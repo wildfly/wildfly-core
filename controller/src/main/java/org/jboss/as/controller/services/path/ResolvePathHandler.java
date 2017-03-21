@@ -84,15 +84,17 @@ public class ResolvePathHandler implements OperationStepHandler {
     private final AttributeDefinition pathAttribute;
     private final OperationDefinition operationDefinition;
     private final PathManager pathManager;
+    private final boolean checkAbsolutePath;
 
     private ResolvePathHandler(final OperationDefinition operationDefinition, final AttributeDefinition parentAttribute,
                                final AttributeDefinition relativeToAttribute, final AttributeDefinition pathAttribute,
-                               final PathManager pathManager) {
+                               final PathManager pathManager, final boolean checkAbsolutePath) {
         this.parentAttribute = parentAttribute;
         this.relativeToAttribute = relativeToAttribute;
         this.pathAttribute = pathAttribute;
         this.operationDefinition = operationDefinition;
         this.pathManager = pathManager;
+        this.checkAbsolutePath = checkAbsolutePath;
     }
 
     @Override
@@ -112,7 +114,12 @@ public class ResolvePathHandler implements OperationStepHandler {
 
         // Resolve paths
         final String result;
-        if (relativeTo.isDefined()) {
+
+        if (checkAbsolutePath
+                && path.isDefined()
+                && AbsolutePathService.isAbsoluteUnixOrWindowsPath(path.asString())) {
+                result = pathManager.resolveRelativePathEntry(path.asString(), null);
+        } else if (relativeTo.isDefined()) {
             // If resolving the full path and a path is defined
             if (!resolveRelativeToOnly && path.isDefined()) {
                 result = pathManager.resolveRelativePathEntry(path.asString(), relativeTo.asString());
@@ -148,6 +155,7 @@ public class ResolvePathHandler implements OperationStepHandler {
         private AttributeDefinition relativeToAttribute;
         private AttributeDefinition pathAttribute;
         private ModelVersion deprecatedSince;
+        private boolean checkAbsolutePath = false;
 
         private Builder(String operationName, final PathManager pathManager) {
             this.operationName = operationName;
@@ -202,7 +210,7 @@ public class ResolvePathHandler implements OperationStepHandler {
             if (deprecatedSince != null) {
                 builder.setDeprecated(deprecatedSince);
             }
-            return new ResolvePathHandler(builder.build(), parentAttribute, relativeToAttribute, pathAttribute, pathManager);
+            return new ResolvePathHandler(builder.build(), parentAttribute, relativeToAttribute, pathAttribute, pathManager, checkAbsolutePath);
         }
 
         /**
@@ -244,6 +252,17 @@ public class ResolvePathHandler implements OperationStepHandler {
 
         public Builder setDeprecated(ModelVersion since) {
             this.deprecatedSince = since;
+            return this;
+        }
+
+        /**
+         * Sets whether the path is absolute and should ignore the relative-to value.
+         *
+         * @param checkAbsolutePath {code true} if an absolute path should ignore the relative-to value
+         * @return the builder
+         */
+        public Builder setCheckAbsolutePath(final boolean checkAbsolutePath) {
+            this.checkAbsolutePath = checkAbsolutePath;
             return this;
         }
     }
