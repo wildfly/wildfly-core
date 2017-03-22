@@ -205,14 +205,14 @@ class SSLDefinitions {
     static final SimpleAttributeDefinition MAXIMUM_SESSION_CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_SESSION_CACHE_SIZE, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(new IntRangeValidator(-1))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition SESSION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SESSION_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(new IntRangeValidator(-1))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
