@@ -56,7 +56,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
-import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
+import org.wildfly.extension.elytron.capabilities._private.CredentialSecurityFactory;
 import org.wildfly.security.auth.util.GSSCredentialSecurityFactory;
 
 import javax.xml.stream.XMLStreamException;
@@ -164,9 +164,15 @@ class KerberosSecurityFactoryDefinition {
                     serviceBuilder.addDependency(pathName(relativeTo));
                 }
 
-                final Map<String, Object> options = new HashMap<>();
-                for(Property option : OPTIONS.resolveModelAttribute(context, model).asPropertyList()) {
-                    options.put(option.getName(), option.getValue());
+                ModelNode optionsNode = OPTIONS.resolveModelAttribute(context, model);
+                final Map<String, Object> options;
+                if (optionsNode.isDefined()) {
+                    options = new HashMap<>();
+                    for (Property option : optionsNode.asPropertyList()) {
+                        options.put(option.getName(), option.getValue());
+                    }
+                } else {
+                    options = null;
                 }
 
                 return () -> {

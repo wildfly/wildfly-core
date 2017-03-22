@@ -55,7 +55,8 @@ class ProviderParser {
 
     private final PersistentResourceXMLDescription providerLoaderParser = builder(PathElement.pathElement(ElytronDescriptionConstants.PROVIDER_LOADER), null)
             .setUseElementsForGroups(false)
-            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ProviderDefinitions.PATH, ProviderDefinitions.RELATIVE_TO, ProviderDefinitions.CONFIGURATION)
+            .addAttributes(ClassLoadingAttributeDefinitions.MODULE, ClassLoadingAttributeDefinitions.CLASS_NAMES, ProviderDefinitions.PATH, ProviderDefinitions.RELATIVE_TO,
+                    ProviderDefinitions.ARGUMENT, ProviderDefinitions.CONFIGURATION)
             .build();
 
     void readProviders(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)

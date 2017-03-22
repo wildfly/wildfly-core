@@ -49,6 +49,7 @@ interface ElytronDescriptionConstants {
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
+    String ARGUMENT = "argument";
     String ATTRIBUTE = "attribute";
     String ATTRIBUTE_MAPPING = "attribute-mapping";
     String ATTRIBUTE_NAME = "attribute-name";

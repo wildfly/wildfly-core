@@ -466,6 +466,15 @@
                  </xs:documentation>
              </xs:annotation>
          </xs:attribute>
+         <xs:attribute name="argument" type="xs:string">
+             <xs:annotation>
+                 <xs:documentation>
+                     Argument to pass into the constructor as the Provider is instantiated.
+
+                     Can only be used where the class names to load are specified. 
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:attribute>
      </xs:complexType>
 
     <!--

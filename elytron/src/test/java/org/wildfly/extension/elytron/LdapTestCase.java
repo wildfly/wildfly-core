@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.common.function.ExceptionSupplier;
-import org.wildfly.extension.elytron.capabilities.DirContextSupplier;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.CloseableIterator;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;

@@ -34,7 +34,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
-import org.wildfly.extension.elytron.capabilities.SecurityEventListener;
+import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SecurityDomain;
