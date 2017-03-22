@@ -43,6 +43,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -73,6 +74,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionConsumer;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 
 
@@ -155,48 +157,57 @@ class ProviderDefinitions {
 
                     @Override
                     public Provider[] get() throws StartException {
-
+                        final Supplier<InputStream> configSupplier;
+                        if (properties != null) {
+                            configSupplier = getConfigurationSupplier(properties);
+                        } else if (path != null) {
+                            configSupplier = getConfigurationSupplier(resolveConfigLocation());
+                        } else {
+                            configSupplier = null;
+                        }
 
                         try {
+                            Collection<ExceptionConsumer<InputStream, IOException>> deferred = new ArrayList<>();
                             ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
                             final List<Provider> loadedProviders;
                             if (classNames != null) {
                                 loadedProviders = new ArrayList<>(classNames.length);
                                 for (String className : classNames) {
                                     Class<? extends Provider> providerClazz = classLoader.loadClass(className).asSubclass(Provider.class);
-                                    if (argument == null) {
-                                        loadedProviders.add(providerClazz.newInstance());
-                                    } else {
+                                    if (argument != null) {
                                         Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(String.class));
                                         loadedProviders.add(constructor.newInstance(new Object[] { argument }));
+                                    } else if (configSupplier != null) {
+                                        // Try and find a constructor that takes an input stream and use it - or use default constructor and enable deferred initialisation.
+                                        try {
+                                            Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(InputStream.class));
+                                            constructor.newInstance(new Object[] { configSupplier.get() });
+                                        } catch (NoSuchMethodException ignored) {
+                                            Provider provider = providerClazz.newInstance();
+                                            loadedProviders.add(provider);
+                                            deferred.add(provider::load);
+                                        }
+                                    } else {
+                                        loadedProviders.add(providerClazz.newInstance());
                                     }
                                 }
                             } else {
                                 loadedProviders = new ArrayList<>();
                                 ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
-                                loader.forEach(loadedProviders::add);
+                                loader.forEach(p -> {
+                                    if (configSupplier != null) {
+                                        deferred.add(p::load);
+                                    }
+                                    loadedProviders.add(p);
+                                });
                             }
 
-                            Provider[] providers = new Provider[loadedProviders.size()];
-
-                            final Supplier<InputStream> configSupplier;
-                            if (properties != null) {
-                                configSupplier = getConfigurationSupplier(properties);
-                            } else if (path != null) {
-                                configSupplier = getConfigurationSupplier(resolveConfigLocation());
-                            } else {
-                                configSupplier = null;
+                            for (ExceptionConsumer<InputStream, IOException> current : deferred) {
+                                // We know from above the deferred Collection is only populated if we do have a configSupplier.
+                                current.accept(configSupplier.get());
                             }
 
-                            for (int i = 0 ; i< providers.length ; i++) {
-                                Provider p = loadedProviders.get(i);
-                                if (configSupplier != null) {
-                                    p.load(configSupplier.get());
-                                }
-                                providers[i] = p;
-                            }
-
-                            return providers;
+                            return loadedProviders.toArray(new Provider[loadedProviders.size()]);
                         } catch (PrivilegedActionException e) {
                             throw new StartException(e.getCause());
                         } catch (Exception e) {
