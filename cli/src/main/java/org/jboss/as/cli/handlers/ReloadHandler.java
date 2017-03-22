@@ -42,6 +42,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
+import org.xnio.http.RedirectException;
 
 /**
  * @author Alexey Loubyansky
@@ -223,7 +224,21 @@ public class ReloadHandler extends BaseOperationCommand {
                         break;
                     }
                 }
-            } catch (IOException|IllegalStateException e) {
+            } catch (IOException e) {
+                // A Redirect Exception? Need to connect again the Client
+                // if that is an http to https redirect only.
+                Throwable ex = e;
+                while (ex != null) {
+                    if (ex instanceof RedirectException) {
+                        // Attempt to reconnect the context
+                        if (Util.reconnectContext((RedirectException) ex, ctx)) {
+                            return;
+                        }
+                    }
+                    ex = ex.getCause();
+                }
+                // ignore and try again
+            } catch( IllegalStateException ex) {
                 // ignore and try again
                 // IllegalStateException is because the embedded server ModelControllerClient will
                 // throw that when the server-state is "stopping"

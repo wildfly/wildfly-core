@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 
 import org.jboss.as.cli.ConnectionInfo;
+import org.jboss.as.cli.ControllerAddress;
 
 /**
  *
@@ -37,6 +38,7 @@ public class ConnectionInfoBean implements ConnectionInfo {
     private String username;
     private Date loggedSince;
     private X509Certificate[] serverCertificates;
+    private ControllerAddress address;
 
     ConnectionInfoBean() {}
 
@@ -72,4 +74,11 @@ public class ConnectionInfoBean implements ConnectionInfo {
         this.serverCertificates = serverCertificates;
     }
 
+    public ControllerAddress getControllerAddress() {
+        return address;
+    }
+
+    void setControllerAddress(ControllerAddress address) {
+        this.address = address;
+    }
 }
