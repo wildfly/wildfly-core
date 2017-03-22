@@ -134,7 +134,7 @@ public class DefaultPermissionFactory implements PermissionFactory, AuthorizerCo
             }
             ManagementPermissionCollection role = currentPerms.permsByRole.get(getOfficialForm(roleName));
             if (role == null) {
-                throw ControllerLogger.ROOT_LOGGER.unknownRole(roleName);
+                continue;
             }
             if (simple == null) {
                 simple = role;
