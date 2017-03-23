@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.Map;
 import javax.inject.Inject;
@@ -44,6 +45,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -114,7 +116,12 @@ public abstract class AbstractLoggingTestCase {
             manifest.append("Dependencies: io.undertow.core");
         }
         archive.addAsResource(new StringAsset(manifest.toString()), "META-INF/MANIFEST.MF");
-        return archive;
+        return addPermissions(archive);
+    }
+
+    public static JavaArchive addPermissions(final JavaArchive archive, final Permission... additionalPermissions) {
+        final Permission[] permissions = LoggingServiceActivator.appendPermissions(additionalPermissions);
+        return archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(permissions), "permissions.xml");
     }
 
     public static ModelNode executeOperation(final ModelNode op) throws IOException {

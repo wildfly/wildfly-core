@@ -311,6 +311,7 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
             archive.addAsServiceProviderAndClasses(ServiceActivator.class, LoggingServiceActivator.class);
         }
         archive.addAsResource(new StringAsset("Dependencies: io.undertow.core\nLogging-Profile: " + profileName), "META-INF/MANIFEST.MF");
+        addPermissions(archive);
         deploy(archive, name);
     }
 }
