@@ -85,8 +85,9 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
 
     static final StandardResourceDescriptionResolver RESOURCE_DESCRIPTION_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE, ElytronDescriptionConstants.ALIAS);
 
-    static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, true)
             .setStorageRuntime()
+            .setMinSize(0)
             .build();
 
     private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {SECRET_VALUE, ENTRY_TYPE};
@@ -185,7 +186,6 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
             String alias = alias(operation);
             String secretValue = asStringIfDefined(context, SECRET_VALUE, resource.getModel());
             String entryType = asStringIfDefined(context, ENTRY_TYPE, resource.getModel());
-
             ServiceName credentialStoreServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
             @SuppressWarnings("unchecked")
             ServiceController<CredentialStore> serviceContainer = (ServiceController<CredentialStore>) context.getServiceRegistry(true).getRequiredService(credentialStoreServiceName);
@@ -195,7 +195,8 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
                     if (credentialStore.exists(alias, PasswordCredential.class)) {
                         throw ROOT_LOGGER.credentialAlreadyExists(alias, PasswordCredential.class.getName());
                     }
-                    credentialStore.store(alias, createCredentialFromPassword(secretValue.toCharArray()));
+                    char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
+                    credentialStore.store(alias, createCredentialFromPassword(secret));
                     credentialStore.flush();
                 } else {
                     String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);

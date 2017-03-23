@@ -72,6 +72,7 @@ interface ElytronDescriptionConstants {
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
     String CACHING_REALM = "caching-realm";
+    String CASE_SENSITIVE = "case-sensitive";
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_CHAIN = "certificate-chain";
