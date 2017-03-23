@@ -8,7 +8,7 @@
         </security-domain>
     </security-domains>
     <security-realms>
-        <filesystem-realm name="FileSystemRealm">
+        <filesystem-realm name="FileSystemRealm" case-sensitive="true">
             <file path="filesystem-realm-empty" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
     </security-realms>

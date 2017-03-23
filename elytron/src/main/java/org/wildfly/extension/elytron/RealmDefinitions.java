@@ -30,6 +30,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -67,6 +68,11 @@ class RealmDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
+    public static final SimpleAttributeDefinition CASE_SENSITIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CASE_SENSITIVE, ModelType.BOOLEAN, true)
+            .setAllowExpression(false)
+            .setDefaultValue(new ModelNode(false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
 
     static AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
 

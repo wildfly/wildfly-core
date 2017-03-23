@@ -172,9 +172,11 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             undertowBuilder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
                     HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, undertowService.getHttpAuthenticationFactoryInjector());
-        } else if (securityRealm != null) {
+        }
+        if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
-        } else {
+        }
+        if(httpAuthenticationFactory == null && securityRealm == null) {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
         String sslContext = commonPolicy.getSSLContext();

@@ -37,10 +37,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -71,6 +74,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionConsumer;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 
 
@@ -94,7 +98,14 @@ class ProviderDefinitions {
     static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.PATH)
+            .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.ARGUMENT)
+            .build();
+
+    static final SimpleAttributeDefinition ARGUMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ARGUMENT, ModelType.STRING, true)
+            .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
+            .setRequires(ElytronDescriptionConstants.CLASS_NAMES)
+            .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.CONFIGURATION)
+            .setAllowExpression(true)
             .build();
 
     private static final AggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = AggregateComponentDefinition.create(Provider[].class,
@@ -107,7 +118,7 @@ class ProviderDefinitions {
     }
 
     static ResourceDefinition getProviderLoaderDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, CONFIGURATION };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
         AbstractAddStepHandler add = new TrivialAddHandler<Provider[]>(Provider[].class, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
 
             @Override
@@ -119,6 +130,7 @@ class ProviderDefinitions {
             protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder,OperationContext context, ModelNode model) throws OperationFailedException {
                 final String module = asStringIfDefined(context, MODULE, model);
                 final String[] classNames = asStringArrayIfDefined(context, CLASS_NAMES, model);
+                final String argument = asStringIfDefined(context, ARGUMENT, model);
 
                 final Properties properties;
                 ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
@@ -145,41 +157,59 @@ class ProviderDefinitions {
 
                     @Override
                     public Provider[] get() throws StartException {
+                        final Supplier<InputStream> configSupplier;
+                        if (properties != null) {
+                            configSupplier = getConfigurationSupplier(properties);
+                        } else if (path != null) {
+                            configSupplier = getConfigurationSupplier(resolveConfigLocation());
+                        } else {
+                            configSupplier = null;
+                        }
+
                         try {
+                            Collection<ExceptionConsumer<InputStream, IOException>> deferred = new ArrayList<>();
                             ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
                             final List<Provider> loadedProviders;
                             if (classNames != null) {
                                 loadedProviders = new ArrayList<>(classNames.length);
                                 for (String className : classNames) {
                                     Class<? extends Provider> providerClazz = classLoader.loadClass(className).asSubclass(Provider.class);
-                                    loadedProviders.add(providerClazz.newInstance());
+                                    if (argument != null) {
+                                        Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(String.class));
+                                        loadedProviders.add(constructor.newInstance(new Object[] { argument }));
+                                    } else if (configSupplier != null) {
+                                        // Try and find a constructor that takes an input stream and use it - or use default constructor and enable deferred initialisation.
+                                        try {
+                                            Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(InputStream.class));
+                                            constructor.newInstance(new Object[] { configSupplier.get() });
+                                        } catch (NoSuchMethodException ignored) {
+                                            Provider provider = providerClazz.newInstance();
+                                            loadedProviders.add(provider);
+                                            deferred.add(provider::load);
+                                        }
+                                    } else {
+                                        loadedProviders.add(providerClazz.newInstance());
+                                    }
                                 }
                             } else {
                                 loadedProviders = new ArrayList<>();
                                 ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
-                                loader.forEach(loadedProviders::add);
+                                loader.forEach(p -> {
+                                    if (configSupplier != null) {
+                                        deferred.add(p::load);
+                                    }
+                                    loadedProviders.add(p);
+                                });
                             }
 
-                            Provider[] providers = new Provider[loadedProviders.size()];
-
-                            final Supplier<InputStream> configSupplier;
-                            if (properties != null) {
-                                configSupplier = getConfigurationSupplier(properties);
-                            } else if (path != null) {
-                                configSupplier = getConfigurationSupplier(resolveConfigLocation());
-                            } else {
-                                configSupplier = null;
+                            for (ExceptionConsumer<InputStream, IOException> current : deferred) {
+                                // We know from above the deferred Collection is only populated if we do have a configSupplier.
+                                current.accept(configSupplier.get());
                             }
 
-                            for (int i = 0 ; i< providers.length ; i++) {
-                                Provider p = loadedProviders.get(i);
-                                if (configSupplier != null) {
-                                    p.load(configSupplier.get());
-                                }
-                                providers[i] = p;
-                            }
-
-                            return providers;
+                            return loadedProviders.toArray(new Provider[loadedProviders.size()]);
+                        } catch (PrivilegedActionException e) {
+                            throw new StartException(e.getCause());
                         } catch (Exception e) {
                             throw new StartException(e);
                         }

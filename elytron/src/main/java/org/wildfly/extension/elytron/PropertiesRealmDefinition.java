@@ -24,6 +24,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
@@ -116,7 +117,7 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
         .setStorageRuntime()
         .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE };
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE, CASE_SENSITIVE };
 
     // Resource Resolver
 

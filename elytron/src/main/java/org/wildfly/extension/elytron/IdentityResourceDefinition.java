@@ -21,12 +21,15 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -125,7 +128,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
             ModifiableSecurityRealm modifiableRealm = getModifiableSecurityRealm(context);
-            String principalName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.ADDRESS)).getLastElement().getValue();
+            String principalName = Normalizer.normalize(context.getCurrentAddressValue(), Normalizer.Form.NFKC);
 
             ModifiableRealmIdentity identity = null;
             try {
@@ -143,6 +146,17 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
                     identity.dispose();
                 }
             }
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            if (!CASE_SENSITIVE.resolveModelAttribute(context, context.readResourceFromRoot(context.getCurrentAddress().getParent(), false).getModel()).asBoolean(false)) {
+                String principalName = context.getCurrentAddressValue();
+                if (!principalName.equals(principalName.toLowerCase(Locale.ROOT))) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidUsername(principalName, context.getCurrentAddress().getParent().getLastElement().getValue());
+                }
+            }
+            super.execute(context, operation);
         }
     }
 

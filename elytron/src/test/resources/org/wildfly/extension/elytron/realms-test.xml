@@ -9,12 +9,12 @@
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashed.properties" digest-realm-name="Hashed" />
         </properties-realm>
 
-        <properties-realm name="ClearPropertyRealm" groups-attribute="groupAttr">
+        <properties-realm name="ClearPropertyRealm" groups-attribute="groupAttr" case-sensitive="true">
             <users-properties path="users-clear.properties" relative-to="jboss.server.config.dir" plain-text="true" />
             <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
         </properties-realm>
 
-        <filesystem-realm name="FilesystemRealm" levels="2">
+        <filesystem-realm name="FilesystemRealm" levels="2" case-sensitive="true">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
         </filesystem-realm>
 
@@ -22,7 +22,7 @@
             <jwt issuer="some-issuer-a some-issuer-b" audience="some-audience-a some-audience-b some-audience-c" public-key="-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCqGKukO1De7zhZj6+H0qtjTkVxwTCpvKe4eCZ0FPqri0cb2JZfXJ/DgYSF6vUpwmJG8wVQZKjeGcjDOL5UlsuusFncCzWBQ7RKNUSesmQRMSGkVb1/3j+skZ6UtW+5u09lHNsj6tQ51s1SPrCBkedbNf0Tp0GbMJDyR4e9T04ZZwIDAQAB-----END PUBLIC KEY-----"/>
         </token-realm>
 
-        <token-realm name="EmptyJwtRealm" principal-claim="sub">
+        <token-realm name="EmptyJwtRealm" principal-claim="sub" case-sensitive="true">
             <jwt/>
         </token-realm>
 
@@ -30,7 +30,7 @@
             <jwt key-store="ElytronCaTruststore" certificate="mykey" />
         </token-realm>
 
-        <token-realm name="OAuth2Realm" principal-claim="sub">
+        <token-realm name="OAuth2Realm" principal-claim="sub" case-sensitive="true">
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
         </token-realm>
     </security-realms>

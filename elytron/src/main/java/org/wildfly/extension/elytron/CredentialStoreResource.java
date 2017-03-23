@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.DelegatingResource;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
@@ -66,34 +67,34 @@ class CredentialStoreResource extends DelegatingResource {
 
     @Override
     public boolean hasChild(PathElement element) {
-        try {
-            if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+        if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+            try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
                 if (credentialStore != null && (credentialStore.getAliases().contains(toLower(element.getValue())))) {
                     return true;
                 }
-                return false;
+            } catch (CredentialStoreException e) {
+                ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-        } catch (CredentialStoreException e) {
-            ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
+            return false;
         }
-        return false;
+        return super.hasChild(element);
     }
 
     @Override
     public Resource getChild(PathElement element) {
-        try {
-            if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+        if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+            try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
                 if (credentialStore != null && (credentialStore.getAliases().contains(toLower(element.getValue())))) {
                     return Resource.Factory.create(true);
                 }
-                return null;
+            } catch (CredentialStoreException e) {
+                ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-        } catch (CredentialStoreException e) {
-            ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
+            return null;
         }
-        return null;
+        return super.getChild(element);
     }
 
     @Override
@@ -107,39 +108,37 @@ class CredentialStoreResource extends DelegatingResource {
 
     @Override
     public Set<String> getChildrenNames(String childType) {
-        try {
-            if (ElytronDescriptionConstants.ALIAS.equals(childType)) {
+        if (ElytronDescriptionConstants.ALIAS.equals(childType)) {
+            try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
                 if (credentialStore != null && credentialStore.isInitialized()) {
                     return credentialStore.getAliases();
-                } else {
-                    return Collections.emptySet();
                 }
+            } catch (CredentialStoreException e) {
+                ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-        } catch (CredentialStoreException e) {
-            ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
+        return super.getChildrenNames(childType);
     }
 
     @Override
     public Set<ResourceEntry> getChildren(String childType) {
-        try {
-            if (ElytronDescriptionConstants.ALIAS.equals(childType)) {
+        if (ElytronDescriptionConstants.ALIAS.equals(childType)) {
+            try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
                 if (credentialStore != null && credentialStore.isInitialized() && credentialStore.getAliases().size() > 0) {
                     Set<String> aliases = credentialStore.getAliases();
                     Set<ResourceEntry> children = new LinkedHashSet<>(aliases.size());
                     children.addAll(aliases.stream().map(alias -> new PlaceholderResource.PlaceholderResourceEntry(ElytronDescriptionConstants.ALIAS, alias)).collect(Collectors.toList()));
                     return children;
-                } else {
-                    return Collections.emptySet();
                 }
+            } catch (CredentialStoreException e) {
+                ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-        } catch (CredentialStoreException e) {
-            ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
+        return super.getChildren(childType);
     }
 
     @Override
@@ -165,6 +164,32 @@ class CredentialStoreResource extends DelegatingResource {
 
     private String toLower(String parameter) {
         return parameter != null ? parameter.toLowerCase(Locale.ROOT) : null;
+    }
+
+    @Override
+    public Resource removeChild(PathElement element) {
+        if (!ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+            return super.removeChild(element);
+        }
+        return null;
+    }
+
+    @Override
+    public void registerChild(PathElement element, int index, Resource resource) {
+        if (!ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+            super.registerChild(element, index, resource);
+        } else if (getChild(element) != null) {
+            throw ControllerLogger.ROOT_LOGGER.duplicateResource(element.getValue());
+        }
+    }
+
+    @Override
+    public void registerChild(PathElement element, Resource resource) {
+        if (!ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
+            super.registerChild(element, resource);
+        } else if (getChild(element) != null) {
+            throw ControllerLogger.ROOT_LOGGER.duplicateResource(element.getValue());
+        }
     }
 
 }

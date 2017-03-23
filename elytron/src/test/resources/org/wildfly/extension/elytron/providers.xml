@@ -10,7 +10,7 @@
                 <property name="c" value="d" />
             </configuration>
         </provider-loader>
-        <provider-loader name="ByClassNames" module="test.class.module" class-names="org.wildfly.elytron.TestOne org.wildfly.elytron.TestTwo" />
+        <provider-loader name="ByClassNames" module="test.class.module" class-names="org.wildfly.elytron.TestOne org.wildfly.elytron.TestTwo" argument="test-argument" />
         <provider-loader name="PathConfigured" module="test.class.module" path="config.test" relative-to="some.path" />
     </providers>
 </subsystem>

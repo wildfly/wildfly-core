@@ -23,6 +23,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -79,7 +80,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setAllowExpression(true)
                     .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, CASE_SENSITIVE};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);

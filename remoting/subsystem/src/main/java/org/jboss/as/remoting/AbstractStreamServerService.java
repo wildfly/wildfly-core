@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLContext;
 
+import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
@@ -47,6 +48,7 @@ import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
 
@@ -114,6 +116,15 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                 builder.set(Options.SSL_STARTTLS, true);
             }
 
+            final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
+            SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
+            if (factory == null && securityRealm != null) {
+                factory = securityRealm.getSaslAuthenticationFactory();
+                if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT)) {
+                    builder.set(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
+                }
+            }
+
             if (connectorPropertiesOptionMap != null) {
                 builder.addAll(connectorPropertiesOptionMap);
             }
@@ -122,11 +133,7 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
 
-            final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
-            SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
-            if (factory == null && securityRealm != null) {
-                factory = securityRealm.getSaslAuthenticationFactory();
-            }
+
 
             if (factory == null) {
                 // TODO Elytron: Just authenticate anonymously
