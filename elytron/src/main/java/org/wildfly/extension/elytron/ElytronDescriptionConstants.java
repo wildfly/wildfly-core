@@ -259,6 +259,7 @@ interface ElytronDescriptionConstants {
     String MECHANISM_CONFIGURATION = "mechanism-configuration";
     String MECHANISM_CONFIGURATIONS = "mechanism-configurations";
     String MECHANISM_NAME = "mechanism-name";
+    String MECHANISM_NAMES = "mechanism-names";
     String MECHANISM_OIDS = "mechanism-oids";
     String MECHANISM_PROPERTIES = "mechanism-properties";
     String MECHANISM_PROVIDER_FILTERING_SASL_SERVER_FACTORY = "mechanism-provider-filtering-sasl-server-factory";

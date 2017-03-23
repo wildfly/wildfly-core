@@ -32,6 +32,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_C
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DEBUG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MECHANISM_NAMES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MECHANISM_OIDS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MINIMUM_REMAINING_LIFETIME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
@@ -90,7 +91,7 @@ class CredentialSecurityFactoryParser {
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
 
-        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME, PRINCIPAL, PATH, MECHANISM_OIDS }));
+        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME, PRINCIPAL, PATH }));
         String name = null;
 
         final int count = reader.getAttributeCount();
@@ -128,6 +129,11 @@ class CredentialSecurityFactoryParser {
                         break;
                     case DEBUG:
                         KerberosSecurityFactoryDefinition.DEBUG.parseAndSetParameter(value, add, reader);
+                        break;
+                    case MECHANISM_NAMES:
+                        for (String mechanismName : reader.getListAttributeValue(i)) {
+                            KerberosSecurityFactoryDefinition.MECHANISM_NAMES.parseAndAddParameterElement(mechanismName, add, reader);
+                        }
                         break;
                     case MECHANISM_OIDS:
                         for (String mechanismOid : reader.getListAttributeValue(i)) {
@@ -235,6 +241,7 @@ class CredentialSecurityFactoryParser {
                 KerberosSecurityFactoryDefinition.SERVER.marshallAsAttribute(factory, false, writer);
                 KerberosSecurityFactoryDefinition.OBTAIN_KERBEROS_TICKET.marshallAsAttribute(factory, false, writer);
                 KerberosSecurityFactoryDefinition.DEBUG.marshallAsAttribute(factory, false, writer);
+                KerberosSecurityFactoryDefinition.MECHANISM_NAMES.getAttributeMarshaller().marshallAsAttribute(KerberosSecurityFactoryDefinition.MECHANISM_NAMES, factory, false, writer);
                 KerberosSecurityFactoryDefinition.MECHANISM_OIDS.getAttributeMarshaller().marshallAsAttribute(KerberosSecurityFactoryDefinition.MECHANISM_OIDS, factory, false, writer);
                 KerberosSecurityFactoryDefinition.OPTIONS.marshallAsElement(factory, writer);
                 writer.writeEndElement();

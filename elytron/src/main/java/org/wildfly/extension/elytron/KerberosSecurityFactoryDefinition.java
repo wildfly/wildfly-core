@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -57,6 +58,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities._private.CredentialSecurityFactory;
+import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.auth.util.GSSCredentialSecurityFactory;
 
 import javax.xml.stream.XMLStreamException;
@@ -109,10 +111,22 @@ class KerberosSecurityFactoryDefinition {
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
+    private static final ModelNode mechanismsDefault = new ModelNode();
+    static {
+        mechanismsDefault.add("KRB5");
+        mechanismsDefault.add("SPNEGO");
+    }
+    static final StringListAttributeDefinition MECHANISM_NAMES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_NAMES)
+        .setAllowExpression(true)
+        .setRequired(false)
+        .setDefaultValue(mechanismsDefault)
+        .setAllowedValues("KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO") // defined in oids.properties in wildfly-elytron
+        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .build();
+
     static final StringListAttributeDefinition MECHANISM_OIDS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_OIDS)
         .setAllowExpression(true)
-        .setRequired(true)
-        .setMinSize(1)
+        .setRequired(false)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
@@ -136,7 +150,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_OIDS, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -147,15 +161,19 @@ class KerberosSecurityFactoryDefinition {
                 final boolean server = SERVER.resolveModelAttribute(context, model).asBoolean();
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
-                final List<Oid> mechanaismOids = MECHANISM_OIDS.unwrap(context, model).stream().map(s -> {
+
+                Stream<String> oidsFromNames = MECHANISM_NAMES.unwrap(context, model).stream()
+                        .map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.GSS, name));
+                Stream<String> directOids = MECHANISM_OIDS.unwrap(context, model).stream();
+                final List<Oid> mechanismOids = Stream.concat(oidsFromNames, directOids).map(s -> {
                     try {
                         return new Oid(s);
                     } catch (GSSException e) {
                         throw new IllegalArgumentException(e);
                     }
                 }).collect(Collectors.toList());
-                final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
+                final InjectedValue<PathManager> pathManager = new InjectedValue<>();
                 final String path = PATH.resolveModelAttribute(context, model).asString();
                 final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
 
@@ -192,7 +210,7 @@ class KerberosSecurityFactoryDefinition {
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
                         .setOptions(options);
-                    mechanaismOids.forEach(builder::addMechanismOid);
+                    mechanismOids.forEach(builder::addMechanismOid);
 
                     try {
                         return CredentialSecurityFactory.from(builder.build());
