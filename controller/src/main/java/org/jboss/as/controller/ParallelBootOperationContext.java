@@ -406,6 +406,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String... dynamicParts) {
+        return primaryContext.getCapabilityServiceName(capabilityBaseName, serviceType, dynamicParts);
+    }
+
+    @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
         return primaryContext.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart),
                 serviceType, activeStep.address);

@@ -1027,6 +1027,23 @@ public interface OperationContext extends ExpressionResolver {
      */
     ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType);
 
+
+    /**
+     * Gets the name of a service associated with a given {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * capability, if there is one.
+     *
+     * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @param dynamicParts the dynamic parts of the capability name. Cannot be {@code null}
+     * @return the name of the service. Will not return {@code null}
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
+     *                                          complete set of capabilities is not known until the end of the model stage.
+     * @throws IllegalArgumentException if {@code serviceType} is {@code null } or
+     *            the capability does not provide a service of type {@code serviceType}
+     */
+    ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String ... dynamicParts);
+
     /**
      * Gets a support object that allows service implementations installed from this context to
      * integrate with capabilities.

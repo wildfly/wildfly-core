@@ -402,6 +402,11 @@ public abstract class AbstractOperationTestCase {
             return null;
         }
 
+        @Override
+        public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String... dynamicParts) {
+            return null;
+        }
+
         public ModelNode readModel(PathAddress address) {
             return null;
         }

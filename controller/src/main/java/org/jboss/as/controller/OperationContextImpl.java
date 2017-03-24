@@ -154,8 +154,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     private final Map<PathAddress, Object> affectsModel;
     /** Resources that have had their services restarted, used by ALLOW_RESOURCE_SERVICE_RESTART This should be confined to a thread, so no sync needed */
     private Map<PathAddress, Object> restartedResources = Collections.emptyMap();
-    private final ContextAttachments contextAttachments = new ContextAttachments();    private final Map<OperationId, AuthorizationResponseImpl> authorizations =
-            new ConcurrentHashMap<OperationId, AuthorizationResponseImpl>();
+    private final ContextAttachments contextAttachments = new ContextAttachments();
+    private final Map<OperationId, AuthorizationResponseImpl> authorizations = new ConcurrentHashMap<>();
     private final Set<ContextServiceTarget> serviceTargets = new HashSet<>();
     private volatile BlockingTimeout blockingTimeout;
     private final long startTime = System.nanoTime();
@@ -1637,6 +1637,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), serviceType, activeStep.address);
     }
 
+    @Override
+    public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String ... dynamicParts) {
+        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicParts), serviceType, activeStep.address);
+    }
+
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address) {
         assert isControllingThread();
         assertCapabilitiesAvailable(currentStage);
@@ -2610,7 +2615,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
-        public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart) {
+        public ServiceName getCapabilityServiceName(String capabilityBaseName, String ... dynamicPart) {
             return getCapabilityServiceName(capabilityBaseName).append(dynamicPart);
         }
     }
@@ -2634,6 +2639,14 @@ final class OperationContextImpl extends AbstractOperationContext {
         public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
             final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
             addDependency(serviceName, type, target);
+            return this;
+        }
+
+
+        @Override
+        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type) {
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
+            addDependency(DependencyType.REQUIRED, serviceName);
             return this;
         }
 
