@@ -76,10 +76,11 @@ class RealmParser {
             .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
     private final PersistentResourceXMLDescription keyStoreRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE_REALM), null)
-            .addAttributes(KeyStoreRealmDefinition.KEYSTORE)
+            .addAttribute(KeyStoreRealmDefinition.KEYSTORE)
             .build();
     private final PersistentResourceXMLDescription propertiesRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM), null)
             .addAttributes(PropertiesRealmDefinition.GROUPS_ATTRIBUTE)
+            .addAttribute(RealmDefinitions.CASE_SENSITIVE)
             .addAttribute(PropertiesRealmDefinition.USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .addAttribute(PropertiesRealmDefinition.GROUPS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .build();
