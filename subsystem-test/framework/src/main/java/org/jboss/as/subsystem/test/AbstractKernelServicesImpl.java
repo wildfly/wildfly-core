@@ -3,8 +3,13 @@ package org.jboss.as.subsystem.test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
@@ -21,9 +26,12 @@ import org.jboss.as.model.test.ModelTestParser;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.ValueService;
+import org.jboss.msc.value.ImmediateValue;
 import org.wildfly.legacy.test.spi.subsystem.TestModelControllerFactory;
 
 
@@ -103,6 +111,12 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         builder.addDependency(PathManagerService.SERVICE_NAME); // ensure this is up before the ModelControllerService, as it would be in a real server
         builder.install();
         target.addService(PathManagerService.SERVICE_NAME, pathManager).install();
+        if (legacyModelVersion == null) {
+            ExecutorService mgmtExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
+                    new SynchronousQueue<Runnable>());
+            Service<ExecutorService> mgmtExecSvc = new ValueService<>(new ImmediateValue<>(mgmtExecutor));
+            target.addService(AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), mgmtExecSvc).install();
+        }
 
         additionalInit.addExtraServices(target);
 
