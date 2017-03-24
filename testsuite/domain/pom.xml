@@ -191,6 +191,7 @@
                     </systemPropertyVariables>
                     <includes>
                          <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
+                         <include>org/jboss/as/test/integration/domain/cacheddc/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/respawn/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/events/*TestCase.java</include>
