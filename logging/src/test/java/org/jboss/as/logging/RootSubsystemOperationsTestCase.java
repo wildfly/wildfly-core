@@ -26,6 +26,8 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -228,6 +230,49 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         op.get("name").set("invalid");
         result = kernelServices.executeOperation(op);
         assertFalse("Should have failed due to invalid file.", SubsystemOperations.isSuccessfulOutcome(result));
+    }
+
+    @Test
+    public void testFailedLogFile() throws Exception {
+        final Path configDir = LoggingTestEnvironment.get().getConfigDir().toPath();
+        final Path logDir = LoggingTestEnvironment.get().getLogDir().toPath();
+
+        // Create the test log file
+        final Path logFile = configDir.resolve("test-config.log");
+        Files.deleteIfExists(logFile);
+        Files.createFile(logFile);
+        final Path relativeLogFile = logDir.relativize(logFile);
+        assertTrue("Expected the log file log file to exist", Files.exists(logFile));
+
+        final KernelServices kernelServices = boot();
+
+        // Attempt to read an attribute on a valid file, but a non-existing resource
+        final ModelNode address = SUBSYSTEM_ADDRESS.append("log-file", relativeLogFile.toString()).toModelNode();
+        ModelNode op = SubsystemOperations.createReadAttributeOperation(address, "file-size");
+        executeOperationForFailure(kernelServices, op);
+
+        // Attempt to read a valid file on a non-existing resource
+        op = SubsystemOperations.createOperation("read-log-file", address);
+        executeOperationForFailure(kernelServices, op);
+
+        // Add a valid file-handler
+        final ModelNode handlerAddress = createFileHandlerAddress(relativeLogFile.toString()).toModelNode();
+        op = SubsystemOperations.createAddOperation(handlerAddress);
+        op.get("append").set(true);
+        final ModelNode fileModel = op.get("file").setEmptyObject();
+        fileModel.get("relative-to").set("jboss.server.log.dir");
+        fileModel.get("path").set(relativeLogFile.toString());
+        executeOperation(kernelServices, op);
+
+        // Attempt to read an attribute on a valid file handler. The file handler was created in the jboss.server.log.dir
+        // however it used a relative path to attempt to allow any file to be read
+        op = SubsystemOperations.createReadAttributeOperation(address, "file-size");
+        executeOperationForFailure(kernelServices, op);
+
+        // Attempt to read the file on a valid file handler. The file handler was created in the jboss.server.log.dir
+        // however it used a relative path to attempt to allow any file to be read
+        op = SubsystemOperations.createOperation("read-log-file", address);
+        executeOperationForFailure(kernelServices, op);
     }
 
     private void testReadLogFile(final KernelServices kernelServices, final ModelNode op, final Logger logger) {
