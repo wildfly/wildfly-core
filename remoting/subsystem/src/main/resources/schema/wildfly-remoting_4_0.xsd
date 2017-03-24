@@ -173,7 +173,7 @@
         <xs:attribute name="max-outbound-messages" type="xs:positiveInteger" default="65535">
             <xs:annotation>
                 <xs:documentation>
-                    <![CDATA[The maximum number of outbound channels to support for a connection.
+                    <![CDATA[The maximum number of concurrent outbound messages on a channel.
                     ]]>
                 </xs:documentation>
             </xs:annotation>
@@ -189,7 +189,7 @@
         <xs:attribute name="max-inbound-messages" type="xs:positiveInteger" default="80">
             <xs:annotation>
                 <xs:documentation>
-                    <![CDATA[The maximum number of inbound channels to support for a connection.
+                    <![CDATA[The maximum number of concurrent inbound messages on a channel.
                     ]]>
                 </xs:documentation>
             </xs:annotation>
@@ -222,7 +222,7 @@
         <xs:attribute name="max-outbound-channels" type="xs:positiveInteger" default="40">
             <xs:annotation>
                 <xs:documentation>
-                    <![CDATA[The maximum number of concurrent outbound messages on a channel.
+                    <![CDATA[The maximum number of outbound channels to support for a connection.
                     ]]>
                 </xs:documentation>
             </xs:annotation>
@@ -230,7 +230,7 @@
         <xs:attribute name="max-inbound-channels" type="xs:positiveInteger" default="40">
             <xs:annotation>
                 <xs:documentation>
-                    <![CDATA[The maximum number of concurrent inbound messages on a channel.
+                    <![CDATA[The maximum number of inbound channels to support for a connection.
                     ]]>
                 </xs:documentation>
             </xs:annotation>
@@ -257,11 +257,11 @@
 
                 The optional nested "authentication-provider" element contains the name of the authentication provider to
                 use for incoming connections.
-                
+
                 The optional server-name attribute specifies the server name that should be used in the initial exchange with
                 the client and within the SASL mechanisms used for authentication.
 
-                The optional sasl-protocol attribute specifies the protocol that should be used within the SASL mechanisms. 
+                The optional sasl-protocol attribute specifies the protocol that should be used within the SASL mechanisms.
             ]]>
             </xs:documentation>
         </xs:annotation>
@@ -282,7 +282,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
     <xs:complexType name="connector">
         <xs:annotation>
             <xs:documentation>
