@@ -52,7 +52,7 @@ if [ -z "$SHUTDOWN_WAIT" ]; then
 fi
 
 if [ -z "$JBOSS_LOCKFILE" ]; then
-	JBOSS_LOCKFILE=/var/lock/subsys/jboss-eap
+	JBOSS_LOCKFILE=/var/lock/subsys/$JBOSS_NAME
 fi
 
 # Startup mode of jboss-eap
