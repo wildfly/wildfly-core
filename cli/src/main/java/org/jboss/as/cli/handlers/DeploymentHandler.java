@@ -82,7 +82,7 @@ public abstract class DeploymentHandler extends BatchModeCommandHandler {
                 table.nextRow();
             }
         }
-        throw new CommandFormatException(table.toString());
+        ctx.printLine(table.toString());
     }
 
     protected ModelNode getDeploymentDescriptions(CommandContext ctx, List<String> names) throws CommandFormatException {
