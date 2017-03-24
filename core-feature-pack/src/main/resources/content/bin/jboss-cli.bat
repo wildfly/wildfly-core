@@ -1,5 +1,8 @@
 @echo off
 setlocal ENABLEEXTENSIONS
+rem the arguments can contain ')' character, this breaks parser. Delaying 
+rem argument evaluation at script execution fixes it.
+setlocal ENABLEDELAYEDEXPANSION
 rem -------------------------------------------------------------------------
 rem JBoss Admin CLI Script for Windows
 rem -------------------------------------------------------------------------
@@ -64,29 +67,30 @@ set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.system.pkgs=com.sun.java.swing"
 set LOGGING_CONFIG=
 echo "%JAVA_OPTS%" | findstr /I "logging.configuration" > nul
 if errorlevel == 1 (
-  set "LOGGING_CONFIG=-Dlogging.configuration=file:%JBOSS_HOME%\bin\jboss-cli-logging.properties"
+  rem It must be quoted in case JBOSS_HOME contains whitespaces 
+  set LOGGING_CONFIG="-Dlogging.configuration=file:%JBOSS_HOME%\bin\jboss-cli-logging.properties"
 ) else (
   echo logging.configuration already set in JAVA_OPTS
 )
-if "x%LOGGING_CONFIG%" == "x" (
-  "%JAVA%" %JAVA_OPTS% ^
-      -jar "%JBOSS_RUNJAR%" ^
-      -mp "%JBOSS_MODULEPATH%" ^
-       org.jboss.as.cli ^
-         %*
-) else (
-  "%JAVA%" %JAVA_OPTS% "%LOGGING_CONFIG%" ^
-      -jar "%JBOSS_RUNJAR%" ^
-      -mp "%JBOSS_MODULEPATH%" ^
-       org.jboss.as.cli ^
-       %*
-)
 
-set /A RC=%errorlevel%
-:END
-if "x%NOPAUSE%" == "x" pause
+rem script arguments will be evaluated at execution time.
+set ARGS=%*
 
-if "x%RC%" == "x" (
-  set /A RC=0
+rem Force following commands to be loaded in memory.
+rem This protects the running script from being rewritten.
+(
+    "%JAVA%" %JAVA_OPTS% %LOGGING_CONFIG% ^
+        -jar "%JBOSS_RUNJAR%" ^
+        -mp "%JBOSS_MODULEPATH%" ^
+         org.jboss.as.cli ^
+         !ARGS!
+
+    set /A RC=%errorlevel%
+    :END
+    if "x%NOPAUSE%" == "x" pause
+
+    if "x%RC%" == "x" (
+      set /A RC=0
+    )
+    exit /B %RC%
 )
-exit /B %RC%

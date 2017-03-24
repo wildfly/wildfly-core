@@ -1,17 +1,5 @@
 #!/bin/sh
 
-CLI_OPTS=""
-while [ "$#" -gt 0 ]
-do
-    case "$1" in
-      *)
-          CLI_OPTS="$CLI_OPTS '$1'"
-          ;;
-    esac
-    shift
-done
-
-
 DIRNAME=`dirname "$0"`
 
 # OS specific support (must be 'true' or 'false').
@@ -84,8 +72,8 @@ fi
 
 LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
-    eval \"$JAVA\" $JAVA_OPTS \"-Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.as.cli "$CLI_OPTS"
+    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
 else
     echo "logging.configuration already set in JAVA_OPTS"
-    eval \"$JAVA\" $JAVA_OPTS -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.jboss.as.cli "$CLI_OPTS"
+    exec "$JAVA" $JAVA_OPTS -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
 fi
