@@ -110,6 +110,8 @@ final class BootstrapImpl implements Bootstrap {
         shutdownHook.setControlledProcessState(processState);
         ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(tracker, processState).getValue();
         final SuspendController suspendController = new SuspendController();
+        //Instantiating the suspendcontroller here to be able to get a reference to it in RunningStateJmx
+        //Note that the SuspendController service will be started in the ServerService during the boot of the server.
         RunningStateJmx.registerMBean(
                 controlledProcessStateService, suspendController,
                 configuration.getRunningModeControl(),
