@@ -434,6 +434,11 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String... dynamicParts) {
+        throw readOnlyContext();
+    }
+
+    @Override
     public CapabilityServiceSupport getCapabilityServiceSupport() {
         throw readOnlyContext();
     }

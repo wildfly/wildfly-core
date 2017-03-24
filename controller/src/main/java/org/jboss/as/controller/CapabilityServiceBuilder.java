@@ -48,7 +48,7 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target, String... referenceNames);
 
     /**
-     * Adds capability requirement with injection to service which we are building
+     * Adds capability requirement with injection to capability which we are building
      *
      * @param capabilityName name of capability requirement
      * @param type           the class of the value of the dependency
@@ -57,6 +57,16 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      * @return this builder
      */
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target);
+
+    /**
+     * Adds capability requirement to capability which we are building
+     *
+     * @param capabilityName name of capability requirement
+     * @param type           the class of the value of the dependency
+     * @param <I>            the type of the value of the dependency
+     * @return this builder
+     */
+    <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type);
 
     /**
      * {@inheritDoc}
