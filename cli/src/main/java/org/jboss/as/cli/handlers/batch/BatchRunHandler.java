@@ -226,7 +226,7 @@ public class BatchRunHandler extends BaseOperationCommand {
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 while(line != null) {
-                    ctx.handle(line);
+                    ctx.handle(line.trim());
                     line = reader.readLine();
                 }
                 final ModelNode request = batchManager.getActiveBatch().toRequest();
