@@ -31,5 +31,13 @@
     <resource name="foo2" no-attr1="blah" alias="localhost,some.host,bah,boh,yak">
         <cluster attr1="bar2" attr2="baz2"/>
     </resource>
+    <resource name="foo3">
+        <source>
+            <credential-reference alias="foo,bar" />
+        </source>
+        <target>
+            <credential-reference alias="alice,bob" />
+        </target>
+    </resource>
     <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3" />
 </subsystem>
