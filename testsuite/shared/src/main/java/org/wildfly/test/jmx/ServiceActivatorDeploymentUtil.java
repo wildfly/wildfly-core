@@ -38,6 +38,7 @@ import org.wildfly.test.jmx.staticmodule.JMXControlledStateNotificationListenerE
 import org.wildfly.test.jmx.staticmodule.JMXNotificationsService;
 
 import javax.management.MBeanPermission;
+import javax.management.MBeanTrustPermission;
 
 /**
  * Utilities for using {@link org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment}.
@@ -60,6 +61,11 @@ public class ServiceActivatorDeploymentUtil {
         sb.append('=');
         sb.append(objectName);
         sb.append("\n");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new MBeanPermission(mbeanClass + "#-[" + objectName + "]", "registerMBean"),
+                new MBeanPermission(mbeanClass + "#-[" + objectName + "]", "unregisterMBean"),
+                new MBeanTrustPermission("register")),
+                "permissions.xml");
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         archive.as(ZipExporter.class).exportTo(destination);
