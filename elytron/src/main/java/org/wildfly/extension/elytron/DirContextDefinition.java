@@ -60,6 +60,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.realm.ldap.DirContextFactory;
@@ -172,14 +173,14 @@ class DirContextDefinition extends SimpleResourceDefinition {
             moduleName = MODULE.resolveModelAttribute(context, model).asString();
 
         Module module = null;
-        if(moduleName != null && !moduleName.equals("")){
+        if(moduleName != null && !"".equals(moduleName)){
             try {
                 Module cm = Module.getCallerModule();
                 ModuleIdentifier mi = ModuleIdentifier.create(moduleName);
                 //module = Module.getCallerModule().getModule(ModuleIdentifier.create(moduleName));
                 module = cm.getModule(mi);
             } catch (ModuleLoadException e) {
-                throw new OperationFailedException(e);
+                throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModule(moduleName, e);
             }
         }
         final Module finalModule = module;
