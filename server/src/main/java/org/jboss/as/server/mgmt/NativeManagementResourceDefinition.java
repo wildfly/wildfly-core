@@ -35,8 +35,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
-import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.NativeManagementAddHandler;
 import org.jboss.as.server.operations.NativeManagementRemoveHandler;
@@ -56,7 +54,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     public static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, false)
             .setXmlName(Attribute.NATIVE.getLocalName())
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
             .build();
@@ -68,9 +66,7 @@ public class NativeManagementResourceDefinition extends BaseNativeInterfaceResou
     private NativeManagementResourceDefinition() {
         super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("core.management.native-interface"))
             .setAddHandler(NativeManagementAddHandler.INSTANCE)
-            .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE)
-            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES));
+            .setRemoveHandler(NativeManagementRemoveHandler.INSTANCE));
     }
 
     @Override
