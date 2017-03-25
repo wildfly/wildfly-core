@@ -5,8 +5,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
-import org.jboss.as.controller.ModelController;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -14,11 +19,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * The graceful shutdown controller. This class co-ordinates the graceful shutdown and pause/resume of a
@@ -49,7 +49,7 @@ public class SuspendController implements Service<SuspendController> {
 
     private final List<OperationListener> operationListeners = new ArrayList<>();
 
-    private final InjectedValue<ModelController> modelControllerInjectedValue = new InjectedValue<>();
+    private final InjectedValue<NotificationHandlerRegistry> notificationHandlerRegistry = new InjectedValue<>();
 
     private int outstandingCount;
 
@@ -202,8 +202,8 @@ public class SuspendController implements Service<SuspendController> {
         return this;
     }
 
-    public InjectedValue<ModelController> getModelControllerInjectedValue() {
-        return modelControllerInjectedValue;
+    public InjectedValue<NotificationHandlerRegistry> getNotificationHandlerRegistry() {
+        return notificationHandlerRegistry;
     }
 
     public enum State {

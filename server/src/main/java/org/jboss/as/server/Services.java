@@ -50,7 +50,10 @@ public final class Services {
 
     /**
      * The service corresponding to the {@link java.util.concurrent.ExecutorService} for this instance.
+     *
+     * @deprecated use capability org.wildfly.management.executor
      */
+    @Deprecated
     public static final ServiceName JBOSS_SERVER_EXECUTOR = JBOSS_AS.append("server-executor");
 
     /**
@@ -72,6 +75,6 @@ public final class Services {
 
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector, boolean optional) {
         ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
-        return builder.addDependency(type, JBOSS_SERVER_EXECUTOR, ExecutorService.class, injector);
+        return builder.addDependency(type, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
     }
 }

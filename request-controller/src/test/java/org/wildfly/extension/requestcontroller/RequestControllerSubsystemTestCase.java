@@ -25,27 +25,17 @@
 package org.wildfly.extension.requestcontroller;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.Executor;
 
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.Operation;
-import org.jboss.as.controller.client.OperationAttachments;
-import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandler;
-import org.jboss.as.controller.registry.NotificationHandlerRegistration;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.ImmediateValue;
@@ -89,40 +79,15 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
             @Override
             protected void addExtraServices(ServiceTarget target) {
                 SuspendController suspendController = new SuspendController();
-                suspendController.getModelControllerInjectedValue().setValue(new ImmediateValue<>(new ModelController() {
+                suspendController.getNotificationHandlerRegistry().setValue(new ImmediateValue<>(new NotificationHandlerRegistry() {
                     @Override
-                    public ModelNode execute(ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control, OperationAttachments attachments) {
-                        return null;
+                    public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
+
                     }
 
                     @Override
-                    public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
-                        return null;
-                    }
+                    public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
 
-                    @Override
-                    public ModelControllerClient createClient(Executor executor) {
-                        return null;
-                    }
-
-                    @Override
-                    public NotificationHandlerRegistration getNotificationRegistry() {
-                        return new NotificationHandlerRegistration() {
-                            @Override
-                            public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
-
-                            }
-
-                            @Override
-                            public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
-
-                            }
-
-                            @Override
-                            public Collection<NotificationHandler> findMatchingNotificationHandlers(Notification notification) {
-                                return null;
-                            }
-                        };
                     }
                 }));
                 target.addService(SuspendController.SERVICE_NAME, suspendController).install();

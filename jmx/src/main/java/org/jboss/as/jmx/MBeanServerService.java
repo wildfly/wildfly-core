@@ -29,9 +29,11 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.jmx.model.ConfiguredDomains;
 import org.jboss.as.jmx.model.ManagementModelIntegration;
 import org.jboss.as.jmx.model.ModelControllerMBeanServerPlugin;
@@ -42,7 +44,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -70,6 +71,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
     private final ManagedAuditLogger auditLoggerInfo;
     private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
+    private final InjectedValue<NotificationHandlerRegistry> notificationRegistryValue = new InjectedValue<>();
     private final InjectedValue<ManagementModelIntegration.ManagementModelProvider> managementModelProviderValue = new InjectedValue<ManagementModelIntegration.ManagementModelProvider>();
     private final ProcessType processType;
     private final boolean isMasterHc;
@@ -95,7 +97,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
     }
 
     @SafeVarargs
-    public static ServiceController<?> addService(final ServiceTarget batchBuilder, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
+    public static ServiceController<?> addService(final OperationContext context, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                                   final boolean coreMBeanSensitivity,
                                                   final ManagedAuditLogger auditLoggerInfo,
                                                   final JmxAuthorizer authorizer,
@@ -107,10 +109,11 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
                 coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, processType, isMasterHc);
         final ServiceName modelControllerName = processType == ProcessType.HOST_CONTROLLER ?
                 DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
-        return batchBuilder.addService(MBeanServerService.SERVICE_NAME, service)
+        return context.getServiceTarget().addService(MBeanServerService.SERVICE_NAME, service)
             .addListener(listeners)
             .setInitialMode(ServiceController.Mode.ACTIVE)
             .addDependency(modelControllerName, ModelController.class, service.modelControllerValue)
+            .addDependency(context.getCapabilityServiceName("org.wildfly.managment.notification-handler-registry", null), NotificationHandlerRegistry.class, service.notificationRegistryValue)
             .addDependency(ManagementModelIntegration.SERVICE_NAME, ManagementModelIntegration.ManagementModelProvider.class, service.managementModelProviderValue)
             .addAliases(LEGACY_MBEAN_SERVER_NAME)
                 .install();
@@ -131,7 +134,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
             //TODO make these configurable
             ConfiguredDomains configuredDomains = new ConfiguredDomains(resolvedDomainName, expressionsDomainName);
             showModelPlugin = new ModelControllerMBeanServerPlugin(pluggable, configuredDomains, modelControllerValue.getValue(),
-                    delegate, legacyWithProperPropertyFormat, processType, managementModelProviderValue.getValue(), isMasterHc);
+                    notificationRegistryValue.getValue(), delegate, legacyWithProperPropertyFormat, processType, managementModelProviderValue.getValue(), isMasterHc);
             pluggable.addPlugin(showModelPlugin);
         }
         mBeanServer = pluggable;
