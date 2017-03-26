@@ -49,7 +49,8 @@ import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.OptionMap;
-import org.xnio.Options;
+import org.xnio.Xnio;
+import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -159,7 +160,9 @@ class WorkerAdd extends AbstractAddStepHandler {
         ModelNode workers = Resource.Tools.readModel(resource).get(IOExtension.WORKER_PATH.getKey());
         int allWorkerCount = workers.asList().size();
         final String name = context.getCurrentAddressValue();
-        final OptionMap.Builder builder = OptionMap.builder();
+        final XnioWorker.Builder builder = Xnio.getInstance().createWorkerBuilder();
+
+        final OptionMap.Builder optionMapBuilder = OptionMap.builder();
 
         for (OptionAttributeDefinition attr : WorkerResourceDefinition.ATTRIBUTES) {
             Option option = attr.getOption();
@@ -168,48 +171,51 @@ class WorkerAdd extends AbstractAddStepHandler {
                 continue;
             }
             if (attr.getType() == ModelType.INT) {
-                builder.set((Option<Integer>) option, value.asInt());
+                optionMapBuilder.set((Option<Integer>) option, value.asInt());
             } else if (attr.getType() == ModelType.LONG) {
-                builder.set(option, value.asLong());
+                optionMapBuilder.set(option, value.asLong());
             } else if (attr.getType() == ModelType.BOOLEAN) {
-                builder.set(option, value.asBoolean());
+                optionMapBuilder.set(option, value.asBoolean());
             }
         }
-        builder.set(Options.WORKER_NAME, name);
+        builder.populateFromOptions(optionMapBuilder.getMap());
+        builder.setWorkerName(name);
 
         ModelNode ioThreadsModel = WORKER_IO_THREADS.resolveModelAttribute(context, model);
         ModelNode maxTaskThreadsModel = WORKER_TASK_MAX_THREADS.resolveModelAttribute(context, model);
         int cpuCount = getCpuCount();
         int ioThreadsCalculated = getSuggestedIoThreadCount();
+        int workerThreads = builder.getMaxWorkerPoolSize();
         if (!ioThreadsModel.isDefined() && !maxTaskThreadsModel.isDefined()) {
-            int workerThreads = getWorkerThreads(name, allWorkerCount);
-            builder.set((Option<Integer>) WORKER_IO_THREADS.getOption(), ioThreadsCalculated);
-            builder.set((Option<Integer>) WORKER_TASK_MAX_THREADS.getOption(), workerThreads);
+            workerThreads = getWorkerThreads(name, allWorkerCount);
+            builder.setWorkerIoThreads(ioThreadsCalculated);
+            builder.setCoreWorkerPoolSize(workerThreads);
+            builder.setMaxWorkerPoolSize(workerThreads);
             IOLogger.ROOT_LOGGER.printDefaults(name, ioThreadsCalculated, workerThreads, cpuCount);
         } else {
             if (!ioThreadsModel.isDefined()) {
-                builder.set((Option<Integer>) WORKER_IO_THREADS.getOption(), ioThreadsCalculated);
+                builder.setWorkerIoThreads(ioThreadsCalculated);
                 IOLogger.ROOT_LOGGER.printDefaultsIoThreads(name, ioThreadsCalculated, cpuCount);
             }
             if (!maxTaskThreadsModel.isDefined()) {
-                int workerThreads = getWorkerThreads(name, allWorkerCount);
-                builder.set((Option<Integer>) WORKER_TASK_MAX_THREADS.getOption(), workerThreads);
+                workerThreads = getWorkerThreads(name, allWorkerCount);
+                builder.setCoreWorkerPoolSize(workerThreads);
+                builder.setMaxWorkerPoolSize(workerThreads);
                 IOLogger.ROOT_LOGGER.printDefaultsWorkerThreads(name, workerThreads, cpuCount);
             }
         }
 
-        OptionMap options = builder.getMap();
-        registerMax(context, name, options);
+        registerMax(context, name, workerThreads);
 
-        final WorkerService workerService = new WorkerService(options);
+        final WorkerService workerService = new WorkerService(builder);
         context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY, workerService)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
     }
 
-    private void registerMax(OperationContext context, String name, OptionMap options) {
+    private void registerMax(OperationContext context, String name, int workerThreads) {
         ServiceName serviceName = IORootDefinition.IO_MAX_THREADS_RUNTIME_CAPABILITY.getCapabilityServiceName();
         MaxThreadTrackerService service = (MaxThreadTrackerService) context.getServiceRegistry(false).getRequiredService(serviceName).getService();
-        service.registerWorkerMax(name, options.get(Options.WORKER_TASK_MAX_THREADS));
+        service.registerWorkerMax(name, workerThreads);
     }
 }

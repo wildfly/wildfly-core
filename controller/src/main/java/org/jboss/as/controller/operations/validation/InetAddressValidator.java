@@ -18,12 +18,10 @@
  */
 package org.jboss.as.controller.operations.validation;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.common.net.Inet;
 
 /**
  * Validates that the given parameter is a string that can be converted into an InetAddress.
@@ -44,11 +42,8 @@ public class InetAddressValidator extends ModelTypeValidator {
         super.validateParameter(parameterName, value);
         if (value.isDefined() && value.getType() != ModelType.EXPRESSION) {
             String str = value.asString();
-            try {
-                //noinspection ResultOfMethodCallIgnored
-                InetAddress.getByName(str);
-            } catch (UnknownHostException e) {
-                throw new OperationFailedException(e.toString());
+            if (Inet.parseInetAddress(str) == null) {
+                throw new OperationFailedException("Address is invalid: \"" + str + "\"");
             }
         }
     }

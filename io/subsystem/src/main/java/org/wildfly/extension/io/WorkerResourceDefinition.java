@@ -88,7 +88,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .setAllowExpression(true)
             .build();
 
-    static OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[]{
+    static final OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[]{
             WORKER_IO_THREADS,
             WORKER_TASK_KEEPALIVE,
             WORKER_TASK_MAX_THREADS,
@@ -189,6 +189,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
         resourceRegistration.registerSubModel(new WorkerServerDefinition());
+        resourceRegistration.registerSubModel(OutboundBindAddressResourceDefinition.getInstance());
     }
 
     private abstract static class AbstractWorkerAttributeHandler implements OperationStepHandler {

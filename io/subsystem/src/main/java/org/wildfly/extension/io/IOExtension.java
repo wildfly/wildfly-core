@@ -64,6 +64,7 @@ public class IOExtension implements Extension {
     public void initializeParsers(ExtensionParsingContext context) {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_0.getUriString(), IOSubsystemParser_1_0::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_1.getUriString(), IOSubsystemParser_1_1::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_2_0.getUriString(), IOSubsystemParser_2_0::new);
     }
 
     @Override

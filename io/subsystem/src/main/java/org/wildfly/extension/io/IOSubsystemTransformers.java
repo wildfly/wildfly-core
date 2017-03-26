@@ -19,6 +19,7 @@
 package org.wildfly.extension.io;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.description.AttributeConverter;
@@ -50,7 +51,9 @@ public class IOSubsystemTransformers implements ExtensionTransformerRegistration
     }
 
     private void buildTransformers_2_0(ResourceTransformationDescriptionBuilder builder) {
-        builder.addChildResource(WorkerResourceDefinition.INSTANCE.getPathElement()).getAttributeBuilder()
+        final ResourceTransformationDescriptionBuilder xformBuilder = builder.addChildResource(WorkerResourceDefinition.INSTANCE.getPathElement());
+        xformBuilder.rejectChildResource(PathElement.pathElement(OutboundBindAddressResourceDefinition.BIND_ADDRESS.getName()));
+        xformBuilder.getAttributeBuilder()
                 .setValueConverter(
                         new AttributeConverter.DefaultValueAttributeConverter(WorkerResourceDefinition.WORKER_TASK_KEEPALIVE),
                         WorkerResourceDefinition.WORKER_TASK_KEEPALIVE
