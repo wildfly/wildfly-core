@@ -61,6 +61,11 @@
             <type>zip</type>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-vault-test-feature-pack</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-standalone</artifactId>
             <scope>test</scope>
