@@ -282,7 +282,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * @return The {@link OperationFailedException} for the error.
      */
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
-    RuntimeException unableToAccessEntryFromKeyStore(String keyStore, String alias);
+    RuntimeException unableToAccessEntryFromKeyStore(String alias, String keyStore);
 
     @Message(id = 34, value = "A principal query can only have a single key mapper")
     OperationFailedException jdbcRealmOnlySingleKeyMapperAllowed();
