@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -334,12 +335,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
 
                 return new RealmIdentityImpl(new NamePrincipal(name), ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+            } catch (IOException | CommunicationException e) {
+                safeClose(ldapConnectionHandler);
+                throw new RealmUnavailableException(e);
             } catch (IllegalStateException | NamingException e) {
                 safeClose(ldapConnectionHandler);
                 return RealmIdentity.NON_EXISTENT;
-            } catch (IOException e) {
-                safeClose(ldapConnectionHandler);
-                throw new RealmUnavailableException(e);
             }
         }
 
