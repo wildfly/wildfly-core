@@ -24,7 +24,9 @@ package org.jboss.as.host.controller;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -101,7 +103,7 @@ class ServerInventoryService implements Service<ServerInventory> {
         ROOT_LOGGER.debug("Starting Host Controller Server Inventory");
         try {
             final ProcessControllerConnectionService processControllerConnectionService = client.getValue();
-            URI managementURI = new URI(protocol, null, NetworkUtils.formatAddress(interfaceBinding.getValue().getAddress()), port, null, null, null);
+            URI managementURI = new URI(protocol, null, NetworkUtils.formatAddress(getNonWildCardManagementAddress()), port, null, null, null);
             serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry);
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
@@ -110,6 +112,11 @@ class ServerInventoryService implements Service<ServerInventory> {
             futureInventory.setFailure(e);
             throw new StartException(e);
         }
+    }
+
+    private InetAddress getNonWildCardManagementAddress() throws UnknownHostException {
+        InetAddress binding = interfaceBinding.getValue().getAddress();
+        return binding.isAnyLocalAddress() ? InetAddress.getLocalHost() : binding;
     }
 
     /**
