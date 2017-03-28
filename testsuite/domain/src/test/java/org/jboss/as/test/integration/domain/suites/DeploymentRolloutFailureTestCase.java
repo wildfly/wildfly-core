@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
+import java.util.PropertyPermission;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -58,6 +59,7 @@ import org.jboss.as.test.integration.domain.deployment.broken.ServiceActivatorDe
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -101,6 +103,9 @@ public class DeploymentRolloutFailureTestCase {
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, ServiceActivatorDeployment.class);
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.broken.fail", "read")),
+                "permissions.xml");
         archive.as(ZipExporter.class).exportTo(deployment);
     }
 
