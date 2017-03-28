@@ -3513,4 +3513,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 439, value = "Value %s for attribute %s is not a valid subnet format")
     OperationFailedException invalidSubnetFormat(String value, String name);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 440, value = "Cannot delete file or directory %s")
+    void cannotDeleteFileOrDirectory(File file);
 }
