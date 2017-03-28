@@ -222,7 +222,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                                           .setPreRealmRewriter(resolved.getPreRealmRewriter())
                                           .setRealmMapper(resolved.getRealmMapper());
                     resolved.getMechanismRealmNames().forEach(s -> builder.addMechanismRealm(resolved.getMechanismRealmConfiguration(s)));
-                    builder.setServerCredential((SecurityFactory<Credential>) () -> getGSSKerberosCredential(mi.getProtocol(), mi.getHostName()));
+                    final String protocol = mi.getMechanismType().equals("HTTP") ? "HTTP" : mi.getProtocol(); // For both http and https we want 'HTTP'
+                    builder.setServerCredential((SecurityFactory<Credential>) () -> getGSSKerberosCredential(protocol, mi.getHostName()));
 
                     return builder.build();
                 }
