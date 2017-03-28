@@ -28,6 +28,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -116,6 +117,7 @@ public class ModuleResourceRootPathsTestCase extends AbstractCliTestBase {
         archive.addAsServiceProviderAndClasses(ServiceActivator.class, ModulesServiceActivator.class)
                 .addAsManifestResource(new StringAsset("Dependencies: io.undertow.core," + MODULE_RESOURCE_MODULE_NAME
                         + "," + ABSOLUTE_RESOURCE_MODULE_NAME + "\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(ModulesServiceActivator.DEFAULT_PERMISSIONS), "permissions.xml");
         final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
         helper.deploy("test-archive.war", archive.as(ZipExporter.class).exportAsInputStream());
     }
