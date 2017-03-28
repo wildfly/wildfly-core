@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
@@ -93,8 +92,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE =
-            CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, true)
-                    .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
+            CredentialReference.getAttributeBuilder(true, true)
                     .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT)
                     .build();
 
