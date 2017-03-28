@@ -59,7 +59,7 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
 
     static ServiceController<?> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String managementName, final byte[] hash) {
         final ManagedExplodedContentServitor service = new ManagedExplodedContentServitor(managementName, hash);
-        return addServerExecutorDependency(serviceTarget.addService(serviceName, service), service.executorInjectedValue, false)
+        return addServerExecutorDependency(serviceTarget.addService(serviceName, service), service.executorInjectedValue)
                 .addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.contentRepositoryInjectedValue)
                 .addDependency(ServerEnvironmentService.SERVICE_NAME, ServerEnvironment.class, service.serverEnvironmentInjectedValue)
                 .install();

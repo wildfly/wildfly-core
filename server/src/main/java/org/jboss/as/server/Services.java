@@ -73,8 +73,14 @@ public final class Services {
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
+    @Deprecated
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector, boolean optional) {
         ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
         return builder.addDependency(type, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
     }
+
+    public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector) {
+        return builder.addDependency(ServiceBuilder.DependencyType.REQUIRED, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
+    }
+
 }
