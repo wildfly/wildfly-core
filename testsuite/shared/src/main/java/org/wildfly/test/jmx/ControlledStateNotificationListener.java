@@ -17,6 +17,7 @@ package org.wildfly.test.jmx;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -82,6 +83,30 @@ public class ControlledStateNotificationListener implements NotificationListener
             in.write(String.format("%s %s %s %s", notification.getType(), notification.getSequenceNumber(), notification.getSource().toString(), notification.getMessage()));
             in.newLine();
             in.flush();
+        } catch (ClosedByInterruptException cbie) {
+            /* This happens sometimes during the "reload" operation, the BufferedWriter won't write anymore
+               because our thread was interrupted by the server.
+               So we clear the interruption flag and try writing again and hope that it will work this time.
+            */
+            boolean wasInterrupted =  Thread.interrupted();
+            try {
+                Logger.getLogger(ControlledStateNotificationListener.class)
+                        .error("We were interrupted and couldn't write into file, try again", cbie);
+                try (BufferedWriter in = Files
+                        .newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.APPEND)) {
+                    in.write(String.format("%s %s %s %s", notification.getType(),
+                            notification.getSequenceNumber(), notification.getSource().toString(),
+                            notification.getMessage()));
+                    in.newLine();
+                    in.flush();
+                } catch (IOException ex2) {
+                    Logger.getLogger(ControlledStateNotificationListener.class)
+                            .error("No success on second attempt either", ex2);
+                }
+            } finally {
+                if(wasInterrupted)
+                    Thread.currentThread().interrupt();
+            }
         } catch (IOException ex) {
             Logger.getLogger(ControlledStateNotificationListener.class).error("Problem handling JMX Notification", ex);
         }
