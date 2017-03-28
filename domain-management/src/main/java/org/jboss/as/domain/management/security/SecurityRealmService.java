@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -187,10 +188,12 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                         currentService.allowGroupLoading() && authorizationRealm != null ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
                         .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                         .build();
+                Function<Principal, Principal> preRealmRewriter = p -> new RealmUser(this.name, p.getName());
+                preRealmRewriter = preRealmRewriter.andThen(currentService.getPrincipalMapper());
                 // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
-                            .setPreRealmRewriter(currentService.getPrincipalMapper().andThen(p -> new RealmUser(this.name, p.getName())))
+                            .setPreRealmRewriter(preRealmRewriter)
                             .setRealmMapper((p, e) -> mechanism.toString())
                             .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
                             .build());
