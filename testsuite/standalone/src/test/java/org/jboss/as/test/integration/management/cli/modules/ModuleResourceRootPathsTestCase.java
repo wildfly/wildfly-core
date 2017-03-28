@@ -20,14 +20,19 @@ package org.jboss.as.test.integration.management.cli.modules;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketPermission;
 import java.net.URL;
+import java.util.PropertyPermission;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.management.MBeanPermission;
+import javax.management.ObjectName;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -116,6 +121,13 @@ public class ModuleResourceRootPathsTestCase extends AbstractCliTestBase {
         archive.addAsServiceProviderAndClasses(ServiceActivator.class, ModulesServiceActivator.class)
                 .addAsManifestResource(new StringAsset("Dependencies: io.undertow.core," + MODULE_RESOURCE_MODULE_NAME
                         + "," + ABSOLUTE_RESOURCE_MODULE_NAME + "\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("jboss.bind.address", "read"),
+                new PropertyPermission("jboss.http.port", "read"),
+                new RuntimePermission("createXnioWorker"),
+                new SocketPermission(TestSuiteEnvironment.getHttpAddress() + ":1024-", "accept,listen,resolve"),
+                new MBeanPermission("org.xnio.nio.*", "*", ObjectName.WILDCARD, "registerMBean")
+        ), "permissions.xml");
         final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
         helper.deploy("test-archive.war", archive.as(ZipExporter.class).exportAsInputStream());
     }
