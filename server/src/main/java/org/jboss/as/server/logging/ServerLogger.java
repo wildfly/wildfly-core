@@ -1274,11 +1274,11 @@ public interface ServerLogger extends BasicLogger {
     void invalidPoolCoreSize(String val, String configSysProp);
 
     @LogMessage(level = WARN)
-    @Message(id = 266, value = "Deployment \"%s\" is using deprecated 'optional' dependency type in its manifest. It's support will be removed in future versions.")
+    @Message(id = 266, value = "Deployment \"%s\" is using deprecated 'optional' dependency type in its manifest. It will be unsupported in future versions.")
     void deprecatedOptionalDependencyManifestAttributeUsed(String name);
 
     @LogMessage(level = WARN)
-    @Message(id = 267, value = "Descriptor jboss-deployment-structure.xml of \"%s\" is using deprecated 'optional' dependency type. It's support will be removed in future versions.")
+    @Message(id = 267, value = "Descriptor jboss-deployment-structure.xml of \"%s\" is using deprecated 'optional' dependency type. It will be unsupported in future versions.")
     void deprecatedOptionalDependencyDescriptorAttributeUsed(String name);
 
     ////////////////////////////////////////////////
