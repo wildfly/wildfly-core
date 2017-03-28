@@ -341,7 +341,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                             parseFilterList(reader, moduleSpec.getExportFilters());
                             break;
                         case DEPENDENCIES:
-                            parseDependencies(reader, moduleSpec, moduleLoader);
+                            parseDependencies(deploymentUnit, reader, moduleSpec, moduleLoader);
                             break;
                         case RESOURCES:
                             parseResources(deploymentUnit, reader, moduleSpec);
@@ -410,7 +410,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
         throw endOfDocument(reader.getLocation());
     }
 
-    private static void parseDependencies(final XMLStreamReader reader, final ModuleStructureSpec specBuilder,
+    private static void parseDependencies(final DeploymentUnit deploymentUnit, final XMLStreamReader reader, final ModuleStructureSpec specBuilder,
                                           final ModuleLoader moduleLoader) throws XMLStreamException {
         // xsd:choice
         while (reader.hasNext()) {
@@ -421,7 +421,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                 case XMLStreamConstants.START_ELEMENT: {
                     switch (Element.of(reader.getName())) {
                         case MODULE:
-                            parseModuleDependency(reader, specBuilder, moduleLoader);
+                            parseModuleDependency(deploymentUnit, reader, specBuilder, moduleLoader);
                             break;
                         case SYSTEM:
                             parseSystemDependency(reader, specBuilder);
@@ -577,7 +577,7 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
         parseNoContent(reader);
     }
 
-    private static void parseModuleDependency(final XMLStreamReader reader, final ModuleStructureSpec specBuilder,
+    private static void parseModuleDependency(final DeploymentUnit deploymentUnit, final XMLStreamReader reader, final ModuleStructureSpec specBuilder,
                                               ModuleLoader moduleLoader) throws XMLStreamException {
         String name = null;
         String slot = null;
@@ -606,6 +606,9 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                     break;
                 case OPTIONAL:
                     optional = Boolean.parseBoolean(reader.getAttributeValue(i));
+                    if (optional) {
+                        ServerLogger.ROOT_LOGGER.deprecatedOptionalDependencyDescriptorAttributeUsed(deploymentUnit.getName());
+                    }
                     break;
                 case ANNOTATIONS:
                     annotations = Boolean.parseBoolean(reader.getAttributeValue(i));

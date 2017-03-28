@@ -358,6 +358,8 @@
         <xsd:attribute name="optional" type="xsd:boolean" use="optional" default="false">
             <annotation xmlns="http://www.w3.org/2001/XMLSchema">
                 <documentation>
+                    IMPORTANT: This attribute is deprecated and will be unsupported in future versions.
+
                     Specifies whether this dependency is optional (defaults to false). An optional dependency will not
                     cause the module to fail to load if not found; however if the module is added later, it will not be
                     retroactively linked into this module's dependency list.
