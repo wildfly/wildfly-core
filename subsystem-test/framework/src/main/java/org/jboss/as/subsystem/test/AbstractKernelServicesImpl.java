@@ -29,6 +29,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
@@ -108,9 +109,10 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
 
         ModelTestModelControllerService svc = testModelControllerFactory.create(mainExtension, controllerInitializer, additionalInit, controllerExtensionRegistry, persister, validateOpsFilter, registerTransformers);
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
-        builder.addDependency(PathManagerService.SERVICE_NAME); // ensure this is up before the ModelControllerService, as it would be in a real server
+        ServiceName pmSvcName = ServiceName.parse("org.wildfly.management.path-manager"); // we can't reference the capability directly as it's not present in legacy controllers
+        builder.addDependency(pmSvcName); // ensure this is up before the ModelControllerService, as it would be in a real server
         builder.install();
-        target.addService(PathManagerService.SERVICE_NAME, pathManager).install();
+        target.addService(pmSvcName, pathManager).addAliases(PathManagerService.SERVICE_NAME).install();
         if (legacyModelVersion == null) {
             ExecutorService mgmtExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
                     new SynchronousQueue<Runnable>());

@@ -394,21 +394,27 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
     @Override
     public void capabilityReloadRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
-        writeLock.lock();
-        try {
-            reloadCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
-        } finally {
-            writeLock.unlock();
+        if (address.size() > 0) { // root resource capabilities are not "reload-required" just because an op
+                                  // targeting the root (e.g. a process name change) triggered reload-required
+            writeLock.lock();
+            try {
+                reloadCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
+            } finally {
+                writeLock.unlock();
+            }
         }
     }
 
     @Override
     public void capabilityRestartRequired(PathAddress address, ImmutableManagementResourceRegistration resourceRegistration) {
-        writeLock.lock();
-        try {
-            restartCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
-        } finally {
-            writeLock.unlock();
+        if (address.size() > 0) {  // root resource capabilities are not "restart-required" just because an op
+                                   // targeting the root (e.g. a process name change) triggered restart-required
+            writeLock.lock();
+            try {
+                restartCapabilities.addAll(getCapabilitiesForAddress(address, resourceRegistration));
+            } finally {
+                writeLock.unlock();
+            }
         }
     }
 
@@ -928,6 +934,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
                 map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
                         + possiblePoint.toPathStyleString())).collect(Collectors.toList());
+        // Any dynamic capability registered to the root address matches (e.g. hardcoded path capabilities)
+        matchers.add(FileSystems.getDefault().getPathMatcher("glob:/"));
 
         // Filter the streams of capabilities to extract matching ones
         return getCapabilities().stream().

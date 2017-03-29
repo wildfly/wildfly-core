@@ -52,12 +52,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
@@ -91,6 +93,8 @@ class DeploymentScannerAdd implements OperationStepHandler {
         for (SimpleAttributeDefinition atr : ALL_ATTRIBUTES) {
             atr.validateAndSet(operation, model);
         }
+
+        recordCapabilitiesAndRequirements(context, resource, ALL_ATTRIBUTES);
 
         boolean stepCompleted = false;
 
@@ -204,6 +208,25 @@ class DeploymentScannerAdd implements OperationStepHandler {
 
         if (!stepCompleted) {
             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+        }
+    }
+
+    private void recordCapabilitiesAndRequirements(final OperationContext context, Resource resource, AttributeDefinition... attributes) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = context.getResourceRegistration().getCapabilities();
+
+        for (RuntimeCapability capability : capabilitySet) {
+            if (capability.isDynamicallyNamed()) {
+                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
+            } else {
+                context.registerCapability(capability);
+            }
+        }
+
+        ModelNode model = resource.getModel();
+        for (AttributeDefinition ad : attributes) {
+            if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
+                ad.addCapabilityRequirements(context, resource, model.get(ad.getName()));
+            }
         }
     }
 

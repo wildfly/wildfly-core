@@ -72,7 +72,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -100,6 +99,7 @@ import org.jboss.msc.value.InjectedValue;
 public class SecurityRealmAddHandler implements OperationStepHandler {
 
     private static final String ELYTRON_CAPABILITY = "org.wildfly.security.elytron";
+    private static final String PATH_MANAGER_CAPABILITY = "org.wildfly.management.path-manager";
 
     public static final SecurityRealmAddHandler INSTANCE = new SecurityRealmAddHandler();
 
@@ -400,7 +400,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsCallbackHandler);
 
         if (relativeTo != null) {
-            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                    PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
             propsBuilder.addDependency(pathName(relativeTo));
         }
 
@@ -423,7 +424,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsSubjectSupplemental);
         if (relativeTo != null) {
-            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                    PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
             propsBuilder.addDependency(pathName(relativeTo));
         }
 
@@ -676,7 +678,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
 
             if (relativeTo != null) {
-                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                        PathManager.class, keyManagerService.getPathManagerInjector());
                 serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
@@ -704,7 +707,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
             if (relativeTo != null) {
-                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, trustManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                        PathManager.class, trustManagerService.getPathManagerInjector());
                 serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
@@ -761,7 +765,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                  ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
 
                 if (relativeTo != null) {
-                    keytabBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, ks.getPathManagerInjector());
+                    keytabBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                            PathManager.class, ks.getPathManagerInjector());
                     keytabBuilder.addDependency(pathName(relativeTo));
                 }
 

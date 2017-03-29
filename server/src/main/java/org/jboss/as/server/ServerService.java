@@ -60,8 +60,10 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
@@ -256,7 +258,7 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.injectedModuleLoader);
         serviceBuilder.addDependency(Services.JBOSS_EXTERNAL_MODULE_SERVICE, ExternalModuleService.class,
                 service.injectedExternalModuleService);
-        serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.injectedPathManagerService);
+        serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
         if (configuration.getServerEnvironment().isAllowModelControllerExecutor()) {
             serviceBuilder.addDependency(MANAGEMENT_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
         }
@@ -460,13 +462,17 @@ public final class ServerService extends AbstractControllerService {
         // Platform MBeans
         rootResource.registerChild(PlatformMBeanConstants.ROOT_PATH, new RootPlatformMBeanResource());
 
-        final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
+        final RuntimeCapabilityRegistry capabilityRegistry = managementModel.getCapabilityRegistry();
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-        capabilityRegistry.registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-        capabilityRegistry.registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+
+        // TODO consider having ManagementModel provide CapabilityRegistry instead of just RuntimeCapabilityRegistry
+        if (capabilityRegistry instanceof PossibleCapabilityRegistry) {
+            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+        }
 
     }
 

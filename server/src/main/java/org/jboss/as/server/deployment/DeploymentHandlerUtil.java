@@ -47,7 +47,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.ServerEnvironment;
@@ -201,7 +200,7 @@ public class DeploymentHandlerUtil {
         else {
             final String path = contents[0].path;
             final String relativeTo = contents[0].relativeTo;
-            contentService = PathContentServitor.addService(serviceTarget, contentsServiceName, path, relativeTo);
+            contentService = PathContentServitor.addService(context, serviceTarget, contentsServiceName, path, relativeTo);
         }
         DeploymentOverlayIndex overlays = DeploymentOverlayIndex.createDeploymentOverlayIndex(context);
 
@@ -211,7 +210,7 @@ public class DeploymentHandlerUtil {
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                 .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
-                .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.getPathManagerInjector())
+                .addDependency(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class), PathManager.class, service.getPathManagerInjector())
                 .addDependency(contentsServiceName, VirtualFile.class, service.getContentsInjector())
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
