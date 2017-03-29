@@ -22,6 +22,11 @@
 
 package org.wildfly.test.undertow;
 
+import java.net.SocketPermission;
+import java.security.Permission;
+import java.util.Arrays;
+import java.util.PropertyPermission;
+
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -53,7 +58,42 @@ public class UndertowServiceActivator implements ServiceActivator {
             TestSuiteEnvironment.class
     };
 
+    /**
+     * The default permissions needed for this activator when running under a security manager.
+     * <p>
+     * Example usage:
+     * <pre>
+     * {@code archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(UndertowServiceActivator.DEFAULT_PERMISSIONS), "permissions.xml");}
+     * </pre>
+     * </p>
+     */
+    public static final Permission[] DEFAULT_PERMISSIONS = {
+            new PropertyPermission("jboss.bind.address", "read"),
+            new PropertyPermission("jboss.http.port", "read"),
+            new RuntimePermission("createXnioWorker"),
+            new SocketPermission("*", "listen,accept,connect")
+    };
+
     public static final String DEFAULT_RESPONSE = "Response sent";
+
+    /**
+     * Appends the passed in permissions to the {@linkplain #DEFAULT_PERMISSIONS default permissions}.
+     *
+     * @param additionalPermissions the additional parameters to add
+     *
+     * @return the combined permissions
+     */
+    public static Permission[] appendPermissions(final Permission... additionalPermissions) {
+        final Permission[] permissions;
+        if (additionalPermissions == null || additionalPermissions.length == 0) {
+            permissions = DEFAULT_PERMISSIONS;
+        } else {
+            permissions = Arrays.copyOf(DEFAULT_PERMISSIONS, DEFAULT_PERMISSIONS.length + additionalPermissions.length);
+            System.arraycopy(additionalPermissions, 0, permissions, DEFAULT_PERMISSIONS.length, additionalPermissions.length);
+        }
+        return permissions;
+    }
+
     private static final HttpHandler DEFAULT_HANDLER = new HttpHandler() {
         @Override
         public void handleRequest(final HttpServerExchange exchange) throws Exception {
