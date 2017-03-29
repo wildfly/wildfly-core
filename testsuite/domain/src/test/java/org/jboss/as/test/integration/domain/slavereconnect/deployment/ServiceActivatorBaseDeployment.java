@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
@@ -61,14 +63,14 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        System.setProperty(propertyName, qualifier);
+        setProperty(propertyName, qualifier);
         System.out.println("===> " + this.getClass() + " setting property " + propertyName + "=" + qualifier);
         InputStream in = getClass().getResourceAsStream("overlay");
         if (in != null) {
             try {
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))){
                     String s = reader.readLine();
-                    System.setProperty(overridePropertyName, s);
+                    setProperty(overridePropertyName, s);
                     System.out.println("===> " + this.getClass() + " setting property " + overridePropertyName + "=" + s);
                 } catch (IOException e) {
                     throw new StartException(e);
@@ -82,10 +84,32 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
         }
     }
 
+    private static void setProperty(final String key, final String value) {
+        if (System.getSecurityManager() == null) {
+            System.setProperty(key, value);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                System.setProperty(key, value);
+                return null;
+            });
+        }
+    }
+
+    private static void clearProperty(final String key) {
+        if (System.getSecurityManager() == null) {
+            System.clearProperty(key);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                System.clearProperty(key);
+                return null;
+            });
+        }
+    }
+
     @Override
     public void stop(StopContext context) {
-        System.clearProperty(propertyName);
-        System.clearProperty(overridePropertyName);
+        clearProperty(propertyName);
+        clearProperty(overridePropertyName);
         System.out.println("===> " + this.getClass() + " clearing property " + propertyName);
     }
 
