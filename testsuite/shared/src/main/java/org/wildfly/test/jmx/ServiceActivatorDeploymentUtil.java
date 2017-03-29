@@ -62,8 +62,8 @@ public class ServiceActivatorDeploymentUtil {
         sb.append(objectName);
         sb.append("\n");
         archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
-                new MBeanPermission(mbeanClass + "#-[" + objectName + "]", "registerMBean"),
-                new MBeanPermission(mbeanClass + "#-[" + objectName + "]", "unregisterMBean"),
+                new MBeanPermission(mbeanClass.getName() + "#-[" + objectName + "]", "registerMBean"),
+                new MBeanPermission(mbeanClass.getName() + "#-[" + objectName + "]", "unregisterMBean"),
                 new MBeanTrustPermission("register")),
                 "permissions.xml");
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
