@@ -638,7 +638,6 @@ public class ConfigurationFile {
         return names.size() > 0 ? new File(snapshotsDirectory, names.get(0)) : null;
     }
 
-
     private void createHistoryDirectory() throws IOException {
         mkdir(this.historyRoot);
         mkdir(this.snapshotsDirectory);
@@ -675,6 +674,7 @@ public class ConfigurationFile {
             final String cutoffFileName = getTimeStamp(subtractDays(date, historyDays));
             for (String name : historyRoot.list()) {
                 if (name.length() == cutoffFileName.length() && TIMESTAMP_PATTERN.matcher(name).matches() && name.compareTo(cutoffFileName) < 0) {
+                    // for simply failing to remove old backup files, we don't abort boot, just log an error and keep going.
                     deleteRecursive(new File(historyRoot, name));
                 }
             }
@@ -701,14 +701,19 @@ public class ConfigurationFile {
         }
     }
 
+    // note, this just logs an error and doesn't throw as its only used to remove old configuration files, and shouldn't stop boot
     private void deleteRecursive(final File file) {
         if (file.isDirectory()) {
-            for (String name : file.list()) {
-                deleteRecursive(new File(file, name));
+            final String[] files = file.list();
+            if (files != null) {
+                for (String name : files) {
+                    deleteRecursive(new File(file, name));
+                }
             }
         }
+
         if (!file.delete()) {
-            throw ControllerLogger.ROOT_LOGGER.cannotDelete(file);
+            ControllerLogger.ROOT_LOGGER.cannotDeleteFileOrDirectory(file);
         }
     }
 
