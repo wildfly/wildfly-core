@@ -78,7 +78,7 @@ public interface DeploymentMountProvider {
             ServerDeploymentRepositoryImpl service = new ServerDeploymentRepositoryImpl();
             org.jboss.as.server.Services.addServerExecutorDependency(
                     serviceTarget.addService(DeploymentMountProvider.SERVICE_NAME, service),
-                    service.injectedExecutorService, false)
+                    service.injectedExecutorService)
                     .install();
         }
 
