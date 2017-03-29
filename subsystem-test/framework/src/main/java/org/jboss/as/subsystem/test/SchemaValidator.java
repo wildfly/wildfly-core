@@ -42,10 +42,12 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.subsystem.test.xml.JBossEntityResolver;
-import org.jboss.metadata.property.PropertiesPropertyResolver;
-import org.jboss.metadata.property.PropertyReplacer;
-import org.jboss.metadata.property.PropertyReplacers;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ValueExpression;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -131,16 +133,53 @@ public class SchemaValidator {
      * be properly resolved).
      */
     private static String resolveAllExpressions(String xmlContent, Properties resolvedProperties) throws IOException {
-        PropertyReplacer replacer = PropertyReplacers.resolvingExpressionReplacer(new PropertiesPropertyResolver(resolvedProperties));
+        // We hack a bit here and use a variant of the management model expression resolver
+        // to resolve expressions in the xml. XML strings aren't DMR model nodes but
+        // pretending they are seems to work well enough.
+        ExpressionResolver replacer = new Resolver(resolvedProperties);
         StringBuilder out = new StringBuilder();
 
         try( BufferedReader reader = new BufferedReader(new StringReader(xmlContent)) ) {
             String line;
             while ((line = reader.readLine()) != null) {
-                out.append(replacer.replaceProperties(line));
+                String resolved = line;
+                if (ExpressionResolver.EXPRESSION_PATTERN.matcher(line).matches()) {
+                    ModelNode input = new ModelNode(new ValueExpression(line));
+                    try {
+                        resolved = replacer.resolveExpressions(input).asString();
+                    } catch (OperationFailedException e) {
+                        // ignore, output the original line and see what happens ;)
+                    }
+                }
+                out.append(resolved);
                 out.append('\n');
             }
         }
         return out.toString();
+    }
+
+    private static class Resolver extends ExpressionResolverImpl {
+        private final Properties properties;
+
+        private Resolver(Properties properties) {
+            super(true);
+            this.properties = properties == null ? new Properties() : properties;
+        }
+
+        @Override
+        protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
+            String expression = node.asString();
+            if (expression.startsWith("${") && expression.endsWith("}")) {
+                int colon = expression.indexOf(':');
+                int end = colon < 0 ? expression.length() - 1 : colon;
+                String key = expression.substring(2, end);
+                String value = properties.getProperty(key);
+                if (value != null) {
+                    node.set(value);
+                } else if (colon > 0) {
+                    node.set(expression.substring(colon + 1, expression.length() - 1));
+                } // else let it go
+            }
+        }
     }
 }
