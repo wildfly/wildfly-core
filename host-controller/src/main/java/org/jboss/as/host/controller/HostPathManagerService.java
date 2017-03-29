@@ -21,6 +21,7 @@
 */
 package org.jboss.as.host.controller;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.ServerPathManagerService;
@@ -36,7 +37,7 @@ import org.jboss.msc.service.ServiceTarget;
 public class HostPathManagerService extends PathManagerService {
 
     public static ServiceController<?> addService(ServiceTarget serviceTarget, HostPathManagerService service, HostControllerEnvironment hostEnvironment) {
-        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(SERVICE_NAME, service);
+        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), service).addAliases(SERVICE_NAME);
 
         // Add resources and capabilities for the always-present paths
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.HOME_DIR, hostEnvironment.getHomeDir().getAbsolutePath());
