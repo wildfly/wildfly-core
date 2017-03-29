@@ -23,6 +23,7 @@ package org.jboss.as.server;
 
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
@@ -43,7 +44,7 @@ import java.io.File;
 public class ServerPathManagerService extends PathManagerService {
 
     public static ServiceController<?> addService(ServiceTarget serviceTarget, ServerPathManagerService service, ServerEnvironment serverEnvironment) {
-        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(SERVICE_NAME, service);
+        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), service).addAliases(SERVICE_NAME);
 
         // Add environment paths
         addAbsolutePath(service, serviceTarget, ServerEnvironment.HOME_DIR, serverEnvironment.getHomeDir());

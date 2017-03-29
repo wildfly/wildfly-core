@@ -61,6 +61,8 @@ import org.jboss.msc.service.StopContext;
  */
 public abstract class PathManagerService implements PathManager, Service<PathManager> {
 
+    /** @deprecated ServiceName should be obtained from capability */
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("path", "manager");
 
     //@GuardedBy(pathEntries)
