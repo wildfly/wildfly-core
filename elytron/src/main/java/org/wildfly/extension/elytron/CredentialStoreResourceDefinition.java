@@ -82,10 +82,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE =
-            CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, false)
-                    .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY)
-                    .build();
+    static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeDefinition(true);
 
     static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
@@ -142,7 +139,9 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setCapabilities(CREDENTIAL_STORE_RUNTIME_CAPABILITY)
+        );
     }
 
     @Override

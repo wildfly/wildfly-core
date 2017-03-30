@@ -282,10 +282,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * @return The {@link OperationFailedException} for the error.
      */
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
-    RuntimeException unableToAccessEntryFromKeyStore(String keyStore, String alias);
+    RuntimeException unableToAccessEntryFromKeyStore(String alias, String keyStore);
 
     @Message(id = 34, value = "A principal query can only have a single key mapper")
     OperationFailedException jdbcRealmOnlySingleKeyMapperAllowed();
+
+    @Message(id = 35, value = "Unable to load module '%s'.")
+    OperationFailedException unableToLoadModule(String module, @Cause Exception cause);
+
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
