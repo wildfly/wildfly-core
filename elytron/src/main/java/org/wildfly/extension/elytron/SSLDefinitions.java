@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_RUNTIME_CAPABILITY;
@@ -301,9 +300,7 @@ class SSLDefinitions {
                 .setAllowExpression(false)
                 .build();
 
-        final ObjectTypeAttributeDefinition credentialReferenceDefinition = CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, false)
-                .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY)
-                .build();
+        final ObjectTypeAttributeDefinition credentialReferenceDefinition = CredentialReference.getAttributeDefinition(true);
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition};
 

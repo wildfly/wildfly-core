@@ -105,7 +105,7 @@ class KerberosSecurityFactoryDefinition {
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEBUG, ModelType.STRING, true)
+    static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEBUG, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)

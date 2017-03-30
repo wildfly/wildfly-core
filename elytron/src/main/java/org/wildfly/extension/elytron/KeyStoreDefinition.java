@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
@@ -105,10 +104,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_STORE_CAPABILITY, true)
         .build();
 
-    static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE =
-            CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, false)
-                    .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, KEY_STORE_CAPABILITY, true)
-                    .build();
+    static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeDefinition(true);
 
     static final SimpleAttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REQUIRED, ModelType.BOOLEAN, true)
         .setDefaultValue(new ModelNode(false))
