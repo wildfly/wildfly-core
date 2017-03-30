@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -65,11 +66,11 @@ public class CLITestUtil {
     public static CommandContext getCommandContext(WildFlyManagedConfiguration config) throws CliInitializationException {
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
-            return CommandContextFactory.getInstance().newCommandContext(
-                    constructUri(config.getHostControllerManagementProtocol(),
-                            config.getHostControllerManagementAddress(),
-                            config.getHostControllerManagementPort()),  isRemote ? username : null, isRemote ? password.toCharArray() : null);
-        }
+        return CommandContextFactory.getInstance().newCommandContext(
+                constructUri(config.getHostControllerManagementProtocol(),
+                        config.getHostControllerManagementAddress(),
+                        config.getHostControllerManagementPort()),  isRemote ? username : null, isRemote ? password.toCharArray() : null);
+    }
 
     public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out)
             throws CliInitializationException {
@@ -77,6 +78,23 @@ public class CLITestUtil {
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         setJBossCliConfig();
         return CommandContextFactory.getInstance().newCommandContext(address + ":" + port, isRemote ? username : null, isRemote ? password.toCharArray() : null, in, out);
+    }
+
+    public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out, int connectionTimeout)
+            throws CliInitializationException {
+        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
+        setJBossCliConfig();
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(address + ":" + port)
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setConsoleInput(in)
+                .setConsoleOutput(out)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false)
+                .setConnectionTimeout(connectionTimeout)
+                .build());
     }
 
     public static CommandContext getCommandContext(String protocol, String address, int port)

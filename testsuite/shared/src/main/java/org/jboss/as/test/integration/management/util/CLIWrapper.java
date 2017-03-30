@@ -93,12 +93,26 @@ public class CLIWrapper implements AutoCloseable {
      * @param consoleInput input stream to use for sending to the CLI, or {@code null} if the standard input stream should be used
      */
     public CLIWrapper(boolean connect, String cliAddress, InputStream consoleInput) throws CliInitializationException {
+        this(connect, cliAddress, consoleInput, -1);
+    }
+
+    /**
+     * Creates new CLI wrapper. If the connect parameter is set to true the CLI will connect to the server using
+     * <code>connect</code> command.
+     *
+     * @param connect indicates if the CLI should connect to server automatically.
+     * @param cliAddress The default name of the property containing the cli address. If null the value of the {@code node0} property is
+     * used, and if that is absent {@code localhost} is used
+     * @param consoleInput input stream to use for sending to the CLI, or {@code null} if the standard input stream should be used
+     * @param connectionTimeout timeout of the CLI connection (in milliseconds)
+     */
+    public CLIWrapper(boolean connect, String cliAddress, InputStream consoleInput, int connectionTimeout) throws CliInitializationException {
 
         consoleOut = new ByteArrayOutputStream();
         System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         ctx = CLITestUtil.getCommandContext(
                 TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(),
-                consoleInput, consoleOut);
+                consoleInput, consoleOut, connectionTimeout);
 
         if (!connect) {
             return;
