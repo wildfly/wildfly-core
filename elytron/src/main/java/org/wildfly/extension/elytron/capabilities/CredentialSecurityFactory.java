@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.extension.elytron.capabilities._private;
+package org.wildfly.extension.elytron.capabilities;
 
 import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.credential.Credential;
