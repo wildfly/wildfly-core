@@ -39,6 +39,9 @@ import org.wildfly.test.jmx.staticmodule.JMXNotificationsService;
 
 import javax.management.MBeanPermission;
 import javax.management.MBeanTrustPermission;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import org.jboss.as.server.jmx.RunningStateJmx;
 
 /**
  * Utilities for using {@link org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment}.
@@ -62,8 +65,8 @@ public class ServiceActivatorDeploymentUtil {
         sb.append(objectName);
         sb.append("\n");
         archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
-                new MBeanPermission(mbeanClass.getName() + "#-[" + objectName + "]", "registerMBean"),
-                new MBeanPermission(mbeanClass.getName() + "#-[" + objectName + "]", "unregisterMBean"),
+                getMBeanPermission(mbeanClass, objectName, "registerMBean"),
+                getMBeanPermission(mbeanClass, objectName, "unregisterMBean"),
                 new MBeanTrustPermission("register")),
                 "permissions.xml");
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
@@ -88,17 +91,14 @@ public class ServiceActivatorDeploymentUtil {
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
-                // This is an ugly hack due to domain mode classpath and the test's classpath
-                // being different and requiring access to the domain deployment path
-                // which is outside of the tests scope
                 new FilePermission(destination.getAbsolutePath()
                         .replace("archives", "wildfly-core")
                         .replace(destination.getName(), ""), "read"),
                 new FilePermission("target", "read, write"),
                 new FilePermission("target/notifications", "read, write"),
                 new FilePermission("target/notifications/-", "read, write"),
-                new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "addNotificationListener"),
-                new MBeanPermission("org.jboss.as.server.jmx.RunningStateJmx#*[" + targetName + "]", "removeNotificationListener"),
+                getMBeanPermission(RunningStateJmx.class, targetName, "addNotificationListener"),
+                getMBeanPermission(RunningStateJmx.class, targetName, "removeNotificationListener"),
                 new PropertyPermission("user.dir", "read")
         ), "permissions.xml");
         archive.as(ZipExporter.class).exportTo(destination);
@@ -123,6 +123,14 @@ public class ServiceActivatorDeploymentUtil {
         sb.append("keep.after.stop=true\n");
         archive.addAsResource(new StringAsset(sb.toString()), JMXNotificationsService.PROPERTIES_RESOURCE);
         archive.as(ZipExporter.class).exportTo(destination);
+    }
+
+    private static MBeanPermission getMBeanPermission(Class mbeanClass, String objectName, String action) {
+        try {
+            return new MBeanPermission(mbeanClass.getName(), "-", ObjectName.getInstance(objectName), action);
+        } catch (MalformedObjectNameException | NullPointerException ex) {
+        }
+        return new MBeanPermission(mbeanClass + "#-[" + objectName + "]", action);
     }
 
     private ServiceActivatorDeploymentUtil() {

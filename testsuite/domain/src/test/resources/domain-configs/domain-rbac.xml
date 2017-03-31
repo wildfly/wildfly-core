@@ -29,6 +29,7 @@
         <extension module="org.jboss.as.logging"/>
         <extension module="org.jboss.as.remoting"/>
         <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.security.manager"/>
     </extensions>
 
     <system-properties>
@@ -67,6 +68,13 @@
             <subsystem xmlns="urn:jboss:domain:remoting:3.0">
                 <connector name="jmx-connector" socket-binding="jmx" security-realm="ApplicationRealm"/>
             </subsystem>
+            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+                <deployment-permissions>
+                    <maximum-set>
+                        <permission class="java.security.AllPermission"/>
+                    </maximum-set>
+                </deployment-permissions>
+            </subsystem>
         </profile>
 
         <profile name="profile-b">
@@ -80,6 +88,13 @@
                 <remoting-connector use-management-endpoint="false"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
+            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+                <deployment-permissions>
+                    <maximum-set>
+                        <permission class="java.security.AllPermission"/>
+                    </maximum-set>
+                </deployment-permissions>
+            </subsystem>
         </profile>
 
         <profile name="profile-shared">
@@ -93,6 +108,13 @@
                 <remoting-connector use-management-endpoint="false"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
+            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+                <deployment-permissions>
+                    <maximum-set>
+                        <permission class="java.security.AllPermission"/>
+                    </maximum-set>
+                </deployment-permissions>
+            </subsystem>
         </profile>
     </profiles>
 

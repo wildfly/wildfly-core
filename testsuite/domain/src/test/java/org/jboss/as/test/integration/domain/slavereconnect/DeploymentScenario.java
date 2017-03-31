@@ -57,6 +57,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.PropertyPermission;
 import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
@@ -69,6 +70,7 @@ import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceAct
 import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentOne;
 import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentThree;
 import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentTwo;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceActivator;
@@ -232,6 +234,13 @@ public class DeploymentScenario extends ReconnectTestScenario {
         archive.addClasses(clazz, ServiceActivatorBaseDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, clazz);
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.broken.fail", "read"),
+                new PropertyPermission("test.deployment.prop.one", "write"),
+                new PropertyPermission("test.deployment.prop.two", "write"),
+                new PropertyPermission("test.deployment.prop.three", "write"),
+                new PropertyPermission("test.deployment.prop.four", "write")
+        ), "permissions.xml");
         archive.as(ZipExporter.class).exportTo(deployment);
         return deployment;
     }

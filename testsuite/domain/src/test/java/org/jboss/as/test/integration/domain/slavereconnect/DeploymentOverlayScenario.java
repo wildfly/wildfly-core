@@ -59,6 +59,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PropertyPermission;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -68,6 +69,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorBaseDeployment;
 import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentOne;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceActivator;
@@ -229,6 +231,17 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
         archive.addClasses(clazz, ServiceActivatorBaseDeployment.class);
         archive.addAsServiceProvider(ServiceActivator.class, clazz);
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc\n"), "MANIFEST.MF");
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                new PropertyPermission("test.deployment.broken.fail", "read"),
+                new PropertyPermission("test.deployment.prop.one", "write"),
+                new PropertyPermission("test.deployment.prop.two", "write"),
+                new PropertyPermission("test.deployment.prop.three", "write"),
+                new PropertyPermission("test.deployment.prop.four", "write"),
+                new PropertyPermission("test.overlay.prop.one", "write"),
+                new PropertyPermission("test.overlay.prop.two", "write"),
+                new PropertyPermission("test.overlay.prop.three", "write"),
+                new PropertyPermission("test.overlay.prop.four", "write")
+        ), "permissions.xml");
         archive.as(ZipExporter.class).exportTo(deployment);
         return deployment;
     }
