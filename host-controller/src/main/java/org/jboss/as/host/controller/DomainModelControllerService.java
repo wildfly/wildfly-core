@@ -107,8 +107,10 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
+import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -288,7 +290,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         return serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
-                .addDependency(PathManagerService.SERVICE_NAME) // ensure this is up
+                .addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()) // ensure this is up
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
     }
@@ -550,12 +552,16 @@ public class DomainModelControllerService extends AbstractControllerService impl
         CoreManagementResourceDefinition.registerDomainResource(managementModel.getRootResource(), authorizer.getWritableAuthorizerConfiguration());
         this.modelNodeRegistration = managementModel.getRootResourceRegistration();
 
-        capabilityRegistry.registerCapability(
+        final RuntimeCapabilityRegistry capabilityReg = managementModel.getCapabilityRegistry(); // use the one from the model as it is what is being published
+        capabilityReg.registerCapability(
                 new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-        capabilityRegistry.registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-        capabilityRegistry.registerCapability(
+        capabilityReg.registerCapability(
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-        capabilityRegistry.registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+        // TODO consider having ManagementModel provide CapabilityRegistry instead of just RuntimeCapabilityRegistry
+        if (capabilityReg instanceof PossibleCapabilityRegistry) {
+            ((PossibleCapabilityRegistry) capabilityReg).registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            ((PossibleCapabilityRegistry) capabilityReg).registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+        }
 
         // Register the slave host info
         ResourceProvider.Tool.addResourceProvider(HOST_CONNECTION, new ResourceProvider() {

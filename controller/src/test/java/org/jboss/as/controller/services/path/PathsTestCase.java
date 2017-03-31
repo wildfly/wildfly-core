@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -65,6 +66,8 @@ import org.junit.Test;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class PathsTestCase extends AbstractControllerTestBase {
+
+    private static final ServiceName PATH_MANAGER_SVC = AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName();
 
     PathManagerService pathManagerService;
 
@@ -356,7 +359,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     }
 
     private void checkServiceAndPathEntry(String name, String path, String relativeTo) {
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         Assert.assertEquals(State.UP, pathManagerService.getState());
         PathManagerService pathManager = (PathManagerService) pathManagerService.getValue();
 
@@ -374,7 +377,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
 
     @Test
     public void testPathManagerAddNotifications() throws Exception {
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add1", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -434,7 +437,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     @Test
     public void testPathManagerRemoveNotifications() throws Exception {
         testAddPath();
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add1", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -498,7 +501,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     @Test
     public void testPathManagerChangeNotifications() throws Exception {
         testAddPath();
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         ModelNode operation = createOperation(ADD);
@@ -575,7 +578,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     public void testCannotRemoveDependentService() throws Exception {
         testAddPath();
 
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add2", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -597,7 +600,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
 
     @Test
     public void testBadAdd() throws Exception {
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add1", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -623,7 +626,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
 
     @Test
     public void testBadChangeNoNotification() throws Exception {
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add1", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -654,7 +657,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
     public void testChangeDependentServiceNotificationIsCascaded() throws Exception {
         testAddPath();
 
-        ServiceController<?> pathManagerService = getContainer().getRequiredService(PathManagerService.SERVICE_NAME);
+        ServiceController<?> pathManagerService = getContainer().getRequiredService(PATH_MANAGER_SVC);
         PathManager pathManager = (PathManager) pathManagerService.getValue();
 
         PerformChangeCallback allCallback1 = new PerformChangeCallback(pathManager, "add1", Event.ADDED, Event.REMOVED, Event.UPDATED);
@@ -815,7 +818,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
 
         TestServiceListener listener = new TestServiceListener();
         listener.reset(1);
-        getContainer().addService(PathManagerService.SERVICE_NAME, pathManagerService)
+        getContainer().addService(PATH_MANAGER_SVC, pathManagerService)
                 .addListener(listener)
                 .install();
 

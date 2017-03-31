@@ -32,10 +32,10 @@ import java.nio.file.Paths;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * Used to resolve an absolute path for a file.
@@ -84,8 +84,9 @@ public class FileResolver implements ModelNodeResolver<String> {
 
     private String resolve(final OperationContext context, final String relativeToPath, final String path) {
         // TODO it would be better if this came via the ExtensionContext
+        ServiceName pathMgrSvc = context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class);
         @SuppressWarnings("unchecked")
-        final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(PathManagerService.SERVICE_NAME);
+        final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(pathMgrSvc);
         if (controller == null) {
             return null;
         }

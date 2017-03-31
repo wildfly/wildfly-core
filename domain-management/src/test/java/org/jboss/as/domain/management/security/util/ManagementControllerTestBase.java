@@ -25,6 +25,7 @@ package org.jboss.as.domain.management.security.util;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -90,7 +91,7 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
 
         TestServiceListener listener = new TestServiceListener();
         listener.reset(1);
-        getContainer().addService(PathManagerService.SERVICE_NAME, pathManagerService)
+        getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
                 .addListener(listener)
                 .install();
 

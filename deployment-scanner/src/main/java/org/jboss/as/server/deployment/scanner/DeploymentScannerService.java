@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OWNER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_BOOTING;
 import static org.jboss.as.controller.registry.NotificationHandlerRegistration.ANY_ADDRESS;
+import static org.jboss.as.server.deployment.scanner.DeploymentScannerDefinition.PATH_MANAGER_CAPABILITY;
 
 import java.io.File;
 import java.util.List;
@@ -41,7 +42,6 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.dmr.ModelNode;
@@ -69,7 +69,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private final boolean autoDeployZipped;
     private final boolean autoDeployExploded;
     private final boolean autoDeployXml;
-    private final Long deploymentTimeout;
+    private final long deploymentTimeout;
     private final String relativeTo;
     private final String path;
     private final boolean rollbackOnRuntimeFailure;
@@ -104,7 +104,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
     private volatile PathManager.Callback.Handle callbackHandle;
 
     public static ServiceName getServiceName(String repositoryName) {
-        return DeploymentScanner.BASE_SERVICE_NAME.append(repositoryName);
+        return DeploymentScannerDefinition.SCANNER_CAPABILITY.getCapabilityServiceName(repositoryName);
     }
 
     /**
@@ -135,7 +135,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
         final ServiceName serviceName = getServiceName(resourceAddress.getLastElement().getValue());
 
         return context.getServiceTarget().addService(serviceName, service)
-                .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
+                .addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class), PathManager.class, service.pathManagerValue)
                 .addDependency(context.getCapabilityServiceName("org.wildfly.managment.notification-handler-registry", null),
                         NotificationHandlerRegistry.class, service.notificationRegistryValue)
                 .addDependency(context.getCapabilityServiceName("org.wildfly.managment.model-controller-client-factory", null),
@@ -197,9 +197,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 scanner.setAutoDeployZippedContent(autoDeployZipped);
                 scanner.setAutoDeployXMLContent(autoDeployXml);
                 scanner.setRuntimeFailureCausesRollback(rollbackOnRuntimeFailure);
-                if (deploymentTimeout != null) {
-                    scanner.setDeploymentTimeout(deploymentTimeout);
-                }
+                scanner.setDeploymentTimeout(deploymentTimeout);
                 this.scanner = scanner;
             } else {
                 // The boot-time scanner should use our DeploymentOperations.Factory
