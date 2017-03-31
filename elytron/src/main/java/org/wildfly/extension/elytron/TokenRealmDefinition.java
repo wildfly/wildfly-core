@@ -269,7 +269,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                                 Certificate certificate = keyStore.getCertificate(certificateAlias);
 
                                 if (certificate == null) {
-                                    throw ROOT_LOGGER.unableToAccessEntryFromKeyStore(keyStoreName, certificateAlias);
+                                    throw ROOT_LOGGER.unableToAccessEntryFromKeyStore(certificateAlias, keyStoreName);
                                 }
 
                                 jwtValidatorBuilder.publicKey(certificate.getPublicKey());
