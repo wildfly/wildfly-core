@@ -22,7 +22,9 @@
 
 package org.wildfly.extension.io;
 
-import static org.wildfly.extension.io.OutboundBindAddressUtils.*;
+import static org.wildfly.extension.io.OutboundBindAddressUtils.getBindAddress;
+import static org.wildfly.extension.io.OutboundBindAddressUtils.getCidrAddress;
+import static org.wildfly.extension.io.OutboundBindAddressUtils.getWorkerService;
 
 import java.net.InetSocketAddress;
 
@@ -40,6 +42,9 @@ import org.wildfly.extension.io.logging.IOLogger;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class OutboundBindAddressAddHandler extends AbstractAddStepHandler {
+    OutboundBindAddressAddHandler() {
+        super(OutboundBindAddressResourceDefinition.ATTRIBUTES);
+    }
 
     protected void performRuntime(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         final CidrAddressTable<InetSocketAddress> bindingsTable = getWorkerService(context).getBindingsTable();

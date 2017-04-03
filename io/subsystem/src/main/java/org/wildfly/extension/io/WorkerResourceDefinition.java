@@ -383,7 +383,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
         @Override
         public Set<String> getChildTypes() {
-            return Collections.singleton("server");
+            LinkedHashSet<String> result = new LinkedHashSet<>(super.getChildTypes());
+            result.add("server");
+            return result;
         }
 
     }
