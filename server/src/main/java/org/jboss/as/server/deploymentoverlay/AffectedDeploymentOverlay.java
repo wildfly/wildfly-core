@@ -46,11 +46,11 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
-import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.as.controller.operations.DomainOperationTransmuter;
 
 /**
  * Utility class for finding and updating deployments affected by an overlay change. This is where the magic of getting
@@ -168,12 +168,12 @@ public class AffectedDeploymentOverlay {
             entry.getValue().forEach((deploymentName) -> opBuilder.addStep(addRedeployStep(context.getCurrentAddress().getParent().append(SERVER_GROUP, entry.getKey()).append(DEPLOYMENT, deploymentName))));
         });
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
         final ModelNode slave = opBuilder.build().getOperation();
-        transformers.add(new OverlayOperationTransformer(slave, context.getCurrentAddress()));
+        transformers.add(new OverlayOperationTransmuter(slave, context.getCurrentAddress()));
     }
 
     /**
@@ -201,12 +201,12 @@ public class AffectedDeploymentOverlay {
         for (String deploymentName : deploymentNames) {
             opBuilder.addStep(addRedeployStep(deploymentsRootAddress.append(DEPLOYMENT, deploymentName)));
         }
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
         final ModelNode slave = opBuilder.build().getOperation();
-        transformers.add(new OverlayOperationTransformer(slave, context.getCurrentAddress()));
+        transformers.add(new OverlayOperationTransmuter(slave, context.getCurrentAddress()));
     }
 
     /**
@@ -259,25 +259,25 @@ public class AffectedDeploymentOverlay {
         return Collections.emptySet();
     }
 
-    private static final class OverlayOperationTransformer implements DomainOperationTransformer {
+    private static final class OverlayOperationTransmuter implements DomainOperationTransmuter {
 
         private final ModelNode newOperation;
         private final PathAddress overlayAddress;
 
-        public OverlayOperationTransformer(ModelNode newOperation, PathAddress overlayAddress) {
+        public OverlayOperationTransmuter(ModelNode newOperation, PathAddress overlayAddress) {
             this.newOperation = newOperation;
             this.overlayAddress = overlayAddress;
         }
 
         @Override
-        public ModelNode transform(final OperationContext context, final ModelNode operation) {
+        public ModelNode transmmute(final OperationContext context, final ModelNode operation) {
             if (COMPOSITE.equals(operation.get(OP).asString())) {
                 ModelNode ret = operation.clone();
                 final List<ModelNode> list = new ArrayList<>();
                 ListIterator<ModelNode> it = ret.get(STEPS).asList().listIterator();
                 while (it.hasNext()) {
                     final ModelNode subOperation = it.next();
-                    list.add(transform(context, subOperation));
+                    list.add(transmmute(context, subOperation));
                 }
                 ret.get(STEPS).set(list);
                 ServerLogger.AS_ROOT_LOGGER.debugf("Transforming operation %s into %s", operation.toJSONString(true), ret.toJSONString(true));

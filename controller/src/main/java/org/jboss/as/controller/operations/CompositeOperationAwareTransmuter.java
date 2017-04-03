@@ -37,23 +37,23 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 /**
  * @author Stuart Douglas
  */
-public class CompositeOperationAwareTransformer implements DomainOperationTransformer {
+public class CompositeOperationAwareTransmuter implements DomainOperationTransmuter {
 
     private final ModelNode newOperation;
 
-    public CompositeOperationAwareTransformer(final ModelNode newOperation) {
+    public CompositeOperationAwareTransmuter(final ModelNode newOperation) {
         this.newOperation = newOperation;
     }
 
     @Override
-    public ModelNode transform(final OperationContext context, final ModelNode operation) {
+    public ModelNode transmmute(final OperationContext context, final ModelNode operation) {
         if (operation.get(OP).asString().equals(COMPOSITE)) {
             ModelNode ret = operation.clone();
             final List<ModelNode> list = new ArrayList<ModelNode>();
             ListIterator<ModelNode> it = ret.get(STEPS).asList().listIterator();
             while (it.hasNext()) {
                 final ModelNode subOperation = it.next();
-                list.add(transform(context, subOperation));
+                list.add(transmmute(context, subOperation));
             }
             ret.get(STEPS).set(list);
             return ret;

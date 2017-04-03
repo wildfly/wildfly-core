@@ -47,13 +47,13 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
+import org.jboss.as.controller.operations.DomainOperationTransmuter;
 
 /**
  * Executes the first phase of a two phase operation on one or more remote, slave host controllers.
@@ -86,15 +86,15 @@ public class DomainSlaveHandler implements OperationStepHandler {
         final Map<String, HostControllerUpdateTask.ExecutedHostRequest> finalResults = new HashMap<String, HostControllerUpdateTask.ExecutedHostRequest>();
         final HostControllerUpdateTask.ProxyOperationListener listener = new HostControllerUpdateTask.ProxyOperationListener();
         final Transformers.TransformationInputs transformationInputs = Transformers.TransformationInputs.getOrCreate(context);
-        final List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        final List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         for (Map.Entry<String, ProxyController> entry : hostProxies.entrySet()) {
             // Create the proxy task
             final String host = entry.getKey();
             final TransformingProxyController proxyController = (TransformingProxyController) entry.getValue();
             ModelNode clonedOp = operation.clone();
             if (transformers != null) {
-                for (final DomainOperationTransformer transformer : transformers) {
-                    clonedOp = transformer.transform(context, clonedOp);
+                for (final DomainOperationTransmuter transformer : transformers) {
+                    clonedOp = transformer.transmmute(context, clonedOp);
                 }
             }
 

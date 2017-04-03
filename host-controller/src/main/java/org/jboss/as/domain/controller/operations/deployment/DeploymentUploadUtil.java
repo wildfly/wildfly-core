@@ -51,8 +51,7 @@ import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.operations.CompositeOperationAwareTransformer;
-import org.jboss.as.controller.operations.DomainOperationTransformer;
+import org.jboss.as.controller.operations.CompositeOperationAwareTransmuter;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
@@ -67,6 +66,7 @@ import org.jboss.dmr.ModelNode;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DEPLOYMENT_CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OVERWRITE;
+import org.jboss.as.controller.operations.DomainOperationTransmuter;
 
 /**
  * Utility method for storing deployment content.
@@ -103,11 +103,11 @@ class DeploymentUploadUtil {
         final ModelNode slave = operation.clone();
         slave.get(CONTENT).setEmptyList().add().get(HASH).set(hash);
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
-        transformers.add(new CompositeOperationAwareTransformer(slave));
+        transformers.add(new CompositeOperationAwareTransmuter(slave));
         return hash;
     }
 
@@ -122,11 +122,11 @@ class DeploymentUploadUtil {
         contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
         slave.get(CONTENT).setEmptyList().add(contentItemNode);
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
-        transformers.add(new CompositeOperationAwareTransformer(slave));
+        transformers.add(new CompositeOperationAwareTransmuter(slave));
         return hash;
     }
 
@@ -159,11 +159,11 @@ class DeploymentUploadUtil {
         addedContent.get(TARGET_PATH.getName()).set("./");
         slave.get(CONTENT).setEmptyList().add(addedContent);
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
-        transformers.add(new CompositeOperationAwareTransformer(slave));
+        transformers.add(new CompositeOperationAwareTransmuter(slave));
         return hash;
     }
 
@@ -206,11 +206,11 @@ class DeploymentUploadUtil {
         addedContent.get(TARGET_PATH.getName()).set(".");
         slave.get(CONTENT).setEmptyList().add(addedContent);
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
-        transformers.add(new CompositeOperationAwareTransformer(slave));
+        transformers.add(new CompositeOperationAwareTransmuter(slave));
         return hash;
     }
 
@@ -236,11 +236,11 @@ class DeploymentUploadUtil {
         slave.get(CONTENT).setEmptyList().add().get(HASH).set(hash);
         slave.get(CONTENT).add().get(ARCHIVE).set(false);
         // Add the domain op transformer
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
-            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<>());
+            context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<>());
         }
-        transformers.add(new CompositeOperationAwareTransformer(slave));
+        transformers.add(new CompositeOperationAwareTransmuter(slave));
         return hash;
     }
 
