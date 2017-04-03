@@ -237,7 +237,14 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
                 //noinspection ThrowableResultOfMethodCallIgnored
                 final StartException startException = controller.getStartException();
                 if (startException != null) {
-                    msg.append(": ").append(startException.toString());
+                    // This is a bit of inside knowledge of StartException. Its toString() prefixes
+                    // the main data with 'org...StartException in org.foo.bar: " stuff that
+                    // will be redundant in the overall output we are creating so we omit that if we can.
+                    String exMsg = startException.getLocalizedMessage();
+                    if (exMsg == null || exMsg.length() == 0) {
+                        exMsg = startException.toString();
+                    }
+                    msg.append(": ").append(exMsg);
                 }
                 msg.append('\n');
             }
