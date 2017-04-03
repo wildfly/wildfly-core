@@ -70,8 +70,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.junit.Test;
 import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
-import org.xnio.OptionMap;
-import org.xnio.Options;
+import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 
 /**
@@ -318,7 +317,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
                 if (!legacyParser) {
-                    target.addService(IOServices.WORKER.append("default"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
+                    target.addService(IOServices.WORKER.append("default"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
                             .setInitialMode(ServiceController.Mode.ACTIVE)
                             .install();
                 }

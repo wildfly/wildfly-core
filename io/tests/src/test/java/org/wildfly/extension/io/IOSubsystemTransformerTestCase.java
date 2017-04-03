@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
@@ -51,7 +52,7 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("io-1.1-transformer.xml");
+        return readResource("io-2.0-transformer.xml");
     }
 
 
@@ -118,6 +119,9 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                                     WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
                                     WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
                                     )
+                    )
+                    .addFailedAttribute(subsystemAddress.append(WORKER_PATH, PathElement.pathElement("outbound-bind-address")),
+                            FailedOperationTransformationConfig.REJECTED_RESOURCE
                     )
             );
         }

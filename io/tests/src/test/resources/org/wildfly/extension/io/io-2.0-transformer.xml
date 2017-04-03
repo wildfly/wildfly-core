@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:io:1.1">
+<subsystem xmlns="urn:jboss:domain:io:2.0">
     <worker name="default" task-keepalive="100" stack-size="5000"/>
     <worker name="second-worker" io-threads="5" stack-size="300" task-keepalive="100" task-max-threads="200"/>
     <worker name="third-worker" task-max-threads="50"/>

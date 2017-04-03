@@ -27,11 +27,16 @@ package org.wildfly.extension.io.logging;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.net.InetSocketAddress;
+
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.wildfly.common.net.CidrAddress;
 
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
@@ -68,6 +73,6 @@ public interface IOLogger extends BasicLogger {
     @Message(id = 6, value = "no metrics available")
     String noMetrics();
 
-
-
+    @Message(id = 7, value = "Unexpected bind address conflict in resource \"%s\" when attempting to establish binding for destination %s to %s: a binding of %s already existed")
+    OperationFailedException unexpectedBindAddressConflict(PathAddress currentAddress, CidrAddress cidrAddress, InetSocketAddress bindAddress, InetSocketAddress existing);
 }
