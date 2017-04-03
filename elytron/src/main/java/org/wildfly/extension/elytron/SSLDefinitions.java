@@ -120,7 +120,7 @@ class SSLDefinitions {
     static final ServiceUtil<SSLContext> SERVER_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SERVER_SSL_CONTEXT, SSLContext.class);
     static final ServiceUtil<SSLContext> CLIENT_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, SSLContext.class);
 
-    static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -308,7 +308,7 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<KeyManager[]> getValueSupplier(ServiceBuilder<KeyManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithm = ALGORITHM.resolveModelAttribute(context, model).asString();
+                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
                 String providersName = asStringIfDefined(context, providersDefinition, model);
@@ -328,6 +328,7 @@ class SSLDefinitions {
                 }
 
                 final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String algorithm = algorithmName != null ? algorithmName : KeyManagerFactory.getDefaultAlgorithm();
 
                 ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
                         CredentialReference.getCredentialSourceSupplier(context, credentialReferenceDefinition, model, serviceBuilder);
@@ -413,7 +414,7 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<TrustManager[]> getValueSupplier(ServiceBuilder<TrustManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithm = ALGORITHM.resolveModelAttribute(context, model).asString();
+                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
                 String providerLoader = asStringIfDefined(context, providersDefinition, model);
@@ -433,6 +434,7 @@ class SSLDefinitions {
                 }
 
                 final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String algorithm = algorithmName != null ? algorithmName : TrustManagerFactory.getDefaultAlgorithm();
 
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
 
@@ -442,6 +444,7 @@ class SSLDefinitions {
 
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
+
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
 
