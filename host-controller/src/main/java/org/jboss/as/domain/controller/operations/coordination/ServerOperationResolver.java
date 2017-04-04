@@ -82,7 +82,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import org.jboss.as.controller.operations.DomainOperationTransformer;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.operations.common.Util;
@@ -99,6 +98,7 @@ import org.jboss.as.server.operations.SystemPropertyAddHandler;
 import org.jboss.as.server.operations.SystemPropertyRemoveHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.as.controller.operations.DomainOperationTransmuter;
 
 /**
  * Logic for creating a server-level operation that realizes the effect
@@ -233,11 +233,11 @@ public class ServerOperationResolver {
         if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
             HOST_CONTROLLER_LOGGER.tracef("Resolving %s", originalOperation);
         }
-        List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+        List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         ModelNode operation = originalOperation;
         if(transformers != null) {
-            for(DomainOperationTransformer transformer : transformers) {
-                operation = transformer.transform(context, operation);
+            for(DomainOperationTransmuter transformer : transformers) {
+                operation = transformer.transmmute(context, operation);
             }
         }
         if (isDontPropagateToServers(context, operation)) {

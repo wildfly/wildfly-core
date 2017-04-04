@@ -44,8 +44,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.operations.CompositeOperationAwareTransformer;
-import org.jboss.as.controller.operations.DomainOperationTransformer;
+import org.jboss.as.controller.operations.CompositeOperationAwareTransmuter;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.protocol.StreamUtils;
@@ -55,6 +54,7 @@ import org.jboss.as.repository.DeploymentFileRepository;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.as.controller.operations.DomainOperationTransmuter;
 
 /**
  * @author Stuart Douglas
@@ -88,11 +88,11 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
             slave.get(CONTENT).clear();
             slave.get(CONTENT).get(HASH).set(hash);
 
-            List<DomainOperationTransformer> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS);
+            List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
             if(transformers == null) {
-                context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSFORMERS, transformers = new ArrayList<DomainOperationTransformer>());
+                context.attach(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS, transformers = new ArrayList<DomainOperationTransmuter>());
             }
-            transformers.add(new CompositeOperationAwareTransformer(slave));
+            transformers.add(new CompositeOperationAwareTransmuter(slave));
         }
         contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, hash));
 
