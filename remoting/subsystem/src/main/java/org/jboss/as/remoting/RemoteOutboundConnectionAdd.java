@@ -81,7 +81,7 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
                 .addDependency(outboundSocketBindingDependency, OutboundSocketBinding.class, outboundConnectionService.getDestinationOutboundSocketBindingInjector());
 
         if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(), securityRealm, false);
+            SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(), securityRealm);
         }
         if (authenticationContext != null) {
             svcBuilder.addDependency(
