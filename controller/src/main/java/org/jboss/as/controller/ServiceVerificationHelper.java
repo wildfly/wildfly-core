@@ -84,6 +84,7 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
             Set<ServiceController<?>> missingTransitive = null;
             final ModelNode failureDescription = context.getFailureDescription();
             Set<ServiceName> unavailableServices = new HashSet<>();
+            Set<ServiceName> failedSet = new HashSet<>();
 
             // generate a list of failedServices
             ModelNode failedList = null;
@@ -92,7 +93,7 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                     failedList = failureDescription.get(ControllerLogger.ROOT_LOGGER.failedServices());
                 }
                 ServiceName serviceName = controller.getName();
-                unavailableServices.add(serviceName);
+                failedSet.add(serviceName);
                 failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
             }
 
@@ -104,7 +105,9 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
                     StringBuilder missing = new StringBuilder();
                     for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
                         ServiceName missingSvc = i.next();
-                        unavailableServices.add(missingSvc);
+                        if (!failedSet.contains(missingSvc)) {
+                            unavailableServices.add(missingSvc);
+                        }
                         missing.append(missingSvc.getCanonicalName());
                         if (i.hasNext()) {
                             missing.append(", ");
@@ -180,7 +183,14 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
     private static ModelNode getServiceFailureDescription(final StartException exception) {
         final ModelNode result = new ModelNode();
         if (exception != null) {
-            StringBuilder sb = new StringBuilder(exception.toString());
+            // This is a bit of inside knowledge of StartException. Its toString() prefixes
+            // the main data with 'org...StartException in org.foo.bar: " stuff that
+            // will be redundant in the overall output we are creating so we omit that if we can.
+            String msg = exception.getLocalizedMessage();
+            if (msg == null || msg.length() == 0) {
+                msg = exception.toString();
+            }
+            StringBuilder sb = new StringBuilder(msg);
             Throwable cause = exception.getCause();
             while (cause != null) {
                 sb.append("\n    Caused by: ");
