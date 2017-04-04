@@ -28,7 +28,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -56,7 +56,7 @@ public final class ParsedInterfaceCriteria {
 
     private final String failureMessage;
     private final boolean anyLocal;
-    private final Set<InterfaceCriteria> criteria = new HashSet<InterfaceCriteria>();
+    private final Set<InterfaceCriteria> criteria = new LinkedHashSet<InterfaceCriteria>();
 
     private ParsedInterfaceCriteria(final String failureMessage) {
         this.failureMessage = failureMessage;
@@ -101,7 +101,7 @@ public final class ParsedInterfaceCriteria {
         } else {
             try {
                 final List<Property> nodes = subModel.asPropertyList();
-                final Set<InterfaceCriteria> criteriaSet = new HashSet<InterfaceCriteria>();
+                final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<InterfaceCriteria>();
                 for (final Property property : nodes) {
                     final InterfaceCriteria criterion = parseCriteria(property, false, expressionResolver);
                     if (criterion instanceof WildcardInetAddressInterfaceCriteria) {
@@ -189,7 +189,7 @@ public final class ParsedInterfaceCriteria {
         if(!subModel.isDefined() || subModel.asInt() == 0) {
             return null;
         }
-        final Set<InterfaceCriteria> criteriaSet = new HashSet<InterfaceCriteria>();
+        final Set<InterfaceCriteria> criteriaSet = new LinkedHashSet<InterfaceCriteria>();
         for(final Property nestedProperty :  subModel.asPropertyList()) {
             final Element element = Element.forName(nestedProperty.getName());
             switch (element) {
