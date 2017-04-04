@@ -98,6 +98,14 @@ public class InetAddressMatchInterfaceCriteria extends AbstractInterfaceCriteria
         return result;
     }
 
+    @Override
+    public int compareTo(InterfaceCriteria o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return 1;
+    }
+
     /**
      * {@inheritDoc}
      *

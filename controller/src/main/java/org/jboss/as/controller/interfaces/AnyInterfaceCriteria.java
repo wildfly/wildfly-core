@@ -30,6 +30,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,7 @@ public class AnyInterfaceCriteria implements InterfaceCriteria {
 
     private static final long serialVersionUID = 3384500068401101329L;
 
-    private final Set<InterfaceCriteria> criteria = new HashSet<InterfaceCriteria>();
+    private final Set<InterfaceCriteria> criteria = new LinkedHashSet<InterfaceCriteria>();
 
     /**
      * Creates a new AnyInterfaceCriteria
@@ -83,6 +84,14 @@ public class AnyInterfaceCriteria implements InterfaceCriteria {
             return false;
         }
         return criteria.equals(((AnyInterfaceCriteria)o).criteria);
+    }
+
+    @Override
+    public int compareTo(InterfaceCriteria o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return o instanceof InetAddressMatchInterfaceCriteria ? -1 : 1;
     }
 
     private void addAccepted(Map<NetworkInterface, Set<InetAddress>> accepted, Map<NetworkInterface, Set<InetAddress>> result) {
