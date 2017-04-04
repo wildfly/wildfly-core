@@ -48,12 +48,17 @@ public interface CallbackHandlerFactory {
         private ServiceUtil() {
         }
 
+        @Deprecated
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerFactory> injector,
                 ServiceName serviceName, boolean optional) {
             ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
             sb.addDependency(type, serviceName, CallbackHandlerFactory.class, injector);
 
             return sb;
+        }
+
+        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerFactory> injector, ServiceName serviceName) {
+            return sb.addDependency(ServiceBuilder.DependencyType.REQUIRED, serviceName, CallbackHandlerFactory.class, injector);
         }
 
     }
