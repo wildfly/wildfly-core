@@ -165,7 +165,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                     buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
                     HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpAuthenticationFactoryInjector());
         } else if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm, false);
+            SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm);
         } else {
             ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }

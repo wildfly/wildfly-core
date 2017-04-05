@@ -33,12 +33,12 @@ import org.jboss.dmr.ModelNode;
  *
  *
  * @author Stuart Douglas
- * @see OperationAttachments#SLAVE_SERVER_OPERATION_TRANSFORMERS
+ * @see OperationAttachments#SLAVE_SERVER_OPERATION_TRANSMUTERS
  * @see  CompositeOperationAwareTransformer
  *
  */
-public interface DomainOperationTransformer {
+public interface DomainOperationTransmuter {
 
-    ModelNode transform(final OperationContext context, final ModelNode operation);
+    ModelNode transmmute(final OperationContext context, final ModelNode operation);
 
 }

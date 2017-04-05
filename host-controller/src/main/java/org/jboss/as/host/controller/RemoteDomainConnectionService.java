@@ -258,7 +258,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             builder.addDependency(authenticationContext, AuthenticationContext.class, service.authenticationContextInjector);
         }
         if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(builder, service.securityRealmInjector, securityRealm, false);
+            SecurityRealm.ServiceUtil.addDependency(builder, service.securityRealmInjector, securityRealm);
         }
 
         builder.install();

@@ -174,7 +174,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                     HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, undertowService.getHttpAuthenticationFactoryInjector());
         }
         if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm, false);
+            SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm);
         }
         if(httpAuthenticationFactory == null && securityRealm == null) {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();

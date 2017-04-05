@@ -314,12 +314,12 @@ public final class CredentialReference {
 
         return new ExceptionSupplier<CredentialSource, Exception>() {
 
-            private String[] parseCommand(String command) {
+            private String[] parseCommand(String command, String delimiter) {
                 // comma can be back slashed
-                final String[] parsedCommand = command.split("(?<!\\\\),");
+                final String[] parsedCommand = command.split("(?<!\\\\)" + delimiter);
                 for (int k = 0; k < parsedCommand.length; k++) {
                     if (parsedCommand[k].indexOf('\\') != -1)
-                        parsedCommand[k] = parsedCommand[k].replaceAll("\\\\,", ",");
+                        parsedCommand[k] = parsedCommand[k].replaceAll("\\\\" + delimiter, delimiter);
                 }
                 return parsedCommand;
             }
@@ -340,17 +340,18 @@ public final class CredentialReference {
                 if (credentialAlias != null) {
                     return new CredentialStoreCredentialSource(credentialStoreInjectedValue.getValue(), credentialAlias);
                 } else if (credentialType != null && credentialType.equalsIgnoreCase("COMMAND")) {
-                    // this is temporary solution until properly moved to WF-CORE
                     CommandCredentialSource.Builder command = CommandCredentialSource.builder();
                     String commandSpec = secret.trim();
+                    String[] parts;
                     if (commandSpec.startsWith("{EXT")) {
-                        commandSpec = stripType(commandSpec);
-                        command.addCommand(commandSpec);
+                        parts = parseCommand(stripType(commandSpec), " ");  // space delimited
                     } else if (commandSpec.startsWith("{CMD")) {
-                        String[] parts = parseCommand(stripType(commandSpec));
-                        for(String part: parts) {
-                            command.addCommand(part);
-                        }
+                        parts = parseCommand(stripType(commandSpec), ",");  // comma delimited
+                    } else {
+                        parts = parseCommand(commandSpec, " ");
+                    }
+                    for(String part: parts) {
+                        command.addCommand(part);
                     }
                     return command.build();
                 } else if (secret != null && secret.startsWith("MASK-")) {
