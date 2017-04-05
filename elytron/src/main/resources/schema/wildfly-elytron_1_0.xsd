@@ -4126,7 +4126,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="wrap" type="xs:boolean" default="true">
+        <xs:attribute name="wrap" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Should the resulting SSLEngine, SSLSocketFactory, and SSLSocket instances returned by this SSLContext

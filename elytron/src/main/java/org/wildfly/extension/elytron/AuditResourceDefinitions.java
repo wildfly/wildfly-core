@@ -30,6 +30,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -113,6 +116,8 @@ class AuditResourceDefinitions {
         return AGGREGATE_SECURITY_EVENT_LISTENER;
     }
 
+    static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     static ResourceDefinition getFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
@@ -143,10 +148,10 @@ class AuditResourceDefinitions {
                     }
                     File resolvedPath = pathResolver.resolve();
 
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().build() : SimpleSecurityEventFormatter.builder().build();
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     AuditEndpoint endpoint;
                     try {
-                        endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath()).setSyncOnAccept(synv).build();
+                        endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath()).setSyncOnAccept(synv).setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     } catch (IOException e) {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
@@ -185,7 +190,7 @@ class AuditResourceDefinitions {
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
 
                 return () -> {
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().build() : SimpleSecurityEventFormatter.builder().build();
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     final AuditEndpoint endpoint;
                     try {
                         endpoint = SyslogAuditEndpoint.builder().setServerAddress(serverAddress).setPort(port)
@@ -213,4 +218,7 @@ class AuditResourceDefinitions {
         TCP, UDP
     }
 
+    private static <T, R> Supplier<R> bind(Function<T,R> fn, T val) {
+        return () -> fn.apply(val);
+    }
 }

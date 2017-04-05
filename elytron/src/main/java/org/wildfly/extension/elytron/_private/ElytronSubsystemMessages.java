@@ -290,6 +290,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 35, value = "Unable to load module '%s'.")
     OperationFailedException unableToLoadModule(String module, @Cause Exception cause);
 
+    /**
+     * A {@link OperationFailedException} for when validating a security domain fails due to the same realm being referenced twice.
+     *
+     * @param realmName the name of the security realm referenced twice.
+     * @return The {@link OperationFailedException} for the error.
+     */
+    @Message(id = 36, value = "Security realm '%s' has been referenced twice in the same security domain.")
+    OperationFailedException realmRefererencedTwice(String realmName);
+
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
