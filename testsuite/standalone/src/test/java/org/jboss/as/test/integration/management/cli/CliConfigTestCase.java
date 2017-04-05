@@ -137,11 +137,11 @@ public class CliConfigTestCase {
 
     @Test
     public void testOptionFile() throws Exception {
-        testFileOption("file");
-        testFileOption("properties");
+        testFileOption("file", false);
+        testFileOption("properties", true);
     }
 
-    private void testFileOption(String optionName) throws Exception {
+    private void testFileOption(String optionName, boolean interactive) throws Exception {
         File f = new File(temporaryUserHome.getRoot(), "a-script"
                 + System.currentTimeMillis() + ".cli");
         f.createNewFile();
@@ -151,7 +151,11 @@ public class CliConfigTestCase {
                     .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                     .addCliArgument("--" + optionName + "=" + "~" + File.separator + f.getName());
             try {
-                cli.executeNonInteractive();
+                if (interactive) {
+                    cli.executeInteractive(null);
+                } else {
+                    cli.executeNonInteractive();
+                }
                 assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
             } finally {
                 cli.destroyProcess();
@@ -164,7 +168,11 @@ public class CliConfigTestCase {
                     .addCliArgument("--" + optionName + "=" + "~"
                             + temporaryUserHome.getRoot().getName() + File.separator + f.getName());
             try {
-                cli.executeNonInteractive();
+                if (interactive) {
+                    cli.executeInteractive(null);
+                } else {
+                    cli.executeNonInteractive();
+                }
                 assertFalse(cli.getOutput(), cli.getOutput().contains(f.getName()));
             } finally {
                 cli.destroyProcess();

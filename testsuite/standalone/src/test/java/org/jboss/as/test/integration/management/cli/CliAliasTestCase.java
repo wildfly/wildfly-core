@@ -177,7 +177,7 @@ public class CliAliasTestCase {
         try {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("alias " + VALID_ALIAS_NAME + "=" + VALID_ALIAS_COMMAND);
-            cli.pushLineAndWaitForResults("quit");
+            cli.pushLineAndWaitForClose("quit");
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
