@@ -471,7 +471,7 @@
                  <xs:documentation>
                      Argument to pass into the constructor as the Provider is instantiated.
 
-                     Can only be used where the class names to load are specified. 
+                     Can only be used where the class names to load are specified.
                  </xs:documentation>
              </xs:annotation>
          </xs:attribute>
@@ -644,7 +644,7 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    
+
     <!--
         Domains and Realms
      -->
@@ -4322,13 +4322,6 @@
                     to search for the one that can create the required KeyStore type.
 
                     If this is not specified then the global list of Providers is used instead.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="password" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The password to use when initialising / loading the KeyStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
