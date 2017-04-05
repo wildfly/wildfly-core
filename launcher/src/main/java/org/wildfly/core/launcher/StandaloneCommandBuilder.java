@@ -471,4 +471,29 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     protected StandaloneCommandBuilder getThis() {
         return this;
     }
+
+    @Override
+    boolean addServerArgument(final Argument argument) {
+        switch (argument.getKey()) {
+            case SERVER_BASE_DIR:
+                if (argument.getValue() != null) {
+                    setBaseDirectory(argument.getValue());
+                    return false;
+                }
+                break;
+            case SERVER_CONFIG_DIR:
+                if (argument.getValue() != null) {
+                    setConfigurationDirectory(argument.getValue());
+                    return false;
+                }
+                break;
+            case SERVER_LOG_DIR:
+                if (argument.getValue() != null) {
+                    setLogDirectory(argument.getValue());
+                    return false;
+                }
+                break;
+        }
+        return true;
+    }
 }

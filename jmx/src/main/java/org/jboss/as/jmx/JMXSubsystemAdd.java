@@ -93,7 +93,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
             }
             jmxEffect = new JmxEffect(hostName, serverGroup);
         }
-        MBeanServerService.addService(context.getServiceTarget(), resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
+        MBeanServerService.addService(context, resolvedDomain, expressionsDomain, legacyWithProperPropertyFormat,
                             coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, context.getProcessType(), isMasterHc);
     }
 

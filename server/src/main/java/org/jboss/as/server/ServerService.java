@@ -45,10 +45,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
 import org.jboss.as.controller.ManagementModel;
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -59,9 +59,14 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.CapabilityRegistry;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.notification.Notification;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.PlaceholderResource;
@@ -146,7 +151,10 @@ public final class ServerService extends AbstractControllerService {
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
     public static final ServiceName JBOSS_SERVER_CLIENT_FACTORY = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
     /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
-    public static final ServiceName JBOSS_SERVER_SCHEDULED_EXECUTOR = Services.JBOSS_SERVER_EXECUTOR.append("scheduled");
+    public static final ServiceName JBOSS_SERVER_NOTIFICATION_REGISTRY = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
+    /** Service is not for general use, so the service name is not declared in the more visible {@code Services} */
+    public static final ServiceName JBOSS_SERVER_SCHEDULED_EXECUTOR = EXECUTOR_CAPABILITY.getCapabilityServiceName().append("scheduled");
+    static final ServiceName MANAGEMENT_EXECUTOR = EXECUTOR_CAPABILITY.getCapabilityServiceName();
 
     private final InjectedValue<DeploymentMountProvider> injectedDeploymentRepository = new InjectedValue<DeploymentMountProvider>();
     private final InjectedValue<ContentRepository> injectedContentRepository = new InjectedValue<ContentRepository>();
@@ -217,6 +225,7 @@ public final class ServerService extends AbstractControllerService {
                                   final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                   final SuspendController suspendController) {
 
+        // Install Executor services
         final ThreadGroup threadGroup = new ThreadGroup("ServerService ThreadGroup");
         final String namePattern = "ServerService Thread Pool -- %t";
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<ThreadFactory>() {
@@ -230,14 +239,16 @@ public final class ServerService extends AbstractControllerService {
 //        serverExecutorService.getThreadFactoryInjector().inject(threadFactory);
         final boolean forDomain = ProcessType.DOMAIN_SERVER == getProcessType(configuration.getServerEnvironment());
         final ServerExecutorService serverExecutorService = new ServerExecutorService(threadFactory, forDomain);
-        serviceTarget.addService(Services.JBOSS_SERVER_EXECUTOR, serverExecutorService)
-                .addAliases(ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
+        serviceTarget.addService(MANAGEMENT_EXECUTOR, serverExecutorService)
+                .addAliases(Services.JBOSS_SERVER_EXECUTOR, ManagementRemotingServices.SHUTDOWN_EXECUTOR_NAME) // Use this executor for mgmt shutdown for now
                 .install();
         final ServerScheduledExecutorService serverScheduledExecutorService = new ServerScheduledExecutorService(threadFactory);
         serviceTarget.addService(JBOSS_SERVER_SCHEDULED_EXECUTOR, serverScheduledExecutorService)
-                .addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
+                .addAliases(JBOSS_SERVER_SCHEDULED_EXECUTOR)
+                .addDependency(MANAGEMENT_EXECUTOR, ExecutorService.class, serverScheduledExecutorService.executorInjector)
                 .install();
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, Services.JBOSS_SERVER_EXECUTOR);
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName());
+
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
         ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
                 runningModeControl, vaultReader, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
@@ -247,9 +258,9 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.injectedModuleLoader);
         serviceBuilder.addDependency(Services.JBOSS_EXTERNAL_MODULE_SERVICE, ExternalModuleService.class,
                 service.injectedExternalModuleService);
-        serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.injectedPathManagerService);
+        serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
         if (configuration.getServerEnvironment().isAllowModelControllerExecutor()) {
-            serviceBuilder.addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
+            serviceBuilder.addDependency(MANAGEMENT_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
         }
         if (configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN) {
             serviceBuilder.addDependency(HostControllerConnectionService.SERVICE_NAME, ControllerInstabilityListener.class,
@@ -295,11 +306,11 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-            Boolean suspend = runningModeControl.getSuspend();
-            suspendController.setStartSuspended(suspend != null ? suspend : serverEnvironment.isStartSuspended());
+            final Boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
+            suspendController.setStartSuspended(suspend);
             runningModeControl.setSuspend(false);
             context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
-                    .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, suspendController.getModelControllerInjectedValue())
+                    .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
                     .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
@@ -384,7 +395,7 @@ public final class ServerService extends AbstractControllerService {
 
                 ok = boot(bootOps, failOnRuntime);
                 if (ok) {
-                    finishBoot();
+                    finishBoot(suspend);
                 }
             } finally {
                 DeployerChainAddHandler.INSTANCE.clearDeployerMap();
@@ -410,6 +421,13 @@ public final class ServerService extends AbstractControllerService {
                     ServerLogger.ROOT_LOGGER.fatal(message);
                 }
             }, 1);
+        }
+    }
+
+    protected void finishBoot(boolean suspend) throws ConfigurationPersistenceException {
+        super.finishBoot();
+        if (!suspend) {
+            suspendController.resume();
         }
     }
 
@@ -443,6 +461,19 @@ public final class ServerService extends AbstractControllerService {
 
         // Platform MBeans
         rootResource.registerChild(PlatformMBeanConstants.ROOT_PATH, new RootPlatformMBeanResource());
+
+        final RuntimeCapabilityRegistry capabilityRegistry = managementModel.getCapabilityRegistry();
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        // TODO consider having ManagementModel provide CapabilityRegistry instead of just RuntimeCapabilityRegistry
+        if (capabilityRegistry instanceof PossibleCapabilityRegistry) {
+            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+        }
+
     }
 
     @Override

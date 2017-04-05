@@ -21,9 +21,11 @@ package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_SPECIFIED;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.READ_ONLY;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO_LOCAL;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -96,6 +98,9 @@ public class PathRemoveHandler implements OperationStepHandler { // TODO make th
         }
 
         context.removeResource(PathAddress.EMPTY_ADDRESS);
+
+        context.deregisterCapability(PATH_CAPABILITY.getDynamicName(context.getCurrentAddressValue()));
+        RELATIVE_TO_LOCAL.removeCapabilityRequirements(context, model.get(RELATIVE_TO.getName()));
 
         if (pathManager != null) {
             final PathEventContextImpl pathEventContext = pathManager.checkRestartRequired(context, name, Event.REMOVED);

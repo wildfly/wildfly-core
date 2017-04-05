@@ -122,16 +122,18 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        setupDomain(false);
+        setupDomain(false, false);
     }
 
-    public static void setupDomain(boolean slaveIsBackupDC) throws Exception {
+    public static void setupDomain(boolean slaveIsBackupDC, boolean slaveIsCachedDc) throws Exception {
         //Make all the configs read-only so we can stop and start when we like to reset
         DomainTestSupport.Configuration config = DomainTestSupport.Configuration.create(AutoIgnoredResourcesDomainTestCase.class.getSimpleName(),
                 "domain-configs/domain-auto-ignore.xml", "host-configs/host-auto-ignore-master.xml", "host-configs/host-auto-ignore-slave.xml",
                 true, true, true);
         if (slaveIsBackupDC)
             config.getSlaveConfiguration().setBackupDC(true);
+        if (slaveIsCachedDc)
+            config.getSlaveConfiguration().setCachedDC(true);
         testSupport = DomainTestSupport.create(config);
         // Start!
         testSupport.start();
@@ -539,7 +541,7 @@ public class AutoIgnoredResourcesDomainTestCase {
     public void test62_RestartDomainAndReloadReadOnlyConfig() throws Exception {
         //Clean up after ourselves for the next round of tests /////////////
         // start with --backup
-        restartDomainAndReloadReadOnlyConfig(true);
+        restartDomainAndReloadReadOnlyConfig(true, false);
     }
 
     /////////////////////////////////////////////////////////////////
@@ -580,6 +582,42 @@ public class AutoIgnoredResourcesDomainTestCase {
         setIgnoreUnusedConfiguration(false);
         checkFullConfiguration();
     }
+
+    @Test
+    public void test68_RestartDomainAndReloadReadOnlyConfig() throws Exception {
+        //Clean up after ourselves for the next round of tests /////////////
+        // start with --cached-dc and reseting ignore-unused-configuration=true
+        restartDomainAndReloadReadOnlyConfig(false, true);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration=true and --cached-dc set
+    // the behavior is as if the ignore-unused-configuration attribute had a value of 'true'
+    @Test
+    public void test69_IgnoreUnusedConfigurationAttrTrueCachedDc() throws Exception {
+        test00_CheckInitialBootExclusions();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration is undefined and --cached-dc set
+    // the behavior is as if the ignore-unused-configuration attribute had a value of 'true'
+    // When ignore-unused-configuration is unset and --backup is provided, then ignore-unused-configuration
+    // behaves as if it is set to false, and nothing is ignored. This behavior does not happen for --cached-dc,
+    // so providing both of them does still make some sense.
+    @Test
+    public void test70_IgnoreUnusedConfigurationAttrUndefinedCachedDc() throws Exception {
+        undefineIgnoreUnsusedConfiguration();
+        test00_CheckInitialBootExclusions();
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // ignore-unused-configuration=false and --cached-dc set
+    @Test
+    public void test71_IgnoreUnusedConfigurationAttrFalseCachedDc() throws Exception {
+        setIgnoreUnusedConfiguration(false);
+        checkFullConfiguration();
+    }
+
 
 
     /////////////////////////////////////////////////////////////////
@@ -719,15 +757,15 @@ public class AutoIgnoredResourcesDomainTestCase {
     }
 
     private void restartDomainAndReloadReadOnlyConfig() throws Exception {
-        restartDomainAndReloadReadOnlyConfig(false);
+        restartDomainAndReloadReadOnlyConfig(false, false);
     }
 
-    private void restartDomainAndReloadReadOnlyConfig(boolean slaveIsBackupDC) throws Exception {
+    private void restartDomainAndReloadReadOnlyConfig(boolean slaveIsBackupDC, boolean slaveIsCachedDC) throws Exception {
         DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
         testSupport.stop();
 
         //Totally reinitialize the domain client
-        setupDomain(slaveIsBackupDC);
+        setupDomain(slaveIsBackupDC, slaveIsCachedDC);
         setup();
         //Check we're back to where we were
         test00_CheckInitialBootExclusions();

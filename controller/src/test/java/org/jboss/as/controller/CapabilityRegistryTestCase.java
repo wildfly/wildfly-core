@@ -59,7 +59,7 @@ import org.xnio.XnioWorker;
 public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     // # of capabilities always present
-    private static final int MIN_CAP_COUNT = 1;
+    private static final int MIN_CAP_COUNT = 2;
 
     private static int expectedCaps(int overMin) {
         return MIN_CAP_COUNT + overMin;

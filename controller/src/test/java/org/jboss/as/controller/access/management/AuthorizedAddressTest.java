@@ -576,6 +576,11 @@ public class AuthorizedAddressTest {
         }
 
         @Override
+        public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String... dynamicParts) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public CapabilityServiceSupport getCapabilityServiceSupport() {
             throw new UnsupportedOperationException("Not supported yet.");
         }

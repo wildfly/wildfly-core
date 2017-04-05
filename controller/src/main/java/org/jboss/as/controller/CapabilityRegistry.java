@@ -928,6 +928,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
                 map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
                         + possiblePoint.toPathStyleString())).collect(Collectors.toList());
+        // Any dynamic capability registered to the root address matches (e.g. hardcoded path capabilities)
+        matchers.add(FileSystems.getDefault().getPathMatcher("glob:/"));
 
         // Filter the streams of capabilities to extract matching ones
         return getCapabilities().stream().

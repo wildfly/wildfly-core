@@ -100,7 +100,7 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
 
             // Install the communication services
             HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier);
-            Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector(), false)
+            Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector())
                     .addDependency(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR, ScheduledExecutorService.class, service.getScheduledExecutorInjector())
                     .addDependency(endpointName, Endpoint.class, service.getEndpointInjector())
                     .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getProcessStateServiceInjectedValue())

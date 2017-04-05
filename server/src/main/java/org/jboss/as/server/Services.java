@@ -32,6 +32,7 @@ import org.jboss.msc.service.ServiceName;
  * A holder class for constants containing the names of the core services.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class Services {
 
@@ -50,7 +51,10 @@ public final class Services {
 
     /**
      * The service corresponding to the {@link java.util.concurrent.ExecutorService} for this instance.
+     *
+     * @deprecated use capability org.wildfly.management.executor
      */
+    @Deprecated
     public static final ServiceName JBOSS_SERVER_EXECUTOR = JBOSS_AS.append("server-executor");
 
     /**
@@ -70,8 +74,32 @@ public final class Services {
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
+    /**
+     * Creates dependency on management executor.
+     *
+     * @param builder the builder
+     * @param injector the injector
+     * @param optional whether dependency is optional or mandatory
+     * @param <T> the parameter type
+     * @return service builder instance
+     * @deprecated  This method will be removed in next major release. Please use {@link #addServerExecutorDependency(ServiceBuilder, Injector)} instead.
+     */
+    @Deprecated
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector, boolean optional) {
         ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
-        return builder.addDependency(type, JBOSS_SERVER_EXECUTOR, ExecutorService.class, injector);
+        return builder.addDependency(type, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
     }
+
+    /**
+     * Creates dependency on management executor.
+     *
+     * @param builder the builder
+     * @param injector the injector
+     * @param <T> the parameter type
+     * @return service builder instance
+     */
+    public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector) {
+        return builder.addDependency(ServiceBuilder.DependencyType.REQUIRED, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
+    }
+
 }

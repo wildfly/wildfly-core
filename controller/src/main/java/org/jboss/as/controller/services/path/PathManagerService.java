@@ -22,6 +22,7 @@
 package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +34,13 @@ import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathEntry.PathResolver;
@@ -54,6 +61,8 @@ import org.jboss.msc.service.StopContext;
  */
 public abstract class PathManagerService implements PathManager, Service<PathManager> {
 
+    /** @deprecated ServiceName should be obtained from capability */
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("path", "manager");
 
     //@GuardedBy(pathEntries)
@@ -65,7 +74,14 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
     //@GuardedBy(callbacks)
     private final Map<String, Map<Event, Set<Callback>>> callbacks = new HashMap<String, Map<Event, Set<Callback>>>();
 
+    private final RuntimeCapabilityRegistry capabilityRegistry;
+
     protected PathManagerService() {
+        this.capabilityRegistry = null;
+    }
+
+    protected PathManagerService(RuntimeCapabilityRegistry capabilityRegistry) {
+        this.capabilityRegistry = capabilityRegistry;
     }
 
     /**
@@ -143,6 +159,11 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
     protected final ServiceController<?> addHardcodedAbsolutePath(final ServiceTarget serviceTarget, final String pathName, final String path) {
         ServiceController<?>  controller = addAbsolutePathService(serviceTarget, pathName, path);
         addPathEntry(pathName, path, null, true);
+        if (capabilityRegistry != null) {
+            RuntimeCapability<Void> pathCapability = PATH_CAPABILITY.fromBaseCapability(pathName);
+            capabilityRegistry.registerCapability(
+                    new RuntimeCapabilityRegistration(pathCapability, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        }
         return controller;
     }
 

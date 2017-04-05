@@ -22,19 +22,23 @@
 
 package org.jboss.as.test.manualmode.logging;
 
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketPermission;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.Map;
+import java.util.logging.LoggingPermission;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
@@ -44,6 +48,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -114,7 +119,16 @@ public abstract class AbstractLoggingTestCase {
             manifest.append("Dependencies: io.undertow.core");
         }
         archive.addAsResource(new StringAsset(manifest.toString()), "META-INF/MANIFEST.MF");
-        return archive;
+        return addPermissions(archive,
+                // TODO (jrp) remove this once LOGMGR-149 is resolved
+                // Add the logging permissions as a workaround for LOGMGR-149
+                new LoggingPermission("control", null),
+                new SocketPermission(TestSuiteEnvironment.getHttpAddress()+ ":0", "listen,resolve"));
+    }
+
+    public static JavaArchive addPermissions(final JavaArchive archive, final Permission... additionalPermissions) {
+        final Permission[] permissions = LoggingServiceActivator.appendPermissions(additionalPermissions);
+        return archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(permissions), "permissions.xml");
     }
 
     public static ModelNode executeOperation(final ModelNode op) throws IOException {

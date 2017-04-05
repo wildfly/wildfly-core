@@ -18,7 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.wildfly.extension.elytron.CredentialStoreResourceDefinition.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron.CredentialStoreResourceDefinition.CREDENTIAL_STORE_UTIL;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -48,9 +47,9 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
@@ -83,8 +82,9 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
 
     static final StandardResourceDescriptionResolver RESOURCE_DESCRIPTION_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE, ElytronDescriptionConstants.ALIAS);
 
-    static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, true)
             .setStorageRuntime()
+            .setMinSize(0)
             .build();
 
     private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {SECRET_VALUE, ENTRY_TYPE};
@@ -104,7 +104,6 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
         );
     }
 
-
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
@@ -118,60 +117,6 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(ENTRY_TYPE, null, new WriteAttributeHandler());
     }
 
-    static String alias(ModelNode operation) {
-        String aliasName = null;
-        PathAddress pa = PathAddress.pathAddress(operation.require(OP_ADDR));
-        for (int i = pa.size() - 1; i > 0; i--) {
-            PathElement pe = pa.getElement(i);
-            if (ElytronDescriptionConstants.ALIAS.equals(pe.getKey())) {
-                aliasName = pe.getValue();
-                break;
-            }
-        }
-
-        if (aliasName == null) {
-            throw ROOT_LOGGER.operationAddressMissingKey(ElytronDescriptionConstants.ALIAS);
-        }
-
-        return aliasName.toLowerCase(Locale.ROOT);
-    }
-
-    private static void transformOperationAddress(final ModelNode operation) {
-        Property alias = propertyAliasFromOperation(operation);
-        if (alias != null)
-        {
-            String newAlias = alias.getValue().asString().toLowerCase(Locale.ROOT);
-            alias.getValue().set(newAlias);
-        }
-    }
-
-    private static Property propertyAliasFromOperation(final ModelNode operation) {
-        ModelNode address = operation.get(ModelDescriptionConstants.OP_ADDR);
-        List<Property> list = address.asPropertyList();
-        Property alias = null;
-        for (Property p: list) {
-            if (ElytronDescriptionConstants.ALIAS.equals(p.getName())) {
-                alias = p;
-                break;
-            }
-        }
-        return alias;
-    }
-
-    private static boolean sameAlias(final OperationContext context, final ModelNode operation) {
-        PathElement contextAlias = context.getCurrentAddress().getLastElement();
-        Property operationAlias = propertyAliasFromOperation(operation);
-        boolean outcome = false;
-        if (contextAlias != null && operationAlias != null)
-        {
-            outcome = contextAlias.getValue().equals(operationAlias.getValue().asString());
-        } else {
-            outcome = contextAlias == null && operationAlias == null ? true : false;
-        }
-
-        return  outcome;
-    }
-
     private static class AddHandler extends BaseAddHandler {
 
         AddHandler() {
@@ -180,10 +125,9 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            String alias = alias(operation);
+            String alias = context.getCurrentAddressValue();
             String secretValue = asStringIfDefined(context, SECRET_VALUE, resource.getModel());
             String entryType = asStringIfDefined(context, ENTRY_TYPE, resource.getModel());
-
             ServiceName credentialStoreServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
             @SuppressWarnings("unchecked")
             ServiceController<CredentialStore> serviceContainer = (ServiceController<CredentialStore>) context.getServiceRegistry(true).getRequiredService(credentialStoreServiceName);
@@ -193,7 +137,8 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
                     if (credentialStore.exists(alias, PasswordCredential.class)) {
                         throw ROOT_LOGGER.credentialAlreadyExists(alias, PasswordCredential.class.getName());
                     }
-                    credentialStore.store(alias, createCredentialFromPassword(secretValue.toCharArray()));
+                    char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
+                    credentialStore.store(alias, createCredentialFromPassword(secret));
                     credentialStore.flush();
                 } else {
                     String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
@@ -212,19 +157,14 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
          */
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            transformOperationAddress(operation);
+            if (!CASE_SENSITIVE.resolveModelAttribute(context, context.readResourceFromRoot(context.getCurrentAddress().getParent(), false).getModel()).asBoolean()) {
+                String aliasName = context.getCurrentAddressValue();
+                if (!aliasName.equals(aliasName.toLowerCase(Locale.ROOT))) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidAliasName(aliasName, context.getCurrentAddress().getParent().getLastElement().getValue());
+                }
+            }
             super.execute(context, operation);
         }
-
-        @Override
-        protected Resource createResource(OperationContext context, ModelNode operation) {
-            Resource resource = Resource.Factory.create(true);
-            if (sameAlias(context, operation)) {
-                context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-            }
-            return resource;
-        }
-
     }
 
     private static class RemoveHandler extends CredentialStoreResourceDefinition.CredentialStoreRuntimeOnlyHandler {
@@ -235,10 +175,9 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
-            String alias = alias(operation);
             try {
                 CredentialStore credentialStore = credentialStoreService.getValue();
-                credentialStore.remove(alias, PasswordCredential.class);
+                credentialStore.remove(context.getCurrentAddressValue(), PasswordCredential.class);
                 credentialStore.flush();
             } catch (CredentialStoreException e) {
                 throw new OperationFailedException(e);

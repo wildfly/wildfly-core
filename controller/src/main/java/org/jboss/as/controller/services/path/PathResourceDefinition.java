@@ -28,6 +28,7 @@ import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -42,6 +43,14 @@ import org.jboss.dmr.ModelType;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public abstract class PathResourceDefinition extends SimpleResourceDefinition {
+
+    public static final RuntimeCapability<Void> PATH_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.path", true, String.class)
+                .setAllowMultipleRegistrations(true) // both /host=master/path=x and /path=x are legal and in the same scope
+                                                     // In a better world we'd only set this true in an HC process
+                                                     // but that's more trouble than I want to take. Adding a path
+                                                     // twice in a server will fail in MODEL due to the dup resource anyway
+                .build();
 
     private static final String SPECIFIED_PATH_RESOURCE_PREFIX = "specified_path";
     private static final String NAMED_PATH_RESOURCE_PREFIX = "named_path";
@@ -86,6 +95,14 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
                     .setValidator(new StringLengthValidator(1, true))
                     .build();
 
+    /**
+     * Variant of {@link #RELATIVE_TO} used by path resources themselves. RELATIVE_TO has been used over time
+     * in other resources as a kind of shared attribute definition, and for those use cases the capability
+     * reference configuration we need in the path resource is not appropriate.
+     */
+    static final SimpleAttributeDefinition RELATIVE_TO_LOCAL = new SimpleAttributeDefinitionBuilder(RELATIVE_TO)
+            .setCapabilityReference(PATH_CAPABILITY.getName(), PATH_CAPABILITY)
+            .build();
 
     private final PathManagerService pathManager;
     private final boolean specified;
@@ -105,7 +122,11 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
 *                                should support the {@code resolve-expresssions} parameter
      */
     private PathResourceDefinition(PathManagerService pathManager, ResourceDescriptionResolver resolver, PathAddHandler addHandler, PathRemoveHandler removeHandler, boolean specified, boolean resolvable) {
-        super(PATH_ADDRESS, resolver, addHandler, removeHandler);
+        super(new Parameters(PATH_ADDRESS, resolver)
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setCapabilities(PATH_CAPABILITY)
+        );
         this.pathManager = pathManager;
         this.specified = specified;
         this.resolvable = resolvable;
@@ -202,7 +223,7 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO));
+        resourceRegistration.registerReadWriteAttribute(RELATIVE_TO_LOCAL, null, new PathWriteAttributeHandler(pathManager, RELATIVE_TO_LOCAL));
         SimpleAttributeDefinition pathAttr = specified ? PATH_SPECIFIED : PATH_NAMED;
         resourceRegistration.registerReadWriteAttribute(pathAttr, null, new PathWriteAttributeHandler(pathManager, pathAttr));
         resourceRegistration.registerReadOnlyAttribute(READ_ONLY, null);

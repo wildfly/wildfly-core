@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment.reflect;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,7 +65,13 @@ public final class DeploymentReflectionIndex {
         try {
             ClassReflectionIndex index = classes.get(clazz);
             if (index == null) {
-                classes.put(clazz, index = new ClassReflectionIndex(clazz, this));
+                final SecurityManager sm = System.getSecurityManager();
+                if (sm == null) {
+                    index = new ClassReflectionIndex(clazz, this);
+                } else {
+                    index = AccessController.doPrivileged((PrivilegedAction<ClassReflectionIndex>) () -> new ClassReflectionIndex(clazz, this));
+                }
+                classes.put(clazz, index);
             }
             return index;
         } catch (Throwable e) {

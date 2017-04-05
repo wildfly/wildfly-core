@@ -40,7 +40,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
@@ -61,6 +60,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     public static final SimpleAttributeDefinition SECURE_SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURE_SOCKET_BINDING, ModelType.STRING, true)
@@ -68,6 +68,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(new SensitiveTargetAccessConstraintDefinition(SensitivityClassification.SOCKET_CONFIG))
             .setCapabilityReference(SOCKET_BINDING_CAPABILITY_NAME, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = combine(COMMON_ATTRIBUTES, SOCKET_BINDING, SECURE_SOCKET_BINDING);
@@ -78,8 +79,6 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
         super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("core.management.http-interface"))
             .setAddHandler(HttpManagementAddHandler.INSTANCE)
             .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
-            .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilities(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
         );
     }

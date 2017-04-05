@@ -466,6 +466,15 @@
                  </xs:documentation>
              </xs:annotation>
          </xs:attribute>
+         <xs:attribute name="argument" type="xs:string">
+             <xs:annotation>
+                 <xs:documentation>
+                     Argument to pass into the constructor as the Provider is instantiated.
+
+                     Can only be used where the class names to load are specified.
+                 </xs:documentation>
+             </xs:annotation>
+         </xs:attribute>
      </xs:complexType>
 
     <!--
@@ -635,7 +644,7 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    
+
     <!--
         Domains and Realms
      -->
@@ -964,6 +973,13 @@
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
                 </xs:sequence>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1252,6 +1268,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1309,6 +1332,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1347,6 +1377,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1376,6 +1413,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1397,6 +1441,13 @@
                     <xs:annotation>
                         <xs:documentation>
                             The name of the claim that should be used to obtain the principal's name. Defaults to 'username'.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1445,6 +1496,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -1485,6 +1543,13 @@
             <xs:annotation>
                 <xs:documentation>
                     A policy that defines how host names should be verified when using HTTPS. Allowed values: "ANY".
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2022,22 +2087,23 @@
                 <xs:attribute name="relative-to" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
-                            A reference to a previously defined path that the path of the KeyTab is
-                            relative to.
+                            The name of another previously named path, or of one of the standard paths provided by the system.
+                            If 'relative-to' is provided, the value of the 'path' attribute is treated as relative
+                            to the path specified by this attribute.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="minimum-remaining-lifetime" type="xs:int" default="0">
                     <xs:annotation>
                         <xs:documentation>
-                            How much lifetime should a cached credential have remaining before it is recreated.
+                            How much lifetime (in seconds) should a cached credential have remaining before it is recreated.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="request-lifetime" type="xs:int">
                     <xs:annotation>
                         <xs:documentation>
-                            How much lifetime should be requested for newly created credentials.
+                            How much lifetime (in seconds) should be requested for newly created credentials.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2064,10 +2130,19 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="mechanism-oids" type="stringListType" use="required">
+                <xs:attribute name="mechanism-names" type="stringListType" default="KRB5 SPNEGO">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The mechanism names the credential should be usable with.
+                            Names will be converted to OIDs and used together with OIDs from mechanism-oids attribute.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="mechanism-oids" type="stringListType">
                     <xs:annotation>
                         <xs:documentation>
                             The mechanism OIDs the credential should be usable with.
+                            Will be used together with OIDs derived from names from mechanism-names attribute.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3810,7 +3885,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the KeyManagerFactory.
@@ -3883,7 +3958,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the TrustManagerFactory.
@@ -4037,21 +4112,21 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="maximum-session-cache-size" type="xs:nonNegativeInteger" default="0">
+        <xs:attribute name="maximum-session-cache-size" type="xs:int" default="-1">
             <xs:annotation>
                 <xs:documentation>
-                    The maximum number of SSL sessions in the cache. The default value zero means there is no limit.
+                    The maximum number of SSL sessions in the cache. The default value -1 means use the JVM default value. Value zero means there is no limit.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="session-timeout" type="xs:nonNegativeInteger" default="0">
+        <xs:attribute name="session-timeout" type="xs:int" default="-1">
             <xs:annotation>
                 <xs:documentation>
-                    The timeout for SSL sessions, in seconds. The default value zero means there is no limit.
+                    The timeout for SSL sessions, in seconds. The default value -1 means use the JVM default value. Value zero means there is no limit.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="wrap" type="xs:boolean" default="true">
+        <xs:attribute name="wrap" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Should the resulting SSLEngine, SSLSocketFactory, and SSLSocket instances returned by this SSLContext
@@ -4138,17 +4213,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="maximum-session-cache-size" type="xs:nonNegativeInteger" default="0">
+        <xs:attribute name="maximum-session-cache-size" type="xs:int" default="-1">
             <xs:annotation>
                 <xs:documentation>
-                    The maximum number of SSL sessions in the cache. The default value zero means there is no limit.
+                    The maximum number of SSL sessions in the cache. The default value -1 means use the JVM default value. Value zero means there is no limit.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="session-timeout" type="xs:nonNegativeInteger" default="0">
+        <xs:attribute name="session-timeout" type="xs:int" default="-1">
             <xs:annotation>
                 <xs:documentation>
-                    The timeout for SSL sessions, in seconds. The default value zero means there is no limit.
+                    The timeout for SSL sessions, in seconds. The default value -1 means use the JVM default value. Value zero means there is no limit.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4247,13 +4322,6 @@
                     to search for the one that can create the required KeyStore type.
 
                     If this is not specified then the global list of Providers is used instead.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="password" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The password to use when initialising / loading the KeyStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4556,18 +4624,25 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the credential sotre is case sensitive and should then allow for upper case in alias.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!--
-        General Types
-     -->
+       General Types
+    -->
 
-     <xs:complexType name="basicFileType">
-         <xs:annotation>
-             <xs:documentation>
-                 Minimal attributes required to specify the location to a file.
-             </xs:documentation>
-         </xs:annotation>
+    <xs:complexType name="basicFileType">
+        <xs:annotation>
+            <xs:documentation>
+                Minimal attributes required to specify the location to a file.
+            </xs:documentation>
+        </xs:annotation>
         <xs:attribute name="relative-to" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4583,7 +4658,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-     </xs:complexType>
+    </xs:complexType>
 
     <xs:complexType name="fileType">
         <xs:annotation>
@@ -4594,7 +4669,7 @@
         <xs:complexContent>
             <xs:extension base="basicFileType">
                 <xs:attribute name="required" type="xs:boolean"
-                    use="optional" default="false">
+                              use="optional" default="false">
                     <xs:annotation>
                         <xs:documentation>
                             It is possible that a KeyStore definition can be created to a

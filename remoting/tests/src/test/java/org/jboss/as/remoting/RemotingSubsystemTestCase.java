@@ -48,8 +48,7 @@ import org.jboss.remoting3.Endpoint;
 import org.junit.Test;
 import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
-import org.xnio.OptionMap;
-import org.xnio.Options;
+import org.xnio.Xnio;
 import org.xnio.XnioWorker;
 
 /**
@@ -145,10 +144,10 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
             protected void addExtraServices(ServiceTarget target) {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
-                target.addService(IOServices.WORKER.append("default"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
+                target.addService(IOServices.WORKER.append("default"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
                         .setInitialMode(ServiceController.Mode.ACTIVE)
                         .install();
-                target.addService(IOServices.WORKER.append("default-remoting"), new WorkerService(OptionMap.builder().set(Options.WORKER_IO_THREADS, 2).getMap()))
+                target.addService(IOServices.WORKER.append("default-remoting"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
                         .setInitialMode(ServiceController.Mode.ACTIVE)
                         .install();
             }

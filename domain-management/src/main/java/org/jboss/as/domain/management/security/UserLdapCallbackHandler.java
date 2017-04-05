@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -43,6 +44,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
+import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
@@ -134,7 +136,8 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 try {
                     SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, p.getName());
 
-                    return new MappedPrincipal(searchResult.getResult().getSimpleName(), p.getName());
+                    return p instanceof RealmUser ? new MappedPrincipal(((RealmUser) p).getRealm(), searchResult.getResult().getSimpleName(), p.getName())
+                            : new MappedPrincipal(searchResult.getResult().getSimpleName(), p.getName());
                 } catch (IllegalStateException | IOException | NamingException e) {
                     return p;
                 }
@@ -334,12 +337,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
 
                 return new RealmIdentityImpl(new NamePrincipal(name), ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
+            } catch (IOException | CommunicationException e) {
+                safeClose(ldapConnectionHandler);
+                throw new RealmUnavailableException(e);
             } catch (IllegalStateException | NamingException e) {
                 safeClose(ldapConnectionHandler);
                 return RealmIdentity.NON_EXISTENT;
-            } catch (IOException e) {
-                safeClose(ldapConnectionHandler);
-                throw new RealmUnavailableException(e);
             }
         }
 
@@ -421,19 +424,18 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
         }
     }
 
-    static class MappedPrincipal implements Principal {
+    static class MappedPrincipal extends RealmUser {
 
-        private final String name;
         private final String originalName;
 
         MappedPrincipal(final String name, final String originalName) {
-            this.name = checkNotNullParam("name", name);
+            super(checkNotNullParam("name", name));
             this.originalName = checkNotNullParam("originalName", originalName);
         }
 
-        @Override
-        public String getName() {
-            return name;
+        MappedPrincipal(final String realm, final String name, final String originalName) {
+            super(realm, checkNotNullParam("name", name));
+            this.originalName = checkNotNullParam("originalName", originalName);
         }
 
         public String getOriginalName() {
@@ -445,12 +447,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
         }
 
         public boolean equals(final MappedPrincipal obj) {
-            return obj != null && name.equals(obj.name);
+            return obj != null && getName().equals(obj.getName());
         }
 
         @Override
         public int hashCode() {
-            return name.hashCode();
+            return getName().hashCode();
         }
 
     }

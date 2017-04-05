@@ -155,6 +155,9 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);
         ModuleIndexService.addService(serviceTarget);
+        //Add server path manager service
+        ServerPathManagerService serverPathManagerService = new ServerPathManagerService(configuration.getCapabilityRegistry());
+        ServerPathManagerService.addService(serviceTarget, serverPathManagerService, serverEnvironment);
         final AbstractVaultReader vaultReader = loadVaultReaderService();
         ServerLogger.AS_ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
         ServerService.addService(serviceTarget, configuration, processState, bootstrapListener, runningModeControl, vaultReader, configuration.getAuditLogger(),
@@ -180,9 +183,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         // Add server environment
         ServerEnvironmentService.addService(serverEnvironment, serviceTarget);
 
-        //Add server path manager service
-        ServerPathManagerService serverPathManagerService = new ServerPathManagerService();
-        ServerPathManagerService.addService(serviceTarget, serverPathManagerService, serverEnvironment);
 
         // Add product config service
         final Value<ProductConfig> productConfigValue = new ImmediateValue<ProductConfig>(config);

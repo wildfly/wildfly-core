@@ -27,10 +27,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIL
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathInfoHandler;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -40,12 +42,20 @@ import org.jboss.dmr.ModelType;
  */
 public class DeploymentScannerDefinition extends SimpleResourceDefinition {
 
+    static final String PATH_MANAGER_CAPABILITY = "org.wildfly.management.path-manager";
+
+    static final RuntimeCapability<Void> SCANNER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.management.deployment-scanner", true, DeploymentScanner.class)
+            .addRequirements(PATH_MANAGER_CAPABILITY)
+            .build();
+
     private final PathManager pathManager;
 
     DeploymentScannerDefinition(final PathManager pathManager) {
-        super(DeploymentScannerExtension.SCANNERS_PATH,
-                DeploymentScannerExtension.getResourceDescriptionResolver("deployment.scanner"),
-                new DeploymentScannerAdd(pathManager), DeploymentScannerRemove.INSTANCE
+        super(new Parameters(DeploymentScannerExtension.SCANNERS_PATH,
+                DeploymentScannerExtension.getResourceDescriptionResolver("deployment.scanner"))
+                .setAddHandler(new DeploymentScannerAdd(pathManager))
+                .setRemoveHandler(DeploymentScannerRemove.INSTANCE)
+                .setCapabilities(SCANNER_CAPABILITY)
         );
         this.pathManager = pathManager;
     }
@@ -68,6 +78,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)
                     .setXmlName(Attribute.RELATIVE_TO.getLocalName())
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
+                    .setCapabilityReference("org.wildfly.management.path")
                     .build();
     protected static final SimpleAttributeDefinition SCAN_ENABLED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_ENABLED, ModelType.BOOLEAN, true)

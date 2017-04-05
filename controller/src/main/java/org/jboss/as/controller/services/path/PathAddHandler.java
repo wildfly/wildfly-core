@@ -19,8 +19,10 @@
 package org.jboss.as.controller.services.path;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_SPECIFIED;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO_LOCAL;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -111,9 +113,10 @@ public class PathAddHandler implements OperationStepHandler {  // TODO make this
         final ModelNode model = resource.getModel();
         final String name = context.getCurrentAddressValue();
         pathAttribute.validateAndSet(operation, model);
-        RELATIVE_TO.validateAndSet(operation, model);
+        RELATIVE_TO_LOCAL.validateAndSet(operation, model);
 
-
+        context.registerCapability(PATH_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()));
+        RELATIVE_TO_LOCAL.addCapabilityRequirements(context, model.get(RELATIVE_TO.getName()));
 
         if (pathManager != null) {
             final String path = getPathValue(context, PATH_SPECIFIED, model);

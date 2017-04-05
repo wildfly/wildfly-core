@@ -43,6 +43,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 
+import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.PathAddress;
@@ -750,7 +751,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
         TestServiceListener listener = new TestServiceListener();
         listener.reset(1);
-        getContainer().addService(PathManagerService.SERVICE_NAME, pathManagerService)
+        getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
                 .addListener(listener)
                 .install();
 

@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>3.0.0.Beta10-SNAPSHOT</version>
+        <version>3.0.0.Beta14-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -191,6 +191,7 @@
                     </systemPropertyVariables>
                     <includes>
                          <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
+                         <include>org/jboss/as/test/integration/domain/cacheddc/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/respawn/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/events/*TestCase.java</include>

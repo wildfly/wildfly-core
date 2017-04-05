@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_RUNTIME_CAPABILITY;
@@ -121,7 +120,7 @@ class SSLDefinitions {
     static final ServiceUtil<SSLContext> SERVER_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SERVER_SSL_CONTEXT, SSLContext.class);
     static final ServiceUtil<SSLContext> CLIENT_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, SSLContext.class);
 
-    static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -205,20 +204,20 @@ class SSLDefinitions {
     static final SimpleAttributeDefinition MAXIMUM_SESSION_CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_SESSION_CACHE_SIZE, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(new IntRangeValidator(-1))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition SESSION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SESSION_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
-            .setValidator(new IntRangeValidator(0))
+            .setValidator(new IntRangeValidator(-1))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition WRAP = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(new ModelNode(false))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -301,9 +300,7 @@ class SSLDefinitions {
                 .setAllowExpression(false)
                 .build();
 
-        final ObjectTypeAttributeDefinition credentialReferenceDefinition = CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, false)
-                .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY)
-                .build();
+        final ObjectTypeAttributeDefinition credentialReferenceDefinition = CredentialReference.getAttributeDefinition(true);
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition};
 
@@ -311,7 +308,7 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<KeyManager[]> getValueSupplier(ServiceBuilder<KeyManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithm = ALGORITHM.resolveModelAttribute(context, model).asString();
+                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
                 String providersName = asStringIfDefined(context, providersDefinition, model);
@@ -331,6 +328,7 @@ class SSLDefinitions {
                 }
 
                 final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String algorithm = algorithmName != null ? algorithmName : KeyManagerFactory.getDefaultAlgorithm();
 
                 ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
                         CredentialReference.getCredentialSourceSupplier(context, credentialReferenceDefinition, model, serviceBuilder);
@@ -416,7 +414,7 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<TrustManager[]> getValueSupplier(ServiceBuilder<TrustManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithm = ALGORITHM.resolveModelAttribute(context, model).asString();
+                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
                 String providerLoader = asStringIfDefined(context, providersDefinition, model);
@@ -436,6 +434,7 @@ class SSLDefinitions {
                 }
 
                 final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String algorithm = algorithmName != null ? algorithmName : TrustManagerFactory.getDefaultAlgorithm();
 
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
 
@@ -445,6 +444,7 @@ class SSLDefinitions {
 
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
+
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
 

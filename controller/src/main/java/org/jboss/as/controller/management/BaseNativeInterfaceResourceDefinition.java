@@ -22,11 +22,11 @@
 
 package org.jboss.as.controller.management;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.management.Capabilities.NATIVE_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -40,7 +40,6 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -59,7 +58,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-        .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+        .setRestartAllServices()
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
         .setDeprecated(ModelVersion.create(5))
@@ -69,7 +68,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setRequires(ModelDescriptionConstants.SECURITY_REALM)
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setDeprecated(ModelVersion.create(5))
         .build();
 
@@ -78,20 +77,20 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setAllowExpression(true)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
         .setDefaultValue(new ModelNode(ModelDescriptionConstants.REMOTE))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setDeprecated(ModelVersion.create(5))
         .build();
 
     public static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SASL_AUTHENTICATION_FACTORY, ModelType.STRING, true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
         .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_FACTORY_REF)
         .build();
 
     public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setCapabilityReference(SSL_CONTEXT_CAPABILITY, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY)
         .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SSL_REF)
         .build();

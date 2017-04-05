@@ -72,6 +72,7 @@ import org.jboss.logmanager.config.LoggerConfiguration;
 import org.jboss.logmanager.config.PojoConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
 import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.AsyncHandler;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
@@ -322,6 +323,10 @@ final class HandlerOperations {
                     configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name);
                 } else {
                     configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name, constructionProperties);
+                }
+                // If this is an AsyncHandler we need to setCloseChildren() to false
+                if (AsyncHandler.class.getName().equals(className)) {
+                    configuration.setPropertyValueString("closeChildren", "false");
                 }
             }
             return configuration;

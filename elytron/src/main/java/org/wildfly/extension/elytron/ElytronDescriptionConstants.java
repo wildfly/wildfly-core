@@ -49,6 +49,7 @@ interface ElytronDescriptionConstants {
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
+    String ARGUMENT = "argument";
     String ATTRIBUTE = "attribute";
     String ATTRIBUTE_MAPPING = "attribute-mapping";
     String ATTRIBUTE_NAME = "attribute-name";
@@ -71,6 +72,7 @@ interface ElytronDescriptionConstants {
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
     String CACHING_REALM = "caching-realm";
+    String CASE_SENSITIVE = "case-sensitive";
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_CHAIN = "certificate-chain";
@@ -257,6 +259,7 @@ interface ElytronDescriptionConstants {
     String MECHANISM_CONFIGURATION = "mechanism-configuration";
     String MECHANISM_CONFIGURATIONS = "mechanism-configurations";
     String MECHANISM_NAME = "mechanism-name";
+    String MECHANISM_NAMES = "mechanism-names";
     String MECHANISM_OIDS = "mechanism-oids";
     String MECHANISM_PROPERTIES = "mechanism-properties";
     String MECHANISM_PROVIDER_FILTERING_SASL_SERVER_FACTORY = "mechanism-provider-filtering-sasl-server-factory";

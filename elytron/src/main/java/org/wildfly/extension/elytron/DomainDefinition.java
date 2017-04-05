@@ -57,6 +57,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -463,7 +464,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource)
                 throws OperationFailedException {
             super.populateModel(context, operation, resource);
-            validateDefaultRealmInRealms(context, resource);
+            context.addStep(new DomainValidationHandler(), Stage.MODEL);
         }
 
         @Override
@@ -495,30 +496,41 @@ class DomainDefinition extends SimpleResourceDefinition {
         }
 
         protected void validateUpdatedModel(final OperationContext context, final Resource resource) throws OperationFailedException {
-            validateDefaultRealmInRealms(context, resource);
+            // Defer validation to end of model stage.
+            context.addStep(new DomainValidationHandler(), Stage.MODEL);
         }
 
     }
 
-    private static void validateDefaultRealmInRealms(final OperationContext context, final Resource resource) throws OperationFailedException {
-        ModelNode model = resource.getModel();
-        String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asString();
-        List<ModelNode> realms = REALMS.resolveModelAttribute(context, model).asList();
+    private static class DomainValidationHandler implements OperationStepHandler {
 
-        for(ModelNode realm : realms) {
-            String realmName = REALM_NAME.resolveModelAttribute(context, realm).asString();
-            if (defaultRealm.equals(realmName)) {
-                return;
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+
+
+            List<ModelNode> realms = REALMS.resolveModelAttribute(context, model).asList();
+
+            Set<String> realmNames = new HashSet<>(realms.size());
+
+            for(ModelNode realm : realms) {
+                String realmName = REALM_NAME.resolveModelAttribute(context, realm).asString();
+                if (realmNames.add(realmName) == false) {
+                    throw ROOT_LOGGER.realmRefererencedTwice(realmName);
+                }
+            }
+
+            String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asString();
+            if (realmNames.contains(defaultRealm) == false) {
+                StringBuilder realmsStringBuilder = new StringBuilder();
+                for(String currentRealm : realmNames) {
+                    if (realmsStringBuilder.length() != 0) realmsStringBuilder.append(", ");
+                    realmsStringBuilder.append(currentRealm);
+                }
+                throw ROOT_LOGGER.defaultRealmNotReferenced(defaultRealm, realmsStringBuilder.toString());
             }
         }
-
-        // validation failed
-        StringBuilder realmsStringBuilder = new StringBuilder();
-        for(ModelNode realm : realms) {
-            if (realmsStringBuilder.length() != 0) realmsStringBuilder.append(", ");
-            realmsStringBuilder.append(REALM_NAME.resolveModelAttribute(context, realm).asString());
-        }
-        throw ROOT_LOGGER.defaultRealmNotReferenced(defaultRealm, realmsStringBuilder.toString());
     }
+
 }
 

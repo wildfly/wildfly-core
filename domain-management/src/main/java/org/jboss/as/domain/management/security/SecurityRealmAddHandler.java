@@ -72,7 +72,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -100,6 +99,7 @@ import org.jboss.msc.value.InjectedValue;
 public class SecurityRealmAddHandler implements OperationStepHandler {
 
     private static final String ELYTRON_CAPABILITY = "org.wildfly.security.elytron";
+    private static final String PATH_MANAGER_CAPABILITY = "org.wildfly.management.path-manager";
 
     public static final SecurityRealmAddHandler INSTANCE = new SecurityRealmAddHandler();
 
@@ -250,7 +250,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 .setInitialMode(ON_DEMAND)
                 .install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName);
     }
 
     private void addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
@@ -262,7 +262,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<?> ccBuilder = serviceTarget.addService(kerberosServiceName, kerberosCallbackHandler);
         ccBuilder.setInitialMode(ON_DEMAND).install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName);
     }
 
     private void addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,
@@ -280,7 +280,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         jaasBuilder.setInitialMode(ON_DEMAND).install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName);
     }
 
     private <R, K> LdapCacheService<R, K> createCacheService(OperationContext context, LdapSearcher<R, K> searcher,
@@ -337,12 +337,12 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapServiceName, ldapCallbackHandler);
         String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, ldapCallbackHandler.getConnectionManagerInjector(), connectionManager, false);
+        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, ldapCallbackHandler.getConnectionManagerInjector(), connectionManager);
         LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, ldapCallbackHandler.getLdapUserSearcherInjector(), true, true, realmName);
 
         ldapBuilder.setInitialMode(ON_DEMAND).install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, ldapServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, ldapServiceName);
     }
 
     private void addLocalService(OperationContext context, ModelNode local, String realmName, ServiceTarget serviceTarget,
@@ -361,7 +361,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 .setInitialMode(ON_DEMAND)
                 .install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName);
     }
 
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
@@ -377,11 +377,11 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 pluginName, properties, mechanism);
 
         ServiceBuilder<CallbackHandlerService> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInService);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInService.getPlugInLoaderServiceValue(), realmName, false);
+        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInService.getPlugInLoaderServiceValue(), realmName);
 
         plugInBuilder.setInitialMode(ON_DEMAND).install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
     }
 
     private void addPropertiesAuthenticationService(OperationContext context, ModelNode properties, String realmName,
@@ -400,14 +400,15 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsCallbackHandler);
 
         if (relativeTo != null) {
-            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                    PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
             propsBuilder.addDependency(pathName(relativeTo));
         }
 
         propsBuilder.setInitialMode(ON_DEMAND)
                 .install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
     }
 
     private void addPropertiesAuthorizationService(OperationContext context, ModelNode properties,
@@ -423,13 +424,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsSubjectSupplemental);
         if (relativeTo != null) {
-            propsBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
+            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                    PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
             propsBuilder.addDependency(pathName(relativeTo));
         }
 
         propsBuilder.setInitialMode(ON_DEMAND).install();
 
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName, false);
+        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
     }
 
     private void addPlugInAuthorizationService(OperationContext context, ModelNode model, String realmName,
@@ -442,11 +444,11 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         PlugInSubjectSupplemental plugInSubjectSupplemental = new PlugInSubjectSupplemental(realmName, pluginName, properties);
 
         ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInSubjectSupplemental);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInSubjectSupplemental.getPlugInLoaderServiceValue(), realmName, false);
+        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInSubjectSupplemental.getPlugInLoaderServiceValue(), realmName);
 
         plugInBuilder.setInitialMode(ON_DEMAND).install();
 
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName, false);
+        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
     }
 
     private void addLdapAuthorizationService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
@@ -541,7 +543,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         LdapSubjectSupplementalService service = new LdapSubjectSupplementalService(realmName, shareConnection, forceUserDnSearch, iterative, groupName);
         ServiceBuilder<SubjectSupplementalService> ldapBuilder = serviceTarget.addService(ldapName, service)
                 .setInitialMode(ON_DEMAND);
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, service.getConnectionManagerInjector(), connectionName, false);
+        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, service.getConnectionManagerInjector(), connectionName);
         if (userSearcher != null) {
             LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapUserSearcherInjector(), false, true, realmName);
         }
@@ -549,7 +551,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         ldapBuilder.install();
 
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, ldapName, false);
+        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, ldapName);
     }
 
     private void addSSLServices(OperationContext context, ModelNode ssl, ModelNode trustStore, String realmName,
@@ -676,7 +678,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
 
             if (relativeTo != null) {
-                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                        PathManager.class, keyManagerService.getPathManagerInjector());
                 serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
@@ -704,7 +707,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
             if (relativeTo != null) {
-                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, trustManagerService.getPathManagerInjector());
+                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                        PathManager.class, trustManagerService.getPathManagerInjector());
                 serviceBuilder.addDependency(pathName(relativeTo));
             }
         }
@@ -724,7 +728,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 .setInitialMode(ON_DEMAND)
                 .install();
 
-        CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName, false);
+        CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName);
     }
 
     private void addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
@@ -761,7 +765,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                  ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
 
                 if (relativeTo != null) {
-                    keytabBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, ks.getPathManagerInjector());
+                    keytabBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
+                            PathManager.class, ks.getPathManagerInjector());
                     keytabBuilder.addDependency(pathName(relativeTo));
                 }
 
@@ -785,7 +790,7 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName, false);
+        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName);
     }
 
     private static ServiceName pathName(String relativeTo) {

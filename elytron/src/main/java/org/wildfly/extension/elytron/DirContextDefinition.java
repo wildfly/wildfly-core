@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
@@ -60,6 +59,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.realm.ldap.DirContextFactory;
@@ -93,8 +93,8 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE =
-            CredentialReference.getAttributeBuilder(CredentialReference.CREDENTIAL_REFERENCE, CredentialReference.CREDENTIAL_REFERENCE, true)
-                    .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
+            CredentialReference.getAttributeBuilder(true, true)
+                    .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT)
                     .build();
 
     static final SimpleAttributeDefinition ENABLE_CONNECTION_POOLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLE_CONNECTION_POOLING, ModelType.BOOLEAN, true)
@@ -115,6 +115,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
+            .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE)
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
@@ -170,14 +171,14 @@ class DirContextDefinition extends SimpleResourceDefinition {
             moduleName = MODULE.resolveModelAttribute(context, model).asString();
 
         Module module = null;
-        if(moduleName != null && !moduleName.equals("")){
+        if(moduleName != null && !"".equals(moduleName)){
             try {
                 Module cm = Module.getCallerModule();
                 ModuleIdentifier mi = ModuleIdentifier.create(moduleName);
                 //module = Module.getCallerModule().getModule(ModuleIdentifier.create(moduleName));
                 module = cm.getModule(mi);
             } catch (ModuleLoadException e) {
-                throw new OperationFailedException(e);
+                throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModule(moduleName, e);
             }
         }
         final Module finalModule = module;

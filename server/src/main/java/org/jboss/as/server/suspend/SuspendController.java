@@ -5,12 +5,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
-import org.jboss.as.controller.ModelController;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.notification.NotificationFilter;
-import org.jboss.as.controller.notification.NotificationHandler;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -18,11 +19,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * The graceful shutdown controller. This class co-ordinates the graceful shutdown and pause/resume of a
@@ -53,7 +49,7 @@ public class SuspendController implements Service<SuspendController> {
 
     private final List<OperationListener> operationListeners = new ArrayList<>();
 
-    private final InjectedValue<ModelController> modelControllerInjectedValue = new InjectedValue<>();
+    private final InjectedValue<NotificationHandlerRegistry> notificationHandlerRegistry = new InjectedValue<>();
 
     private int outstandingCount;
 
@@ -66,6 +62,7 @@ public class SuspendController implements Service<SuspendController> {
     }
 
     public void setStartSuspended(boolean startSuspended) {
+        //TODO: it is not very clear what this boolean stands for now.
         this.startSuspended = startSuspended;
         state = State.SUSPENDED;
     }
@@ -149,19 +146,7 @@ public class SuspendController implements Service<SuspendController> {
 
     @Override
     public synchronized void start(StartContext startContext) throws StartException {
-        if(!startSuspended) {
-            final NotificationFilter filter = notification -> notification.getType().equals(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION);
-            NotificationHandler handler = new NotificationHandler() {
-                @Override
-                public void handleNotification(Notification notification) {
-                    resume();
-                    modelControllerInjectedValue.getValue().getNotificationRegistry().unregisterNotificationHandler(NOTIFICATION_ADDRESS, this, filter);
-                }
-            };
-            modelControllerInjectedValue.getValue().getNotificationRegistry().registerNotificationHandler(NOTIFICATION_ADDRESS, handler, filter);
-            //if the service bounces we don't want to auto resume if we are suspended
-            startSuspended = true;
-        } else {
+        if(startSuspended) {
             ServerLogger.AS_ROOT_LOGGER.startingServerSuspended();
         }
     }
@@ -217,8 +202,8 @@ public class SuspendController implements Service<SuspendController> {
         return this;
     }
 
-    public InjectedValue<ModelController> getModelControllerInjectedValue() {
-        return modelControllerInjectedValue;
+    public InjectedValue<NotificationHandlerRegistry> getNotificationHandlerRegistry() {
+        return notificationHandlerRegistry;
     }
 
     public enum State {

@@ -670,7 +670,7 @@ public abstract class AbstractProxyControllerTest {
         }
 
         @Override
-        protected boolean isExposingClientFactoryAllowed() {
+        protected boolean isExposingClientServicesAllowed() {
             return false; // don't install or it will conflict with the one from MainModelControllerService
         }
 

@@ -24,12 +24,13 @@
 
 package org.wildfly.extension.io;
 
-import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.common.net.CidrAddressTable;
 import org.xnio.OptionMap;
 import org.xnio.Xnio;
 import org.xnio.XnioWorker;
@@ -38,22 +39,27 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
  */
 public class WorkerService implements Service<XnioWorker> {
-    private final OptionMap options;
+    private final XnioWorker.Builder builder;
+    private CidrAddressTable<InetSocketAddress> bindingsTable;
     private XnioWorker worker;
     private volatile StopContext stopContext;
 
-    public WorkerService(OptionMap options) {
-        this.options = options;
+    /**
+     * @deprecated Use {@link #WorkerService(XnioWorker.Builder)} instead to allow setting of full range of options.
+     */
+    public WorkerService(OptionMap optionMap) {
+        this(Xnio.getInstance().createWorkerBuilder().populateFromOptions(optionMap));
+    }
+
+    public WorkerService(XnioWorker.Builder builder) {
+        this.builder = builder;
     }
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        final Xnio xnio = Xnio.getInstance();
-        try {
-            worker = xnio.createWorker(null, options, this::stopDone);
-        } catch (IOException e) {
-            throw new StartException(e);
-        }
+        builder.setTerminationTask(this::stopDone);
+        bindingsTable = builder.getBindAddressConfigurations();
+        worker = builder.build();
     }
 
     @Override
@@ -69,6 +75,10 @@ public class WorkerService implements Service<XnioWorker> {
         this.stopContext = null;
         assert stopContext != null;
         stopContext.complete();
+    }
+
+    CidrAddressTable<InetSocketAddress> getBindingsTable() {
+        return bindingsTable;
     }
 
     @Override

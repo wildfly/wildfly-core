@@ -282,10 +282,23 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * @return The {@link OperationFailedException} for the error.
      */
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
-    RuntimeException unableToAccessEntryFromKeyStore(String keyStore, String alias);
+    RuntimeException unableToAccessEntryFromKeyStore(String alias, String keyStore);
 
     @Message(id = 34, value = "A principal query can only have a single key mapper")
     OperationFailedException jdbcRealmOnlySingleKeyMapperAllowed();
+
+    @Message(id = 35, value = "Unable to load module '%s'.")
+    OperationFailedException unableToLoadModule(String module, @Cause Exception cause);
+
+    /**
+     * A {@link OperationFailedException} for when validating a security domain fails due to the same realm being referenced twice.
+     *
+     * @param realmName the name of the security realm referenced twice.
+     * @return The {@link OperationFailedException} for the error.
+     */
+    @Message(id = 36, value = "Security realm '%s' has been referenced twice in the same security domain.")
+    OperationFailedException realmRefererencedTwice(String realmName);
+
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
@@ -315,6 +328,11 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 917, value = "Password cannot be resolved for dir-context")
     StartException dirContextPasswordCannotBeResolved(@Cause Exception cause);
 
+    @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case alias names")
+    OperationFailedException invalidUsername(String username, String realmName);
+
+    @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
+    OperationFailedException invalidAliasName(String alias, String credntialStore);
     /*
      * Identity Resource Messages - 1000
      */

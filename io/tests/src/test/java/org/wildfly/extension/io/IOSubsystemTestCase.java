@@ -57,12 +57,12 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("io-1.1.xml");
+        return readResource("io-2.0.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_1_1.xsd";
+        return "schema/wildfly-io_2_0.xsd";
     }
 
     @Override
@@ -84,7 +84,7 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
                 .setSubsystemXml(getSubsystemXml());
         KernelServices mainServices = builder.build();
         if (!mainServices.isSuccessfulBoot()) {
-            Assert.fail(mainServices.getBootError().toString());
+            Assert.fail(String.valueOf(mainServices.getBootError()));
         }
         ServiceController<XnioWorker> workerServiceController = (ServiceController<XnioWorker>) mainServices.getContainer().getService(IOServices.WORKER.append("default"));
         workerServiceController.setMode(ServiceController.Mode.ACTIVE);

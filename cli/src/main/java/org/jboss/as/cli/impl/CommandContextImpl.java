@@ -33,8 +33,10 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -114,8 +116,10 @@ import org.jboss.as.cli.batch.impl.DefaultBatchedCommand;
 import org.jboss.as.cli.embedded.EmbeddedControllerHandlerRegistrar;
 import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
 import org.jboss.as.cli.handlers.ArchiveHandler;
+import org.jboss.as.cli.handlers.AttachmentHandler;
 import org.jboss.as.cli.handlers.ClearScreenHandler;
 import org.jboss.as.cli.handlers.CommandCommandHandler;
+import org.jboss.as.cli.handlers.CommandTimeoutHandler;
 import org.jboss.as.cli.handlers.ConnectHandler;
 import org.jboss.as.cli.handlers.ConnectionInfoHandler;
 import org.jboss.as.cli.handlers.DeployHandler;
@@ -136,8 +140,6 @@ import org.jboss.as.cli.handlers.ReadOperationHandler;
 import org.jboss.as.cli.handlers.ReloadHandler;
 import org.jboss.as.cli.handlers.SetVariableHandler;
 import org.jboss.as.cli.handlers.ShutdownHandler;
-import org.jboss.as.cli.handlers.CommandTimeoutHandler;
-import org.jboss.as.cli.handlers.AttachmentHandler;
 import org.jboss.as.cli.handlers.UndeployHandler;
 import org.jboss.as.cli.handlers.UnsetVariableHandler;
 import org.jboss.as.cli.handlers.VersionHandler;
@@ -190,6 +192,11 @@ import org.jboss.stdio.StdioContext;
 import org.wildfly.security.auth.callback.CallbackUtil;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.OptionalNameCallback;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.credential.BearerTokenCredential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -315,6 +322,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     private static final short DEFAULT_TIMEOUT = 0;
     private int timeout = DEFAULT_TIMEOUT;
     private int configTimeout;
+    private ControllerAddress connectionAddress;
 
     /**
      * Version mode - only used when --version is called from the command line.
@@ -1128,46 +1136,46 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     @Override
     public void connectController(String controller) throws CommandLineException {
 
-        ControllerAddress address = addressResolver.resolveAddress(controller);
+        connectionAddress = addressResolver.resolveAddress(controller);
 
         // In case the alias mappings cause us to enter some form of loop or a badly
         // configured server does the same,
         Set<ControllerAddress> visited = new HashSet<ControllerAddress>();
-        visited.add(address);
+        visited.add(connectionAddress);
         boolean retry = false;
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
                 if (log.isDebugEnabled()) {
-                    log.debug("connecting to " + address.getHost() + ':' + address.getPort() + " as " + username);
+                    log.debug("connecting to " + connectionAddress.getHost() + ':' + connectionAddress.getPort() + " as " + username);
                 }
-                ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(address, cbh,
+                ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(connectionAddress, cbh,
                         disableLocalAuth, sslContext, defaultSslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);
                 retry = false;
                 connInfoBean = new ConnectionInfoBean();
-                tryConnection(tempClient, address);
-                initNewClient(tempClient, address, connInfoBean);
+                tryConnection(tempClient, connectionAddress);
+                initNewClient(tempClient, connectionAddress, connInfoBean);
                 connInfoBean.setDisableLocalAuth(disableLocalAuth);
                 connInfoBean.setLoggedSince(new Date());
             } catch (RedirectException re) {
                 try {
                     URI location = new URI(re.getLocation());
-                    if (Util.isHttpsRedirect(re, address.getProtocol())) {
+                    if (Util.isHttpsRedirect(re, connectionAddress.getProtocol())) {
                         int port = location.getPort();
                         if (port < 0) {
                             port = 443;
                         }
-                        address = addressResolver.resolveAddress(new URI("remote+https", null, location.getHost(), port,
+                        connectionAddress = addressResolver.resolveAddress(new URI("remote+https", null, location.getHost(), port,
                                 null, null, null).toString());
-                        if (visited.add(address) == false) {
+                        if (visited.add(connectionAddress) == false) {
                             throw new CommandLineException("Redirect to address already tried encountered Address="
-                                    + address.toString());
+                                    + connectionAddress.toString());
                         }
                         retry = true;
-                    } else if (address.getHost().equals(location.getHost()) && address.getPort() == location.getPort()
+                    } else if (connectionAddress.getHost().equals(location.getHost()) && connectionAddress.getPort() == location.getPort()
                             && location.getPath() != null && location.getPath().length() > 1) {
-                        throw new CommandLineException("Server at " + address.getHost() + ":" + address.getPort()
-                                + " does not support " + address.getProtocol());
+                        throw new CommandLineException("Server at " + connectionAddress.getHost() + ":" + connectionAddress.getPort()
+                                + " does not support " + connectionAddress.getProtocol());
                     } else {
                         throw new CommandLineException("Unsupported redirect received.", re);
                     }
@@ -1175,7 +1183,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     throw new CommandLineException("Bad redirect location '" + re.getLocation() + "' received.", e);
                 }
             } catch (IOException e) {
-                throw new CommandLineException("Failed to resolve host '" + address.getHost() + "'", e);
+                throw new CommandLineException("Failed to resolve host '" + connectionAddress.getHost() + "'", e);
             }
         } while (retry);
     }
@@ -1924,8 +1932,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             showRealm();
                             String temp;
                             try {
-                                if(console == null) {
-                                    if(ERROR_ON_INTERACT) {
+                                if (console == null) {
+                                    if (ERROR_ON_INTERACT) {
                                         interactionDisabled();
                                     }
                                     initBasicConsole(null);
@@ -1948,6 +1956,19 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         // We don't support an interactive use of this callback so it must have been set in advance.
                         final byte[] bytes = CodePointIterator.ofString(digest).hexDecode().drain();
                         cc.setCredential(new PasswordCredential(DigestPassword.createRaw(DigestPassword.ALGORITHM_DIGEST_MD5, username, realm, bytes)));
+                    } else if (cc.isCredentialTypeSupported(BearerTokenCredential.class)) {
+                        AuthenticationContext context = AuthenticationContext.captureCurrent();
+                        AuthenticationContextConfigurationClient client = AccessController.doPrivileged(AuthenticationContextConfigurationClient.ACTION);
+
+                        AuthenticationConfiguration configuration = client.getAuthenticationConfiguration(URI.create(connectionAddress.toString()), context);
+                        CallbackHandler callbackHandler = client.getCallbackHandler(configuration);
+                        context.with(MatchRule.ALL, configuration.useCallbackHandler(this)).run((PrivilegedAction<Object>) () -> {
+                            try {
+                                callbackHandler.handle(callbacks);
+                            } catch (Exception ignore) {
+                            }
+                            return null;
+                        });
                     } else {
                         CallbackUtil.unsupported(current);
                     }

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LoggingPermission;
 
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -47,6 +48,7 @@ import org.jboss.as.test.syslogserver.UDPSyslogServerConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -88,7 +90,11 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
 
     @BeforeClass
     public static void deploy() throws Exception {
-        deploy(createDeployment(Collections.singletonMap("Logging-Profile", "syslog-profile")), DEPLOYMENT_NAME);
+        // TODO (jrp) remove this once LOGMGR-149 is resolved
+        final JavaArchive deployment = createDeployment(Collections.singletonMap("Logging-Profile", "syslog-profile"));
+        // Add the logging permissions as a workaround for LOGMGR-149
+        addPermissions(deployment, new LoggingPermission("control", null));
+        deploy(deployment, DEPLOYMENT_NAME);
     }
 
     @AfterClass

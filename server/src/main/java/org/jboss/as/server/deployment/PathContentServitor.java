@@ -21,8 +21,8 @@
  */
 package org.jboss.as.server.deployment;
 
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -43,10 +43,11 @@ class PathContentServitor extends AbstractService<VirtualFile> {
     private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
     private volatile PathManager.Callback.Handle callbackHandle;
 
-    static ServiceController<VirtualFile> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
+    static ServiceController<VirtualFile> addService(OperationContext context, final ServiceTarget serviceTarget, final ServiceName serviceName, final String path, final String relativeTo) {
         final PathContentServitor service = new PathContentServitor(path, relativeTo);
         return serviceTarget.addService(serviceName, service)
-                .addDependency(PathManagerService.SERVICE_NAME, PathManager.class, service.pathManagerValue)
+                .addDependency(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class),
+                        PathManager.class, service.pathManagerValue)
                 .install();
     }
 

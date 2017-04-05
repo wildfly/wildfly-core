@@ -93,8 +93,8 @@ public interface CapabilityServiceSupport {
      * capability. This method does not confirm that the capability is currently registered.
      *
      * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
-     * @param dynamicPart the dynamic part of the capability name. Cannot be {@code null}
+     * @param dynamicParts the dynamic parts of the capability name. Cannot be {@code null} Can be multiple if capability supports that
      * @return the name of the service. Will not return {@code null}
      */
-    ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart);
+    ServiceName getCapabilityServiceName(String capabilityBaseName, String ... dynamicParts);
 }

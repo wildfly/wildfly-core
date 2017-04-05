@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.wildfly.core.launcher.Arguments.Argument;
 import org.wildfly.core.launcher.logger.LauncherMessages;
 
 /**
@@ -286,10 +287,13 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      */
     public T addServerArgument(final String arg) {
         if (arg != null) {
-            if (SECURITY_MANAGER_ARG.equals(arg)) {
-                setUseSecurityManager(true);
-            } else {
-                serverArgs.add(arg);
+            final Argument argument = Arguments.parse(arg);
+            if (addServerArgument(argument)) {
+                if (SECURITY_MANAGER_ARG.equals(arg)) {
+                    setUseSecurityManager(true);
+                } else {
+                    serverArgs.add(argument);
+                }
             }
         }
         return getThis();
@@ -624,6 +628,17 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     protected String getServerArg(final String key) {
         return serverArgs.get(key);
     }
+
+    /**
+     * Allows the subclass to do additional checking on whether the server argument should be added or not. In some
+     * cases it may be desirable for the argument passed to be added or processed elsewhere.
+     *
+     * @param argument the argument to test
+     *
+     * @return {@code true} if the argument should be added to the server arguments, {@code false} if the argument is
+     * handled by the subclass
+     */
+    abstract boolean addServerArgument(final Argument argument);
 
     @Deprecated
     protected static Path resolveJavaHome(final Path javaHome) {

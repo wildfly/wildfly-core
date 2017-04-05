@@ -176,6 +176,7 @@ public class PlugInLoaderService implements Service<PlugInLoaderService> {
             return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
         }
 
+        @Deprecated
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, InjectedValue<PlugInLoaderService> injector,
                 String realmName, boolean optional) {
             ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
@@ -183,6 +184,11 @@ public class PlugInLoaderService implements Service<PlugInLoaderService> {
 
             return sb;
         }
+
+        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, InjectedValue<PlugInLoaderService> injector, String realmName) {
+            return sb.addDependency(ServiceBuilder.DependencyType.REQUIRED, createServiceName(realmName), PlugInLoaderService.class, injector);
+        }
+
     }
 
 }

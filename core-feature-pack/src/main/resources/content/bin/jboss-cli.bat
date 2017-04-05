@@ -1,5 +1,11 @@
 @echo off
 setlocal ENABLEEXTENSIONS
+
+rem WARNING: Delayed expansion is enabled prior to execute JVM.
+rem Do not enable delayed expansion until the JVM execution.
+rem '!' contained in JBOSS_HOME or JAVA_HOME paths would be removed from variables.
+
+
 rem -------------------------------------------------------------------------
 rem JBoss Admin CLI Script for Windows
 rem -------------------------------------------------------------------------
@@ -64,27 +70,27 @@ set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.system.pkgs=com.sun.java.swing"
 set LOGGING_CONFIG=
 echo "%JAVA_OPTS%" | findstr /I "logging.configuration" > nul
 if errorlevel == 1 (
-  set "LOGGING_CONFIG=-Dlogging.configuration=file:%JBOSS_HOME%\bin\jboss-cli-logging.properties"
+  rem It must be quoted in case JBOSS_HOME contains whitespaces 
+  set LOGGING_CONFIG="-Dlogging.configuration=file:%JBOSS_HOME%\bin\jboss-cli-logging.properties"
 ) else (
   echo logging.configuration already set in JAVA_OPTS
 )
 
+rem the arguments can contain ')' character, this breaks parser. Delaying 
+rem argument evaluation at script execution fixes it.
+setlocal ENABLEDELAYEDEXPANSION
+
+rem script arguments will be evaluated at execution time.
+set ARGS=%*
+
 rem Force following commands to be loaded in memory.
 rem This protects the running script from being rewritten.
 (
-    if "x%LOGGING_CONFIG%" == "x" (
-      "%JAVA%" %JAVA_OPTS% ^
-          -jar "%JBOSS_RUNJAR%" ^
-          -mp "%JBOSS_MODULEPATH%" ^
-           org.jboss.as.cli ^
-             %*
-    ) else (
-      "%JAVA%" %JAVA_OPTS% "%LOGGING_CONFIG%" ^
-          -jar "%JBOSS_RUNJAR%" ^
-          -mp "%JBOSS_MODULEPATH%" ^
-           org.jboss.as.cli ^
-           %*
-    )
+    "!JAVA!" !JAVA_OPTS! !LOGGING_CONFIG! ^
+        -jar "!JBOSS_RUNJAR!" ^
+        -mp "!JBOSS_MODULEPATH!" ^
+         org.jboss.as.cli ^
+         !ARGS!
 
     set /A RC=%errorlevel%
     :END

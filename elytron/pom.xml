@@ -23,10 +23,10 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Beta10-SNAPSHOT</version>
+        <version>3.0.0.Beta14-SNAPSHOT</version>
     </parent>
 
-    <artifactId>wildfly-elytron</artifactId>
+    <artifactId>wildfly-elytron-integration</artifactId>
 
     <name>WildFly: Elytron Subsystem</name>
 

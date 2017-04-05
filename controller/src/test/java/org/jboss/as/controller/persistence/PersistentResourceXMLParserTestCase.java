@@ -541,7 +541,20 @@ public class PersistentResourceXMLParserTestCase {
                 .setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST)
                 .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
                 .build();
-
+        static final ObjectTypeAttributeDefinition SOURCE_CREDENTIAL_REFERENCE = new ObjectTypeAttributeDefinition.Builder("source-credential-reference", ALIAS)
+                .setAttributeGroup("source")
+                .setXmlName("credential-reference")
+                .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
+                .setAttributeParser(AttributeParser.OBJECT_PARSER)
+                .setAllowNull(true)
+                .build();
+        static final ObjectTypeAttributeDefinition TARGET_CREDENTIAL_REFERENCE = new ObjectTypeAttributeDefinition.Builder("target-credential-reference", ALIAS)
+                .setAttributeGroup("target")
+                .setXmlName("credential-reference")
+                .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
+                .setAttributeParser(AttributeParser.OBJECT_PARSER)
+                .setAllowNull(true)
+                .build();
         static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("props", true)
                 .setAttributeMarshaller(AttributeMarshaller.PROPERTIES_MARSHALLER_UNWRAPPED)
                 .setAttributeParser(AttributeParser.PROPERTIES_PARSER_UNWRAPPED)
@@ -827,7 +840,9 @@ public class PersistentResourceXMLParserTestCase {
                                             PROPERTIES,
                                             WRAPPED_PROPERTIES_GROUP,
                                             ALIAS,
-                                            USERS_PROPERTIES
+                                            USERS_PROPERTIES,
+                                            SOURCE_CREDENTIAL_REFERENCE,
+                                            TARGET_CREDENTIAL_REFERENCE
                                     )
                     )
                     .addChild(

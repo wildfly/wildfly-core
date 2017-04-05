@@ -47,12 +47,14 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
@@ -116,9 +118,33 @@ public abstract class AbstractControllerService implements Service<ModelControll
         }
     }
 
+    /** Capability in-vm users of the controller use to create clients */
     protected static final RuntimeCapability<Void> CLIENT_FACTORY_CAPABILITY =
             RuntimeCapability.Builder.of("org.wildfly.managment.model-controller-client-factory", ModelControllerClientFactory.class)
             .build();
+
+    /** Capability in-vm users of the controller use to register notification handlers */
+    protected static final RuntimeCapability<Void> NOTIFICATION_REGISTRY_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.managment.notification-handler-registry", NotificationHandlerRegistry.class)
+                    .build();
+
+    /**
+     * Capability users of the controller use to coordinate changes to paths.
+     * This capability isn't necessarily directly related to this class but we declare it
+     * here as it's as good a place as any at this time.
+     */
+    public static final RuntimeCapability<Void> PATH_MANAGER_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.path-manager", PathManager.class)
+                    .build();
+
+    /**
+     * Capability users of the controller use to perform asynchronous management tasks.
+     * This capability isn't necessarily directly related to this class but we declare it
+     * here as it's as good a place as any at this time.
+     */
+    public static final RuntimeCapability<Void> EXECUTOR_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.executor", ExecutorService.class)
+                    .build();
 
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
         .setPrivateEntry()
@@ -314,16 +340,23 @@ public abstract class AbstractControllerService implements Service<ModelControll
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
 
         // Expose the client factory
-        if (isExposingClientFactoryAllowed()) {
-            ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
+        if (isExposingClientServicesAllowed()) {
             capabilityRegistry.registerCapability(
                     new RuntimeCapabilityRegistration(CLIENT_FACTORY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
             capabilityRegistry.registerPossibleCapability(CLIENT_FACTORY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-            capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
+            capabilityRegistry.registerCapability(
+                    new RuntimeCapabilityRegistration(NOTIFICATION_REGISTRY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+            capabilityRegistry.registerPossibleCapability(NOTIFICATION_REGISTRY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
             target.addService(CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName(),
                     new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))
                     .install();
+            target.addService(NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName(),
+                    new ValueService<NotificationHandlerRegistry>(new ImmediateValue<NotificationHandlerRegistry>(controller.getNotificationRegistry())))
+                    .install();
         }
+        capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
+                                       // We publish even if we didn't register anything in case parent services did
 
         this.controller = controller;
 
@@ -360,10 +393,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     /**
      * Gets whether this controller service should install a {@link ModelControllerClientFactory}
+     * and a {@link org.jboss.as.controller.notification.NotificationHandlerRegistry}
      * as a service. Default is {@code true}; this method allows test infrastructure subclasses to turn this off.
      * @return {@code true} if a service should be installed
      */
-    protected boolean isExposingClientFactoryAllowed() {
+    protected boolean isExposingClientServicesAllowed() {
         return true;
     }
 

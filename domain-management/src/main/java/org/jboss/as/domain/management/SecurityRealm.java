@@ -118,6 +118,7 @@ public interface SecurityRealm {
             return BASE_SERVICE_NAME.append(realmName);
         }
 
+        @Deprecated
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SecurityRealm> injector,
                 String realmName, boolean optional) {
             ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
@@ -125,6 +126,11 @@ public interface SecurityRealm {
 
             return sb;
         }
+
+        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SecurityRealm> injector, String realmName) {
+            return sb.addDependency(ServiceBuilder.DependencyType.REQUIRED, createServiceName(realmName), SecurityRealm.class, injector);
+        }
+
     }
 
 }

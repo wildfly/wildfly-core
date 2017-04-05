@@ -81,7 +81,7 @@ public class ContentCleanerService implements Service<Void> {
                 .addDependency(clientFactoryService, ModelControllerClientFactory.class, service.clientFactoryValue)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateServiceValue)
                 .addDependency(scheduledExecutorServiceName, ScheduledExecutorService.class, service.scheduledExecutorValue);
-        Services.addServerExecutorDependency(builder, service.executorServiceValue, false);
+        Services.addServerExecutorDependency(builder, service.executorServiceValue);
         builder.install();
     }
 
