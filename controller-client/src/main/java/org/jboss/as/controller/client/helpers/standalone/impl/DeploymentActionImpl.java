@@ -59,8 +59,8 @@ public class DeploymentActionImpl implements DeploymentAction, Serializable {
         return new DeploymentActionImpl(Type.DEPLOY, deploymentName, null, null, false, null);
     }
 
-    public static DeploymentActionImpl getExplodeAction(String deploymentName) {
-        return new DeploymentActionImpl(Type.EXPLODE, deploymentName, null, null, false, null);
+    public static DeploymentActionImpl getExplodeAction(String deploymentName, String path) {
+        return new DeploymentActionImpl(Type.EXPLODE, deploymentName, path, null, false, null);
     }
 
     public static DeploymentActionImpl getRedeployAction(String deploymentName) {
