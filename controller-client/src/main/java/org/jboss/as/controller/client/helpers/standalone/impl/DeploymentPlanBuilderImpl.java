@@ -422,7 +422,13 @@ class DeploymentPlanBuilderImpl
 
     @Override
     public DeploymentPlanBuilder explodeDeployment(String deploymentName) throws IOException {
-        DeploymentActionImpl mod = DeploymentActionImpl.getExplodeAction(deploymentName);
+        DeploymentActionImpl mod = DeploymentActionImpl.getExplodeAction(deploymentName, null);
+        return new DeploymentPlanBuilderImpl(this, mod);
+    }
+
+    @Override
+    public DeploymentPlanBuilder explodeDeploymentContent(String deploymentName, String path) throws IOException {
+        DeploymentActionImpl mod = DeploymentActionImpl.getExplodeAction(deploymentName, path);
         return new DeploymentPlanBuilderImpl(this, mod);
     }
 

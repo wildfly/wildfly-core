@@ -228,6 +228,20 @@ public interface DeploymentPlanBuilder {
     DeploymentPlanBuilder explodeDeployment(String deploymentName) throws IOException;
 
     /**
+     * Indicates the deployment content to be exploded.
+     * <p>
+     * Note that this operation does not indicate the content should
+     * be undeployed into the runtime.
+     *
+     * @param deploymentName name by which the deployment is known in the model.
+     * @param path the relative path to the archive to be exploded.
+     *
+     * @return a builder that can continue building the overall deployment plan
+     * @throws java.io.IOException
+     */
+    DeploymentPlanBuilder explodeDeploymentContent(String deploymentName, String path) throws IOException;
+
+    /**
      * Indicates the content readable from the specified <code>InputStream</code>
      * should be added to the content repository.
      * <p>

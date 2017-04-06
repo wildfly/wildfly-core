@@ -40,6 +40,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.NAME;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
+import static org.jboss.as.controller.client.helpers.ClientConstants.PATH;
 import static org.jboss.as.controller.client.helpers.ClientConstants.PATHS;
 import static org.jboss.as.controller.client.helpers.ClientConstants.REMOVE_CONTENT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.ROLLBACK_ON_RUNTIME_FAILURE;
@@ -179,6 +180,9 @@ public abstract class AbstractServerDeploymentManager implements ServerDeploymen
                 }
                 case EXPLODE: {
                     configureDeploymentOperation(step, EXPLODE, uniqueName);
+                    if(action.getReplacedDeploymentUnitUniqueName() != null) {
+                        step.get(PATH).set(action.getReplacedDeploymentUnitUniqueName());
+                    }
                     break;
                 }
                 default: {
