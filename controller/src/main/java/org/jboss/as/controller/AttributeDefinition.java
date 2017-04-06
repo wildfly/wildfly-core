@@ -317,7 +317,7 @@ public abstract class AttributeDefinition {
      *
      * @return {@code true} if an {@code undefined} value is significant
      */
-    public boolean isNullSignificant() {
+    public final boolean isNullSignificant() {
         if (nilSignificant != null) {
             return nilSignificant;
         }

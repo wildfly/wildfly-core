@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
@@ -69,10 +70,13 @@ import org.jboss.dmr.Property;
 public class JmxManagementInterface implements ManagementInterface {
     private final JMXConnector jmxConnector;
     private final String domain;
+    // TODO if WFCORE-2645 is implemented, drop this
+    private final boolean forceStrings;
 
     protected JmxManagementInterface(JMXConnector jmxConnector, String domain) {
         this.jmxConnector = jmxConnector;
         this.domain = domain;
+        this.forceStrings = "jboss.as.expr".equals(domain);
     }
 
     public void close() {
@@ -101,7 +105,12 @@ public class JmxManagementInterface implements ManagementInterface {
         } else if (WRITE_ATTRIBUTE_OPERATION.equals(opName)) {
             String name = JmxInterfaceStringUtils.toCamelCase(op.get(NAME).asString());
             Object value = object(op.get(VALUE));
+            // TODO if WFCORE-2645 is implemented, drop this
+            value = forceStrings && value != null ? value.toString() : value;
             return setAttribute(objectName, name, value);
+        }  else if (UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) {
+            String name = JmxInterfaceStringUtils.toCamelCase(op.get(NAME).asString());
+            return setAttribute(objectName, name, null);
         } else if (READ_RESOURCE_OPERATION.equals(opName)) {
             return getInfo(objectName);
         } else {

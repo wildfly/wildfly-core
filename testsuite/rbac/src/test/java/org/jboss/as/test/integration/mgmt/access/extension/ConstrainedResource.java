@@ -62,10 +62,19 @@ public class ConstrainedResource extends SimpleResourceDefinition {
     static SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder("security-domain", ModelType.STRING)
             .setAllowExpression(true)
             .setAttributeGroup("security")
-            .setAllowNull(true)
+            .setRequired(false)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
             .addAccessConstraint(DS_SECURITY_DEF)
             .build();
+
+    static final SimpleAttributeDefinition AUTHENTICATION_INFLOW = new SimpleAttributeDefinitionBuilder("authentication-inflow", ModelType.BOOLEAN)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setNullSignificant(false)
+            .addAccessConstraint(DS_SECURITY_DEF)
+            .build();
+
 
     static SimpleAttributeDefinition NEW_CONNECTION_SQL = new SimpleAttributeDefinitionBuilder("new-connection-sql", ModelType.STRING, true)
             .setAllowExpression(true)
@@ -100,7 +109,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
     public ConstrainedResource(PathElement pathElement) {
         super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
-                .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN))
+                .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN, AUTHENTICATION_INFLOW))
                 .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "datasource"))));
     }
@@ -110,6 +119,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
         super.registerAttributes(resourceRegistration);
         resourceRegistration.registerReadWriteAttribute(PASSWORD, null, new BasicAttributeWriteHandler(PASSWORD));
         resourceRegistration.registerReadOnlyAttribute(SECURITY_DOMAIN, null);
+        resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_INFLOW, null, new BasicAttributeWriteHandler(AUTHENTICATION_INFLOW));
         resourceRegistration.registerReadOnlyAttribute(JNDI_NAME, null);
         resourceRegistration.registerReadWriteAttribute(NEW_CONNECTION_SQL, null, new BasicAttributeWriteHandler(NEW_CONNECTION_SQL));
     }
