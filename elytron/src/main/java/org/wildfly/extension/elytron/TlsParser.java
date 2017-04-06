@@ -154,7 +154,7 @@ class TlsParser {
     private void readKeyManager(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
         ModelNode addKeyManager = new ModelNode();
         addKeyManager.get(OP).set(ADD);
-        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME, ALGORITHM }));
+        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME }));
         String name = null;
 
         final int count = reader.getAttributeCount();
@@ -224,7 +224,7 @@ class TlsParser {
     private void readTrustManager(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
         ModelNode addKeyManager = new ModelNode();
         addKeyManager.get(OP).set(ADD);
-        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME, ALGORITHM }));
+        Set<String> requiredAttributes = new HashSet<String>(Arrays.asList(new String[] { NAME }));
         String name = null;
 
         final int count = reader.getAttributeCount();

@@ -3885,7 +3885,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the KeyManagerFactory.
@@ -3958,7 +3958,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the TrustManagerFactory.
