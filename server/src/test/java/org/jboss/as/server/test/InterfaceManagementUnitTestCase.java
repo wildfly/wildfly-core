@@ -85,6 +85,7 @@ import org.jboss.modules.Module;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -106,9 +107,11 @@ public class InterfaceManagementUnitTestCase {
 
     private final ServiceContainer container = ServiceContainer.Factory.create();
     private ModelController controller;
+    private volatile boolean dependentStarted;
 
     @Before
     public void before() throws Exception {
+        dependentStarted = false;
         final ServiceTarget target = container.subTarget();
         final ExtensionRegistry extensionRegistry =
                 new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
@@ -123,10 +126,12 @@ public class InterfaceManagementUnitTestCase {
         Service<Void> dependentService = new Service<Void>() {
             @Override
             public void start(StartContext context) throws StartException {
+                dependentStarted = true;
             }
 
             @Override
             public void stop(StopContext context) {
+                dependentStarted = false;
             }
 
             @Override
@@ -134,13 +139,15 @@ public class InterfaceManagementUnitTestCase {
                 return null;
             }
         };
-        target.addService(ServiceName.JBOSS.append("interface", "management", "test", "case", "dependent"), dependentService)
+        ServiceController<Void> dependentController = target.addService(ServiceName.JBOSS.append("interface", "management", "test", "case", "dependent"), dependentService)
                 .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append("test"))
                 .install();
 
         svc.latch.await(20, TimeUnit.SECONDS);
         this.controller = svc.getValue();
 
+        container.awaitStability(20, TimeUnit.SECONDS);
+        Assert.assertEquals(ServiceController.Substate.PROBLEM, dependentController.getSubstate());
     }
 
     @After
@@ -432,15 +439,21 @@ public class InterfaceManagementUnitTestCase {
     /**
      * Assert that the operation failed, but only with the failure message that indicates a service start problem.
      * Use this for instead of executeFoResult in tests that use criteria that may not be resolvable on a real machine,
-     * but which are conceptually valid. The inability to resolve a matching interface will lead to the service start problem.
+     * but which are not explicitly disallowed in the model. The inability to resolve a matching interface will lead to the service start problem.
      *
      * @param client the client to use to execute the operation
      * @param operation the operation to execute
      */
-    private static void executeForServiceFailure(final ModelControllerClient client, final ModelNode operation) {
+    private void executeForServiceFailure(final ModelControllerClient client, final ModelNode operation) {
         try {
             final ModelNode result = client.execute(operation);
-            if (! result.hasDefined(OUTCOME) && ! ModelDescriptionConstants.FAILED.equals(result.get(OUTCOME).asString())) {
+            if (result.hasDefined(OUTCOME) && ! ModelDescriptionConstants.FAILED.equals(result.get(OUTCOME).asString())) {
+                // The dependent service we add in before() should have demanded the ON_DEMAND interface service.
+                // And that should have failed start. So if the op succeeded but didn't start the dependent, that's
+                // a clue as to why the op succeeded; i.e. the demand didn't get picked up. This is basically
+                // a diagnostic for WFCORE-2630
+                Assert.assertTrue("Adding interface service did not trigger start of dependent service", dependentStarted);
+                // If we get here the interface service must have started when it shouldn't have
                 Assert.fail("Operation outcome is " + result.get(OUTCOME).asString());
             }
             System.out.println("Failure for " + operation + "\n is:\n" + result);
