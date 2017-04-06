@@ -48,7 +48,6 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.credential.PasswordCredential;
@@ -139,42 +138,6 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
         return aliasName.toLowerCase(Locale.ROOT);
     }
 
-    private static void transformOperationAddress(final ModelNode operation) {
-        Property alias = propertyAliasFromOperation(operation);
-        if (alias != null)
-        {
-            String newAlias = alias.getValue().asString().toLowerCase(Locale.ROOT);
-            alias.getValue().set(newAlias);
-        }
-    }
-
-    private static Property propertyAliasFromOperation(final ModelNode operation) {
-        ModelNode address = operation.get(ModelDescriptionConstants.OP_ADDR);
-        List<Property> list = address.asPropertyList();
-        Property alias = null;
-        for (Property p: list) {
-            if (ElytronDescriptionConstants.ALIAS.equals(p.getName())) {
-                alias = p;
-                break;
-            }
-        }
-        return alias;
-    }
-
-    private static boolean sameAlias(final OperationContext context, final ModelNode operation) {
-        PathElement contextAlias = context.getCurrentAddress().getLastElement();
-        Property operationAlias = propertyAliasFromOperation(operation);
-        boolean outcome = false;
-        if (contextAlias != null && operationAlias != null)
-        {
-            outcome = contextAlias.getValue().equals(operationAlias.getValue().asString());
-        } else {
-            outcome = contextAlias == null && operationAlias == null ? true : false;
-        }
-
-        return  outcome;
-    }
-
     private static class AddHandler extends BaseAddHandler {
 
         AddHandler() {
@@ -206,28 +169,6 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
                 throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
             }
         }
-
-        /**
-         * {@inheritDoc
-         *
-         * @param context
-         * @param operation
-         */
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            transformOperationAddress(operation);
-            super.execute(context, operation);
-        }
-
-        @Override
-        protected Resource createResource(OperationContext context, ModelNode operation) {
-            Resource resource = Resource.Factory.create(true);
-            if (sameAlias(context, operation)) {
-                context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-            }
-            return resource;
-        }
-
     }
 
     private static class RemoveHandler extends CredentialStoreResourceDefinition.CredentialStoreRuntimeOnlyHandler {
