@@ -54,6 +54,12 @@ public class AbstractCliTestBase {
         }
     }
 
+    public static void initCLI(int connectionTimeout) throws Exception {
+        if (cli == null) {
+            cli = new CLIWrapper(true, null, null, connectionTimeout);
+        }
+    }
+
     public static void closeCLI() throws Exception {
         try {
             if (cli != null) cli.quit();
