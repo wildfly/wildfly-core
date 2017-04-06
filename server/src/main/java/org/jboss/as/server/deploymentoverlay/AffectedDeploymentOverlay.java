@@ -157,7 +157,6 @@ public class AffectedDeploymentOverlay {
         }
         if (deploymentPerServerGroup.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any server-group for %s", s));
-            return;
         }
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if(removeOperation != null) {
@@ -190,11 +189,10 @@ public class AffectedDeploymentOverlay {
      */
      public static void redeployLinksAndTransformOperation(OperationContext context, ModelNode removeOperation, PathAddress deploymentsRootAddress, Set<String> runtimeNames) throws OperationFailedException {
         Set<String> deploymentNames = listDeployments(context.readResourceFromRoot(deploymentsRootAddress), runtimeNames);
+        Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if (deploymentNames.isEmpty()) {
             runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any deployment for %s in server-group %s", s, deploymentsRootAddress.getLastElement().getValue()));
-            return;
         }
-        Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if(removeOperation != null) {
              opBuilder.addStep(removeOperation);
         }
@@ -299,7 +297,7 @@ public class AffectedDeploymentOverlay {
         }
 
         private boolean validOverlay(PathAddress operationAddress) {
-            if (operationAddress.size() > 1 && operationAddress.size() >= overlayAddress.size()) {
+            if (operationAddress.size() >= 1 && operationAddress.size() >= overlayAddress.size()) {
                 ServerLogger.AS_ROOT_LOGGER.debugf("Comparing address %s with %s", operationAddress.subAddress(0, overlayAddress.size()).toCLIStyleString(), overlayAddress.toCLIStyleString());
                 return operationAddress.subAddress(0, overlayAddress.size()).equals(overlayAddress);
             }

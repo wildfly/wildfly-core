@@ -119,7 +119,7 @@ public class DomainTestSupport {
     public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
                 String testName, WildFlyManagedConfiguration baseConfig,
                 boolean readOnlyDomain, boolean readOnlyHost) {
-        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, false);
+        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, Boolean.getBoolean("wildfly.master.debug"));
     }
 
     public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
@@ -146,7 +146,7 @@ public class DomainTestSupport {
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, false);
+        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, Boolean.getBoolean("wildfly.slave.debug"));
     }
 
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
