@@ -45,11 +45,10 @@ import org.jboss.dmr.ModelType;
 public class SimpleAttributeDefinition extends AttributeDefinition {
 
     // NOTE: Standards for creating a constructor variant are:
-    // 1) Expected to be a common use case; no one-offs.
-    // 2) Max 4 parameters, or 5 only if the fifth is "AttributeAccess.Flag... flags"
-    // 3) No single type appears twice in the param list. Hence no allowNull, allowExpressions variants
+    // 1) Don't.
+    // 2) See 1),
     //
-    // All other use cases should use the constructor that takes a builder
+    // Use the constructor that takes a builder
 
 
     /**
@@ -58,7 +57,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param name the name of the attribute. Cannot be {@code null}
      * @param type the type of the attribute value. Cannot be {@code null}
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull) {
         super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
                 null, false, null, null, null, null);
@@ -71,7 +73,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param type the type of the attribute value. Cannot be {@code null}
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      * @param flags any flags to indicate special characteristics of the attribute
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final AttributeAccess.Flag... flags) {
         super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
                 null, false, null, null, null, null, flags);
@@ -84,7 +89,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param type the type of the attribute value. Cannot be {@code null}
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      * @param measurementUnit a measurement unit for the attribute's value. Can be {@code null}
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final MeasurementUnit measurementUnit) {
         super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
                 null, false, null, null, null, null);
@@ -98,7 +106,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      * @param measurementUnit a measurement unit for the attribute's value. Can be {@code null}
      * @param flags any flags to indicate special characteristics of the attribute
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull,
                                      final MeasurementUnit measurementUnit, final AttributeAccess.Flag... flags) {
         super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
@@ -112,7 +123,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param defaultValue a default value to use for the attribute if none is specified by the user. Can be {@code null}
      * @param type the type of the attribute value. Cannot be {@code null}
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type, final boolean allowNull) {
         super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
                 null, false, null, null, null, null);
@@ -126,7 +140,10 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param type the type of the attribute value. Cannot be {@code null}
      * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
      * @param flags any flags to indicate special characteristics of the attribute
+     *
+     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
      */
+    @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type,
                                      final boolean allowNull, final AttributeAccess.Flag... flags) {
         super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
