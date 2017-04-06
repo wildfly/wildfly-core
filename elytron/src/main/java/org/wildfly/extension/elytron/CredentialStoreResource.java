@@ -20,10 +20,8 @@ package org.wildfly.extension.elytron;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -70,13 +68,12 @@ class CredentialStoreResource extends DelegatingResource {
         if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
             try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
-                if (credentialStore != null && (credentialStore.getAliases().contains(toLower(element.getValue())))) {
+                if (credentialStore != null && (credentialStore.getAliases().contains(element.getValue()))) {
                     return true;
                 }
             } catch (CredentialStoreException e) {
                 ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-            return false;
         }
         return super.hasChild(element);
     }
@@ -86,13 +83,12 @@ class CredentialStoreResource extends DelegatingResource {
         if (ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
             try {
                 CredentialStore credentialStore = credentialStoreServiceController != null ? credentialStoreServiceController.getValue() : null;
-                if (credentialStore != null && (credentialStore.getAliases().contains(toLower(element.getValue())))) {
+                if (credentialStore != null && (credentialStore.getAliases().contains(element.getValue()))) {
                     return Resource.Factory.create(true);
                 }
             } catch (CredentialStoreException e) {
                 ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-            return null;
         }
         return super.getChild(element);
     }
@@ -117,7 +113,6 @@ class CredentialStoreResource extends DelegatingResource {
             } catch (CredentialStoreException e) {
                 ElytronSubsystemMessages.ROOT_LOGGER.credentialStoreIssueEncountered(e);
             }
-            return Collections.emptySet();
         }
         return super.getChildrenNames(childType);
     }
@@ -162,10 +157,6 @@ class CredentialStoreResource extends DelegatingResource {
         }
     }
 
-    private String toLower(String parameter) {
-        return parameter != null ? parameter.toLowerCase(Locale.ROOT) : null;
-    }
-
     @Override
     public Resource removeChild(PathElement element) {
         if (!ElytronDescriptionConstants.ALIAS.equals(element.getKey())) {
@@ -191,5 +182,4 @@ class CredentialStoreResource extends DelegatingResource {
             throw ControllerLogger.ROOT_LOGGER.duplicateResource(element.getValue());
         }
     }
-
 }

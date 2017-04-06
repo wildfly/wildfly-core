@@ -471,7 +471,7 @@
                  <xs:documentation>
                      Argument to pass into the constructor as the Provider is instantiated.
 
-                     Can only be used where the class names to load are specified. 
+                     Can only be used where the class names to load are specified.
                  </xs:documentation>
              </xs:annotation>
          </xs:attribute>
@@ -644,7 +644,7 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    
+
     <!--
         Domains and Realms
      -->
@@ -3885,7 +3885,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the KeyManagerFactory.
@@ -3958,7 +3958,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="algorithm" type="xs:string" use="required">
+        <xs:attribute name="algorithm" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The algorithm name to use to initialise the TrustManagerFactory.
@@ -4126,7 +4126,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="wrap" type="xs:boolean" default="true">
+        <xs:attribute name="wrap" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Should the resulting SSLEngine, SSLSocketFactory, and SSLSocket instances returned by this SSLContext
@@ -4322,13 +4322,6 @@
                     to search for the one that can create the required KeyStore type.
 
                     If this is not specified then the global list of Providers is used instead.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="password" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The password to use when initialising / loading the KeyStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4628,6 +4621,13 @@
                 <xs:documentation>
                     A reference to a previously defined path that the file name is
                     relative to.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates that the credential sotre is case sensitive and should then allow for upper case in alias.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
