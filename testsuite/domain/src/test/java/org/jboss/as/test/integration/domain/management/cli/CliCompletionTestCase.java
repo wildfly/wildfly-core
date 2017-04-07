@@ -1349,4 +1349,41 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testNoArgumentCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = "cd --hel";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--help"),
+                        candidates);
+            }
+
+            {
+                String cmd = "cd --no";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--no-validation"),
+                        candidates);
+            }
+
+            {
+                String cmd = "ls --hel";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--help"),
+                        candidates);
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }
