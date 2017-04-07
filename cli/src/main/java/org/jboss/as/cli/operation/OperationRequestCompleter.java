@@ -324,10 +324,44 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 }
             }
             boolean needNeg = false;
+
+            // We must first check that we have no matches for option names
+            // prior to call the argument (option with no value) value completers
+            // Otherwise we can enter the case where value completer would complete
+            // an option name. That is possible because value completer parsers are not strict.
+            // for example: ls --hel<TAB> ==> --hel will be completed by the node-path completer
+            // and this can give strange completion result.
+            boolean optionMatch = false;
+            for (CommandArgument arg : allArgs) {
+                try {
+                    if (arg.canAppearNext(ctx)) {
+                        if (arg.getIndex() < 0) {
+                            String argFullName = arg.getFullName();
+                            if (chunk != null
+                                    && argFullName.startsWith(chunk)) {
+                                if (!parsedCmd.isLastPropertyNegated()) {
+                                    optionMatch = true;
+                                    break;
+                                } else // We can only add candidates that are of type boolean
+                                 if (!arg.isValueRequired()) {
+                                     optionMatch = true;
+                                     break;
+                                    }
+                            }
+                        }
+                    }
+                } catch (CommandFormatException e) {
+                    return -1;
+                }
+            }
+
             for (CommandArgument arg : allArgs) {
                 try {
                     if (arg.canAppearNext(ctx)) {
                         if (arg.getIndex() >= 0) {
+                            if (optionMatch) {
+                                continue;
+                            }
                             CommandLineCompleter valCompl = arg.getValueCompleter();
                             if (valCompl != null) {
                                 final String value = chunk == null ? "" : chunk;
