@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
@@ -42,6 +43,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
@@ -57,6 +59,7 @@ import org.wildfly.security.audit.AuditLogger;
 import org.wildfly.security.audit.EventPriority;
 import org.wildfly.security.audit.FileAuditEndpoint;
 import org.wildfly.security.audit.JsonSecurityEventFormatter;
+import org.wildfly.security.audit.RotatingFileAuditEndpoint;
 import org.wildfly.security.audit.SimpleSecurityEventFormatter;
 import org.wildfly.security.audit.SyslogAuditEndpoint;
 import org.wildfly.security.auth.server.event.SecurityEventVisitor;
@@ -105,6 +108,26 @@ class AuditResourceDefinitions {
     static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST_NAME, ModelType.STRING, false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder("max-backup-index", ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(1))
+            .setValidator(new IntRangeValidator(1, true))
+            .build();
+
+    static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder("rotate-on-boot", ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder("rotate-size", ModelType.LONG, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(2000))
+            .build();
+
+    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder("suffix", ModelType.STRING, true)
+            .setAllowExpression(true)
             .build();
 
     private static final AggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = AggregateComponentDefinition.create(SecurityEventListener.class,
@@ -166,6 +189,67 @@ class AuditResourceDefinitions {
         };
 
         return new TrivialResourceDefinition(FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+    }
+
+    static ResourceDefinition getRotatingFileAuditLogResourceDefinition() {
+        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SUFFIX };
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+
+            @Override
+            protected ValueSupplier<SecurityEventListener> getValueSupplier(
+                    ServiceBuilder<SecurityEventListener> serviceBuilder, OperationContext context, ModelNode model)
+                    throws OperationFailedException {
+
+                final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
+                final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
+                final int maxBackupIndex = MAX_BACKUP_INDEX.resolveModelAttribute(context, model).asInt(0);
+                final boolean rotateOnBoot = ROTATE_ON_BOOT.resolveModelAttribute(context, model).asBoolean();
+                final long rotateSize = ROTATE_SIZE.resolveModelAttribute(context, model).asLong(0);
+                final String suffix = SUFFIX.resolveModelAttribute(context, model).asString();
+
+                final InjectedValue<PathManager> pathManager = new InjectedValue<>();
+
+                final String path = PATH.resolveModelAttribute(context, model).asString();
+                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+
+                if (relativeTo != null) {
+                    serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
+                    serviceBuilder.addDependency(pathName(relativeTo));
+                }
+
+                return () -> {
+                    PathResolver pathResolver = pathResolver();
+                    pathResolver.path(path);
+                    if (relativeTo != null) {
+                        pathResolver.relativeTo(relativeTo, pathManager.getValue());
+                    }
+                    File resolvedPath = pathResolver.resolve();
+
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().build() : SimpleSecurityEventFormatter.builder().build();
+                    AuditEndpoint endpoint;
+                    try {
+                        endpoint = RotatingFileAuditEndpoint.builder()
+                                .setMaxBackupIndex(maxBackupIndex)
+                                .setRotateOnBoot(rotateOnBoot)
+                                .setRotateSize(rotateSize)
+                                .setSuffix(suffix)
+                                .setLocation(resolvedPath.toPath())
+                                .setSyncOnAccept(synv)
+                                .build();
+                    } catch (IOException e) {
+                        throw ROOT_LOGGER.unableToStartService(e);
+                    }
+
+                    return SecurityEventListener.from(AuditLogger.builder()
+                            .setPriorityMapper(m -> EventPriority.WARNING)
+                            .setMessageFormatter(m -> m.accept(formatter, null))
+                            .setAuditEndpoint(endpoint)
+                            .build());
+                };
+            }
+        };
+
+        return new TrivialResourceDefinition(ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {

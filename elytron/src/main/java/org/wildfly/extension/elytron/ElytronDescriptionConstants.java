@@ -370,6 +370,7 @@ interface ElytronDescriptionConstants {
     String ROLE_MAPPER = "role-mapper";
     String ROLE_MAPPERS = "role-mappers";
     String ROLES = "roles";
+    String ROTATING_FILE_AUDIT_LOG = "rotating-file-audit-log";
 
     String SALT = "salt";
     String SALT_INDEX = "salt-index";
