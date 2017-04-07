@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientPermission;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -165,6 +166,10 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
      * @throws IOException
      */
     private AsyncFuture<OperationResponse> execute(final OperationExecutionContext executionContext) throws IOException {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelControllerClientPermission.PERFORM_REMOTE_CALL);
+        }
         return executeRequest(new AbstractManagementRequest<OperationResponse, OperationExecutionContext>() {
 
             @Override
@@ -259,12 +264,12 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
 
     }
 
-    protected AsyncFuture<OperationResponse> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request, final OperationExecutionContext attachment) throws IOException {
+    private AsyncFuture<OperationResponse> executeRequest(final ManagementRequest<OperationResponse, OperationExecutionContext> request, final OperationExecutionContext attachment) throws IOException {
         final ActiveOperation<OperationResponse, OperationExecutionContext> support = getChannelAssociation().executeRequest(request, attachment, attachment);
         return new DelegatingCancellableAsyncFuture(support.getResult(), support.getOperationId());
     }
 
-    static class OperationExecutionContext implements ActiveOperation.CompletedCallback<OperationResponse> {
+    private static class OperationExecutionContext implements ActiveOperation.CompletedCallback<OperationResponse> {
 
         private final Operation operation;
         private final OperationMessageHandler handler;

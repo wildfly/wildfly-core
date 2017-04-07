@@ -23,10 +23,14 @@
 package org.jboss.as.controller.client.impl;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
+import org.jboss.as.controller.client.ModelControllerClientPermission;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
@@ -53,6 +57,10 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
     private final StackTraceElement[] allocationStackTrace;
 
     public RemotingModelControllerClient(final ModelControllerClientConfiguration configuration) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelControllerClientPermission.CONNECT);
+        }
         this.channelAssociation = new ManagementChannelHandler(new ManagementClientChannelStrategy() {
             @Override
             public Channel getChannel() throws IOException {
@@ -108,16 +116,25 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
     }
 
     protected synchronized Channel getOrCreateChannel() throws IOException {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(ModelControllerClientPermission.CONNECT);
+        }
         if (closed) {
             throw ControllerClientLogger.ROOT_LOGGER.objectIsClosed(ModelControllerClient.class.getSimpleName());
         }
         if (strategy == null) {
             try {
-
-                endpoint = Endpoint.builder().setEndpointName("management-client").build();
-
+                if (System.getSecurityManager() != null) {
+                    try {
+                        endpoint = AccessController.doPrivileged((PrivilegedExceptionAction<Endpoint>) () -> Endpoint.builder().setEndpointName("management-client").build());
+                    } catch (PrivilegedActionException ex) {
+                        throw (Exception) ex.getCause();
+                    }
+                } else {
+                    endpoint = Endpoint.builder().setEndpointName("management-client").build();
+                }
                 final ProtocolConnectionConfiguration configuration = ProtocolConfigurationFactory.create(clientConfiguration, endpoint);
-
                 strategy = ManagementClientChannelStrategy.create(configuration, channelAssociation, clientConfiguration.getCallbackHandler(),
                         clientConfiguration.getSaslOptions(), clientConfiguration.getSSLContext(),
                         new CloseHandler<Channel>() {
@@ -130,6 +147,16 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 throw e;
             } catch (Exception e) {
                 throw new RuntimeException(e);
+            }
+        }
+        if (System.getSecurityManager() != null) {
+            try {
+                return AccessController.doPrivileged((PrivilegedExceptionAction<Channel>) strategy::getChannel);
+            } catch (PrivilegedActionException ex) {
+                if (ex.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) ex.getCause();
+                }
+                throw new RuntimeException(ex.getCause());
             }
         }
         return strategy.getChannel();

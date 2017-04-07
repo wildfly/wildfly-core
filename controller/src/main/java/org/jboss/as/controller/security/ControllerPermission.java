@@ -128,11 +128,6 @@ public class ControllerPermission extends BasicPermission {
      * The Controller Permission named inflowSecurityIdentity, which is required where a SecurityIdentity is inflowed as-is bypassing local security.
      */
     public static final ControllerPermission INFLOW_SECURITY_IDENTITY = new ControllerPermission(INFLOW_SECURITY_IDENTITY_NAME);
-    /**
-     * The Controller Permission named performInVmCall, which should be used to perform an in-vm call.
-     */
-    public static final ControllerPermission PERFORM_IN_VM_CALL = new ControllerPermission(PERFORM_IN_VM_CALL_NAME);
-
 
     private static String validatePermissionName(String name) throws IllegalArgumentException {
         switch (name) {
@@ -144,7 +139,6 @@ public class ControllerPermission extends BasicPermission {
             case GET_CALLER_SECURITY_IDENTITY_NAME:
             case GET_IN_VM_CALL_STATE_NAME:
             case INFLOW_SECURITY_IDENTITY_NAME:
-            case PERFORM_IN_VM_CALL_NAME:
             case WILDCARD_NAME:
                 return name;
             default:

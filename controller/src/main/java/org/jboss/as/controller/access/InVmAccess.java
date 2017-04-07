@@ -18,8 +18,8 @@
 
 package org.jboss.as.controller.access;
 
+import static org.jboss.as.controller.client.ModelControllerClientPermission.PERFORM_IN_VM_CALL;
 import static org.jboss.as.controller.security.ControllerPermission.GET_IN_VM_CALL_STATE;
-import static org.jboss.as.controller.security.ControllerPermission.PERFORM_IN_VM_CALL;
 
 import java.security.Permission;
 import java.security.PrivilegedAction;
