@@ -90,10 +90,12 @@ class PolicyParser {
             switch (localName) {
                 // Permission Mapper
                 case JACC_POLICY:
-                    providerFound = defaultPolicy.equals(parseJaccPolicy(addPolicy, reader, operations)) || providerFound;
+                    String jaccPolicy = parseJaccPolicy(addPolicy, reader, operations);
+                    providerFound = providerFound || defaultPolicy.equals(jaccPolicy);
                     break;
                 case CUSTOM_POLICY:
-                    providerFound = defaultPolicy.equals(parseCustomPolicy(addPolicy, reader, operations)) || providerFound;
+                    String customPolicy = parseCustomPolicy(addPolicy, reader, operations);
+                    providerFound = providerFound || defaultPolicy.equals(customPolicy);
                     break;
                 default:
                     throw unexpectedElement(reader);

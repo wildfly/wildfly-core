@@ -26,6 +26,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
@@ -108,6 +109,9 @@ class CredentialStoreParser {
                     case RELATIVE_TO:
                         CredentialStoreResourceDefinition.RELATIVE_TO.parseAndSetParameter(value, addCredentialStore, reader);
                         break;
+                    case CASE_SENSITIVE:
+                        CredentialStoreResourceDefinition.CASE_SENSITIVE.parseAndSetParameter(value, addCredentialStore, reader);
+                        break;
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -151,6 +155,7 @@ class CredentialStoreParser {
                 CredentialStoreResourceDefinition.PROVIDERS.marshallAsAttribute(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.OTHER_PROVIDERS.marshallAsAttribute(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.RELATIVE_TO.marshallAsAttribute(credentialStoreModelNode, writer);
+                CredentialStoreResourceDefinition.CASE_SENSITIVE.marshallAsAttribute(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.URI.marshallAsElement(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE.marshallAsElement(credentialStoreModelNode, writer);
                 writer.writeEndElement();
