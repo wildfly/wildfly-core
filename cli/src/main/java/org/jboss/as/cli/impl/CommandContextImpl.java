@@ -1276,9 +1276,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         for (;;) {
             String response;
             if (trustManager.isModifyTrustStore()) {
-                response = readLine("Accept certificate? [N]o, [T]emporarily, [P]ermanently : ", false);
+                response = prompt("Accept certificate? [N]o, [T]emporarily, [P]ermanently : ", false);
             } else {
-                response = readLine("Accept certificate? [N]o, [T]emporarily : ", false);
+                response = prompt("Accept certificate? [N]o, [T]emporarily : ", false);
             }
             if (response == null)
                 break;
@@ -1296,6 +1296,24 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         }
                 }
             }
+        }
+    }
+
+    private String prompt(String prompt, boolean mask) throws CliInitializationException,
+            CommandLineException {
+        if (console == null) {
+            if (ERROR_ON_INTERACT) {
+                interactionDisabled();
+            }
+            initBasicConsole(null);
+        }
+        console.setCompletion(false);
+        console.getHistory().setUseHistory(false);
+        try {
+            return readLine(prompt, mask);
+        } finally {
+            console.getHistory().setUseHistory(true);
+            console.setCompletion(true);
         }
     }
 
@@ -1876,17 +1894,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         } else {
                             showRealm();
                             try {
-                                if(console == null) {
-                                    if(ERROR_ON_INTERACT) {
-                                        interactionDisabled();
-                                    }
-                                    initBasicConsole(null);
-                                }
-                                console.setCompletion(false);
-                                console.getHistory().setUseHistory(false);
-                                username = readLine("Username: ", false);
-                                console.getHistory().setUseHistory(true);
-                                console.setCompletion(true);
+                                username = prompt("Username: ", false);
                             } catch (CommandLineException e) {
                                 // the messages of the cause are lost if nested here
                                 throw new IOException("Failed to read username: " + e.getLocalizedMessage());
@@ -1904,17 +1912,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         showRealm();
                         String temp;
                         try {
-                            if(console == null) {
-                                if(ERROR_ON_INTERACT) {
-                                    interactionDisabled();
-                                }
-                                initBasicConsole(null);
-                            }
-                            console.setCompletion(false);
-                            console.getHistory().setUseHistory(false);
-                            temp = readLine("Password: ", true);
-                            console.getHistory().setUseHistory(true);
-                            console.setCompletion(true);
+                            temp = prompt("Password: ", true);
                         } catch (CommandLineException e) {
                             // the messages of the cause are lost if nested here
                             throw new IOException("Failed to read password: " + e.getLocalizedMessage());
@@ -1932,17 +1930,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                             showRealm();
                             String temp;
                             try {
-                                if (console == null) {
-                                    if (ERROR_ON_INTERACT) {
-                                        interactionDisabled();
-                                    }
-                                    initBasicConsole(null);
-                                }
-                                console.setCompletion(false);
-                                console.getHistory().setUseHistory(false);
-                                temp = readLine("Password: ", true);
-                                console.getHistory().setUseHistory(true);
-                                console.setCompletion(true);
+                                temp = prompt("Password: ", true);
                             } catch (CommandLineException e) {
                                 // the messages of the cause are lost if nested here
                                 throw new IOException("Failed to read password: " + e.getLocalizedMessage());
