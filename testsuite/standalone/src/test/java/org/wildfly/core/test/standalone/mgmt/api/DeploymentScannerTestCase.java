@@ -100,22 +100,33 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
      * 2) Tests that the test deployment scanner resource added in step#1, exists
      * 3) Finally, removes the test deployment scanner
      *
-     * @throws Exception
      */
     @Test
     public void testAddRemove() throws Exception {
 
         addDeploymentScanner();
+        Throwable caught = null;
         try {
             assertTestDeploymentScannerResourceExists();
+        }  catch (Exception | Error t) {
+            caught = t;
         } finally {
             // now clean up
             try {
                 removeDeploymentScanner();
             } catch (Throwable t) {
-                // just log so that the any previous exception that might have failed this test will be propagated back
-                logger.info("Removing test deployment scanner failed with exception", t);
+                if (caught != null) {
+                    // just log so that the any previous exception that might have failed this test will be propagated back
+                    logger.info("Removing test deployment scanner failed with exception", t);
+                } else {
+                    caught = t;
+                }
             }
+        }
+        if (caught instanceof Exception) {
+            throw (Exception) caught;
+        } else if (caught != null) {
+            throw (Error) caught;
         }
     }
 
@@ -123,7 +134,6 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
      * Adds a deployment scanner (let's say "foo") which points to a non-existing deployment directory. This operation is expected to fail and the test asserts it.
      * Later it adds a deployment scanner with the same name, but this time points to a correct/existing deployment directory. This operation is then expected to pass.
      *
-     * @throws Exception
      */
     @Test
     public void testAddWrongPath() throws Exception {
@@ -137,16 +147,28 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
         // check that it failed
         assertEquals("Adding a deployment scanner for a non-existent path was expected to succeed but it failed", "success", result.get("outcome").asString());
 
+        Throwable caught = null;
         try {
             assertTestDeploymentScannerResourceExists();
+        } catch (Exception | Error t) {
+            caught = t;
         } finally {
             // now clean up
             try {
                 removeDeploymentScanner();
             } catch (Throwable t) {
-                // just log so that the any previous exception that might have failed this test will be propagated back
-                logger.info("Removing test deployment scanner failed with exception", t);
+                if (caught != null) {
+                    // just log so that the any previous exception that might have failed this test will be propagated back
+                    logger.info("Removing test deployment scanner failed with exception", t);
+                } else {
+                    caught = t;
+                }
             }
+        }
+        if (caught instanceof Exception) {
+            throw (Exception) caught;
+        } else if (caught != null) {
+            throw (Error) caught;
         }
     }
 
@@ -158,7 +180,6 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
      * 5) Another composite operation is triggered and that's expected to rollback/fail
      * 6) After #5 step the presence of the test deployment scanner added in #3 step is asserted. It should still exist
      *
-     * @throws Exception
      */
     @Test
     public void testAddRemoveRollbacks() throws Exception {
@@ -170,6 +191,7 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
 
         // add deployment scanner - this time it's supposed to be added successfully
         addDeploymentScanner();
+        Throwable caught = null;
         try {
             assertTestDeploymentScannerResourceExists();
             // execute and rollback remove deployment scanner
@@ -179,23 +201,33 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
 
             // check that the deployment scanner is still present
             assertTestDeploymentScannerResourceExists();
+        } catch (Exception | Error t) {
+            caught = t;
         } finally {
             // now clean up
             try {
                 removeDeploymentScanner();
             } catch (Throwable t) {
-                // just log so that the any previous exception that might have failed this test will be propagated back
-                logger.info("Removing test deployment scanner failed with exception", t);
+                if (caught != null) {
+                    // just log so that the any previous exception that might have failed this test will be propagated back
+                    logger.info("Removing test deployment scanner failed with exception", t);
+                } else {
+                    caught = t;
+                }
             }
+        }
+        if (caught instanceof Exception) {
+            throw (Exception) caught;
+        } else if (caught != null) {
+            throw (Error) caught;
         }
     }
 
-    private ModelNode addDeploymentScanner() throws Exception {
+    private void addDeploymentScanner() throws Exception {
         // add deployment scanner
         final ModelNode op = getAddDeploymentScannerOp();
         final ModelNode resp = executeOperation(op, false);
         assertEquals("Unexpected outcome " + resp + " of adding the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-        return resp;
     }
 
     private void assertTestDeploymentScannerResourceExists() throws Exception {
@@ -204,12 +236,11 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
         assertEquals(readResourceOp + " was supposed to be successful but received " + result, ModelDescriptionConstants.SUCCESS, result.get("outcome").asString());
     }
 
-    private ModelNode removeDeploymentScanner() throws Exception {
+    private void removeDeploymentScanner() throws Exception {
         // remove deployment scanner
         final ModelNode op = getRemoveDeploymentScannerOp();
         final ModelNode resp = executeOperation(op, false);
         assertEquals("Unexpected outcome " + resp + " of removing the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-        return resp;
     }
 
     private ModelNode getAddDeploymentScannerOp() {
