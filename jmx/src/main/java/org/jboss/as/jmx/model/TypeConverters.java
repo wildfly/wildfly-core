@@ -241,7 +241,10 @@ class TypeConverters {
                 if (possibleExpression) {
                     return new ModelNode().set(new ValueExpression((String)o));
                 }
-                return valueAccessor.toModelNodeFromString((String)o);
+                if (o instanceof String) {
+                    return valueAccessor.toModelNodeFromString((String) o);
+                }
+                return valueAccessor.toModelNode(o);
             } else {
                 if (possibleExpression) {
                     if (valueAccessor != StringValueAccessor.INSTANCE) {
