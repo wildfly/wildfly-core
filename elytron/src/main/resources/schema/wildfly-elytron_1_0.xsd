@@ -240,6 +240,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="kerberos-security-factory" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to a kerberos security factory used to obtain a GSS kerberos credential.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="authenticationContextType">
