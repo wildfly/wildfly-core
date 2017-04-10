@@ -93,11 +93,10 @@ public abstract class AttributeDefinition {
     private final Map<String, ModelNode> arbitraryDescriptors = new HashMap<>();
 
     // NOTE: Standards for creating a constructor variant are:
-    // 1) Expected to be a common use case; no one-offs.
-    // 2) Max 4 parameters, or 5 only if the fifth is "AttributeAccess.Flag... flags"
-    // 3) No single type appears twice in the param list. Hence no allowNull, allowExpressions variants
+    // 1) Don't.
+    // 2) See 1)
     //
-    // All other use cases should use the constructor that takes a builder
+    // Use the constructor that takes a builder
 
     protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
         this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
@@ -111,6 +110,10 @@ public abstract class AttributeDefinition {
                 toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
     }
 
+    /**
+     * @deprecated use {@link AbstractAttributeDefinitionBuilder}
+     */
+    @Deprecated
     protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
                                   final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
                                   final ParameterCorrector valueCorrector, final ParameterValidator validator,

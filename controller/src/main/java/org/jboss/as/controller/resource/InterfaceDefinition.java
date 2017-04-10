@@ -36,17 +36,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -58,7 +55,6 @@ import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.SubnetValidator;
 import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -233,12 +229,14 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
 
     @Deprecated
     private static AttributeDefinition createNestedComplexType(final String name) {
-        return new AttributeDefinition(name, name, null, ModelType.OBJECT,
-                true, false, MeasurementUnit.NONE,
-                (ParameterCorrector) null, createNestedParamValidator(), true,
-                new String[]{ModelDescriptionConstants.ANY_ADDRESS}, (String[]) null, (AttributeMarshaller) null,
-                false, null, null, (Boolean) null, null,
-                AttributeAccess.Flag.RESTART_ALL_SERVICES) {
+
+        return new AttributeDefinition(
+                new SimpleAttributeDefinitionBuilder(name, ModelType.OBJECT)
+                    .setRequired(false)
+                    .setValidator(createNestedParamValidator())
+                    .setAlternatives(ModelDescriptionConstants.ANY_ADDRESS)
+                    .setRestartAllServices())
+        {
 
             @Override
             public ModelNode addResourceAttributeDescription(final ResourceBundle bundle, final String prefix, final ModelNode resourceDescription) {
