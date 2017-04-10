@@ -2130,6 +2130,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="wrap-gss-credential" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Should generated GSS credentials be wrapped to prevent improper disposal or not?
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="mechanism-names" type="stringListType" default="KRB5 SPNEGO">
                     <xs:annotation>
                         <xs:documentation>

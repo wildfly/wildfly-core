@@ -459,6 +459,7 @@ interface ElytronDescriptionConstants {
 
     String WANT_CLIENT_AUTH = "want-client-auth";
     String WRAP = "wrap";
+    String WRAP_GSS_CREDENTIAL = "wrap-gss-credential";
     String WRITABLE = "writable";
 
     String X500_ATTRIBUTE_PRINCIPAL_DECODER = "x500-attribute-principal-decoder";
