@@ -794,6 +794,42 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         }
     }
 
+
+    @Test
+    public void testAddRemoveAdd() throws OperationFailedException {
+        executeCheckNoFailure(Util.createEmptyOperation("root-cap", PathAddress.EMPTY_ADDRESS));
+        try {
+            for (int i = 0; i < 100; i++) {
+                addRemoveAddTest();
+            }
+        } finally {
+            //noinspection ThrowFromFinallyBlock
+            executeCheckNoFailure(Util.createEmptyOperation("no-root-cap", PathAddress.EMPTY_ADDRESS));
+        }
+    }
+
+    private void addRemoveAddTest() throws OperationFailedException {
+        ManagementResourceRegistration registration = managementModel.getRootResourceRegistration().getSubModel(PathAddress.pathAddress(DEP_CAP_ELEMENT));
+        Assert.assertEquals(1, registration.getCapabilities().size());
+        Assert.assertEquals(reloadCaps(3), capabilityRegistry.getPossibleCapabilities().size());  //resource1 has 2 + 1 from resource 2
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+
+        add(DEP_CAP_ELEMENT);
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
+
+        remove(DEP_CAP_ELEMENT);
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+
+        add(DEP_CAP_ELEMENT);
+
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
+        Assert.assertEquals(reloadCaps(3), capabilityRegistry.getPossibleCapabilities().size());
+
+        //remove resource so capabilites are moved
+        remove(DEP_CAP_ELEMENT);
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+    }
+
     private void add(PathElement... address) throws OperationFailedException {
         executeCheckNoFailure(Util.createEmptyOperation("add", PathAddress.pathAddress(address)));
     }
