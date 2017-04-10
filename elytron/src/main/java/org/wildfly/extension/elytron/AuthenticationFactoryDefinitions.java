@@ -212,14 +212,14 @@ class AuthenticationFactoryDefinitions {
 
             Predicate<MechanismInformation> selectionPredicate = null;
             if (mechanismName != null) {
-                selectionPredicate = i -> mechanismName.equals(i.getMechanismName());
+                selectionPredicate = i -> mechanismName.equalsIgnoreCase(i.getMechanismName());
             }
             if (hostName != null) {
-                Predicate<MechanismInformation> hostPredicate = i -> hostName.equals(i.getHostName());
+                Predicate<MechanismInformation> hostPredicate = i -> hostName.equalsIgnoreCase(i.getHostName());
                 selectionPredicate = selectionPredicate != null ? selectionPredicate.and(hostPredicate) : hostPredicate;
             }
             if (protocol != null) {
-                Predicate<MechanismInformation> protocolPredicate = i -> protocol.equals(i.getProtocol());
+                Predicate<MechanismInformation> protocolPredicate = i -> protocol.equalsIgnoreCase(i.getProtocol());
                 selectionPredicate = selectionPredicate != null ? selectionPredicate.and(protocolPredicate) : protocolPredicate;
             }
 
