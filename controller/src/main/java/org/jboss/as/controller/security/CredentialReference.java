@@ -48,7 +48,6 @@ import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.credential.source.CredentialStoreCredentialSource;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
-import org.wildfly.security.util.Alphabet;
 import org.wildfly.security.util.PasswordBasedEncryptionUtil;
 
 /**
@@ -364,8 +363,6 @@ public final class CredentialReference {
 
                         @Override
                         public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                            final String DEFAULT_ALGORITHM = "PBEWithMD5AndDES";
-                            final String DEFAULT_PICKETBOX_INITIAL_KEY_MATERIAL = "somearbitrarycrazystringthatdoesnotmatter";
                             String[] part = secret.substring(5).split(";");  // strip "MASK-" and split by ';'
                             if (part.length != 3) {
                                 throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
@@ -379,9 +376,7 @@ public final class CredentialReference {
                             }
                             try {
                                 PasswordBasedEncryptionUtil decryptUtil = new PasswordBasedEncryptionUtil.Builder()
-                                        .alphabet(Alphabet.Base64Alphabet.PICKETBOX_COMPATIBILITY)
-                                        .keyAlgorithm(DEFAULT_ALGORITHM)
-                                        .password(DEFAULT_PICKETBOX_INITIAL_KEY_MATERIAL)
+                                        .picketBoxCompatibility()
                                         .salt(salt)
                                         .iteration(iterationCount)
                                         .decryptMode()
