@@ -67,8 +67,8 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
         this.connectionManagerRegistry = connectionManagerRegistry;
     }
 
-    Config setConfiguration(final String initialContextFactory, final String url, final String searchDn, final String searchCredential, final ReferralHandling referralHandling, final Set<URI> referralURIs) {
-        Config configuration = new Config(initialContextFactory, url, searchDn, searchCredential, referralHandling, referralURIs);
+    Config setConfiguration(final String initialContextFactory, final String url, final String searchDn, final String searchCredential, final ReferralHandling referralHandling, final Set<URI> referralURIs, boolean alwaysSendClientCert) {
+        Config configuration = new Config(initialContextFactory, url, searchDn, searchCredential, referralHandling, referralURIs, alwaysSendClientCert);
 
         try {
             return this.configuration;
@@ -190,8 +190,13 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
         connectionProperties.put(Context.SECURITY_PRINCIPAL, bindDn);
         connectionProperties.put(Context.SECURITY_CREDENTIALS, bindCredential);
 
-        // Use a trust only SSLContext as we do not want to authenticate using a pre-defined key in a KeyStore.
-        DirContext context = getConnection(connectionProperties, getSSLContext(true));
+        /* WFCORE-2647: originally, we always used a trust only SSLContext got via getSSLContext(true) here
+         * as we did not want to authenticate using a pre-defined key in a KeyStore.
+         * However, there are LDAP servers, such as OpenLDAP who expect the client cert on every request
+         * and hence we had to make the setting configurable. */
+        final boolean trustOnly = !configuration.isAlwaysSendClientCert();
+        SECURITY_LOGGER.tracef("Using a %s SSL context to authenticate user %s", trustOnly ? "trustOnly" : "fullSSLContext", bindDn);
+        DirContext context = getConnection(connectionProperties, getSSLContext(trustOnly));
         context.close();
     }
 
@@ -329,13 +334,14 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
 
     static class Config {
 
-        private Config(final String initialContextFactory, final String url, final String searchDn, final String searchCredential, final ReferralHandling referralHandling, final Set<URI> referralURIs) {
+        private Config(final String initialContextFactory, final String url, final String searchDn, final String searchCredential, final ReferralHandling referralHandling, final Set<URI> referralURIs, boolean alwaysSendClientCert) {
             this.initialContextFactory = initialContextFactory;
             this.url = url;
             this.searchDn = searchDn;
             this.searchCredential = searchCredential;
             this.referralHandling = referralHandling;
             this.referralURIs = referralURIs;
+            this.alwaysSendClientCert = alwaysSendClientCert;
         }
 
         private Config(final String url, final Config config) {
@@ -345,6 +351,7 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
             this.searchCredential = config.searchCredential;
             this.referralHandling = config.referralHandling;
             this.referralURIs = config.referralURIs;
+            this.alwaysSendClientCert = config.alwaysSendClientCert;
         }
 
         private final String initialContextFactory;
@@ -353,6 +360,8 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
         private final String searchCredential;
         private final ReferralHandling referralHandling;
         private final Set<URI> referralURIs;
+        private final boolean alwaysSendClientCert;
+
         public String getInitialContextFactory() {
             return initialContextFactory;
         }
@@ -370,6 +379,9 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
         }
         public Set<URI> getReferralURIs() {
             return referralURIs;
+        }
+        public boolean isAlwaysSendClientCert() {
+            return alwaysSendClientCert;
         }
     }
 

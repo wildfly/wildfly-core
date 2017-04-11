@@ -31,6 +31,7 @@ public class ModelDescriptionConstants {
 
     public static final String ALIAS = "alias";
     public static final String ALLOWED_USERS = "allowed-users";
+    public static final String ALWAYS_SEND_CLIENT_CERT = "always-send-client-cert";
     public static final String ASSIGN_GROUPS = "assign-groups";
     public static final String ATTRIBUTES = "attributes";
     public static final String AUTHENTICATION = "authentication";

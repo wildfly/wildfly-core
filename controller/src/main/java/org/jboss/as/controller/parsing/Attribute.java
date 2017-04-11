@@ -46,6 +46,7 @@ public enum Attribute {
     ALLOW_EMPTY_PASSWORDS("allow-empty-passwords"),
     ALLOWED_ORIGINS("allowed-origins"),
     ALLOWED_USERS("allowed-users"),
+    ALWAYS_SEND_CLIENT_CERT("always-send-client-cert"),
     APP_NAME("app-name"),
     APPLICATION("application"),
     ARCHIVE("archive"),

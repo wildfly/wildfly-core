@@ -51,6 +51,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRU
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_ATTRIBUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER_DN;
+import static org.jboss.as.domain.management.ModelDescriptionConstants.ALWAYS_SEND_CLIENT_CERT;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.INITIAL_CONTEXT_FACTORY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SEARCH_CREDENTIAL;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SEARCH_DN;
@@ -177,6 +178,7 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                     setModelAttribute(ldapConnectionNode, SECURITY_REALM, ldap.getSecurityRealm());
                     setModelAttribute(ldapConnectionNode, URL, ldap.getUrl());
                     setModelAttribute(ldapConnectionNode, INITIAL_CONTEXT_FACTORY, ldap.getInitialContextFactory());
+                    setModelAttribute(ldapConnectionNode, ALWAYS_SEND_CLIENT_CERT, ldap.isAlwaysSendClientCert());
                     ldapConnectionNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
                     steps.add(ldapConnectionNode);
 
