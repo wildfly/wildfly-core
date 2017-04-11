@@ -2822,6 +2822,7 @@
                     <xs:annotation>
                         <xs:documentation>
                             The regular expression which must contain at least one capture group to extract the realm from the name.
+                            If the regular expression matches more than one capture group, the first capture group is used.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2869,6 +2870,7 @@
                     <xs:annotation>
                         <xs:documentation>
                             The regular expression which must contain at least one capture group to extract the realm from the name.
+                            If the regular expression matches more than one capture group, the first capture group is used.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2877,6 +2879,7 @@
                         <xs:documentation>
                             The RealmMapper to delegate to if the pattern does not match.  If no delegate is specified then the default realm on
                             the domain will be used instead.
+                            If the username does not match the pattern and a delegate realm-mapper is present, the result of delegate-realm-mapper is mapped via the realm-map.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
