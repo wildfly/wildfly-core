@@ -3395,7 +3395,7 @@
                                         <xs:attribute name="enabling" type="xs:boolean" default="true">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    When set to true all mechanisms are disabled unless enabled by matching one of the defined fiters.
+                                                    When set to true all mechanisms are disabled unless enabled by matching one of the defined filters.
 
                                                     When set to false all mechanisms are enabled unless disabled by matching one of the defined filters.
                                                 </xs:documentation>
@@ -3409,7 +3409,7 @@
                     <xs:element name="properties" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
-                                Additional properties that should be passed to the factor for SASL mechanism detection and creation.
+                                Additional properties that should be passed to the factory for HTTP mechanism detection and creation.
                             </xs:documentation>
                         </xs:annotation>
                         <xs:complexType>
@@ -3613,7 +3613,7 @@
                                         <xs:attribute name="enabling" type="xs:boolean" default="true">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    When set to true all mechanisms are disabled unless enabled by matching one of the defined fiters.
+                                                    When set to true all mechanisms are disabled unless enabled by matching one of the defined filters.
 
                                                     When set to false all mechanisms are enabled unless disabled by matching one of the defined filters.
                                                 </xs:documentation>
@@ -3627,7 +3627,7 @@
                     <xs:element name="properties" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
-                                Additional properties that should be passed to the factor for SASL mechanism detection and creation.
+                                Additional properties that should be passed to the factory for SASL mechanism detection and creation.
                             </xs:documentation>
                         </xs:annotation>
                         <xs:complexType>
