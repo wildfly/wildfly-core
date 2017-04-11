@@ -169,10 +169,16 @@ class ValidateModelStepHandler implements OperationStepHandler {
     }
 
     private void validateNestedAttributes(ModelNode subModel, AttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
+        if (!subModel.isDefined()) {
+            return;
+        }
         AttributeDefinition[] subAttrs = ((ObjectTypeAttributeDefinition) attr).getValueTypes();
         for (AttributeDefinition subAttr : subAttrs) {
             String subAttributeName = subAttr.getName();
             String absoluteName = absoluteParentName + "." + subAttributeName;
+            if (!subModel.hasDefined(subAttributeName) && isRequired(subAttr, subModel)) {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(subAttributeName));
+            }
             if (!subModel.hasDefined(subAttributeName)) {
                 continue;
             }
