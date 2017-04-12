@@ -180,8 +180,8 @@ public abstract class AbstractServerDeploymentManager implements ServerDeploymen
                 }
                 case EXPLODE: {
                     configureDeploymentOperation(step, EXPLODE, uniqueName);
-                    if(action.getReplacedDeploymentUnitUniqueName() != null) {
-                        step.get(PATH).set(action.getReplacedDeploymentUnitUniqueName());
+                    if(action.getNewContentFileName() != null) {
+                        step.get(PATH).set(action.getNewContentFileName());
                     }
                     break;
                 }
