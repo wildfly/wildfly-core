@@ -199,7 +199,7 @@ class SaslServerDefinitions {
 
             if (value.hasDefined(ElytronDescriptionConstants.PREDEFINED_FILTER)
                     && value.hasDefined(ElytronDescriptionConstants.PATTERN_FILTER)) {
-                throw ROOT_LOGGER.invalidDefinition(ElytronDescriptionConstants.FILTERS);
+                throw ROOT_LOGGER.invalidDefinition(ElytronDescriptionConstants.FILTERS, ElytronDescriptionConstants.PREDEFINED_FILTER, ElytronDescriptionConstants.PATTERN_FILTER);
             }
         }
     }

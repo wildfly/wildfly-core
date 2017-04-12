@@ -379,8 +379,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1013, value = "Pattern [%s] requires a capture group")
     OperationFailedException patternRequiresCaptureGroup(final String pattern);
 
-    @Message(id = 1014, value = "Invalid [%s] definition.")
-    OperationFailedException invalidDefinition(final String property);
+    @Message(id = 1014, value = "Invalid [%s] definition. Only one of '%s' or '%s' can be set in one Object in the list of filters.")
+    OperationFailedException invalidDefinition(final String property, String filterNameOne, String filterNameTwo);
 
     @Message(id = 1015, value = "Unable to perform automatic outflow for '%s'")
     IllegalStateException unableToPerformOutflow(String identityName, @Cause Exception cause);
