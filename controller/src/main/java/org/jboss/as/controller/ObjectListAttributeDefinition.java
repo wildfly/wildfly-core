@@ -225,7 +225,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         //Don't add allowed values for object types, since they simply enumerate the fields given in the value type
     }
 
-    ObjectTypeAttributeDefinition getValueType() {
+    public final ObjectTypeAttributeDefinition getValueType() {
         return valueType;
     }
 

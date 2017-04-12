@@ -139,7 +139,7 @@ public class ObjectMapAttributeDefinition extends MapAttributeDefinition {
         valueType.addValueTypeDescription(node, prefix, bundle, forOperation, resolver, locale);
     }
 
-    ObjectTypeAttributeDefinition getValueType() {
+    public final ObjectTypeAttributeDefinition getValueType() {
         return valueType;
     }
 

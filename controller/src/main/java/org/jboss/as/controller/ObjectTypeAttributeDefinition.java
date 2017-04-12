@@ -88,7 +88,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         return result;
     }
 
-    AttributeDefinition[] getValueTypes() {
+    public final AttributeDefinition[] getValueTypes() {
         return valueTypes;
     }
 

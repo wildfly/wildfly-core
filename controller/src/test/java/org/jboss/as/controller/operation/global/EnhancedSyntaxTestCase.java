@@ -298,6 +298,20 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         op.get("name").set(OBJECT_LIST.getName() + "[-3].attr1");
         executeCheckForFailure(op);
 
+        // test read non-existent element -- read-attribute(name=object-list[6])
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[6]");
+        Assert.assertFalse(executeForResult(op).isDefined());
+
+        // test write to non-existing element
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[6].attr1");
+        op.get(VALUE).set("newvalue");
+        executeCheckNoFailure(op);
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[6].attr1");
+        Assert.assertEquals("newvalue", executeForResult(op).asString());
+
 
         //complex attribute with list with complex attributes
 
@@ -342,6 +356,68 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
         op.get("index").set(1);
         Assert.assertEquals(3, executeForResult(op).asList().size()); //there should be 3 attributes on this list element
+
+        // test read non-existent element -- read-attribute(name=complex-attribute2.object-list[6])
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6]");
+        Assert.assertFalse(executeForResult(op).isDefined());
+
+        // test write to non-existing element
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].attr1");
+        op.get(VALUE).set("newvalue");
+        executeCheckNoFailure(op);
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[6].attr1");
+        Assert.assertEquals("newvalue", executeForResult(op).asString());
+
+        // test add to undefined list
+        op = createOperation("undefine-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
+        executeCheckNoFailure(op);
+        ModelNode item = new ModelNode();
+        item.get(ATTR_1.getName()).set("newvalue");
+        item.get(ATTR_2.getName()).set(true);
+        ModelNode mapValue = item.get(MAP_ATTRIBUTE.getName());
+        mapValue.get("key1").set("value1");
+        mapValue.get("key2").set("value2");
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
+        op.get(VALUE).set(item);
+        executeCheckNoFailure(op);
+        op = createOperation("read-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[0].attr1");
+        Assert.assertEquals("newvalue", executeForResult(op).asString());
+
+        // test write to non-existing attribute
+        op = createOperation("undefine-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName());
+        executeCheckNoFailure(op);
+        op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
+        ModelNode list = new ModelNode();
+        list.add(item);
+        op.get("value").set(list);
+        executeCheckNoFailure(op);
+
+        // test add to undefined parent
+        op = createOperation("undefine-attribute", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName());
+        executeCheckNoFailure(op);
+        item = new ModelNode();
+        item.get(ATTR_1.getName()).set("newvalue");
+        item.get(ATTR_2.getName()).set(true);
+        mapValue = item.get(MAP_ATTRIBUTE.getName());
+        mapValue.get("key1").set("value1");
+        mapValue.get("key2").set("value2");
+        op = createOperation("list-add", TEST_ADDRESS);
+        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName());
+        op.get(VALUE).set(item);
+        executeCheckForFailure(op);  // TODO perhaps this could be made to work and this line would be replaced by the following
+//        executeCheckNoFailure(op);
+//        op = createOperation("read-attribute", TEST_ADDRESS);
+//        op.get("name").set(COMPLEX_ATTRIBUTE2.getName() + "." + OBJECT_LIST.getName() + "[0].attr1");
+//        Assert.assertEquals("newvalue", executeForResult(op).asString());
     }
 
 
