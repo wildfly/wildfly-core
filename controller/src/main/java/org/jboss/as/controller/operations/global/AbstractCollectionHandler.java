@@ -18,6 +18,7 @@
 
 package org.jboss.as.controller.operations.global;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
@@ -139,6 +140,17 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             ModelNode readAttributeOperation = Util.getReadAttributeOperation(address, useEnhancedSyntax ? attributeExpression : attributeName);
             context.addStep(readResponse, readAttributeOperation, ReadAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         }
+
+        context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                // If the read failed we *probably* have no failure description in our own response.
+                // So propagate the read failure desc so the user has a clue what happened
+                if (!context.hasFailureDescription() && readResponse.hasDefined(FAILURE_DESCRIPTION)) {
+                    context.getFailureDescription().set(readResponse.get(FAILURE_DESCRIPTION));
+                }
+            }
+        });
     }
 
     abstract void updateModel(final OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException;
