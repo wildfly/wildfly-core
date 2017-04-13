@@ -673,8 +673,12 @@ class SSLDefinitions {
                 .setAllowExpression(false)
                 .build();
 
+        final SimpleAttributeDefinition keyManagersDefinition = new SimpleAttributeDefinitionBuilder(KEY_MANAGERS)
+                .setRequired(true)
+                .build();
+
         AttributeDefinition[] attributes = new AttributeDefinition[] { SECURITY_DOMAIN, CIPHER_SUITE_FILTER, PROTOCOLS, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
-                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
+                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagersDefinition, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
