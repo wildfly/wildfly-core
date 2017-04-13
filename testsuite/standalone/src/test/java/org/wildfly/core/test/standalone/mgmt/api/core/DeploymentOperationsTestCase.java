@@ -53,6 +53,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -75,7 +76,10 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
+import org.jboss.as.controller.client.helpers.standalone.ServerUpdateActionResult;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -217,6 +221,20 @@ public class DeploymentOperationsTestCase {
     }
 
     @Test
+    public void testExplodeContentFailsWithDeployedManagedArchiveDeployment() throws Exception {
+        deployManagedDeploymentWithArchives(TEST_DEPLOYMENT_NAME, true);
+        Assert.assertFalse(explodeDeploymentContentAndGetOutcome(TEST_DEPLOYMENT_NAME, "web.war"));
+        undeployAndRemoveDeployment(TEST_DEPLOYMENT_NAME);
+    }
+
+    @Test
+    public void testExplodeContentWithDeployedManagedArchiveDeployment() throws Exception {
+        deployManagedDeploymentWithArchives(TEST_DEPLOYMENT_NAME, false);
+        Assert.assertTrue(explodeDeploymentContentAndGetOutcome(TEST_DEPLOYMENT_NAME, "web.war"));
+        undeployAndRemoveDeployment(TEST_DEPLOYMENT_NAME);
+    }
+
+    @Test
     public void testAddContentFailsWithoutOverwriteManagedExplodedDeployment() throws Exception {
         deployManagedDeployment(TEST_DEPLOYMENT_NAME, false);
 
@@ -306,6 +324,18 @@ public class DeploymentOperationsTestCase {
         op.get(OP_ADDR).add(DEPLOYMENT, deploymentName);
 
         return Operations.isSuccessfulOutcome(awaitOperationExecutionAndReturnResult(op));
+    }
+
+    private boolean explodeDeploymentContentAndGetOutcome(String deploymentName, String archivePath) throws IOException {
+        final ModelControllerClient client = managementClient.getControllerClient();
+        final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
+        DeploymentPlan plan = manager.newDeploymentPlan()
+                .undeploy(deploymentName)
+                .explodeDeploymentContent(deploymentName, archivePath)
+                .deploy(deploymentName)
+                .build();
+        Future<ServerDeploymentPlanResult> future = manager.execute(plan);
+        return awaitDeploymentExecution(future).getDeploymentActionResult(plan.getDeploymentActions().get(plan.getDeploymentActions().size() - 1).getId()).getResult() == ServerUpdateActionResult.Result.EXECUTED;
     }
 
     private ModelNode addContentByByteArrayAndGetOutcome(String deploymentName, boolean overwrite) throws Exception {
@@ -568,13 +598,13 @@ public class DeploymentOperationsTestCase {
 
         try (InputStream is = ear.as(ZipExporter.class).exportAsInputStream()) {
             if (archived) {
-                Future<?> future = manager.execute(manager.newDeploymentPlan()
+                Future<ServerDeploymentPlanResult> future = manager.execute(manager.newDeploymentPlan()
                         .add(deploymentName, is)
                         .deploy(deploymentName)
                         .build());
                 awaitDeploymentExecution(future);
             } else {
-                Future<?> future = manager.execute(manager.newDeploymentPlan()
+                Future<ServerDeploymentPlanResult> future = manager.execute(manager.newDeploymentPlan()
                         .add(deploymentName, is)
                         .explodeDeployment(deploymentName)
                         .deploy(deploymentName)
@@ -599,13 +629,13 @@ public class DeploymentOperationsTestCase {
 
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
             if (archived) {
-                Future<?> future = manager.execute(manager.newDeploymentPlan()
+                Future<ServerDeploymentPlanResult> future = manager.execute(manager.newDeploymentPlan()
                         .add(deploymentName, is)
                         .deploy(deploymentName)
                         .build());
                 awaitDeploymentExecution(future);
             } else {
-                Future<?> future = manager.execute(manager.newDeploymentPlan()
+                Future<ServerDeploymentPlanResult> future = manager.execute(manager.newDeploymentPlan()
                         .add(deploymentName, is)
                         .explodeDeployment(deploymentName)
                         .deploy(deploymentName)
@@ -665,7 +695,7 @@ public class DeploymentOperationsTestCase {
         final ModelControllerClient client = managementClient.getControllerClient();
         final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
 
-        Future<?> future = manager.execute(manager.newDeploymentPlan()
+        Future<ServerDeploymentPlanResult> future = manager.execute(manager.newDeploymentPlan()
                 .undeploy(deploymentName)
                 .remove(deploymentName)
                 .build());
@@ -715,9 +745,9 @@ public class DeploymentOperationsTestCase {
         }
     }
 
-    private void awaitDeploymentExecution(Future<?> future) {
+    private ServerDeploymentPlanResult awaitDeploymentExecution(Future<ServerDeploymentPlanResult> future) {
         try {
-            future.get(TIMEOUT, TimeUnit.MILLISECONDS);
+           return future.get(TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
