@@ -75,4 +75,12 @@ public class WildcardInetAddressInterfaceCriteria implements InterfaceCriteria {
         return (o instanceof WildcardInetAddressInterfaceCriteria)
                 && version == ((WildcardInetAddressInterfaceCriteria)o).version;
     }
+
+    @Override
+    public int compareTo(InterfaceCriteria o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return o instanceof InetAddressMatchInterfaceCriteria ? -1 : 1;
+    }
 }

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -61,7 +62,8 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
     public Map<NetworkInterface, Set<InetAddress>> getAcceptableAddresses(Map<NetworkInterface, Set<InetAddress>> candidates) throws SocketException {
 
         Map<NetworkInterface, Set<InetAddress>> result = AbstractInterfaceCriteria.cloneCandidates(candidates);
-        for (InterfaceCriteria criteria : interfaceCriteria) {
+        Set<InterfaceCriteria> sorted = new TreeSet<>(interfaceCriteria);
+        for (InterfaceCriteria criteria : sorted) {
             result = criteria.getAcceptableAddresses(result);
             if (result.size() == 0) {
                 break;
@@ -103,6 +105,14 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
         sb.setLength(sb.length() - 1);
         sb.append(")");
         return sb.toString();
+    }
+
+    @Override
+    public int compareTo(InterfaceCriteria o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return 1;
     }
 
     private Map<NetworkInterface, Set<InetAddress>> pruneIPTypes(Map<NetworkInterface, Set<InetAddress>> candidates) {

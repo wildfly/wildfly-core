@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author Brian Stansberry
  */
-public interface InterfaceCriteria extends Serializable {
+public interface InterfaceCriteria extends Serializable, Comparable<InterfaceCriteria> {
 
     /**
      * Gets which of the available network interfaces and addresses are acceptable for

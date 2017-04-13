@@ -87,4 +87,12 @@ public abstract class AbstractInterfaceCriteria implements InterfaceCriteria {
         }
         return clone;
     }
+
+    @Override
+    public int compareTo(InterfaceCriteria o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        return o instanceof InetAddressMatchInterfaceCriteria ? -1 : 1;
+    }
 }
