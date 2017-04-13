@@ -61,7 +61,6 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 import org.jboss.msc.inject.InjectionException;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
@@ -603,8 +602,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void validateUpdatedModel(OperationContext context, Resource model) throws OperationFailedException {
-            Property property = model.getModel().asProperty();
-            resolveKeyMappers(context, property.getValue().get(0));
+            ModelNode principalQuery = model.getModel().get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
+            resolveKeyMappers(context, principalQuery);
         }
     }
 
