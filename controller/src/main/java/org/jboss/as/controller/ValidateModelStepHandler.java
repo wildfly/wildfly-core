@@ -20,6 +20,8 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationContext.Stage;
@@ -69,7 +71,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
         final Set<String> attributeNames = resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
         for (final String attributeName : attributeNames) {
             final boolean has = model.hasDefined(attributeName);
-            final AttributeAccess access = context.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+            final AttributeAccess access = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
             if (access.getStorageType() != AttributeAccess.Storage.CONFIGURATION){
                 continue;
             }
@@ -85,14 +87,24 @@ class ValidateModelStepHandler implements OperationStepHandler {
                 continue;
             }
 
-            if (attr.getRequires() != null) {
-                for (final String required : attr.getRequires()) {
+            String[] requires = attr.getRequires();
+            if (requires != null) {
+                for (final String required : requires) {
                     if (!model.hasDefined(required)) {
-                        attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
-                            @Override
-                            public void throwError() throws OperationFailedException {
-                                throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, attr.getName());
-                            }});
+                        // Check for alternatives that are in the same set of 'requires'
+                        AttributeDefinition requiredAttr = getAttributeDefinition(required, resourceRegistration);
+                        if (requiredAttr == null) {
+                            // Coding mistake in the attr AD. Don't mess up the user; just debug log
+                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
+                                    required, attributeName);
+                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), model)) {
+                            attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
+                                @Override
+                                public void throwError() throws OperationFailedException {
+                                    throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, attr.getName());
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -124,6 +136,20 @@ class ValidateModelStepHandler implements OperationStepHandler {
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
+    private static AttributeDefinition getAttributeDefinition(String name, ImmutableManagementResourceRegistration resourceRegistration) {
+        AttributeAccess aa = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name);
+        return aa == null ? null : aa.getAttributeDefinition();
+    }
+
+    private static AttributeDefinition getAttributeDefinition(String name, AttributeDefinition[] attrs) {
+        for (AttributeDefinition peer : attrs) {
+            if (name.equals(peer.getName())) {
+                return peer;
+            }
+        }
+        return null;
+    }
+
     private void attemptReadMissingAttributeValueFromHandler(final OperationContext context, final AttributeAccess attributeAccess,
             final String attributeName, final ErrorHandler errorHandler) throws OperationFailedException {
         OperationStepHandler handler = attributeAccess.getReadHandler();
@@ -152,15 +178,15 @@ class ValidateModelStepHandler implements OperationStepHandler {
 
     private void handleObjectAttributes(ModelNode model, AttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
         if (attr instanceof ObjectTypeAttributeDefinition) {
-            validateNestedAttributes(model.get(attr.getName()), attr, absoluteParentName);
+            validateNestedAttributes(model.get(attr.getName()), (ObjectTypeAttributeDefinition) attr, absoluteParentName);
         } else if (attr instanceof ObjectListAttributeDefinition) {
-            AttributeDefinition valueType = ((ObjectListAttributeDefinition) attr).getValueType();
+            ObjectTypeAttributeDefinition valueType = ((ObjectListAttributeDefinition) attr).getValueType();
             ModelNode list = model.get(attr.getName());
             for (int i = 0; i < list.asInt(); i++) {
                 validateNestedAttributes(list.get(i), valueType, absoluteParentName + "[" + i + "]");
             }
         } else if (attr instanceof ObjectMapAttributeDefinition) {
-            AttributeDefinition valueType = ((ObjectMapAttributeDefinition) attr).getValueType();
+            ObjectTypeAttributeDefinition valueType = ((ObjectMapAttributeDefinition) attr).getValueType();
             ModelNode map = model.get(attr.getName());
             for (String key : map.keys()) {
                 validateNestedAttributes(map.get(key), valueType, absoluteParentName + "." + key);
@@ -168,24 +194,33 @@ class ValidateModelStepHandler implements OperationStepHandler {
         }
     }
 
-    private void validateNestedAttributes(ModelNode subModel, AttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
+    private void validateNestedAttributes(ModelNode subModel, ObjectTypeAttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
         if (!subModel.isDefined()) {
             return;
         }
-        AttributeDefinition[] subAttrs = ((ObjectTypeAttributeDefinition) attr).getValueTypes();
+        AttributeDefinition[] subAttrs = attr.getValueTypes();
         for (AttributeDefinition subAttr : subAttrs) {
             String subAttributeName = subAttr.getName();
             String absoluteName = absoluteParentName + "." + subAttributeName;
             if (!subModel.hasDefined(subAttributeName) && isRequired(subAttr, subModel)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(subAttributeName));
+                throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.required(subAttributeName));
             }
             if (!subModel.hasDefined(subAttributeName)) {
                 continue;
             }
-            if (subAttr.getRequires() != null) {
-                for (final String required : subAttr.getRequires()) {
+            String[] requires = subAttr.getRequires();
+            if (requires != null) {
+                for (final String required : requires) {
                     if (!subModel.hasDefined(required)) {
-                        throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
+                        // Check for alternatives that are in the same set of 'requires'
+                        AttributeDefinition requiredAttr = getAttributeDefinition(required, subAttrs);
+                        if (requiredAttr == null) {
+                            // Coding mistake in the subAttr AD. Don't mess up the user; just debug log
+                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s of %s is null",
+                                    required, subAttributeName, absoluteParentName);
+                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), subModel)) {
+                            throw ControllerLogger.MGMT_OP_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
+                        }
                     }
                 }
             }
@@ -213,8 +248,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
     }
 
     private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
-        final boolean required = def.isRequired() && !def.isResourceOnly();
-        return required ? !hasAlternative(def.getAlternatives(), model) : required;
+        return def.isRequired() && !def.isResourceOnly() && !hasAlternative(def.getAlternatives(), model);
     }
 
     private boolean isAllowed(final AttributeDefinition def, final ModelNode model) {
@@ -238,6 +272,22 @@ class ValidateModelStepHandler implements OperationStepHandler {
             }
         }
         return false;
+    }
+
+    private String[] getRelevantAlteratives(String[] alternatives, String[] relevant) {
+        if (alternatives == null || relevant == null || relevant.length == 0) {
+            return null;
+        }
+        List<String> result = new ArrayList<>(alternatives.length);
+        for (String alt : alternatives) {
+            for (String rel : relevant) {
+                if (alt.equals(rel)) {
+                    result.add(alt);
+                    break;
+                }
+            }
+        }
+        return result.size() == 0 ? null : result.toArray(new String[result.size()]);
     }
 
     private Resource loadResource(OperationContext context) {

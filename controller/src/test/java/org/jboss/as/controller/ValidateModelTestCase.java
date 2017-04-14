@@ -32,16 +32,22 @@ import org.junit.Test;
  */
 public class ValidateModelTestCase extends AbstractControllerTestBase {
     private static final SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING, true)
-            //.setValidator(new IntRangeValidator(5, 10, false, false))
-            .setRequires("other")
+            .setRequires("other", "alter2")
             .build();
 
     private static final SimpleAttributeDefinition other = new SimpleAttributeDefinitionBuilder("other", ModelType.STRING, true)
+            .setAlternatives("alter2")
             .build();
     private static final SimpleAttributeDefinition alter1 = new SimpleAttributeDefinitionBuilder("alter1", ModelType.STRING, true)
             .build();
     private static final SimpleAttributeDefinition alter2 = new SimpleAttributeDefinitionBuilder("alter2", ModelType.STRING, true)
             .setAlternatives("other")
+            .build();
+    private static final SimpleAttributeDefinition alter3 = new SimpleAttributeDefinitionBuilder("alter3", ModelType.STRING, true)
+            .setAlternatives("alter2")
+            .build();
+    private static final AttributeDefinition object = ObjectTypeAttributeDefinition.Builder.of("object", ad, other, alter1, alter2, alter3)
+            .setRequired(false)
             .build();
 
 
@@ -70,14 +76,18 @@ public class ValidateModelTestCase extends AbstractControllerTestBase {
                         other.validateAndSet(operation, model);
                         alter1.validateAndSet(operation, model);
                         alter2.validateAndSet(operation, model);
+                        alter3.validateAndSet(operation, model);
+                        object.validateAndSet(operation, model);
                     }
 
                 })
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
                 .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
-                .addReadWriteAttribute(alter1, null, new ReloadRequiredWriteAttributeHandler(other))
-                .addReadWriteAttribute(alter2, null, new ReloadRequiredWriteAttributeHandler(other))
+                .addReadWriteAttribute(alter1, null, new ReloadRequiredWriteAttributeHandler(alter1))
+                .addReadWriteAttribute(alter2, null, new ReloadRequiredWriteAttributeHandler(alter2))
+                .addReadWriteAttribute(alter3, null, new ReloadRequiredWriteAttributeHandler(alter3))
+                .addReadWriteAttribute(object, null, new ReloadRequiredWriteAttributeHandler(object))
                 .build();
     }
 
@@ -103,6 +113,57 @@ public class ValidateModelTestCase extends AbstractControllerTestBase {
 
 
         addOp.remove("other");
+        executeCheckNoFailure(addOp);
+
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+    }
+
+    @Test
+    public void testRequiresAndAlternatives() throws OperationFailedException {
+        ModelNode addOp = createOperation("add", TEST_ADDRESS);
+        addOp.get("test").set("some test value");
+        addOp.get("other").set("some test value");
+        addOp.get("alter2").set("some test value");
+        executeCheckForFailure(addOp);
+
+        addOp.remove("other");
+        executeCheckNoFailure(addOp);
+
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+
+        addOp.get("alter3").set("some test value");
+        executeCheckForFailure(addOp);
+
+        addOp.remove("alter2");
+        executeCheckForFailure(addOp);
+
+        addOp.get("other").set("some test value");
+        executeCheckNoFailure(addOp);
+
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+    }
+
+    @Test
+    public void testRequiresAndAlternativesNested() throws OperationFailedException {
+        ModelNode addOp = createOperation("add", TEST_ADDRESS);
+        ModelNode object = addOp.get("object");
+        object.get("test").set("some test value");
+        object.get("other").set("some test value");
+        object.get("alter2").set("some test value");
+        executeCheckForFailure(addOp);
+
+        object.remove("other");
+        executeCheckNoFailure(addOp);
+
+        executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
+
+        object.get("alter3").set("some test value");
+        executeCheckForFailure(addOp);
+
+        object.remove("alter2");
+        executeCheckForFailure(addOp);
+
+        object.get("other").set("some test value");
         executeCheckNoFailure(addOp);
 
         executeCheckNoFailure(createOperation("remove", TEST_ADDRESS));
