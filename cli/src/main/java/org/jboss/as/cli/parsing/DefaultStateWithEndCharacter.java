@@ -102,7 +102,11 @@ public class DefaultStateWithEndCharacter extends ExpressionBaseState {
             setLeaveHandler(new CharacterHandler() {
                 @Override
                 public void handle(ParsingContext ctx) throws CommandFormatException {
-                    if(ctx.getCharacter() == leaveStateChar) {
+                    // End of content, do not mix character from
+                    // previous state with this state.
+                    // eg: a={x={y=c}
+                    // x is complete, a is not, do not 're-use; x closing '}' for a.
+                    if (ctx.getCharacter() == leaveStateChar && !ctx.isEndOfContent()) {
                         GlobalCharacterHandlers.CONTENT_CHARACTER_HANDLER.handle(ctx);
                     }
                 }});
