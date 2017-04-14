@@ -1386,4 +1386,29 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    public void testRequiredArgument() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = ":write-attribute(";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(Arrays.asList("name*", "value"), candidates);
+            }
+
+            {
+                String cmd = ":write-attribute(value=toto,";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(Arrays.asList("name"), candidates);
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }

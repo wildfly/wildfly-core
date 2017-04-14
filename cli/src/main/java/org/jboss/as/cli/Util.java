@@ -74,6 +74,7 @@ public class Util {
     public static final String ADDRESS = "address";
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
+    public static final String ALTERNATIVES = "alternatives";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
@@ -163,6 +164,7 @@ public class Util {
     public static final String REPLY_PROPERTIES = "reply-properties";
     public static final String REQUEST_PROPERTIES = "request-properties";
     public static final String REQUIRED = "required";
+    public static final String REQUIRES = "requires";
     public static final String RESOLVE_EXPRESSIONS = "resolve-expressions";
     public static final String RESPONSE_HEADERS = "response-headers";
     public static final String RESTART = "restart";

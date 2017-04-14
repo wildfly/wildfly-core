@@ -39,6 +39,15 @@ public interface CommandArgument {
     String getFullName();
 
     /**
+     * The name can contain some tags to advertise status (e.g.: required).
+     *
+     * @return The default name of the argument with optional tags.
+     */
+    default String getDecoratedName() {
+        return getFullName();
+    }
+
+    /**
      * Short name of the argument if exists.
      * @return short name of the argument or null if the short name doesn't exist.
      */
