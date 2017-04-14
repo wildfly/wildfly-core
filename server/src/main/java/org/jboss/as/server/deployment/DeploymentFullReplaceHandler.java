@@ -166,6 +166,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         final Resource resource = Resource.Factory.create(!persistent);
         resource.writeModel(deploymentModel);
         context.addResource(PathAddress.pathAddress(deploymentPath), resource);
+        if (newHash != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+        }
 
         if (ENABLED.resolveModelAttribute(context, deploymentModel).asBoolean()) {
             DeploymentHandlerUtil.replace(context, originalDeployment, runtimeName, name, replacedRuntimeName, vaultReader, contentItem);
@@ -180,9 +183,6 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
                     if (replacedHash != null  && (newHash == null || !Arrays.equals(replacedHash, newHash))) {
                         // The old content is no longer used; clean from repos
                         contentRepository.removeContent(ModelContentReference.fromModelAddress(address, replacedHash));
-                    }
-                    if (newHash != null) {
-                        contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
                     }
                 } else if (newHash != null && (replacedHash == null || !Arrays.equals(replacedHash, newHash))) {
                     // Due to rollback, the new content isn't used; clean from repos
