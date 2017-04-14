@@ -1519,34 +1519,64 @@ public class CliCompletionTestCase {
         CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
                 System.in, System.out);
         ctx.connectController();
-        {
-            String cmd = "for var ";
-            List<String> candidates = new ArrayList<>();
-            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length(), candidates);
-            assertEquals(candidates.toString(), Arrays.asList("in"), candidates);
-        }
-
-        {
-            String cmd = "for var in ";
-            List<String> candidates = new ArrayList<>();
-            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length(), candidates);
-            assertFalse(candidates.toString(), candidates.isEmpty());
-            assertTrue(candidates.toString(), candidates.contains(":"));
-        }
-
-        {
-            String cmd = "done ";
-            ctx.handle("for var in :read-resource");
-            try {
+        try {
+            {
+                String cmd = "for var ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.contains("--discard"));
-            } finally {
-                ctx.handle("done --discard");
+                assertEquals(candidates.toString(), Arrays.asList("in"), candidates);
             }
+
+            {
+                String cmd = "for var in ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                assertTrue(candidates.toString(), candidates.contains(":"));
+            }
+
+            {
+                String cmd = "done ";
+                ctx.handle("for var in :read-resource");
+                try {
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue(candidates.toString(), candidates.contains("--discard"));
+                } finally {
+                    ctx.handle("done --discard");
+                }
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    public void testRequiredArgument() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = ":write-attribute(";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(Arrays.asList("name*", "value"), candidates);
+            }
+
+            {
+                String cmd = ":write-attribute(value=toto,";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(Arrays.asList("name"), candidates);
+            }
+        } finally {
+            ctx.terminateSession();
         }
     }
 }
