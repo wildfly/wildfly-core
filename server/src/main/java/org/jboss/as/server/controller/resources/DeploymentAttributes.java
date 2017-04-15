@@ -200,6 +200,7 @@ public class DeploymentAttributes {
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.PATH)
                     .build();
+
     public static final AttributeDefinition CONTENT_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL)
@@ -233,8 +234,8 @@ public class DeploymentAttributes {
             .setDefaultValue(new ModelNode(false))
             .build();
 
-    /** The content complex attribute */
-    public static final ObjectListAttributeDefinition CONTENT_ALL =
+    /** The complex content  operation parameters */
+    public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL =
                 ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                     ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                             CONTENT_INPUT_STREAM_INDEX,
@@ -251,7 +252,7 @@ public class DeploymentAttributes {
                     .setMaxSize(1)
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
-    public static final ObjectListAttributeDefinition CONTENT_ALL_NILLABLE =
+    public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_NILLABLE =
             ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                 ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                         CONTENT_INPUT_STREAM_INDEX,
@@ -268,20 +269,7 @@ public class DeploymentAttributes {
                 .setAllowNull(true)
                 .setCorrector(ContentListCorrector.INSTANCE)
                 .build();
-    public static final ObjectListAttributeDefinition CONTENT_RESOURCE =
-                ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                    ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                            CONTENT_HASH,
-                            CONTENT_PATH,
-                            CONTENT_RELATIVE_TO,
-                            CONTENT_ARCHIVE)
-                            .setValidator(new ContentTypeValidator())
-                            .build())
-                    .setMinSize(1)
-                    .setMaxSize(1)
-                    .build();
-    /** The content complex attribute */
-    public static final ObjectListAttributeDefinition EXPLODED_CONTENT =
+    public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_EXPLODED =
                 ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                     ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                         CONTENT_INPUT_STREAM_INDEX,
@@ -295,12 +283,45 @@ public class DeploymentAttributes {
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
 
+    // Resource content attributes
+    public static final SimpleAttributeDefinition CONTENT_RESOURCE_HASH =
+            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.HASH, ModelType.BYTES)
+                    .setValidator(new HashValidator(true))
+                    .setAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO)
+                    .build();
+    public static final AttributeDefinition CONTENT_RESOURCE_PATH =
+            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING)
+                    .setAlternatives(ModelDescriptionConstants.HASH)
+                    .build();
+    public static final AttributeDefinition CONTENT_RESOURCE_RELATIVE_TO =
+            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.RELATIVE_TO, ModelType.STRING)
+                    .setRequired(false)
+                    .setRequires(ModelDescriptionConstants.PATH)
+                    .setAlternatives(ModelDescriptionConstants.HASH)
+                    .build();
+    public static final SimpleAttributeDefinition CONTENT_RESOURCE_ARCHIVE =
+            createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false)
+                    .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH)
+                    .build();
+    public static final ObjectListAttributeDefinition CONTENT_RESOURCE_ALL =
+            ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
+                    ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
+                            CONTENT_RESOURCE_HASH,
+                            CONTENT_RESOURCE_PATH,
+                            CONTENT_RESOURCE_RELATIVE_TO,
+                            CONTENT_RESOURCE_ARCHIVE)
+                            .setValidator(new ContentTypeValidator())
+                            .build())
+                    .setMinSize(1)
+                    .setMaxSize(1)
+                    .build();
+
 
     /** Attributes for server deployment resource */
-    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE, ENABLED, PERSISTENT, OWNER, STATUS, ENABLED_TIME, ENABLED_TIMESTAMP, DISABLED_TIME, DISABLED_TIMESTAMP, MANAGED};
+    public static final AttributeDefinition[] SERVER_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, CONTENT_RESOURCE_ALL, ENABLED, PERSISTENT, OWNER, STATUS, ENABLED_TIME, ENABLED_TIMESTAMP, DISABLED_TIME, DISABLED_TIMESTAMP, MANAGED};
 
     /** Attributes for server deployment add */
-    public static final AttributeDefinition[] SERVER_ADD_ATTRIBUTES = new AttributeDefinition[] { RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED};// 'hide' the persistent and owner attributes from users
+    public static final AttributeDefinition[] SERVER_ADD_ATTRIBUTES = new AttributeDefinition[] { RUNTIME_NAME_NILLABLE, CONTENT_PARAM_ALL, ENABLED};// 'hide' the persistent and owner attributes from users
 
     /** Attributes for server group deployment add */
     public static final AttributeDefinition[] SERVER_GROUP_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, ENABLED, MANAGED};
@@ -309,10 +330,10 @@ public class DeploymentAttributes {
     public static final AttributeDefinition[] SERVER_GROUP_ADD_ATTRIBUTES = new AttributeDefinition[] {RUNTIME_NAME_NILLABLE, ENABLED};
 
     /** Attributes for domain deployment resource */
-    public static final AttributeDefinition[] DOMAIN_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, MANAGED, CONTENT_RESOURCE};
+    public static final AttributeDefinition[] DOMAIN_RESOURCE_ATTRIBUTES = new AttributeDefinition[] {NAME, RUNTIME_NAME, MANAGED, CONTENT_RESOURCE_ALL};
 
     /** Attributes for domain deployment add */
-    public static final AttributeDefinition[] DOMAIN_ADD_ATTRIBUTES = new AttributeDefinition[] {RUNTIME_NAME_NILLABLE, CONTENT_ALL};
+    public static final AttributeDefinition[] DOMAIN_ADD_ATTRIBUTES = new AttributeDefinition[] {RUNTIME_NAME_NILLABLE, CONTENT_PARAM_ALL};
 
     /** Attributes indicating managed deployments in the content attribute */
     public static final Map<String, AttributeDefinition> MANAGED_CONTENT_ATTRIBUTES = createAttributeMap(CONTENT_INPUT_STREAM_INDEX, CONTENT_HASH, CONTENT_BYTES, CONTENT_URL, EMPTY);
@@ -344,7 +365,7 @@ public class DeploymentAttributes {
             .setParameters(SERVER_ADD_ATTRIBUTES)
             .build();
     public static final OperationDefinition DEPLOYMENT_ADD_CONTENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD_CONTENT, DEPLOYMENT_RESOLVER)
-            .setParameters(EXPLODED_CONTENT, OVERWRITE)
+            .setParameters(CONTENT_PARAM_ALL_EXPLODED, OVERWRITE)
             .withFlag(Flag.DOMAIN_PUSH_TO_SERVERS)
             .build();
     public static final OperationDefinition DEPLOYMENT_REMOVE_CONTENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE_CONTENT, DEPLOYMENT_RESOLVER)
@@ -434,7 +455,7 @@ public class DeploymentAttributes {
             .build();
 
     //Replace deployment definition
-    public static final Map<String, AttributeDefinition> REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, TO_REPLACE, CONTENT_ALL_NILLABLE, RUNTIME_NAME_NILLABLE);
+    public static final Map<String, AttributeDefinition> REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, TO_REPLACE, CONTENT_PARAM_ALL_NILLABLE, RUNTIME_NAME_NILLABLE);
     public static final OperationDefinition REPLACE_DEPLOYMENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REPLACE_DEPLOYMENT, DEPLOYMENT_RESOLVER)
             .setParameters(REPLACE_DEPLOYMENT_ATTRIBUTES.values().toArray(new AttributeDefinition[REPLACE_DEPLOYMENT_ATTRIBUTES.size()]))
             .build();
@@ -445,7 +466,7 @@ public class DeploymentAttributes {
             .build();
 
     //Full replace deployment definition
-    public static final Map<String, AttributeDefinition> FULL_REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, RUNTIME_NAME_NILLABLE, CONTENT_ALL, ENABLED);
+    public static final Map<String, AttributeDefinition> FULL_REPLACE_DEPLOYMENT_ATTRIBUTES = createAttributeMap(NAME, RUNTIME_NAME_NILLABLE, CONTENT_PARAM_ALL, ENABLED);
     public static final OperationDefinition FULL_REPLACE_DEPLOYMENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.FULL_REPLACE_DEPLOYMENT, DEPLOYMENT_RESOLVER)
             .setParameters(FULL_REPLACE_DEPLOYMENT_ATTRIBUTES.values().toArray(new AttributeDefinition[FULL_REPLACE_DEPLOYMENT_ATTRIBUTES.size()]))
             .addAccessConstraint(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT)

@@ -33,7 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.EXPLODED_CONTENT;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PARAM_ALL_EXPLODED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.REMOVED_PATHS;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.TARGET_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.UPDATED_PATHS;
@@ -181,7 +181,7 @@ class DeploymentUploadUtil {
         final Resource deploymentResource = context.readResource(PathAddress.EMPTY_ADDRESS);
         ModelNode contentItem = getContentItem(deploymentResource);
         byte[] oldHash = CONTENT_HASH.resolveModelAttribute(context, contentItem).asBytes();
-        List<ModelNode> contents = EXPLODED_CONTENT.resolveModelAttribute(context, operation).asList();
+        List<ModelNode> contents = CONTENT_PARAM_ALL_EXPLODED.resolveModelAttribute(context, operation).asList();
         final List<ExplodedContent> addedFiles = new ArrayList<>(contents.size());
 
         final ModelNode slave = operation.clone();
@@ -253,7 +253,7 @@ class DeploymentUploadUtil {
      * @return true if the content should be pulled by the slave HC - false otherwise.
      */
     public static byte[] synchronizeSlaveHostController(ModelNode operation, final PathAddress address, HostFileRepository fileRepository, ContentRepository contentRepository, boolean backup, byte[] oldHash) {
-        ModelNode operationContentItem = operation.get(DeploymentAttributes.CONTENT_RESOURCE.getName()).get(0);
+        ModelNode operationContentItem = operation.get(DeploymentAttributes.CONTENT_RESOURCE_ALL.getName()).get(0);
         byte[] newHash = operationContentItem.require(CONTENT_HASH.getName()).asBytes();
         if (needRemoteContent(fileRepository, contentRepository, backup, oldHash)) {  // backup DC needs to  pull the content
             fileRepository.getDeploymentFiles(ModelContentReference.fromModelAddress(address, newHash));

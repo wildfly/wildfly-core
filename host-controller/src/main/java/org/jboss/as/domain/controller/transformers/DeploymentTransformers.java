@@ -52,15 +52,15 @@ class DeploymentTransformers {
 
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_4_1);
         builder
-                .getAttributeBuilder().addRejectCheck(EXPLODED_REJECT, DeploymentAttributes.CONTENT_ALL)
-                    .setValueConverter(ARCHIVE_REMOVER, DeploymentAttributes.CONTENT_ALL)
+                .getAttributeBuilder().addRejectCheck(EXPLODED_REJECT, DeploymentAttributes.CONTENT_RESOURCE_ALL)
+                    .setValueConverter(ARCHIVE_REMOVER, DeploymentAttributes.CONTENT_RESOURCE_ALL)
                     .end()
                 .addOperationTransformationOverride(READ_ATTRIBUTE_OPERATION)
                     .setDiscard(DiscardAttributeChecker.ALWAYS, DeploymentAttributes.MANAGED)
                     .end()
                 .addOperationTransformationOverride(ADD)
-                    .addRejectCheck(EXPLODED_REJECT, DeploymentAttributes.CONTENT_ALL)
-                    .setValueConverter(ARCHIVE_REMOVER, DeploymentAttributes.CONTENT_ALL)
+                    .addRejectCheck(EXPLODED_REJECT, DeploymentAttributes.CONTENT_PARAM_ALL)
+                    .setValueConverter(ARCHIVE_REMOVER, DeploymentAttributes.CONTENT_PARAM_ALL)
                     .end()
                 .discardOperations(BROWSE_CONTENT, READ_CONTENT, EXPLODE, ADD_CONTENT, REMOVE_CONTENT);
         return chainedBuilder;

@@ -409,7 +409,7 @@ public class DeploymentHandlerUtil {
     }
 
     public static ModelNode getContentItem(Resource resource) {
-        return resource.getModel().get(DeploymentAttributes.CONTENT_RESOURCE.getName()).get(0);
+        return resource.getModel().get(DeploymentAttributes.CONTENT_RESOURCE_ALL.getName()).get(0);
     }
 
     static Path getExplodedDeploymentRoot(ServerEnvironment serverEnvironment, String deploymentManagementName) {

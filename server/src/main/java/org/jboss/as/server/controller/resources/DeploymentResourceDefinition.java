@@ -23,7 +23,7 @@ package org.jboss.as.server.controller.resources;
 
 
 
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ALL;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.isUnmanagedContent;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -73,8 +73,8 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS, true).getModel();
-                        if(deployment.hasDefined(CONTENT_ALL.getName())) {
-                            ModelNode content = deployment.get(CONTENT_ALL.getName()).asList().get(0);
+                        if(deployment.hasDefined(CONTENT_RESOURCE_ALL.getName())) {
+                            ModelNode content = deployment.get(CONTENT_RESOURCE_ALL.getName()).asList().get(0);
                             context.getResult().set(!isUnmanagedContent(content));
                         }
                     }
