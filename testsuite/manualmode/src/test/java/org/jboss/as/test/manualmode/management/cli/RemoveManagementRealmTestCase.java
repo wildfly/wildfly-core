@@ -21,6 +21,7 @@
  */
 package org.jboss.as.test.manualmode.management.cli;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -84,25 +85,14 @@ public class RemoveManagementRealmTestCase {
         cli.executeInteractive();
         cli.clearOutput();
         cli.pushLineAndWaitForResults("/core-service=management/security-realm=ManagementRealm/authentication=local:remove");
-        cli.clearOutput();
-        cli.pushLineAndWaitForResults("reload");
-        assertTrue(cli.ctrlCAndWaitForClose());
+        cmdAndCtrlC("reload", cli);
     }
 
-    @Test
-    public void testShutdown() throws Exception {
-        CliProcessWrapper cli = new CliProcessWrapper().
-                addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString()).
-                addCliArgument("--controller=remote+http://"
-                        + TestSuiteEnvironment.getServerAddress() + ":"
-                        + TestSuiteEnvironment.getServerPort()).
-                addCliArgument("--connect");
-        cli.executeInteractive();
+    private void cmdAndCtrlC(String cmd, CliProcessWrapper cli) throws IOException {
         cli.clearOutput();
-        cli.pushLineAndWaitForResults("/core-service=management/security-realm=ManagementRealm/authentication=local:remove");
-        cli.clearOutput();
-        cli.pushLineAndWaitForResults("shutdown --reload");
-        assertTrue(cli.ctrlCAndWaitForClose());
+        boolean prompt = cli.pushLineAndWaitForResults(cmd, "Username:");
+        assertTrue("Expected prompt not seen in output: " + cli.getOutput(), prompt);
+        assertTrue("Process not terminated. Output is: " + cli.getOutput(), cli.ctrlCAndWaitForClose());
     }
 
     @Test
@@ -126,13 +116,9 @@ public class RemoveManagementRealmTestCase {
         cli2.clearOutput();
 
         cli1.pushLineAndWaitForResults("/core-service=management/security-realm=ManagementRealm/authentication=local:remove");
-        cli1.clearOutput();
-        cli1.pushLineAndWaitForResults("reload");
-        assertTrue(cli1.ctrlCAndWaitForClose());
+        cmdAndCtrlC("reload", cli1);
 
         // Send ls from cli2.
-        cli2.pushLineAndWaitForResults("ls");
-        cli2.clearOutput();
-        assertTrue(cli2.ctrlCAndWaitForClose());
+        cmdAndCtrlC("ls", cli2);
     }
 }
