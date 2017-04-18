@@ -112,6 +112,12 @@ class KerberosSecurityFactoryDefinition {
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
+    static final SimpleAttributeDefinition WRAP_GSS_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     private static final ModelNode mechanismsDefault = new ModelNode();
     private static final String[] mechanismAllowedValues = new String[]{"KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO"};
     static {
@@ -155,7 +161,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -166,6 +172,7 @@ class KerberosSecurityFactoryDefinition {
                 final boolean server = SERVER.resolveModelAttribute(context, model).asBoolean();
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
+                final boolean wrapGssCredential = WRAP_GSS_CREDENTIAL.resolveModelAttribute(context, model).asBoolean();
 
                 Stream<String> oidsFromNames = MECHANISM_NAMES.unwrap(context, model).stream()
                         .map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.GSS, name));
@@ -192,7 +199,7 @@ class KerberosSecurityFactoryDefinition {
                 if (optionsNode.isDefined()) {
                     options = new HashMap<>();
                     for (Property option : optionsNode.asPropertyList()) {
-                        options.put(option.getName(), option.getValue());
+                        options.put(option.getName(), option.getValue().asString());
                     }
                 } else {
                     options = null;
@@ -214,6 +221,7 @@ class KerberosSecurityFactoryDefinition {
                         .setIsServer(server)
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
+                        .setWrapGssCredential(wrapGssCredential)
                         .setOptions(options);
                     mechanismOids.forEach(builder::addMechanismOid);
 

@@ -240,6 +240,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="kerberos-security-factory" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to a kerberos security factory used to obtain a GSS kerberos credential.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="authenticationContextType">
@@ -2127,6 +2134,13 @@
                     <xs:annotation>
                         <xs:documentation>
                             Should the JAAS step of obtaining the credential have debug logging enabled.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="wrap-gss-credential" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Should generated GSS credentials be wrapped to prevent improper disposal or not?
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
