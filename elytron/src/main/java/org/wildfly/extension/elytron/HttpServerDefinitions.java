@@ -28,7 +28,9 @@ import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ProviderUtil.isServiceTypeProvided;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
@@ -201,7 +203,12 @@ class HttpServerDefinitions {
                     providerSupplier = Security::getProviders;
                 }
 
-                return () -> new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(providerSupplier));
+                return () -> {
+                    if ( ! isServiceTypeProvided(providerSupplier.get(), HttpServerAuthenticationMechanismFactory.class)) {
+                        throw ROOT_LOGGER.noSuitableProvider(HttpServerAuthenticationMechanismFactory.class.getSimpleName());
+                    }
+                    return new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(providerSupplier));
+                };
             }
 
         };
