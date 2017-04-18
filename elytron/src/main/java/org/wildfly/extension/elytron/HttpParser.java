@@ -35,7 +35,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_AUTHENTICATION_FACTORY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_SERVER_FACTORIES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORIES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
@@ -396,7 +396,7 @@ class HttpParser {
                 writer.writeStartElement(AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY);
                 writer.writeAttribute(NAME, name);
 
-                List<ModelNode> serverFactoryReferences = serverFactory.get(HTTP_SERVER_FACTORIES).asList();
+                List<ModelNode> serverFactoryReferences = serverFactory.get(HTTP_SERVER_MECHANISM_FACTORIES).asList();
                 for (ModelNode currentReference : serverFactoryReferences) {
                     writer.writeStartElement(HTTP_SERVER_MECHANISM_FACTORY);
                     writer.writeAttribute(NAME, currentReference.asString());

@@ -184,7 +184,7 @@ interface ElytronDescriptionConstants {
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
     String HTTP_SERVER_MECHANISM_FACTORY = "http-server-mechanism-factory";
-    String HTTP_SERVER_FACTORIES = "http-server-factories";
+    String HTTP_SERVER_MECHANISM_FACTORIES = "http-server-mechanism-factories";
 
     String IDENTITY = "identity";
     String IDENTITY_MAPPING = "identity-mapping";
