@@ -33,6 +33,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.ManifestHelper;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -47,6 +48,8 @@ import org.jboss.modules.filter.PathFilters;
  * @author Stuart Douglas
  */
 public final class ManifestDependencyProcessor implements DeploymentUnitProcessor {
+
+    private static final ServerLogger logger = ServerLogger.DEPLOYMENT_LOGGER;
 
     private static final String DEPENDENCIES_ATTR = "Dependencies";
     private static final String EXPORT_PARAM = "export";
@@ -92,6 +95,9 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 final ModuleIdentifier dependencyId = ModuleIdentifier.fromString(dependencyParts[0]);
                 final boolean export = containsParam(dependencyParts, EXPORT_PARAM);
                 final boolean optional = containsParam(dependencyParts, OPTIONAL_PARAM);
+                if (optional) {
+                    logger.deprecatedOptionalDependencyManifestAttributeUsed(deploymentUnit.getName());
+                }
                 final boolean services = containsParam(dependencyParts, SERVICES_PARAM);
                 final boolean annotations = containsParam(dependencyParts, ANNOTATIONS_PARAM);
                 final boolean metaInf = containsParam(dependencyParts, META_INF);
