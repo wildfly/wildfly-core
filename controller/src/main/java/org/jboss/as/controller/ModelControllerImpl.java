@@ -687,10 +687,18 @@ class ModelControllerImpl implements ModelController {
         return getClientFactory().createSuperUserClient(executor);
     }
 
-    ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException {
-        ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
-        final ModelNode newModel = Resource.Tools.readModel(model.rootResource, model.resourceRegistration);
-        final ConfigurationPersister.PersistenceResource delegate = persister.store(newModel, affectedAddresses);
+    ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, final Set<PathAddress> affectedAddresses,
+                                                          final boolean resourceTreeModified, final boolean capabilityRegistryModified,
+                                                          final boolean resourceRegistrationModified) throws ConfigurationPersistenceException {
+        final ConfigurationPersister.PersistenceResource delegate;
+        if (resourceTreeModified) {
+            ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
+            final ModelNode newModel = Resource.Tools.readModel(model.rootResource, model.resourceRegistration);
+            delegate = persister.store(newModel, affectedAddresses);
+        } else {
+            ControllerLogger.MGMT_OP_LOGGER.tracef("persisting with no resource tree changes to %s", model);
+            delegate = null;
+        }
         return new ConfigurationPersister.PersistenceResource() {
 
             @Override
@@ -700,26 +708,43 @@ class ModelControllerImpl implements ModelController {
                 if (hostServerGroupTracker != null) {
                     hostServerGroupTracker.invalidate();
                 }
-                model.publish();
-                delegate.commit();
+                // Publish capability registry mods if the caller knows it modified it
+                // or if it modified the resource reg tree, as the registrations may
+                // have modified the cap reg without the caller knowing
+                if ((capabilityRegistryModified || resourceRegistrationModified)
+                        && model.capabilityRegistry.isModified()) {
+                    model.capabilityRegistry.publish();
+                }
+                if (resourceTreeModified) {
+                    model.publish();
+                    delegate.commit();
+                }
             }
 
             @Override
             public void rollback() {
-                model.discard();
-                delegate.rollback();
+                // Don't discard the model here; let that happen via finally block calls to MCI.discardModel
+                //model.discard();
+                if (resourceTreeModified) {
+                    delegate.rollback();
+                }
             }
         };
     }
 
-    void publishCapabilityRegistry(final ManagementModelImpl model){
-        if (model.capabilityRegistry.isModified()){
-            model.capabilityRegistry.publish();
+    void discardModel(final ManagementModelImpl model,
+                      final boolean resourceTreeModified, final boolean capabilityRegistryModified,
+                      final boolean resourceRegistrationModified) {
+        // Roll back capability registry mods if the caller knows it modified it
+        // or if it modified the resource reg tree, as the registrations may
+        // have modified the cap reg without the caller knowing
+        if ((capabilityRegistryModified || resourceRegistrationModified)
+                && model.capabilityRegistry.isModified()) {
+            model.capabilityRegistry.rollback();
         }
-    }
-
-    void discardModel(final ManagementModelImpl model) {
-        model.discard();
+        if (resourceTreeModified) {
+            model.discard();
+        }
     }
 
     void acquireWriteLock(Integer permit, final boolean interruptibly) throws InterruptedException {
@@ -1098,7 +1123,7 @@ class ModelControllerImpl implements ModelController {
         /**
          * Creates a new {@code ManagementModelImpl} that uses a clone of this one's root {@link ManagementResourceRegistration}.
          * The caller can safely modify that {@code ManagementResourceRegistration} without changes being exposed
-         * to other callers. Use {@link org.jboss.as.controller.ModelControllerImpl#writeModel(org.jboss.as.controller.ModelControllerImpl.ManagementModelImpl, java.util.Set)}
+         * to other callers. Use {@link ModelControllerImpl#writeModel(ManagementModelImpl, Set, boolean, boolean, boolean)}
          * to publish changes.
          *
          * @return the new {@code ManagementModelImpl}. Will not return {@code null}
@@ -1130,7 +1155,7 @@ class ModelControllerImpl implements ModelController {
         /**
          * Creates a new {@code ManagementModelImpl} that uses a clone of this one's root {@link Resource}.
          * The caller can safely modify that {@code Resource} without changes being exposed
-         * to other callers. Use {@link org.jboss.as.controller.ModelControllerImpl#writeModel(org.jboss.as.controller.ModelControllerImpl.ManagementModelImpl, java.util.Set)}
+         * to other callers. Use {@link ModelControllerImpl#writeModel(ManagementModelImpl, Set, boolean, boolean, boolean)}
          * to publish changes.
          *
          * @return the new {@code ManagementModelImpl}. Will not return {@code null}
@@ -1189,7 +1214,8 @@ class ModelControllerImpl implements ModelController {
             // will now see the value of ModelControllerImpl.this.managementModel.get,
             // which will be
             published = true;
-            capabilityRegistry.rollback();
+            // Don't roll back the capability registry here; let that happen via finally block calls to MCI.discardModel
+            // capabilityRegistry.rollback();
             ControllerLogger.MGMT_OP_LOGGER.tracef("discarded %s", this);
         }
     }
