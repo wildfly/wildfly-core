@@ -43,8 +43,8 @@ final class OutboundBindAddressRemoveHandler extends AbstractRemoveStepHandler {
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         final CidrAddressTable<InetSocketAddress> bindingsTable = getWorkerService(context).getBindingsTable();
         if (bindingsTable != null) {
-            final CidrAddress cidrAddress = getCidrAddress(operation, context);
-            final InetSocketAddress bindAddress = getBindAddress(operation, context);
+            final CidrAddress cidrAddress = getCidrAddress(model, context);
+            final InetSocketAddress bindAddress = getBindAddress(model, context);
             bindingsTable.removeExact(cidrAddress, bindAddress);
         }
     }
