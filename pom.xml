@@ -138,7 +138,7 @@
         <version.org.wildfly.discovery>1.0.0.Beta10</version.org.wildfly.discovery>
         <version.org.wildfly.openssl>1.0.0.CR1</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.2.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.1.0.Beta36</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.0.Beta37</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.Beta2</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta15</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
