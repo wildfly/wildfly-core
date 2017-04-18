@@ -46,6 +46,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
@@ -112,6 +113,7 @@ class KerberosSecurityFactoryDefinition {
         .build();
 
     private static final ModelNode mechanismsDefault = new ModelNode();
+    private static final String[] mechanismAllowedValues = new String[]{"KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO"};
     static {
         mechanismsDefault.add("KRB5");
         mechanismsDefault.add("SPNEGO");
@@ -121,6 +123,9 @@ class KerberosSecurityFactoryDefinition {
         .setRequired(false)
         .setDefaultValue(mechanismsDefault)
         .setAllowedValues("KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO") // defined in oids.properties in wildfly-elytron
+        .setMinSize(1)
+        .setMaxSize(mechanismAllowedValues.length)
+        .setValidator(new StringAllowedValuesValidator(mechanismAllowedValues))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
