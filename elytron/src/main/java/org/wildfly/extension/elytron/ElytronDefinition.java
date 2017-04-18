@@ -88,14 +88,17 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition DEFAULT_AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_AUTHENTICATION_CONTEXT, ModelType.STRING, true)
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, ELYTRON_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition INITIAL_PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.INITIAL_PROVIDERS, ModelType.STRING, true)
             .setCapabilityReference(PROVIDERS_CAPABILITY, ELYTRON_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition FINAL_PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FINAL_PROVIDERS, ModelType.STRING, true)
             .setCapabilityReference(PROVIDERS_CAPABILITY, ELYTRON_RUNTIME_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     public static final ElytronDefinition INSTANCE = new ElytronDefinition();
