@@ -2821,7 +2821,7 @@
                 <xs:attribute name="pattern" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The regular expression to use for this NameRewriter.
+                            The regular expression which must contain at least one capture group to extract the realm from the name.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
