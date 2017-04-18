@@ -109,7 +109,7 @@ class AuthenticationFactoryDefinitions {
     static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MECHANISM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setRestartAllServices()
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAttributeGroup(ElytronDescriptionConstants.SELECTION_CRITERIA)
             .build();
 
