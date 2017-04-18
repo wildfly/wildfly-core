@@ -98,7 +98,7 @@ class AuditResourceDefinitions {
     static final SimpleAttributeDefinition TRANSPORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRANSPORT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(Transport.TCP.toString()))
-            .setAllowedValues(Transport.TCP.toString(), Transport.UDP.toString())
+            .setAllowedValues(Transport.TCP.toString(), Transport.UDP.toString(), Transport.SSL_TCP.toString())
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -193,8 +193,13 @@ class AuditResourceDefinitions {
                     final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     final AuditEndpoint endpoint;
                     try {
-                        endpoint = SyslogAuditEndpoint.builder().setServerAddress(serverAddress).setPort(port)
-                                .setTcp(Transport.TCP == transport).setHostName(hostName).build();
+                        endpoint = SyslogAuditEndpoint.builder()
+                                .setServerAddress(serverAddress)
+                                .setPort(port)
+                                .setSsl(transport == Transport.SSL_TCP)
+                                .setTcp(transport == Transport.TCP || transport == Transport.SSL_TCP)
+                                .setHostName(hostName)
+                                .build();
                     } catch (IOException e) {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
@@ -215,7 +220,7 @@ class AuditResourceDefinitions {
     }
 
     private enum Transport {
-        TCP, UDP
+        TCP, UDP, SSL_TCP
     }
 
     private static <T, R> Supplier<R> bind(Function<T,R> fn, T val) {

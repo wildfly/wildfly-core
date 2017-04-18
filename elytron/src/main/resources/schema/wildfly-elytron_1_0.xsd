@@ -516,12 +516,13 @@
     <xs:simpleType name="transportType">
         <xs:annotation>
             <xs:documentation>
-                The format type.
+                The syslog transport method type.
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
             <xs:enumeration value="TCP" />
             <xs:enumeration value="UDP" />
+            <xs:enumeration value="SSL_TCP" />
         </xs:restriction>
     </xs:simpleType>
 
