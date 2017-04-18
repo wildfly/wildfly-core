@@ -33,6 +33,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGAT
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUDIT_LOGGING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_EVENT_LISTENER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_EVENT_LISTENERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
@@ -61,6 +62,11 @@ class AuditLoggingParser {
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT)
             .build();
 
+    private final PersistentResourceXMLDescription rotatingFileAuditLogParser = builder(PathElement.pathElement(ROTATING_FILE_AUDIT_LOG), null)
+            .setUseElementsForGroups(false)
+            .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SUFFIX)
+            .build();
+
     private final PersistentResourceXMLDescription syslogAuditLogParser = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.HOST_NAME)
@@ -79,6 +85,9 @@ class AuditLoggingParser {
                     break;
                 case FILE_AUDIT_LOG:
                     fileAuditLogParser.parse(reader, parentAddress, operations);
+                    break;
+                case ROTATING_FILE_AUDIT_LOG:
+                    rotatingFileAuditLogParser.parse(reader, parentAddress, operations);
                     break;
                 case SYSLOG_AUDIT_LOG:
                     syslogAuditLogParser.parse(reader, parentAddress, operations);
@@ -167,6 +176,7 @@ class AuditLoggingParser {
 
         writeAggregateSecurityEventListener(subsystem, writer);
         fileAuditLogParser.persist(writer, subsystem);
+        rotatingFileAuditLogParser.persist(writer, subsystem);
         syslogAuditLogParser.persist(writer, subsystem);
 
         writer.writeEndElement();
