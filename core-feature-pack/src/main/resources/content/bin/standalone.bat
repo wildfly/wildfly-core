@@ -8,7 +8,7 @@ rem Usage : standalone.bat --debug
 rem         standalone.bat --debug 9797
 
 @if not "%ECHO%" == ""  echo %ECHO%
-@if "%OS%" == "Windows_NT" setlocal
+setlocal
 
 rem By default debug mode is disable.
 set DEBUG_MODE=false
@@ -234,7 +234,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
           if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
             mkdir "%JBOSS_LOG_DIR%"
           )
-         set "JAVA_OPTS=-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -Xloggc:%JBOSS_LOG_DIR%\gc.log -XX:-TraceClassUnloading %JAVA_OPTS%"
+		set JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
         )
        )
     )
