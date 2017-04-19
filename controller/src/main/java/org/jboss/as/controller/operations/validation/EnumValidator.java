@@ -23,14 +23,15 @@
 package org.jboss.as.controller.operations.validation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -48,28 +49,113 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
     private final Class<E> enumType;
     private final Map<String, E> toStringMap = new HashMap<String, E>();
 
+    /**
+     * Creates a validator where the specified enum values are allowed
+     * @param enumType the type of the enum
+     * @param allowed  the allowed values. Cannot be {@code null}
+     */
     @SafeVarargs
-    public EnumValidator(final Class<E> enumType, final boolean nullable, final E... allowed) {
-        this(enumType, nullable, false, allowed);
+    public EnumValidator(final Class<E> enumType, final E... allowed) {
+        this(enumType, setOf(enumType, allowed), true);
     }
 
-    public EnumValidator(final Class<E> enumType,  final boolean nullable, final boolean allowExpressions) {
-        super(ModelType.STRING, nullable, allowExpressions);
-        this.enumType = enumType;
-        allowedValues = EnumSet.allOf(enumType);
+    /**
+     * Creates a validator where the specified enum values are allowed
+     * @param enumType the type of the enum
+     * @param allowed  the allowed values. Cannot be {@code null}
+     */
+    public EnumValidator(final Class<E> enumType, final EnumSet<E> allowed) {
+        this(enumType, allowed, false);
+    }
+
+    /**
+     * Creates a validator where the specified enum values are allowed
+     * @param enumType the type of the enum
+     * @param allowed  the allowed values. Cannot be {@code null} or empty
+     * @param safe {@code true} if the inputs have been validated and the set is an internally created one
+     */
+    private EnumValidator(final Class<E> enumType, final EnumSet<E> allowed, boolean safe) {
+        super(ModelType.STRING);
+        if (safe) {
+            this.enumType = enumType;
+            this.allowedValues = allowed;
+        } else {
+            assert enumType != null;
+            assert allowed != null;
+            this.enumType = enumType;
+            this.allowedValues = EnumSet.copyOf(allowed);
+        }
         for (E value : allowedValues) {
             toStringMap.put(value.toString(), value);
         }
     }
+
+    /** @deprecated use {@link #EnumValidator(Class, Enum[])} with {@link EnumSet#allOf(Class)} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable and expressions checks.*/
     @SafeVarargs
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public EnumValidator(final Class<E> enumType, final boolean nullable, final E... allowed) {
+        this(enumType, nullable, false, allowed);
+    }
+
+    /** @deprecated use {@link #EnumValidator(Class, EnumSet)} with {@link EnumSet#allOf(Class)} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable and expression checks.*/
+    @Deprecated
+    public EnumValidator(final Class<E> enumType,  final boolean nullable, final boolean allowExpressions) {
+        super(ModelType.STRING, nullable, allowExpressions);
+        assert  enumType != null;
+        this.enumType = enumType;
+        this.allowedValues = EnumSet.allOf(enumType);
+        for (E value : allowedValues) {
+            toStringMap.put(value.toString(), value);
+        }
+    }
+
+    /** @deprecated use {@link #EnumValidator(Class, Enum[])} with {@link EnumSet#allOf(Class)} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable and expression checks.*/
+    @SafeVarargs
+    @Deprecated
     public EnumValidator(final Class<E> enumType,  final boolean nullable, final boolean allowExpressions, final E... allowed) {
         super(ModelType.STRING, nullable, allowExpressions);
         this.enumType = enumType;
-        allowedValues = EnumSet.noneOf(enumType);
+        this.allowedValues = setOf(enumType, allowed);
         for (E value : allowed) {
-            allowedValues.add(value);
             toStringMap.put(value.toString(), value);
         }
+    }
+
+    @SafeVarargs
+    private static <T extends Enum<T>> EnumSet<T> setOf(Class<T> enumType, T... allowed) {
+        assert  enumType != null;
+        assert  allowed != null;
+        EnumSet<T> set = EnumSet.noneOf(enumType);
+        Collections.addAll(set, allowed);
+        return set;
+    }
+
+    /**
+     * Creates a new validator for the enum type with the allowed values defined in the {@code allowed} parameter.
+     *
+     * @param enumType the type of the enum.
+     * @param allowed  the enum values that are allowed.
+     * @param <E>      the type of the enum.
+     *
+     * @return a new validator.
+     */
+    @SafeVarargs
+    public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final E... allowed) {
+        return new EnumValidator<E>(enumType, allowed);
+    }
+
+    /**
+     * Creates a new validator for the enum type with the allowed values defined in the {@code allowed} parameter.
+     *
+     * @param enumType the type of the enum.
+     * @param allowed  the enum values that are allowed.
+     * @param <E>      the type of the enum.
+     *
+     * @return a new validator.
+     */
+    public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final EnumSet<E> allowed) {
+        return new EnumValidator<E>(enumType, allowed);
     }
 
     /**
@@ -81,8 +167,11 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      * @param <E>      the type of the enum.
      *
      * @return a new validator.
+     * @deprecated use {@link #create(Class, Enum[])} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable check.
      */
     @SafeVarargs
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final boolean nullable, final E... allowed) {
         return new EnumValidator<E>(enumType, nullable, allowed);
     }
@@ -96,7 +185,10 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      * @param <E>              the type of the enum.
      *
      * @return a new validator.
+     * @deprecated use {@link #create(Class, EnumSet)} with {@link EnumSet#allOf(Class)} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable and expression checks.
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final boolean nullable, final boolean allowExpressions) {
         return new EnumValidator<E>(enumType, nullable, allowExpressions);
     }
@@ -111,8 +203,11 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      * @param <E>              the type of the enum.
      *
      * @return a new validator.
+     * @deprecated use {@link #create(Class, Enum[])} since {@link org.jboss.as.controller.AttributeDefinition} handles the nullable and expression checks.
      */
     @SafeVarargs
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final boolean nullable, final boolean allowExpressions, final E... allowed) {
         return new EnumValidator<E>(enumType, nullable, allowExpressions, allowed);
     }
