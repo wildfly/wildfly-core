@@ -102,12 +102,8 @@ class ReadOnlyContext extends AbstractOperationContext {
 
     @Override
     ConfigurationPersister.PersistenceResource createPersistenceResource() throws ConfigurationPersistenceException {
-        throw readOnlyContext();
-    }
-
-    @Override
-    void publishCapabilityRegistry() {
-        //do noting
+        // We don't persist
+        return null;
     }
 
     @Override
