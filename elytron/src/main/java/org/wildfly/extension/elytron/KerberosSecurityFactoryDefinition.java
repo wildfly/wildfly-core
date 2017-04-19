@@ -29,8 +29,8 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolve
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -177,13 +177,13 @@ class KerberosSecurityFactoryDefinition {
                 Stream<String> oidsFromNames = MECHANISM_NAMES.unwrap(context, model).stream()
                         .map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.GSS, name));
                 Stream<String> directOids = MECHANISM_OIDS.unwrap(context, model).stream();
-                final List<Oid> mechanismOids = Stream.concat(oidsFromNames, directOids).map(s -> {
+                final Set<Oid> mechanismOids = Stream.concat(oidsFromNames, directOids).map(s -> {
                     try {
                         return new Oid(s);
                     } catch (GSSException e) {
                         throw new IllegalArgumentException(e);
                     }
-                }).collect(Collectors.toList());
+                }).collect(Collectors.toSet());
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
                 final String path = PATH.resolveModelAttribute(context, model).asString();
