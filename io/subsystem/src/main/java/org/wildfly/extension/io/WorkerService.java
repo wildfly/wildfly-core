@@ -40,7 +40,6 @@ import org.xnio.XnioWorker;
  */
 public class WorkerService implements Service<XnioWorker> {
     private final XnioWorker.Builder builder;
-    private CidrAddressTable<InetSocketAddress> bindingsTable;
     private XnioWorker worker;
     private volatile StopContext stopContext;
 
@@ -58,7 +57,6 @@ public class WorkerService implements Service<XnioWorker> {
     @Override
     public void start(StartContext startContext) throws StartException {
         builder.setTerminationTask(this::stopDone);
-        bindingsTable = builder.getBindAddressConfigurations();
         worker = builder.build();
     }
 
@@ -78,7 +76,7 @@ public class WorkerService implements Service<XnioWorker> {
     }
 
     CidrAddressTable<InetSocketAddress> getBindingsTable() {
-        return bindingsTable;
+        return builder.getBindAddressConfigurations();
     }
 
     @Override
