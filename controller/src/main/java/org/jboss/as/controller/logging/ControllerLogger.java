@@ -63,7 +63,6 @@ import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.security.CredentialStoreURIParser;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -3451,33 +3450,6 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 423, value = "Masked password command has the wrong format.%nUsage: MASK-<encoded secret>;<salt>;<iteration count> where <salt>=UTF-8 characters, <iteration count>=reasonable sized positive integer")
     IOException wrongMaskedPasswordFormat();
-
-    @Message(id = 424, value = "Supposed Credential Store URI has no scheme or different from '" + CredentialStoreURIParser.CR_STORE_SCHEME + "://' ('%s')")
-    IllegalArgumentException credentialStoreURIWrongScheme(String uri);
-
-    @Message(id = 425, value = "Credential Store URI has to be absolute '%s'")
-    IllegalArgumentException credentialStoreURIisNotAbsolute(String uri);
-
-    @Message(id = 426, value = "More than one fragment defined for Credential Store URI")
-    String moreThanOneFragmentDefined();
-
-    @Message(id = 427, value = "Credential Store name has to be defined '%s'")
-    IllegalArgumentException credentialStoreHasNoName(String uri);
-
-    @Message(id = 428, value = "Attribute name is defined, but empty '%s'")
-    IllegalArgumentException credentialStoreURIAttributeEmpty(String uri);
-
-    @Message(id = 429, value = "Opening quote has to be the first character in parameter value '%s'")
-    IllegalArgumentException credentialStoreURIParameterOpeningQuote(String uri);
-
-    @Message(id = 430, value = "Closing quote has to be the last character of parameter value '%s'")
-    IllegalArgumentException credentialStoreURIParameterClosingQuote(String uri);
-
-    @Message(id = 431, value = "Unexpected end of parameter part of '%s'")
-    IllegalArgumentException credentialStoreURIParameterUnexpectedEnd(String uri);
-
-    @Message(id = 432, value = "Parameter name expected, but is missing '%s'")
-    IllegalArgumentException credentialStoreURIParameterNameExpected(String uri);
 
     @Message(id = 433, value = "'%s' is not a valid representation of a resource address")
     OperationFailedException invalidAddressFormat(ModelNode address);

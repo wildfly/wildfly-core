@@ -4642,7 +4642,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="credential-store" type="credentialStoreType" minOccurs="0" />
+            <xs:element name="credential-store" type="credentialStoreType" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -4653,12 +4653,17 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="uri" type="xs:string">
+            <xs:element name="implementation-properties" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The URI for credential store definition.
+                        Map of credentials store implementation specific properties.
                     </xs:documentation>
                 </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="property" type="propertyType" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
             </xs:element>
             <xs:element name="credential-reference" type="credentialReferenceType">
                 <xs:annotation>
@@ -4715,10 +4720,32 @@
         <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Indicates that the credential sotre is case sensitive and should then allow for upper case in alias.
+                    Indicates that the credential store is case sensitive and should then allow for upper case in alias.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="location" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    File name of credential store storage.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="modifiable" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether credential store is modifiable.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="create" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether credential store should create storage when it doesn't exist.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
     </xs:complexType>
 
     <!--

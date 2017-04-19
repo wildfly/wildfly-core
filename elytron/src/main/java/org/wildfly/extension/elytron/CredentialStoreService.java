@@ -20,15 +20,14 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.jboss.as.controller.security.CredentialStoreURIParser;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
@@ -90,18 +89,18 @@ class CredentialStoreService implements Service<CredentialStore> {
         this.otherProvidersLoaderName = otherProvidersLoaderName;
     }
 
-    static CredentialStoreService createCredentialStoreService(String name, String uri, String type, String provider, String relativeTo, String providerLoaderName, String keyStoreProvidersLoaderName) throws CredentialStoreException {
-        try {
-            CredentialStoreURIParser credentialStoreURIParser = new CredentialStoreURIParser(uri);
-            String nameToSet = name != null ? name : credentialStoreURIParser.getName(); // once we specify name, the name from uri is ignored
-            Map<String, String> credentialStoreAttributes = credentialStoreURIParser.getOptionsMap();
-            credentialStoreAttributes.put(ElytronDescriptionConstants.CREDENTIAL_STORE_NAME, nameToSet);
-            credentialStoreAttributes.putIfAbsent(CS_KEY_STORE_TYPE_ATTRIBUTE, "JCEKS");
-            String storageFile = credentialStoreURIParser.getStorageFile();
-            return new CredentialStoreService(nameToSet, credentialStoreAttributes, type, provider, relativeTo, storageFile != null ? storageFile : name, providerLoaderName, keyStoreProvidersLoaderName);
-        } catch (URISyntaxException e) {
-            throw new CredentialStoreException(e);
+    static CredentialStoreService createCredentialStoreService(String name, String location, boolean modifiable, boolean create, Map<String, String> implementationAttributes, String type, String provider, String relativeTo, String providerLoaderName, String keyStoreProvidersLoaderName) throws CredentialStoreException {
+        Map<String, String> credentialStoreAttributes = new HashMap<>();
+        if (implementationAttributes != null) {
+            credentialStoreAttributes.putAll(implementationAttributes);
         }
+        // location will be inserted later after resolving relative-to
+        credentialStoreAttributes.put(ElytronDescriptionConstants.MODIFIABLE, Boolean.toString(modifiable));
+        credentialStoreAttributes.put(ElytronDescriptionConstants.CREATE, Boolean.toString(create));
+        if (type == null || type.equals(KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE)) {
+            credentialStoreAttributes.putIfAbsent(CS_KEY_STORE_TYPE_ATTRIBUTE, "JCEKS");
+        }
+        return new CredentialStoreService(name, credentialStoreAttributes, type, provider, relativeTo, location != null ? location : name, providerLoaderName, keyStoreProvidersLoaderName);
     }
 
     /*
