@@ -177,9 +177,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
         if (nextPhase != null) {
             final ServiceName serviceName = DeploymentUtils.getDeploymentUnitPhaseServiceName(deploymentUnit, nextPhase);
             final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, nextPhase);
-
-            final DeploymentUnitPhaseBuilder builder = processorContext.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
-            final ServiceBuilder<?> phaseServiceBuilder = (builder != null) ? builder.build(serviceTarget, serviceName, phaseService) : serviceTarget.addService(serviceName, phaseService);
+            final ServiceBuilder<?> phaseServiceBuilder = serviceTarget.addService(serviceName, phaseService);
 
             for (DeploymentUnitPhaseDependency dependency: dependencies) {
                 dependency.register(phaseServiceBuilder);

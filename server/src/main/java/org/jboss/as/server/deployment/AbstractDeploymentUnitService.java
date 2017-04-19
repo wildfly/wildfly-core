@@ -33,7 +33,6 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -43,6 +42,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionConsumer;
 
 /**
  * Abstract service responsible for managing the life-cycle of a {@link DeploymentUnit}.
@@ -60,7 +60,8 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final AbstractVaultReader vaultReader;
     private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
 
-    private DeploymentUnit deploymentUnit;
+    private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
+    private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
     AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader) {
@@ -76,8 +77,8 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         final String deploymentName = context.getController().getName().getSimpleName();
         monitor = new StabilityMonitor();
         monitor.addController(context.getController());
-        // Create the first phase deployer
         deploymentUnit = createAndInitializeDeploymentUnit(context.getController().getServiceContainer());
+        boolean rootDeployment = deploymentUnit.getParent() == null;
 
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
@@ -86,12 +87,22 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             ServerLogger.DEPLOYMENT_LOGGER.startingSubDeployment(deploymentName);
         }
 
-        final ServiceName serviceName = deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
-        final Phase firstPhase = Phase.values()[0];
-        final DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(deploymentUnit, firstPhase);
-        final ServiceBuilder<?> phaseServiceBuilder = target.addService(serviceName, phaseService);
-        phaseServiceBuilder.addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector());
-        phaseServiceBuilder.install();
+        ExceptionConsumer<StartContext, StartException> installer = startContext -> {
+            ServiceName serviceName = this.deploymentUnit.getServiceName().append(FIRST_PHASE_NAME);
+            DeploymentUnitPhaseService<?> phaseService = DeploymentUnitPhaseService.create(this.deploymentUnit, Phase.values()[0]);
+            startContext.getChildTarget().addService(serviceName, phaseService)
+                    .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, phaseService.getDeployerChainsInjector())
+                    .install();
+        };
+
+        // If a builder was previously attached, reattach to the new deployment unit instance and build the initial phase using that builder
+        if (this.phaseBuilder != null) {
+            this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER, this.phaseBuilder);
+            ServiceName serviceName = this.deploymentUnit.getServiceName().append("installer");
+            this.phaseBuilder.build(target, serviceName, new FunctionalVoidService(installer)).install();
+        } else {
+            installer.accept(context);
+        }
     }
 
     /**
@@ -111,6 +122,8 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         } else {
             ServerLogger.DEPLOYMENT_LOGGER.stoppedSubDeployment(deploymentName, (int) (context.getElapsedTime() / 1000000L));
         }
+        // Retain any attached builder across restarts
+        this.phaseBuilder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
         //clear up all attachments
         SimpleAttachable attachable = (SimpleAttachable)deploymentUnit;
         attachable.attachmentKeys().forEach(key -> deploymentUnit.removeAttachment(key));
