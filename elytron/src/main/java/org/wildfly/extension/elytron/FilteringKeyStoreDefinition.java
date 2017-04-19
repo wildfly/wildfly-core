@@ -48,7 +48,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.keystore.FilteringKeyStore;
@@ -131,23 +130,22 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
             String sourceKeyStoreCapability = RuntimeCapability.buildDynamicCapabilityName(KEY_STORE_CAPABILITY, sourceKeyStoreName);
             ServiceName sourceKeyStoreServiceName = context.getCapabilityServiceName(sourceKeyStoreCapability, KeyStore.class);
 
-            final InjectedValue<ModifiableKeyStoreService> serviceInjector = new InjectedValue<>();
 
-            FilteringKeyStoreService filteringKeyStoreService = new FilteringKeyStoreService(serviceInjector, aliasFilter);
+            final InjectedValue<KeyStore> keyStore = new InjectedValue<>();
+
+            FilteringKeyStoreService filteringKeyStoreService = new FilteringKeyStoreService(keyStore, aliasFilter);
 
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
             ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, filteringKeyStoreService).setInitialMode(ServiceController.Mode.ACTIVE);
 
-            serviceBuilder.addDependency(sourceKeyStoreServiceName);
-            // Retrieving the modifiable registry here as the ModifiedKeyStoreService may be modified
-            ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
-            ServiceController<?> controller = serviceRegistry.getRequiredService(sourceKeyStoreServiceName);
-            serviceInjector.setValue(() -> (ModifiableKeyStoreService) controller.getService());
+            FILTERING_KEY_STORE_UTIL.addInjection(serviceBuilder, keyStore, sourceKeyStoreServiceName);
 
             commonDependencies(serviceBuilder);
-            ServiceController<KeyStore> serviceController = serviceBuilder.install();
+            ServiceController<KeyStore> serviceController = serviceBuilder
+                    .setInitialMode(ServiceController.Mode.ACTIVE)
+                    .install();
 
             assert resource instanceof KeyStoreResource;
             ((KeyStoreResource)resource).setKeyStoreServiceController(serviceController);

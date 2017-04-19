@@ -29,6 +29,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.keystore.AliasFilter;
 import org.wildfly.security.keystore.FilteringKeyStore;
+import org.wildfly.security.keystore.UnmodifiableKeyStore;
 
 /**
  * A {@link Service} responsible for a single {@link KeyStore} instance.
@@ -37,13 +38,13 @@ import org.wildfly.security.keystore.FilteringKeyStore;
  */
 class FilteringKeyStoreService implements ModifiableKeyStoreService {
 
-    final InjectedValue<ModifiableKeyStoreService> serviceInjector;
+    final InjectedValue<KeyStore> keyStoreInjector;
     final String aliasFilter;
     KeyStore filteringKeyStore;
     KeyStore modifiableFilteringKeyStore;
 
-    FilteringKeyStoreService(InjectedValue<ModifiableKeyStoreService> serviceInjector, String aliasFilter) {
-        this.serviceInjector = serviceInjector;
+    FilteringKeyStoreService(InjectedValue<KeyStore> keyStoreInjector, String aliasFilter) {
+        this.keyStoreInjector = keyStoreInjector;
         this.aliasFilter = aliasFilter;
     }
 
@@ -54,17 +55,17 @@ class FilteringKeyStoreService implements ModifiableKeyStoreService {
     @Override
     public void start(StartContext startContext) throws StartException {
         try {
-            ModifiableKeyStoreService keyStoreService = serviceInjector.getValue();
+            KeyStore keyStore = keyStoreInjector.getValue();
             AliasFilter filter = AliasFilter.fromString(aliasFilter);
-            KeyStore unmodifiable = keyStoreService.getValue();
-            KeyStore modifiable = keyStoreService.getModifiableValue();
+            KeyStore unmodifiable = UnmodifiableKeyStore.unmodifiableKeyStore(keyStore);
+            KeyStore modifiable = keyStore;
 
             ROOT_LOGGER.tracef(
                     "starting:  aliasFilter = %s  filter = %s  unmodifiable = %s  modifiable = %s",
                     aliasFilter, filter, unmodifiable, modifiable);
 
             filteringKeyStore = FilteringKeyStore.filteringKeyStore(unmodifiable, filter);
-            if (modifiableFilteringKeyStore != null) {
+            if (modifiableFilteringKeyStore == null) {
                 modifiableFilteringKeyStore = FilteringKeyStore.filteringKeyStore(modifiable, filter);
             }
         } catch (Exception e) {
