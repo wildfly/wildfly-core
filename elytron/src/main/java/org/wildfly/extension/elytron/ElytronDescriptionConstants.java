@@ -108,6 +108,7 @@ interface ElytronDescriptionConstants {
     String CONSTANT_PRINCIPAL_TRANSFORMER = "constant-principal-transformer";
     String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
     String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
+    String CREATE = "create";
     String CREATION_DATE = "creation-date";
     String CREATION_TIME = "creation-time";
     String CREDENTIAL = "credential";
@@ -115,9 +116,6 @@ interface ElytronDescriptionConstants {
     String CREDENTIAL_SECURITY_FACTORY = "credential-security-factory";
     String CREDENTIAL_STORE = "credential-store";
     String CREDENTIAL_STORES = "credential-stores";
-    String CREDENTIAL_STORE_NAME = "store.name";
-    String CREDENTIAL_STORE_FILE = "store.file";
-    String CREDENTIAL_STORE_BASE = "store.base";
     String CREDENTIALS = "credentials";
     String CUSTOM_CREDENTIAL_SECURITY_FACTORY = "custom-credential-security-factory";
     String CUSTOM_PERMISSION_MAPPER = "custom-permission-mapper";
@@ -190,6 +188,7 @@ interface ElytronDescriptionConstants {
     String IDENTITY_MAPPING = "identity-mapping";
     String IDENTITY_REALM = "identity-realm";
     String IMPLEMENTATION = "implementation";
+    String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String INDEX = "index";
     String INFO = "info";
     String INITIAL = "initial";
@@ -229,6 +228,7 @@ interface ElytronDescriptionConstants {
     String LOADED_PROVIDERS = "loaded-providers";
     String LOCAL_CERTIFICATES = "local-certificates";
     String LOCAL_PRINCIPAL = "local-principal";
+    String LOCATION = "location";
     String LOGICAL_OPERATION = "logical-operation";
     String LOGICAL_PERMISSION_MAPPER = "logical-permission-mapper";
     String LOGICAL_ROLE_MAPPER = "logical-role-mapper";
@@ -268,6 +268,7 @@ interface ElytronDescriptionConstants {
     String MECHANISM_REALM_CONFIGURATIONS = "mechanism-realm-configurations";
     String MINIMUM_REMAINING_LIFETIME = "minimum-remaining-lifetime";
     String MINUS = "minus";
+    String MODIFIABLE = "modifiable";
     String MODIFIABLE_SECURITY_REALM = "modifiable-security-realm";
     String MODIFIED = "modified";
     String MODULE = "module";
@@ -445,7 +446,6 @@ interface ElytronDescriptionConstants {
     String RELOAD = "reload";
     String RELOAD_CERTIFICATE_REVOCATION_LIST = "reload-certificate-revocation-list";
     String UNLESS = "unless";
-    String URI = "uri";
     String URL = "url";
     String USE_RECURSIVE_SEARCH = "use-recursive-search";
     String USE_CIPHER_SUITES_ORDER = "use-cipher-suites-order";

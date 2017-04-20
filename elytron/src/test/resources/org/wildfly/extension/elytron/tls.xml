@@ -51,7 +51,6 @@
     </tls>
     <credential-stores>
         <credential-store name="credstore1" case-sensitive="true">
-            <uri>cr-store://credstore1</uri>
             <credential-reference store="mystore" alias="the-alias"/>
         </credential-store>
     </credential-stores>

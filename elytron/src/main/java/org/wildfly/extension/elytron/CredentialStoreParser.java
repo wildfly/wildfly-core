@@ -27,15 +27,18 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CASE_SENSITIVE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREATE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.IMPLEMENTATION_PROPERTIES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LOCATION;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODIFIABLE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OTHER_PROVIDERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.RELATIVE_TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TYPE;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.URI;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.Arrays;
@@ -112,6 +115,15 @@ class CredentialStoreParser {
                     case CASE_SENSITIVE:
                         CredentialStoreResourceDefinition.CASE_SENSITIVE.parseAndSetParameter(value, addCredentialStore, reader);
                         break;
+                    case LOCATION:
+                        CredentialStoreResourceDefinition.LOCATION.parseAndSetParameter(value, addCredentialStore, reader);
+                        break;
+                    case MODIFIABLE:
+                        CredentialStoreResourceDefinition.MODIFIABLE.parseAndSetParameter(value, addCredentialStore, reader);
+                        break;
+                    case CREATE:
+                        CredentialStoreResourceDefinition.CREATE.parseAndSetParameter(value, addCredentialStore, reader);
+                        break;
                     default:
                         throw unexpectedAttribute(reader, i);
                 }
@@ -127,9 +139,9 @@ class CredentialStoreParser {
         while(reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
             String localName = reader.getLocalName();
-            if (URI.equals(localName)) {
-                String value = reader.getElementText();
-                CredentialStoreResourceDefinition.URI.parseAndSetParameter(value, addCredentialStore, reader);
+            if (IMPLEMENTATION_PROPERTIES.equals(localName)) {
+                AttributeParser parser = CredentialStoreResourceDefinition.IMPLEMENTATION_PROPERTIES.getParser();
+                parser.parseElement(CredentialStoreResourceDefinition.IMPLEMENTATION_PROPERTIES, reader, addCredentialStore);
             } else if (CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE.getXmlName().equals(localName)) {
                 AttributeParser ap = CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE.getParser();
                 ap.parseElement(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE, reader, addCredentialStore);
@@ -156,7 +168,10 @@ class CredentialStoreParser {
                 CredentialStoreResourceDefinition.OTHER_PROVIDERS.marshallAsAttribute(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.RELATIVE_TO.marshallAsAttribute(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.CASE_SENSITIVE.marshallAsAttribute(credentialStoreModelNode, writer);
-                CredentialStoreResourceDefinition.URI.marshallAsElement(credentialStoreModelNode, writer);
+                CredentialStoreResourceDefinition.MODIFIABLE.marshallAsAttribute(credentialStoreModelNode, writer);
+                CredentialStoreResourceDefinition.LOCATION.marshallAsAttribute(credentialStoreModelNode, writer);
+                CredentialStoreResourceDefinition.CREATE.marshallAsAttribute(credentialStoreModelNode, writer);
+                CredentialStoreResourceDefinition.IMPLEMENTATION_PROPERTIES.marshallAsElement(credentialStoreModelNode, writer);
                 CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE.marshallAsElement(credentialStoreModelNode, writer);
                 writer.writeEndElement();
             }
