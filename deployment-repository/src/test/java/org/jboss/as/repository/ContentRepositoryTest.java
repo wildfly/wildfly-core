@@ -85,6 +85,7 @@ public class ContentRepositoryTest {
         }
         tmpRootDir.mkdirs();
         repository = ContentRepository.Factory.create(rootDir, tmpRootDir, 0L);
+        repository.readWrite();
     }
 
     @After
