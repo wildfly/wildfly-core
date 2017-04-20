@@ -117,6 +117,9 @@ class ValidateModelStepHandler implements OperationStepHandler {
                 }
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidAttributeCombo(attributeName, sb));
             }
+
+            handleObjectAttributes(model, attr, attributeName);
+
         }
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
@@ -145,6 +148,68 @@ class ValidateModelStepHandler implements OperationStepHandler {
         }
 
 
+    }
+
+    private void handleObjectAttributes(ModelNode model, AttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
+        if (attr instanceof ObjectTypeAttributeDefinition) {
+            validateNestedAttributes(model.get(attr.getName()), attr, absoluteParentName);
+        } else if (attr instanceof ObjectListAttributeDefinition) {
+            AttributeDefinition valueType = ((ObjectListAttributeDefinition) attr).getValueType();
+            ModelNode list = model.get(attr.getName());
+            for (int i = 0; i < list.asInt(); i++) {
+                validateNestedAttributes(list.get(i), valueType, absoluteParentName + "[" + i + "]");
+            }
+        } else if (attr instanceof ObjectMapAttributeDefinition) {
+            AttributeDefinition valueType = ((ObjectMapAttributeDefinition) attr).getValueType();
+            ModelNode map = model.get(attr.getName());
+            for (String key : map.keys()) {
+                validateNestedAttributes(map.get(key), valueType, absoluteParentName + "." + key);
+            }
+        }
+    }
+
+    private void validateNestedAttributes(ModelNode subModel, AttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
+        if (!subModel.isDefined()) {
+            return;
+        }
+        AttributeDefinition[] subAttrs = ((ObjectTypeAttributeDefinition) attr).getValueTypes();
+        for (AttributeDefinition subAttr : subAttrs) {
+            String subAttributeName = subAttr.getName();
+            String absoluteName = absoluteParentName + "." + subAttributeName;
+            if (!subModel.hasDefined(subAttributeName) && isRequired(subAttr, subModel)) {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(subAttributeName));
+            }
+            if (!subModel.hasDefined(subAttributeName)) {
+                continue;
+            }
+            if (subAttr.getRequires() != null) {
+                for (final String required : subAttr.getRequires()) {
+                    if (!subModel.hasDefined(required)) {
+                        throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
+                    }
+                }
+            }
+
+            if (!isAllowed(subAttr, subModel)) {
+                String[] alts = subAttr.getAlternatives();
+                StringBuilder sb = null;
+                if (alts != null) {
+                    for (String alt : alts) {
+                        if (subModel.hasDefined(alt)) {
+                            if (sb == null) {
+                                sb = new StringBuilder();
+                            } else {
+                                sb.append(", ");
+                            }
+                            sb.append(absoluteParentName + "." + alt);
+                        }
+                    }
+                }
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidAttributeCombo(absoluteName, sb));
+            }
+
+            handleObjectAttributes(subModel, subAttr, absoluteName);
+        }
     }
 
     private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
