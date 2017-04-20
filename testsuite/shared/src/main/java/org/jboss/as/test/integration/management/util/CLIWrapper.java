@@ -26,6 +26,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -177,7 +179,9 @@ public class CLIWrapper implements AutoCloseable {
             try {
                 ctx.handle(line);
             } catch (CommandLineException e) {
-                Assert.fail("Failed to execute line '" + line + "': " + e.toString());
+                StringWriter stackTrace = new StringWriter();
+                e.printStackTrace(new PrintWriter(stackTrace));
+                Assert.fail(String.format("Failed to execute line '%s'%n%s", line, stackTrace.toString()));
             }
         }
         return true;
