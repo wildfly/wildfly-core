@@ -24,6 +24,7 @@ import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGUR
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.asIntIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
@@ -56,6 +57,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.MatchRule;
@@ -82,13 +84,13 @@ class AuthenticationClientDefinitions {
     static final SimpleAttributeDefinition ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
-            .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN)
+            .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.SECURITY_DOMAIN)
+            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -119,7 +121,7 @@ class AuthenticationClientDefinitions {
 
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME)
+            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
@@ -153,11 +155,17 @@ class AuthenticationClientDefinitions {
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, true)
             .build();
 
+    static final SimpleAttributeDefinition KERBEROS_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN)
+            .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
+            .build();
+
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS };
+            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, KERBEROS_SECURITY_FACTORY };
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
+            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, KERBEROS_SECURITY_FACTORY, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
 
     /* *************************************** */
     /* Authentication Context Attributes */
@@ -305,6 +313,14 @@ class AuthenticationClientDefinitions {
 
                 List<String> forbiddenMechanisms = FORBID_SASL_MECHANISMS.unwrap(context, model);
                 configuration = forbiddenMechanisms.size() > 0 ? configuration.andThen(c -> c.forbidSaslMechanisms(forbiddenMechanisms.toArray(new String[forbiddenMechanisms.size()]))) : configuration;
+
+                String kerberosSecurityFactory = asStringIfDefined(context, KERBEROS_SECURITY_FACTORY, model);
+                if (kerberosSecurityFactory != null) {
+                    InjectedValue<CredentialSecurityFactory> kerberosFactoryInjector = new InjectedValue<>();
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, kerberosSecurityFactory, CredentialSecurityFactory.class),
+                            CredentialSecurityFactory.class, kerberosFactoryInjector);
+                    configuration = configuration.andThen(c -> c.useKerberosSecurityFactory(kerberosFactoryInjector.getValue()));
+                }
 
                 ModelNode properties = MECHANISM_PROPERTIES.resolveModelAttribute(context, model);
                 if (properties.isDefined()) {

@@ -29,8 +29,8 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolve
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,6 +46,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
@@ -111,7 +112,14 @@ class KerberosSecurityFactoryDefinition {
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
+    static final SimpleAttributeDefinition WRAP_GSS_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     private static final ModelNode mechanismsDefault = new ModelNode();
+    private static final String[] mechanismAllowedValues = new String[]{"KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO"};
     static {
         mechanismsDefault.add("KRB5");
         mechanismsDefault.add("SPNEGO");
@@ -121,6 +129,9 @@ class KerberosSecurityFactoryDefinition {
         .setRequired(false)
         .setDefaultValue(mechanismsDefault)
         .setAllowedValues("KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO") // defined in oids.properties in wildfly-elytron
+        .setMinSize(1)
+        .setMaxSize(mechanismAllowedValues.length)
+        .setValidator(new StringAllowedValuesValidator(mechanismAllowedValues))
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
@@ -150,7 +161,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -161,17 +172,18 @@ class KerberosSecurityFactoryDefinition {
                 final boolean server = SERVER.resolveModelAttribute(context, model).asBoolean();
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
+                final boolean wrapGssCredential = WRAP_GSS_CREDENTIAL.resolveModelAttribute(context, model).asBoolean();
 
                 Stream<String> oidsFromNames = MECHANISM_NAMES.unwrap(context, model).stream()
                         .map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.GSS, name));
                 Stream<String> directOids = MECHANISM_OIDS.unwrap(context, model).stream();
-                final List<Oid> mechanismOids = Stream.concat(oidsFromNames, directOids).map(s -> {
+                final Set<Oid> mechanismOids = Stream.concat(oidsFromNames, directOids).map(s -> {
                     try {
                         return new Oid(s);
                     } catch (GSSException e) {
                         throw new IllegalArgumentException(e);
                     }
-                }).collect(Collectors.toList());
+                }).collect(Collectors.toSet());
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
                 final String path = PATH.resolveModelAttribute(context, model).asString();
@@ -187,7 +199,7 @@ class KerberosSecurityFactoryDefinition {
                 if (optionsNode.isDefined()) {
                     options = new HashMap<>();
                     for (Property option : optionsNode.asPropertyList()) {
-                        options.put(option.getName(), option.getValue());
+                        options.put(option.getName(), option.getValue().asString());
                     }
                 } else {
                     options = null;
@@ -209,6 +221,7 @@ class KerberosSecurityFactoryDefinition {
                         .setIsServer(server)
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
+                        .setWrapGssCredential(wrapGssCredential)
                         .setOptions(options);
                     mechanismOids.forEach(builder::addMechanismOid);
 

@@ -29,6 +29,8 @@ import static org.wildfly.extension.elytron.ServiceStateDefinition.populateRespo
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.Provider;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
@@ -41,6 +43,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -75,10 +78,30 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     static final ServiceUtil<CredentialStore> CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CREDENTIAL_STORE, CredentialStore.class);
 
-    static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.URI, ModelType.STRING, false)
+    static final SimpleAttributeDefinition LOCATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOCATION, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setMinSize(1)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition MODIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIABLE, ModelType.BOOLEAN, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
+            .setDefaultValue(new ModelNode(true))
+            .setAllowExpression(false)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREATE, ModelType.BOOLEAN, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
+            .setAllowExpression(false)
+            .setDefaultValue(new ModelNode(false))
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleMapAttributeDefinition IMPLEMENTATION_PROPERTIES = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.IMPLEMENTATION_PROPERTIES, ModelType.STRING, true)
+            .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
+            .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -135,7 +158,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
     static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
             .build();
 
-    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {URI, CREDENTIAL_REFERENCE, TYPE, PROVIDER_NAME, PROVIDERS, OTHER_PROVIDERS, RELATIVE_TO, CASE_SENSITIVE};
+    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {LOCATION, CREATE, MODIFIABLE, IMPLEMENTATION_PROPERTIES, CREDENTIAL_REFERENCE, TYPE, PROVIDER_NAME, PROVIDERS, OTHER_PROVIDERS, RELATIVE_TO, CASE_SENSITIVE};
 
     private static final CredentialStoreAddHandler ADD = new CredentialStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, CREDENTIAL_STORE_RUNTIME_CAPABILITY);
@@ -192,7 +215,17 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
             ModelNode model = resource.getModel();
-            String uri = asStringIfDefined(context, URI, model);
+            String location = asStringIfDefined(context, LOCATION, model);
+            boolean modifiable =  MODIFIABLE.resolveModelAttribute(context, model).asBoolean();
+            boolean create = CREATE.resolveModelAttribute(context, model).asBoolean();
+            final Map<String, String> implementationAttributes;
+            ModelNode implAttrModel = IMPLEMENTATION_PROPERTIES.resolveModelAttribute(context, model);
+            if (implAttrModel.isDefined()) {
+                implementationAttributes = new HashMap<>();
+                implAttrModel.keys().forEach((String s) -> implementationAttributes.put(s, implAttrModel.require(s).asString()));
+            } else {
+                implementationAttributes = null;
+            }
             String type = asStringIfDefined(context, TYPE, model);
             String providers = asStringIfDefined(context, PROVIDERS, model);
             String otherProviders = asStringIfDefined(context, OTHER_PROVIDERS, model);
@@ -204,7 +237,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             // ----------- credential store service ----------------
             final CredentialStoreService csService;
             try {
-                csService = CredentialStoreService.createCredentialStoreService(name, uri, type, providerName, relativeTo, providers, otherProviders);
+                csService = CredentialStoreService.createCredentialStoreService(name, location, modifiable, create, implementationAttributes, type, providerName, relativeTo, providers, otherProviders);
             } catch (CredentialStoreException e) {
                 throw new OperationFailedException(e);
             }

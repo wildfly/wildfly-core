@@ -19,6 +19,7 @@
 package org.wildfly.extension.elytron;
 
 import java.security.Provider;
+import java.util.Set;
 
 /**
  * A simple utility to search an array of {@link Provider} instances to identify the one to use.
@@ -49,6 +50,22 @@ class ProviderUtil {
         }
 
         return null;
+    }
+
+    static boolean isServiceTypeProvided(Provider[] candidates, Class<?> type) {
+        String serviceType = type.getSimpleName();
+        for (Provider current : candidates) {
+            Set<Provider.Service> services = current.getServices();
+            if (services != null) {
+                for (Provider.Service currentService : services) {
+                    if (serviceType.equals(currentService.getType())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
 }
