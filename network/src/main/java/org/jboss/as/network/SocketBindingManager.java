@@ -44,6 +44,8 @@ import org.jboss.msc.service.ServiceName;
  */
 public interface SocketBindingManager {
 
+    /** @deprecated Use the org.wildfly.management.socket-binding-manager capability */
+    @Deprecated
     ServiceName SOCKET_BINDING_MANAGER = ServiceName.JBOSS.append("socket-binding-manager");
 
     /**

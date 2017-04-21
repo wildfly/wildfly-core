@@ -22,7 +22,6 @@
 package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
 import org.jboss.dmr.ModelNode;
 
 /**

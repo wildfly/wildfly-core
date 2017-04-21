@@ -18,11 +18,11 @@
  */
 package org.jboss.as.domain.controller.operations;
 
-import static org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition.INCLUDES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -32,11 +32,12 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  *
  */
-public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler {
+public class SocketBindingGroupAddHandler extends ModelOnlyAddStepHandler {
 
     public static final SocketBindingGroupAddHandler INSTANCE = new SocketBindingGroupAddHandler();
 
     private SocketBindingGroupAddHandler() {
+        super(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE, SocketBindingGroupResourceDefinition.INCLUDES);
     }
 
     /**
@@ -45,13 +46,12 @@ public class SocketBindingGroupAddHandler extends AbstractSocketBindingGroupAddH
     @Override
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.populateModel(context, operation, resource);
-        SocketBindingGroupResourceDefinition.INCLUDES.validateAndSet(operation, resource.getModel());
-        DomainModelIncludesValidator.addValidationStep(context, operation);
-    }
 
-    @Override
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        super.recordCapabilitiesAndRequirements(context, operation, resource);
-        INCLUDES.addCapabilityRequirements(context, resource, resource.getModel().get(INCLUDES.getName()));
+        //  We need to store the address value in the 'name' instead of using
+        // ReadResourceNameOperationStepHandler to avoid picky legacy controller
+        // model comparison failures
+        resource.getModel().get(NAME).set(context.getCurrentAddressValue());
+
+        DomainModelIncludesValidator.addValidationStep(context, operation);
     }
 }

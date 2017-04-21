@@ -27,8 +27,11 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ListAttributeDefinition;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PrimitiveListAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -44,10 +47,14 @@ import org.jboss.dmr.ModelType;
  */
 public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingGroupResourceDefinition {
 
-    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+    public static final String SOCKET_BINDING_GROUP_CAPABILITY_NAME = "org.wildfly.domain.socket-binding-group";
+    public static final RuntimeCapability SOCKET_BINDING_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
+            .build();
+
+    public static final SimpleAttributeDefinition DEFAULT_INTERFACE = createDefaultInterface(SOCKET_BINDING_GROUP_CAPABILITY);
 
     public static final ListAttributeDefinition INCLUDES = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.INCLUDES, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(0)
             .setMaxSize(Integer.MAX_VALUE)
             .setElementValidator(new StringLengthValidator(1, true))
@@ -75,8 +82,11 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
             .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
             .build();
 
+    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+
     private SocketBindingGroupResourceDefinition() {
-        super(SocketBindingGroupAddHandler.INSTANCE, DomainSocketBindingGroupRemoveHandler.INSTANCE);
+        super(SocketBindingGroupAddHandler.INSTANCE, ModelOnlyRemoveStepHandler.INSTANCE,
+                DEFAULT_INTERFACE, SOCKET_BINDING_GROUP_CAPABILITY);
     }
 
     @Override

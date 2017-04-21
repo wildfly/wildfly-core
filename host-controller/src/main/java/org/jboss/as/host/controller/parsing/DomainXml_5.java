@@ -90,7 +90,6 @@ import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
@@ -201,7 +200,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
             writer.writeStartElement(Element.SOCKET_BINDING_GROUPS.getLocalName());
             ModelNode sbgs = modelNode.get(SOCKET_BINDING_GROUP);
             for (final String sbg : sbgs.keys()) {
-                writeSocketBindingGroup(writer, sbgs.get(sbg), false);
+                writeSocketBindingGroup(writer, sbgs.get(sbg), sbg);
             }
             writer.writeEndElement();
             WriteUtils.writeNewLine(writer);
@@ -424,15 +423,15 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
         if (socketBindingGroupName == null || defaultInterface == null) {
             HashSet<String> missing = new HashSet<>();
             if (socketBindingGroupName == null) {
-                missing.add(socketBindingGroupName);
+                missing.add(Attribute.NAME.getLocalName());
             }
             if (defaultInterface == null) {
-                missing.add(defaultInterface);
+                missing.add(Attribute.DEFAULT_INTERFACE.getLocalName());
             }
             throw missingRequired(reader, missing);
         }
 
-        if (add.get(AbstractSocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
+        if (add.get(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.getName()).getType() != ModelType.EXPRESSION
                 && !interfaces.contains(defaultInterface)) {
             throw ControllerLogger.ROOT_LOGGER.unknownInterface(defaultInterface,
                     Attribute.DEFAULT_INTERFACE.getLocalName(), Element.INTERFACES.getLocalName(), reader.getLocation());

@@ -38,6 +38,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -50,7 +51,6 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.InterfaceAddHandler;
 import org.jboss.as.controller.operations.common.InterfaceCriteriaWriteHandler;
-import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.SubnetValidator;
@@ -176,7 +176,7 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
     private final boolean updateRuntime;
     private final boolean resolvable;
 
-    public InterfaceDefinition(InterfaceAddHandler addHandler, InterfaceRemoveHandler removeHandler, boolean updateRuntime, boolean resolvable) {
+    public InterfaceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler, boolean updateRuntime, boolean resolvable) {
         super(new Parameters(PathElement.pathElement(INTERFACE), ControllerResolver.getResolver(INTERFACE))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)

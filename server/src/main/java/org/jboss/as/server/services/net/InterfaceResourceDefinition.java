@@ -22,8 +22,8 @@
 
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.operations.common.InterfaceRemoveHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
@@ -36,7 +36,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
  */
 public class InterfaceResourceDefinition extends InterfaceDefinition {
 
-    public static final RuntimeCapability<Void> INTERFACE_CAPABILITY =
+    static final RuntimeCapability<Void> INTERFACE_CAPABILITY =
             RuntimeCapability.Builder.of(INTERFACE_CAPABILITY_NAME, true, NetworkInterfaceBinding.class)
                     .setAllowMultipleRegistrations(true) // both /host=master/interface=x and /interface=x are legal and in the same scope
                                                          // In a better world we'd only set this true in an HC process
@@ -44,7 +44,7 @@ public class InterfaceResourceDefinition extends InterfaceDefinition {
                                                          // interface twice in a server will fail in MODEL due to the dup resource anyway
                     .build();
 
-    public InterfaceResourceDefinition(InterfaceAddHandler addHandler, InterfaceRemoveHandler removeHandler,
+    public InterfaceResourceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler,
                                        boolean updateRuntime, boolean resolvable) {
         super(addHandler, removeHandler, updateRuntime, resolvable);
     }
