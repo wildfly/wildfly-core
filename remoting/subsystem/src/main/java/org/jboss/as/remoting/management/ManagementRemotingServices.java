@@ -23,6 +23,7 @@
 package org.jboss.as.remoting.management;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.management.BaseNativeInterfaceResourceDefinition.NATIVE_MANAGEMENT_RUNTIME_CAPABILITY;
 import static org.jboss.msc.service.ServiceController.Mode.ACTIVE;
 import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 
@@ -37,6 +38,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
+import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.logging.RemotingLogger;
@@ -92,8 +94,11 @@ public final class ManagementRemotingServices extends RemotingServices {
                                                       final ServiceName securityRealm,
                                                       final ServiceName saslAuthenticationFactory,
                                                       final ServiceName sslContext) {
-        ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
-        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR, networkInterfaceBinding, port, options, securityRealm, saslAuthenticationFactory, sslContext);
+        String sbmCap = "org.wildfly.management.socket-binding-manager";
+        ServiceName sbmName = context.hasOptionalCapability(sbmCap, NATIVE_MANAGEMENT_RUNTIME_CAPABILITY.getName(), null)
+                ? context.getCapabilityServiceName(sbmCap, SocketBindingManager.class) : null;
+        installConnectorServicesForNetworkInterfaceBinding(serviceTarget, endpointName, MANAGEMENT_CONNECTOR,
+                networkInterfaceBinding, port, options, securityRealm, saslAuthenticationFactory, sslContext, sbmName);
     }
 
     /**
