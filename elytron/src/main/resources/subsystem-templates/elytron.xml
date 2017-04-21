@@ -42,7 +42,13 @@
         </security-realms>
 
         <mappers>
-            <constant-permission-mapper name="default-permission-mapper">
+            <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
+            <simple-permission-mapper name="anonymous-permission-mapper">
+                <permission-mapping principals="anonymous">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                </permission-mapping>
+            </simple-permission-mapper>
+            <constant-permission-mapper name="constant-permission-mapper">
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
                 <?ADDITIONAL_PERMISSIONS?>
             </constant-permission-mapper>
