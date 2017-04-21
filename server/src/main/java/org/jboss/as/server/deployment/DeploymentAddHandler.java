@@ -25,7 +25,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONT
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PATH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RELATIVE_TO;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
@@ -103,7 +103,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         // TODO: JBAS-9020: for the moment overlays are not supported, so there is a single content item
-        ModelNode contentItemNode = newModel.require(CONTENT_RESOURCE.getName()).require(0);
+        ModelNode contentItemNode = newModel.require(CONTENT_RESOURCE_ALL.getName()).require(0);
         final ModelNode opAddr = operation.get(OP_ADDR);
         final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
@@ -120,7 +120,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
             ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_RESOURCE.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE_ALL.getName()).set(content);
         } else if(hasValidContentAdditionParameterDefined(contentItemNode)) {
             contentItem = addFromContentAdditionParameter(context, contentItemNode);
             // Store a hash-based contentItemNode back to the model
@@ -128,7 +128,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             contentItemNode.get(CONTENT_HASH.getName()).set(contentItem.getHash());
             ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_RESOURCE.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE_ALL.getName()).set(content);
         } else {
             contentItem = addUnmanaged(contentItemNode);
         }

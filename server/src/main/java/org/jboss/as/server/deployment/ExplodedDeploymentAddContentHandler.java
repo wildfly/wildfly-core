@@ -21,7 +21,7 @@ import static org.jboss.as.server.Services.JBOSS_SERVER_EXECUTOR;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.EXPLODED_CONTENT;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PARAM_ALL_EXPLODED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OVERWRITE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.TARGET_PATH;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
@@ -88,7 +88,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         final PathAddress address = PathAddress.pathAddress(DEPLOYMENT, managementName);
         final byte[] oldHash = CONTENT_HASH.resolveModelAttribute(context, contentItemNode).asBytes();
         final boolean overwrite = OVERWRITE.resolveModelAttribute(context, operation).asBoolean(true);
-        List<ModelNode> contents = EXPLODED_CONTENT.resolveModelAttribute(context, operation).asList();
+        List<ModelNode> contents = CONTENT_PARAM_ALL_EXPLODED.resolveModelAttribute(context, operation).asList();
         final List<ExplodedContent> addedFiles = new ArrayList<>(contents.size());
         final byte[] newHash;
         if (contents.size() == 1 && contents.get(0).hasDefined(HASH)) {

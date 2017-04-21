@@ -22,7 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
-import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE;
+import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.DOMAIN_ADD_ATTRIBUTES;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.EMPTY;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
@@ -90,7 +90,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         // TODO: JBAS-9020: for the moment overlays are not supported, so there is a single content item
-        ModelNode contentItemNode = newModel.require(CONTENT_RESOURCE.getName()).require(0);
+        ModelNode contentItemNode = newModel.require(CONTENT_RESOURCE_ALL.getName()).require(0);
         final ModelNode opAddr = correctedOperation.get(OP_ADDR);
         final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
@@ -129,7 +129,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
             ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_RESOURCE.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE_ALL.getName()).set(content);
         } else if (DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(contentItemNode)) {
             if (fileRepository != null || contentRepository == null) {
                 // This is a slave DC. We can't handle this operation; it should have been fixed up on the master DC
@@ -147,7 +147,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
             // We have altered contentItemNode from what's in the newModel, so store it back to model
             ModelNode content = new ModelNode();
             content.add(contentItemNode);
-            newModel.get(CONTENT_RESOURCE.getName()).set(content);
+            newModel.get(CONTENT_RESOURCE_ALL.getName()).set(content);
 
         } // else would have failed validation
 
