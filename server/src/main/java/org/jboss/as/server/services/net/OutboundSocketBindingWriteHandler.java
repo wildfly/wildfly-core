@@ -25,8 +25,6 @@ package org.jboss.as.server.services.net;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
-import java.net.UnknownHostException;
-
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -79,7 +77,7 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
         final boolean bound = binding != null && binding.isConnected(); // FIXME see if this can be used, or remove
         if (binding == null) {
             // existing is not started, so can't "update" it. Instead reinstall the service
-            handleBindingReinstall(context, bindingName, bindingModel, serviceName);
+            handleBindingReinstall(context, bindingModel, serviceName);
             handbackHolder.setHandback(Boolean.TRUE);
         } else {
             // We don't allow runtime changes without a context reload for outbound socket bindings
@@ -104,16 +102,12 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
         }
     }
 
-    private void handleBindingReinstall(OperationContext context, String bindingName, ModelNode bindingModel, ServiceName serviceName) throws OperationFailedException {
+    private void handleBindingReinstall(OperationContext context, ModelNode bindingModel, ServiceName serviceName) throws OperationFailedException {
         context.removeService(serviceName);
-        try {
-            if (remoteDestination) {
-                RemoteDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel, bindingName);
-            } else {
-                LocalDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel, bindingName);
-            }
-        } catch (UnknownHostException e) {
-            throw new OperationFailedException(e.toString());
+        if (remoteDestination) {
+            RemoteDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel);
+        } else {
+            LocalDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, bindingModel);
         }
     }
 
@@ -125,11 +119,11 @@ class OutboundSocketBindingWriteHandler extends AbstractWriteAttributeHandler<Bo
         unresolvedConfig.get(attributeName).set(previousValue);
         try {
             if (remoteDestination) {
-                RemoteDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, unresolvedConfig, bindingName);
+                RemoteDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, unresolvedConfig);
             } else {
-                LocalDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, unresolvedConfig, bindingName);
+                LocalDestinationOutboundSocketBindingAddHandler.installOutboundSocketBindingService(context, unresolvedConfig);
             }
-        } catch (Exception e) {
+        } catch (OperationFailedException e) {
             // Bizarro, as we installed the service before
             throw new RuntimeException(e);
         }

@@ -26,7 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,10 +34,10 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Element;
@@ -47,10 +46,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * Handles "add" operation for remote-destination outbound-socket-binding
@@ -130,33 +126,25 @@ public class RemoteDestinationOutboundSocketBindingAddHandler extends AbstractAd
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String outboundSocketName = address.getLastElement().getValue();
-        try {
-            installOutboundSocketBindingService(context, model, outboundSocketName);
-        } catch (UnknownHostException e) {
-            throw new OperationFailedException(e.toString());
-        }
+        installOutboundSocketBindingService(context, model);
     }
 
-    static void installOutboundSocketBindingService(final OperationContext context, final ModelNode model,
-                                                    final String outboundSocketName) throws OperationFailedException, UnknownHostException {
+    static void installOutboundSocketBindingService(final OperationContext context, final ModelNode model) throws OperationFailedException {
         final CapabilityServiceTarget serviceTarget = context.getCapabilityServiceTarget();
 
+        // socket name
+        final String outboundSocketName = context.getCurrentAddressValue();
         // destination host
         final String destinationHost = RemoteDestinationOutboundSocketBindingResourceDefinition.HOST.resolveModelAttribute(context, model).asString();
         // port
         final int destinationPort = RemoteDestinationOutboundSocketBindingResourceDefinition.PORT.resolveModelAttribute(context, model).asInt();
-
         // (optional) source interface
-        final ModelNode sourceInterfaceModelNode = OutboundSocketBindingResourceDefinition.SOURCE_INTERFACE.resolveModelAttribute(context, model);
-        final String sourceInterfaceName = sourceInterfaceModelNode.isDefined() ? sourceInterfaceModelNode.asString() : null;
+        final String sourceInterfaceName = OutboundSocketBindingResourceDefinition.SOURCE_INTERFACE.resolveModelAttribute(context, model).asStringOrNull();
         // (optional) source port
-        final ModelNode sourcePortModelNode = OutboundSocketBindingResourceDefinition.SOURCE_PORT.resolveModelAttribute(context, model);
-        final Integer sourcePort = sourcePortModelNode.isDefined() ? sourcePortModelNode.asInt() : null;
-        // (optional) fixedSourcePort
-        final ModelNode fixedSourcePortModelNode = OutboundSocketBindingResourceDefinition.FIXED_SOURCE_PORT.resolveModelAttribute(context, model);
-        final boolean fixedSourcePort = fixedSourcePortModelNode.isDefined() && fixedSourcePortModelNode.asBoolean();
+        final Integer sourcePort = OutboundSocketBindingResourceDefinition.SOURCE_PORT.resolveModelAttribute(context, model).asIntOrNull();
+        // (optional but defaulted) fixedSourcePort
+        final boolean fixedSourcePort = OutboundSocketBindingResourceDefinition.FIXED_SOURCE_PORT.resolveModelAttribute(context, model).asBoolean();
+
         // create the service
         final OutboundSocketBindingService outboundSocketBindingService = new RemoteDestinationOutboundSocketBindingService(outboundSocketName, destinationHost, destinationPort, sourcePort, fixedSourcePort);
         final CapabilityServiceBuilder<OutboundSocketBinding> serviceBuilder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY, outboundSocketBindingService);
