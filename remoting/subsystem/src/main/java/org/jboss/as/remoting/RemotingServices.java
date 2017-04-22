@@ -132,11 +132,12 @@ public class RemotingServices {
                                                                 final OptionMap connectorPropertiesOptionMap,
                                                                 final ServiceName securityRealm,
                                                                 final ServiceName saslAuthenticationFactory,
-                                                                final ServiceName sslContext) {
+                                                                final ServiceName sslContext,
+                                                                final ServiceName socketBindingManager) {
         final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
         final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
                 .addDependency(socketBindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
-                .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
+                .addDependency(socketBindingManager, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
 
         installConnectorServices(serviceBuilder, streamServerService, endpointName, securityRealm, saslAuthenticationFactory, sslContext);
     }

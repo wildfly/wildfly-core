@@ -33,11 +33,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Element;
@@ -47,10 +49,7 @@ import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * Handles "add" operation for a local-destination outbound-socket-binding
@@ -140,9 +139,9 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         }
     }
 
-    public static void installOutboundSocketBindingService(final OperationContext context, final ModelNode model,
-                                                                                               final String outboundSocketName) throws OperationFailedException, UnknownHostException {
-        final ServiceTarget serviceTarget = context.getServiceTarget();
+    static void installOutboundSocketBindingService(final OperationContext context, final ModelNode model,
+                                                    final String outboundSocketName) throws OperationFailedException, UnknownHostException {
+        final CapabilityServiceTarget serviceTarget = context.getCapabilityServiceTarget();
 
         final String socketBindingRef = LocalDestinationOutboundSocketBindingResourceDefinition.SOCKET_BINDING_REF.resolveModelAttribute(context, model).asString();
         // (optional) source interface
@@ -156,15 +155,14 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
 
         // create the service
         final LocalDestinationOutboundSocketBindingService outboundSocketBindingService = new LocalDestinationOutboundSocketBindingService(outboundSocketName, sourcePort, fixedSourcePort);
-        final ServiceName serviceName = OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(outboundSocketName, OutboundSocketBinding.class);
-        final ServiceBuilder<OutboundSocketBinding> serviceBuilder = serviceTarget.addService(serviceName, outboundSocketBindingService);
+        final CapabilityServiceBuilder<OutboundSocketBinding> serviceBuilder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY, outboundSocketBindingService);
         // if a source interface has been specified then add a dependency on it
         if (sourceInterfaceName != null) {
             serviceBuilder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(sourceInterfaceName), NetworkInterfaceBinding.class, outboundSocketBindingService.getSourceNetworkInterfaceBindingInjector());
         }
-        serviceBuilder.addDependency(context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, socketBindingRef, SocketBinding.class),
-                    SocketBinding.class, outboundSocketBindingService.getLocalDestinationSocketBindingInjector())
-                .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, outboundSocketBindingService.getSocketBindingManagerInjector())
+        serviceBuilder.addCapabilityRequirement(SOCKET_BINDING_CAPABILITY_NAME,
+                    SocketBinding.class, outboundSocketBindingService.getLocalDestinationSocketBindingInjector(), socketBindingRef)
+                .addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, outboundSocketBindingService.getSocketBindingManagerInjector())
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .addAliases(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(outboundSocketName))
                 .install();
