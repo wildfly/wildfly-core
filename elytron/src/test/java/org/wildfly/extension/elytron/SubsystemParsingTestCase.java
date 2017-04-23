@@ -119,4 +119,9 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     public void testParseAndMarshalModel_JaccWithProviders() throws Exception {
         standardSubsystemTest("jacc-with-providers.xml");
     }
+
+    @Test
+    public void testParseAndMarshalModel_CredentialStores() throws Exception {
+        standardSubsystemTest("credential-stores.xml");
+    }
 }

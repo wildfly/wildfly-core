@@ -14,8 +14,10 @@
         </filesystem-realm>
     </security-realms>
     <credential-stores>
-        <credential-store name="test" case-sensitive="false">
-            <uri>cr-store://test/target/tlstest.keystore</uri>
+        <credential-store name="test" case-sensitive="false" location="target/tlstest.keystore">
+            <implementation-properties>
+                <property name="keyStoreType" value="JCEKS"/>
+            </implementation-properties>
             <credential-reference clear-text="super_secret"/>
         </credential-store>
     </credential-stores>

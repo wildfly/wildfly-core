@@ -46,9 +46,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
-import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -403,7 +401,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(BCryptPassword.ALGORITHM_BCRYPT))
-                    .setValidator(new StringValuesValidator(BCryptPassword.ALGORITHM_BCRYPT))
+                    .setValidator(new StringAllowedValuesValidator(BCryptPassword.ALGORITHM_BCRYPT))
                     .setAllowExpression(false)
                     .build();
 
@@ -430,7 +428,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(ClearPassword.ALGORITHM_CLEAR))
-                    .setValidator(new StringValuesValidator(ClearPassword.ALGORITHM_CLEAR))
+                    .setValidator(new StringAllowedValuesValidator(ClearPassword.ALGORITHM_CLEAR))
                     .setAllowExpression(false)
                     .build();
 
@@ -450,7 +448,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_512))
-                    .setValidator(new StringValuesValidator(
+                    .setValidator(new StringAllowedValuesValidator(
                             SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_MD2,
                             SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_MD5,
                             SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_1,
@@ -477,7 +475,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_512))
-                    .setValidator(new StringValuesValidator(
+                    .setValidator(new StringAllowedValuesValidator(
                             SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_MD5,
                             SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_1,
                             SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256,
@@ -510,7 +508,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(DigestPassword.ALGORITHM_DIGEST_SHA_512))
-                    .setValidator(new StringValuesValidator(
+                    .setValidator(new StringAllowedValuesValidator(
                             DigestPassword.ALGORITHM_DIGEST_MD5,
                             DigestPassword.ALGORITHM_DIGEST_SHA,
                             DigestPassword.ALGORITHM_DIGEST_SHA_256,
@@ -643,40 +641,6 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
             if (realmIdentity != null) {
                 realmIdentity.dispose();
             }
-        }
-    }
-
-    /**
-     * A simple {@link ModelTypeValidator} that requires that values are contained on a pre-defined list of string.
-     * <p>
-     * //TODO: couldn't find a built-in validator for that. see if there is one or even if it can be moved to its own file.
-     */
-    static class StringValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
-
-        private List<ModelNode> allowedValues = new ArrayList<>();
-
-        StringValuesValidator(String... values) {
-            super(ModelType.STRING);
-
-            for (String value : values) {
-                allowedValues.add(new ModelNode().set(value));
-            }
-        }
-
-        @Override
-        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-            super.validateParameter(parameterName, value);
-
-            if (value.isDefined()) {
-                if (!allowedValues.contains(value)) {
-                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(value.asString(), parameterName, allowedValues));
-                }
-            }
-        }
-
-        @Override
-        public List<ModelNode> getAllowedValues() {
-            return this.allowedValues;
         }
     }
 
