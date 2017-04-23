@@ -57,7 +57,12 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
 
     private static ServerLogger log = ServerLogger.NETWORK_LOGGER;
 
-    /** The service base name. */
+    /**
+     * The service base name.
+     *
+     * @deprecated use the org.wildfly.network.interface capability
+     */
+    @Deprecated
     public static final ServiceName JBOSS_NETWORK_INTERFACE = ServiceName.JBOSS.append("network");
 
     private static final String IPV4_ANYLOCAL = "0.0.0.0";

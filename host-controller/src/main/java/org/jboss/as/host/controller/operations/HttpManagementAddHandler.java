@@ -22,10 +22,10 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.host.controller.resources.HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS;
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
+import static org.jboss.as.server.mgmt.UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +34,9 @@ import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
+import io.undertow.server.ListenerRegistry;
+import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -61,16 +64,11 @@ import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
-import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
-
-import io.undertow.server.ListenerRegistry;
 
 
 /**
@@ -111,8 +109,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
     protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
         populateHostControllerInfo(hostControllerInfo, context, model);
 
-        RunningMode runningMode = context.getRunningMode();
-        ServiceTarget serviceTarget = context.getServiceTarget();
+        CapabilityServiceTarget serviceTarget = context.getCapabilityServiceTarget();
         boolean onDemand = context.isBooting();
         String interfaceName = hostControllerInfo.getHttpManagementInterface();
         int port = hostControllerInfo.getHttpManagementPort();
@@ -141,13 +138,11 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
         final UndertowHttpManagementService service = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
-        ServiceBuilder<?> builder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, service)
-                .addDependency(
-                        NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceName),
-                        NetworkInterfaceBinding.class, service.getInterfaceInjector())
-                .addDependency(
-                        NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(secureInterfaceName),
-                        NetworkInterfaceBinding.class, service.getSecureInterfaceInjector())
+        CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, service)
+                .addCapabilityRequirement("org.wildfly.network.interface",
+                        NetworkInterfaceBinding.class, service.getInterfaceInjector(), interfaceName)
+                .addCapabilityRequirement("org.wildfly.network.interface",
+                        NetworkInterfaceBinding.class, service.getSecureInterfaceInjector(), secureInterfaceName)
                 .addDependency(DomainModelControllerService.SERVICE_NAME, ModelController.class, service.getModelControllerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.getListenerRegistry())
@@ -161,9 +156,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
         String securityRealm = commonPolicy.getSecurityRealm();
         if (httpAuthenticationFactory != null) {
-            builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
-                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, service.getHttpAuthenticationFactoryInjector());
+            builder.addCapabilityRequirement(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class,
+                    service.getHttpAuthenticationFactoryInjector(), httpAuthenticationFactory);
         } else if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm);
         } else {
@@ -171,9 +165,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         }
         String sslContext = commonPolicy.getSSLContext();
         if (sslContext != null) {
-            builder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
-                    SSLContext.class), SSLContext.class, service.getSSLContextInjector());
+            builder.addCapabilityRequirement(SSL_CONTEXT_CAPABILITY, SSLContext.class, service.getSSLContextInjector(), sslContext);
         }
 
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
@@ -182,7 +174,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         // Add service preventing the server from shutting down
         final HttpShutdownService shutdownService = new HttpShutdownService();
         final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
-        final ServiceController<?> shutdown = serviceTarget.addService(shutdownName, shutdownService)
+        serviceTarget.addService(shutdownName, shutdownService)
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue())
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, shutdownService.getExecutorValue())
                 .addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry())
@@ -191,9 +183,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .install();
 
         if (commonPolicy.isHttpUpgradeEnabled()) {
-            ServiceName serverCallbackService = ServiceName.JBOSS.append("host", "controller", "server-inventory", "callback");
-            ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.domain.temp.dir");
-
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);
             final String httpConnectorName;
             if (port > -1 || securePort < 0) {

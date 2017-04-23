@@ -101,7 +101,7 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         final CapabilityServiceBuilder<SocketBinding> builder = serviceTarget.addCapability(SOCKET_BINDING_CAPABILITY, service);
         if (intf != null) {
-            builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(intf), NetworkInterfaceBinding.class, service.getInterfaceBinding());
+            builder.addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getInterfaceBinding(), intf);
         }
         builder.addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, service.getSocketBindings())
                 .addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name))

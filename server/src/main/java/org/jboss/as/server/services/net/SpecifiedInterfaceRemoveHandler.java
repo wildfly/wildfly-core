@@ -43,7 +43,7 @@ public class SpecifiedInterfaceRemoveHandler extends InterfaceRemoveHandler {
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
         String name = context.getCurrentAddressValue();
-        context.removeService(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(name));
+        context.removeService(InterfaceResourceDefinition.INTERFACE_CAPABILITY.getCapabilityServiceName(name));
     }
 
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) {

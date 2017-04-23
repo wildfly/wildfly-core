@@ -108,9 +108,9 @@ public class BindingGroupAddHandler extends AbstractAddStepHandler {
         String defaultInterface = SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.resolveModelAttribute(context, model).asString();
 
         SocketBindingManagerService service = new SocketBindingManagerService(portOffset);
-        context.getServiceTarget().addService(SOCKET_BINDING_MANAGER_CAPABILITY.getCapabilityServiceName(), service)
+        context.getCapabilityServiceTarget().addCapability(SOCKET_BINDING_MANAGER_CAPABILITY, service)
+                .addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector(), defaultInterface)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(defaultInterface), NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector())
                 .addAliases(SocketBindingManager.SOCKET_BINDING_MANAGER)
                 .install();
     }

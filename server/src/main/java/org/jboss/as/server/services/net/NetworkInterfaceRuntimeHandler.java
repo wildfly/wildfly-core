@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -36,6 +35,7 @@ import org.jboss.as.network.NetworkUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * {@code OperationStepHandler} for the runtime attributes of a network interface.
@@ -56,13 +56,13 @@ public class NetworkInterfaceRuntimeHandler implements OperationStepHandler {
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR));
-        final String interfaceName = address.getLastElement().getValue();
+        final String interfaceName = context.getCurrentAddressValue();
         final String attributeName = operation.require(ModelDescriptionConstants.NAME).asString();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                final ServiceController<?> controller = context.getServiceRegistry(false).getService(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceName));
+                final ServiceName svcName = context.getCapabilityServiceName("org.wildfly.network.interface", interfaceName, NetworkInterfaceBinding.class);
+                final ServiceController<?> controller = context.getServiceRegistry(false).getService(svcName);
                 if(controller != null && controller.getState() == ServiceController.State.UP) {
                     final NetworkInterfaceBinding binding = NetworkInterfaceBinding.class.cast(controller.getValue());
                     final InetAddress address = binding.getAddress();
