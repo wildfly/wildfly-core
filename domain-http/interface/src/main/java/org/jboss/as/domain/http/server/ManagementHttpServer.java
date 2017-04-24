@@ -252,7 +252,7 @@ public class ManagementHttpServer {
     }
 
     private static Function<HttpServerExchange, Boolean> createReadyFunction(Builder builder) {
-        if (builder.securityRealm != null) {
+        if (builder.securityRealm != null && builder.httpAuthenticationFactory == null) {
             final SecurityRealm securityRealm = builder.securityRealm;
             return e -> securityRealm.isReadyForHttpChallenge() || clientCertPotentiallyPossible(securityRealm, e);
         } else {
