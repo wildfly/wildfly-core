@@ -46,7 +46,7 @@
             <trust-manager name="CaTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore"/>
         </trust-managers>
         <client-ssl-contexts>
-            <client-ssl-context name="ClientCaSslContext" trust-managers="CaTrustManager" />
+            <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
         </client-ssl-contexts>
     </tls>
 </subsystem>

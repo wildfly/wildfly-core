@@ -107,23 +107,23 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testProviderTrustManager() throws Throwable {
-        ServiceName serviceName = Capabilities.TRUST_MANAGERS_RUNTIME_CAPABILITY.getCapabilityServiceName("ProviderTrustManager");
-        TrustManager[] trustManagers = (TrustManager[]) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManagers);
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("ProviderTrustManager");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
     }
 
     @Test
     public void testRevocationLists() throws Throwable {
-        ServiceName serviceName = Capabilities.TRUST_MANAGERS_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl");
-        TrustManager[] trustManagers = (TrustManager[]) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManagers);
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
     }
 
     @Test
     public void testRevocationListsDp() throws Throwable {
-        ServiceName serviceName = Capabilities.TRUST_MANAGERS_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
-        TrustManager[] trustManagers = (TrustManager[]) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManagers);
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
     }
 
     private SSLContext getSslContext(String contextName) {

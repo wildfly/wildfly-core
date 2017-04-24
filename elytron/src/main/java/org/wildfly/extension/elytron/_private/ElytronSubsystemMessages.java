@@ -300,6 +300,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 36, value = "Security realm '%s' has been referenced twice in the same security domain.")
     OperationFailedException realmRefererencedTwice(String realmName);
 
+    /**
+     * A {@link StartException} where a specific type is not type of injected value.
+     *
+     * @param type the type required.
+     * @return The {@link StartException} for the error.
+     */
+    @Message(id = 37, value = "Injected value is not of '%s' type.")
+    StartException invalidTypeInjected(final String type);
+
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")

@@ -192,6 +192,7 @@ interface ElytronDescriptionConstants {
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String INDEX = "index";
     String INFO = "info";
+    String INIT = "init";
     String INITIAL = "initial";
     String INITIAL_PROVIDERS = "initial-providers";
     String INTROSPECTION_URL = "introspection-url";
