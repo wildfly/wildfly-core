@@ -78,7 +78,6 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         monitor = new StabilityMonitor();
         monitor.addController(context.getController());
         deploymentUnit = createAndInitializeDeploymentUnit(context.getController().getServiceContainer());
-        boolean rootDeployment = deploymentUnit.getParent() == null;
 
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
