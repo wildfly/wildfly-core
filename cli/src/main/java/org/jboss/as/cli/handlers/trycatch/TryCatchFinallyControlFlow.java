@@ -51,7 +51,7 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
     }
 
     private Registration registration;
-    private List<String> tryList;
+    private final List<String> tryList = new ArrayList<>();
     private List<String> catchList;
     private List<String> finallyList;
     private int state;
@@ -99,6 +99,7 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
     void moveToCatch() throws CommandLineException {
         switch(state) {
             case IN_TRY:
+                catchList = new ArrayList<>();
                 state = IN_CATCH;
                 break;
             case IN_CATCH:
@@ -113,9 +114,8 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
     void moveToFinally() throws CommandLineException {
         switch(state) {
             case IN_TRY:
-                state = IN_FINALLY;
-                break;
             case IN_CATCH:
+                finallyList = new ArrayList<>();
                 state = IN_FINALLY;
                 break;
             case IN_FINALLY:
@@ -128,21 +128,12 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
     private void addLine(String line) {
         switch(state) {
             case IN_TRY:
-                if(tryList == null) {
-                    tryList = new ArrayList<String>();
-                }
                 tryList.add(line);
                 break;
             case IN_CATCH:
-                if(catchList == null) {
-                    catchList = new ArrayList<String>();
-                }
                 catchList.add(line);
                 break;
             case IN_FINALLY:
-                if(finallyList == null) {
-                    finallyList = new ArrayList<String>();
-                }
                 finallyList.add(line);
                 break;
             default:
@@ -166,7 +157,7 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
 
             CommandLineException error = null;
 
-            if (tryList == null || tryList.isEmpty()) {
+            if (tryList.isEmpty()) {
                 throw new CommandLineException("The try block is empty");
             }
 
