@@ -76,14 +76,6 @@
                 </filters>
             </mechanism-provider-filtering-sasl-server-factory>
             <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
-                <filters>
-                    <filter>
-                        <pattern-filter value="JBOSS-LOCAL-USER" />
-                    </filter>
-                    <filter>
-                        <pattern-filter value="DIGEST-MD5" />
-                    </filter>
-                </filters>
                 <properties>
                     <property name="wildfly.sasl.local-user.default-user" value="$local" />
                 </properties>
