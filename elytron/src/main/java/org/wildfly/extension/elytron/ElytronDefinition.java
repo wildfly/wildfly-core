@@ -33,8 +33,11 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Provider;
+import java.util.List;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -45,10 +48,12 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
@@ -101,6 +106,15 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
+
+    static final StringListAttributeDefinition DISALLOWED_PROVIDERS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.DISALLOWED_PROVIDERS)
+            .setRequired(false)
+            .setRestartJVM()
+            .setElementValidator(new StringLengthValidator(1))
+            .setAllowExpression(true)
+            .setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST)
+            .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
+            .build();
     public static final ElytronDefinition INSTANCE = new ElytronDefinition();
 
     private ElytronDefinition() {
@@ -230,9 +244,10 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS);
+        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS);
         resourceRegistration.registerReadWriteAttribute(INITIAL_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(FINAL_PROVIDERS, null, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(DISALLOWED_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(DEFAULT_AUTHENTICATION_CONTEXT, null, new ElytronWriteAttributeHandler<Void>(DEFAULT_AUTHENTICATION_CONTEXT) {
 
             @Override
@@ -306,7 +321,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
             ServiceTarget target = context.getServiceTarget();
             installService(SecurityPropertyService.SERVICE_NAME, new SecurityPropertyService(), target);
 
-            ProviderRegistrationService prs = new ProviderRegistrationService();
+            List<String> providers = DISALLOWED_PROVIDERS.unwrap(context, operation);
+
+            ProviderRegistrationService prs = new ProviderRegistrationService(providers);
             ServiceBuilder<Void> builder = target.addService(ProviderRegistrationService.SERVICE_NAME, prs)
                 .setInitialMode(Mode.ACTIVE);
 
@@ -379,7 +396,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
             if (securityPropertyService != null) {
                 installService(SecurityPropertyService.SERVICE_NAME, securityPropertyService, target);
             }
-            installService(ProviderRegistrationService.SERVICE_NAME, new ProviderRegistrationService(), target);
+            List<String> providers = DISALLOWED_PROVIDERS.unwrap(context, model);
+            installService(ProviderRegistrationService.SERVICE_NAME, new ProviderRegistrationService(providers), target);
         }
 
     }
