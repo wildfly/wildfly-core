@@ -60,8 +60,8 @@ public class JBossAllXmlParserRegisteringProcessor<T> implements DeploymentUnitP
     }
 
     @Override
-    public void undeploy(final DeploymentUnit context) {
-
+    public void undeploy(final DeploymentUnit unit) {
+        unit.removeAttachment(JBossAllXMLParserDescription.ATTACHMENT_KEY);
     }
 
     public static Builder builder() {
