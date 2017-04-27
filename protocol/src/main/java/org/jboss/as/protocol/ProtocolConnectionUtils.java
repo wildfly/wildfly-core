@@ -30,7 +30,9 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
@@ -45,6 +47,7 @@ import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.sasl.localuser.LocalUserClient;
 import org.xnio.IoFuture;
 import org.xnio.Option;
 import org.xnio.OptionMap;
@@ -60,6 +63,7 @@ import org.xnio.Options;
 public class ProtocolConnectionUtils {
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
+    private static final Map<String, String> QUIET_LOCAL_AUTH = Collections.singletonMap(LocalUserClient.QUIET_AUTH, "true");
 
     private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
 
@@ -146,7 +150,26 @@ public class ProtocolConnectionUtils {
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
         if (handler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(handler);
-        mergedConfiguration = configureSaslMechnisms(configuration.getSaslOptions(), isLocal(uri), mergedConfiguration);
+
+        Map<String, String> saslOptions = configuration.getSaslOptions();
+        mergedConfiguration = configureSaslMechnisms(saslOptions, isLocal(uri), mergedConfiguration);
+
+        // Pass through any other SASL options from the ProtocolConnectionConfiguration
+        // If not set, specify quiet authentication for any JBOSS_LOCAL_USER mechanism
+        // When we merge these, any preexisting options already associated with the
+        // AuthenticationConfiguration will take precedence.
+        if (saslOptions != null) {
+            saslOptions = new HashMap<>(saslOptions);
+            // Drop SASL_DISALLOWED_MECHANISMS which we already handled
+            saslOptions.remove(Options.SASL_DISALLOWED_MECHANISMS.getName());
+            if (!saslOptions.containsKey(LocalUserClient.QUIET_AUTH)
+                    && !saslOptions.containsKey(LocalUserClient.LEGACY_QUIET_AUTH)) {
+                saslOptions.put(LocalUserClient.QUIET_AUTH, "true");
+            }
+        } else {
+            saslOptions = QUIET_LOCAL_AUTH;
+        }
+        mergedConfiguration = mergedConfiguration.useMechanismProperties(saslOptions);
 
         SSLContext sslContext = configuration.getSslContext();
         if (sslContext == null) {
