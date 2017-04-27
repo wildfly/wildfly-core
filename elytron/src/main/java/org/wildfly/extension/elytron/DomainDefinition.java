@@ -33,6 +33,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
@@ -57,9 +58,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -67,15 +70,18 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.inject.Injector;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.DomainService.RealmDependency;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.server.PrincipalDecoder;
@@ -88,6 +94,7 @@ import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
+import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -224,8 +231,8 @@ class DomainDefinition extends SimpleResourceDefinition {
     }
 
     private void registerIdentityManagementOperations(ManagementResourceRegistration resourceRegistration) {
-        IdentityResourceDefinition.ReadSecurityDomainIdentityHandler.register(resourceRegistration, getResourceDescriptionResolver());
-        IdentityResourceDefinition.AuthenticatorOperationHandler.register(resourceRegistration, getResourceDescriptionResolver());
+        ReadSecurityDomainIdentityHandler.register(resourceRegistration, getResourceDescriptionResolver());
+        AuthenticatorOperationHandler.register(resourceRegistration, getResourceDescriptionResolver());
     }
 
     private static ServiceController<SecurityDomain> installInitialService(OperationContext context, ServiceName initialName, ModelNode model,
@@ -550,5 +557,155 @@ class DomainDefinition extends SimpleResourceDefinition {
         }
     }
 
+    static class ReadSecurityDomainIdentityHandler extends ElytronRuntimeOnlyHandler {
+
+        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+                .setAllowExpression(false)
+                .build();
+
+        static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver, NAME), new ReadSecurityDomainIdentityHandler());
+        }
+
+        private ReadSecurityDomainIdentityHandler() {
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            // Retrieving the modifiable registry here as the SecurityDomain is used to create a new authentication
+            // context.
+            ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+            RuntimeCapability<Void> runtimeCapability = SECURITY_DOMAIN_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            ServiceName domainServiceName = runtimeCapability.getCapabilityServiceName(SecurityDomain.class);
+            ServiceController<SecurityDomain> serviceController = getRequiredService(serviceRegistry, domainServiceName, SecurityDomain.class);
+            SecurityDomain domain = serviceController.getValue();
+            ServerAuthenticationContext authenticationContext = domain.createNewAuthenticationContext();
+            String principalName = NAME.resolveModelAttribute(context, operation).asString();
+
+            try {
+                authenticationContext.setAuthenticationName(principalName);
+
+                if (!authenticationContext.exists()) {
+                    context.getFailureDescription().add(ROOT_LOGGER.identityNotFound(principalName));
+                    return;
+                }
+
+                if (!authenticationContext.authorize(principalName)) {
+                    context.getFailureDescription().add(ROOT_LOGGER.identityNotAuthorized(principalName));
+                    return;
+                }
+
+                SecurityIdentity identity = authenticationContext.getAuthorizedIdentity();
+                ModelNode result = context.getResult();
+
+                result.get(ElytronDescriptionConstants.NAME).set(principalName);
+
+                ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
+
+                identity.getAttributes().entries().forEach(entry -> {
+                    ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
+                    entry.forEach(entryNode::add);
+                });
+
+                ModelNode rolesNode = result.get(ElytronDescriptionConstants.ROLES);
+                identity.getRoles().forEach(rolesNode::add);
+            } catch (RealmUnavailableException e) {
+                throw ROOT_LOGGER.couldNotReadIdentity(principalName, domainServiceName, e);
+            }
+        }
+    }
+
+    /**
+     * <p>A temporary operation that performs authentication based on a {@link SecurityDomain}. This operation will be removed once
+     * the subsystem is fully functional. It should be used for <em>test</em> purposes only.
+     *
+     * <p>This operation is very verbose in order to push messages back to CLI during tests.
+     */
+    static class AuthenticatorOperationHandler extends ElytronRuntimeOnlyHandler {
+
+        private static final ServiceUtil<SecurityDomain> DOMAIN_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_DOMAIN_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SECURITY_DOMAIN, SecurityDomain.class);
+
+        private static final String OPERATION_NAME = "authenticate";
+        private static final String PARAMETER_USERNAME = "username";
+        private static final String PARAMETER_PASSWORD = "password";
+
+        public static final SimpleAttributeDefinition USER_NAME = new SimpleAttributeDefinitionBuilder(PARAMETER_USERNAME, ModelType.STRING, false)
+                .setAllowExpression(false)
+                .build();
+
+        public static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(PARAMETER_PASSWORD, ModelType.STRING, false)
+                .setAllowExpression(false)
+                .build();
+
+        static String getOperationName() {
+            return OPERATION_NAME;
+        }
+
+        static AttributeDefinition[] getParameterDefinitions() {
+            return new AttributeDefinition[] {USER_NAME, PASSWORD};
+        }
+
+        public static void register(final ManagementResourceRegistration resourceRegistration, final ResourceDescriptionResolver resolver) {
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(AuthenticatorOperationHandler.getOperationName(), resolver,
+                    AuthenticatorOperationHandler.getParameterDefinitions()), new AuthenticatorOperationHandler());
+        }
+
+        AuthenticatorOperationHandler() {
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            String principalName = USER_NAME.resolveModelAttribute(context, operation).asString();
+            String password = PASSWORD.resolveModelAttribute(context, operation).asString();
+            SecurityDomain securityDomain = getSecurityDomain(context, operation);
+
+            try {
+                ServerAuthenticationContext authenticationContext = securityDomain.createNewAuthenticationContext();
+
+                authenticationContext.setAuthenticationName(principalName);
+
+                if (!authenticationContext.exists()) {
+                    addFailureDescription("Principal [" + principalName + "] does not exist.", context);
+                    return;
+                }
+
+                // for now, only clear passwords. we can provide an enum with different types later. if necessary.
+                if (authenticationContext.verifyEvidence(new PasswordGuessEvidence(password.toCharArray()))) {
+                    authenticationContext.authorize();
+                    authenticationContext.succeed();
+
+                    SecurityIdentity authorizedIdentity = authenticationContext.getAuthorizedIdentity();
+
+                    if (authorizedIdentity == null) {
+                        addFailureDescription("Principal [" + principalName + "] authenticated but no identity could be obtained.", context);
+                        return;
+                    }
+
+                    context.getResult().add("Principal [" + principalName + "] successfully authenticated.");
+                    context.getResult().add("Roles are " + authorizedIdentity.getRoles() + ".");
+                } else {
+                    authenticationContext.fail();
+                    addFailureDescription("Invalid credentials for Principal [" + principalName + "].", context);
+                }
+            } catch (Exception cause) {
+                addFailureDescription(cause.getMessage(), context);
+                ElytronSubsystemMessages.ROOT_LOGGER.error(cause);
+            }
+        }
+
+        private void addFailureDescription(String message, OperationContext context) {
+            ModelNode failureDescription = context.getFailureDescription();
+            failureDescription.add(message);
+        }
+
+        private SecurityDomain getSecurityDomain(OperationContext context, ModelNode operation) {
+            // Retrieving the modifiable registry here as the SecurityDomain is used to create a new authentication context.
+            ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+            ServiceController<SecurityDomain> serviceController = getRequiredService(serviceRegistry, DOMAIN_SERVICE_UTIL.serviceName(operation), SecurityDomain.class);
+            Service<SecurityDomain> service = serviceController.getService();
+
+            return service.getValue();
+        }
+    }
 }
 

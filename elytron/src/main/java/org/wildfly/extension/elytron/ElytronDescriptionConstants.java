@@ -27,7 +27,8 @@ interface ElytronDescriptionConstants {
 
     String ACTION = "action";
     String ACTIVE_SESSION_COUNT = "active-session-count";
-    String ADD_ATTRIBUTE = "add-attribute";
+    String ADD_IDENTITY = "add-identity";
+    String ADD_IDENTITY_ATTRIBUTE = "add-identity-attribute";
     String ADD_PREFIX_ROLE_MAPPER = "add-prefix-role-mapper";
     String ADD_SUFFIX_ROLE_MAPPER = "add-suffix-role-mapper";
     String AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY = "aggregate-http-server-mechanism-factory";
@@ -359,10 +360,10 @@ interface ElytronDescriptionConstants {
     String REFERRAL_MODE = "referral-mode";
     String REGEX_PRINCIPAL_TRANSFORMER = "regex-principal-transformer";
     String REGEX_VALIDATING_PRINCIPAL_TRANSFORMER = "regex-validating-principal-transformer";
-    String REGISTER = "register";
     String RELATIVE_TO = "relative-to";
     String REMOVE_ALIAS = "remove-alias";
-    String REMOVE_ATTRIBUTE = "remove-attribute";
+    String REMOVE_IDENTITY = "remove-identity";
+    String REMOVE_IDENTITY_ATTRIBUTE = "remove-identity-attribute";
     String REPLACE_ALL = "replace-all";
     String REPLACEMENT = "replacement";
     String REQUEST_LIFETIME = "request-lifetime";
