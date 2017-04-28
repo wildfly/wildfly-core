@@ -29,7 +29,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -54,7 +53,7 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
 
 
     WorkerServerDefinition() {
-        super(new Parameters(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(PathElement.pathElement("server"), IOExtension.getResolver("worker","server"))
                 .setRuntime());
     }
 
