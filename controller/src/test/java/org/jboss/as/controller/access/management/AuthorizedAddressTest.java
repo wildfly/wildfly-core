@@ -521,11 +521,6 @@ public class AuthorizedAddressTest {
         }
 
         @Override
-        public void registerCapability(RuntimeCapability capability, String attribute) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public void registerCapability(RuntimeCapability capability) {
             throw new UnsupportedOperationException("Not supported yet.");
         }

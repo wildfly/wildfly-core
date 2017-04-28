@@ -374,12 +374,6 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
-    @Deprecated
-    public void registerCapability(RuntimeCapability capability, String attribute) {
-        throw readOnlyContext();
-    }
-
-    @Override
     public void registerCapability(RuntimeCapability capability) {
         throw readOnlyContext();
     }

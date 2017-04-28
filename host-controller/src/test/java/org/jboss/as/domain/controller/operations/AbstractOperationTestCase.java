@@ -635,11 +635,6 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public void registerCapability(RuntimeCapability capability, String attribute) {
-            // no-op
-        }
-
-        @Override
         public void registerCapability(RuntimeCapability capability) {
             // no-op
         }

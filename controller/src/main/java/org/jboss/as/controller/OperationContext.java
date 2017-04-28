@@ -169,7 +169,7 @@ public interface OperationContext extends ExpressionResolver {
     void addResponseWarning(Level level, String warning);
 
     /**
-     * See {@link #addResponseWarning(Level, String, String)}
+     * See {@link #addResponseWarning(Level, String)}
      * @param warning - pre-formatted warning messsage.
      */
     void addResponseWarning(Level level, ModelNode warning);
@@ -832,21 +832,6 @@ public interface OperationContext extends ExpressionResolver {
      */
     Environment getCallEnvironment();
 
-    /**
-     * deprecated use {@link #registerCapability(RuntimeCapability)}
-     * Registers a capability with the system. Any {@link org.jboss.as.controller.capability.RuntimeCapability#getRequirements() requirements}
-     * associated with the capability will be recorded as requirements.
-     *
-     * @param capability  the capability. Cannot be {@code null}
-     * @param attribute the name of the attribute that triggered this registration, or {@code null} if no single
-     *                  attribute was responsible
-     *
-     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
-     * @deprecated use {@link #registerCapability(RuntimeCapability)}
-     */
-    @Deprecated
-    void registerCapability(RuntimeCapability capability, String attribute);
-
 
     /**
      * Registers a capability with the system. Any {@link org.jboss.as.controller.capability.RuntimeCapability#getRequirements() requirements}
@@ -860,7 +845,7 @@ public interface OperationContext extends ExpressionResolver {
 
     /**
      * Registers an additional hard requirement a capability has beyond what it was aware of when {@code capability}
-     * was passed to {@link #registerCapability(org.jboss.as.controller.capability.RuntimeCapability, String)}. Used for cases
+     * was passed to {@link #registerCapability(org.jboss.as.controller.capability.RuntimeCapability)}. Used for cases
      * where a capability optionally depends on another capability, and whether or not that requirement is needed is
      * not known when the capability is first registered.
      * <p>

@@ -39,32 +39,11 @@ public interface CapabilityReferenceRecorder {
     /**
      * Registers capability requirement information to the given context.
      * @param context         the context
-     * @param attributeName   the name of the attribute
-     * @param attributeValues the values of the attribute, which may contain null
-     * @deprecated use @{link {@link #addCapabilityRequirements(OperationContext, Resource, String, String...)}} instead
-     */
-    @Deprecated
-    void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
-
-    /**
-     * Registers capability requirement information to the given context.
-     * @param context         the context
      * @param resource        the resource on which requirements are gathered
      * @param attributeName   the name of the attribute
      * @param attributeValues the values of the attribute, which may contain null
      */
-    default void addCapabilityRequirements(OperationContext context, Resource resource, String attributeName, String... attributeValues){
-        addCapabilityRequirements(context, attributeName, attributeValues);
-    }
-
-    /**
-     * Deregisters capability requirement information from the given context.
-     * @param context         the context
-     * @param attributeName   the name of the attribute
-     * @param attributeValues the values of the attribute, which may contain null
-     */
-    @Deprecated
-    void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues);
+    void addCapabilityRequirements(OperationContext context, Resource resource, String attributeName, String... attributeValues);
 
     /**
      * Deregisters capability requirement information from the given context.
@@ -73,9 +52,7 @@ public interface CapabilityReferenceRecorder {
      * @param attributeName   the name of the attribute
      * @param attributeValues the values of the attribute, which may contain null
      */
-    default void removeCapabilityRequirements(OperationContext context, Resource resource, String attributeName, String... attributeValues){
-        removeCapabilityRequirements(context, attributeName, attributeValues);
-    }
+    void removeCapabilityRequirements(OperationContext context, Resource resource, String attributeName, String... attributeValues);
 
     /**
      * @return base name of dependant, usually name of the attribute that provides reference to capability
@@ -95,7 +72,9 @@ public interface CapabilityReferenceRecorder {
      * @deprecated No longer required and may throw {@link java.lang.UnsupportedOperationException}
      */
     @Deprecated
-    boolean isDynamicDependent();
+    default boolean isDynamicDependent() {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Default implementation of {@link org.jboss.as.controller.CapabilityReferenceRecorder}.
@@ -109,22 +88,10 @@ public interface CapabilityReferenceRecorder {
         private final String baseDependentName;
         private final boolean dynamicDependent;
 
-        public DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName, boolean dynamicDependent) {
+        DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName, boolean dynamicDependent) {
             this.baseRequirementName = baseRequirementName;
             this.baseDependentName = baseDependentName;
             this.dynamicDependent = dynamicDependent;
-        }
-
-        @Override
-        @Deprecated
-        public void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
-            processCapabilityRequirement(context, attributeName, false, attributeValues);
-        }
-
-        @Override
-        @Deprecated
-        public void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
-            processCapabilityRequirement(context, attributeName, true, attributeValues);
         }
 
         @Override
@@ -169,7 +136,7 @@ public interface CapabilityReferenceRecorder {
          * @param currentAddress the address of the resource currently being processed. Will not be {@code null}
          * @return the dynamic portion of the dependenty capability name. Cannot be {@code null}
          */
-        protected String getDynamicDependentName(PathAddress currentAddress) {
+        String getDynamicDependentName(PathAddress currentAddress) {
             return currentAddress.getLastElement().getValue();
         }
 
@@ -181,11 +148,6 @@ public interface CapabilityReferenceRecorder {
         @Override
         public String getBaseRequirementName() {
             return baseRequirementName;
-        }
-
-        @Override
-        public boolean isDynamicDependent() {
-            return dynamicDependent;
         }
 
     }
@@ -202,18 +164,8 @@ public interface CapabilityReferenceRecorder {
 
         final String baseRequirementName;
 
-        public ContextDependencyRecorder(String baseRequirementName) {
+        ContextDependencyRecorder(String baseRequirementName) {
             this.baseRequirementName = baseRequirementName;
-        }
-
-        @Override
-        public void addCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void removeCapabilityRequirements(OperationContext context, String attributeName, String... attributeValues) {
-            throw new UnsupportedOperationException();
         }
 
         /**
@@ -236,7 +188,7 @@ public interface CapabilityReferenceRecorder {
             processCapabilityRequirement(context, resource, attributeName, true, attributeValues);
         }
 
-        protected void processCapabilityRequirement(OperationContext context, Resource resource, String attributeName, boolean remove, String... attributeValues) {
+        void processCapabilityRequirement(OperationContext context, Resource resource, String attributeName, boolean remove, String... attributeValues) {
             RuntimeCapability cap = getDependentCapability(context);
             String dependentName = getDependentName(cap, context);
             for (String attributeValue : attributeValues) {
@@ -259,7 +211,7 @@ public interface CapabilityReferenceRecorder {
             return capabilities.iterator().next();
         }
 
-        protected String getDependentName(RuntimeCapability cap, OperationContext context) {
+        String getDependentName(RuntimeCapability cap, OperationContext context) {
             if (cap.isDynamicallyNamed()) {
                 return cap.fromBaseCapability(context.getCurrentAddress()).getName();
             } else {
@@ -282,15 +234,6 @@ public interface CapabilityReferenceRecorder {
         public String getBaseRequirementName() {
             return baseRequirementName;
         }
-
-        /**
-         * Throws {@link UnsupportedOperationException}
-         */
-        @Override
-        public boolean isDynamicDependent() {
-            throw new UnsupportedOperationException();
-        }
-
     }
 
     /**
@@ -310,7 +253,7 @@ public interface CapabilityReferenceRecorder {
          * @param baseRequirementName base requirement name
          * @param attributes list of additional attributes on same resource that are used to dynamically construct name of capability
          */
-        public CompositeAttributeDependencyRecorder(String baseRequirementName, AttributeDefinition... attributes) {
+        CompositeAttributeDependencyRecorder(String baseRequirementName, AttributeDefinition... attributes) {
             super(baseRequirementName);
             this.attributes = attributes;
             this.capability = null;
@@ -321,7 +264,7 @@ public interface CapabilityReferenceRecorder {
          * @param baseRequirementName base requirement name
          * @param attributes          list of additional attributes on same resource that are used to dynamically construct name of capability
          */
-        public CompositeAttributeDependencyRecorder(RuntimeCapability capability, String baseRequirementName, AttributeDefinition... attributes) {
+        CompositeAttributeDependencyRecorder(RuntimeCapability capability, String baseRequirementName, AttributeDefinition... attributes) {
             super(baseRequirementName);
             this.attributes = attributes;
             this.capability = capability;
@@ -349,27 +292,6 @@ public interface CapabilityReferenceRecorder {
             }
             dynamicParts[attributes.length] = attributeValue;
             return RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, dynamicParts);
-        }
-
-    }
-
-    /**
-     * {@link ResourceNameCompositeDependencyRecorder} that determines the dependent capability
-     * from the {@link OperationContext} and resource name.
-     * This assumes that the {@link OperationContext#getResourceRegistration() resource registration associated with currently executing step}
-     * will expose a {@link ImmutableManagementResourceRegistration#getCapabilities() capability set} including
-     * one and only one capability. <strong>This recorder cannot be used with attributes associated with resources
-     * that do not meet this requirement.</strong>
-     */
-    public class ResourceNameCompositeDependencyRecorder extends CompositeAttributeDependencyRecorder {
-
-        public ResourceNameCompositeDependencyRecorder(String baseRequirementName) {
-            super(baseRequirementName);
-        }
-
-        @Override
-        protected String getRequirementName(OperationContext context, Resource resource, String attributeValue) {
-            return RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, context.getCurrentAddressValue(), attributeValue);
         }
 
     }
