@@ -136,9 +136,9 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
 
         return context.getServiceTarget().addService(serviceName, service)
                 .addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class), PathManager.class, service.pathManagerValue)
-                .addDependency(context.getCapabilityServiceName("org.wildfly.managment.notification-handler-registry", null),
+                .addDependency(context.getCapabilityServiceName("org.wildfly.management.notification-handler-registry", null),
                         NotificationHandlerRegistry.class, service.notificationRegistryValue)
-                .addDependency(context.getCapabilityServiceName("org.wildfly.managment.model-controller-client-factory", null),
+                .addDependency(context.getCapabilityServiceName("org.wildfly.management.model-controller-client-factory", null),
                         ModelControllerClientFactory.class, service.clientFactoryValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateServiceValue)
