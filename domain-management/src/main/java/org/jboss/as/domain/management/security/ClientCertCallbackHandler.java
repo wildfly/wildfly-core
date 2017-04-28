@@ -128,12 +128,8 @@ public class ClientCertCallbackHandler implements Service<CallbackHandlerService
     private class ClientCertSecurityRealm implements org.wildfly.security.auth.server.SecurityRealm {
 
         @Override
-        public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
-            if (evidence instanceof X509PeerCertificateChainEvidence) {
-                return new ClientCertRealmIdentity(((X509PeerCertificateChainEvidence)evidence).getPrincipal());
-            }
-
-            return RealmIdentity.NON_EXISTENT;
+        public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+            return new ClientCertRealmIdentity(principal);
         }
 
         @Override
