@@ -353,7 +353,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (operations) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 23, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 23, ops.size());
             boolean runtimeOnly = processType != ProcessType.DOMAIN_SERVER;
             assertEquals(runtimeOnly, ops.contains("testA1-1"));
             assertEquals(runtimeOnly, ops.contains("testA1-2"));
@@ -405,7 +405,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 21, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 21, ops.size());
             assertTrue(ops.contains(READ_RESOURCE_OPERATION));
             assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
             assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
@@ -440,7 +440,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 18 : 21, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 21, ops.size());
             assertTrue(ops.contains(READ_RESOURCE_OPERATION));
             assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
             assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));

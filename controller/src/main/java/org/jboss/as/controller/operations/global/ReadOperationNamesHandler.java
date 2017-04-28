@@ -87,7 +87,8 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
             final PathAddress address = context.getCurrentAddress();
             for (final Map.Entry<String, OperationEntry> entry : operations.entrySet()) {
                 if (entry.getValue().getType() == OperationEntry.EntryType.PUBLIC) {
-                    if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)) {
+                    if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)
+                            || entry.getValue().getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
 
                         boolean add = true;
                         if (accessControl) {
