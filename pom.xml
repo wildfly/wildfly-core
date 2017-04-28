@@ -1682,21 +1682,11 @@
             <properties>
                 <modular.jdk.args>
                     --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens=java.base/java.io=ALL-UNNAMED
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                    --add-opens=java.base/java.math=ALL-UNNAMED
-                    --add-opens=java.base/java.net=ALL-UNNAMED
-                    --add-opens=java.base/java.security=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
-                    --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED
-                    --add-opens=java.management/javax.management=ALL-UNNAMED
-                    --add-opens=java.management/javax.management.openmbean=ALL-UNNAMED
+                    --permit-illegal-access
                 </modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true -Dsun.reflect.debugModuleAccessChecks=true</modular.jdk.props>
-                <version.org.jboss.byteman>4.0.0-BETA3</version.org.jboss.byteman>
+                <version.org.jboss.byteman>4.0.0-BETA5</version.org.jboss.byteman>
             </properties>
             <build>
                 <plugins>
