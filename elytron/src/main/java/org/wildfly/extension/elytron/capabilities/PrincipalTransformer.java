@@ -33,37 +33,46 @@ public interface PrincipalTransformer extends Function<Principal, Principal> {
         return function::apply;
     }
 
+    /**
+     * Principal transformer which transforms principal by individual transformers
+     * in defined order and returns first non-null transformed principal.
+     * Input of all transformers is original principal.
+     */
     static PrincipalTransformer aggregate(PrincipalTransformer... transformers) {
         Assert.checkNotNullParam("transformers", transformers);
         final PrincipalTransformer[] clone = transformers.clone();
         for (int i = 0; i < clone.length; i++) {
             Assert.checkNotNullArrayParam("transformers", i, clone[i]);
         }
-        return p -> {
-            if (p == null) return null;
-            Principal tf;
-            for (PrincipalTransformer t : clone) {
-                tf = t.apply(p);
-                if (tf != null) {
-                    return tf;
+        return principal -> {
+            if (principal == null) return null;
+            for (PrincipalTransformer transformer : clone) {
+                Principal transformed = transformer.apply(principal);
+                if (transformed != null) {
+                    return transformed;
                 }
             }
             return null;
         };
     }
 
+    /**
+     * Principal transformer which transforms original principal by first transformer
+     * in chain, its output transforms by second transformer etc. Output of last
+     * transformer is returned.
+     */
     static PrincipalTransformer chain(PrincipalTransformer... transformers) {
         Assert.checkNotNullParam("transformers", transformers);
         final PrincipalTransformer[] clone = transformers.clone();
         for (int i = 0; i < clone.length; i++) {
             Assert.checkNotNullArrayParam("transformers", i, clone[i]);
         }
-        return p -> {
-            for (PrincipalTransformer pt : clone) {
-                if (p == null) return null;
-                p = pt.apply(p);
+        return principal -> {
+            for (PrincipalTransformer transformer : clone) {
+                if (principal == null) return null;
+                principal = transformer.apply(principal);
             }
-            return p;
+            return principal;
         };
     }
 
