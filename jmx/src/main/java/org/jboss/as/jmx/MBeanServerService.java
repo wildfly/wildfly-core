@@ -113,7 +113,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
             .addListener(listeners)
             .setInitialMode(ServiceController.Mode.ACTIVE)
             .addDependency(modelControllerName, ModelController.class, service.modelControllerValue)
-            .addDependency(context.getCapabilityServiceName("org.wildfly.managment.notification-handler-registry", null), NotificationHandlerRegistry.class, service.notificationRegistryValue)
+            .addDependency(context.getCapabilityServiceName("org.wildfly.management.notification-handler-registry", null), NotificationHandlerRegistry.class, service.notificationRegistryValue)
             .addDependency(ManagementModelIntegration.SERVICE_NAME, ManagementModelIntegration.ManagementModelProvider.class, service.managementModelProviderValue)
             .addAliases(LEGACY_MBEAN_SERVER_NAME)
                 .install();
