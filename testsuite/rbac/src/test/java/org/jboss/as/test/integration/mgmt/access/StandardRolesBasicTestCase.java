@@ -41,9 +41,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHU
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UPLOAD_DEPLOYMENT_BYTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.ADMINISTRATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.AUDITOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.DEPLOYER_USER;
@@ -122,7 +125,15 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         } catch (AssertionError e) {
             assertionError = e;
         } finally {
-            removeResource(TEST_PATH);
+            try {
+                removeResource(TEST_PATH);
+            } catch (AssertionError e1) {
+                if (assertionError == null) {
+                    assertionError = e1;
+                }
+            } finally {
+                restoreNonSensitiveValueAttribute(getManagementClient());
+            }
         }
 
         if (assertionError != null) {
@@ -139,6 +150,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
+        checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.UNAUTHORIZED);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -161,6 +173,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
+        checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.SUCCESS);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -180,6 +193,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
+        checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.SUCCESS);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -199,6 +213,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
         readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
+        checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.UNAUTHORIZED);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -221,6 +236,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
+        checkNonSensitiveDefaultAttribute(client, true, true);
         runGC(client, Outcome.SUCCESS);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -242,6 +258,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
+        checkNonSensitiveDefaultAttribute(client, true, false);
         runGC(client, Outcome.UNAUTHORIZED);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -265,6 +282,7 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
         readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
+        checkNonSensitiveDefaultAttribute(client, true, true);
         runGC(client, Outcome.SUCCESS);
         if (this instanceof JmxInterfaceStandardRolesBasicTestCase) {
             return; // the 'add' operation is not implemented in JmxManagementInterface
@@ -333,6 +351,33 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
 
         attrValue = readAttribute(client, EXAMPLE_DS, PASSWORD, expectSuccess ? Outcome.SUCCESS : Outcome.UNAUTHORIZED).get(RESULT);
         assertEquals(correct, attrValue);
+    }
+
+    private static void checkNonSensitiveDefaultAttribute(ManagementInterface client, boolean expectReadSuccess, boolean expectWriteSuccess) throws IOException {
+        ModelNode correct = new ModelNode();
+        if (expectReadSuccess) {
+            correct.set(false);
+        }
+
+        ModelNode attrValue = readResource(client, EXAMPLE_DS, Outcome.SUCCESS).get(RESULT, "authentication-inflow");
+        assertEquals(correct, attrValue);
+
+        attrValue = readAttribute(client, EXAMPLE_DS, "authentication-inflow", expectReadSuccess ? Outcome.SUCCESS : Outcome.UNAUTHORIZED).get(RESULT);
+        assertEquals(correct, attrValue);
+
+        ModelNode op = createOpNode(EXAMPLE_DS, WRITE_ATTRIBUTE_OPERATION);
+        op.get(NAME).set("authentication-inflow");
+        op.get(VALUE).set(true);
+
+        RbacUtil.executeOperation(client, op, expectWriteSuccess ? Outcome.SUCCESS : Outcome.UNAUTHORIZED);
+    }
+
+    private static void restoreNonSensitiveValueAttribute(ManagementClient client) throws IOException {
+
+        ModelNode op = createOpNode(EXAMPLE_DS, UNDEFINE_ATTRIBUTE_OPERATION);
+        op.get(NAME).set("authentication-inflow");
+
+        RbacUtil.executeOperation(client.getControllerClient(), op, Outcome.SUCCESS );
     }
 
     private static void runGC(ManagementInterface client, Outcome expectedOutcome) throws IOException {

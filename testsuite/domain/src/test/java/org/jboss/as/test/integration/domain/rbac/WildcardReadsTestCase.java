@@ -435,9 +435,10 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assert accItem != null;
         assertEquals(accItem.toString(), reporter, PathAddress.pathAddress(accItem.get(RELATIVE_ADDRESS)));
         assertTrue(accItem.toString(), accItem.hasDefined(FILTERED_ATTRIBUTES));
-        assertEquals(accItem.toString(), 2, accItem.get(FILTERED_ATTRIBUTES).asInt());
+        assertEquals(accItem.toString(), 3, accItem.get(FILTERED_ATTRIBUTES).asInt());
         assertTrue(accItem.toString(), accItem.get(FILTERED_ATTRIBUTES).asString().contains("password"));
         assertTrue(accItem.toString(), accItem.get(FILTERED_ATTRIBUTES).asString().contains("security-domain"));
+        assertTrue(accItem.toString(), accItem.get(FILTERED_ATTRIBUTES).asString().contains("authentication-inflow"));
 
     }
 
