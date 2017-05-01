@@ -34,6 +34,7 @@ import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -367,6 +368,9 @@ public interface ControllerClientLogger extends BasicLogger {
 
     @Message(id = 36, value = "Stream was closed")
     IOException streamWasClosed();
+
+    @Message(id = 37, value = "Failed to parse the configuration file: %s")
+    RuntimeException failedToParseAuthenticationConfig(@Cause Throwable cause, URI location);
 
     class LeakDescription extends Throwable {
         private static final long serialVersionUID = -7193498784746897578L;

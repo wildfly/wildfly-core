@@ -25,15 +25,22 @@ package org.jboss.as.controller.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.controller.client.helpers.ContextualModelControllerClient;
 import org.jboss.as.controller.client.impl.RemotingModelControllerClient;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
+import org.wildfly.client.config.ConfigXMLParseException;
+import org.wildfly.common.context.Contextual;
+import org.wildfly.security.auth.client.ElytronXmlParser;
 
 /**
  * A client for an application server management model controller.
@@ -599,7 +606,20 @@ public interface ModelControllerClient extends Closeable {
          * @return the client
          */
         public static ModelControllerClient create(final ModelControllerClientConfiguration configuration) {
-            return new RemotingModelControllerClient(configuration);
+            final ModelControllerClient result =  new RemotingModelControllerClient(configuration);
+            Contextual<?> contextual = null;
+            final URI authenticationConfig = configuration.getAuthenticationConfigUri();
+            if (authenticationConfig != null) {
+                try {
+                    contextual = ElytronXmlParser.parseAuthenticationClientConfiguration(authenticationConfig).create();
+                } catch (GeneralSecurityException | ConfigXMLParseException e) {
+                    throw ControllerClientLogger.ROOT_LOGGER.failedToParseAuthenticationConfig(e, authenticationConfig);
+                }
+            }
+            if (contextual == null) {
+                return result;
+            }
+            return new ContextualModelControllerClient(result, contextual);
         }
 
     }
