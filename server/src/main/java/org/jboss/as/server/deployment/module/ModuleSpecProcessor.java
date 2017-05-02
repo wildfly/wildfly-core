@@ -89,6 +89,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
     @Override
     public void undeploy(final DeploymentUnit deploymentUnit) {
+        deploymentUnit.removeAttachment(Attachments.MODULE);
+        deploymentUnit.removeAttachment(Attachments.MODULE_PERMISSIONS);
+        deploymentUnit.removeAttachment(DelegatingClassFileTransformer.ATTACHMENT_KEY);
     }
 
     private void deployModuleSpec(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
