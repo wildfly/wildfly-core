@@ -82,7 +82,7 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
     }
 
     @Override
-    public void undeploy(DeploymentUnit deploymentUnit) {
+    public void undeploy(final DeploymentUnit deploymentUnit) {
         final ServiceRegistry serviceRegistry = deploymentUnit.getServiceRegistry();
         final List<ResourceRoot> childRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
         for (final ResourceRoot childRoot : childRoots) {
@@ -95,5 +95,6 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
                 serviceController.setMode(ServiceController.Mode.REMOVE);
             }
         }
+        deploymentUnit.removeAttachment(Attachments.SUB_DEPLOYMENTS);
     }
 }
