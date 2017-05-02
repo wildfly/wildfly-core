@@ -92,12 +92,12 @@ rem This protects the running script from being rewritten.
          org.jboss.as.cli ^
          !ARGS!
 
-    set /A RC=%errorlevel%
+    set /A RC=!errorlevel!
     :END
-    if "x%NOPAUSE%" == "x" pause
+    if "x!NOPAUSE!" == "x" pause
 
-    if "x%RC%" == "x" (
+    if "x!RC!" == "x" (
       set /A RC=0
     )
-    exit /B %RC%
+    exit /B !RC!
 )
