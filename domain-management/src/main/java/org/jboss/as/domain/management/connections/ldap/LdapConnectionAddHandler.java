@@ -44,6 +44,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService.Config;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.ReferralHandling;
@@ -97,7 +98,9 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
             SSLContextService.ServiceUtil.addDependency(sb, connectionManagerService.getFullSSLContextInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName), false);
             SSLContextService.ServiceUtil.addDependency(sb, connectionManagerService.getTrustOnlySSLContextInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName), true);
         }
-
+        if(LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE.resolveModelAttribute(context, model).isDefined()) {
+            connectionManagerService.getCredentialSourceSupplierInjector().inject(CredentialReference.getCredentialSourceSupplier(context, LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE, model, sb));
+        }
         sb.install();
     }
 

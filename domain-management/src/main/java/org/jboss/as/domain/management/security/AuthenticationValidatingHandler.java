@@ -77,6 +77,9 @@ class AuthenticationValidatingHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         String realmName = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR)).getLastElement().getValue();
+        if(!hasResource(context)) {//realm has been deleted, who cares :)
+            return;
+        }
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         Set<String> children = resource.getChildrenNames(ModelDescriptionConstants.AUTHENTICATION);
 
@@ -100,5 +103,14 @@ class AuthenticationValidatingHandler implements OperationStepHandler {
             throw DomainManagementLogger.ROOT_LOGGER.multipleAuthenticationMechanismsDefined(realmName, invalid);
         }
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    }
+
+    private static boolean hasResource (OperationContext context) {
+        try {
+            context.readResource(PathAddress.EMPTY_ADDRESS, false);
+            return true;
+        } catch (Resource.NoSuchResourceException nsre) {
+            return false;
+        }
     }
 }

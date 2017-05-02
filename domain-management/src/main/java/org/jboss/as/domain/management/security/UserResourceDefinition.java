@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.security;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -32,6 +33,7 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -45,6 +47,11 @@ public class UserResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PASSWORD, ModelType.STRING, false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setAllowExpression(true)
+            .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE)
+            .build();
+
+    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, false)
+            .setAlternatives(org.jboss.as.domain.management.ModelDescriptionConstants.VALUE)
             .build();
 
     public UserResourceDefinition() {
@@ -61,5 +68,6 @@ public class UserResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(PASSWORD, null, new UserWriteAttributeHandler());
+        resourceRegistration.registerReadWriteAttribute(CREDENTIAL_REFERENCE, null, new UserWriteAttributeHandler());
     }
 }

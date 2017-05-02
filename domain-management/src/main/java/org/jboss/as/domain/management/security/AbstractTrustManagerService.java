@@ -37,6 +37,10 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
 
 /**
  * Service to handle the creation of the TrustManager[].
@@ -45,7 +49,22 @@ import org.jboss.msc.service.StopContext;
  */
 abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
 
+    private volatile char[] keystorePassword;
     private volatile TrustManager[] theTrustManagers;
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
+
+
+    AbstractTrustManagerService(final char[] keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
+
+    public char[] getKeystorePassword() {
+        return keystorePassword;
+    }
+
+    public void setKeystorePassword(char[] keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
 
     /*
      * Service Lifecycle Methods
@@ -74,6 +93,31 @@ abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
     @Override
     public TrustManager[] getValue() throws IllegalStateException, IllegalArgumentException {
         return theTrustManagers;
+    }
+
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
+        return credentialSourceSupplier;
+    }
+
+    protected char[] resolvePassword() {
+        try {
+            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getOptionalValue();
+            if (sourceSupplier != null) {
+                CredentialSource cs = sourceSupplier.get();
+                if (cs != null) {
+                    org.wildfly.security.credential.PasswordCredential credential = cs.getCredential(org.wildfly.security.credential.PasswordCredential.class);
+                    if (credential != null) {
+                        ClearPassword password = credential.getPassword(ClearPassword.class);
+                        if (password != null) {
+                            return password.getPassword();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            return keystorePassword;
+        }
+        return keystorePassword;
     }
 
     /**

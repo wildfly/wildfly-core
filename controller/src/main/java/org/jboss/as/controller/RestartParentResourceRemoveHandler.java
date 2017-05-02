@@ -21,6 +21,15 @@
  */
 package org.jboss.as.controller;
 
+
+
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -31,8 +40,15 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class RestartParentResourceRemoveHandler extends RestartParentResourceHandlerBase {
 
+    private final Set<RuntimeCapability> capabilities;
+
     protected RestartParentResourceRemoveHandler(String parentKeyName) {
+        this(parentKeyName, null);
+    }
+
+    protected RestartParentResourceRemoveHandler(String parentKeyName, RuntimeCapability ... capabilities) {
         super(parentKeyName);
+        this.capabilities = capabilities == null || capabilities.length == 0 ? RestartParentResourceAddHandler.NULL_CAPABILITIES : Arrays.stream(capabilities).collect(Collectors.toSet());
     }
 
     /**
@@ -46,7 +62,30 @@ public abstract class RestartParentResourceRemoveHandler extends RestartParentRe
     protected void updateModel(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         // verify that the resource exist before removing it
         context.readResource(PathAddress.EMPTY_ADDRESS, false);
+        Resource resource = context.removeResource(PathAddress.EMPTY_ADDRESS);
+        recordCapabilitiesAndRequirements(context, operation, resource);
+    }
 
-        context.removeResource(PathAddress.EMPTY_ADDRESS);
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+
+        for (RuntimeCapability capability : capabilitySet) {
+            if (capability.isDynamicallyNamed()) {
+                context.deregisterCapability(capability.getDynamicName(context.getCurrentAddress()));
+            } else {
+                context.deregisterCapability(capability.getName());
+            }
+        }
+        ModelNode model = resource.getModel();
+        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+        for (String attr : mrr.getAttributeNames(PathAddress.EMPTY_ADDRESS)) {
+            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
+            if (aa != null) {
+                AttributeDefinition ad = aa.getAttributeDefinition();
+                if (ad != null && (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements())) {
+                    ad.removeCapabilityRequirements(context, resource, model.get(ad.getName()));
+                }
+            }
+        }
     }
 }

@@ -213,15 +213,17 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         public static final PathElement CLIENT_CERT_ELEMENT = PathElement.pathElement(AUTHENTICATION, CLIENT_CERT_STORE);
 
         public static final SimpleAttributeDefinition KEYSTORE_PASSWORD = KeystoreAttributes.KEYSTORE_PASSWORD;
+        public static final SimpleAttributeDefinition KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE;
         public static final SimpleAttributeDefinition KEYSTORE_PATH = KeystoreAttributes.KEYSTORE_PATH;
         public static final SimpleAttributeDefinition KEYSTORE_RELATIVE_TO = KeystoreAttributes.KEYSTORE_RELATIVE_TO;
         public static final SimpleAttributeDefinition KEY_PASSWORD = KeystoreAttributes.KEY_PASSWORD;
+        public static final SimpleAttributeDefinition KEY_PASSWORD_CREDENTIAL_REFERENCE = KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE;
 
         private static final AttributeDefinition[] CLIENT_CERT_ATTRIBUTES = new AttributeDefinition[]{
-                KEYSTORE_PASSWORD, KEYSTORE_PATH, KEYSTORE_RELATIVE_TO, KEY_PASSWORD};
+                KEYSTORE_PASSWORD, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, KEYSTORE_PATH, KEYSTORE_RELATIVE_TO, KEY_PASSWORD, KEY_PASSWORD_CREDENTIAL_REFERENCE};
 
         private static final AttributeDefinition[] TRUSTSTORE_ATTRIBUTES = new AttributeDefinition[]{
-                KEYSTORE_PASSWORD, KEYSTORE_PATH, KEYSTORE_RELATIVE_TO};
+                KEYSTORE_PASSWORD, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, KEYSTORE_PATH, KEYSTORE_RELATIVE_TO};
 
         private final ManagedAuditLogger auditLogger;
         private final PathManagerService pathManager;
