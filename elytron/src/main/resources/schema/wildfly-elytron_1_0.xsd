@@ -2329,7 +2329,7 @@
                 <xs:attribute name="logical-operation" type="logicalPermissionMappingsType" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The logicial operation to perform using the two referenced PermissionMappers.
+                            The logical operation to perform using the two referenced PermissionMappers.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2355,6 +2355,10 @@
         <xs:annotation>
             <xs:documentation>
                 The supported set of logical operations.
+                "and" assigns permissions which was assigned by both mappers
+                "or" assigns permissions which was assigned by at least one of mappers
+                "xor" assigns permissions which was assigned by exactly one of mappers
+                "unless" assigns permissions which was assigned by left mapper but not by right mapper
             </xs:documentation>
         </xs:annotation>
         <xs:restriction base="xs:string">
@@ -2798,7 +2802,11 @@
     <xs:complexType name="aggregatePrincipalTransformerType">
         <xs:annotation>
             <xs:documentation>
-                A PrincipalTransformer definition that is actually an aggregation of other PrincipalTransformers.
+                A PrincipalTransformer aggregating more PrincipalTransformers - original principal is tried to be transformed
+                by individual transformers in given order until some of them return non-null principal - that is returned.
+
+                Typically can be used with chained principal transformers beginning with validating principal
+                transformer - to transform principals in different forms differently.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
@@ -2828,7 +2836,7 @@
     <xs:complexType name="principalTransformerRefType">
         <xs:annotation>
             <xs:documentation>
-                A reference to a PrincipalTransformer
+                A reference to a PrincipalTransformer.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="name" type="xs:string" use="required" />

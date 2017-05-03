@@ -177,7 +177,7 @@ class MapperParser {
                     readRegexPrincipalTransformerElement(parentAddress, reader, operations);
                     break;
                 case REGEX_VALIDATING_PRINCIPAL_TRANSFORMER:
-                    readRegexPrincipalTransformerRewriterElement(parentAddress, reader, operations);
+                    readRegexValidatingPrincipalTransformerElement(parentAddress, reader, operations);
                     break;
                 // Realm Mappers
                 case CONSTANT_REALM_MAPPER:
@@ -832,7 +832,7 @@ class MapperParser {
         requireNoContent(reader);
     }
 
-    private void readRegexPrincipalTransformerRewriterElement(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    private void readRegexValidatingPrincipalTransformerElement(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {
         ModelNode addPrincipalTransformer = new ModelNode();
         addPrincipalTransformer.get(OP).set(ADD);
