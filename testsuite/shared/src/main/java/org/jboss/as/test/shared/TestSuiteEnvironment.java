@@ -55,6 +55,26 @@ public class TestSuiteEnvironment {
         return "java";
     }
 
+    /**
+     * Returns the JBoss home directory or {@code null} if it could not be found.
+     * <p>
+     * The following is the order the directory is resolved:
+     * <ol>
+     *     <li>The {@code jboss.dist} system property is checked</li>
+     *     <li>The {@code jboss.home} system property is checked</li>
+     *     <li>The {@code JBOSS_HOME} environment variable is checked</li>
+     * </ol>
+     * </p>
+     * @return the JBoss home directory or {@code null} if it could not be resolved
+     */
+    public static String getJBossHome() {
+        String jbossHome = getSystemProperty("jboss.dist");
+        if (jbossHome == null) {
+            jbossHome = getSystemProperty("jboss.home");
+        }
+        return jbossHome == null ? System.getenv("JBOSS_HOME") : jbossHome;
+    }
+
     public static String getSystemProperty(String name, String def) {
         return System.getProperty(name, def);
     }
