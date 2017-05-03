@@ -719,6 +719,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="ssl-context" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of ssl-context used to secure connection to the syslog server.
+                            Applies only when SSL_TCP transport is used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

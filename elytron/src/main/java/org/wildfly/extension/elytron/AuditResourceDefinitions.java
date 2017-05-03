@@ -17,7 +17,9 @@
  */
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
@@ -43,6 +45,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathManager;
@@ -50,6 +53,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
@@ -63,6 +67,8 @@ import org.wildfly.security.audit.RotatingFileAuditEndpoint;
 import org.wildfly.security.audit.SimpleSecurityEventFormatter;
 import org.wildfly.security.audit.SyslogAuditEndpoint;
 import org.wildfly.security.auth.server.event.SecurityEventVisitor;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Resources definitions for the audit logging resources.
@@ -110,24 +116,30 @@ class AuditResourceDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder("max-backup-index", ModelType.INT, true)
+    static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAX_BACKUP_INDEX, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(1))
             .setValidator(new IntRangeValidator(1, true))
             .build();
 
-    static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder("rotate-on-boot", ModelType.BOOLEAN, true)
+    static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_ON_BOOT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
             .build();
 
-    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder("rotate-size", ModelType.LONG, true)
+    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.LONG, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(2000))
             .build();
 
-    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder("suffix", ModelType.STRING, true)
+    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, true)
             .setAllowExpression(true)
+            .build();
+
+    static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
+            .setAllowExpression(false)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY, true)
             .build();
 
     private static final AggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = AggregateComponentDefinition.create(SecurityEventListener.class,
@@ -253,7 +265,7 @@ class AuditResourceDefinitions {
     }
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT, SSL_CONTEXT };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -273,9 +285,18 @@ class AuditResourceDefinitions {
                 final String hostName = HOST_NAME.resolveModelAttribute(context, model).asString();
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
 
+                final InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
+                String sslContextName = asStringIfDefined(context, SSL_CONTEXT, model);
+                if (sslContextName != null) {
+                    String sslCapability = RuntimeCapability.buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContextName);
+                    ServiceName sslServiceName = context.getCapabilityServiceName(sslCapability, SSLContext.class);
+                    serviceBuilder.addDependency(sslServiceName, SSLContext.class, sslContextInjector);
+                }
+
                 return () -> {
                     final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     final AuditEndpoint endpoint;
+                    final SSLContext sslContext = sslContextInjector.getOptionalValue();
                     try {
                         endpoint = SyslogAuditEndpoint.builder()
                                 .setServerAddress(serverAddress)
@@ -283,6 +304,7 @@ class AuditResourceDefinitions {
                                 .setSsl(transport == Transport.SSL_TCP)
                                 .setTcp(transport == Transport.TCP || transport == Transport.SSL_TCP)
                                 .setHostName(hostName)
+                                .setSocketFactory(transport == Transport.SSL_TCP && sslContext != null ? sslContext.getSocketFactory() : null)
                                 .build();
                     } catch (IOException e) {
                         throw ROOT_LOGGER.unableToStartService(e);

@@ -255,6 +255,7 @@ interface ElytronDescriptionConstants {
     String MAXIMUM_ENTRIES = "maximum-entries";
     String MAXIMUM_SEGMENTS = "maximum-segments";
     String MAXIMUM_SESSION_CACHE_SIZE = "maximum-session-cache-size";
+    String MAX_BACKUP_INDEX = "max-backup-index";
     String MECHANISM = "mechanism";
     String MECHANISM_CONFIGURATION = "mechanism-configuration";
     String MECHANISM_CONFIGURATIONS = "mechanism-configurations";
@@ -371,6 +372,8 @@ interface ElytronDescriptionConstants {
     String ROLE_MAPPER = "role-mapper";
     String ROLE_MAPPERS = "role-mappers";
     String ROLES = "roles";
+    String ROTATE_SIZE = "rotate-size";
+    String ROTATE_ON_BOOT = "rotate-on-boot";
     String ROTATING_FILE_AUDIT_LOG = "rotating-file-audit-log";
 
     String SALT = "salt";

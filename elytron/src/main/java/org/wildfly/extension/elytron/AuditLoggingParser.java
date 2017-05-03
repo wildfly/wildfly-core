@@ -69,7 +69,7 @@ class AuditLoggingParser {
 
     private final PersistentResourceXMLDescription syslogAuditLogParser = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
-            .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.HOST_NAME)
+            .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT)
             .build();
 
     void readAuditLogging(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
