@@ -32,7 +32,7 @@ public class DeploymentCompleteServiceProcessor implements DeploymentUnitProcess
 
     public static final ServiceName SERVICE_NAME = ServiceName.of("deploymentCompleteService");
 
-    public static final ServiceName serviceName(final ServiceName deploymentUnitServiceName) {
+    public static ServiceName serviceName(final ServiceName deploymentUnitServiceName) {
         return deploymentUnitServiceName.append(SERVICE_NAME);
     }
 
@@ -51,7 +51,7 @@ public class DeploymentCompleteServiceProcessor implements DeploymentUnitProcess
     }
 
     @Override
-    public void undeploy(final DeploymentUnit context) {
-
+    public void undeploy(final DeploymentUnit deploymentUnit) {
+        deploymentUnit.removeAttachment(Attachments.DEPLOYMENT_COMPLETE_SERVICES);
     }
 }
