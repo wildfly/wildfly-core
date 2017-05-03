@@ -1,0 +1,37 @@
+<subsystem xmlns="urn:wildfly:elytron:1.0">
+    <security-domains>
+        <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree">
+            <realm name="PropRealm"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <properties-realm name="PropRealm">
+            <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
+        </properties-realm>
+    </security-realms>
+    <mappers>
+
+        <aggregate-principal-transformer name="tree">
+            <principal-transformer name="jbossEmail" />
+            <principal-transformer name="wildflyEmail" />
+            <principal-transformer name="genericEmail" />
+        </aggregate-principal-transformer>
+
+        <chained-principal-transformer name="jbossEmail">
+            <principal-transformer name="isJbossEmail"/>
+            <principal-transformer name="jbossToOrg"/>
+        </chained-principal-transformer>
+
+        <chained-principal-transformer name="wildflyEmail">
+            <principal-transformer name="isWildflyEmail"/>
+            <principal-transformer name="removeWildflyAt"/>
+        </chained-principal-transformer>
+
+        <regex-principal-transformer name="removeWildflyAt" pattern="@wildfly.org" replacement=""/>
+        <regex-principal-transformer name="jbossToOrg" pattern=".com" replacement=".org"/>
+        <regex-validating-principal-transformer name="isJbossEmail" pattern="(.*)@jboss.com"/>
+        <regex-validating-principal-transformer name="isWildflyEmail" pattern="(.*)@wildfly.org"/>
+        <regex-validating-principal-transformer name="genericEmail" pattern="(.*)@(.*)"/>
+
+    </mappers>
+</subsystem>
