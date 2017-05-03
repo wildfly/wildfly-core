@@ -269,6 +269,7 @@ interface ElytronDescriptionConstants {
     String MINIMUM_REMAINING_LIFETIME = "minimum-remaining-lifetime";
     String MINUS = "minus";
     String MODIFIABLE = "modifiable";
+    String MODIFIABLE_KEY_STORE = "modifiable-key-store";
     String MODIFIABLE_SECURITY_REALM = "modifiable-security-realm";
     String MODIFIED = "modified";
     String MODULE = "module";
@@ -342,6 +343,8 @@ interface ElytronDescriptionConstants {
     String PUBLIC_KEY = "public-key";
 
     String RDN_IDENTIFIER = "rdn-identifier";
+    String READ_ALIAS = "read-alias";
+    String READ_ALIASES = "read-aliases";
     String READ_IDENTITY = "read-identity";
     String READ_TIMEOUT = "read-timeout";
     String REALM = "realm";
@@ -356,6 +359,7 @@ interface ElytronDescriptionConstants {
     String REGEX_VALIDATING_PRINCIPAL_TRANSFORMER = "regex-validating-principal-transformer";
     String REGISTER = "register";
     String RELATIVE_TO = "relative-to";
+    String REMOVE_ALIAS = "remove-alias";
     String REMOVE_ATTRIBUTE = "remove-attribute";
     String REPLACE_ALL = "replace-all";
     String REPLACEMENT = "replacement";

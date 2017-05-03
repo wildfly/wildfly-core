@@ -109,11 +109,6 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
         });
     }
 
-    @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new KeyStoreAliasDefinition(FILTERING_KEY_STORE_UTIL));
-    }
-
     private static class KeyStoreAddHandler extends BaseAddHandler {
 
         private KeyStoreAddHandler() {
@@ -142,20 +137,7 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
 
             FILTERING_KEY_STORE_UTIL.addInjection(serviceBuilder, keyStore, sourceKeyStoreServiceName);
 
-            commonDependencies(serviceBuilder);
-            ServiceController<KeyStore> serviceController = serviceBuilder
-                    .setInitialMode(ServiceController.Mode.ACTIVE)
-                    .install();
-
-            assert resource instanceof KeyStoreResource;
-            ((KeyStoreResource)resource).setKeyStoreServiceController(serviceController);
-        }
-
-        @Override
-        protected Resource createResource(OperationContext context) {
-            KeyStoreResource resource = new KeyStoreResource(Resource.Factory.create());
-            context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-            return resource;
+            commonDependencies(serviceBuilder).install();
         }
     }
 
