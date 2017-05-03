@@ -476,7 +476,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         //server configurations
         hostRegistration.registerSubModel(new ServerConfigResourceDefinition(hostControllerInfo, serverInventory, pathManager, processState, environment.getDomainDataDir()));
-        hostRegistration.registerSubModel(new StoppedServerResource(serverInventory));
+        hostRegistration.registerSubModel(new StoppedServerResource());
 
         hostRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
     }
