@@ -21,6 +21,8 @@ package org.wildfly.extension.elytron;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -44,11 +46,23 @@ class ProviderRegistrationService implements Service<Void> {
 
     private InjectedValue<Provider[]> initialProviders = new InjectedValue<>();
     private InjectedValue<Provider[]> finalProviders = new InjectedValue<>();
+    private final Set<String> providersToRemove;
 
     private final Set<String> registeredProviderNames = new HashSet<>();
 
+    ProviderRegistrationService(Collection<String> providersToRemove) {
+        this.providersToRemove = new HashSet<>(providersToRemove == null ? Collections.emptySet() : providersToRemove);
+    }
+
     @Override
     public void start(StartContext context) throws StartException {
+        SecurityActions.doPrivileged((PrivilegedAction<Void>) () -> {
+            for(String provider : providersToRemove) {
+                Security.removeProvider(provider);
+            }
+            return null;
+        });
+
         final Provider[] initialProviders = this.initialProviders.getOptionalValue();
         final Provider[] finalProviders = this.finalProviders.getOptionalValue();
 
