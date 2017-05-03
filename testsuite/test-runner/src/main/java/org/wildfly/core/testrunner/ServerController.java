@@ -3,6 +3,7 @@ package org.wildfly.core.testrunner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,13 +28,50 @@ public class ServerController {
         start(serverConfig, adminMode ? Server.StartMode.ADMIN_ONLY : Server.StartMode.NORMAL);
     }
 
+    /**
+     * Starts the server. If the {@code authConfigUri} is not {@code null} the resource will be used for
+     * authentication of the {@link org.jboss.as.controller.client.ModelControllerClient}.
+     *
+     * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
+     */
+    public void start(final URI authConfigUri) {
+        start(null, authConfigUri);
+    }
+
+    /**
+     * Starts the server. If the {@code authConfigUri} is not {@code null} the resource will be used for
+     * authentication of the {@link org.jboss.as.controller.client.ModelControllerClient}.
+     *
+     * @param serverConfig  the configuration file to use or {@code null} to use the default
+     * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
+     */
+    public void start(final String serverConfig, final URI authConfigUri) {
+        start(serverConfig, authConfigUri, Server.StartMode.NORMAL, System.out);
+    }
+
     public void start(final String serverConfig, Server.StartMode startMode) {
         start(serverConfig, startMode, System.out);
     }
 
     public void start(final String serverConfig, Server.StartMode startMode, PrintStream out) {
+        start(serverConfig, null, startMode, out);
+    }
+
+    /**
+     * Stats the server.
+     * <p>
+     * If the {@code authConfigUri} is not {@code null} the resource will be used for authentication of the
+     * {@link org.jboss.as.controller.client.ModelControllerClient}.
+     * </p>
+     *
+     * @param serverConfig  the configuration file to use or {@code null} to use the default
+     * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
+     * @param startMode     the mode to start the server in
+     * @param out           the print stream used to consume the {@code stdout} and {@code stderr} streams
+     */
+    public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out) {
         if (started.compareAndSet(false, true)) {
-            server = new Server();
+            server = new Server(authConfigUri);
             if (serverConfig != null) {
                 server.setServerConfig(serverConfig);
             }

@@ -24,8 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import javax.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -145,13 +143,7 @@ public class PreparedResponseTestCase {
     }
 
     static ManagementClient getManagementClient() {
-        ModelControllerClient client = null;
-        try {
-            client = ModelControllerClient.Factory.create("remote+http", InetAddress.getByName(TestSuiteEnvironment.getServerAddress()),
-                    TestSuiteEnvironment.getServerPort(), new org.wildfly.core.testrunner.Authentication.CallbackHandler());
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        final ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         return new ManagementClient(client, TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), "remote+http");
     }
 }

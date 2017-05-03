@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.DelegatingModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -68,6 +69,24 @@ public class Server {
 
     private volatile Process process;
     private final ManagementClient client = new ManagementClient(new DelegatingModelControllerClient(ServerClientProvider.INSTANCE), managementAddress, managementPort, managementProtocol);
+    private final URI authConfigUri;
+
+    public Server() {
+        this(null);
+    }
+
+    /**
+     * Creates a new server.
+     * <p>
+     * If the {@code authConfigUri} is defined the path will be used to authenticate the
+     * {@link ModelControllerClient}.
+     * </p>
+     *
+     * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
+     */
+    public Server(final URI authConfigUri) {
+        this.authConfigUri = authConfigUri;
+    }
 
 
     private static boolean processHasDied(final Process process) {
@@ -245,17 +264,16 @@ public class Server {
     }
 
     private ModelControllerClient createModelControllerClient() {
-        ModelControllerClient modelControllerClient = null;
-        try {
-            modelControllerClient = ModelControllerClient.Factory.create(
-                    managementProtocol,
-                    managementAddress,
-                    managementPort,
-                    Authentication.getCallbackHandler());
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+        final ModelControllerClientConfiguration.Builder builder = new ModelControllerClientConfiguration.Builder()
+                .setProtocol(managementProtocol)
+                .setHostName(managementAddress)
+                .setPort(managementPort);
+        if (authConfigUri == null) {
+            builder.setHandler(Authentication.getCallbackHandler());
+        } else {
+            builder.setAuthenticationConfigUri(authConfigUri);
         }
-        return modelControllerClient;
+        return ModelControllerClient.Factory.create(builder.build());
     }
 
     private void safeCloseClient() {
