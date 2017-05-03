@@ -52,27 +52,27 @@ public class ThreadsParser2_0 extends PersistentResourceXMLParser {
 
 
     public static PersistentResourceXMLBuilder getThreadFactoryParser(ThreadFactoryResourceDefinition factoryResourceDefinition) {
-        return builder(factoryResourceDefinition)
+        return builder(factoryResourceDefinition.getPathElement())
                 .addAttributes(PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY);
 
     }
 
     public static PersistentResourceXMLBuilder getUnboundedQueueThreadPoolParser(UnboundedQueueThreadPoolResourceDefinition resourceDefinition) {
-        return builder(resourceDefinition)
+        return builder(resourceDefinition.getPathElement())
                 .addAttributes(PoolAttributeDefinitions.KEEPALIVE_TIME,
                         PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.THREAD_FACTORY);
 
     }
 
     public static PersistentResourceXMLBuilder getScheduledThreadPoolParser(ScheduledThreadPoolResourceDefinition resourceDefinition) {
-        return builder(resourceDefinition)
+        return builder(resourceDefinition.getPathElement())
                 .addAttributes(PoolAttributeDefinitions.KEEPALIVE_TIME,
                         PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.THREAD_FACTORY);
 
     }
 
     public static PersistentResourceXMLBuilder getQueuelessThreadPoolParser(QueuelessThreadPoolResourceDefinition definition) {
-        PersistentResourceXMLBuilder builder = builder(definition)
+        PersistentResourceXMLBuilder builder = builder(definition.getPathElement())
                 .addAttributes(PoolAttributeDefinitions.KEEPALIVE_TIME, PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.THREAD_FACTORY);
 
         if (!definition.isBlocking()) {
@@ -82,7 +82,7 @@ public class ThreadsParser2_0 extends PersistentResourceXMLParser {
     }
 
     public static PersistentResourceXMLBuilder getBoundedQueueThreadPoolParser(BoundedQueueThreadPoolResourceDefinition definition) {
-        PersistentResourceXMLBuilder builder = builder(definition)
+        PersistentResourceXMLBuilder builder = builder(definition.getPathElement())
                 .addAttributes(
                         PoolAttributeDefinitions.KEEPALIVE_TIME,
                         PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.THREAD_FACTORY,
