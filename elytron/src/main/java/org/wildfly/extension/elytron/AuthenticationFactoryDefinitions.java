@@ -177,7 +177,7 @@ class AuthenticationFactoryDefinitions {
                 .build();
 
         ObjectListAttributeDefinition mechanismRealmConfigurations = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATIONS, mechanismRealmConfiguration)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -192,7 +192,7 @@ class AuthenticationFactoryDefinitions {
                 .build();
 
         return new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATIONS, mechanismConfiguration)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
     }

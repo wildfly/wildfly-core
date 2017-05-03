@@ -59,29 +59,29 @@ class SaslResource extends ConnectorChildResource {
     static final PathElement SASL_CONFIG_PATH = PathElement.pathElement(SECURITY, SASL);
 
     static final AttributeDefinition INCLUDE_MECHANISMS_ATTRIBUTE = new StringListAttributeDefinition.Builder(INCLUDE_MECHANISMS)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new SaslAttributeMarshaller(Element.INCLUDE_MECHANISMS))
             .build();
 
     static final AttributeDefinition QOP_ATTRIBUTE = new StringListAttributeDefinition.Builder(QOP)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new SaslAttributeMarshaller(Element.QOP))
             .setElementValidator(QopParameterValidation.INSTANCE)
             .build();
     static final AttributeDefinition STRENGTH_ATTRIBUTE = new StringListAttributeDefinition.Builder(STRENGTH)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new SaslAttributeMarshaller(Element.STRENGTH))
             .setElementValidator(StrengthParameterValidation.INSTANCE)
             .build();
     static final SimpleAttributeDefinition SERVER_AUTH_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(SERVER_AUTH, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))
             .build();
     static final SimpleAttributeDefinition REUSE_SESSION_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(REUSE_SESSION, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))
             .build();

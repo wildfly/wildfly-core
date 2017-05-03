@@ -47,7 +47,7 @@ public class SchemaLocationRemoveHandler implements OperationStepHandler {
     private static final String OPERATION_NAME = "remove-schema-location";
 
     private static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.URI, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 

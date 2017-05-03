@@ -56,7 +56,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
     private static final String MY_NOTIFICATION_TYPE = "my-notification-type";
 
     private static final SimpleAttributeDefinition FAIL_OPERATION = SimpleAttributeDefinitionBuilder.create("fail-operation", ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

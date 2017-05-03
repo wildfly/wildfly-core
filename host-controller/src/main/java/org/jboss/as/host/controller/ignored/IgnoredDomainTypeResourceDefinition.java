@@ -51,7 +51,7 @@ public class IgnoredDomainTypeResourceDefinition extends SimpleResourceDefinitio
             .setDefaultValue(new ModelNode(false)).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static final ListAttributeDefinition NAMES = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.NAMES, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setElementValidator(new StringLengthValidator(1))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();

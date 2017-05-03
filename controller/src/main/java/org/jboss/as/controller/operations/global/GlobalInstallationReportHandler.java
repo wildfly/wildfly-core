@@ -102,11 +102,11 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
             SimpleAttributeDefinitionBuilder.create(JVM_VERSION, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(JVM_VENDOR, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(JVM_HOME, ModelType.STRING, true).build()
-    ).setAllowNull(false).setAttributeMarshaller(AttributeMarshaller.ELEMENT_ONLY_OBJECT).build();
+    ).setRequired(true).setAttributeMarshaller(AttributeMarshaller.ELEMENT_ONLY_OBJECT).build();
     public static final SimpleAttributeDefinition CPU_DEFINITION = ObjectTypeAttributeDefinition.Builder.of(CPU,
             SimpleAttributeDefinitionBuilder.create(ARCH, ModelType.STRING, true).build(),
             SimpleAttributeDefinitionBuilder.create(AVAILABLE_PROCESSORS, ModelType.INT, true).setDefaultValue(new ModelNode(1)).build()
-    ).setAllowNull(false).setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT).build();
+    ).setRequired(true).setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT).build();
 
     public static final SimpleAttributeDefinition SUMMARY_DEFINITION = new ObjectTypeAttributeDefinition.Builder(SUMMARY,
             SimpleAttributeDefinitionBuilder.create(NODE_NAME, ModelType.STRING, true).build(),

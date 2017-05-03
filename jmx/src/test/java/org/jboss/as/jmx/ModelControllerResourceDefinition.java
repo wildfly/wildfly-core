@@ -131,9 +131,9 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         addAttribute("string", ModelType.STRING, resourceRegistration);
         addAttribute("long", ModelType.LONG, resourceRegistration);
         addAttribute("type", ModelType.TYPE, resourceRegistration);
-        PrimitiveListAttributeDefinition list = new PrimitiveListAttributeDefinition.Builder("list", ModelType.INT).setAllowNull(true).setAllowExpression(allowExpressions).build();
+        PrimitiveListAttributeDefinition list = new PrimitiveListAttributeDefinition.Builder("list", ModelType.INT).setRequired(false).setAllowExpression(allowExpressions).build();
         resourceRegistration.registerReadWriteAttribute(list, null, new ReloadRequiredWriteAttributeHandler(list));
-        SimpleMapAttributeDefinition map = new SimpleMapAttributeDefinition.Builder("map", ModelType.INT, true).setAllowNull(true).setAllowExpression(allowExpressions).build();
+        SimpleMapAttributeDefinition map = new SimpleMapAttributeDefinition.Builder("map", ModelType.INT, true).setRequired(false).setAllowExpression(allowExpressions).build();
         resourceRegistration.registerReadWriteAttribute(map, null, new ReloadRequiredWriteAttributeHandler(map));
 
 

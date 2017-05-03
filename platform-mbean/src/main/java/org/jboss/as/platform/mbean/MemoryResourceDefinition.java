@@ -61,7 +61,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
     )
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     private static SimpleAttributeDefinition NON_HEAP_MEMORY_USAGE = new ObjectTypeAttributeDefinition.Builder(
@@ -72,7 +72,7 @@ class MemoryResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     private static AttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VERBOSE, ModelType.BOOLEAN, false)

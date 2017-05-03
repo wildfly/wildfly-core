@@ -134,7 +134,7 @@ public class PropertyAttributeDefinition extends SimpleAttributeDefinition imple
          * @return a builder
          */
         public static Builder of(final String name, final ModelType type, final boolean allowNull) {
-            return new Builder(name, type).setAllowNull(allowNull);
+            return new Builder(name, type).setRequired(!allowNull);
         }
 
         public PropertyAttributeDefinition build() {

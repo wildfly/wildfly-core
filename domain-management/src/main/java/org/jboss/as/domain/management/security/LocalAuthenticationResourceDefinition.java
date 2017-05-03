@@ -46,20 +46,20 @@ public class LocalAuthenticationResourceDefinition extends SimpleResourceDefinit
 
     public static final SimpleAttributeDefinition DEFAULT_USER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEFAULT_USER, ModelType.STRING)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     public static final SimpleAttributeDefinition ALLOWED_USERS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ALLOWED_USERS, ModelType.STRING)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public static final SimpleAttributeDefinition SKIP_GROUP_LOADING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SKIP_GROUP_LOADING, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

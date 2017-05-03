@@ -53,7 +53,7 @@ public class CapabilityRegistryResourceDefinition extends SimpleResourceDefiniti
             Builder("dependent-address", new SimpleAttributeDefinition("parameter", ModelType.PROPERTY, false)).build();
 
     private static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     private static final StringListAttributeDefinition REGISTRATION_POINTS = new StringListAttributeDefinition.Builder("registration-points")

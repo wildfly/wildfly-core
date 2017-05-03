@@ -79,23 +79,23 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     // Patch operation
     static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
-            .setAllowNull(true)
+            .setRequired(false)
             .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
             .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
             .build();
     static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     static final AttributeDefinition OVERRIDE_ALL = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_ALL, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     static final AttributeDefinition OVERRIDE = PrimitiveListAttributeDefinition.Builder.of(Constants.OVERRIDE, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     static final AttributeDefinition PRESERVE = PrimitiveListAttributeDefinition.Builder.of(Constants.PRESERVE, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static final OperationDefinition PATCH = new SimpleOperationDefinitionBuilder(Constants.PATCH, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
@@ -113,17 +113,17 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     static final AttributeDefinition RESET_CONFIGURATION = SimpleAttributeDefinitionBuilder.create(Constants.RESET_CONFIGURATION, ModelType.BOOLEAN)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     static final AttributeDefinition ROLLBACK_TO = SimpleAttributeDefinitionBuilder.create(Constants.ROLLBACK_TO, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static final AttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(Constants.VERBOSE, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static final OperationDefinition ROLLBACK = new SimpleOperationDefinitionBuilder(Constants.ROLLBACK, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
@@ -160,7 +160,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                     SimpleAttributeDefinitionBuilder.create(Constants.IDENTITY_NAME, ModelType.STRING).build(),
                     SimpleAttributeDefinitionBuilder.create(Constants.IDENTITY_VERSION, ModelType.STRING).build(),
                     SimpleAttributeDefinitionBuilder.create(Constants.DESCRIPTION, ModelType.STRING).build(),
-                    SimpleAttributeDefinitionBuilder.create(Constants.LINK, ModelType.STRING).setAllowNull(true).build(),
+                    SimpleAttributeDefinitionBuilder.create(Constants.LINK, ModelType.STRING).setRequired(false).build(),
                     ObjectListAttributeDefinition.Builder.of(Constants.ELEMENTS,
                             new ObjectTypeAttributeDefinition.Builder(Constants.ELEMENTS,
                                     PATCH_ID,

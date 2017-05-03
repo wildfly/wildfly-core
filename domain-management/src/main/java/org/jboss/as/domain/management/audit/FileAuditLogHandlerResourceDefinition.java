@@ -47,7 +47,7 @@ import org.jboss.dmr.ModelType;
 public class FileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition ROTATE_AT_STARTUP = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ROTATE_AT_STARTUP, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(true))
             .build();
 

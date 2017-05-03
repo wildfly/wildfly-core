@@ -124,7 +124,7 @@ public class DeploymentAttributes {
     public static final AttributeDefinition PERSISTENT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PERSISTENT, ModelType.BOOLEAN, false)
         .build();
     public static final AttributeDefinition OWNER = PrimitiveListAttributeDefinition.Builder.of(ModelDescriptionConstants.OWNER, ModelType.PROPERTY)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final AttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.STATUS, ModelType.STRING, true)
@@ -217,12 +217,12 @@ public class DeploymentAttributes {
     public static final StringListAttributeDefinition REMOVED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATHS)
             .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
             .setAllowExpression(true)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     public static final StringListAttributeDefinition UPDATED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATH)
             .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
             .setAllowExpression(true)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     public static final SimpleAttributeDefinition OVERWRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.OVERWRITE, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(true))
@@ -266,7 +266,7 @@ public class DeploymentAttributes {
                         .build())
                 .setMinSize(1)
                 .setMaxSize(1)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setCorrector(ContentListCorrector.INSTANCE)
                 .build();
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_EXPLODED =
@@ -346,7 +346,7 @@ public class DeploymentAttributes {
                 SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DIRECTORY, ModelType.BOOLEAN, false).build(),
                 SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, false).build(),
                 SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.FILE_SIZE, ModelType.LONG, true).setMeasurementUnit(MeasurementUnit.BYTES).build())
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     /** All attributes of the content attribute */
@@ -394,13 +394,13 @@ public class DeploymentAttributes {
 
     /** Return type for the upload-deployment-xxx operaions */
     private static final SimpleAttributeDefinition UPLOAD_HASH_REPLY = SimpleAttributeDefinitionBuilder.create(CONTENT_HASH)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
 
     //Upload deployment bytes definitions
     public static final AttributeDefinition BYTES_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_BYTES)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     public static final OperationDefinition UPLOAD_BYTES_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_BYTES, DEPLOYMENT_RESOLVER)
             .setParameters(BYTES_NOT_NULL)
@@ -418,7 +418,7 @@ public class DeploymentAttributes {
 
     //Upload deployment url definitions
     public static final AttributeDefinition URL_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_URL)
-            .setAllowNull(false)
+            .setRequired(true)
             .addArbitraryDescriptor(WEB_URL, new ModelNode(true))
             .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
@@ -437,7 +437,7 @@ public class DeploymentAttributes {
 
     //Upload deployment stream definition
     public static final AttributeDefinition INPUT_STREAM_INDEX_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_INPUT_STREAM_INDEX)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     //public static Map<String, AttributeDefinition> UPLOAD_INPUT_STREAM_INDEX_ATTRIBUTES = Collections.singletonMap(INPUT_STREAM_INDEX_NOT_NULL.getName(), INPUT_STREAM_INDEX_NOT_NULL);
     public static final OperationDefinition UPLOAD_STREAM_ATTACHMENT_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_STREAM, DEPLOYMENT_RESOLVER)

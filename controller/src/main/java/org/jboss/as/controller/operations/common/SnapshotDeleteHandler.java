@@ -47,7 +47,7 @@ public class SnapshotDeleteHandler implements OperationStepHandler {
     private static final String OPERATION_NAME = "delete-snapshot";
 
     private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ControllerResolver.getResolver("snapshot"))

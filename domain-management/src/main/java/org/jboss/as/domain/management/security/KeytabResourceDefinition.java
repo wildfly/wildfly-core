@@ -61,7 +61,7 @@ public class KeytabResourceDefinition extends SimpleResourceDefinition {
 
     public static final StringListAttributeDefinition FOR_HOSTS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.FOR_HOSTS)
             .setAllowExpression(true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setAttributeMarshaller(AttributeMarshaller.STRING_LIST)
             .build();

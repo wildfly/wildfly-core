@@ -50,7 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PER
 public class PeriodicRotatingFileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SUFFIX, ModelType.STRING)
-        .setAllowNull(false)
+        .setRequired(true)
         .setAllowExpression(true)
         .setValidator(new SuffixValidator())
         .setMinSize(1)

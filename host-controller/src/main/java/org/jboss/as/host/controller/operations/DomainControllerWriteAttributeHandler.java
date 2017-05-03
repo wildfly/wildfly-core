@@ -73,7 +73,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                     .build();
     public static final SimpleAttributeDefinition PORT =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAllowExpression(true)
                     .setValidator(new IntRangeValidator(1, 65535, true, true))
                     .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -96,13 +96,13 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                     .build();
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAllowExpression(true)
                     .setFlags(AttributeAccess.Flag.RESTART_JVM)
                     .build();
     public static final SimpleAttributeDefinition HOST =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -110,7 +110,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                     .build();
     public static final SimpleAttributeDefinition PROTOCOL =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAllowExpression(true)
                     .setValidator(new EnumValidator(Protocol.class, true, true))
                     .setDefaultValue(org.jboss.as.remoting.Protocol.REMOTE.toModelNode())

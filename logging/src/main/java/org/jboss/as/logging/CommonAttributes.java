@@ -84,7 +84,7 @@ public interface CommonAttributes {
 
     PropertyObjectTypeAttributeDefinition FILE = PropertyObjectTypeAttributeDefinition.Builder.of("file", RELATIVE_TO, PATH)
             .setAllowExpression(false)
-            .setAllowNull(false)
+            .setRequired(true)
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
                 @Override
                 public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
@@ -116,7 +116,7 @@ public interface CommonAttributes {
 
     LogHandlerListAttributeDefinition HANDLERS = LogHandlerListAttributeDefinition.Builder.of("handlers")
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     SimpleAttributeDefinition HANDLER_NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true).build();
@@ -233,7 +233,7 @@ public interface CommonAttributes {
 
     ObjectTypeAttributeDefinition LEVEL_RANGE_LEGACY = ObjectTypeAttributeDefinition.Builder.of("level-range", MIN_LEVEL, MIN_INCLUSIVE, MAX_LEVEL, MAX_INCLUSIVE)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new ObjectTypeValidator(false, MIN_LEVEL, MIN_INCLUSIVE, MAX_LEVEL, MAX_INCLUSIVE) {
                 @Override
                 public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
@@ -260,7 +260,7 @@ public interface CommonAttributes {
 
     ObjectTypeAttributeDefinition REPLACE = ObjectTypeAttributeDefinition.Builder.of("replace", FILTER_PATTERN, REPLACEMENT, REPLACE_ALL)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new ObjectTypeValidator(false, FILTER_PATTERN, REPLACEMENT, REPLACE_ALL) {
                 @Override
                 public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
@@ -287,24 +287,24 @@ public interface CommonAttributes {
 
     ObjectTypeAttributeDefinition NOT = ObjectTypeAttributeDefinition.Builder.of("not", ACCEPT, CHANGE_LEVEL, DENY, LEVEL, LEVEL_RANGE_LEGACY, MATCH, REPLACE)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     ObjectTypeAttributeDefinition ALL = ObjectTypeAttributeDefinition.Builder.of("all", ACCEPT, CHANGE_LEVEL, DENY, LEVEL, LEVEL_RANGE_LEGACY, MATCH, NOT, REPLACE)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     ObjectTypeAttributeDefinition ANY = ObjectTypeAttributeDefinition.Builder.of("any", ACCEPT, CHANGE_LEVEL, DENY, LEVEL, LEVEL_RANGE_LEGACY, MATCH, NOT, REPLACE)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     ObjectTypeAttributeDefinition FILTER = ObjectTypeAttributeDefinition.Builder.of("filter", ALL, ANY, ACCEPT, CHANGE_LEVEL, DENY, LEVEL, LEVEL_RANGE_LEGACY, MATCH, NOT, REPLACE)
             .setAllowExpression(false)
             .addAlternatives(FILTER_SPEC.getName())
             .setDeprecated(ModelVersion.create(1, 2, 0))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     String ADD_HANDLER_OPERATION_NAME = "add-handler";

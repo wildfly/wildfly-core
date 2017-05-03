@@ -48,11 +48,11 @@ public class ModuleInfoHandler implements OperationStepHandler {
 
 
     static final AttributeDefinition MODULE_NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     static final AttributeDefinition MODULE_SLOT = SimpleAttributeDefinitionBuilder.create("slot", ModelType.STRING)
             .setDefaultValue(new ModelNode("main"))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     //reply parameters

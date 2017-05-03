@@ -114,10 +114,10 @@ public class ListAttributeDefinitionTestCase {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 AttributeDefinition type1 = create(TYPE1, ModelType.STRING)
-                        .setAllowNull(true)
+                        .setRequired(false)
                         .build();
                 AttributeDefinition type2 = create(TYPE2, ModelType.BOOLEAN)
-                        .setAllowNull(false)
+                        .setRequired(true)
                         .build();
                 ObjectTypeAttributeDefinition objectDefinition = ObjectTypeAttributeDefinition.Builder.of("objects", type1, type2).build();
                 ObjectListAttributeDefinition attr = ObjectListAttributeDefinition.Builder.of(MY_LIST_OF_OBJECTS, objectDefinition).build();
@@ -173,7 +173,7 @@ public class ListAttributeDefinitionTestCase {
     public void testStringList() {
         StringListAttributeDefinition list = new StringListAttributeDefinition.Builder("string-list")
                 .setAllowExpression(true)
-                .setAllowNull(false)
+                .setRequired(true)
                 .build();
         assertEquals(list.getValueType(), ModelType.STRING);
         ModelNode desc = list.getNoTextDescription(false);

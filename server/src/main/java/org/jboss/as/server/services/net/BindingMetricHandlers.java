@@ -79,7 +79,7 @@ public final class BindingMetricHandlers {
 
         public static final String ATTRIBUTE_NAME = "bound";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.BOOLEAN)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setStorageRuntime()
                 .setRuntimeServiceNotRequired()
                 .build();
@@ -105,7 +105,7 @@ public final class BindingMetricHandlers {
 
         public static final String ATTRIBUTE_NAME = "bound-address";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.STRING)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setStorageRuntime()
                 .setRuntimeServiceNotRequired()
                 .build();
@@ -133,7 +133,7 @@ public final class BindingMetricHandlers {
 
         public static final String ATTRIBUTE_NAME = "bound-port";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.INT)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, false))
                 .setStorageRuntime()
                 .setRuntimeServiceNotRequired()

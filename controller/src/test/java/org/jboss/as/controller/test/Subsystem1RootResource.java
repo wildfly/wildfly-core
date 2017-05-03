@@ -54,7 +54,7 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration profileSub1Reg) {
         super.registerAttributes(profileSub1Reg);
 
-        profileSub1Reg.registerReadOnlyAttribute(new PrimitiveListAttributeDefinition.Builder("attr1", ModelType.INT).setAllowNull(false).build(), null);
+        profileSub1Reg.registerReadOnlyAttribute(new PrimitiveListAttributeDefinition.Builder("attr1", ModelType.INT).setRequired(true).build(), null);
 
         profileSub1Reg.registerReadOnlyAttribute(createAttribute("read-only", ModelType.INT, null, false, false, true), null);
         final AttributeDefinition attribute = createAttribute("read-write", ModelType.INT, null, false, false, true);
@@ -78,7 +78,7 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
         ResourceDefinition profileSub1RegType2Def = ResourceBuilder.Factory.create(PathElement.pathElement("type2", "other"),
                 new NonResolvingResourceDescriptionResolver())
                 .addReadOnlyAttribute(createAttribute("name", ModelType.STRING))
-                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("default", ModelType.STRING).setAllowNull(true).setDefaultValue(new ModelNode("Default string")).build())
+                .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("default", ModelType.STRING).setRequired(false).setDefaultValue(new ModelNode("Default string")).build())
                 .build();
         profileSub1Reg.registerSubModel(profileSub1RegType2Def);
     }

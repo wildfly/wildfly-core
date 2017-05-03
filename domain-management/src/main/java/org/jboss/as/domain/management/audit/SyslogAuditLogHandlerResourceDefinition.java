@@ -75,7 +75,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
 
 
     public static final SimpleAttributeDefinition SYSLOG_FORMAT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SYSLOG_FORMAT, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(SyslogHandler.SyslogType.RFC5424.toString()))
         .setAllowExpression(true)
         .setValidator(new EnumValidator<>(SyslogHandler.SyslogType.class, true, true))
@@ -83,26 +83,26 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         .build();
 
     public static final SimpleAttributeDefinition TRUNCATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TRUNCATE, ModelType.BOOLEAN)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(false))
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition MAX_LENGTH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MAX_LENGTH, ModelType.INT)
-        .setAllowNull(true)
+        .setRequired(false)
         .setAllowExpression(true)
         .setMinSize(0)
         .build();
 
     public static final SimpleAttributeDefinition FACILITY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FACILITY, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setValidator(new EnumValidator<SyslogAuditLogHandler.Facility>(SyslogAuditLogHandler.Facility.class, true, true))
         .setDefaultValue(new ModelNode(SyslogAuditLogHandler.Facility.USER_LEVEL.name()))
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition APP_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.APP_NAME, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setAllowExpression(true)
         .build();
 

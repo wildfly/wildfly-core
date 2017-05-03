@@ -329,13 +329,13 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE)
                 .setAllowDuplicates(true)
                 .build();
 
         static final ObjectListAttributeDefinition NEW_IDENTITY_ATTRIBUTES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.NEW_IDENTITY_ATTRIBUTES, NewIdentityAttributeObjectDefinition.OBJECT_DEFINITION)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowDuplicates(true)
                 .build();
 
@@ -369,7 +369,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                     OtpCredentialMappingObjectDefinition.OBJECT_DEFINITION,
                     X509CredentialMappingObjectDefinition.OBJECT_DEFINITION
                 )
-                .setAllowNull(false)
+                .setRequired(true)
                 .build();
     }
 

@@ -98,12 +98,12 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
             .build();
 
     static final ObjectTypeAttributeDefinition USERS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.USERS_PROPERTIES, PATH, RELATIVE_TO, DIGEST_REALM_NAME, PLAIN_TEXT)
-        .setAllowNull(false)
+        .setRequired(true)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
     static final ObjectTypeAttributeDefinition GROUPS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.GROUPS_PROPERTIES, PATH, RELATIVE_TO)
-        .setAllowNull(true)
+        .setRequired(false)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 

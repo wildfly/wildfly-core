@@ -48,7 +48,7 @@ import org.jboss.dmr.ModelType;
  */
 public class ExtensionSubsystemResourceDefinition extends SimpleResourceDefinition {
     public static final ListAttributeDefinition XML_NAMESPACES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.XML_NAMESPACES)
-            .setAllowNull(false)
+            .setRequired(true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setElementValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, false))

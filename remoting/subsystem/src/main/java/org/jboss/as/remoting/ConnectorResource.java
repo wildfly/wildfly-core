@@ -57,7 +57,7 @@ public class ConnectorResource extends SimpleResourceDefinition {
     //FIXME is this attribute still used?
     static final SimpleAttributeDefinition AUTHENTICATION_PROVIDER = new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTHENTICATION_PROVIDER, ModelType.STRING)
             .setDefaultValue(null)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.NAME))
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .build();

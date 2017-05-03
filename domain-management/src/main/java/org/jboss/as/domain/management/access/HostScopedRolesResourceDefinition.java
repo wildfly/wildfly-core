@@ -77,7 +77,7 @@ public class HostScopedRolesResourceDefinition extends SimpleResourceDefinition 
                                 writer.writeAttribute(Attribute.NAME.getLocalName(), resourceModel.asString());
                             }
                         }).build())
-            .setAllowNull(true)
+            .setRequired(false)
             .setWrapXmlList(false)
             .build();
 

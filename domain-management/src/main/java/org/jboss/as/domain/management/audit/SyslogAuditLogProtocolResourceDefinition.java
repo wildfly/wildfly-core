@@ -65,14 +65,14 @@ import org.jboss.dmr.ModelType;
 public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode("localhost"))
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
 
     public static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(514))
         .setAllowExpression(true)
         .build();
@@ -166,13 +166,13 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         public static final PathElement PATH_ELEMENT = PathElement.pathElement(PROTOCOL, ModelDescriptionConstants.TCP);
 
         public static final SimpleAttributeDefinition MESSAGE_TRANSFER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MESSAGE_TRANSFER, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(SyslogAuditLogHandler.MessageTransfer.NON_TRANSPARENT_FRAMING.name()))
             .setAllowExpression(true)
             .build();
 
         public static final SimpleAttributeDefinition RECONNECT_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RECONNECT_TIMEOUT, ModelType.INT)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(-1))
             .setAllowExpression(true)
             .build();

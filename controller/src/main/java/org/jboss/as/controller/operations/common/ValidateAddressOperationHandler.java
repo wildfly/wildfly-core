@@ -69,7 +69,7 @@ public class ValidateAddressOperationHandler implements OperationStepHandler {
         .setReplyParameters(
                 SimpleAttributeDefinitionBuilder.create(VALID, ModelType.BOOLEAN).build(),
                 SimpleAttributeDefinitionBuilder.create(PROBLEM, ModelType.STRING)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build()
                 )
         .setReadOnly()

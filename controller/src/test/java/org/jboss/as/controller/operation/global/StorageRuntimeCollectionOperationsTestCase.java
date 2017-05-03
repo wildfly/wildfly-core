@@ -48,12 +48,12 @@ public class StorageRuntimeCollectionOperationsTestCase extends AbstractCollecti
 
 
     private static final StringListAttributeDefinition LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder(LIST_ATTRIBUTE_NAME)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowDuplicates(false)
             .setStorageRuntime()
             .build();
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder(MAP_ATTRIBUTE_NAME, true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setStorageRuntime()
             .build();
 

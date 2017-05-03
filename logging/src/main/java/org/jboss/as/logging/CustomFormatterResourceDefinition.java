@@ -56,7 +56,7 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
 
     public static final ObjectTypeAttributeDefinition CUSTOM_FORMATTER = ObjectTypeAttributeDefinition.Builder.of("custom-formatter", CLASS, MODULE, PROPERTIES)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
                 @Override
                 public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {

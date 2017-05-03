@@ -110,7 +110,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition MANAGEMENT_MINOR_VERSION =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION, ModelType.INT)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setXmlName("minor-version")
                     .setAlternatives(ModelDescriptionConstants.HOST_RELEASE)
                     .setRequires(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION)
@@ -118,22 +118,22 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition MANAGEMENT_MICRO_VERSION =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION, ModelType.INT)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setXmlName("micro-version")
                     .setAlternatives(ModelDescriptionConstants.HOST_RELEASE)
                     .setRequires(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION, ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION)
                     .build();
 
     public static final AttributeDefinition EXCLUDED_EXTENSIONS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.EXCLUDED_EXTENSIONS)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final AttributeDefinition ACTIVE_SERVER_GROUPS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ACTIVE_SERVER_GROUPS)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final AttributeDefinition ACTIVE_SOCKET_BINDING_GROUPS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ACTIVE_SOCKET_BINDING_GROUPS)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     private static final AttributeDefinition[] attributes = { MANAGEMENT_MAJOR_VERSION, MANAGEMENT_MINOR_VERSION,

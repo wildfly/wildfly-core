@@ -116,7 +116,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_MAX
     )
             .setStorageRuntime()
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     private static AttributeDefinition PEAK_USAGE = new ObjectTypeAttributeDefinition.Builder(
@@ -127,7 +127,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             PlatformMBeanConstants.MEMORY_MAX)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE = new ObjectTypeAttributeDefinition.Builder(

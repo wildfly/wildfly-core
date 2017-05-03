@@ -60,39 +60,39 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
     private final ManagedAuditLogger auditLogger;
 
     public static final SimpleAttributeDefinition INCLUDE_DATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_DATE, ModelType.BOOLEAN)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(true))
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition DATE_FORMAT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DATE_FORMAT, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode("yyyy-MM-dd HH:mm:ss"))
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
 
     public static final SimpleAttributeDefinition DATE_SEPARATOR = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DATE_SEPARATOR, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(" - "))
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
 
     public static final SimpleAttributeDefinition COMPACT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.COMPACT, ModelType.BOOLEAN)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(false))
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition ESCAPE_NEW_LINE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ESCAPE_NEW_LINE, ModelType.BOOLEAN)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(false))
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition ESCAPE_CONTROL_CHARACTERS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ESCAPE_CONTROL_CHARACTERS, ModelType.BOOLEAN)
-        .setAllowNull(true)
+        .setRequired(false)
         .setDefaultValue(new ModelNode(false))
         .setAllowExpression(true)
         .build();

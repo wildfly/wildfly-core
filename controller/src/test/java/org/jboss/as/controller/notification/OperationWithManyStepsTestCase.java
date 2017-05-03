@@ -61,13 +61,13 @@ public class OperationWithManyStepsTestCase extends AbstractControllerTestBase {
     private static final String MESSAGE2 = "second notification message";
 
     private static final SimpleAttributeDefinition FAIL_FIRST_STEP = SimpleAttributeDefinitionBuilder.create("fail-first-step", ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
     private static final AttributeDefinition FAIL_SECOND_STEP = SimpleAttributeDefinitionBuilder.create("fail-second-step", FAIL_FIRST_STEP)
             .build();
     private static final SimpleAttributeDefinition ROLLBACK = SimpleAttributeDefinitionBuilder.create("rollback", ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

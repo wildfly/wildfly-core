@@ -37,57 +37,57 @@ class GlobalOperationAttributes {
 
     // WFCORE-76
     static final SimpleAttributeDefinition RECURSIVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RECURSIVE, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .build();
 
     // WFCORE-76
     static final SimpleAttributeDefinition RECURSIVE_DEPTH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RECURSIVE_DEPTH, ModelType.INT)
-    .setAllowNull(true)
+    .setRequired(false)
     .setValidator(new IntRangeValidator(0, true))
     .build();
 
     static final SimpleAttributeDefinition PROXIES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROXIES, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .setDefaultValue(new ModelNode(false))
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_SINGLETONS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_SINGLETONS, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .setDefaultValue(new ModelNode(false))
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_RUNTIME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_RUNTIME, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .setDefaultValue(new ModelNode(false))
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_DEFAULTS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_DEFAULTS, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .setDefaultValue(new ModelNode(true))
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_ALIASES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_ALIASES, ModelType.BOOLEAN)
-    .setAllowNull(true)
+    .setRequired(false)
     .setDefaultValue(new ModelNode(false))
     .build();
 
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
     .setValidator(new StringLengthValidator(1))
-    .setAllowNull(false)
+    .setRequired(true)
     .build();
 
     static final SimpleAttributeDefinition LOCALE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.LOCALE, ModelType.STRING)
-    .setAllowNull(true)
+    .setRequired(false)
     .build();
 
     static final SimpleAttributeDefinition CHILD_TYPE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CHILD_TYPE, ModelType.STRING)
     .setValidator(new StringLengthValidator(1))
-    .setAllowNull(false)
+    .setRequired(true)
     .build();
 
     static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE, ModelType.STRING)
     .setValidator(new StringLengthValidator(1))
-    .setAllowNull(true)
+    .setRequired(false)
     .build();
 
 }

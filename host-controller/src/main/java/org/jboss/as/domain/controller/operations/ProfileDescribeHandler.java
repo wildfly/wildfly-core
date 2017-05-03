@@ -53,7 +53,7 @@ public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler
     public static final ProfileDescribeHandler INSTANCE = new ProfileDescribeHandler();
 
     public static final AttributeDefinition SERVER_LAUNCH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SERVER_LAUNCH, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

@@ -85,19 +85,19 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
             .build();
 
     protected static final SimpleAttributeDefinition LONG_ATT = new SimpleAttributeDefinitionBuilder(LONG_ATT_NAME, ModelType.LONG)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition DOUBLE_ATT = new SimpleAttributeDefinitionBuilder(DOUBLE_ATT_NAME, ModelType.DOUBLE)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition BOOLEAN_ATT = new SimpleAttributeDefinitionBuilder(BOOLEAN_ATT_NAME, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(true))
             .setAllowExpression(true)
             .setMaxSize(1)
@@ -105,31 +105,31 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
             .build();
 
     protected static final SimpleAttributeDefinition STRING_ATT = new SimpleAttributeDefinitionBuilder(STRING_ATT_NAME, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition INT_ATT = new SimpleAttributeDefinitionBuilder(INT_ATT_NAME, ModelType.INT)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition BYTES_ATT = new SimpleAttributeDefinitionBuilder(BYTES_ATT_NAME, ModelType.BYTES)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition BIGINT_ATT = new SimpleAttributeDefinitionBuilder(BIGINT_ATT_NAME, ModelType.BIG_INTEGER)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();
 
     protected static final SimpleAttributeDefinition BIGDEC_ATT = new SimpleAttributeDefinitionBuilder(BIGDEC_ATT_NAME, ModelType.BIG_DECIMAL)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();

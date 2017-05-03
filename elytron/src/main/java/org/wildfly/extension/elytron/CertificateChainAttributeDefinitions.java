@@ -109,7 +109,7 @@ class CertificateChainAttributeDefinitions {
 
     static ObjectListAttributeDefinition getNamedCertificateList(final String name) {
         return new ObjectListAttributeDefinition.Builder(name, CERTIFICATE)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setStorageRuntime()
                 .build();
     }

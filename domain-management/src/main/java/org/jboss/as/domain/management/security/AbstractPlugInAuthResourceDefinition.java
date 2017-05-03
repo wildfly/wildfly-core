@@ -44,7 +44,7 @@ public abstract class AbstractPlugInAuthResourceDefinition extends SimpleResourc
 
     public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME,
             ModelType.STRING, false).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, false))
-            .setAllowNull(false).setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
+            .setRequired(true).setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     AbstractPlugInAuthResourceDefinition(PathElement pathElement, ResourceDescriptionResolver resourceDescriptionResolver,
             SecurityRealmChildAddHandler securityRealmChildAddHandler,

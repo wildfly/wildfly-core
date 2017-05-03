@@ -66,7 +66,7 @@ class HandlerResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleListAttributeDefinition HANDLERS = SimpleListAttributeDefinition.Builder.of("handlers", HANDLER)
-            .setAllowNull(true)
+            .setRequired(false)
             .setStorageRuntime()
             .build();
 

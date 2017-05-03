@@ -48,12 +48,12 @@ public class SchemaLocationAddHandler extends AbstractModelUpdateHandler {
     private static final String OPERATION_NAME = "add-schema-location";
 
     private static final SimpleAttributeDefinition SCHEMA_LOCATION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SCHEMA_LOCATION, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 
     private static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.URI, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 

@@ -47,7 +47,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
     public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
 
     public static final ListAttributeDefinition INCLUDES = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.INCLUDES, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(0)
             .setMaxSize(Integer.MAX_VALUE)
             .setElementValidator(new StringLengthValidator(1, true))

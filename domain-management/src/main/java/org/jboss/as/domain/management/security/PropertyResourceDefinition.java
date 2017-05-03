@@ -43,7 +43,7 @@ public class PropertyResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE,
             ModelType.STRING, true).setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
-            .setAllowNull(true).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
+            .setRequired(false).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public PropertyResourceDefinition() {
         super(PathElement.pathElement(ModelDescriptionConstants.PROPERTY),

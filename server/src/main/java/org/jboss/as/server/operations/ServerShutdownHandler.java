@@ -65,11 +65,11 @@ public class ServerShutdownHandler implements OperationStepHandler {
 
     protected static final SimpleAttributeDefinition RESTART = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
-            .setAllowNull(true)
+            .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 

@@ -89,7 +89,7 @@ public class JvmAttributes {
 
     public static final PropertiesAttributeDefinition ENVIRONMENT_VARIABLES = new PropertiesAttributeDefinition.Builder(JvmAttributes.JVM_ENV_VARIABLES, true)
             .setXmlName(Element.VARIABLE.getLocalName())
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, true, true))
             .setWrapperElement(JvmAttributes.JVM_ENV_VARIABLES)
@@ -120,7 +120,7 @@ public class JvmAttributes {
      */
     public static final AttributeDefinition OPTIONS = new StringListAttributeDefinition.Builder(JvmAttributes.JVM_OPTIONS)
             .setElementValidator(new StringLengthValidator(1, true, true))
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setAttributeMarshaller(new AttributeMarshaller() {
                 @Override
