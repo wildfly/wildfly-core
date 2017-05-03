@@ -51,9 +51,8 @@ public class InstallationReportHandler extends AbstractInstallationReporter {
             OPERATION_NAME, HostResolver.getResolver(HOST))
             .setRuntimeOnly()
             .setReadOnly()
-            .setPrivateEntry()
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
-            .withFlags(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)
+            .withFlags(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS, OperationEntry.Flag.HIDDEN)  // can't be private because of how GlobalInstallationReportHandler calls it
             .setReplyType(ModelType.OBJECT)
             .setReplyParameters(SUMMARY_DEFINITION)
             .build();

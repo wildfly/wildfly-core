@@ -66,7 +66,15 @@ public final class OperationEntry {
         MASTER_HOST_CONTROLLER_ONLY,
         /** Operations with this flag do not affect the mode or change the installed services. The main intention for
          * this is to only make RUNTIME_ONLY methods on domain mode servers visible to end users. */
-        RUNTIME_ONLY
+        RUNTIME_ONLY,
+        /** Operations with this flag do not appear in management API description output but still can be invoked
+         *  by external callers.  This is meant for operations that were not meant to be part of the supported external
+         *  management API but users may have learned of them. Such ops should be evaluated for inclusion as normally
+         *  described ops, or perhaps should be marked with {@link EntryType#PRIVATE} and external use thus disabled.
+         *  This can also be used for ops that are invoked internally on one domain process by another domain process
+         *  but where it's not possible for the caller to suppress the caller-type=user header from the op, making
+         *  use of {@link EntryType#PRIVATE} not workable. */
+        HIDDEN
     }
 
     private final OperationDefinition operationDefinition;

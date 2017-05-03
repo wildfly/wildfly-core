@@ -57,7 +57,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("proxy-step",
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setPrivateEntry()
+            .withFlags(OperationEntry.Flag.HIDDEN)
             .setRuntimeOnly()
             .build();
 
