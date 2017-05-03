@@ -329,4 +329,52 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             cliOut.reset();
         }
     }
+
+    @Test
+    public void testCommentOnlyCatchBlock() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle("try");
+            ctx.handle("echo try block");
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("catch");
+            ctx.handle("# commented line");
+            ctx.handleSafe("end-try");
+            ctx.handle("echo after-block");
+            String out = cliOut.toString();
+            assertTrue(out.contains("try block"));
+            assertTrue(out.contains("after-block"));
+            assertFalse(out.contains("system-property"));
+        } finally {
+            ctx.terminateSession();
+            cliOut.reset();
+        }
+    }
+
+    @Test
+    public void testCommentOnlyCatchAndFinallyBlock() throws Exception {
+        cliOut.reset();
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        try {
+            ctx.connectController();
+            ctx.handle("try");
+            ctx.handle("echo try block");
+            ctx.handle(getReadNonexistingPropReq());
+            ctx.handle("catch");
+            ctx.handle("# commented line");
+            ctx.handle("finally");
+            ctx.handle("# commented line");
+            ctx.handleSafe("end-try");
+            ctx.handle("echo after-block");
+            String out = cliOut.toString();
+            assertTrue(out.contains("try block"));
+            assertTrue(out.contains("after-block"));
+            assertFalse(out.contains("system-property"));
+        } finally {
+            ctx.terminateSession();
+            cliOut.reset();
+        }
+    }
 }

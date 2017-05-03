@@ -1273,6 +1273,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 265, value = "Invalid value '%s' for system property '%s' -- value must be a non-negative integer")
     void invalidPoolCoreSize(String val, String configSysProp);
 
+    @LogMessage(level = WARN)
+    @Message(id = 266, value = "Server home is set to '%s', but server real home is '%s' - unpredictable results may occur.")
+    void serverHomeMismatch(Path passed, Path real);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

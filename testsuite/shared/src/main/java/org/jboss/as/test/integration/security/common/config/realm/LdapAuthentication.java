@@ -37,6 +37,7 @@ public class LdapAuthentication {
     private final String securityRealm;
     private final String url;
     private final String initialContextFactory;
+    private final boolean alwaysSendClientCert;
 
     // ldap authentication attributes
     private final String advancedFilter;
@@ -64,6 +65,7 @@ public class LdapAuthentication {
         this.securityRealm = builder.securityRealm;
         this.url = builder.url;
         this.initialContextFactory = builder.initialContextFactory;
+        this.alwaysSendClientCert = builder.alwaysSendClientCert;
     }
 
     // Public methods --------------------------------------------------------
@@ -139,6 +141,13 @@ public class LdapAuthentication {
     }
 
     /**
+     * @return the alwaysSendClientCert flag
+     */
+    public boolean isAlwaysSendClientCert() {
+        return alwaysSendClientCert;
+    }
+
+    /**
      * @return the recursive
      */
     public Boolean getRecursive() {
@@ -161,7 +170,8 @@ public class LdapAuthentication {
     public String toString() {
         return "LdapAuthentication [connection=" + connection + ", searchDn=" + searchDn + ", searchCredential="
                 + searchCredential + ", securityRealm=" + securityRealm + ", url=" + url + ", initialContextFactory="
-                + initialContextFactory + ", advancedFilter=" + advancedFilter + ", baseDn=" + baseDn + ", userDn=" + userDn
+                + initialContextFactory + ", alwaysSendClientCert=" + alwaysSendClientCert + ", advancedFilter="
+                + advancedFilter + ", baseDn=" + baseDn + ", userDn=" + userDn
                 + ", recursive=" + recursive + ", usernameAttribute=" + usernameAttribute + ", allowEmptyPasswords="
                 + allowEmptyPasswords + "]";
     }
@@ -176,6 +186,7 @@ public class LdapAuthentication {
         private String securityRealm;
         private String url;
         private String initialContextFactory;
+        private boolean alwaysSendClientCert;
 
         private String advancedFilter;
         private String baseDn;
@@ -226,6 +237,11 @@ public class LdapAuthentication {
 
         public Builder url(String url) {
             this.url = url;
+            return this;
+        }
+
+        public Builder alwaysSendClientCert(boolean alwaysSendClientCert) {
+            this.alwaysSendClientCert = alwaysSendClientCert;
             return this;
         }
 

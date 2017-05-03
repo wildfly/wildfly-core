@@ -23,6 +23,7 @@
 package org.jboss.as.controller.client.impl;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -88,12 +89,13 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 strategy = null;
             }
             // Then the endpoint
+            final Endpoint endpoint = this.endpoint;
             if (endpoint != null) {
+                this.endpoint = null;
                 try {
                     endpoint.closeAsync();
                 } catch (UnsupportedOperationException ignored) {
                 }
-                endpoint = null;
             }
             // Cancel all still active operations
             channelAssociation.shutdownNow();
@@ -103,6 +105,15 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 Thread.currentThread().interrupt();
             } finally {
                 StreamUtils.safeClose(clientConfiguration);
+            }
+            // Per WFCORE-1573 remoting endpoints should be closed asynchronously, however consumers of this client
+            // likely need to wait until the endpoints are fully shutdown.
+            if (endpoint != null) try {
+                endpoint.awaitClosed();
+            } catch (InterruptedException e) {
+                final InterruptedIOException cause = new InterruptedIOException(e.getLocalizedMessage());
+                cause.initCause(e);
+                throw cause;
             }
         }
     }

@@ -88,7 +88,8 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
         boolean accessControl = ACCESS_CONTROL.resolveModelAttribute(context, operation).asBoolean();
 
         final DescribedOp describedOp = getDescribedOp(context, operationName, operation, !accessControl);
-        if (describedOp == null || (context.getProcessType() == ProcessType.DOMAIN_SERVER && !describedOp.flags.contains(OperationEntry.Flag.RUNTIME_ONLY))) {
+        if (describedOp == null || (context.getProcessType() == ProcessType.DOMAIN_SERVER &&
+                !(describedOp.flags.contains(OperationEntry.Flag.RUNTIME_ONLY) || describedOp.flags.contains(OperationEntry.Flag.READ_ONLY)))) {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.operationNotRegistered(operationName, context.getCurrentAddress()));
         } else {
             ModelNode result = describedOp.getDescription();

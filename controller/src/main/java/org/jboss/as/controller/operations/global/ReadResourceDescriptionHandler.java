@@ -219,7 +219,8 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
         if (ops) {
             for (final Map.Entry<String, OperationEntry> entry : registry.getOperationDescriptions(PathAddress.EMPTY_ADDRESS, inherited).entrySet()) {
                 if (entry.getValue().getType() == OperationEntry.EntryType.PUBLIC) {
-                    if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)) {
+                    if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)
+                            || entry.getValue().getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
                         ReadOperationDescriptionHandler.DescribedOp describedOp = new ReadOperationDescriptionHandler.DescribedOp(entry.getValue(), locale);
                         operations.put(entry.getKey(), describedOp.getDescription());
                     }

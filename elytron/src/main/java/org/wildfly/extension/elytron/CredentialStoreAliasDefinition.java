@@ -131,7 +131,14 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
     private static void storeSecret(CredentialStore credentialStore, String alias, String secretValue) throws CredentialStoreException {
         char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
         credentialStore.store(alias, createCredentialFromPassword(secret));
-        credentialStore.flush();
+        try {
+            credentialStore.flush();
+        } catch (CredentialStoreException e) {
+            // operation fails, remove the entry from the store, to avoid an inconsistency between
+            // the store on the FS and in the memory
+            credentialStore.remove(alias, PasswordCredential.class);
+            throw e;
+        }
     }
 
     private static class AddHandler extends BaseAddHandler {
@@ -189,8 +196,17 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
         protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
             try {
                 CredentialStore credentialStore = credentialStoreService.getValue();
-                credentialStore.remove(context.getCurrentAddressValue(), PasswordCredential.class);
-                credentialStore.flush();
+                String currentAddress = context.getCurrentAddressValue();
+                PasswordCredential retrieved = credentialStore.retrieve(currentAddress, PasswordCredential.class);
+                credentialStore.remove(currentAddress, PasswordCredential.class);
+                try {
+                    credentialStore.flush();
+                } catch (CredentialStoreException e) {
+                    // the operation fails, return removed entry back to the store to avoid an inconsistency
+                    // between the store on the FS and in the memory
+                    credentialStore.store(currentAddress, retrieved);
+                    throw e;
+                }
             } catch (CredentialStoreException e) {
                 throw new OperationFailedException(e);
             }

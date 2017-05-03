@@ -615,7 +615,8 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * the default value is whether the attribute {@link AttributeDefinition#isRequired()} () is not required} and
      * has a {@link AttributeDefinition#getDefaultValue() default value}.
      *
-     * @param nullSignificant {@code true} if an undefined value is significant
+     * @param nullSignificant {@code true} if an undefined value is significant; {@code false} if it is not significant,
+     *                                    even if a default value is configured
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setNullSignificant(boolean nullSignificant) {

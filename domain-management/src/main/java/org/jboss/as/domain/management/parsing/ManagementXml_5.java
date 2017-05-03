@@ -360,6 +360,10 @@ class ManagementXml_5 extends ManagementXml {
                         }
                         break;
                     }
+                    case ALWAYS_SEND_CLIENT_CERT: {
+                        LdapConnectionResourceDefinition.ALWAYS_SEND_CLIENT_CERT.parseAndSetParameter(value,  add, reader);
+                        break;
+                    }
                     default: {
                         throw unexpectedAttribute(reader, i);
                     }
@@ -2324,6 +2328,7 @@ class ManagementXml_5 extends ManagementXml {
             LdapConnectionResourceDefinition.REFERRALS.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.getAttributeMarshaller()
                     .marshallAsAttribute(LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR, connection, true, writer);
+            LdapConnectionResourceDefinition.ALWAYS_SEND_CLIENT_CERT.marshallAsAttribute(connection, writer);
 
             if (connection.hasDefined(PROPERTY)) {
                 ModelNode properties = connection.get(PROPERTY);
