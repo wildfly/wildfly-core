@@ -30,10 +30,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -144,17 +148,110 @@ public class CustomCLIExecutor {
         // Set the connection command
         commandBuilder.setConnection(controller);
         commandBuilder.addCliArgument(operation);
+        return executeProcess(commandBuilder, logFailure, failureResponse, Collections.emptyMap());
+    }
+
+    /**
+     * Execute the commands in a new CLI process offline. This is useful when using an {@code embed-server} or
+     * {@code embed-host-controller} command is being used.
+     *
+     * @param commands the commands to execute
+     *
+     * @return the stdout response from the process
+     */
+    public static String executeOffline(final CharSequence... commands) {
+        return executeOffline(false, Arrays.asList(commands));
+    }
+
+    /**
+     * Execute the commands in a new CLI process offline. This is useful when using an {@code embed-server} or
+     * {@code embed-host-controller} command is being used.
+     *
+     * @param commands the commands to execute
+     *
+     * @return the stdout response from the process
+     */
+    public static String executeOffline(final Iterable<? extends CharSequence> commands) {
+        return executeOffline(false, commands);
+    }
+
+    /**
+     * Execute the commands in a new CLI process offline. This is useful when using an {@code embed-server} or
+     * {@code embed-host-controller} command is being used.
+     *
+     * @param commands   the commands to execute
+     * @param logFailure {@code true} to log failures otherwise {@code false}
+     *
+     * @return the stdout response from the process
+     */
+    public static String executeOffline(final boolean logFailure, final CharSequence... commands) {
+        return executeOffline(logFailure, Arrays.asList(commands));
+    }
+
+    /**
+     * Execute the commands in a new CLI process offline. This is useful when using an {@code embed-server} or
+     * {@code embed-host-controller} command is being used.
+     *
+     * @param commands   the commands to execute
+     * @param logFailure {@code true} to log failures otherwise {@code false}
+     *
+     * @return the stdout response from the process
+     */
+    public static String executeOffline(final boolean logFailure, final Iterable<? extends CharSequence> commands) {
+
+        final String jbossDist = System.getProperty("jboss.dist");
+        if (jbossDist == null) {
+            fail("jboss.dist system property is not set");
+        }
+        final String modulePath = System.getProperty("module.path");
+        if (modulePath == null) {
+            fail("module.path system property is not set");
+        }
+
+        // Write the commands to a temporary file
+        try {
+            final Path cliScript = Files.createTempFile("offline-test-cli", ".cli");
+            try {
+                Files.write(cliScript, commands, StandardCharsets.UTF_8);
+
+                // Build the CLI command
+                final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                        .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)))
+                        .addCliArgument("--file=" + cliScript.toAbsolutePath());
+
+                final String cliJvmArgs = System.getProperty("cli.jvm.args");
+                if (cliJvmArgs != null) {
+                    commandBuilder.addJavaOptions(cliJvmArgs.split("\\s+"));
+                }
+                return executeProcess(commandBuilder, logFailure, null, Collections.singletonMap("JBOSS_HOME", jbossDist));
+            } finally {
+                try {
+                    Files.deleteIfExists(cliScript);
+                } catch (IOException e) {
+                    LOGGER.debugf(e, "Failed to delete CLI script %s", cliScript);
+                }
+            }
+        } catch (IOException e) {
+            fail("Failed to execute offline CLI script: " + e.getLocalizedMessage());
+            // Should never happen
+            throw new RuntimeException("Failed to execute offline CLI script: " + e.getLocalizedMessage(), e);
+        }
+    }
+
+    private static String executeProcess(final CliCommandBuilder commandBuilder, final boolean logFailure, final String failureResponse, final Map<String, String> env) {
         Process cliProc = null;
         try {
-            cliProc = Launcher.of(commandBuilder).launch();
+            cliProc = Launcher.of(commandBuilder)
+                    .addEnvironmentVariables(env)
+                    .launch();
         } catch (IOException e) {
             fail("Failed to start CLI process: " + e.getLocalizedMessage());
         }
 
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
-        ConsoleConsumer.start(cliProc.getInputStream(), out);
-        ConsoleConsumer.start(cliProc.getErrorStream(), err);
+        CustomCLIExecutor.ConsoleConsumer.start(cliProc.getInputStream(), out);
+        CustomCLIExecutor.ConsoleConsumer.start(cliProc.getErrorStream(), err);
         boolean wait = true;
         int runningTime = 0;
         int exitCode = Integer.MIN_VALUE;
