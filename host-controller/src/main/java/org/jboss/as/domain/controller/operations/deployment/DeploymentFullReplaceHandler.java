@@ -148,6 +148,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
             newHash = null;
         }
 
+        if (newHash != null && contentRepository != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+        }
         // Store state to the model
         deploymentModel.get(RUNTIME_NAME).set(runtimeName);
         deploymentModel.get(CONTENT).set(content);
@@ -180,9 +183,6 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
                         } else {
                             fileRepository.deleteDeployment(reference);
                         }
-                    }
-                    if (newHash != null && contentRepository != null) {
-                        contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
                     }
                 } else if (newHash != null && (replacedHash == null || !Arrays.equals(replacedHash, newHash))) {
                     // Due to rollback, the new content isn't used; clean from repos

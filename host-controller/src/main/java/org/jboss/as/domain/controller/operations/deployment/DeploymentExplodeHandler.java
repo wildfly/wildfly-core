@@ -115,6 +115,7 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
             newHash = DeploymentUploadUtil.synchronizeSlaveHostController(operation, address, fileRepository, contentRepository, backup, oldHash);
         }
         if (newHash != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(context.getCurrentAddress(), newHash));
             contentItem = new ModelNode();
             contentItem.get(HASH).set(newHash);
             contentItem.get(ARCHIVE).set(false);
@@ -129,11 +130,9 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
                             if (oldHash != null && contentRepository.hasContent(oldHash)) {
                                 contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
                             }
-                            if (contentRepository.hasContent(newHash)) {
-                                contentRepository.addContentReference(ModelContentReference.fromModelAddress(context.getCurrentAddress(), newHash));
-                            }
-                        } // else the model update will be reverted and no ref content repo references changes will be made so
-                        // the newly exploded content will be eligible for content repo gc
+                        } else {
+                            contentRepository.removeContent(ModelContentReference.fromModelAddress(address, newHash));
+                        }
                     }
                 });
             }

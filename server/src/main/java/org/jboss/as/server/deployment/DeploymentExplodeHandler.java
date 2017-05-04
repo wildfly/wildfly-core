@@ -90,6 +90,7 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
         }
         contentItem.get(CONTENT_HASH.getName()).set(newHash);
         contentItem.get(CONTENT_ARCHIVE.getName()).set(false);
+        contentRepository.addContentReference(ModelContentReference.fromModelAddress(context.getCurrentAddress(), newHash));
 
         context.completeStep(new OperationContext.ResultHandler() {
             @Override
@@ -97,9 +98,9 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
                 if (resultAction == OperationContext.ResultAction.KEEP) {
                     PathAddress address = context.getCurrentAddress();
                     contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
-                    contentRepository.addContentReference(ModelContentReference.fromModelAddress(context.getCurrentAddress(), newHash));
-                } // else the model update will be reverted and no ref content repo references changes will be made so
-                  // the newly exploded content will be eligible for content repo gc
+                } else {
+                    contentRepository.removeContent(ModelContentReference.fromModelAddress(context.getCurrentAddress(), newHash));
+                }
             }
         });
     }

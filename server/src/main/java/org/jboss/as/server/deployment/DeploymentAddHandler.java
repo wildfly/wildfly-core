@@ -41,7 +41,6 @@ import java.io.InputStream;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -150,13 +149,9 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
         if (contentItem.getHash() != null) {
             final byte[] contentHash = contentItem.getHash();
-            context.completeStep(new OperationContext.ResultHandler() {
-                @Override
-                public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                    if (resultAction == ResultAction.KEEP) {
-                        contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, contentHash));
-                    }
-                }
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, contentHash));
+            context.completeStep((OperationContext context1, ModelNode operation1) -> {
+                contentRepository.removeContent(ModelContentReference.fromModelAddress(address, contentHash));
             });
         }
     }

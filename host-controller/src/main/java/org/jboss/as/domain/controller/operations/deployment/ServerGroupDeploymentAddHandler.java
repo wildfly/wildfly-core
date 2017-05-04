@@ -78,6 +78,12 @@ public class ServerGroupDeploymentAddHandler implements OperationStepHandler {
                 fileRepository.getDeploymentFiles(reference);
                 if (contentRepository != null) {
                     contentRepository.addContentReference(reference);
+                    context.completeStep(new OperationContext.RollbackHandler() {
+                        @Override
+                        public void handleRollback(OperationContext context, ModelNode operation) {
+                            contentRepository.removeContent(reference);
+                        }
+                    });
                 }
             }
         }

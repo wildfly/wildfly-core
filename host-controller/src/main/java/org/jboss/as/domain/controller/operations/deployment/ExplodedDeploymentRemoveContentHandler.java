@@ -99,6 +99,9 @@ public class ExplodedDeploymentRemoveContentHandler implements OperationStepHand
         } else { //Slave HC
             newHash = DeploymentUploadUtil.synchronizeSlaveHostController(operation, address, fileRepository, contentRepository, backup, oldHash);
         }
+        if (newHash != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+        }
         contentItem.get(CONTENT_HASH.getName()).set(newHash);
         if (newHash != null) {
             contentItem = new ModelNode();
@@ -115,9 +118,6 @@ public class ExplodedDeploymentRemoveContentHandler implements OperationStepHand
                             if (oldHash != null && (newHash == null || !Arrays.equals(oldHash, newHash))) {
                                 // The old content is no longer used; clean from repos
                                 contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
-                            }
-                            if (newHash != null) {
-                                contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
                             }
                         }
                     } else {

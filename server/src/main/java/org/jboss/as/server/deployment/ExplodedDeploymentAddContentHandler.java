@@ -118,6 +118,9 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
         final List<String> relativePaths = addedFiles.stream().map(ExplodedContent::getRelativePath).collect(Collectors.toList());
         contentItemNode.get(CONTENT_HASH.getName()).set(newHash);
         contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
+        if (newHash != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+        }
         if (!addedFiles.isEmpty() && ENABLED.resolveModelAttribute(context, deploymentResource.getModel()).asBoolean()) {
             context.addStep(new OperationStepHandler() {
                 @Override
@@ -141,21 +144,15 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.completeStep(new OperationContext.ResultHandler() {
-            @Override
-            public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
-                if (resultAction == ResultAction.KEEP) {
-                    if (oldHash != null  && (newHash == null || !Arrays.equals(oldHash, newHash))) {
-                        // The old content is no longer used; clean from repos
-                        contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
-                    }
-                    if (newHash != null) {
-                        contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
-                    }
-                } else if (newHash != null && (oldHash == null || !Arrays.equals(oldHash, newHash))) {
-                    // Due to rollback, the new content isn't used; clean from repos
-                    contentRepository.removeContent(ModelContentReference.fromModelAddress(address, newHash));
+        context.completeStep((ResultAction resultAction, OperationContext context1, ModelNode operation1) -> {
+            if (resultAction == ResultAction.KEEP) {
+                if (oldHash != null  && (newHash == null || !Arrays.equals(oldHash, newHash))) {
+                    // The old content is no longer used; clean from repos
+                    contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
                 }
+            } else if (newHash != null && (oldHash == null || !Arrays.equals(oldHash, newHash))) {
+                // Due to rollback, the new content isn't used; clean from repos
+                contentRepository.removeContent(ModelContentReference.fromModelAddress(address, newHash));
             }
         });
     }

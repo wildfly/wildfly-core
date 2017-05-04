@@ -29,6 +29,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.dmr.ModelNode;
 
@@ -55,7 +56,13 @@ public class ManagedDMRContentTypeAddHandler implements OperationStepHandler {
         byte[] hash = hashNode.isDefined() ? hashNode.asBytes() : null;
 
         // Create and add the specialized resource type we use for this resource tree
-        ManagedDMRContentTypeResource resource = new ManagedDMRContentTypeResource(address, childType, hash, contentRepository);
-        context.addResource(PathAddress.EMPTY_ADDRESS, resource);
+        final ManagedDMRContentTypeResource resource = new ManagedDMRContentTypeResource(address, childType, hash, contentRepository);
+       context.addResource(PathAddress.EMPTY_ADDRESS, resource);
+       context.completeStep(new OperationContext.RollbackHandler() {
+            @Override
+            public void handleRollback(OperationContext context, ModelNode operation) {
+                contentRepository.removeContent(new ContentReference(address.toCLIStyleString(), resource.getModel().get(HASH.getName()).asBytes()));
+            }
+        });
     }
 }

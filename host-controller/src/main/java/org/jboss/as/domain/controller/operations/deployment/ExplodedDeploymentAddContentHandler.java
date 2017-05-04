@@ -100,6 +100,9 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
             newHash = DeploymentUploadUtil.synchronizeSlaveHostController(operation, address, fileRepository, contentRepository, backup, oldHash);
         }
         if (newHash != null) {
+            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+        }
+        if (newHash != null) {
             contentItem = new ModelNode();
             contentItem.get(HASH).set(newHash);
             contentItem.get(ARCHIVE).set(false);
@@ -114,9 +117,6 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
                             if (oldHash != null && (newHash == null || !Arrays.equals(oldHash, newHash))) {
                                 // The old content is no longer used; clean from repos
                                 contentRepository.removeContent(ModelContentReference.fromModelAddress(address, oldHash));
-                            }
-                            if (newHash != null) {
-                                contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
                             }
                         }
                     } else {

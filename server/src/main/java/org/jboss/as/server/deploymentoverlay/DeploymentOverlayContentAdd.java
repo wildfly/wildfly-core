@@ -105,6 +105,12 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
         if (!contentRepository.syncContent(ModelContentReference.fromModelAddress(address, hash))) {
             throw ServerLogger.ROOT_LOGGER.noSuchDeploymentContent(Arrays.toString(hash));
         }
+        context.completeStep((OperationContext context1, ModelNode operation1) -> {
+            if (hash != null) {
+                // Due to rollback, the new content isn't used; clean from repos
+                contentRepository.removeContent(ModelContentReference.fromModelAddress(address, hash));
+            }
+        });
     }
 
     @Override
@@ -113,8 +119,9 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
     }
 
     protected static void validateOnePieceOfContent(final ModelNode content) throws OperationFailedException {
-        if (content.asList().size() != 1)
+        if (content.asList().size() != 1) {
             throw ServerLogger.ROOT_LOGGER.multipleContentItemsNotSupported();
+        }
     }
 
     byte[] addFromHash(byte[] hash, String deploymentOverlayName, final String contentName, final PathAddress address, final OperationContext context) throws OperationFailedException {
