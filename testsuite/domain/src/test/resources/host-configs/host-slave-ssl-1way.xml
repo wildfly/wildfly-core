@@ -47,9 +47,6 @@
                 </authentication>
             </security-realm>
             <security-realm name="SlaveManagementRealm">
-                <server-identities>
-                     <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" />
-                </server-identities>
                 <authentication>
                     <truststore path="../ssl-master-slave-1way-workdir/client.truststore" keystore-password="123456" relative-to="jboss.home.dir" />
                 </authentication>
