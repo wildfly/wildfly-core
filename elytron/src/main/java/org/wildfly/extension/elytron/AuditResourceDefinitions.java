@@ -225,7 +225,7 @@ class AuditResourceDefinitions {
                     }
                     File resolvedPath = pathResolver.resolve();
 
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().build() : SimpleSecurityEventFormatter.builder().build();
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
                     AuditEndpoint endpoint;
                     try {
                         endpoint = RotatingFileAuditEndpoint.builder()
