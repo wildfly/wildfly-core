@@ -29,6 +29,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -51,6 +56,7 @@ import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.WindowsFilenameTabCompleter;
 import org.jboss.as.cli.impl.ArgumentWithListValue;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.impl.DefaultCompleter.CandidatesProvider;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
@@ -126,6 +132,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue slot;
     private final ArgumentWithValue resourceDelimiter;
     private final ArgumentWithValue moduleRootDir;
+    private final ArgumentWithoutValue allowNonExistentResources;
     private File modulesDir;
 
     public ASModuleHandler(CommandContext ctx) {
@@ -201,6 +208,9 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 return state;
             }
         };
+
+        allowNonExistentResources = new ArgumentWithoutValue(this, "--allow-nonexistent-resources");
+        allowNonExistentResources.addRequiredPreceding(resources);
 
         absoluteResources = new AddModuleArgument("--absolute-resources", new CommandLineCompleter(){
             @Override
@@ -359,10 +369,14 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         final FilenameTabCompleter pathCompleter = Util.isWindows() ? new WindowsFilenameTabCompleter(ctx) : new DefaultFilenameTabCompleter(ctx);
         final String[] resourceArr = (resourcePaths == null) ? new String[0] : resourcePaths.split(pathDelimiter);
         File[] resourceFiles = new File[resourceArr.length];
+
+        boolean allowNonExistent = allowNonExistentResources.isPresent(parsedCmd);
         for(int i = 0; i < resourceArr.length; ++i) {
             final File f = new File(pathCompleter.translatePath(resourceArr[i]));
-            if(!f.exists()) {
-                throw new CommandLineException("Failed to locate " + f.getAbsolutePath());
+            if (!f.exists() && !allowNonExistent) {
+                throw new CommandLineException("Failed to locate " + f.getAbsolutePath()
+                        + ", if you defined a nonexistent resource on purpose you should "
+                        + "use the " + allowNonExistentResources.getFullName() + " option");
             }
             resourceFiles[i] = f;
         }
@@ -400,7 +414,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         }
 
         for(File f : resourceFiles) {
-            copy(f, new File(moduleDir, f.getName()));
+            copyResource(f, new File(moduleDir, f.getName()), ctx, this);
             if(config != null) {
                 config.addResource(new ResourceRoot(f.getName()));
             }
@@ -568,6 +582,62 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             return new FormattingXMLStreamWriter(writer);
         } catch (Exception e) {
             throw new CommandLineException("Failed to create xml stream writer.", e);
+        }
+    }
+
+    private static void copyResource(final File source, final File target,
+            CommandContext ctx, ASModuleHandler handler) throws CommandLineException {
+        if (!source.exists()) {
+            target.mkdir();
+            return;
+        }
+        if (source.isDirectory()) {
+            copyDirectory(source, target, ctx, handler);
+        } else {
+            copy(source, target);
+        }
+    }
+
+    private static void copyDirectory(final File source, final File target,
+            CommandContext ctx, ASModuleHandler handler) throws CommandLineException {
+        Path sourcePath = source.toPath();
+        Path targetPath = target.toPath();
+        try {
+            Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir,
+                        final BasicFileAttributes attrs) throws IOException {
+                    Files.createDirectories(targetPath.resolve(sourcePath
+                            .relativize(dir)));
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(final Path file,
+                        final BasicFileAttributes attrs) throws IOException {
+                    Files.copy(file,
+                            targetPath.resolve(sourcePath.relativize(file)));
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException ex) {
+            Exception removalException = null;
+            try {
+                // Remove fully the module.
+                handler.removeModule(ctx.getParsedCommandLine(), ctx);
+            } catch (Exception ee) {
+                removalException = ee;
+            }
+            String msg = "An error occurred while copying directory  "
+                    + source.getAbsolutePath() + " to " + target.getAbsolutePath()
+                    + " :" + ex;
+            if (removalException == null) {
+                msg = "Module not added. " + msg;
+            } else {
+                msg = msg + ". Attempt to remove the module has failed: "
+                        + removalException;
+            }
+            throw new CommandLineException(msg);
         }
     }
 

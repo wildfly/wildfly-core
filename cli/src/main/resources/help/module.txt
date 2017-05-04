@@ -58,6 +58,9 @@ ARGUMENTS
                    (usually jar files) separated by a filesystem-specific
                    path separator, i.e. '/' for Linux and '\' for Windows.
                    The file(s) specified will be copied to the created module's directory.
+                   If the specified path is a directory, it will be recursively copied to
+                   the module directory. If the directory does not exist, an empty directory
+                   will be created in the module directory.
 
  --absolute-resources - (used with add, resources and/or absolute-resources required
                        unless module-xml is used) a list of filesystem paths
@@ -107,3 +110,6 @@ ARGUMENTS
                    NOTE: this argument makes sense only when the module.xml file
                    is generated, i.e. when the --module-xml argument isn't
                    specified.
+
+--allow-nonexistent-resources - Used in conjunction with --resources in order to create
+                                empty directories for referenced resources that do not exist.

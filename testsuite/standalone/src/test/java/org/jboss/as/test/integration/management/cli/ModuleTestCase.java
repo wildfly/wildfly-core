@@ -21,6 +21,9 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import com.sun.javafx.util.Utils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -35,14 +38,15 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-
 import org.apache.commons.io.FileUtils;
+
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -198,6 +202,83 @@ public class ModuleTestCase extends AbstractCliTestBase {
         } finally {
             testRemove("main", false);
         }
+    }
+
+    @Test
+    public void addModuleWithEmptyDirectory() throws Exception {
+        String dir = System.currentTimeMillis() + "dir";
+        File dirFile = new File(TestSuiteEnvironment.getTmpDir() + File.separator + dir);
+        try {
+            // Check that must fail for empty directory.
+            boolean success = cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile, true);
+            Assert.assertFalse(success);
+
+            cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile + " --allow-nonexistent-resources");
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            File moduleDir = new File(testModuleRoot, "main");
+
+            // check that there is a single empty directory
+            File[] dirs = moduleDir.listFiles(File::isDirectory);
+            Assert.assertEquals(1, dirs.length);
+            Assert.assertEquals(dir, dirs[0].getName());
+            Assert.assertEquals(0, dirs[0].listFiles().length);
+        } finally {
+            testRemove("main", false);
+        }
+    }
+
+    @Test
+    public void addModuleWithDirectory() throws Exception {
+        String dir = System.currentTimeMillis() + "dir";
+        File dirFile = new File(TestSuiteEnvironment.getTmpDir() + File.separator + dir);
+        dirFile.mkdir();
+        String content = "HELLO WORLD";
+        String fileName = System.currentTimeMillis() + "file.txt";
+        File f = new File(dirFile, fileName);
+        f.createNewFile();
+        Files.write(content.getBytes(), f);
+        try {
+            cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile.getAbsolutePath());
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            File moduleDir = new File(testModuleRoot, "main");
+
+            // check that there is a single directory
+            File[] dirs = moduleDir.listFiles(File::isDirectory);
+            Assert.assertEquals(1, dirs.length);
+            Assert.assertEquals(dir, dirs[0].getName());
+            File[] files = dirs[0].listFiles();
+            Assert.assertEquals(1, files.length);
+            Assert.assertEquals(fileName, files[0].getName());
+            Assert.assertEquals(content, Files.readFirstLine(files[0], Charsets.UTF_8));
+        } finally {
+            testRemove("main", false);
+        }
+    }
+
+    @Test
+    public void addModuleWithDirectoryError() throws Exception {
+        if (Utils.isWindows()) {
+            return;
+        }
+        String dir = System.currentTimeMillis() + "dir";
+        File dirFile = new File(TestSuiteEnvironment.getTmpDir() + File.separator + dir);
+        dirFile.mkdir();
+        String content = "HELLO WORLD";
+        String fileName = System.currentTimeMillis() + "file.txt";
+        File f = new File(dirFile, fileName);
+        f.createNewFile();
+        Files.write(content.getBytes(), f);
+        f.setReadable(false);
+        boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                + " --resources=" + dirFile.getAbsolutePath(), true);
+        Assert.assertFalse(ret);
+        String output = cli.readOutput();
+        Assert.assertTrue(output.contains("Module not added"));
+        File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+        Assert.assertFalse(testModuleRoot.exists());
     }
 
     private void testAddRemove(String slotName, boolean addModuleRootDir, boolean addResources,
