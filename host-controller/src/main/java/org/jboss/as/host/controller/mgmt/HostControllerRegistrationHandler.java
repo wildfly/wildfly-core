@@ -47,7 +47,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -236,15 +235,6 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
 
             final RegistrationContext registration = context.getAttachment();
             registration.initialize(hostName, hostInfo, context);
-
-            if (domainController.getCurrentRunningMode() == RunningMode.ADMIN_ONLY) {
-                registration.failed(SlaveRegistrationException.ErrorCode.MASTER_IS_ADMIN_ONLY, DomainControllerLogger.ROOT_LOGGER.adminOnlyModeCannotAcceptSlaves(RunningMode.ADMIN_ONLY));
-                return;
-            }
-            if (!domainController.getLocalHostInfo().isMasterDomainController()) {
-                registration.failed(SlaveRegistrationException.ErrorCode.HOST_IS_NOT_MASTER, DomainControllerLogger.ROOT_LOGGER.slaveControllerCannotAcceptOtherSlaves());
-                return;
-            }
 
             // Read the domain model async, this will block until the registration process is complete
             context.executeAsync(new ManagementRequestContext.AsyncTask<RegistrationContext>() {
@@ -742,7 +732,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
      * @param message the operation message
      * @throws IOException for any error
      */
-    static void sendFailedResponse(final ManagementRequestContext<RegistrationContext> context, final byte errorCode, final String message) throws IOException {
+    static void sendFailedResponse(final ManagementRequestContext<?> context, final byte errorCode, final String message) throws IOException {
         final ManagementResponseHeader header = ManagementResponseHeader.create(context.getRequestHeader());
         final FlushableDataOutput output = context.writeMessage(header);
         try {
