@@ -22,11 +22,9 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -34,7 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIME_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
@@ -368,21 +365,18 @@ class ModelControllerImpl implements ModelController {
         AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
         if (accessContext != null) {
             // External caller of some sort.
-            if (operation.hasDefined(OPERATION_HEADERS)) {
-                ModelNode operationHeaders = operation.get(OPERATION_HEADERS);
-                // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
-                // This header will only be set at this point if the request came in that way; for user-originated
-                // requests on this process the header is added later during op execution by OperationCoordinatorStepHandler
-                if (operationHeaders.hasDefined(DOMAIN_UUID)) {
-                    accessContext.setDomainUuid(operationHeaders.get(DOMAIN_UUID).asString());
-                    accessContext.setDomainRollout(true);
-                }
-                // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
-                // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
-                if (operationHeaders.hasDefined(ACCESS_MECHANISM)) {
-                    accessContext
-                            .setAccessMechanism(AccessMechanism.valueOf(operationHeaders.get(ACCESS_MECHANISM).asString()));
-                }
+
+            // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
+            // This header will only be set at this point if the request came in that way; for user-originated
+            // requests on this process the header is added later during op execution by OperationCoordinatorStepHandler
+            if (headers.getDomainUUID() != null) {
+                accessContext.setDomainUuid(headers.getDomainUUID());
+                accessContext.setDomainRollout(true);
+            }
+            // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
+            // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
+            if (headers.getAccessMechanism() != null) {
+                accessContext.setAccessMechanism(headers.getAccessMechanism());
             }
             accessMechanism = accessContext.getAccessMechanism();
         } // else its an internal caller as external callers always get an AccessAuditContext

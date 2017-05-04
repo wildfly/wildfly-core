@@ -143,7 +143,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static final Set<Action.ActionEffect> ALL_READ_WRITE = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG, Action.ActionEffect.WRITE_RUNTIME);
 
     private final ModelControllerImpl modelController;
-    private final OperationHeaders operationHeaders;
     private final OperationMessageHandler messageHandler;
     private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
     // protected by "realRemovingControllers"
@@ -218,7 +217,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                          final boolean partialModel,
                          final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(processType, runningMode, transactionControl, processState, booting, auditLogger, notificationSupport,
-                modelController, skipModelValidation, extraValidationStepHandler, securityIdentitySupplier);
+                modelController, skipModelValidation, extraValidationStepHandler, operationHeaders, securityIdentitySupplier);
         this.operationId = operationId;
         this.operationName = operationName;
         this.operationAddress = operationAddress.isDefined()
@@ -229,7 +228,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         this.messageHandler = messageHandler;
         this.attachments = attachments;
         this.affectsModel = booting ? new ConcurrentHashMap<>(16 * 16) : new HashMap<>(1);
-        this.operationHeaders = operationHeaders;
         this.hostServerGroupTracker = hostServerGroupTracker;
         this.activeOperationResource = new ActiveOperationResource();
         this.accessAuditContext = accessAuditContext;
