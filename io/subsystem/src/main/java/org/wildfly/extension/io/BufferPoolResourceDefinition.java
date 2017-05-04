@@ -85,15 +85,18 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setAllowExpression(true)
             .setValidator(new IntRangeValidator(1, true, true))
+            .setDefaultValue(new ModelNode(defaultBufferSize))
             .build();
     static final SimpleAttributeDefinition BUFFER_PER_SLICE = new SimpleAttributeDefinitionBuilder(Constants.BUFFER_PER_SLICE, ModelType.INT, true)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setAllowExpression(true)
             .setValidator(new IntRangeValidator(1, true, true))
+            .setDefaultValue(new ModelNode(defaultBuffersPerRegion))
             .build();
     static final SimpleAttributeDefinition DIRECT_BUFFERS = new SimpleAttributeDefinitionBuilder(Constants.DIRECT_BUFFERS, ModelType.BOOLEAN, true)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(defaultDirectBuffers))
             .build();
 
 
