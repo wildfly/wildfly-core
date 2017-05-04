@@ -23,7 +23,9 @@ import java.util.HashSet;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -229,6 +231,32 @@ public class DomainTestCase extends AbstractSubsystemTest {
         valueRealms.add(new ModelNode().set(ElytronDescriptionConstants.REALM, "FileRealm"));
         operation.get(ClientConstants.VALUE).set(valueRealms);
         Assert.assertNotNull(assertFail(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+    }
+
+    /**
+     * Regression test for WFCORE-2614 - don't allow duplicating realms referenced from a single domain.
+     */
+    @Test
+    public void testDuplicateRealmValidation() throws Exception {
+        init();
+
+        ModelNode realmNode = new ModelNode();
+
+        ModelNode operation = Util.createEmptyOperation("list-add", PathAddress.pathAddress("subsystem", "elytron")
+                .append(ElytronDescriptionConstants.SECURITY_DOMAIN, "MyDomain"));
+        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.REALMS);
+
+        realmNode.get("realm").set("PropRealm");
+        operation.get("value").set(realmNode);
+        Assert.assertNotNull(assertFail(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+
+        realmNode.get("realm").set("FileRealm");
+        operation.get("value").set(realmNode);
+        Assert.assertNotNull(assertFail(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+
+        realmNode.get("realm").set("NonDomainRealm");
+        operation.get("value").set(realmNode);
+        Assert.assertNotNull(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
     }
 
     @Test
