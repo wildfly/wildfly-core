@@ -24,6 +24,7 @@ package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -32,11 +33,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIME_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
@@ -904,7 +907,15 @@ class ModelControllerImpl implements ModelController {
             final String operationName =  operation.require(OP).asString();
             final OperationEntry stepOperation = resolveOperationHandler(address, operationName);
             if (stepOperation != null) {
-                context.addModelStep(stepOperation.getOperationDefinition(), stepOperation.getOperationHandler(), false);
+                if (!context.isBooting()
+                        && stepOperation.getType() == OperationEntry.EntryType.PRIVATE
+                        && operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE)
+                        && USER.equals(operation.get(OPERATION_HEADERS, CALLER_TYPE).asString())) {
+                    // End user trying to invoke a private op. Respond as if there is no such operation
+                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
+                } else {
+                    context.addModelStep(stepOperation.getOperationDefinition(), stepOperation.getOperationHandler(), false);
+                }
             } else {
 
                 ImmutableManagementResourceRegistration child = managementModel.get().getRootResourceRegistration().getSubModel(address);

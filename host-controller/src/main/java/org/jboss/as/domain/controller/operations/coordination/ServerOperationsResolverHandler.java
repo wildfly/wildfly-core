@@ -114,7 +114,7 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
                         for (Map.Entry<Set<ServerIdentity>, ModelNode> entry : ops.entrySet()) {
                             ModelNode op = entry.getValue();
                             //Remove the caller-type=user header
-                            if (op.hasDefined(OPERATION_HEADERS) && op.get(OPERATION_HEADERS).hasDefined(CALLER_TYPE) && op.get(OPERATION_HEADERS, CALLER_TYPE).asString().equals(USER)) {
+                            if (op.hasDefined(OPERATION_HEADERS, CALLER_TYPE) && op.get(OPERATION_HEADERS, CALLER_TYPE).asString().equals(USER)) {
                                 op.get(OPERATION_HEADERS).remove(CALLER_TYPE);
                             }
                         }

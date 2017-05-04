@@ -94,12 +94,12 @@ public class OperationCoordinatorStepHandler {
             if (COMPOSITE.equals(operation.get(OP).asString()) && PathAddress.pathAddress(operation.get(OP_ADDR)).size() == 0) {
                 executeTwoPhaseOperation(context, operation, routing);
             } else {
-                executeDirect(context, operation);
+                executeDirect(context, operation, false); // don't need to check private as we are just going to forward this
             }
         }
         else if (!routing.isTwoStep()) {
             // It's a domain or host level op (probably a read) that does not require bringing in other hosts or servers
-            executeDirect(context, operation);
+            executeDirect(context, operation, true);
         }
         else {
             // Else we are responsible for coordinating a two-phase op
@@ -129,13 +129,14 @@ public class OperationCoordinatorStepHandler {
      * Directly handles the op in the standard way the default prepare step handler would
      * @param context the operation execution context
      * @param operation the operation
+     * @param checkPrivate {@code true} if a check should be made for a direct user call to a private operation
      * @throws OperationFailedException if there is no handler registered for the operation
      */
-    private void executeDirect(OperationContext context, ModelNode operation) throws OperationFailedException {
+    private void executeDirect(OperationContext context, ModelNode operation, boolean checkPrivate) throws OperationFailedException {
         if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
             HOST_CONTROLLER_LOGGER.tracef("%s executing direct", getClass().getSimpleName());
         }
-        PrepareStepHandler.executeDirectOperation(context, operation);
+        PrepareStepHandler.executeDirectOperation(context, operation, checkPrivate);
     }
 
     private void executeTwoPhaseOperation(OperationContext context, ModelNode operation, OperationRouting routing) throws OperationFailedException {

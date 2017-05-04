@@ -22,8 +22,11 @@
 
 package org.jboss.as.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -109,7 +112,7 @@ public final class MultistepUtil {
      */
     public static <T> void recordOperationSteps(final OperationContext context, final Map<T, ModelNode> operations,
                                                                        final Map<T, ModelNode> responses) throws OperationFailedException {
-        recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT, false);
+        recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT, false, true);
     }
 
     /**
@@ -135,6 +138,34 @@ public final class MultistepUtil {
                                                 final Map<T, ModelNode> responses,
                                                 final OperationHandlerResolver handlerResolver,
                                                 final boolean adjustAddresses) throws OperationFailedException {
+        recordOperationSteps(context, operations, responses, handlerResolver, adjustAddresses, true);
+    }
+
+    /**
+     * This is a specialized version of the other variant of this method that allows a pluggable strategy
+     * for resolving the {@link OperationStepHandler} to use for the added steps. It is not expected to
+     * be needed by users outside the WildFly Core kernel.
+     *
+     * @param <T> the type of the keys in the maps
+     * @param context the {@code OperationContext}. Cannot be {@code null}
+     * @param operations the operations, each value of which must be a proper OBJECT type model node with a structure describing an operation.
+     * @param responses  a map of the response nodes, the keys for which match the keys in the {@code operations} param.
+     *                   Cannot be {@code null} but may be empty in which case this method will
+     *                   create the response nodes and store them in this map.
+     * @param handlerResolver an object that can provide the {@code OperationStepHandler} to use for the operation
+     * @param adjustAddresses {@code true} if the address of each operation should be adjusted to become a child of the context's
+     *                                {@link OperationContext#getCurrentAddress() current address}
+     * @param rejectPrivateOperations
+     *
+     * @throws OperationFailedException  if there is a problem registering a step for any of the operations
+     *
+     */
+    public static <T> void recordOperationSteps(final OperationContext context,
+        final Map<T, ModelNode> operations,
+        final Map<T, ModelNode> responses,
+        final OperationHandlerResolver handlerResolver,
+        final boolean adjustAddresses,
+        final boolean rejectPrivateOperations) throws OperationFailedException {
 
         assert responses != null;
         assert responses.isEmpty() || operations.size() == responses.size();
@@ -157,7 +188,7 @@ public final class MultistepUtil {
                 op.get(OP_ADDR).set(stepAddress.toModelNode());
             }
 
-            OpData opData = getOpData(context, op, response, stepAddress, handlerResolver);
+            OpData opData = getOpData(context, op, response, stepAddress, handlerResolver, rejectPrivateOperations);
             // Reverse the order for addition to the context
             opdatas.add(0, opData);
 
@@ -172,7 +203,7 @@ public final class MultistepUtil {
     }
 
     private static OpData getOpData(OperationContext context, ModelNode subOperation, ModelNode response, PathAddress stepAddress,
-                                               OperationHandlerResolver handlerResolver) throws OperationFailedException {
+                                    OperationHandlerResolver handlerResolver, boolean rejectPrivateOperations) throws OperationFailedException {
         ImmutableManagementResourceRegistration registry = context.getRootResourceRegistration();
         String stepOpName = subOperation.require(OP).asString();
         OperationEntry operationEntry = registry.getOperationEntry(stepAddress, stepOpName);
@@ -181,6 +212,13 @@ public final class MultistepUtil {
             if (child == null) {
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noSuchResourceType(stepAddress));
             } else {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(stepOpName, stepAddress));
+            }
+        } else if (operationEntry.getType() == OperationEntry.EntryType.PRIVATE) {
+            if (rejectPrivateOperations
+                    || (subOperation.hasDefined(OPERATION_HEADERS, CALLER_TYPE)
+                    && USER.equals(subOperation.get(OPERATION_HEADERS, CALLER_TYPE).asString()))) {
+                // Not allowed; respond as if there is no such operation
                 throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(stepOpName, stepAddress));
             }
         }
