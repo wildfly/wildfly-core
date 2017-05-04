@@ -144,6 +144,9 @@ public abstract class AttributeDefinition {
         if (defaultValue != null && defaultValue.isDefined()) {
             this.defaultValue = defaultValue;
             this.defaultValue.protect();
+            if (this.required) {
+                throw new IllegalArgumentException(); // WFCORE-2252. Incorrect combination from the code author
+            }
         } else {
             this.defaultValue = null;
         }
