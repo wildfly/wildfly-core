@@ -108,12 +108,12 @@ class PermissionMapperDefinitions {
 
     static final SimpleAttributeDefinition TARGET_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TARGET_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setMinSize(1)
+            .setMinSize(0)
             .build();
 
     static final SimpleAttributeDefinition ACTION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACTION, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setMinSize(1)
+            .setMinSize(0)
             .build();
 
     static final ObjectTypeAttributeDefinition PERMISSION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION, CLASS_NAME, MODULE, TARGET_NAME, ACTION)
