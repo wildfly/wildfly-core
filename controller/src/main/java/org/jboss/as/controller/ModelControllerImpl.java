@@ -681,7 +681,7 @@ class ModelControllerImpl implements ModelController {
 
     @Override
     public ModelControllerClient createClient(final Executor executor) {
-        return getClientFactory().createSuperUserClient(executor);
+        return getClientFactory().createSuperUserClient(executor, false);
     }
 
     ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, final Set<PathAddress> affectedAddresses,

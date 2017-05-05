@@ -104,8 +104,9 @@ public class ContentCleanerService implements Service<Void> {
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
-        this.deploymentContentCleaner = new ContentRepositoryCleaner(clientFactoryValue.getValue().createSuperUserClient(
-                executorServiceValue.getValue()), controlledProcessStateServiceValue.getValue(),
+        this.deploymentContentCleaner = new ContentRepositoryCleaner(
+                clientFactoryValue.getValue().createSuperUserClient(executorServiceValue.getValue(), false),
+                controlledProcessStateServiceValue.getValue(),
                 scheduledExecutorValue.getValue(), unit.toMillis(interval), server);
         deploymentContentCleaner.startScan();
     }

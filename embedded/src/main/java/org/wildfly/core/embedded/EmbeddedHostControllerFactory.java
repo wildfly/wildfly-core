@@ -319,7 +319,7 @@ public class EmbeddedHostControllerFactory {
                     clientFactory = null;
                 }
                 if (clientFactory != null) {
-                    newClient = clientFactory.createSuperUserClient(executorService);
+                    newClient = clientFactory.createSuperUserClient(executorService, true);
                 }
             }
             modelControllerClient = newClient;

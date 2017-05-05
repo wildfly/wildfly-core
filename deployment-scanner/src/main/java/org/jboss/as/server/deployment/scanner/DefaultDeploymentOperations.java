@@ -64,8 +64,8 @@ final class DefaultDeploymentOperations implements DeploymentOperations {
     private final LocalModelControllerClient controllerClient;
 
     DefaultDeploymentOperations(final ModelControllerClientFactory clientFactory, final Executor executor) {
-        // We need to run with RBAC SuperUser rights
-        this.controllerClient = clientFactory.createSuperUserClient(executor);
+        // We need to run with RBAC SuperUser rights, but don't need to invoke private operations
+        this.controllerClient = clientFactory.createSuperUserClient(executor, false);
     }
 
     @Override

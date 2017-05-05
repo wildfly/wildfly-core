@@ -2062,7 +2062,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public LocalModelControllerClient createSuperUserClient(Executor executor) {
+        public LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls) {
             return  this;
         }
 

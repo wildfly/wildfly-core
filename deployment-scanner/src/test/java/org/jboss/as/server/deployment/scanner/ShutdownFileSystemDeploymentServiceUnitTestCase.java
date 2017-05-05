@@ -230,7 +230,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         }
 
         @Override
-        public LocalModelControllerClient createSuperUserClient(Executor executor) {
+        public LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls) {
             return this;
         }
 
