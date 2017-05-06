@@ -22,25 +22,29 @@
 
 package org.jboss.as.test.manualmode.management.cli;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Collections;
 import java.util.List;
 
 import org.codehaus.plexus.util.FileUtils;
-import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
+import org.jboss.as.test.integration.management.extension.optypes.OpTypesExtension;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.junit.After;
@@ -49,13 +53,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Basic tests for embedded host-controller in the CLI.
@@ -72,18 +69,15 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     private static final File ROOT = new File(System.getProperty("jboss.home"));
     private static final String JBOSS_HOME = " --jboss-home=" + ROOT.getAbsolutePath();
     private static final String STOP = "stop-embedded-host-controller";
-    private static final String SERVICE_ACTIVATOR_DEPLOYMENT_NAME = "service-activated.jar";
-    private static JavaArchive serviceActivatorDeployment;
-    private static File serviceActivatorDeploymentFile;
     private static boolean uninstallStdio;
 
-    public static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
-    public static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
-    public static final String JBOSS_DOMAIN_CONTENT_DIR = "jboss.domain.content.dir";
-    public static final String JBOSS_DOMAIN_DEPLOY_DIR = "jboss.domain.deploy.dir";
-    public static final String JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
-    public static final String JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
-    public static final String JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
+    private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
+    private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
+    private static final String JBOSS_DOMAIN_CONTENT_DIR = "jboss.domain.content.dir";
+    private static final String JBOSS_DOMAIN_DEPLOY_DIR = "jboss.domain.deploy.dir";
+    private static final String JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
+    private static final String JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
+    private static final String JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
 
     private static final String[] DOMAIN_PROPS = {
             JBOSS_DOMAIN_BASE_DIR, JBOSS_DOMAIN_CONFIG_DIR, JBOSS_DOMAIN_CONTENT_DIR, JBOSS_DOMAIN_DEPLOY_DIR,
@@ -108,13 +102,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             //
         }
 
-        serviceActivatorDeployment = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(SERVICE_ACTIVATOR_DEPLOYMENT_NAME, Collections.emptyMap());
-
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        serviceActivatorDeploymentFile = new File(tmpDir, SERVICE_ACTIVATOR_DEPLOYMENT_NAME);
-        serviceActivatorDeployment.as(ZipExporter.class).exportTo(serviceActivatorDeploymentFile, true);
-
         ExtensionUtils.createExtensionModule(BlockerExtension.MODULE_NAME, BlockerExtension.class, EmptySubsystemParser.class.getPackage());
+        ExtensionUtils.createExtensionModule(OpTypesExtension.EXTENSION_NAME, OpTypesExtension.class, EmptySubsystemParser.class.getPackage());
 
         // Silly assertion just to stop IDEs complaining about field 'out' not being used.
         assertNotNull(out);
@@ -131,6 +120,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             }
         }
         ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
+        ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
     }
 
     @Before
@@ -276,7 +266,6 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     /**
      * Test not specifying a server config works.
-     * @throws IOException
      */
     @Test
     public void testDefaultServerConfig() throws IOException {
@@ -285,7 +274,6 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     /**
      * Test the -c shorthand for specifying a domain config works.
-     * @throws IOException
      */
     @Test
     public void testDashC() throws IOException {
@@ -318,7 +306,6 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     /**
      * Tests the --help param works.
-     * @throws IOException
      */
     @Test
     public void testHelp() throws IOException {
@@ -357,8 +344,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             cli.sendLine("/system-property=" + newDomain + ":add(value=" + newDomain +")");
             assertProperty(newDomain, newDomain, false);
             // verify we've logged to the right spot at least, and directories were created
-            File f = new File(ROOT + File.separator + newDomain + File.separator + "log" + File.separator + "host-controller.log");
             // WFCORE-1187
+            //File f = new File(ROOT + File.separator + newDomain + File.separator + "log" + File.separator + "host-controller.log");
             //assertTrue(f.exists());
             //assertTrue(f.length() > 0);
 
@@ -392,7 +379,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         final String newDomain = "CLIEmbedServerTestCaseHostControllerTmp";
 
         assertFalse(cli.isConnected());
-        File newLogDir = null;
+        File newLogDir;
         try {
             // save the current value, if it has one
             currBaseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_DOMAIN_BASE_DIR, null);
@@ -412,8 +399,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             cli.sendLine(line);
             assertTrue(cli.isConnected());
             // verify we've logged to the right spot and directories were created
-            File f = new File(ROOT + File.separator + newDomain + File.separator + "newlog" + File.separator + "host-controller.log");
             // WFCORE-1187, when this overrides logging.properties correctly, we can check this
+            //File f = new File(ROOT + File.separator + newDomain + File.separator + "newlog" + File.separator + "host-controller.log");
             //assertTrue(f.exists());
             //assertTrue(f.length() > 0);
         } finally {
@@ -435,13 +422,63 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         assertState("running", TimeoutUtil.adjust(30000));
     }
 
+    @Test
+    public void testPrivateHiddenOperations() throws IOException {
+        validateServerConnectivity();
+
+        try {
+            // Setup
+            cli.sendLine("/extension=" + OpTypesExtension.EXTENSION_NAME +":add", true);
+            cli.readAllAsOpResult();
+            cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
+            cli.readAllAsOpResult();
+            cli.sendLine("/host=master/extension=" + OpTypesExtension.EXTENSION_NAME +":add", true);
+            cli.readAllAsOpResult();
+            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
+            cli.readAllAsOpResult();
+
+            cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
+            CLIOpResult result = cli.readAllAsOpResult();
+            assertTrue(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+            cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":private", true);
+            result = cli.readAllAsOpResult();
+            assertFalse(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+
+            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
+            result = cli.readAllAsOpResult();
+            assertTrue(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":private", true);
+            result = cli.readAllAsOpResult();
+            assertFalse(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+        } finally {
+            try {
+                cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":remove", true);
+                cli.readAllAsOpResult();
+            } finally {
+                try {
+                    cli.sendLine("/extension=" + OpTypesExtension.EXTENSION_NAME + ":remove", true);
+                    cli.readAllAsOpResult();
+                } finally {
+                    try {
+                        cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":remove", true);
+                        cli.readAllAsOpResult();
+                    } finally {
+                        cli.sendLine("/host=master/extension=" + OpTypesExtension.EXTENSION_NAME + ":remove", true);
+                        cli.readAllAsOpResult();
+
+                    }
+                }
+            }
+        }
+    }
+
     private void assertProperty(final String propertyName, final String expected, final boolean notPresent) throws IOException, InterruptedException {
         cli.sendLine("/system-property=" + propertyName + " :read-attribute(name=value)", true);
         CLIOpResult result = cli.readAllAsOpResult();
         ModelNode resp = result.getResponseNode();
         ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
         if (notPresent) {
-            assertTrue(stateNode.asString().indexOf("WFLYCTL0216") != -1);
+            assertTrue(stateNode.asString().contains("WFLYCTL0216"));
         } else {
             assertEquals(expected, stateNode.asString());
         }
@@ -449,7 +486,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
         long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
-        String history = "";
+        StringBuilder history = new StringBuilder();
         String state = null;
         do {
             try {
@@ -458,10 +495,10 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
                 ModelNode resp = result.getResponseNode();
                 ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
                 state = stateNode.asString();
-                history += state+"\n";
+                history.append(state).append("\n");
             } catch (Exception ignored) {
                 //
-                history += ignored.toString()+ "--" + cli.readOutput() + "\n";
+                history.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
             }
             if (expected.equals(state)) {
                 return;
@@ -469,7 +506,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
                 Thread.sleep(20);
             }
         } while (timeout > 0 && System.currentTimeMillis() < done);
-        assertEquals(history, expected, state);
+        assertEquals(history.toString(), expected, state);
     }
 
     private void checkNoLogging(String line) throws IOException {

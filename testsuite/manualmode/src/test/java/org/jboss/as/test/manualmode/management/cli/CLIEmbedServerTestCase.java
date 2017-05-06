@@ -59,6 +59,7 @@ import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
+import org.jboss.as.test.integration.management.extension.optypes.OpTypesExtension;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -95,15 +96,15 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     private static File serviceActivatorDeploymentFile;
     private static boolean uninstallStdio;
 
-    public static final String JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
-    public static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
-    public static final String JBOSS_SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
-    public static final String JBOSS_SERVER_TEMP_DIR = "jboss.server.temp.dir";
-    public static final String JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
-    public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
-    public static final String JBOSS_CONTROLLER_TEMP_DIR = "jboss.controller.temp.dir";
+    private static final String JBOSS_SERVER_BASE_DIR = "jboss.server.base.dir";
+    private static final String JBOSS_SERVER_CONFIG_DIR = "jboss.server.config.dir";
+    private static final String JBOSS_SERVER_DEPLOY_DIR = "jboss.server.deploy.dir";
+    private static final String JBOSS_SERVER_TEMP_DIR = "jboss.server.temp.dir";
+    private static final String JBOSS_SERVER_LOG_DIR = "jboss.server.log.dir";
+    private static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
+    private static final String JBOSS_CONTROLLER_TEMP_DIR = "jboss.controller.temp.dir";
 
-    public static final String[] SERVER_PROPS = {
+    private static final String[] SERVER_PROPS = {
         JBOSS_SERVER_BASE_DIR,  JBOSS_SERVER_CONFIG_DIR,  JBOSS_SERVER_DEPLOY_DIR,
         JBOSS_SERVER_TEMP_DIR,  JBOSS_SERVER_LOG_DIR, JBOSS_SERVER_DATA_DIR
     };
@@ -134,6 +135,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         serviceActivatorDeployment.as(ZipExporter.class).exportTo(serviceActivatorDeploymentFile, true);
 
         ExtensionUtils.createExtensionModule(BlockerExtension.MODULE_NAME, BlockerExtension.class, EmptySubsystemParser.class.getPackage());
+        ExtensionUtils.createExtensionModule(OpTypesExtension.EXTENSION_NAME, OpTypesExtension.class, EmptySubsystemParser.class.getPackage());
 
         // Set jboss.bind.address so the embedded server uses the expected IP address
         System.setProperty("jboss.bind.address.management", TestSuiteEnvironment.getServerAddress());
@@ -158,6 +160,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         }
 
         ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
+        ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
     }
 
     @Before
@@ -665,6 +668,34 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         assertState("running", TimeoutUtil.adjust(30000));
     }
 
+    @Test
+    public void testPrivateHiddenOperations() throws IOException {
+        validateServerConnectivity();
+
+        try {
+            // Setup
+            cli.sendLine("/extension=" + OpTypesExtension.EXTENSION_NAME +":add", true);
+            cli.readAllAsOpResult();
+            cli.sendLine("/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
+            cli.readAllAsOpResult();
+
+            cli.sendLine("/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
+            CLIOpResult result = cli.readAllAsOpResult();
+            assertTrue(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+            cli.sendLine("/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":private", true);
+            result = cli.readAllAsOpResult();
+            assertFalse(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
+        } finally {
+            try {
+                cli.sendLine("/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":remove", true);
+                cli.readAllAsOpResult();
+            } finally {
+                cli.sendLine("/extension=" + OpTypesExtension.EXTENSION_NAME +":remove", true);
+                cli.readAllAsOpResult();
+            }
+        }
+    }
+
     private void assertPath(final String path, final String expected) throws IOException, InterruptedException {
             cli.sendLine("/path=" + path + " :read-attribute(name=path)", true);
             CLIOpResult result = cli.readAllAsOpResult();
@@ -687,7 +718,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
         long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
-        String history = "";
+        StringBuilder history = new StringBuilder();
         String state = null;
         do {
             try {
@@ -696,10 +727,10 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
                 ModelNode resp = result.getResponseNode();
                 ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
                 state = stateNode.asString();
-                history += state+"\n";
+                history.append(state).append("\n");
             } catch (Exception ignored) {
                 //
-                history += ignored.toString()+ "--" + cli.readOutput() + "\n";
+                history.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
             }
             if (expected.equals(state)) {
                 return;
@@ -707,7 +738,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
                 Thread.sleep(20);
             }
         } while (timeout > 0 && System.currentTimeMillis() < done);
-        assertEquals(history, expected, state);
+        assertEquals(history.toString(), expected, state);
     }
 
     private void checkNoLogging(String line) throws IOException {
@@ -800,7 +831,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
                     assertPath(propName, ROOT + File.separator + newStandalone + File.separator + value);
                 } else {
                     // just make sure the unchanged property has the default basedir
-                    assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").indexOf(currBaseDir) != -1);
+                    assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").contains(currBaseDir));
                 }
             }
         } finally {

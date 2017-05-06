@@ -125,7 +125,7 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     @Override
     public DescriptionProvider getDescriptionProvider() {
-        if (entryType == OperationEntry.EntryType.PRIVATE) {
+        if (entryType == OperationEntry.EntryType.PRIVATE || flags.contains(OperationEntry.Flag.HIDDEN)) {
             return PRIVATE_PROVIDER;
         }
         if (descriptionProvider !=null) {

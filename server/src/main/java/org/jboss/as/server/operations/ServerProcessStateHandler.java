@@ -27,6 +27,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
 
@@ -41,11 +42,11 @@ public class ServerProcessStateHandler implements OperationStepHandler {
     public static final String REQUIRE_RESTART_OPERATION = "server-set-restart-required";
 
     public static final SimpleOperationDefinition RELOAD_DEFINITION = new SimpleOperationDefinitionBuilder(REQUIRE_RELOAD_OPERATION, ServerDescriptions.getResourceDescriptionResolver())
-            .setPrivateEntry()
+            .withFlag(OperationEntry.Flag.HIDDEN)
             .build();
 
     public static final SimpleOperationDefinition RESTART_DEFINITION = new SimpleOperationDefinitionBuilder(REQUIRE_RESTART_OPERATION, ServerDescriptions.getResourceDescriptionResolver())
-            .setPrivateEntry()
+            .withFlag(OperationEntry.Flag.HIDDEN)
             .build();
 
     public static final OperationStepHandler SET_RELOAD_REQUIRED_HANDLER = new ServerProcessStateHandler(true);

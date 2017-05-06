@@ -23,22 +23,15 @@
 package org.jboss.as.host.controller.resources;
 
 import org.jboss.as.controller.CompositeOperationHandler;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.operations.LaunchTypeHandler;
-import org.jboss.dmr.ModelNode;
 
 /**
  * {@code ResourceDescription} describing a stopped server instance.
@@ -49,33 +42,20 @@ public class StoppedServerResource extends SimpleResourceDefinition {
 
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
 
-    private static final OperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.RELOAD, HostResolver.getResolver("host.server"))
-            .setPrivateEntry()
-            .build();
-
-    private final ServerInventory serverInventory;
-    public StoppedServerResource(final ServerInventory serverInventory) {
+    public StoppedServerResource() {
         super(SERVER, HostResolver.getResolver(ModelDescriptionConstants.RUNNING_SERVER, false));
-        this.serverInventory = serverInventory;
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
-        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                // note this is inconsistent with the other values, should be lower case, preserved for now.
-                context.getResult().set("STOPPED");
-            }
+        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, (context, operation) -> {
+            // note this is inconsistent with the other values, should be lower case, preserved for now.
+            context.getResult().set("STOPPED");
         });
-        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNTIME_CONFIGURATION_STATE, new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                context.getResult().set(ClientConstants.CONTROLLER_PROCESS_STATE_STOPPED);
-            }
-        });
+        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNTIME_CONFIGURATION_STATE,
+                (context, operation) -> context.getResult().set(ClientConstants.CONTROLLER_PROCESS_STATE_STOPPED));
     }
 
     @Override

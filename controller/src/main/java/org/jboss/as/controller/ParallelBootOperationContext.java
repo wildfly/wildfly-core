@@ -68,7 +68,7 @@ class ParallelBootOperationContext extends AbstractOperationContext {
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger,
                                  final Resource model, final OperationStepHandler extraValidationStepHandler, final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
-                controller.getNotificationSupport(), controller, true, extraValidationStepHandler, securityIdentitySupplier);
+                controller.getNotificationSupport(), controller, true, extraValidationStepHandler, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
         this.runtimeOps = runtimeOps;
         AbstractOperationContext.controllingThread.set(controllingThread);

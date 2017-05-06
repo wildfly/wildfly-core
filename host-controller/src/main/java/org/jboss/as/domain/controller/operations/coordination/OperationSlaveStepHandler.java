@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_RESULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -29,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 
 import java.util.Map;
 
@@ -154,9 +156,15 @@ class OperationSlaveStepHandler {
      */
     private void addBasicStep(OperationContext context, ModelNode operation, ModelNode localReponse) throws OperationFailedException {
         final String operationName = operation.require(OP).asString();
-
-        final OperationEntry entry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
-        if(entry != null) {
+        final PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final OperationEntry entry = context.getRootResourceRegistration().getOperationEntry(pathAddress, operationName);
+        if (entry != null) {
+            if (!context.isBooting()
+                    && entry.getType() == OperationEntry.EntryType.PRIVATE
+                    && operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE)
+                    && USER.equals(operation.get(OPERATION_HEADERS, CALLER_TYPE).asString())) {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
+            }
             if (context.isBooting() || localHostControllerInfo.isMasterDomainController()) {
                 context.addModelStep(localReponse, operation, entry.getOperationDefinition(), entry.getOperationHandler(), false);
             } else {
@@ -172,7 +180,7 @@ class OperationSlaveStepHandler {
                 context.addModelStep(localReponse, operation, entry.getOperationDefinition(), wrapper, false);
             }
         } else {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, PathAddress.pathAddress(operation.get(OP_ADDR))));
+            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
         }
     }
 

@@ -50,7 +50,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING_LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -102,7 +101,6 @@ import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -123,7 +121,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
 
-    static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
+    private static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
 
     /** Thread that initiated execution of the overall operation for which this context is the whole or a part */
     final Thread initiatingThread;
@@ -131,6 +129,7 @@ abstract class AbstractOperationContext implements OperationContext {
     private final ModelController.OperationTransactionControl transactionControl;
     final ControlledProcessState processState;
     final NotificationSupport notificationSupport;
+    final OperationHeaders operationHeaders;
     private final boolean booting;
     private final ProcessType processType;
     private final RunningMode runningMode;
@@ -193,7 +192,8 @@ abstract class AbstractOperationContext implements OperationContext {
         ROLLBACK_ON_FAIL, ALLOW_RESOURCE_SERVICE_RESTART,
     }
 
-    AbstractOperationContext(final ProcessType processType, final RunningMode runningMode,
+    AbstractOperationContext(final ProcessType processType,
+                             final RunningMode runningMode,
                              final ModelController.OperationTransactionControl transactionControl,
                              final ControlledProcessState processState,
                              final boolean booting,
@@ -202,6 +202,7 @@ abstract class AbstractOperationContext implements OperationContext {
                              final ModelControllerImpl controller,
                              final boolean skipModelValidation,
                              final OperationStepHandler extraValidationStepHandler,
+                             final OperationHeaders operationHeaders,
                              final Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.processType = processType;
         this.runningMode = runningMode;
@@ -227,6 +228,7 @@ abstract class AbstractOperationContext implements OperationContext {
         this.callEnvironment = new Environment(processState, processType);
         modifiedResourcesForModelValidation = skipModelValidation == false ?  new HashSet<PathAddress>() : null;
         this.extraValidationStepHandler = extraValidationStepHandler;
+        this.operationHeaders = operationHeaders == null ? OperationHeaders.forInternalCall() : operationHeaders;
         this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
@@ -368,18 +370,18 @@ abstract class AbstractOperationContext implements OperationContext {
 
     @Override
     public void addResponseWarning(final Level level,final  ModelNode warning) {
-        if(!isWarningLoggable(level, activeStep.operation.get(OPERATION_HEADERS))){
+        if(!isWarningLoggable(level)){
             return;
         }
         createWarning(level, warning);
     }
 
-    protected void createWarning(final Level level, final String warning){
+    private void createWarning(final Level level, final String warning){
         final ModelNode modelNodeWarning = new ModelNode(warning);
         createWarning(level,modelNodeWarning);
     }
 
-    protected void createWarning(final Level level, final ModelNode warning){
+    private void createWarning(final Level level, final ModelNode warning){
         final ModelNode responseHeaders = getResponseHeaders();
         final ModelNode warnings = responseHeaders.get(WARNINGS);
         final ModelNode warningEntry = warnings.add();
@@ -393,23 +395,20 @@ abstract class AbstractOperationContext implements OperationContext {
         }
     }
 
-    protected boolean isWarningLoggable(final Level level, final ModelNode operationHeaders){
-        Level thresholdLevel = null;
-        if(operationHeaders.has(WARNING_LEVEL)){
-            try{
-                thresholdLevel = Level.parse(operationHeaders.get(WARNING_LEVEL).asString());
-            }catch(Exception e){
-                createWarning(Level.ALL, ControllerLogger.ROOT_LOGGER.couldntConvertWarningLevel(operationHeaders.get(WARNING_LEVEL).asString()));
+    private boolean isWarningLoggable(final Level level){
+        Level thresholdLevel;
+        String headerLevel = operationHeaders.getWarningLevel();
+        if (headerLevel != null) {
+            try {
+                thresholdLevel = Level.parse(headerLevel);
+            } catch(Exception e) {
+                createWarning(Level.ALL, ControllerLogger.ROOT_LOGGER.couldntConvertWarningLevel(headerLevel));
                 thresholdLevel = Level.ALL;
             }
         } else {
             thresholdLevel = WARNING_DEFAULT_LEVEL;
         }
-        if(thresholdLevel.intValue() <= level.intValue()){
-            return true;
-        } else {
-            return false;
-        }
+        return thresholdLevel.intValue() <= level.intValue();
     }
 
     @Override

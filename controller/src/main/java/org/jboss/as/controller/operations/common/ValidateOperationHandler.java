@@ -49,6 +49,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.OperationValidator;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -72,11 +73,11 @@ public class ValidateOperationHandler implements OperationStepHandler {
             .setRuntimeOnly()
             .build();
 
-    public static final OperationDefinition DEFINITION_PRIVATE = new SimpleOperationDefinitionBuilder(VALIDATE_OPERATION, ControllerResolver.getResolver("global"))
+    public static final OperationDefinition DEFINITION_HIDDEN = new SimpleOperationDefinitionBuilder(VALIDATE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(VALUE)
             .setReadOnly()
             .setRuntimeOnly()
-            .setPrivateEntry()
+            .withFlags(OperationEntry.Flag.HIDDEN) // can't be private, because the proxyReg != null case in execute results in a caller-type=user op being executed for this
             .build();
 
 
