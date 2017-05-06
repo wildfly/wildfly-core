@@ -76,6 +76,8 @@
     <!-- Global testsuite system properties defaults. -->
 
     <properties>
+
+	<version.org.wildfly.plugin>1.2.0.Alpha4</version.org.wildfly.plugin>
         <!-- Current module's directory. Will automatically pick up sub-module's basedir. -->
         <jbossas.ts.submodule.dir>${basedir}</jbossas.ts.submodule.dir>
         <!-- Integration module's directory. To be overriden in sub-modules. -->
