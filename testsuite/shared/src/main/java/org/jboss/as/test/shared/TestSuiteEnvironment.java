@@ -1,13 +1,13 @@
 package org.jboss.as.test.shared;
 
-import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.wildfly.test.api.Authentication;
 
 /**
@@ -20,15 +20,28 @@ import org.wildfly.test.api.Authentication;
 public class TestSuiteEnvironment {
 
     public static ModelControllerClient getModelControllerClient() {
-        try {
-            return ModelControllerClient.Factory.create(
-                    InetAddress.getByName(getServerAddress()),
-                    TestSuiteEnvironment.getServerPort(),
-                    Authentication.getCallbackHandler()
-                    );
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+        return getModelControllerClient(null);
+    }
+
+    /**
+     * Creates a client based on the {@linkplain #getServerAddress() server address} and
+     * {@linkplain #getServerPort() port}. If the {@code authConfigUri} is not {@code null} the it will be used to
+     * authenticate the client.
+     *
+     * @param authConfigUri the path too the authentication configuration or {@code null}
+     *
+     * @return the client
+     */
+    public static ModelControllerClient getModelControllerClient(final URI authConfigUri) {
+        final ModelControllerClientConfiguration.Builder builder = new ModelControllerClientConfiguration.Builder()
+                .setHostName(getServerAddress())
+                .setPort(getServerPort());
+        if (authConfigUri == null) {
+            builder.setHandler(Authentication.getCallbackHandler());
+        } else {
+            builder.setAuthenticationConfigUri(authConfigUri);
         }
+        return ModelControllerClient.Factory.create(builder.build());
     }
 
     public static String getJavaPath() {
@@ -40,6 +53,26 @@ public class TestSuiteEnvironment {
             return home + java.io.File.separator + "bin" + java.io.File.separator + "java";
         }
         return "java";
+    }
+
+    /**
+     * Returns the JBoss home directory or {@code null} if it could not be found.
+     * <p>
+     * The following is the order the directory is resolved:
+     * <ol>
+     *     <li>The {@code jboss.dist} system property is checked</li>
+     *     <li>The {@code jboss.home} system property is checked</li>
+     *     <li>The {@code JBOSS_HOME} environment variable is checked</li>
+     * </ol>
+     * </p>
+     * @return the JBoss home directory or {@code null} if it could not be resolved
+     */
+    public static String getJBossHome() {
+        String jbossHome = getSystemProperty("jboss.dist");
+        if (jbossHome == null) {
+            jbossHome = getSystemProperty("jboss.home");
+        }
+        return jbossHome == null ? System.getenv("JBOSS_HOME") : jbossHome;
     }
 
     public static String getSystemProperty(String name, String def) {

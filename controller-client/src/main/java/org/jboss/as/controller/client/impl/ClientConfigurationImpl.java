@@ -26,6 +26,7 @@ import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -46,8 +47,9 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
     private final String protocol;
     private final boolean shutdownExecutor;
     private final int connectionTimeout;
+    private final URI authConfigUri;
 
-    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol, String clientBindAddress) {
+    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol, String clientBindAddress, final URI authConfigUri) {
         this.address = address;
         this.port = port;
         this.handler = handler;
@@ -58,6 +60,7 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
         this.protocol = protocol;
         this.clientBindAddress = clientBindAddress;
         this.connectionTimeout = connectionTimeout > 0 ? connectionTimeout : DEFAULT_CONNECTION_TIMEOUT;
+        this.authConfigUri = authConfigUri;
     }
 
     @Override
@@ -111,5 +114,10 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
     @Override
     public String getClientBindAddress() {
         return clientBindAddress;
+    }
+
+    @Override
+    public URI getAuthenticationConfigUri() {
+        return authConfigUri;
     }
 }

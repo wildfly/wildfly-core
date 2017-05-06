@@ -71,6 +71,14 @@
             <groupId>org.jboss.threads</groupId>
             <artifactId>jboss-threads</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.common</groupId>
+            <artifactId>wildfly-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
+        </dependency>
 
         <!-- Test Dependencies -->
         <dependency>

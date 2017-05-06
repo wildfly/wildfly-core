@@ -30,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 import java.io.Closeable;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -111,6 +112,16 @@ public interface ModelControllerClientConfiguration extends Closeable {
      */
     String getClientBindAddress();
 
+    /**
+     * Specifies the URI for the authentication configuration.
+     *
+     * @return the location to the authentication configuration file or {@code null} to use auto
+     * discovery
+     */
+    default URI getAuthenticationConfigUri() {
+        return null;
+    }
+
     class Builder {
         private String hostName;
         private String clientBindAddress;
@@ -120,6 +131,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
         private SSLContext sslContext;
         private String protocol;
         private int connectionTimeout = 0;
+        private URI authConfigUri;
 
         public Builder() {
         }
@@ -211,13 +223,24 @@ public interface ModelControllerClientConfiguration extends Closeable {
         }
 
         /**
+         * Set the location of the authentication configuration file.
+         * @param authConfigUri the location to the authentication configuration file or {@code null} to use auto
+         *                      discovery
+         * @return a builder to allow continued configuration
+         */
+        public Builder setAuthenticationConfigUri(final URI authConfigUri) {
+            this.authConfigUri = authConfigUri;
+            return this;
+        }
+
+        /**
          * Builds the configuration object based on this builder's settings.
          *
          * @return the configuration
          */
         public ModelControllerClientConfiguration build() {
            return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContext,
-                   Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress);
+                   Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress, authConfigUri);
         }
 
     }
