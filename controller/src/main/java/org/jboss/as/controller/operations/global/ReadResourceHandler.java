@@ -277,17 +277,19 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     PathAddress relativeAddr = PathAddress.pathAddress(childPE);
 
                     if (recursive) {
+                        boolean getChild = false;
                         ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
-                        if (childReg == null) {
-                            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noChildRegistry(childType, child));
-                        }
-                        // Decide if we want to invoke on this child resource
-                        boolean proxy = childReg.isRemote();
-                        boolean runtimeResource = childReg.isRuntimeOnly();
-                        boolean getChild = !runtimeResource || (queryRuntime && !proxy) || (proxies && proxy);
-                        if (!aliases && childReg.isAlias()) {
-                            nonExistentChildTypes.remove(childType);
-                            getChild = false;
+                        if (childReg != null) {
+                            // Decide if we want to invoke on this child resource
+                            boolean proxy = childReg.isRemote();
+                            boolean runtimeResource = childReg.isRuntimeOnly();
+                            getChild = !runtimeResource || (queryRuntime && !proxy) || (proxies && proxy);
+                            if (!aliases && childReg.isAlias()) {
+                                nonExistentChildTypes.remove(childType);
+                                getChild = false;
+                            }
+                        } else {
+                            ControllerLogger.MGMT_OP_LOGGER.tracef("ManagementResourceRegistration for address %s has been removed", absoluteChildAddr);
                         }
                         if (getChild) {
                             nonExistentChildTypes.remove(childType);
