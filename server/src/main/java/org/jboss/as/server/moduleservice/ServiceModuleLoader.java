@@ -98,10 +98,10 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
                 case STOP_REQUESTED_to_STOPPING: {
                     log.tracef("serviceStopping: %s", controller);
                     ModuleSpec moduleSpec = this.moduleSpec;
-                    ModuleIdentifier identifier = moduleSpec.getModuleIdentifier();
+                    String identifier = moduleSpec.getName();
                     Module module = findLoadedModuleLocal(identifier);
                     if(module != null)
-                        unloadModuleLocal(module);
+                        unloadModuleLocal(identifier, module);
                     // TODO: what if the service is restarted?
                     controller.removeListener(this);
                     break;
