@@ -26,6 +26,7 @@ import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
@@ -654,6 +655,22 @@ public class ManagementHttpServer {
 
             next.handleRequest(exchange);
         }
+    }
+
+    public SocketAddress getLocalAddress() {
+        return normalServer.getLocalAddress();
+    }
+
+    public <A extends SocketAddress> A getLocalAddress(Class<A> type) {
+        return normalServer.getLocalAddress(type);
+    }
+
+    public SocketAddress getSecureLocalAddress() {
+        return secureServer.getLocalAddress();
+    }
+
+    public <A extends SocketAddress> A getSecureLocalAddress(Class<A> type) {
+        return secureServer.getLocalAddress(type);
     }
 
 }
