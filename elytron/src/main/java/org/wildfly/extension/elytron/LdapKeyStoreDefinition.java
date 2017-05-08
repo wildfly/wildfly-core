@@ -241,20 +241,6 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                 }
             }
         });
-
-    }
-
-    @Override
-    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-        // Create Key Pair / Certificate (Is this a special op or on a resource?)
-        // Create CSR
-        // Import certificate
-    }
-
-    @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new KeyStoreAliasDefinition(LDAP_KEY_STORE_UTIL));
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {
@@ -330,21 +316,8 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             ServiceName dirContextServiceName = context.getCapabilityServiceName(dirContextCapability, DirContextSupplier.class);
             serviceBuilder.addDependency(dirContextServiceName, DirContextSupplier.class, keyStoreService.getDirContextSupplierInjector());
 
-            commonDependencies(serviceBuilder);
-            ServiceController<KeyStore> serviceController = serviceBuilder.install();
-
-            assert resource instanceof KeyStoreResource;
-            ((KeyStoreResource)resource).setKeyStoreServiceController(serviceController);
+            commonDependencies(serviceBuilder).install();
         }
-
-        @Override
-        protected Resource createResource(OperationContext context) {
-            KeyStoreResource resource = new KeyStoreResource(Resource.Factory.create());
-            context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-
-            return resource;
-        }
-
     }
 
     private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {

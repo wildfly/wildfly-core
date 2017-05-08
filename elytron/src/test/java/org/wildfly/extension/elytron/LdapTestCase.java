@@ -219,8 +219,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
     private void testLdapKeyStoreCli(String keystoreName, String alias) throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_CHILDREN_NAMES_OPERATION);
-        operation.get(ClientConstants.CHILD_TYPE).set(ElytronDescriptionConstants.ALIAS);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
         Assert.assertEquals(1, nodes.size());
         Assert.assertEquals(alias, nodes.get(0).asString());
@@ -238,30 +237,18 @@ public class LdapTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(1, assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asInt());
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName).add("alias", alias);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.CREATION_DATE);
-        Assert.assertNotNull(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
 
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName).add("alias", alias);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.ENTRY_TYPE);
-        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+        ModelNode aliasNode = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
+        Assert.assertNotNull(aliasNode.get(ElytronDescriptionConstants.CREATION_DATE).asString());
+        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), aliasNode.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+        Assert.assertFalse(aliasNode.get(ElytronDescriptionConstants.CERTIFICATE).isDefined()); // chain defined, certificate should be blank
 
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName).add("alias", alias);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.CERTIFICATE);
-        Assert.assertFalse(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).isDefined()); // chain defined, certificate should be blank
-
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName).add("alias", alias);
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.CERTIFICATE_CHAIN);
-        ModelNode result = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
-        Assert.assertEquals("OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", result.asList().get(0).get(ElytronDescriptionConstants.SUBJECT).asString());
-        Assert.assertEquals("O=Root Certificate Authority,1.2.840.113549.1.9.1=#1613656c7974726f6e4077696c64666c792e6f7267,C=UK,ST=Elytron,CN=Elytron CA", result.asList().get(1).get(ElytronDescriptionConstants.SUBJECT).asString());
+        List<ModelNode> chain = aliasNode.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN).asList();
+        Assert.assertEquals("OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", chain.get(0).get(ElytronDescriptionConstants.SUBJECT).asString());
+        Assert.assertEquals("O=Root Certificate Authority,1.2.840.113549.1.9.1=#1613656c7974726f6e4077696c64666c792e6f7267,C=UK,ST=Elytron,CN=Elytron CA", chain.get(1).get(ElytronDescriptionConstants.SUBJECT).asString());
     }
 
     @Test
@@ -287,8 +274,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
         ModelNode operation = new ModelNode(); // check count of copies through subsystem
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_CHILDREN_NAMES_OPERATION);
-        operation.get(ClientConstants.CHILD_TYPE).set(ElytronDescriptionConstants.ALIAS);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         Assert.assertEquals(3, assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList().size());
 
         keyStore.deleteEntry("serenity1"); // remove through keystore operation
@@ -296,8 +282,9 @@ public class LdapTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(2, keyStore.size());
 
         operation = new ModelNode(); // remove through subsystem operation
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal").add("alias", "serenity2");
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.REMOVE_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("serenity2");
         assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
         Assert.assertNull(keyStore.getKey("serenity2", "password2".toCharArray()));
         Assert.assertEquals(1, keyStore.size());

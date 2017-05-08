@@ -206,9 +206,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SaslServerDefinitions.getServiceLoaderSaslServerFactoryDefinition());
 
         // TLS Building Blocks
-        resourceRegistration.registerSubModel(new KeyStoreDefinition());
-        resourceRegistration.registerSubModel(new LdapKeyStoreDefinition());
-        resourceRegistration.registerSubModel(new FilteringKeyStoreDefinition());
+        resourceRegistration.registerSubModel(ModifiableKeyStoreDecorator.wrap(new KeyStoreDefinition()));
+        resourceRegistration.registerSubModel(ModifiableKeyStoreDecorator.wrap(new LdapKeyStoreDefinition()));
+        resourceRegistration.registerSubModel(ModifiableKeyStoreDecorator.wrap(new FilteringKeyStoreDefinition()));
         resourceRegistration.registerSubModel(SSLDefinitions.getKeyManagerDefinition());
         resourceRegistration.registerSubModel(SSLDefinitions.getTrustManagerDefinition());
         resourceRegistration.registerSubModel(SSLDefinitions.getServerSSLContextDefinition());

@@ -10,5 +10,20 @@
         <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
         <rotating-file-audit-log name="rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d"/>
         <syslog-audit-log name="remote-syslog" server-address="remote-server" port="9898" transport="UDP" format="JSON" host-name="Elytron" />
+        <syslog-audit-log name="remote-syslog-ssl" server-address="remote-server" port="9898" transport="SSL_TCP" host-name="Elytron" ssl-context="audit-ssl" />
     </audit-logging>
+    <tls>
+        <key-stores>
+            <key-store name="truststore" type="JKS">
+                <file path="ca.truststore" relative-to="jboss.server.config.dir"/>
+                <credential-reference clear-text="Elytron"/>
+            </key-store>
+        </key-stores>
+        <trust-managers>
+            <trust-manager name="trustmanager" algorithm="SunX509" key-store="truststore"/>
+        </trust-managers>
+        <client-ssl-contexts>
+            <client-ssl-context name="audit-ssl" trust-managers="trustmanager" />
+        </client-ssl-contexts>
+    </tls>
 </subsystem>
