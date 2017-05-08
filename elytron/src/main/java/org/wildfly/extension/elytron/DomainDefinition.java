@@ -44,10 +44,12 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -57,7 +59,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -197,7 +198,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER };
 
     private static final DomainAddHandler ADD = new DomainAddHandler();
-    private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_DOMAIN_RUNTIME_CAPABILITY);
+    private static final OperationStepHandler REMOVE = new DomainRemoveHandler(ADD);
     private static final WriteAttributeHandler WRITE = new WriteAttributeHandler(ElytronDescriptionConstants.SECURITY_DOMAIN);
 
     DomainDefinition() {
@@ -476,6 +477,23 @@ class DomainDefinition extends SimpleResourceDefinition {
             installService(context, domainName, model);
         }
 
+    }
+
+    private static class DomainRemoveHandler extends TrivialCapabilityServiceRemoveHandler {
+
+        DomainRemoveHandler(AbstractAddStepHandler addHandler) {
+            super(addHandler, SECURITY_DOMAIN_RUNTIME_CAPABILITY);
+        }
+
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
+            super.performRuntime(context, operation, model);
+            if (context.isResourceServiceRestartAllowed()) {
+                final PathAddress address = context.getCurrentAddress();
+                final String name = address.getLastElement().getValue();
+                context.removeService(serviceName(name, address).append(INITIAL));
+            }
+        }
     }
 
     private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
