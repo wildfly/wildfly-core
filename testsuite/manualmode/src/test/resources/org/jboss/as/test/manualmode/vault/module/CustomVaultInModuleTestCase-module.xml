@@ -24,5 +24,6 @@
     <module name="org.jboss.staxmapper"/>
     <module name="org.picketbox"/>
     <module name="javax.xml.stream.api"/>
+    <module name="sun.jdk"/>
   </dependencies>
 </module>
