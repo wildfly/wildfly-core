@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.helpers.ContextualModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.ServerIdentity;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -61,7 +63,10 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
+import org.wildfly.client.config.ConfigXMLParseException;
 import org.wildfly.core.launcher.DomainCommandBuilder;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.ElytronXmlParser;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
@@ -429,11 +434,30 @@ public class DomainLifecycleUtil {
      * @return the domain client
      */
     public DomainClient createDomainClient() {
+        return createDomainClient(null);
+    }
+
+    /**
+     * Create a new model controller client. The client can (and should) be closed without affecting other usages.
+     *
+     * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
+     *
+     * @return the domain client
+     */
+    public DomainClient createDomainClient(final URI authConfigUri) {
         final DomainTestConnection connection = this.connection;
         if(connection == null) {
             throw new IllegalStateException();
         }
-        return DomainClient.Factory.create(connection.createClient());
+        if (authConfigUri == null) {
+            return DomainClient.Factory.create(connection.createClient());
+        }
+        try {
+            final AuthenticationContext context = ElytronXmlParser.parseAuthenticationClientConfiguration(authConfigUri).create();
+            return DomainClient.Factory.create(new ContextualModelControllerClient(connection.createClient(), context));
+        } catch (GeneralSecurityException | ConfigXMLParseException e) {
+            throw new RuntimeException("Failed to parse authentication configuration: " + authConfigUri, e);
+        }
     }
 
     /**
@@ -442,7 +466,26 @@ public class DomainLifecycleUtil {
      * @return the domain client
      */
     public synchronized DomainClient getDomainClient() {
-        return DomainClient.Factory.create(internalGetOrCreateClient());
+        return getDomainClient(null);
+    }
+
+    /**
+     * Get a shared domain client.
+     *
+     * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
+     *
+     * @return the domain client
+     */
+    public synchronized DomainClient getDomainClient(final URI authConfigUri) {
+        if (authConfigUri == null) {
+            return DomainClient.Factory.create(internalGetOrCreateClient());
+        }
+        try {
+            final AuthenticationContext context = ElytronXmlParser.parseAuthenticationClientConfiguration(authConfigUri).create();
+            return DomainClient.Factory.create(new ContextualModelControllerClient(internalGetOrCreateClient(), context));
+        } catch (GeneralSecurityException | ConfigXMLParseException e) {
+            throw new RuntimeException("Failed to parse authentication configuration: " + authConfigUri, e);
+        }
     }
 
     /** Wait for all auto-start servers for the host to reach {@link ControlledProcessState.State#RUNNING} */

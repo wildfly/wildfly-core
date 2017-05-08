@@ -22,7 +22,10 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -95,7 +98,9 @@ public class CompositeOperationHandler implements OperationStepHandler {
         }
 
         boolean adjustStepAddresses = context.getCurrentAddress().size() > 0;
-        MultistepUtil.recordOperationSteps(context, operationMap, addedResponses, getOperationHandlerResolver(), adjustStepAddresses);
+        boolean rejectPrivateSteps = operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE) && USER.equals(operation.get(OPERATION_HEADERS, CALLER_TYPE).asString());
+        MultistepUtil.recordOperationSteps(context, operationMap, addedResponses,
+                getOperationHandlerResolver(), adjustStepAddresses, rejectPrivateSteps);
 
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override

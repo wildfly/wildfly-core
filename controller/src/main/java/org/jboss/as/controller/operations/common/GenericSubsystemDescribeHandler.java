@@ -49,6 +49,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -66,7 +67,7 @@ public class GenericSubsystemDescribeHandler implements OperationStepHandler, De
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.OBJECT)
-            .setPrivateEntry()
+            .withFlag(OperationEntry.Flag.HIDDEN)
             .build();
 
     public static final Set<Action.ActionEffect> DESCRIBE_EFFECTS =

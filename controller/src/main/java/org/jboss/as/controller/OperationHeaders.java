@@ -16,18 +16,22 @@ limitations under the License.
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING_LEVEL;
 
 import java.util.EnumSet;
 
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -54,11 +58,24 @@ final class OperationHeaders {
             .setRequired(false)
             .build();
 
+    private static final OperationHeaders INTERNAL = new OperationHeaders(EnumSet.noneOf(OperationContextImpl.ContextFlag.class), null, null, null, null);
+
+    /**
+     * Gets a headers object for use by internal calls where the caller knows there will be none of the
+     * headers tracked by this class present.
+     * @return a headers object
+     */
+    static OperationHeaders forInternalCall() {
+        return INTERNAL;
+    }
+
     static OperationHeaders fromOperation(ModelNode operation) throws OperationFailedException {
 
         final EnumSet<OperationContextImpl.ContextFlag> contextFlags;
         Integer blockingTimeout = null;
-
+        String warningLevel = null;
+        String domainUUID = null;
+        AccessMechanism accessMechanism = null;
         if (operation.hasDefined(OPERATION_HEADERS)) {
             final ModelNode headers = operation.get(OPERATION_HEADERS).clone();
 
@@ -80,18 +97,21 @@ final class OperationHeaders {
                 }
             }
 
+            warningLevel = headers.hasDefined(WARNING_LEVEL) ? headers.get(WARNING_LEVEL).asString() : null;
+            domainUUID = headers.hasDefined(DOMAIN_UUID) ? headers.get(DOMAIN_UUID).asString() : null;
+            accessMechanism = headers.hasDefined(ACCESS_MECHANISM) ? AccessMechanism.valueOf(headers.get(ACCESS_MECHANISM).asString()) : null;
         } else {
             contextFlags = EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL);
         }
 
-        return new OperationHeaders(contextFlags, blockingTimeout);
+        return new OperationHeaders(contextFlags, blockingTimeout, warningLevel, domainUUID, accessMechanism);
     }
 
     static OperationHeaders forBoot(boolean rollbackOnRuntimeFailure) {
         EnumSet<OperationContextImpl.ContextFlag> contextFlags = rollbackOnRuntimeFailure
                 ? EnumSet.of(AbstractOperationContext.ContextFlag.ROLLBACK_ON_FAIL)
                 : EnumSet.noneOf(OperationContextImpl.ContextFlag.class);
-        return new OperationHeaders(contextFlags, null);
+        return new OperationHeaders(contextFlags, null, null, null, null);
     }
 
     static OperationResponse fromFailure(OperationFailedException ofe) {
@@ -103,10 +123,17 @@ final class OperationHeaders {
 
     private final EnumSet<AbstractOperationContext.ContextFlag> contextFlags;
     private final Integer blockingTimeout;
+    private final String warningLevel;
+    private final String domainUUID;
+    private final AccessMechanism accessMechanism;
 
-    private OperationHeaders(EnumSet<AbstractOperationContext.ContextFlag> contextFlags, Integer blockingTimeout) {
+    private OperationHeaders(EnumSet<AbstractOperationContext.ContextFlag> contextFlags, Integer blockingTimeout,
+                             String warningLevel, String domainUUID, AccessMechanism accessMechanism) {
         this.contextFlags = contextFlags;
         this.blockingTimeout = blockingTimeout;
+        this.warningLevel = warningLevel;
+        this.domainUUID = domainUUID;
+        this.accessMechanism = accessMechanism;
     }
 
     EnumSet<AbstractOperationContext.ContextFlag> getContextFlags() {
@@ -115,5 +142,17 @@ final class OperationHeaders {
 
     Integer getBlockingTimeout() {
         return blockingTimeout;
+    }
+
+    String getWarningLevel() {
+        return warningLevel;
+    }
+
+    String getDomainUUID() {
+        return domainUUID;
+    }
+
+    AccessMechanism getAccessMechanism() {
+        return  accessMechanism;
     }
 }

@@ -122,7 +122,7 @@ public class OperationValidator {
             throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.noOperationEntry(name, address));
         }
         //noinspection ConstantConditions
-        if (entry.getType() == EntryType.PRIVATE) {
+        if (entry.getType() == EntryType.PRIVATE || entry.getFlags().contains(OperationEntry.Flag.HIDDEN)) {
             return;
         }
         if (entry.getOperationHandler() == null) {

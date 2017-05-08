@@ -16,8 +16,14 @@ limitations under the License.
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
@@ -57,14 +63,14 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
 
     @Override
     public LocalModelControllerClient createClient(Executor executor) {
-        return createLocalClient(executor);
+        return createLocalClient(executor, true);
     }
 
     @Override
-    public LocalModelControllerClient createSuperUserClient(Executor executor) {
+    public LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls) {
         // Wrap a standard LocalClient returned for non-SuperUser calls with
         // one that provides superuser privileges
-        final LocalClient delegate = createLocalClient(executor);
+        final LocalClient delegate = createLocalClient(executor, forUserCalls);
         return new LocalModelControllerClient() {
             @Override
             public OperationResponse executeOperation(final Operation operation, final OperationMessageHandler messageHandler) {
@@ -88,13 +94,13 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         };
     }
 
-    private LocalClient createLocalClient(Executor executor) {
+    private LocalClient createLocalClient(Executor executor, boolean forUserCalls) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(ModelController.ACCESS_PERMISSION);
         }
 
-        return new LocalClient(modelController, securityIdentitySupplier, executor);
+        return new LocalClient(modelController, securityIdentitySupplier, executor, forUserCalls);
     }
 
     /**
@@ -105,11 +111,13 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         private final ModelController modelController;
         private final Supplier<SecurityIdentity> securityIdentitySupplier;
         private final Executor executor;
+        private final boolean forUserCalls;
 
-        private LocalClient(ModelController modelController, Supplier<SecurityIdentity> securityIdentitySupplier, Executor executor) {
+        private LocalClient(ModelController modelController, Supplier<SecurityIdentity> securityIdentitySupplier, Executor executor, boolean forUserCalls) {
             this.modelController = modelController;
             this.securityIdentitySupplier = securityIdentitySupplier;
             this.executor = executor;
+            this.forUserCalls = forUserCalls;
         }
 
         @Override
@@ -119,7 +127,8 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
 
         @Override
         public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
-            return modelController.execute(operation, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+            Operation toExecute = sanitizeOperation(operation);
+            return modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
         }
 
         @Override
@@ -132,15 +141,16 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             return executeAsync(operation.getOperation(), messageHandler, operation, ResponseConverter.TO_OPERATION_RESPONSE);
         }
 
-        private <T> AsyncFuture<T> executeAsync(final ModelNode operation, final OperationMessageHandler messageHandler,
+        private <T> AsyncFuture<T> executeAsync(final ModelNode op, final OperationMessageHandler messageHandler,
                                                 final OperationAttachments attachments,
                                                 final ResponseConverter<T> responseConverter) {
             if (executor == null) {
                 throw ControllerLogger.ROOT_LOGGER.nullAsynchronousExecutor();
             }
 
-            final AtomicReference<Thread> opThread = new AtomicReference<Thread>();
-            final ResponseFuture<T> responseFuture = new ResponseFuture<T>(opThread, responseConverter, executor);
+            final ModelNode operation = sanitizeOperation(op);
+            final AtomicReference<Thread> opThread = new AtomicReference<>();
+            final ResponseFuture<T> responseFuture = new ResponseFuture<>(opThread, responseConverter, executor);
 
             final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
             final boolean inVmCall = SecurityActions.isInVmCall();
@@ -174,6 +184,31 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                 }
             });
             return responseFuture;
+        }
+
+        private Operation sanitizeOperation(Operation operation) {
+            ModelNode sanitized = sanitizeOperation(operation.getOperation());
+            return Operation.Factory.create(sanitized, operation.getInputStreams(),
+                    operation.isAutoCloseStreams());
+        }
+
+        private ModelNode sanitizeOperation(ModelNode operation) {
+            ModelNode sanitized = operation.clone();
+
+            // Strip headers that are not usable by clients
+            if (sanitized.hasDefined(OPERATION_HEADERS)) {
+                ModelNode headers = sanitized.get(OPERATION_HEADERS);
+                headers.remove(SYNC_REMOVED_FOR_READD);
+                headers.remove(DOMAIN_UUID);
+                headers.remove(EXECUTE_FOR_COORDINATOR);
+            }
+
+            // If so configured record that this is a user request
+            if (forUserCalls) {
+                sanitized.get(OPERATION_HEADERS, CALLER_TYPE).set(USER);
+            }
+
+            return sanitized;
         }
     }
 

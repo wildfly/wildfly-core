@@ -201,8 +201,8 @@ interface HostControllerExecutionSupport {
                 if (operation.hasDefined(STEPS)) {
                     List<HostControllerExecutionSupport> parsedSteps = new ArrayList<HostControllerExecutionSupport>();
                     for (ModelNode step : operation.get(STEPS).asList()) {
-                        //Remove the caller-type=user header
-                        if (operation.hasDefined(OPERATION_HEADERS) && operation.get(OPERATION_HEADERS).hasDefined(CALLER_TYPE) && operation.get(OPERATION_HEADERS, CALLER_TYPE).asString().equals(USER)) {
+                        // Propagate the caller-type=user header
+                        if (operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE) && operation.get(OPERATION_HEADERS, CALLER_TYPE).asString().equals(USER)) {
                             step = step.clone();
                             step.get(OPERATION_HEADERS, CALLER_TYPE).set(USER);
                         }

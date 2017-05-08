@@ -228,7 +228,7 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         }
 
                         CredentialCallback credentialCallback = (CredentialCallback) current;
-                        if (PasswordCredential.class.isAssignableFrom(credentialCallback.getCredentialType()) == false) {
+                        if (org.wildfly.security.credential.PasswordCredential.class.isAssignableFrom(credentialCallback.getCredentialType()) == false) {
                             throw new UnsupportedCallbackException(current);
                         }
 
@@ -379,7 +379,7 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
 
             @Override
             public <C extends org.wildfly.security.credential.Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
-                if (credential == null || (PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
+                if (credential == null || (org.wildfly.security.credential.PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
                     return null;
                 }
 

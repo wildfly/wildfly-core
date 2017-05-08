@@ -146,8 +146,8 @@ public final class BootstrapListener {
         if (controller != null) {
             HttpManagement mgmt = (HttpManagement)controller.getValue();
 
-            boolean hasHttp = mgmt.getHttpNetworkInterfaceBinding() != null && mgmt.getHttpPort() > 0;
-            boolean hasHttps = mgmt.getHttpsNetworkInterfaceBinding() != null && mgmt.getHttpsPort() > 0;
+            boolean hasHttp = mgmt.getHttpNetworkInterfaceBinding() != null;
+            boolean hasHttps = mgmt.getHttpsNetworkInterfaceBinding() != null;
             if (hasHttp && hasHttps) {
                 ServerLogger.AS_ROOT_LOGGER.logHttpAndHttpsManagement(NetworkUtils.formatIPAddressForURI(mgmt.getHttpNetworkInterfaceBinding().getAddress()), mgmt.getHttpPort(), NetworkUtils.formatIPAddressForURI(mgmt.getHttpsNetworkInterfaceBinding().getAddress()), mgmt.getHttpsPort());
                 if (mgmt.hasConsole()) {

@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -86,23 +87,19 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
         if (operations.size() > 0) {
             final PathAddress address = context.getCurrentAddress();
             for (final Map.Entry<String, OperationEntry> entry : operations.entrySet()) {
-                if (entry.getValue().getType() == OperationEntry.EntryType.PUBLIC) {
-                    if (context.getProcessType() != ProcessType.DOMAIN_SERVER || entry.getValue().getFlags().contains(OperationEntry.Flag.RUNTIME_ONLY)
-                            || entry.getValue().getFlags().contains(OperationEntry.Flag.READ_ONLY)) {
+                if (isVisible(entry.getValue(), context)) {
+                    boolean add = true;
+                    if (accessControl) {
+                        ModelNode operationToCheck = Util.createOperation(entry.getKey(), address);
+                        operationToCheck.get(OPERATION_HEADERS).set(operation.get(OPERATION_HEADERS));
+                        AuthorizationResult authorizationResult = context.authorizeOperation(operationToCheck);
+                        add = authorizationResult.getDecision() == Decision.PERMIT;
+                    }
 
-                        boolean add = true;
-                        if (accessControl) {
-                            ModelNode operationToCheck = Util.createOperation(entry.getKey(), address);
-                            operationToCheck.get(OPERATION_HEADERS).set(operation.get(OPERATION_HEADERS));
-                            AuthorizationResult authorizationResult = context.authorizeOperation(operationToCheck);
-                            add = authorizationResult.getDecision() == Decision.PERMIT;
-                        }
-
-                        if (add) {
-                            result.add(entry.getKey());
-                        } else {
-                            context.getResponseHeaders().get(ModelDescriptionConstants.ACCESS_CONTROL, FILTERED_OPERATIONS).add(entry.getKey());
-                        }
+                    if (add) {
+                        result.add(entry.getKey());
+                    } else {
+                        context.getResponseHeaders().get(ModelDescriptionConstants.ACCESS_CONTROL, FILTERED_OPERATIONS).add(entry.getKey());
                     }
                 }
             }
@@ -110,5 +107,14 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
             result.setEmptyList();
         }
         context.getResult().set(result);
+    }
+
+    static boolean isVisible(OperationEntry operationEntry, OperationContext context) {
+        EnumSet<OperationEntry.Flag> flags = operationEntry.getFlags();
+        return operationEntry.getType() == OperationEntry.EntryType.PUBLIC
+                && !flags.contains(OperationEntry.Flag.HIDDEN)
+                && (context.getProcessType() != ProcessType.DOMAIN_SERVER || flags.contains(OperationEntry.Flag.RUNTIME_ONLY)
+                || flags.contains(OperationEntry.Flag.READ_ONLY));
+
     }
 }

@@ -306,21 +306,25 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                 if (useUnmanagedBindings) {
                     SocketBindingManager.UnnamedBindingRegistry registry = socketBindingManager.getUnnamedRegistry();
                     if (bindAddress != null) {
-                        basicManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding("management-http", bindAddress, null);
+                        final InetSocketAddress boundAddress = serverManagement.getLocalAddress(InetSocketAddress.class);
+                        basicManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding("management-http", boundAddress, null);
                         registry.registerBinding(basicManagedBinding);
                     }
                     if (secureBindAddress != null) {
-                        secureManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding("management-https", secureBindAddress, null);
+                        final InetSocketAddress boundAddress = serverManagement.getSecureLocalAddress(InetSocketAddress.class);
+                        secureManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding("management-https", boundAddress, null);
                         registry.registerBinding(secureManagedBinding);
                     }
                 } else {
                     SocketBindingManager.NamedManagedBindingRegistry registry = socketBindingManager.getNamedRegistry();
                     if (basicBinding != null) {
-                        basicManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding(basicBinding);
+                        final InetSocketAddress boundAddress = serverManagement.getLocalAddress(InetSocketAddress.class);
+                        basicManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding(basicBinding.getName(), boundAddress, null);
                         registry.registerBinding(basicManagedBinding);
                     }
                     if (secureBinding != null) {
-                        secureManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding(secureBinding);
+                        final InetSocketAddress boundAddress = serverManagement.getSecureLocalAddress(InetSocketAddress.class);
+                        secureManagedBinding = ManagedBinding.Factory.createSimpleManagedBinding(secureBinding.getName(), boundAddress, null);
                         registry.registerBinding(secureManagedBinding);
                     }
                 }

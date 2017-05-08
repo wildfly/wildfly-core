@@ -39,6 +39,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.DomainIncludesValidationWriteAttributeHandler;
 import org.jboss.as.domain.controller.operations.GenericModelDescribeOperationHandler;
@@ -65,7 +66,7 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.OBJECT)
-            .setPrivateEntry()
+            .withFlag(OperationEntry.Flag.HIDDEN)
             .setReadOnly()
             .build();
 

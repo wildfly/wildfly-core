@@ -22,12 +22,14 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTE_FOR_COORDINATOR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.HOST_CONTROLLER_LOGGER;
 import static org.jboss.as.domain.controller.operations.coordination.OperationCoordinatorStepHandler.configureDomainUUID;
 
@@ -115,18 +117,26 @@ public class PrepareStepHandler  implements OperationStepHandler {
         if (HOST_CONTROLLER_LOGGER.isTraceEnabled()) {
             HOST_CONTROLLER_LOGGER.tracef("%s executing direct", getClass().getSimpleName());
         }
-        executeDirectOperation(context, operation);
+        executeDirectOperation(context, operation, false); // Don't bother checking private; this path is for boot or for calls routed to the server
     }
 
-    static void executeDirectOperation(OperationContext context, ModelNode operation) throws OperationFailedException {
+    static void executeDirectOperation(OperationContext context, ModelNode operation, boolean checkPrivate) throws OperationFailedException {
         final String operationName =  operation.require(OP).asString();
 
         final ImmutableManagementResourceRegistration registration = context.getResourceRegistration();
-        final OperationEntry stepEntry = context.getRootResourceRegistration().getOperationEntry(PathAddress.pathAddress(operation.get(OP_ADDR)), operationName);
+        PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final OperationEntry stepEntry = context.getRootResourceRegistration().getOperationEntry(pathAddress, operationName);
         if (stepEntry != null) {
-            context.addModelStep(stepEntry.getOperationDefinition(), stepEntry.getOperationHandler(), false);
+            boolean illegalPrivateStep = checkPrivate
+                    && stepEntry.getType() == OperationEntry.EntryType.PRIVATE
+                    && operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE)
+                    && USER.equals(operation.get(OPERATION_HEADERS, CALLER_TYPE).asString());
+            if (illegalPrivateStep) {
+                context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, pathAddress));
+            } else {
+                context.addModelStep(stepEntry.getOperationDefinition(), stepEntry.getOperationHandler(), false);
+            }
         } else {
-            PathAddress pathAddress = PathAddress.pathAddress(operation.get(OP_ADDR));
             if (! context.isBooting()) {
                 if (registration == null) {
                     context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noSuchResourceType(pathAddress));

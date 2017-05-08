@@ -49,7 +49,7 @@ public class InstallationReportHandler extends AbstractInstallationReporter {
             OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver())
             .setRuntimeOnly()
             .setReadOnly()
-            .setPrivateEntry()
+            .withFlags(OperationEntry.Flag.HIDDEN) // can't be private because of how GlobalInstallationReportHandler calls it
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.READ_WHOLE_CONFIG)
             .setReplyType(ModelType.OBJECT)
             .setReplyParameters(SUMMARY_DEFINITION).build();

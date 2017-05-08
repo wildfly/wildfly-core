@@ -22,11 +22,10 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_UUID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -40,6 +39,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
@@ -368,21 +368,18 @@ class ModelControllerImpl implements ModelController {
         AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
         if (accessContext != null) {
             // External caller of some sort.
-            if (operation.hasDefined(OPERATION_HEADERS)) {
-                ModelNode operationHeaders = operation.get(OPERATION_HEADERS);
-                // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
-                // This header will only be set at this point if the request came in that way; for user-originated
-                // requests on this process the header is added later during op execution by OperationCoordinatorStepHandler
-                if (operationHeaders.hasDefined(DOMAIN_UUID)) {
-                    accessContext.setDomainUuid(operationHeaders.get(DOMAIN_UUID).asString());
-                    accessContext.setDomainRollout(true);
-                }
-                // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
-                // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
-                if (operationHeaders.hasDefined(ACCESS_MECHANISM)) {
-                    accessContext
-                            .setAccessMechanism(AccessMechanism.valueOf(operationHeaders.get(ACCESS_MECHANISM).asString()));
-                }
+
+            // Internal domain ManagementRequestHandler impls will set a header to track an op through the domain
+            // This header will only be set at this point if the request came in that way; for user-originated
+            // requests on this process the header is added later during op execution by OperationCoordinatorStepHandler
+            if (headers.getDomainUUID() != null) {
+                accessContext.setDomainUuid(headers.getDomainUUID());
+                accessContext.setDomainRollout(true);
+            }
+            // Native and http ManagementRequestHandler impls, plus those used for intra-domain comms
+            // will always set a header to specify the access mechanism. JMX directly sets it on the accessContext
+            if (headers.getAccessMechanism() != null) {
+                accessContext.setAccessMechanism(headers.getAccessMechanism());
             }
             accessMechanism = accessContext.getAccessMechanism();
         } // else its an internal caller as external callers always get an AccessAuditContext
@@ -684,7 +681,7 @@ class ModelControllerImpl implements ModelController {
 
     @Override
     public ModelControllerClient createClient(final Executor executor) {
-        return getClientFactory().createSuperUserClient(executor);
+        return getClientFactory().createSuperUserClient(executor, false);
     }
 
     ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, final Set<PathAddress> affectedAddresses,
@@ -910,7 +907,15 @@ class ModelControllerImpl implements ModelController {
             final String operationName =  operation.require(OP).asString();
             final OperationEntry stepOperation = resolveOperationHandler(address, operationName);
             if (stepOperation != null) {
-                context.addModelStep(stepOperation.getOperationDefinition(), stepOperation.getOperationHandler(), false);
+                if (!context.isBooting()
+                        && stepOperation.getType() == OperationEntry.EntryType.PRIVATE
+                        && operation.hasDefined(OPERATION_HEADERS, CALLER_TYPE)
+                        && USER.equals(operation.get(OPERATION_HEADERS, CALLER_TYPE).asString())) {
+                    // End user trying to invoke a private op. Respond as if there is no such operation
+                    context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
+                } else {
+                    context.addModelStep(stepOperation.getOperationDefinition(), stepOperation.getOperationHandler(), false);
+                }
             } else {
 
                 ImmutableManagementResourceRegistration child = managementModel.get().getRootResourceRegistration().getSubModel(address);

@@ -373,7 +373,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         DomainServerLifecycleHandlers.initializeServerInventory(serverInventory);
 
         ValidateOperationHandler validateOperationHandler = hostControllerInfo.isMasterDomainController() ? ValidateOperationHandler.INSTANCE : ValidateOperationHandler.SLAVE_HC_INSTANCE;
-        hostRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION_PRIVATE, validateOperationHandler);
+        hostRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION_HIDDEN, validateOperationHandler);
 
 
         SnapshotDeleteHandler snapshotDelete = new SnapshotDeleteHandler(configurationPersister.getHostPersister());
@@ -476,7 +476,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         //server configurations
         hostRegistration.registerSubModel(new ServerConfigResourceDefinition(hostControllerInfo, serverInventory, pathManager, processState, environment.getDomainDataDir()));
-        hostRegistration.registerSubModel(new StoppedServerResource(serverInventory));
+        hostRegistration.registerSubModel(new StoppedServerResource());
 
         hostRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
     }
