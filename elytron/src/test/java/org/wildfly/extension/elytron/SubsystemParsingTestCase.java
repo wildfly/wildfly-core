@@ -22,7 +22,7 @@ package org.wildfly.extension.elytron;
 import java.io.IOException;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.junit.Before;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.junit.Test;
 
 
@@ -40,10 +40,6 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
-    @Before
-    public void init() throws Exception {
-        TestEnvironment.forceRequireRuntimeFalse();
-    }
 
     @Override
     protected String getSubsystemXml() throws IOException {
@@ -123,5 +119,10 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testParseAndMarshalModel_CredentialStores() throws Exception {
         standardSubsystemTest("credential-stores.xml");
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        return AdditionalInitialization.MANAGEMENT;
     }
 }

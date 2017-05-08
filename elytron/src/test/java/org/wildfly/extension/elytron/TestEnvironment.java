@@ -19,7 +19,6 @@ package org.wildfly.extension.elytron;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.jboss.as.controller.OperationContext;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 
@@ -109,23 +108,4 @@ class TestEnvironment extends AdditionalInitialization {
         new ClassLoadingAttributeDefinitionsMock();
     }
 
-    // base add handler mock to prevent services starting for parsing testcase
-    private static class BaseAddHandlerMock extends MockUp<BaseAddHandler> {
-        @Mock
-        protected boolean requiresRuntime(OperationContext context) {
-            return false;
-        }
-    }
-
-    static void forceRequireRuntimeFalse() throws Exception {
-        new BaseAddHandlerMock();
-
-        Class<?> innerClass = Class.forName(SecurityPropertyResourceDefinition.class.getName() + "$PropertyRemoveHandler");
-        new MockUp<Object>(innerClass) {
-            @Mock
-            protected boolean requiresRuntime(OperationContext context) {
-                return false;
-            }
-        };
-    }
 }
