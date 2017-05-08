@@ -71,7 +71,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         STANDALONE(ProcessType.STANDALONE_SERVER),
         /** Launched by another process in which the server is embedded */
         EMBEDDED(ProcessType.EMBEDDED_SERVER),
-        /** Launched as a self-contained (no filesystem) server */
+        /** Launched as self-contained WildFly Swarm server */
         SELF_CONTAINED(ProcessType.SELF_CONTAINED),
         /** Launched by a Java EE appclient */
         APPCLIENT(ProcessType.APPLICATION_CLIENT);

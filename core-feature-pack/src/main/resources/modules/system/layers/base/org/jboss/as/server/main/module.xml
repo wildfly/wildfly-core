@@ -89,7 +89,6 @@
             </imports> 
         </module>
         <module name="org.jboss.as.remoting"/>
-        <module name="org.jboss.as.self-contained" optional="true"/>
         <module name="org.wildfly.security.elytron-private" services="import"/>
         <module name="org.jboss.as.security" optional="true" services="import"/>
         <module name="org.jboss.as.version"/>
