@@ -12,6 +12,7 @@ public class Authentication {
     public static final String PASSWORD = "testSuitePassword";
 
 
+    @Deprecated
     public static Authenticator getAuthenticator() {
         return new Authenticator() {
             @Override
@@ -21,6 +22,10 @@ public class Authentication {
         };
     }
 
+    /**
+     * @deprecated this could cause tests ran after this is set to fail, use the Apache HttpClient
+     */
+    @Deprecated
     public static void setupDefaultAuthenticator() {
         Authenticator.setDefault(getAuthenticator());
     }

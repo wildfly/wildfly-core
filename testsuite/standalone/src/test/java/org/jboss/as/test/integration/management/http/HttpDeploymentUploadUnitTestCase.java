@@ -46,6 +46,7 @@ import org.jboss.as.test.http.Authentication;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -58,6 +59,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Jonathan Pearlin
  */
 @RunWith(WildflyTestRunner.class)
+@Ignore("See WFCORE-2785 for details on why this test is being ignored")
 public class HttpDeploymentUploadUnitTestCase {
 
     private static final String BOUNDARY_PARAM = "NeAG1QNIHHOyB5joAS7Rox!!";
