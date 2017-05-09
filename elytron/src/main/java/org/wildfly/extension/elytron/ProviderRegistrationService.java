@@ -57,9 +57,7 @@ class ProviderRegistrationService implements Service<Void> {
     @Override
     public void start(StartContext context) throws StartException {
         SecurityActions.doPrivileged((PrivilegedAction<Void>) () -> {
-            for(String provider : providersToRemove) {
-                Security.removeProvider(provider);
-            }
+            providersToRemove.forEach(Security::removeProvider);
             return null;
         });
 

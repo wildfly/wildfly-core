@@ -66,10 +66,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="disallowed-providers" type="xs:string">
+        <xs:attribute name="disallowed-providers" type="stringListType">
             <xs:annotation>
                 <xs:documentation>
-                    A comma seperated list of providers that are disallowed, and will be removed from the providers list.
+                    A list of providers that are disallowed, and will be removed from the providers list.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
