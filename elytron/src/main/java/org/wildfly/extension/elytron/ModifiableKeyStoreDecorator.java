@@ -34,6 +34,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.common.Assert;
 import org.wildfly.security.keystore.PasswordEntry;
 
 import java.security.KeyStore;
@@ -200,7 +201,7 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
         ServiceController<KeyStore> serviceController = getRequiredService(serviceRegistry, serviceName, KeyStore.class);
 
-        return serviceController.getValue();
+        return Assert.assertNotNull(serviceController.getValue());
     }
 
     /**

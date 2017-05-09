@@ -333,6 +333,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
     OperationFailedException invalidAliasName(String alias, String credntialStore);
+
+    @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exists in the store")
+    OperationFailedException credentialDoesNotExists(String alias, String credentialType);
+
     /*
      * Identity Resource Messages - 1000
      */
