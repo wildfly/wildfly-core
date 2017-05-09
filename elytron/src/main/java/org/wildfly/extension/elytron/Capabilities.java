@@ -83,8 +83,18 @@ class Capabilities {
 
     static final String ELYTRON_CAPABILITY = CAPABILITY_BASE + "elytron";
 
+    // This has to be at this position, and must not be a lambda, to avoid an init circularity problem on IBM
+    @SuppressWarnings("Convert2Lambda")
+    static final Consumer<ServiceBuilder> COMMON_DEPENDENCIES = new Consumer<ServiceBuilder>() {
+        // unchecked because ServiceBuilder is a raw type
+        @SuppressWarnings("unchecked")
+        public void accept(final ServiceBuilder serviceBuilder) {
+            ElytronDefinition.commonDependencies(serviceBuilder);
+        }
+    };
+
     static final RuntimeCapability<Consumer<ServiceBuilder>> ELYTRON_RUNTIME_CAPABILITY = RuntimeCapability
-            .Builder.of(ELYTRON_CAPABILITY, (Consumer<ServiceBuilder>) ElytronDefinition::commonDependencies)
+            .Builder.of(ELYTRON_CAPABILITY, COMMON_DEPENDENCIES)
             .build();
 
     static final String HTTP_AUTHENTICATION_FACTORY_CAPABILITY = CAPABILITY_BASE + "http-authentication-factory";
