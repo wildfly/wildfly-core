@@ -221,17 +221,8 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        // Create Key Pair / Certificate (Is this a special op or on a resource?)
-        // Create CSR
-        // Import certificate
-
         resourceRegistration.registerOperationHandler(LOAD, PersistanceHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(STORE, PersistanceHandler.INSTANCE);
-    }
-
-    @Override
-    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new KeyStoreAliasDefinition(KEY_STORE_UTIL));
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {
@@ -264,8 +255,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
-            ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService)
-                    .setInitialMode(Mode.ACTIVE);
+            ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService).setInitialMode(Mode.ACTIVE);
 
             if (relativeTo != null) {
                 serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyStoreService.getPathManagerInjector());
@@ -281,21 +271,8 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             keyStoreService.getCredentialSourceSupplierInjector()
                     .inject(CredentialReference.getCredentialSourceSupplier(context, KeyStoreDefinition.CREDENTIAL_REFERENCE, model, serviceBuilder));
 
-            commonDependencies(serviceBuilder);
-            ServiceController<KeyStore> serviceController = serviceBuilder.install();
-
-            assert resource instanceof KeyStoreResource;
-            ((KeyStoreResource)resource).setKeyStoreServiceController(serviceController);
+            commonDependencies(serviceBuilder).install();
         }
-
-        @Override
-        protected Resource createResource(OperationContext context) {
-            KeyStoreResource resource = new KeyStoreResource(Resource.Factory.create());
-            context.addResource(PathAddress.EMPTY_ADDRESS, resource);
-
-            return resource;
-        }
-
     }
 
     private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {

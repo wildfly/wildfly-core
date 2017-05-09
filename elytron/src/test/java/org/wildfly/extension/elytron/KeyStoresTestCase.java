@@ -140,21 +140,20 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_CHILDREN_NAMES_OPERATION);
-        operation.get(ClientConstants.CHILD_TYPE).set(ElytronDescriptionConstants.ALIAS);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
         Assert.assertEquals(2, nodes.size());
 
         operation = new ModelNode();
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore").add("alias","ca");
-        operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.REMOVE_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("ca");
         assertSuccess(services.executeOperation(operation));
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_CHILDREN_NAMES_OPERATION);
-        operation.get(ClientConstants.CHILD_TYPE).set(ElytronDescriptionConstants.ALIAS);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
         Assert.assertEquals(1, nodes.size());
 
@@ -186,22 +185,18 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     public void testFilteringKeystoreCli() throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.FILTERING_KEY_STORE,"FilteringKeyStore");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_CHILDREN_NAMES_OPERATION);
-        operation.get(ClientConstants.CHILD_TYPE).set(ElytronDescriptionConstants.ALIAS);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
         List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
         Assert.assertEquals(1, nodes.size());
         Assert.assertEquals("firefly", nodes.get(0).asString());
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.FILTERING_KEY_STORE,"FilteringKeyStore").add(ElytronDescriptionConstants.ALIAS, "firefly");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.CREATION_DATE);
-        Assert.assertNotNull(assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
-
-        operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.FILTERING_KEY_STORE,"FilteringKeyStore").add(ElytronDescriptionConstants.ALIAS, "firefly");
-        operation.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-        operation.get(ClientConstants.NAME).set(ElytronDescriptionConstants.ENTRY_TYPE);
-        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asString());
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.FILTERING_KEY_STORE,"FilteringKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("firefly");
+        ModelNode firefly = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
+        Assert.assertEquals("firefly", firefly.get(ElytronDescriptionConstants.ALIAS).asString());
+        Assert.assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), firefly.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+        Assert.assertTrue(firefly.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN).isDefined());
     }
 }

@@ -21,10 +21,12 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.msc.service.ServiceName;
@@ -61,9 +63,11 @@ class TrivialResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
          if (attributes != null && attributes.length > 0) {
-             WriteAttributeHandler write = new WriteAttributeHandler(pathKey, attributes);
+             WriteAttributeHandler restartParentWriteHandler = new WriteAttributeHandler(pathKey, attributes);
+             ReloadRequiredWriteAttributeHandler reloadRequiredWriteHandler = new ReloadRequiredWriteAttributeHandler(attributes);
              for (AttributeDefinition current : attributes) {
-                 resourceRegistration.registerReadWriteAttribute(current, null, write);
+                 boolean restartAll = current.getFlags().contains(AttributeAccess.Flag.RESTART_ALL_SERVICES);
+                 resourceRegistration.registerReadWriteAttribute(current, null, restartAll ? reloadRequiredWriteHandler : restartParentWriteHandler);
              }
          }
     }

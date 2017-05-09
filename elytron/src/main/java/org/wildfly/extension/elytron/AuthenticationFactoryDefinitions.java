@@ -37,9 +37,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -78,6 +80,8 @@ import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.util.FilterServerMechanismFactory;
+import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.SaslMechanismInformation;
 import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
 
@@ -96,7 +100,7 @@ class AuthenticationFactoryDefinitions {
 
     static final SimpleAttributeDefinition HTTP_SERVER_MECHANISM_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY, true)
             .build();
 
@@ -109,7 +113,7 @@ class AuthenticationFactoryDefinitions {
     static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MECHANISM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setRestartAllServices()
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAttributeGroup(ElytronDescriptionConstants.SELECTION_CRITERIA)
             .build();
 
@@ -195,6 +199,22 @@ class AuthenticationFactoryDefinitions {
                 .setAllowNull(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
+    }
+
+    static Set<String> getConfiguredMechanismNames(AttributeDefinition mechanismConfigurationAttribute, OperationContext context, ModelNode model) throws OperationFailedException {
+        ModelNode mechanismConfiguration = mechanismConfigurationAttribute.resolveModelAttribute(context, model);
+        if ( ! mechanismConfiguration.isDefined()) {
+            return Collections.emptySet();
+        }
+        Set<String> mechanismNames = new HashSet<>();
+        for (ModelNode current : mechanismConfiguration.asList()) {
+            final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, current);
+            if (mechanismName == null) {
+                return Collections.emptySet();
+            }
+            mechanismNames.add(mechanismName);
+        }
+        return mechanismNames;
     }
 
     static List<ResolvedMechanismConfiguration> getResolvedMechanismConfiguration(AttributeDefinition mechanismConfigurationAttribute, ServiceBuilder<?> serviceBuilder,
@@ -360,14 +380,20 @@ class AuthenticationFactoryDefinitions {
                         buildDynamicCapabilityName(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, httpServerFactory), HttpServerAuthenticationMechanismFactory.class),
                         HttpServerAuthenticationMechanismFactory.class, mechanismFactoryInjector);
 
+                final Set<String> supportedMechanisms = getConfiguredMechanismNames(mechanismConfigurationAttribute, context, model);
                 final List<ResolvedMechanismConfiguration> resolvedMechanismConfigurations = getResolvedMechanismConfiguration(mechanismConfigurationAttribute, serviceBuilder, context, model);
 
                 return () -> {
-                    HttpServerAuthenticationMechanismFactory injectedHttpServerFactory = mechanismFactoryInjector.getValue();
+                    HttpServerAuthenticationMechanismFactory serverFactory = mechanismFactoryInjector.getValue();
+
+                    // filter non-configured mechanisms out (when we are sure they are not configured)
+                    if ( ! supportedMechanisms.isEmpty()) {
+                        serverFactory = new FilterServerMechanismFactory(serverFactory, true, supportedMechanisms);
+                    }
 
                     HttpAuthenticationFactory.Builder builder = HttpAuthenticationFactory.builder()
                             .setSecurityDomain(securityDomainInjector.getValue())
-                            .setFactory(injectedHttpServerFactory);
+                            .setFactory(serverFactory);
 
                     buildMechanismConfiguration(resolvedMechanismConfigurations, builder);
 
@@ -423,10 +449,18 @@ class AuthenticationFactoryDefinitions {
                         buildDynamicCapabilityName(SASL_SERVER_FACTORY_CAPABILITY, saslServerFactory), SaslServerFactory.class),
                         SaslServerFactory.class, saslServerFactoryInjector);
 
+                final Set<String> supportedMechanisms = getConfiguredMechanismNames(mechanismConfigurationAttribute, context, model);
                 final List<ResolvedMechanismConfiguration> resolvedMechanismConfigurations = getResolvedMechanismConfiguration(mechanismConfigurationAttribute, serviceBuilder, context, model);
 
                 return () -> {
                     SaslServerFactory serverFactory = saslServerFactoryInjector.getValue();
+
+                    // filter non-configured mechanisms out (when we are sure they are not configured)
+                    if ( ! supportedMechanisms.isEmpty()) {
+                        serverFactory = new FilterMechanismSaslServerFactory(serverFactory, true, supportedMechanisms);
+                    }
+
+                    // sort mechanisms by strength
                     serverFactory = new SortedMechanismSaslServerFactory(serverFactory, AuthenticationFactoryDefinitions::compare);
 
                     SaslAuthenticationFactory.Builder builder = SaslAuthenticationFactory.builder()
