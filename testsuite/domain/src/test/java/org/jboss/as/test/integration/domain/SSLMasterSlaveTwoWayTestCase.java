@@ -39,7 +39,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -47,7 +46,6 @@ import org.junit.Test;
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
-@Ignore("[WFCORE-1978] Enable Client Cert authentication for slave to master connections.")
 public class SSLMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-2way-workdir");

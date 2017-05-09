@@ -320,6 +320,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     private static int toPriority(String name) {
         switch (name) {
+            case "EXTERNAL":
+                return 15;
             case "JBOSS-LOCAL-USER":
                 return 10;
             case "GSSAPI":
