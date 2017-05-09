@@ -35,7 +35,7 @@ import org.jboss.dmr.ModelNode;
 public class UserWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
     public UserWriteAttributeHandler() {
-        super(UserResourceDefinition.PASSWORD);
+        super(UserResourceDefinition.PASSWORD, UserResourceDefinition.CREDENTIAL_REFERENCE);
     }
 
     @Override

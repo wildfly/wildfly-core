@@ -47,4 +47,27 @@ public class StandaloneSSLTestCase extends AbstractCoreModelTest {
         ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "ssl-standalone.xml"), marshalled);
     }
 
+    @Test
+    public void testConfigurationCredentialReference() throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.STANDALONE)
+                .setXmlResource("ssl-standalone_credential_reference.xml")
+                .validateDescription()
+                .build();
+        Assert.assertTrue(kernelServices.isSuccessfulBoot());
+
+        String marshalled = kernelServices.getPersistedSubsystemXml();
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "ssl-standalone_credential_reference.xml"), marshalled);
+    }
+
+    @Test
+    public void testSimpleConfigurationCredentialReference() throws Exception {
+        KernelServices kernelServices = createKernelServicesBuilder(TestModelType.STANDALONE)
+                .setXmlResource("users-standalone.xml")
+                .validateDescription()
+                .build();
+        Assert.assertTrue(kernelServices.isSuccessfulBoot());
+
+        String marshalled = kernelServices.getPersistedSubsystemXml();
+        ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "users-standalone.xml"), marshalled);
+    }
 }

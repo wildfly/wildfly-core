@@ -22,9 +22,15 @@
 
 package org.jboss.as.domain.management.security;
 
+import java.util.Set;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -37,6 +43,11 @@ public class SecurityRealmChildRemoveHandler extends SecurityRealmParentRestartH
     private final boolean validateAuthentication;
 
     public SecurityRealmChildRemoveHandler(boolean validateAuthentication) {
+        this(validateAuthentication, null);
+    }
+
+    public SecurityRealmChildRemoveHandler(boolean validateAuthentication, RuntimeCapability... capabilities) {
+        super(capabilities);
         this.validateAuthentication = validateAuthentication;
     }
 
@@ -44,12 +55,34 @@ public class SecurityRealmChildRemoveHandler extends SecurityRealmParentRestartH
     protected void updateModel(OperationContext context, ModelNode operation) throws OperationFailedException {
         // verify that the resource exist before removing it
         context.readResource(PathAddress.EMPTY_ADDRESS, false);
-
-        context.removeResource(PathAddress.EMPTY_ADDRESS);
+        Resource resource = context.removeResource(PathAddress.EMPTY_ADDRESS);
+        recordCapabilitiesAndRequirements(context, operation, resource);
 
         if (validateAuthentication && !context.isBooting()) {
             ModelNode validationOp = AuthenticationValidatingHandler.createOperation(operation);
             context.addStep(validationOp, AuthenticationValidatingHandler.INSTANCE, OperationContext.Stage.MODEL);
         } // else we know the SecurityRealmAddHandler is part of this overall set of ops and it added AuthenticationValidatingHandler
+    }
+
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+        for (RuntimeCapability capability : capabilitySet) {
+            if (capability.isDynamicallyNamed()) {
+                context.deregisterCapability(capability.getDynamicName(context.getCurrentAddress()));
+            } else {
+                context.deregisterCapability(capability.getName());
+            }
+        }
+        ModelNode model = resource.getModel();
+        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+        for (String attr : mrr.getAttributeNames(PathAddress.EMPTY_ADDRESS)) {
+            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
+            if (aa != null) {
+                AttributeDefinition ad = aa.getAttributeDefinition();
+                if (ad != null && (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements())) {
+                    ad.removeCapabilityRequirements(context, resource, model.get(ad.getName()));
+                }
+            }
+        }
     }
 }

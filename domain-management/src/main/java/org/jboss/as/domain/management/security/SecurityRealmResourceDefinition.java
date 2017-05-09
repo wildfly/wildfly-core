@@ -32,11 +32,14 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.management.Capabilities;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -48,6 +51,7 @@ import org.jboss.dmr.ModelType;
  */
 public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
 
+    public static final RuntimeCapability<Void> MANAGEMENT_SECURITY_REALM_CAPABILITY = RuntimeCapability.Builder.of(Capabilities.MANAGEMENT_SECURITY_REALM_CAPABILITY, true, SecurityRealm.class).build();
     public static final SecurityRealmResourceDefinition INSTANCE = new SecurityRealmResourceDefinition();
 
     static final String DEPRECATED_PARENT_CATEGORY = "core.management.security-realm";
@@ -65,6 +69,7 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM)
+                .addCapabilities(MANAGEMENT_SECURITY_REALM_CAPABILITY)
                 .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 

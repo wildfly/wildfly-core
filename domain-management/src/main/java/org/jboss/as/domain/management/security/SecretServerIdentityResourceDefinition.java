@@ -25,7 +25,9 @@ package org.jboss.as.domain.management.security;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECRET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -34,6 +36,7 @@ import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.dmr.ModelType;
 
@@ -45,20 +48,32 @@ import org.jboss.dmr.ModelType;
 public class SecretServerIdentityResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE, ModelType.STRING, false)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true)).setAllowExpression(true).build();
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .setAllowExpression(true)
+            .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE)
+            .build();
+
+    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, false)
+            .setAlternatives(ModelDescriptionConstants.VALUE)
+            .build();
+
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {VALUE, CREDENTIAL_REFERENCE};
 
     public SecretServerIdentityResourceDefinition() {
         super(PathElement.pathElement(SERVER_IDENTITY, SECRET),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
                         "core", "management", "security-realm", "server-identity", "secret"),
-                new SecurityRealmChildAddHandler(false, false, VALUE), new SecurityRealmChildRemoveHandler(false),
+                new SecurityRealmChildAddHandler(false, false, ATTRIBUTE_DEFINITIONS), new SecurityRealmChildRemoveHandler(false),
                 OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
         setDeprecated(ModelVersion.create(1, 7));
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        SecurityRealmChildWriteAttributeHandler handler = new SecurityRealmChildWriteAttributeHandler(VALUE);
-        handler.registerAttributes(resourceRegistration);
+        super.registerAttributes(resourceRegistration);
+        for (AttributeDefinition att : ATTRIBUTE_DEFINITIONS) {
+            SecurityRealmChildWriteAttributeHandler handler = new SecurityRealmChildWriteAttributeHandler(att);
+            handler.registerAttributes(resourceRegistration);
+        }
     }
 }

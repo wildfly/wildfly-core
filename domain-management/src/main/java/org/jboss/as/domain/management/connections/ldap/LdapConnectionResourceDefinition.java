@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDA
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -38,6 +39,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.operations.validation.URIValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -55,6 +57,7 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
     static final String DEPRECATED_PARENT_CATEGORY = "core.management.ldap-connection";
 
     private static final String DEFAULT_INITIAL_CONTEXT = "com.sun.jndi.ldap.LdapCtxFactory";
+    private static final String SEARCH_CREDENTIAL_REFERENCE_NAME = "search-credential-reference";
 
     public static final SimpleAttributeDefinition URL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.URL, ModelType.STRING, false)
             .setAllowExpression(true)
@@ -69,6 +72,11 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition SEARCH_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SEARCH_CREDENTIAL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(0, Integer.MAX_VALUE, true, true))
+            .setAlternatives(SEARCH_CREDENTIAL_REFERENCE_NAME)
+            .build();
+
+    public static final ObjectTypeAttributeDefinition SEARCH_CREDENTIAL_REFERENCE =  CredentialReference.getAttributeBuilder(SEARCH_CREDENTIAL_REFERENCE_NAME, SEARCH_CREDENTIAL_REFERENCE_NAME,true, false)
+            .setAlternatives(ModelDescriptionConstants.SEARCH_CREDENTIAL)
             .build();
 
     public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
@@ -99,8 +107,7 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(false))
             .build();
 
-    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {URL, SEARCH_DN, SEARCH_CREDENTIAL, SECURITY_REALM, INITIAL_CONTEXT_FACTORY, REFERRALS, HANDLES_REFERRALS_FOR, ALWAYS_SEND_CLIENT_CERT};
-
+    public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {URL, SEARCH_DN, SEARCH_CREDENTIAL, SEARCH_CREDENTIAL_REFERENCE, SECURITY_REALM, INITIAL_CONTEXT_FACTORY, REFERRALS, HANDLES_REFERRALS_FOR, ALWAYS_SEND_CLIENT_CERT};
 
 
     private LdapConnectionResourceDefinition(OperationStepHandler add, OperationStepHandler remove) {

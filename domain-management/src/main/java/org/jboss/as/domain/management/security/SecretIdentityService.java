@@ -43,6 +43,11 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import java.io.IOException;
+import org.jboss.msc.inject.Injector;
+import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
 
 /**
  * A simple identity service for an identity represented by a single secret or password.
@@ -57,12 +62,14 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
     private final boolean base64;
 
     private volatile CallbackHandlerFactory factory;
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
 
     public SecretIdentityService(final String password, boolean base64) {
         this.password = password;
         this.base64 = base64;
     }
 
+    @Override
     public void start(StartContext startContext) throws StartException {
         final char[] thePassword;
         if (base64) {
@@ -78,11 +85,7 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
             thePassword = password.toCharArray();
         }
 
-        factory = new CallbackHandlerFactory() {
-            public CallbackHandler getCallbackHandler(String username) {
-                return new SecretCallbackHandler(username, thePassword);
-            }
-        };
+        factory = (String username) -> new SecretCallbackHandler(username, resolvePassword(thePassword));
     }
 
     public void stop(StopContext stopContext) {
@@ -93,6 +96,33 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
         return factory;
     }
 
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
+        return credentialSourceSupplier;
+    }
+
+    private char[] resolvePassword(char[] thePassword) {
+        try {
+            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getOptionalValue();
+            if (sourceSupplier == null) {
+                return thePassword;
+            }
+            CredentialSource cs = sourceSupplier.get();
+            if (cs == null) {
+                return thePassword;
+            }
+            org.wildfly.security.credential.PasswordCredential credential = cs.getCredential(org.wildfly.security.credential.PasswordCredential.class);
+            if (credential == null) {
+                return thePassword;
+            }
+            ClearPassword clearPassword = credential.getPassword(ClearPassword.class);
+            if (clearPassword == null) {
+                return thePassword;
+            }
+            return clearPassword.getPassword();
+        } catch (Exception ex) {
+            return thePassword;
+        }
+    }
     private class SecretCallbackHandler implements CallbackHandler {
 
         private final String userName;

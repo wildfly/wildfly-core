@@ -277,6 +277,13 @@
         </xs:annotation>
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" />
+            <xs:element name="search-credential-reference" type="credentialReferenceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The credential reference to use when connecting to perform a search.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -563,6 +570,15 @@
                 Configuration of the secret/password-based identity of this server.
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Credential to be used by as protection parameter for the Credential Store.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="value" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -628,7 +644,16 @@
                 The keystore configuration for the server.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="keystore-password" type="xs:string" use="required">
+        <xs:sequence>
+            <xs:element name="keystore-password-credential-reference" type="credentialReferenceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Credential reference to be used by as protection parameter for the Keystore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="keystore-password" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The password to open the keystore.
@@ -646,6 +671,15 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="keyStoreType">
+                <xs:sequence>
+                    <xs:element name="key-password-credential-reference" type="credentialReferenceType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Credential reference to be used by as protection parameter when loading keys from the keystore.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
                 <xs:attribute name="alias" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
