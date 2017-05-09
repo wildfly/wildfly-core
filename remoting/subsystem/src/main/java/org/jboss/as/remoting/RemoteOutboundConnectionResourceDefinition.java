@@ -37,6 +37,7 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.domain.management.security.SecurityRealmResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -69,6 +70,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setAlternatives(CommonAttributes.AUTHENTICATION_CONTEXT)
+            .setCapabilityReference(SecurityRealmResourceDefinition.MANAGEMENT_SECURITY_REALM_CAPABILITY.getName())
             .setDeprecated(ModelVersion.create(4))
             .build();
 

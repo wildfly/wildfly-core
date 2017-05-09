@@ -23,14 +23,12 @@
 package org.jboss.as.domain.management.security;
 
 import java.util.List;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -40,47 +38,28 @@ import org.jboss.msc.service.ServiceRegistry;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SecurityRealmRemoveHandler implements OperationStepHandler {
+public class SecurityRealmRemoveHandler extends AbstractRemoveStepHandler {
 
-    public static final SecurityRealmRemoveHandler INSTANCE = new SecurityRealmRemoveHandler();
+    public static final SecurityRealmRemoveHandler INSTANCE = new SecurityRealmRemoveHandler(SecurityRealmResourceDefinition.MANAGEMENT_SECURITY_REALM_CAPABILITY);
 
-    private SecurityRealmRemoveHandler() {
+    private SecurityRealmRemoveHandler(RuntimeCapability ... capabilities) {
+        super(capabilities);
     }
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        context.removeResource(PathAddress.EMPTY_ADDRESS);
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final boolean reloadRequired = ManagementUtil.isSecurityRealmReloadRequired(context, operation);
-                final String realmName = ManagementUtil.getSecurityRealmName(operation);
-                if (reloadRequired) {
-                    context.reloadRequired();
-                } else {
-                    removeServices(context, realmName, model);
-                }
-
-                context.completeStep(new OperationContext.RollbackHandler() {
-                    @Override
-                    public void handleRollback(OperationContext context, ModelNode operation) {
-                        if (reloadRequired) {
-                            context.revertReloadRequired();
-                        } else {
-                            recoverServices(context, realmName, model);
-                        }
-                    }
-                });
-            }
-        }, OperationContext.Stage.RUNTIME);
-
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        super.performRuntime(context, operation, model);
+        final boolean reloadRequired = ManagementUtil.isSecurityRealmReloadRequired(context, operation);
+        if (reloadRequired) {
+            context.reloadRequired();
+        } else {
+            removeServices(context, context.getCurrentAddressValue(), model);
+        }
     }
 
     protected void removeServices(final OperationContext context, final String realmName, final ModelNode model) throws OperationFailedException {
         // KISS -- Just remove the service and all child services.
-        ServiceName realmServiceName = SecurityRealm.ServiceUtil.createServiceName(realmName);
+        ServiceName realmServiceName = SecurityRealmService.ServiceUtil.createServiceName(realmName);
         ServiceRegistry serviceRegistry = context.getServiceRegistry(false);
         List<ServiceName> allNames = serviceRegistry.getServiceNames();
         for (ServiceName current : allNames) {
@@ -90,9 +69,11 @@ public class SecurityRealmRemoveHandler implements OperationStepHandler {
         }
     }
 
-    protected void recoverServices(OperationContext context, final String realmName, ModelNode model) {
+    @Override
+    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        super.recoverServices(context, operation, model);
         try {
-            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model);
+            SecurityRealmAddHandler.INSTANCE.installServices(context, context.getCurrentAddressValue(), model);
         } catch (OperationFailedException e) {
             throw ControllerLogger.ROOT_LOGGER.failedToRecoverServices(e);
         }

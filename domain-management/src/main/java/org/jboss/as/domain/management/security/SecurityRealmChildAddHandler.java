@@ -22,10 +22,13 @@
 
 package org.jboss.as.domain.management.security;
 
+import java.util.Collections;
+import java.util.Set;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -39,8 +42,14 @@ public class SecurityRealmChildAddHandler extends SecurityRealmParentRestartHand
     private final boolean validateAuthentication;
     private final boolean validateAuthorization;
     private final AttributeDefinition[] attributeDefinitions;
+    private final Set<RuntimeCapability> capabilities;
 
     public SecurityRealmChildAddHandler(boolean validateAuthentication, boolean validateAuthorization, AttributeDefinition... attributeDefinitions) {
+        this(validateAuthentication, validateAuthorization, Collections.emptySet(), attributeDefinitions);
+    }
+
+    public SecurityRealmChildAddHandler( boolean validateAuthentication, boolean validateAuthorization, Set<RuntimeCapability> capabilities, AttributeDefinition... attributeDefinitions) {
+        this.capabilities = capabilities == null ? Collections.emptySet() : capabilities;
         this.validateAuthentication = validateAuthentication;
         this.validateAuthorization = validateAuthorization;
         this.attributeDefinitions = attributeDefinitions == null ? new AttributeDefinition[0] : attributeDefinitions;
@@ -65,5 +74,25 @@ public class SecurityRealmChildAddHandler extends SecurityRealmParentRestartHand
                 context.addStep(validationOp, AuthorizationValidatingHandler.INSTANCE, OperationContext.Stage.MODEL);
             }
         } // else we know the SecurityRealmAddHandler is part of this overall set of ops and it added the handlers.
+        recordCapabilitiesAndRequirements(context, operation, resource);
+    }
+
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+
+        for (RuntimeCapability capability : capabilitySet) {
+            if (capability.isDynamicallyNamed()) {
+                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
+            } else {
+                context.registerCapability(capability);
+            }
+        }
+
+        ModelNode model = resource.getModel();
+        for (AttributeDefinition ad : attributeDefinitions) {
+            if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
+                ad.addCapabilityRequirements(context, resource, model.get(ad.getName()));
+            }
+        }
     }
 }

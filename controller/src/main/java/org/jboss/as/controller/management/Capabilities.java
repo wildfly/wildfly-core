@@ -40,4 +40,6 @@ public final class Capabilities {
 
     public static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
+    public static final String MANAGEMENT_SECURITY_REALM_CAPABILITY = "org.wildfly.core.management.security.realm";
+
 }

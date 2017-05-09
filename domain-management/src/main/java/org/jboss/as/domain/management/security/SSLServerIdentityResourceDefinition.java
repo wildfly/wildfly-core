@@ -78,7 +78,8 @@ public class SSLServerIdentityResourceDefinition extends SimpleResourceDefinitio
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {
             PROTOCOL, ENABLED_CIPHER_SUITES, ENABLED_PROTOCOLS, KeystoreAttributes.KEYSTORE_PASSWORD, KeystoreAttributes.KEYSTORE_PATH, KeystoreAttributes.KEYSTORE_RELATIVE_TO,
-            KeystoreAttributes.ALIAS, KeystoreAttributes.KEY_PASSWORD, KeystoreAttributes.KEYSTORE_PROVIDER, KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST
+            KeystoreAttributes.ALIAS, KeystoreAttributes.KEY_PASSWORD, KeystoreAttributes.KEYSTORE_PROVIDER, KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST,
+            KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE
     };
 
     public SSLServerIdentityResourceDefinition() {

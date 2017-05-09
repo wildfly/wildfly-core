@@ -38,7 +38,7 @@ public class UserAddHandler extends AbstractAddStepHandler {
     public static final UserAddHandler INSTANCE = new UserAddHandler();
 
     private UserAddHandler() {
-        super(UserResourceDefinition.PASSWORD);
+        super(UserResourceDefinition.PASSWORD, UserResourceDefinition.CREDENTIAL_REFERENCE);
     }
 
     @Override

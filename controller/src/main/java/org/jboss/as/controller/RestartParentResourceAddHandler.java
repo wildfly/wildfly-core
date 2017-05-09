@@ -21,6 +21,12 @@
  */
 package org.jboss.as.controller;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -32,14 +38,49 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class RestartParentResourceAddHandler extends RestartParentResourceHandlerBase {
 
+    static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
+    static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
+
+    protected final Set<RuntimeCapability> capabilities;
+    protected final Collection<? extends AttributeDefinition> attributes;
+
     protected RestartParentResourceAddHandler(String parentKeyName) {
+        this(parentKeyName, null, null);
+    }
+
+    protected RestartParentResourceAddHandler(String parentKeyName, RuntimeCapability ... capabilities) {
+        this(parentKeyName, capabilities == null || capabilities.length == 0 ? NULL_CAPABILITIES : Arrays.stream(capabilities).collect(Collectors.toSet()), null);
+    }
+
+    public RestartParentResourceAddHandler(String parentKeyName, Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
         super(parentKeyName);
+        this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
+        this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
     }
 
     @Override
     protected void updateModel(OperationContext context, ModelNode operation) throws OperationFailedException {
         final Resource resource = context.createResource(PathAddress.EMPTY_ADDRESS);
         populateModel(operation, resource.getModel());
+        recordCapabilitiesAndRequirements(context, operation, resource);
+    }
+
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+        for (RuntimeCapability capability : capabilitySet) {
+            if (capability.isDynamicallyNamed()) {
+                context.registerCapability(capability.fromBaseCapability(context.getCurrentAddress()));
+            } else {
+                context.registerCapability(capability);
+            }
+        }
+
+        ModelNode model = resource.getModel();
+        for (AttributeDefinition ad : attributes) {
+            if (model.hasDefined(ad.getName()) || ad.hasCapabilityRequirements()) {
+                ad.addCapabilityRequirements(context, resource, model.get(ad.getName()));
+            }
+        }
     }
 
     /**

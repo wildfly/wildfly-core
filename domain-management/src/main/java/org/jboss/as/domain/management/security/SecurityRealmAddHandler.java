@@ -65,12 +65,14 @@ import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.jboss.as.controller.AbstractAddStepHandler;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
@@ -89,6 +91,8 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
 
 /**
  * Handler to add security realm definitions and register the service.
@@ -96,7 +100,7 @@ import org.jboss.msc.value.InjectedValue;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SecurityRealmAddHandler implements OperationStepHandler {
+public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private static final String ELYTRON_CAPABILITY = "org.wildfly.security.elytron";
     private static final String PATH_MANAGER_CAPABILITY = "org.wildfly.management.path-manager";
@@ -104,29 +108,34 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
     public static final SecurityRealmAddHandler INSTANCE = new SecurityRealmAddHandler();
 
     @Override
-    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        ModelNode model = context.createResource(PathAddress.EMPTY_ADDRESS).getModel();
-        SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.validateAndSet(operation, model);
+    protected boolean requiresRuntime(OperationContext context) {
+        return true;
+    }
 
-        // Add a step validating that we have the correct authentication and authorization child resources
+    @Override
+    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
+        super.populateModel(operation, model);
+        SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.validateAndSet(operation, model);
+    }
+
+    @Override
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        // Install another RUNTIME handler to actually install the services. This will run after the
+        // RUNTIME handler for any child resources. Doing this will ensure that child resource handlers don't
+        // see the installed services and can just ignore doing any RUNTIME stage work
+        context.addStep(ServiceInstallStepHandler.INSTANCE, OperationContext.Stage.RUNTIME);
+    }
+
+    @Override
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        super.execute(context, operation);
+// Add a step validating that we have the correct authentication and authorization child resources
         ModelNode validationOp = AuthenticationValidatingHandler.createOperation(operation);
         context.addStep(validationOp, AuthenticationValidatingHandler.INSTANCE, OperationContext.Stage.MODEL);
         validationOp = AuthorizationValidatingHandler.createOperation(operation);
         context.addStep(validationOp, AuthorizationValidatingHandler.INSTANCE, OperationContext.Stage.MODEL);
-
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                // Install another RUNTIME handler to actually install the services. This will run after the
-                // RUNTIME handler for any child resources. Doing this will ensure that child resource handlers don't
-                // see the installed services and can just ignore doing any RUNTIME stage work
-                context.addStep(ServiceInstallStepHandler.INSTANCE, OperationContext.Stage.RUNTIME);
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-            }
-        }, OperationContext.Stage.RUNTIME);
-
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
+
 
     protected void installServices(final OperationContext context, final String realmName, final ModelNode model)
             throws OperationFailedException {
@@ -140,7 +149,9 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         final boolean mapGroupsToRoles = SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.resolveModelAttribute(context, model).asBoolean();
         final SecurityRealmService securityRealmService = new SecurityRealmService(realmName, mapGroupsToRoles);
         final ServiceName realmServiceName = SecurityRealm.ServiceUtil.createServiceName(realmName);
-        ServiceBuilder<?> realmBuilder = serviceTarget.addService(realmServiceName, securityRealmService);
+        ServiceBuilder<?> realmBuilder = serviceTarget
+                .addService(realmServiceName, securityRealmService)
+                .addAliases(SecurityRealm.ServiceUtil.createLegacyServiceName(realmName));
         final ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
         final boolean shareLdapConnections = shareLdapConnection(context, authentication, authorization);
@@ -677,6 +688,14 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
             serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
 
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keyManagerService.getKeystoreCredentialSourceSupplierInjector()
+                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+            }
+            if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keyManagerService.getKeyCredentialSourceSupplierInjector()
+                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+            }
             if (relativeTo != null) {
                 serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                         PathManager.class, keyManagerService.getPathManagerInjector());
@@ -698,6 +717,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         if (!JKS.equalsIgnoreCase(provider)) {
             final ProviderTrustManagerService trustManagerService = new ProviderTrustManagerService(provider, keystorePassword);
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                trustManagerService.getCredentialSourceSupplierInjector()
+                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+            }
         } else {
             String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();
             ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
@@ -706,6 +729,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             FileTrustManagerService trustManagerService = new FileTrustManagerService(provider, path, relativeTo, keystorePassword);
 
             serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                trustManagerService.getCredentialSourceSupplierInjector()
+                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+            }
             if (relativeTo != null) {
                 serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                         PathManager.class, trustManagerService.getPathManagerInjector());
@@ -724,10 +751,13 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
         boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
 
         SecretIdentityService sis = new SecretIdentityService(resolvedValueNode.asString(), base64);
-        serviceTarget.addService(secretServiceName, sis)
-                .setInitialMode(ON_DEMAND)
-                .install();
-
+        final ServiceBuilder<CallbackHandlerFactory> serviceBuilder = serviceTarget.addService(secretServiceName, sis)
+                .setInitialMode(ON_DEMAND);
+        if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
+                sis.getCredentialSourceSupplierInjector()
+                        .inject(CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, serviceBuilder));
+            }
+        serviceBuilder.install();
         CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName);
     }
 
@@ -786,9 +816,10 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         UserDomainCallbackHandler usersCallbackHandler = new UserDomainCallbackHandler(realmName, unmaskUsersPasswords(context, users));
 
-        serviceTarget.addService(usersServiceName, usersCallbackHandler)
-                .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .install();
+        ServiceBuilder<CallbackHandlerService> serviceBuilder = serviceTarget.addService(usersServiceName, usersCallbackHandler)
+                .setInitialMode(ServiceController.Mode.ON_DEMAND);
+        usersCallbackHandler.getCredentialSourceSupplierInjector().inject(unmaskUsersCredentials(context, serviceBuilder, users.clone()));
+        serviceBuilder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName);
     }
@@ -808,6 +839,18 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
             }
         }
         return users;
+    }
+
+    private Map<String, ExceptionSupplier<CredentialSource, Exception>> unmaskUsersCredentials(OperationContext context, ServiceBuilder<CallbackHandlerService> serviceBuilder, ModelNode users) throws OperationFailedException {
+        Map<String, ExceptionSupplier<CredentialSource, Exception>> suppliers = new HashMap<>();
+        for (Property property : users.get(USER).asPropertyList()) {
+            // Don't use the value from property as it is a clone and does not update the returned users ModelNode.
+            ModelNode user = users.get(USER, property.getName());
+            if (user.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
+                suppliers.put(property.getName(), CredentialReference.getCredentialSourceSupplier(context, UserResourceDefinition.CREDENTIAL_REFERENCE, user, serviceBuilder));
+            }
+        }
+        return suppliers;
     }
 
     private static Map<String, String> resolveProperties( final OperationContext context, final ModelNode model) throws OperationFailedException {
@@ -835,18 +878,8 @@ public class SecurityRealmAddHandler implements OperationStepHandler {
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            final List<ServiceController<?>> newControllers = new ArrayList<ServiceController<?>>();
-            final String realmName = ManagementUtil.getSecurityRealmName(operation);
             final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-            SecurityRealmAddHandler.INSTANCE.installServices(context, realmName, model);
-            context.completeStep(new OperationContext.RollbackHandler() {
-                @Override
-                public void handleRollback(OperationContext context, ModelNode operation) {
-                    for (ServiceController<?> sc : newControllers) {
-                        context.removeService(sc);
-                    }
-                }
-            });
+            SecurityRealmAddHandler.INSTANCE.installServices(context, context.getCurrentAddressValue(), model);
         }
     }
 }

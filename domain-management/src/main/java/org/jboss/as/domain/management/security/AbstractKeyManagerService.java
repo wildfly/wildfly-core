@@ -37,6 +37,10 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
+import org.wildfly.security.password.interfaces.ClearPassword;
 
 /**
  * Service to handle the creation of the KeyManager[].
@@ -47,6 +51,8 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
 
     private volatile char[] keystorePassword;
     private volatile char[] keyPassword;
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> keyCredentialSourceSupplier = new InjectedValue<>();
+    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> keystoreCredentialSourceSupplier = new InjectedValue<>();
 
 
     AbstractKeyManagerService(final char[] keystorePassword, final char[] keyPassword) {
@@ -150,4 +156,42 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
 
     }
 
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getKeyCredentialSourceSupplierInjector() {
+        return keyCredentialSourceSupplier;
+    }
+
+    Injector<ExceptionSupplier<CredentialSource, Exception>> getKeystoreCredentialSourceSupplierInjector() {
+        return keystoreCredentialSourceSupplier;
+    }
+
+    protected char[] resolveKeyPassword() {
+        return resolvePassword(keyCredentialSourceSupplier.getOptionalValue(), keyPassword);
+    }
+
+    protected char[] resolveKeystorePassword() {
+        return resolvePassword(keystoreCredentialSourceSupplier.getOptionalValue(), keystorePassword);
+    }
+
+    private char[] resolvePassword(ExceptionSupplier<CredentialSource, Exception> sourceSupplier, char[] legacyPassword) {
+        try {
+            if(sourceSupplier == null) {
+                return legacyPassword;
+            }
+            CredentialSource cs = sourceSupplier.get();
+            if(cs == null) {
+                return legacyPassword;
+            }
+            org.wildfly.security.credential.PasswordCredential credential = cs.getCredential(org.wildfly.security.credential.PasswordCredential.class);
+            if (credential == null) {
+                return legacyPassword;
+            }
+            ClearPassword password = credential.getPassword(ClearPassword.class);
+            if (password == null) {
+                return legacyPassword;
+            }
+            return password.getPassword();
+        } catch (Exception ex) {
+            return legacyPassword;
+        }
+    }
 }

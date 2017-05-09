@@ -44,6 +44,8 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
+import static org.jboss.as.controller.management.Capabilities.MANAGEMENT_SECURITY_REALM_CAPABILITY;
+
 /**
  * Base class for the {@link ResourceDefinition} instances to extend from.
  *
@@ -61,6 +63,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setRestartAllServices()
         .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
         .setNullSignificant(true)
+        .setCapabilityReference(MANAGEMENT_SECURITY_REALM_CAPABILITY)
         .setDeprecated(ModelVersion.create(5))
         .build();
 

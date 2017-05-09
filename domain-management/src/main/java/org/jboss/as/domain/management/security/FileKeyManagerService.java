@@ -65,8 +65,6 @@ class FileKeyManagerService extends AbstractKeyManagerService {
     private volatile String provider;
     private volatile String path;
     private volatile String relativeTo;
-    private volatile char[] keystorePassword;
-    private volatile char[] keyPassword;
     private volatile String alias;
     private volatile FileKeystore keyStore;
     private String autoGenerateCertHostName;
@@ -74,12 +72,9 @@ class FileKeyManagerService extends AbstractKeyManagerService {
     FileKeyManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword,
                           final char[] keyPassword, final String alias, String autoGenerateCertHostName) {
         super(keystorePassword, keyPassword);
-
         this.provider = provider;
         this.path = path;
         this.relativeTo = relativeTo;
-        this.keystorePassword = keystorePassword;
-        this.keyPassword = keyPassword;
         this.alias = alias;
         this.autoGenerateCertHostName = autoGenerateCertHostName;
     }
@@ -106,22 +101,6 @@ class FileKeyManagerService extends AbstractKeyManagerService {
 
     public void setRelativeTo(final String relativeTo) {
         this.relativeTo = relativeTo;
-    }
-
-    public char[] getKeystorePassword() {
-        return keystorePassword;
-    }
-
-    public void setKeystorePassword(char[] keystorePassword) {
-        this.keystorePassword = keystorePassword;
-    }
-
-    public char[] getKeyPassword() {
-        return keyPassword;
-    }
-
-    public void setKeyPassword(char[] keyPassword) {
-        this.keyPassword = keyPassword;
     }
 
     public String getAlias() {
@@ -186,7 +165,7 @@ class FileKeyManagerService extends AbstractKeyManagerService {
                 }
             }
 
-            keyStore = FileKeystore.newKeyStore(provider, file, keystorePassword, keyPassword, alias);
+            keyStore = FileKeystore.newKeyStore(provider, file, resolveKeystorePassword(), resolveKeyPassword(), alias);
             keyStore.load();
 
             return keyStore.getKeyStore();
@@ -204,14 +183,14 @@ class FileKeyManagerService extends AbstractKeyManagerService {
 
 
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(null, keystorePassword);
+            keyStore.load(null, resolveKeystorePassword());
 
             //Generate self signed certificate
             X509Certificate[] chain = new X509Certificate[1];
             chain[0] = cert;
-            keyStore.setKeyEntry(alias, pair.getPrivate(), keyPassword, chain);
+            keyStore.setKeyEntry(alias, pair.getPrivate(), resolveKeyPassword(), chain);
             try (FileOutputStream stream = new FileOutputStream(path)) {
-                keyStore.store(stream, keystorePassword);
+                keyStore.store(stream, resolveKeystorePassword());
             }
             DomainManagementLogger.SECURITY_LOGGER.keystoreHasBeenCreated(path.toString(), getSha1Fingerprint(cert, "SHA-1"), getSha1Fingerprint(cert, "SHA-256"));
 
