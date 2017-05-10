@@ -37,7 +37,6 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.domain.management.security.SecurityRealmResourceDefinition;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -72,7 +71,6 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
-            .setCapabilityReference(SecurityRealmResourceDefinition.MANAGEMENT_SECURITY_REALM_CAPABILITY.getName())
             .setNullSignificant(true)
             .build();
 
