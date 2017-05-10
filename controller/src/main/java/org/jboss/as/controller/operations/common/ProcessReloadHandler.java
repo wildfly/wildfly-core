@@ -22,6 +22,11 @@
 
 package org.jboss.as.controller.operations.common;
 
+import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
@@ -30,6 +35,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.AbstractServiceListener;
@@ -72,17 +78,29 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 final ReloadContext<T> reloadContext = initializeReloadContext(context, operation);
                 final ServiceController<?> service = context.getServiceRegistry(true).getRequiredService(rootService);
+                final ExecutorService executor = (ExecutorService) context.getServiceRegistry(false).getRequiredService(EXECUTOR_CAPABILITY.getCapabilityServiceName()).getValue();
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if(resultAction == OperationContext.ResultAction.KEEP) {
                             service.addListener(new AbstractServiceListener<Object>() {
+                                @Override
                                 public void listenerAdded(final ServiceController<?> controller) {
-                                    reloadContext.reloadInitiated(runningModeControl);
-                                    processState.setStopping();
-                                    controller.setMode(ServiceController.Mode.NEVER);
+                                    Future<?> stopping = executor.submit(() -> {
+                                        reloadContext.reloadInitiated(runningModeControl);
+                                        processState.setStopping();
+                                        controller.setMode(ServiceController.Mode.NEVER);
+                                    });
+                                    try {
+                                        stopping.get();
+                                    } catch (InterruptedException ex) {
+                                        Thread.currentThread().interrupt();
+                                    } catch (ExecutionException ex) {
+                                        ControllerLogger.ROOT_LOGGER.errorStoppingServer(ex);
+                                    }
                                 }
 
+                                @Override
                                 public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
                                     if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
                                         controller.removeListener(this);

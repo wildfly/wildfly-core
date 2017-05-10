@@ -56,7 +56,7 @@ public class NativeManagementServices {
             ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     new ModelControllerClientOperationHandlerFactoryService(),
                     DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.MANAGEMENT_CHANNEL,
-                    HostControllerService.HC_EXECUTOR_SERVICE_NAME, HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
+                    DomainModelControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), HostControllerService.HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
         }
     }
 }

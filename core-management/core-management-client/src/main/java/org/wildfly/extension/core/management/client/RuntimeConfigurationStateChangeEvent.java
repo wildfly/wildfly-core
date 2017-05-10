@@ -40,4 +40,9 @@ public class RuntimeConfigurationStateChangeEvent {
         return oldState;
     }
 
+    @Override
+    public String toString() {
+        return "RuntimeConfigurationStateChangeEvent{" + "newState=" + newState + ", oldState=" + oldState + '}';
+    }
+
 }

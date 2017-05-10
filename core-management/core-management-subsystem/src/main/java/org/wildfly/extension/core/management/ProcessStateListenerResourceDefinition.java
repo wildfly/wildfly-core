@@ -23,9 +23,11 @@ package org.wildfly.extension.core.management;
 
 
 
+import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
 import static org.wildfly.extension.core.management.CoreManagementExtension.PROCESS_STATE_LISTENER_PATH;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -45,7 +47,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.wildfly.extension.core.management.client.ProcessStateListener;
 import org.wildfly.extension.core.management.logging.CoreManagementLogger;
@@ -57,7 +58,9 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     private static final String CLASS = "class";
     private static final String PROCESS_STATE_LISTENER_CAPABILITY_NAME = "org.wildfly.extension.core-management.process-state";
     static final RuntimeCapability<Void> PROCESS_STATE_LISTENER_CAPABILITY =
-            RuntimeCapability.Builder.of(PROCESS_STATE_LISTENER_CAPABILITY_NAME, true, ProcessStateListenerService.class).build();
+            RuntimeCapability.Builder.of(PROCESS_STATE_LISTENER_CAPABILITY_NAME, true, ProcessStateListenerService.class)
+                    .addRequirements(EXECUTOR_CAPABILITY.getName())
+                    .build();
 
     public static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true)
             .setAllowExpression(true)
@@ -90,6 +93,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     ProcessStateListenerResourceDefinition() {
         super(new Parameters(PROCESS_STATE_LISTENER_PATH, CoreManagementExtension.getResourceDescriptionResolver("process-state-listener"))
                 .setOrderedChild()
+                .setCapabilities(PROCESS_STATE_LISTENER_CAPABILITY)
                 .setAddHandler(new ProcessStateListenerResourceDefinition.ProcessStateListenerAddHandler())
                 .setRemoveHandler(new ProcessStateListenerResourceDefinition.ProcessStateListenerRemoveHandler()));
     }
@@ -102,7 +106,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     private static class ProcessStateListenerAddHandler extends AbstractAddStepHandler  {
 
         ProcessStateListenerAddHandler() {
-            super(PROCESS_STATE_LISTENER_CAPABILITY, ATTRIBUTES);
+            super(ATTRIBUTES);
         }
 
         @Override
@@ -127,19 +131,18 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
         }
 
         private static ProcessStateListener newInstance(String className, String moduleIdentifier) throws OperationFailedException {
-            ModuleIdentifier moduleID = ModuleIdentifier.fromString(moduleIdentifier);
             final Module module;
             try {
-                module = Module.getContextModuleLoader().loadModule(moduleID);
+                module = Module.getContextModuleLoader().loadModule(moduleIdentifier);
                 Class<?> clazz = module.getClassLoader().loadClass(className);
-                Object instance = clazz.newInstance();
+                Object instance = clazz.getConstructor(null).newInstance(null);
                 return ProcessStateListener.class.cast(instance);
             } catch (ModuleLoadException e) {
-                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModule(moduleID);
+                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModule(moduleIdentifier);
             } catch (ClassNotFoundException e) {
-                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModuleClass(className, moduleID);
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw CoreManagementLogger.ROOT_LOGGER.errorToInstantiateClassInstanceFromModule(className, moduleID);
+                throw CoreManagementLogger.ROOT_LOGGER.errorToLoadModuleClass(className, moduleIdentifier);
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException | InvocationTargetException e) {
+                throw CoreManagementLogger.ROOT_LOGGER.errorToInstantiateClassInstanceFromModule(className, moduleIdentifier);
             }
         }
     }

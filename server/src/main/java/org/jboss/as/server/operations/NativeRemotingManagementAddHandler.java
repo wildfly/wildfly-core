@@ -73,7 +73,7 @@ public class NativeRemotingManagementAddHandler extends ManagementInterfaceAddSt
                 new ModelControllerClientOperationHandlerFactoryService(),
                 Services.JBOSS_SERVER_CONTROLLER,
                 ManagementRemotingServices.MANAGEMENT_CHANNEL,
-                Services.JBOSS_SERVER_EXECUTOR,
+                ServerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(),
                 ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
         List<ServiceName> requiredServices = Collections.singletonList(RemotingServices.channelServiceName(endpointName, ManagementRemotingServices.MANAGEMENT_CHANNEL));
         addVerifyInstallationStep(context, requiredServices);

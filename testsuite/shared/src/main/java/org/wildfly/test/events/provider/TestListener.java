@@ -104,14 +104,18 @@ public class TestListener implements ProcessStateListener {
     @Override
     public void runtimeConfigurationStateChanged(RuntimeConfigurationStateChangeEvent evt) {
         if (parameters.getInitProperties().containsKey(FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED)) {
-            throw new NullPointerException(FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
+            throw new ListenerFailureException(FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
         }
         try {
             if (parameters.getInitProperties().containsKey(TIMEOUT)) {
                 long timeout = Long.parseLong(parameters.getInitProperties().get(TIMEOUT));
                 Thread.sleep(timeout);
             }
-            fileRuntimeWriter.write(String.format("%s %s %s %s\n", parameters.getProcessType(), parameters.getRunningMode(), evt.getOldState(), evt.getNewState()));
+            fileRuntimeWriter.write(String.format("%s %s %s %s\n",
+                    parameters.getProcessType(),
+                    parameters.getRunningMode(),
+                    evt.getOldState(),
+                    evt.getNewState()));
             fileRuntimeWriter.flush();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -121,10 +125,14 @@ public class TestListener implements ProcessStateListener {
     @Override
     public void runningStateChanged(RunningStateChangeEvent evt) {
         if (parameters.getInitProperties().containsKey(FAIL_RUNNING_STATE_CHANGED)) {
-            throw new NullPointerException(FAIL_RUNNING_STATE_CHANGED);
+            throw new ListenerFailureException(FAIL_RUNNING_STATE_CHANGED);
         }
         try {
-            fileRunningWriter.write(String.format("%s %s %s %s\n", parameters.getProcessType(), parameters.getRunningMode(), evt.getOldState(), evt.getNewState()));
+            fileRunningWriter.write(String.format("%s %s %s %s\n",
+                    parameters.getProcessType(),
+                    parameters.getRunningMode(),
+                    evt.getOldState(),
+                    evt.getNewState()));
             fileRunningWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();

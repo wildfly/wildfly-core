@@ -78,6 +78,7 @@ public class ProcessStateListenerService implements Service<Void> {
     private final String name;
     private final int timeout;
     private final ProcessType processType;
+    private final Object stopLock = new Object();
 
     private volatile Process.RunningState runningState = null;
 
@@ -136,58 +137,62 @@ public class ProcessStateListenerService implements Service<Void> {
     }
 
     private void transition(Process.RuntimeConfigurationState oldState, Process.RuntimeConfigurationState newState) {
-        if(oldState == newState) {
-            return;
-        }
-        Future<?> controlledProcessStateTransition = executorServiceValue.getValue().submit(() -> {
-            listener.runtimeConfigurationStateChanged(new RuntimeConfigurationStateChangeEvent(oldState, newState));
-        });
-        try {
-            controlledProcessStateTransition.get(timeout, TimeUnit.SECONDS);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
-        } catch (TimeoutException ex) {
-            CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
-        } catch (ExecutionException | RuntimeException t) {
-            CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
-        } finally {
-            if (!controlledProcessStateTransition.isDone()) {
-                controlledProcessStateTransition.cancel(true);
+        synchronized (stopLock) {
+            if (oldState == newState) {
+                return;
             }
-        }
-        switch(newState) {
-            case RUNNING:
-                if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState) {
-                    if (!processType.isServer()) {
-                        if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
-                            suspendTransition(runningState, Process.RunningState.NORMAL);
-                        } else {
-                            suspendTransition(runningState, Process.RunningState.ADMIN_ONLY);
+            final RuntimeConfigurationStateChangeEvent event = new RuntimeConfigurationStateChangeEvent(oldState, newState);
+            Future<?> controlledProcessStateTransition = executorServiceValue.getValue().submit(() -> {
+                CoreManagementLogger.ROOT_LOGGER.debugf("Executing runtimeConfigurationStateChanged %s in thread %s", event, Thread.currentThread().getName());
+                listener.runtimeConfigurationStateChanged(event);
+            });
+            try {
+                controlledProcessStateTransition.get(timeout, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
+            } catch (TimeoutException ex) {
+                CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
+            } catch (ExecutionException | RuntimeException t) {
+                CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
+            } finally {
+                if (!controlledProcessStateTransition.isDone()) {
+                    controlledProcessStateTransition.cancel(true);
+                }
+            }
+            switch (newState) {
+                case RUNNING:
+                    if (RunningState.NORMAL != runningState && RunningState.ADMIN_ONLY != runningState) {
+                        if (!processType.isServer()) {
+                            if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
+                                suspendTransition(runningState, Process.RunningState.NORMAL);
+                            } else {
+                                suspendTransition(runningState, Process.RunningState.ADMIN_ONLY);
+                            }
+                        } else if (runningState == RunningState.STARTING) {
+                            suspendTransition(runningState, Process.RunningState.SUSPENDED);
                         }
-                    } else if (runningState == RunningState.STARTING) {
-                        suspendTransition(runningState, Process.RunningState.SUSPENDED);
                     }
-                }
-                break;
-            case STARTING:
-                if (Process.RunningState.STARTING != runningState) {
-                    suspendTransition(runningState, Process.RunningState.STARTING);
-                }
-                break;
-            case STOPPING:
-                if (Process.RunningState.STOPPING != runningState) {
-                    suspendTransition(runningState, Process.RunningState.STOPPING);
-                }
-                break;
-            case STOPPED:
-                if (Process.RunningState.STOPPED != runningState) {
-                    suspendTransition(runningState, Process.RunningState.STOPPED);
-                }
-                break;
-            case RELOAD_REQUIRED:
-            case RESTART_REQUIRED:
-            default:
+                    break;
+                case STARTING:
+                    if (Process.RunningState.STARTING != runningState) {
+                        suspendTransition(runningState, Process.RunningState.STARTING);
+                    }
+                    break;
+                case STOPPING:
+                    if (Process.RunningState.STOPPING != runningState) {
+                        suspendTransition(runningState, Process.RunningState.STOPPING);
+                    }
+                    break;
+                case STOPPED:
+                    if (Process.RunningState.STOPPED != runningState) {
+                        suspendTransition(runningState, Process.RunningState.STOPPED);
+                    }
+                    break;
+                case RELOAD_REQUIRED:
+                case RESTART_REQUIRED:
+                default:
+            }
         }
     }
 
@@ -196,25 +201,29 @@ public class ProcessStateListenerService implements Service<Void> {
      * @param newState the new running state.
      */
     private void suspendTransition(Process.RunningState oldState, Process.RunningState newState) {
-        if(oldState == newState) {
-            return;
-        }
-        this.runningState = newState;
-        Future<?> suspendStateTransition = executorServiceValue.getValue().submit(() -> {
-            listener.runningStateChanged(new RunningStateChangeEvent(oldState, newState));
-        });
-        try {
-            suspendStateTransition.get(timeout, TimeUnit.SECONDS);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
-        } catch (TimeoutException ex) {
-            CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
-        } catch (ExecutionException | RuntimeException t) {
-            CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
-        } finally {
-            if (!suspendStateTransition.isDone()) {
-                suspendStateTransition.cancel(true);
+        synchronized (stopLock) {
+            if (oldState == newState) {
+                return;
+            }
+            this.runningState = newState;
+            final RunningStateChangeEvent event = new RunningStateChangeEvent(oldState, newState);
+            Future<?> suspendStateTransition = executorServiceValue.getValue().submit(() -> {
+                CoreManagementLogger.ROOT_LOGGER.debugf("Executing runningStateChanged %s in thread %s", event, Thread.currentThread().getName());
+                listener.runningStateChanged(event);
+            });
+            try {
+                suspendStateTransition.get(timeout, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(ex, name);
+            } catch (TimeoutException ex) {
+                CoreManagementLogger.ROOT_LOGGER.processStateTimeoutError(ex, name);
+            } catch (ExecutionException | RuntimeException t) {
+                CoreManagementLogger.ROOT_LOGGER.processStateInvokationError(t, name);
+            } finally {
+                if (!suspendStateTransition.isDone()) {
+                    suspendStateTransition.cancel(true);
+                }
             }
         }
     }
@@ -225,10 +234,8 @@ public class ProcessStateListenerService implements Service<Void> {
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateService);
         if (processType != ProcessType.HOST_CONTROLLER && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
             builder.addDependency(SuspendController.SERVICE_NAME, SuspendController.class, service.suspendControllerInjectedValue);
-            builder.addDependency(Services.JBOSS_SERVER_EXECUTOR, ExecutorService.class, service.executorServiceValue);
-        } else {
-            builder.addDependency(ServiceName.JBOSS.append("host", "controller", "executor"), ExecutorService.class, service.executorServiceValue);
         }
+        Services.addServerExecutorDependency(builder, service.executorServiceValue);
         builder.install();
     }
 
@@ -290,29 +297,36 @@ public class ProcessStateListenerService implements Service<Void> {
         }
     }
 
+    /**
+     * The stop is asynchronous and will wait until the current transition / suspendTransition ends before effectively stopping.
+     * This will force the executorService to be Value
+     * @param context the stop context.
+     */
     @Override
     public void stop(StopContext context) {
-        Runnable task = () -> {
-            controlledProcessStateService.getValue().removePropertyChangeListener(propertyChangeListener);
-            runningState = null;
-            try {
-                listener.cleanup();
+        Runnable asyncStop = () -> {
+            synchronized (stopLock) {
+                controlledProcessStateService.getValue().removePropertyChangeListener(propertyChangeListener);
                 SuspendController controller = suspendControllerInjectedValue.getOptionalValue();
                 if (controller != null) {
                     controller.removeListener(operationListener);
                 }
-            } catch (RuntimeException t) {
-                CoreManagementLogger.ROOT_LOGGER.processStateCleanupError(t, name);
-            } finally {
-                context.complete();
+                runningState = null;
+                try {
+                    listener.cleanup();
+                } catch (RuntimeException t) {
+                    CoreManagementLogger.ROOT_LOGGER.processStateCleanupError(t, name);
+                } finally {
+                    context.complete();
+                }
             }
         };
         final ExecutorService executorService = executorServiceValue.getValue();
         try {
             try {
-                executorService.execute(task);
+                executorService.execute(asyncStop);
             } catch (RejectedExecutionException e) {
-                task.run();
+                asyncStop.run();
             }
         } finally {
             context.asynchronous();

@@ -3492,4 +3492,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 441, value = "Operation has resulted in failed or missing services %n")
     String serviceStatusReportFailureHeader();
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 442, value = "Error stopping server")
+    void errorStoppingServer(@Cause Exception cause);
 }
