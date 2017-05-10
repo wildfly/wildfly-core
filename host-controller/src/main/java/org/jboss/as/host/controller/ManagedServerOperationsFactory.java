@@ -393,6 +393,10 @@ public final class ManagedServerOperationsFactory {
             if (codeNode.isDefined()) {
                 vault.get(Attribute.CODE.getLocalName()).set(codeNode.asString());
             }
+            ModelNode moduleNode = vaultNode.get(Attribute.MODULE.getLocalName());
+            if (moduleNode.isDefined()) {
+                vault.get(Attribute.MODULE.getLocalName()).set(moduleNode.asString());
+            }
             ModelNode vaultAddress = new ModelNode();
             vaultAddress.add(CORE_SERVICE, VAULT);
             addAddNameAndAddress(vault, vaultAddress);
