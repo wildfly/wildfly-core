@@ -21,12 +21,28 @@
  */
 package org.jboss.as.test.integration.domain;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
+import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_USERNAME;
+import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTP_PORT;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -41,22 +57,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
-import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_USERNAME;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTP_PORT;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -117,6 +120,18 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         Assert.fail("Cannot validate host '" + host + "' is running");
     }
 
+    protected static void checkHostStatusOnMasterOverRemote(String host, DomainClient domainClient) throws IOException, InterruptedException {
+        final long time = System.currentTimeMillis() + TIMEOUT;
+        do {
+            if (checkResultIsRunning(domainClient.execute(getHostStateRunningOperation(host)))) {
+                return;
+            }
+            Thread.sleep(100);
+        } while (System.currentTimeMillis() < time);
+
+        Assert.fail("Cannot validate host '" + host + "' is running");
+    }
+
     private static void setMasterManagementNativeInterface(ModelControllerClient client) throws Exception {
         ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
@@ -137,6 +152,16 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         return new URL("http", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX).toURI();
     }
 
+    private static boolean checkResultIsRunning(ModelNode result) {
+        if (result != null && result.get(OUTCOME).asString().equals(SUCCESS)) {
+            final ModelNode resultNode = result.require(RESULT);
+            if ("running".equalsIgnoreCase(resultNode.asString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean isHostStateRunning(URI mgmtURI, String operation) throws IOException {
         ModelNode responseNode;
         try {
@@ -146,14 +171,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
             return false;
         }
 
-        if (responseNode != null && responseNode.get(OUTCOME).asString().equals(SUCCESS)) {
-            final ModelNode resultNode = responseNode.require(RESULT);
-            if ("running".equalsIgnoreCase(resultNode.asString())) {
-                return true;
-            }
-        }
-
-        return false;
+        return checkResultIsRunning(responseNode);
     }
 
     private static ModelNode executeOverHttp(URI mgmtURI, String operation) throws IOException {
@@ -196,10 +214,14 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static String createHostStateRunningOperationJson(String host) {
+        return getHostStateRunningOperation(host).toJSONString(true);
+    }
+
+    private static ModelNode getHostStateRunningOperation(String host) {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(HOST, host);
         operation.get(NAME).set(HOST_STATE);
-        return operation.toJSONString(true);
+        return operation;
     }
 }
