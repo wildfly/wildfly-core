@@ -132,7 +132,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final ObjectListAttributeDefinition NEW_ITEM_ATTRIBUTES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.NEW_ITEM_ATTRIBUTES, NewItemTemplateAttributeObjectDefinition.OBJECT_DEFINITION)
-                .setAllowNull(false)
+                .setRequired(true)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
                 .setRequires(ElytronDescriptionConstants.NEW_ITEM_PATH, ElytronDescriptionConstants.NEW_ITEM_RDN)
@@ -347,7 +347,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { NAME, VALUE };
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE, ATTRIBUTES)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
     }
 

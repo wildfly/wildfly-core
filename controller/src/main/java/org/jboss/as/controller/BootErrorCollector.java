@@ -110,19 +110,19 @@ public class BootErrorCollector {
                     SimpleListAttributeDefinition.Builder.of(OP_ADDR,
                             SimpleAttributeDefinitionBuilder.create("element", ModelType.PROPERTY, false).build())
                             .build())
-                .setAllowNull(false)
+                .setRequired(true)
                 .build();
 
         private static final AttributeDefinition FAILURE_MESSAGE = SimpleAttributeDefinitionBuilder.create(FAILURE_DESCRIPTION, ModelType.STRING, false).build();
 
         private static final AttributeDefinition FAILED_SVC_AD = SimpleListAttributeDefinition.Builder.of(FAILED_SERVICES,
                 SimpleAttributeDefinitionBuilder.create("element", ModelType.STRING, false).build())
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
 
         private static final AttributeDefinition MISSING_DEPS_AD = SimpleListAttributeDefinition.Builder.of(SERVICES_MISSING_DEPENDENCIES,
                 SimpleAttributeDefinitionBuilder.create("element", ModelType.STRING, false).build())
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
 
         private static final AttributeDefinition AFFECTED_AD = SimpleListAttributeDefinition.Builder.of(SERVICES_MISSING_TRANSITIVE_DEPENDENCIES,
@@ -135,7 +135,7 @@ public class BootErrorCollector {
 
         private static final AttributeDefinition TRANSITIVE_AD = ObjectTypeAttributeDefinition.Builder.of(MISSING_TRANSITIVE_DEPENDENCY_PROBLEMS,
                     AFFECTED_AD, CAUSE_AD)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
 
         public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME,

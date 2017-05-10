@@ -47,7 +47,7 @@ class ProviderAttributeDefinition {
 
     static final ObjectTypeAttributeDefinition LOADED_PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.LOADED_PROVIDER, NAME, INFO, VERSION)
         .setStorageRuntime()
-        .setAllowNull(false)
+        .setRequired(true)
         .build();
 
     /*
@@ -64,19 +64,19 @@ class ProviderAttributeDefinition {
 
     private static final ObjectTypeAttributeDefinition SERVICE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVICE, TYPE, ALGORITHM, CLASS_NAME)
         .setStorageRuntime()
-        .setAllowNull(false)
+        .setRequired(true)
         .build();
 
     private static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.SERVICES, SERVICE)
         .build();
 
     private static final ObjectTypeAttributeDefinition FULL_PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDER, NAME, INFO, VERSION, SERVICES)
-        .setAllowNull(false)
+        .setRequired(true)
         .build();
 
     static final ObjectListAttributeDefinition LOADED_PROVIDERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.LOADED_PROVIDERS, FULL_PROVIDER)
         .setStorageRuntime()
-        .setAllowNull(false)
+        .setRequired(true)
         .build();
 
     /*
@@ -117,14 +117,14 @@ class ProviderAttributeDefinition {
         .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
         .setAlternatives(ElytronDescriptionConstants.PATH)
         .setAllowDuplicates(true)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
     static final ObjectListAttributeDefinition INDEXED_PROPERTY_LIST = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY_LIST, INDEXED_PROPERTY)
         .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
         .setAlternatives(ElytronDescriptionConstants.PATH)
         .setAllowDuplicates(true)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
     private static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
@@ -145,11 +145,11 @@ class ProviderAttributeDefinition {
         .build();
 
     static final ObjectListAttributeDefinition PROVIDERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDERS, PROVIDER)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
     static final ObjectListAttributeDefinition INDEXED_PROVIDERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDERS, INDEXED_PROVIDER)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
 

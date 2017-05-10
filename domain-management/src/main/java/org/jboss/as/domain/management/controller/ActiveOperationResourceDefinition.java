@@ -63,7 +63,7 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CALLER_THREAD, ModelType.STRING).build();
     private static final AttributeDefinition ACCESS_MECHANISM =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ACCESS_MECHANISM, ModelType.STRING)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setValidator(EnumValidator.create(AccessMechanism.class, true, false))
                     .build();
     private static final AttributeDefinition DOMAIN_UUID =

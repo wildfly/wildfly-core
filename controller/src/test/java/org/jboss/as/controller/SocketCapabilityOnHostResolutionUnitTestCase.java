@@ -227,7 +227,7 @@ public class SocketCapabilityOnHostResolutionUnitTestCase {
             }  else {
                 context.getResult().set(true);
             }
-            context.registerCapability(rcb.build(), null);
+            context.registerCapability(rcb.build());
         }
     }
 

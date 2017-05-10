@@ -83,7 +83,7 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
                     }
                 }
             })
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(OverflowAction.BLOCK.name()))
             .setPropertyName("overflowAction")
             .setResolver(OverflowActionResolver.INSTANCE)
@@ -92,7 +92,7 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
 
     public static final LogHandlerListAttributeDefinition SUBHANDLERS = LogHandlerListAttributeDefinition.Builder.of("subhandlers")
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = {ENABLED, LEVEL, FILTER_SPEC, QUEUE_LENGTH, OVERFLOW_ACTION, SUBHANDLERS};

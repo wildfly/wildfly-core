@@ -47,7 +47,7 @@ public class NamespaceRemoveHandler implements OperationStepHandler {
     private static final String OPERATION_NAME = "remove-namespace";
 
     private static final SimpleAttributeDefinition NAMESPACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAMESPACE, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 

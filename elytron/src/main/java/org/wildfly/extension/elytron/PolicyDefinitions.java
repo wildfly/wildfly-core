@@ -122,7 +122,7 @@ class PolicyDefinitions {
         static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(JACC_POLICY, NAME, POLICY_PROVIDER, CONFIGURATION_FACTORY, MODULE).build();
         static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(JACC_POLICY, POLICY)
                 .setMinSize(1)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
     }
 
@@ -134,7 +134,7 @@ class PolicyDefinitions {
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
         static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, NAME, CLASS_NAME, MODULE).build();
         static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, POLICY)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
     }
 

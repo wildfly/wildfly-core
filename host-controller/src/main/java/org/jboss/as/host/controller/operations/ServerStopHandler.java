@@ -49,7 +49,7 @@ public class ServerStopHandler implements OperationStepHandler {
 
     private static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
-            .setAllowNull(true)
+            .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .build();
 

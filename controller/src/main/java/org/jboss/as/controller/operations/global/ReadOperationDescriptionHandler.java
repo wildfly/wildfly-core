@@ -67,7 +67,7 @@ import org.jboss.dmr.ModelType;
 public class ReadOperationDescriptionHandler implements OperationStepHandler {
 
     static final SimpleAttributeDefinition ACCESS_CONTROL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ACCESS_CONTROL, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

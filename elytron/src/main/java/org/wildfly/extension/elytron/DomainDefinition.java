@@ -158,7 +158,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         .build();
 
     static final ObjectTypeAttributeDefinition REALM = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.REALM, REALM_NAME, REALM_PRINCIPAL_TRANSFORMER, REALM_ROLE_DECODER, ROLE_MAPPER)
-        .setAllowNull(false)
+        .setRequired(true)
         .build();
 
     static final ObjectListAttributeDefinition REALMS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.REALMS, REALM)

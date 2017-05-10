@@ -155,12 +155,12 @@ class SaslServerDefinitions {
         .build();
 
     static final ObjectTypeAttributeDefinition MECH_PROVIDER_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, MECHANISM_NAME, PROVIDER_NAME, PROVIDER_VERSION, VERSION_COMPARISON)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
     static final ObjectListAttributeDefinition MECH_PROVIDER_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, MECH_PROVIDER_FILTER)
         .setMinSize(1)
-        .setAllowNull(true)
+        .setRequired(false)
         .build();
 
     static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, true)
@@ -183,7 +183,7 @@ class SaslServerDefinitions {
         .build();
 
     static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, CONFIGURED_FILTER)
-        .setAllowNull(true)
+        .setRequired(false)
         .setValidator(new FiltersValidator())
         .build();
 

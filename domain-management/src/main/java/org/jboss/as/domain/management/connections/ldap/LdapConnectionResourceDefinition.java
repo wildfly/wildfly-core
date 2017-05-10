@@ -98,7 +98,7 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
 
     public static final StringListAttributeDefinition HANDLES_REFERRALS_FOR = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.HANDLES_REFERRALS_FOR)
             .setAllowExpression(true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new URIValidator(true, true))
             .build();
 

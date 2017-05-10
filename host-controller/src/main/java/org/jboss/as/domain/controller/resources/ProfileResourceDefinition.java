@@ -73,12 +73,12 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
     //This attribute exists in 7.1.2 and 7.1.3 but was always nillable
     public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
             .setValidator(new StringLengthValidator(1, true))
-            .setAllowNull(true)
+            .setRequired(false)
             .setResourceOnly()
             .build();
 
     public static final ListAttributeDefinition INCLUDES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.INCLUDES)
-            .setAllowNull(true)
+            .setRequired(false)
             .setElementValidator(new StringLengthValidator(1, true))
             .setCapabilityReference(PROFILE_CAPABILITY_NAME, PROFILE_CAPABILITY_NAME, true)
             .build();

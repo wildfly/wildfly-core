@@ -56,7 +56,7 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
     // Pattern formatter options
     public static final PropertyAttributeDefinition COLOR_MAP = PropertyAttributeDefinition.Builder.of("color-map", ModelType.STRING)
             .setAllowExpression(true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setPropertyName("colors")
             .setValidator(new RegexValidator(ModelType.STRING, true, true, COLOR_MAP_VALIDATION_PATTERN))
             .build();
@@ -68,7 +68,7 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
 
     public static final ObjectTypeAttributeDefinition PATTERN_FORMATTER = ObjectTypeAttributeDefinition.Builder.of("pattern-formatter", PATTERN, COLOR_MAP)
             .setAllowExpression(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
                 @Override
                 public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {

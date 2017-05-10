@@ -63,7 +63,7 @@ public class SSLServerIdentityResourceDefinition extends SimpleResourceDefinitio
 
     public static final StringListAttributeDefinition ENABLED_CIPHER_SUITES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ENABLED_CIPHER_SUITES)
             .setAllowExpression(true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setAttributeMarshaller(new StringListMarshaller(Attribute.ENABLED_CIPHER_SUITES.getLocalName()))
             .build();
@@ -71,7 +71,7 @@ public class SSLServerIdentityResourceDefinition extends SimpleResourceDefinitio
     public static final StringListAttributeDefinition ENABLED_PROTOCOLS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ENABLED_PROTOCOLS)
             .setDefaultValue(new ModelNode().add(TLSV1).add(TLSV1_1).add(TLSV1_2))
             .setAllowExpression(true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .setAttributeMarshaller(new StringListMarshaller(Attribute.ENABLED_PROTOCOLS.getLocalName()))
             .build();

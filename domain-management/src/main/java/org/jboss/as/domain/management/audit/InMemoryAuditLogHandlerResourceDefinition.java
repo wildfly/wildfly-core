@@ -65,7 +65,7 @@ import org.jboss.dmr.ModelType;
 public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition MAX_OPERATION_COUNT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MAX_HISTORY, ModelType.INT)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(10))
             .setValidator(new IntRangeValidator(0, true, true))

@@ -54,7 +54,7 @@ public class DiscoveryOptionsResourceDefinition extends SimpleResourceDefinition
     public static DiscoveryOptionsResourceDefinition INSTANCE = new DiscoveryOptionsResourceDefinition();
 
     public static final PrimitiveListAttributeDefinition DISCOVERY_OPTIONS = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.DISCOVERY_OPTIONS, ModelType.PROPERTY)
-        .setAllowNull(true)
+        .setRequired(false)
         .setElementValidator(new PropertyValidator(false, new StringLengthValidator(1)))
         .setDeprecated(ModelVersion.create(1))
         .build();
@@ -63,7 +63,7 @@ public class DiscoveryOptionsResourceDefinition extends SimpleResourceDefinition
     static {
 
         final SimpleAttributeDefinition name = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
-                .setAllowNull(false)
+                .setRequired(true)
                 .setValidator(new StringLengthValidator(1))
                 .build();
 
@@ -89,7 +89,7 @@ public class DiscoveryOptionsResourceDefinition extends SimpleResourceDefinition
         OPTIONS = ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.OPTIONS, listItem)
                 .setType(ModelType.LIST)
                 .addFlag(Flag.STORAGE_CONFIGURATION)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setDefaultValue(new ModelNode().setEmptyList())
                 .build();
     }

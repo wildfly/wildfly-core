@@ -354,7 +354,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronDescriptionConstants.VALUE, VALUE)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setMinSize(0)
                 .setAllowExpression(false)
                 .build();
@@ -420,7 +420,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.BCRYPT, PASSWORD, SALT, ITERATION_COUNT)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 
@@ -440,7 +440,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.CLEAR, PASSWORD)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 
@@ -467,7 +467,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.SIMPLE_DIGEST, ALGORITHM, PASSWORD)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 
@@ -500,7 +500,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST, ALGORITHM, PASSWORD, SALT)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 
@@ -527,7 +527,7 @@ class IdentityResourceDefinition extends SimpleResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.DIGEST, ALGORITHM, PASSWORD, REALM)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 

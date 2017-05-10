@@ -133,27 +133,27 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_NAMES)
             .build();
 
     static final SimpleAttributeDefinition PRODUCT_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PRODUCT_NAME, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .build();
 
     static final SimpleAttributeDefinition RELEASE_VERSION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RELEASE_VERSION, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .build();
 
     static final SimpleAttributeDefinition RELEASE_CODENAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RELEASE_CODENAME, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .build();
     static final SimpleAttributeDefinition PRODUCT_VERSION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PRODUCT_VERSION, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .build();
     static final SimpleAttributeDefinition MANAGEMENT_MAJOR_VERSION = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION, ModelType.INT)
@@ -167,7 +167,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .build();
     //This is just there for bw compatibility, it had no read handler before this change
     static final SimpleAttributeDefinition SERVER_STATE = new SimpleAttributeDefinitionBuilder("server-state", ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setMinSize(1)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
@@ -228,7 +228,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static final ObjectTypeAttributeDefinition DOMAIN_CONTROLLER = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.DOMAIN_CONTROLLER, DC_LOCAL, DC_REMOTE)
-            .setAllowNull(false)
+            .setRequired(true)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .build();
 

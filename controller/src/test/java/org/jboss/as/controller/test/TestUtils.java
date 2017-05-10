@@ -79,7 +79,7 @@ public class TestUtils {
         }
         attribute.setAllowExpression(true);
         if (allowNull) {
-            attribute.setAllowNull(true);
+            attribute.setRequired(false);
         }
         return attribute.build();
     }
@@ -97,7 +97,7 @@ public class TestUtils {
             attribute.setUndefinedMetricValue(new ModelNode(-1));
         }
         if (type == ModelType.STRING) {
-            attribute.setAllowNull(true);
+            attribute.setRequired(false);
         }
         return attribute.build();
     }

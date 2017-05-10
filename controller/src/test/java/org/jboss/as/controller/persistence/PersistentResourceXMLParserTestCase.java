@@ -536,7 +536,7 @@ public class PersistentResourceXMLParserTestCase {
                 .setXmlName("no-attr1")
                 .build();
         static final StringListAttributeDefinition ALIAS = new StringListAttributeDefinition.Builder("alias")
-                .setAllowNull(true)
+                .setRequired(false)
                 .setElementValidator(new StringLengthValidator(1))
                 .setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST)
                 .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
@@ -546,14 +546,14 @@ public class PersistentResourceXMLParserTestCase {
                 .setXmlName("credential-reference")
                 .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
                 .setAttributeParser(AttributeParser.OBJECT_PARSER)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
         static final ObjectTypeAttributeDefinition TARGET_CREDENTIAL_REFERENCE = new ObjectTypeAttributeDefinition.Builder("target-credential-reference", ALIAS)
                 .setAttributeGroup("target")
                 .setXmlName("credential-reference")
                 .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
                 .setAttributeParser(AttributeParser.OBJECT_PARSER)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
         static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("props", true)
                 .setAttributeMarshaller(AttributeMarshaller.PROPERTIES_MARSHALLER_UNWRAPPED)
@@ -571,17 +571,17 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         static final SimpleAttributeDefinition BUFFER_SIZE = new SimpleAttributeDefinitionBuilder("buffer-size", ModelType.INT)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setDefaultValue(new ModelNode(1024))
                 .setAllowExpression(true)
                 .build();
         static final SimpleAttributeDefinition BUFFERS_PER_REGION = new SimpleAttributeDefinitionBuilder("buffers-per-region", ModelType.INT)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setDefaultValue(new ModelNode(1024))
                 .setAllowExpression(true)
                 .build();
         static final SimpleAttributeDefinition MAX_REGIONS = new SimpleAttributeDefinitionBuilder("max-regions", ModelType.INT)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(true)
                 .setDefaultValue(new ModelNode(10))
                 .build();
@@ -590,14 +590,14 @@ public class PersistentResourceXMLParserTestCase {
                 .setAttributeGroup("statistics")
                 .setXmlName("enabled")
                 .setDefaultValue(new ModelNode(false))
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(true)
                 .build();
         static final SimpleAttributeDefinition SECURITY_ENABLED = new SimpleAttributeDefinitionBuilder("security-enabled", ModelType.BOOLEAN)
                 .setAttributeGroup("security")
                 .setXmlName("enabled")
                 .setDefaultValue(new ModelNode(true))
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(true)
                 .setRestartAllServices()
                 .build();
@@ -635,7 +635,7 @@ public class PersistentResourceXMLParserTestCase {
 
 
         static final ObjectListAttributeDefinition INTERCEPTORS = ObjectListAttributeDefinition.Builder.of("interceptors", CLASS)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(false)
                 .setMinSize(0)
                 .setMaxSize(Integer.MAX_VALUE)
@@ -643,30 +643,30 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
         static final ObjectListAttributeDefinition COMPLEX_LIST = ObjectListAttributeDefinition.Builder.of("complex-list", CLASS)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(false)
                 .build();
 
         static final ObjectListAttributeDefinition COMPLEX_LIST_WITH_DEFAULT = ObjectListAttributeDefinition.Builder.of("complex-list-with-default", CLASS)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(false)
                 .setDefaultValue(COMPLEX_LIST_DEFAULT_VALUE)
                 .build();
 
         static final ObjectMapAttributeDefinition COMPLEX_MAP = ObjectMapAttributeDefinition.create("complex-map", CLASS)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAttributeParser(new AttributeParsers.ObjectMapParser("element", true))
                 .setAttributeMarshaller(new AttributeMarshallers.ObjectMapAttributeMarshaller(null, "element", true))
                 .build();
         static final ObjectMapAttributeDefinition COMPLEX_MAP2 = ObjectMapAttributeDefinition.create("object-map", OBJECT)
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAttributeParser(AttributeParsers.getObjectMapAttributeParser("name")) //change key attribute to name
                 .setAttributeMarshaller(AttributeMarshallers.getObjectMapAttributeMarshaller("name"))
                 .build();
 
 
         static final ObjectMapAttributeDefinition COMPLEX_MAP3 = ObjectMapAttributeDefinition.create("map", CLASS)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
 
 
@@ -1258,7 +1258,7 @@ public class PersistentResourceXMLParserTestCase {
                     .build(),
             PROPERTIES)
             .setRestartAllServices()
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final ObjectTypeAttributeDefinition STATE_LISTENER = ObjectTypeAttributeDefinition.Builder.of("state-listener",
@@ -1270,16 +1270,16 @@ public class PersistentResourceXMLParserTestCase {
                     .build(),
             PROPERTIES)
             .setRestartAllServices()
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final AttributeDefinition PROCESS_STATE_LISTENERS = ObjectListAttributeDefinition.Builder.of("listeners", PROCESS_STATE_LISTENER)
-            .setAllowNull(false)
+            .setRequired(true)
             .setRuntimeServiceNotRequired()
             .build();
 
     public static final AttributeDefinition UNWRAPPED_LISTENER = ObjectListAttributeDefinition.Builder.of("unwrapped-listener", STATE_LISTENER)
-              .setAllowNull(false)
+              .setRequired(true)
               .setRuntimeServiceNotRequired()
               .build();
 
@@ -1353,13 +1353,13 @@ public class PersistentResourceXMLParserTestCase {
                     .build();
 
             static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder("attribute-mapping", AttributeMappingObjectDefinition.OBJECT_DEFINITION)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAttributeGroup("attribute")
                     .setAllowDuplicates(true)
                     .build();
 
             static final ObjectListAttributeDefinition NEW_IDENTITY_ATTRIBUTES = new ObjectListAttributeDefinition.Builder("new-identity-attributes", NewIdentityAttributeObjectDefinition.OBJECT_DEFINITION)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .setAllowDuplicates(true)
                     .build();
 
@@ -1391,7 +1391,7 @@ public class PersistentResourceXMLParserTestCase {
                         UserPasswordCredentialMappingObjectDefinition.OBJECT_DEFINITION,
                         OtpCredentialMappingObjectDefinition.OBJECT_DEFINITION*/
                     )
-                    .setAllowNull(false)
+                    .setRequired(true)
                     .build();
         }
 

@@ -53,7 +53,7 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
 
     private static SimpleAttributeDefinition getRequiredCopy(SimpleAttributeDefinition attr) {
         return new SimpleAttributeDefinitionBuilder(attr.getName(), attr.getType())
-        .setAllowNull(false)
+        .setRequired(true)
         .setAllowExpression(attr.isAllowExpression())
         .setValidator(attr.getValidator())
         .setFlags(attr.getFlags().toArray(new AttributeAccess.Flag[0]))

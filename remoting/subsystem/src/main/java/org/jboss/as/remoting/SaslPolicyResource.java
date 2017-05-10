@@ -86,7 +86,7 @@ class SaslPolicyResource extends ConnectorChildResource {
     private static SimpleAttributeDefinition createBooleanAttributeDefinition(String name) {
         return SimpleAttributeDefinitionBuilder.create(name, ModelType.BOOLEAN)
                 .setDefaultValue(new ModelNode(true))
-                .setAllowNull(true)
+                .setRequired(false)
                 .setAllowExpression(true)
                 .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))
                 .build();

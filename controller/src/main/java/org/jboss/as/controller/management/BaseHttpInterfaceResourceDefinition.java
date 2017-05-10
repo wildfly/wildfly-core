@@ -135,7 +135,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     public static final StringListAttributeDefinition ALLOWED_ORIGINS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.ALLOWED_ORIGINS)
         .setAllowExpression(true)
-        .setAllowNull(true)
+        .setRequired(false)
         .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
         .setAttributeMarshaller(AttributeMarshaller.STRING_LIST)
         .setRestartAllServices()

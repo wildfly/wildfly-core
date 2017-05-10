@@ -54,7 +54,7 @@ public class OptionList {
             attributes.add(OptionAttributeDefinition.builder(name, option)
                     .setDefaultValue(defaultValue)
                     .setAllowExpression(allowExpression)
-                    .setAllowNull(allowNull)
+                    .setRequired(!allowNull)
                     .build()
             );
             return this;

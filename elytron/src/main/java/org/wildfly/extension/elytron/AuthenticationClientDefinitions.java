@@ -249,7 +249,7 @@ class AuthenticationClientDefinitions {
             AUTHENTICATION_CONFIGURATION, SSL_CONTEXT).build();
 
     static final ObjectListAttributeDefinition MATCH_RULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULES, MATCH_RULE)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static ResourceDefinition getAuthenticationClientDefinition() {

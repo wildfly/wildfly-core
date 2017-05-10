@@ -60,25 +60,25 @@ import org.jboss.dmr.ModelType;
 public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition FORMATTER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FORMATTER, ModelType.STRING)
-        .setAllowNull(false)
+        .setRequired(true)
         .setMinSize(1)
         .build();
 
     public static final SimpleAttributeDefinition MAX_FAILURE_COUNT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MAX_FAILURE_COUNT, ModelType.INT)
-        .setAllowNull(true)
+        .setRequired(false)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(10))
         .setValidator(new IntRangeValidator(0, true, true))
         .build();
 
     public static final SimpleAttributeDefinition FAILURE_COUNT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FAILURE_COUNT, ModelType.INT)
-        .setAllowNull(false)
+        .setRequired(true)
         .setStorageRuntime()
         .setRuntimeServiceNotRequired()
         .build();
 
     public static final SimpleAttributeDefinition DISABLED_DUE_TO_FAILURE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DISABLED_DUE_TO_FAILURE, ModelType.BOOLEAN)
-        .setAllowNull(false)
+        .setRequired(true)
         .setStorageRuntime()
         .setRuntimeServiceNotRequired()
         .build();

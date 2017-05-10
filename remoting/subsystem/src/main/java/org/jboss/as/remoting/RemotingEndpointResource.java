@@ -56,7 +56,7 @@ import org.wildfly.extension.io.OptionAttributeDefinition;
  */
 public class RemotingEndpointResource extends PersistentResourceDefinition {
     protected static final SimpleAttributeDefinition WORKER = new SimpleAttributeDefinitionBuilder(CommonAttributes.WORKER, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
             .setDefaultValue(new ModelNode("default"))

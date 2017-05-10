@@ -344,12 +344,6 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
-    public void registerCapability(RuntimeCapability capability, String attribute) {
-        // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
-        primaryContext.registerCapability(capability, activeStep, attribute);
-    }
-
-    @Override
     public void registerCapability(RuntimeCapability capability) {
         // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
         primaryContext.registerCapability(capability, activeStep, null);

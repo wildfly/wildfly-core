@@ -58,7 +58,7 @@ public class HostShutdownHandler implements OperationStepHandler {
     private final DomainController domainController;
 
     private static final AttributeDefinition RESTART = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN, true)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
             .addParameter(RESTART)

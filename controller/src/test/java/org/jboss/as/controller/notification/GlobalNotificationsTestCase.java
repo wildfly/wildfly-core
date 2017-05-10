@@ -77,7 +77,7 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
     public static final SimpleAttributeDefinition MY_RUNTIME_ATTRIBUTE = create("my-runtime-attribute", LONG)
             .setRequired(false)
             .setDefaultValue(new ModelNode(6789))
-            .setAllowNull(true)
+            .setRequired(false)
             .setStorageRuntime()
             .build();
     public static final SimpleAttributeDefinition FAIL_ADD_OPERATION = create("fail-add-operation", BOOLEAN)

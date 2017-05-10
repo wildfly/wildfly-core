@@ -89,7 +89,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition STREAM = SimpleAttributeDefinitionBuilder.create("stream", ModelType.STRING)
             .setStorageRuntime()
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     static final SimpleAttributeDefinition LINES = SimpleAttributeDefinitionBuilder.create("lines", ModelType.INT, true)

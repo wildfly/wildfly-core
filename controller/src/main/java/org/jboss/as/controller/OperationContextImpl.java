@@ -1464,12 +1464,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     @Override
-    @Deprecated
-    public void registerCapability(RuntimeCapability capability, String attribute) {
-        registerCapability(capability, activeStep, attribute);
-    }
-
-    @Override
     public void registerCapability(RuntimeCapability capability) {
         registerCapability(capability, activeStep, null);
     }

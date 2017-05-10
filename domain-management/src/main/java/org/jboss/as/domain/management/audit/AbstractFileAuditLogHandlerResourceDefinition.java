@@ -51,13 +51,13 @@ import org.jboss.dmr.ModelType;
 public abstract class AbstractFileAuditLogHandlerResourceDefinition extends AuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PATH, ModelType.STRING)
-        .setAllowNull(false)
+        .setRequired(true)
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
 
     public static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RELATIVE_TO, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setMinSize(1)
         .build();
 

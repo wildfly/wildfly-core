@@ -69,7 +69,7 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.JVM)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     private static AttributeDefinition VM_NAME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VM_NAME, ModelType.STRING, true)

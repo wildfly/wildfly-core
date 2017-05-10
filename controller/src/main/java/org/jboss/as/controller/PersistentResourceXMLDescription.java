@@ -100,7 +100,7 @@ public final class PersistentResourceXMLDescription {
         for (PersistentResourceXMLBuilder b : builder.childrenBuilders) {
             this.children.add(b.build());
         }
-        builder.children.forEach(this.children::add);
+        this.children.addAll(builder.children);
         this.useValueAsElementName = builder.useValueAsElementName;
         this.noAddOperation = builder.noAddOperation;
         this.additionalOperationsGenerator = builder.additionalOperationsGenerator;

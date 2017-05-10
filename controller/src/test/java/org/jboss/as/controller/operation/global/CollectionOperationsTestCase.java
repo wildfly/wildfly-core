@@ -44,15 +44,15 @@ public class CollectionOperationsTestCase extends AbstractCollectionOperationsTe
     private static final String WRONG_ATTRIBUTE_NAME = "attribute.with.wrong.name";
 
     private static final StringListAttributeDefinition LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder(LIST_ATTRIBUTE_NAME)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowDuplicates(false)
             .build();
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder(MAP_ATTRIBUTE_NAME, true)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     private static final StringListAttributeDefinition WRONG_ATTRIBUTE = new StringListAttributeDefinition.Builder(WRONG_ATTRIBUTE_NAME)
-                .setAllowNull(true)
+                .setRequired(false)
                 .build();
 
     private static PathAddress TEST_ADDRESS = PathAddress.pathAddress("subsystem", "test");

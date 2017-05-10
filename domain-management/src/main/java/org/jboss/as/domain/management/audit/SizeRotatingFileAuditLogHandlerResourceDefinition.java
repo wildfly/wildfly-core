@@ -51,7 +51,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SIZ
 public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogHandlerResourceDefinition {
 
     public static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ROTATE_SIZE, ModelType.STRING)
-        .setAllowNull(true)
+        .setRequired(false)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode("10m"))   // by default, rotate at 10MB
         .setValidator(new SizeValidator())
@@ -59,7 +59,7 @@ public class SizeRotatingFileAuditLogHandlerResourceDefinition extends AbstractF
         .build();
 
     public static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MAX_BACKUP_INDEX, ModelType.INT)
-        .setAllowNull(true)
+        .setRequired(false)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(1))
         .setValidator(new IntRangeValidator(1, true))

@@ -79,13 +79,13 @@ public final class QueryOperationHandler extends GlobalOperationHandlers.Abstrac
             .build();
 
     private static final AttributeDefinition OPERATOR_ATT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.OPERATOR, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode().set(Operator.AND.name()))
             .setValidator(EnumValidator.create(Operator.class, true, false))
             .build();
 
     private static final AttributeDefinition SELECT_ATT = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.SELECT, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
 

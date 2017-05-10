@@ -252,7 +252,7 @@ public final class CredentialReference {
                 .setXmlName(xmlName)
                 .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
                 .setAttributeParser(AttributeParser.OBJECT_PARSER)
-                .setAllowNull(allowNull)
+                .setRequired(!allowNull)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.CREDENTIAL);
     }
 

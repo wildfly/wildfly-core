@@ -101,22 +101,22 @@ import org.jboss.dmr.Property;
 public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     private static final SimpleAttributeDefinition INHERITED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INHERITED, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(true))
             .build();
 
     private static final SimpleAttributeDefinition OPERATIONS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.OPERATIONS, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
     private static final SimpleAttributeDefinition NOTIFICATIONS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NOTIFICATIONS, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
     private static final SimpleAttributeDefinition ACCESS_CONTROL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ACCESS_CONTROL, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(AccessControl.NONE.toString()))
             .setValidator(EnumValidator.create(AccessControl.class, true, AccessControl.NONE, AccessControl.COMBINED_DESCRIPTIONS, AccessControl.TRIM_DESCRIPTONS))
             .build();

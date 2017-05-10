@@ -51,7 +51,7 @@ public class SnapshotListHandler implements OperationStepHandler {
     private static final String OPERATION_NAME = "list-snapshots";
 
     private static final SimpleAttributeDefinition DIRECTORY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DIRECTORY, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
     private static final AttributeDefinition NAMES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.NAMES)
             .build();

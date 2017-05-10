@@ -64,7 +64,7 @@ public class ValidateOperationHandler implements OperationStepHandler {
     public static final ValidateOperationHandler SLAVE_HC_INSTANCE = new ValidateOperationHandler(true);
 
     private static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE, ModelType.OBJECT)
-            .setAllowNull(false)
+            .setRequired(true)
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(VALIDATE_OPERATION, ControllerResolver.getResolver("global"))

@@ -87,7 +87,7 @@ import org.jboss.dmr.Property;
 public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     private static final SimpleAttributeDefinition ATTRIBUTES_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ATTRIBUTES_ONLY, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 
@@ -101,7 +101,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
     public static final OperationStepHandler INSTANCE = new ReadResourceHandler();
 
     private static final SimpleAttributeDefinition RESOLVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESOLVE_EXPRESSIONS, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

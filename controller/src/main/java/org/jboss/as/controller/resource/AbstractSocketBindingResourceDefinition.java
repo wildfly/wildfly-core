@@ -106,7 +106,7 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
     private static final ObjectTypeAttributeDefinition CLIENT_MAPPING = ObjectTypeAttributeDefinition.Builder.of("client-mapping", CLIENT_MAPPING_SOURCE_NETWORK, CLIENT_MAPPING_DESTINATION_ADDRESS, CLIENT_MAPPING_DESTINATION_PORT).build();
 
     public static final AttributeDefinition CLIENT_MAPPINGS = ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CLIENT_MAPPINGS, CLIENT_MAPPING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 

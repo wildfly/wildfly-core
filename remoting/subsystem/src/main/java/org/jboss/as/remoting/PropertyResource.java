@@ -41,7 +41,7 @@ public class PropertyResource extends ConnectorChildResource {
 
     static final SimpleAttributeDefinition VALUE = SimpleAttributeDefinitionBuilder.create(CommonAttributes.VALUE, ModelType.STRING)
             .setDefaultValue(null)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .build();
     static final PropertyResource INSTANCE_CONNECTOR = new PropertyResource(CONNECTOR);

@@ -64,31 +64,31 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
 
     private static final StringListAttributeDefinition LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder("my-list-attribute")
             .setAllowDuplicates(false)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     private static final StringListAttributeDefinition RUNTIME_LIST_ATTRIBUTE = new StringListAttributeDefinition.Builder("runtime-list-attribute")
-            .setAllowNull(true)
+            .setRequired(false)
             .setStorageRuntime()
             .build();
 
     private static final PropertiesAttributeDefinition MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("map-attribute", true)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     private static final PropertiesAttributeDefinition RUNTIME_MAP_ATTRIBUTE = new PropertiesAttributeDefinition.Builder("runtime-map-attribute", true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setStorageRuntime()
             .build();
 
     private static final AttributeDefinition ATTR_1 = create("attr1", ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     private static final AttributeDefinition ATTR_2 = create("attr2", ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE = ObjectTypeAttributeDefinition.Builder.of("complex-attribute", ATTR_1, ATTR_2, MAP_ATTRIBUTE, RUNTIME_MAP_ATTRIBUTE).build();
-    private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setAllowNull(true).build();
+    private static final ObjectListAttributeDefinition OBJECT_LIST = ObjectListAttributeDefinition.Builder.of("object-list", COMPLEX_ATTRIBUTE).setRequired(false).build();
     private static final ObjectTypeAttributeDefinition COMPLEX_ATTRIBUTE2 = ObjectTypeAttributeDefinition.Builder.of("complex-attribute2", OBJECT_LIST).build();
     private static final AttributeDefinition NORMAL_LOOKING_EXTENDED = new SimpleAttributeDefinitionBuilder("normal.looking.extended", ModelType.STRING, true).build();
 

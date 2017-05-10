@@ -71,7 +71,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
     public static final OperationStepHandler INSTANCE = new ReadAttributeHandler();
 
     private static final SimpleAttributeDefinition RESOLVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESOLVE_EXPRESSIONS, ModelType.BOOLEAN)
-            .setAllowNull(true)
+            .setRequired(false)
             .setDefaultValue(new ModelNode(false))
             .build();
 

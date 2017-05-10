@@ -57,7 +57,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = "write-remote-domain-controller";
 
     public static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT, ModelType.INT)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setValidator(new IntRangeValidator(1, 65535, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -65,7 +65,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
@@ -73,7 +73,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setValidator(EnumValidator.create(Protocol.class, true, true))
             .setDefaultValue(Protocol.REMOTE.toModelNode())
@@ -100,7 +100,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
-            .setAllowNull(true)
+            .setRequired(false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_JVM)
             .build();

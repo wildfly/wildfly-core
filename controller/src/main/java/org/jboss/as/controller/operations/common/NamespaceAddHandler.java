@@ -47,12 +47,12 @@ public class NamespaceAddHandler extends AbstractModelUpdateHandler {
     private static final String OPERATION_NAME = "add-namespace";
 
     private static final SimpleAttributeDefinition NAMESPACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAMESPACE, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 
     private static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.URI, ModelType.STRING)
-            .setAllowNull(false)
+            .setRequired(true)
             .setValidator(new ModelTypeValidator(ModelType.STRING, false))
             .build();
 

@@ -47,10 +47,10 @@ public class CleanObsoleteContentHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = "clean-obsolete-content";
 
     private static final AttributeDefinition MARKED_CONTENT = new PrimitiveListAttributeDefinition.Builder(ContentRepository.MARKED_CONTENT, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
     private static final AttributeDefinition DELETED_CONTENT = new PrimitiveListAttributeDefinition.Builder(ContentRepository.DELETED_CONTENT, ModelType.STRING)
-            .setAllowNull(true)
+            .setRequired(false)
             .build();
 
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME,
