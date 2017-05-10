@@ -26,10 +26,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.jar.JarEntry;
@@ -105,7 +104,7 @@ public class ArchiveHandler extends BatchModeCommandHandler {
             }
             ctx.printLine("Processing script '" + script + "'.");
 
-            try (BufferedReader reader = Files.newBufferedReader(scriptFile.toPath(), StandardCharsets.UTF_8)){
+            try (BufferedReader reader = new BufferedReader(new FileReader(scriptFile))) {
                 String line = reader.readLine();
                 while (!ctx.isTerminated() && line != null) {
                     ctx.handle(line);

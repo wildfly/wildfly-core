@@ -24,9 +24,8 @@ package org.jboss.as.cli.handlers.batch;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
 import org.jboss.aesh.console.Config;
 import org.jboss.as.cli.Attachments;
@@ -220,9 +219,7 @@ public class BatchRunHandler extends BaseOperationCommand {
                 ctx.setCurrentDir(baseDir);
             }
 
-            BufferedReader reader = null;
-            try {
-                reader = Files.newBufferedReader(f.toPath(), StandardCharsets.UTF_8);
+            try (BufferedReader reader = new BufferedReader(new FileReader(f))) {
                 String line = reader.readLine();
                 batchManager.activateNewBatch();
                 while(line != null) {
@@ -241,11 +238,6 @@ public class BatchRunHandler extends BaseOperationCommand {
             } finally {
                 if(baseDir != null) {
                     ctx.setCurrentDir(currentDir);
-                }
-                if(reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {}
                 }
             }
         }
