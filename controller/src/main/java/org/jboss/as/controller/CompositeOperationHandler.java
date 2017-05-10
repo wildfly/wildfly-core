@@ -22,21 +22,23 @@
 
 package org.jboss.as.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.MultistepUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 
 /**
  * Handler for the "composite" operation; i.e. one that includes one or more child operations
@@ -94,6 +96,7 @@ public class CompositeOperationHandler implements OperationStepHandler {
 
             // This makes the result steps appear in the correct order
             ModelNode stepResp = responseMap.get(stepName);
+            stepResp.get("step-operation-name").set(defineStepOPName(list.get(i)));
             addedResponses.put(stepName, stepResp);
         }
 
@@ -130,5 +133,18 @@ public class CompositeOperationHandler implements OperationStepHandler {
 
     protected MultistepUtil.OperationHandlerResolver getOperationHandlerResolver() {
         return MultistepUtil.OperationHandlerResolver.DEFAULT;
+    }
+
+    private String defineStepOPName(ModelNode node){
+        if (node.get("name").isDefined()) {
+            return node.get("name").asString();
+        } else if (!node.get("name").isDefined() && node.get("operation").isDefined() && node.get("address").isDefined()) {
+            String address = node.get("address").asString();
+            final Pattern pattern = Pattern.compile("\"(.+?)\"");
+            final Matcher matcher = pattern.matcher(address);
+            return node.get("operation").asString() + (matcher.find() ? "-" + matcher.group(1): "");
+        } else {
+            return String.valueOf(node.get("operation").asString());
+        }
     }
 }
