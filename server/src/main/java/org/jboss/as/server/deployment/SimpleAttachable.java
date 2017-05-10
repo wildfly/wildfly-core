@@ -22,12 +22,12 @@
 
 package org.jboss.as.server.deployment;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.wildfly.common.Assert;
 
@@ -98,7 +98,7 @@ public class SimpleAttachable implements Attachable {
         }
     }
 
-    public synchronized Collection<AttachmentKey<?>> attachmentKeys() {
+    public synchronized Set<AttachmentKey<?>> attachmentKeys() {
         return new HashSet<AttachmentKey<?>>(attachments.keySet());
     }
 }
