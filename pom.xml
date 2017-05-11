@@ -206,7 +206,6 @@
         <module>remoting</module>
         <module>request-controller</module>
         <module>security-manager</module>
-        <module>self-contained</module>
         <module>server</module>
         <module>subsystem-test</module>
         <module>testsuite</module>

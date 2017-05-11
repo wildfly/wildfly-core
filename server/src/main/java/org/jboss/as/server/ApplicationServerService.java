@@ -36,7 +36,6 @@ import java.util.TreeSet;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.repository.ContentRepository;
-import org.jboss.as.selfcontained.SelfContainedContentRepository;
 import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
@@ -142,9 +141,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         bootstrapListener.getStabilityMonitor().addController(myController);
         // Install either a local or remote content repository
         if(standalone) {
-            if ( selfContained ) {
-                SelfContainedContentRepository.addService(serviceTarget);
-            } else {
+            if ( ! selfContained ) {
                 ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
             }
         } else {

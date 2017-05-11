@@ -34,7 +34,7 @@ public enum ProcessType {
     HOST_CONTROLLER(false, true),
     EMBEDDED_HOST_CONTROLLER(false, true),
     APPLICATION_CLIENT(true, false),
-    SELF_CONTAINED(true,false);
+    SELF_CONTAINED(true, false);
 
     private final boolean server;
     private final boolean domain;
