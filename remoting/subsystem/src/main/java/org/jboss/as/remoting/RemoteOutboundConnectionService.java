@@ -104,7 +104,8 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
             configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null, "connect");
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
-            if (securityRealm != null) {
+            if (securityRealm != null && username != null) {
+                // legacy remote-outbound-connection configuration
                 configuration = AuthenticationConfiguration.EMPTY
                     .useName(username)
                     .forbidSaslMechanisms(JBOSS_LOCAL_USER);
@@ -113,7 +114,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
                     configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
                 }
             } else {
-                configuration = AuthenticationConfiguration.EMPTY.useName(username);
+                configuration = AuthenticationConfiguration.EMPTY;
             }
         }
         final OptionMap optionMap = this.connectionCreationOptions;
