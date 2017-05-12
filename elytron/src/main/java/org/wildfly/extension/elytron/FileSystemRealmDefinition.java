@@ -80,7 +80,13 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setAllowExpression(true)
                     .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, CASE_SENSITIVE};
+    static final SimpleAttributeDefinition ENCODED =
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENCODED, ModelType.BOOLEAN, true)
+                    .setDefaultValue(new ModelNode(true))
+                    .setAllowExpression(true)
+                    .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, CASE_SENSITIVE};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -88,11 +94,11 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
     FileSystemRealmDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM),
                 ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILESYSTEM_REALM))
-            .setAddHandler(ADD)
-            .setRemoveHandler(REMOVE)
-            .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
-            .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
-            .setCapabilities(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY));
+                .setAddHandler(ADD)
+                .setRemoveHandler(REMOVE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setCapabilities(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY));
     }
 
     @Override
@@ -120,6 +126,8 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
             final int levels = LEVELS.resolveModelAttribute(context, model).asInt();
 
+            final boolean encoded = ENCODED.resolveModelAttribute(context, model).asBoolean();
+
             final String path = PATH.resolveModelAttribute(context, model).asString();
             final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
 
@@ -139,8 +147,8 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                             NameRewriter nameRewriter = nameRewriterInjector.getOptionalValue();
 
                             return nameRewriter != null ?
-                                    new FileSystemSecurityRealm(rootPath, nameRewriter, levels) :
-                                    new FileSystemSecurityRealm(rootPath, levels);
+                                    new FileSystemSecurityRealm(rootPath, nameRewriter, levels, encoded) :
+                                    new FileSystemSecurityRealm(rootPath, NameRewriter.IDENTITY_REWRITER, levels, encoded);
                         }
 
                         @Override
