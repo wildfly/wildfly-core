@@ -1556,6 +1556,12 @@
                 <groupId>org.wildfly.discovery</groupId>
                 <artifactId>wildfly-discovery-client</artifactId>
                 <version>${version.org.wildfly.discovery}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
