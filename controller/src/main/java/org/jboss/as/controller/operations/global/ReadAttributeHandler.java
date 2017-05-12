@@ -191,7 +191,8 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                 String remainingExpression = attributeExpression.substring(prefixLength);
 
                 if (AttributeAccess.Storage.CONFIGURATION == attributeAccess.getStorageType()) {
-                    ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult());
+                    ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult(),
+                            attributeAccess.getAttributeDefinition());
                     context.getResult().set(resolved);
                 } else {
                     assert AttributeAccess.Storage.RUNTIME == attributeAccess.getStorageType();
@@ -199,7 +200,8 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
                     // Resolution must be postponed to RUNTIME stage for Storage.RUNTIME attributes.
 
                     context.addStep((context1, operation1) -> {
-                        ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult());
+                        ModelNode resolved = EnhancedSyntaxSupport.resolveEnhancedSyntax(remainingExpression, context.getResult(),
+                                attributeAccess.getAttributeDefinition());
                         context.getResult().set(resolved);
                     }, OperationContext.Stage.RUNTIME);
                 }
@@ -276,7 +278,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         final ModelNode subModel = resource.getModel();
         if (enhancedSyntax) {
-            context.getResult().set(EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeSyntax, subModel));
+            context.getResult().set(EnhancedSyntaxSupport.resolveEnhancedSyntax(attributeSyntax, subModel, attribute));
         } else if (subModel.hasDefined(attribute.getName())) {
             final ModelNode result = subModel.get(attribute.getName());
             context.getResult().set(result);

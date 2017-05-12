@@ -21,6 +21,9 @@ package org.jboss.as.controller.operations.global;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -51,9 +54,12 @@ class EnhancedSyntaxSupport {
         }
     }
 
-    static ModelNode resolveEnhancedSyntax(final String attributeExpression, final ModelNode model) throws OperationFailedException {
+    static ModelNode resolveEnhancedSyntax(final String attributeExpression, final ModelNode model, AttributeDefinition attributeDefinition) throws OperationFailedException {
+        assert attributeExpression != null;
         ModelNode result = model;
-        for (String part : attributeExpression.split("\\.")) {
+        String[] parts = attributeExpression.split("\\.");
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
             Matcher matcher = BRACKETS_PATTERN.matcher(part);
             if (matcher.matches()) {
                 String attribute = matcher.group(1);
@@ -61,6 +67,12 @@ class EnhancedSyntaxSupport {
                 ModelNode list = attribute.isEmpty() ? result : result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
                 if (list.isDefined() && list.getType() == ModelType.LIST && index >= 0) {
                     result = list.get(index);
+                    if (i < parts.length - 1) {
+                        // If this is a list of objects, track the AD in case we need it to validate later parts
+                        attributeDefinition = attributeDefinition instanceof ObjectListAttributeDefinition
+                                ? ((ObjectListAttributeDefinition) attributeDefinition).getValueType()
+                                : null;
+                    }
                 } else {
                     if (index < 0) {
                         throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionIndex(attributeExpression, index);
@@ -69,10 +81,34 @@ class EnhancedSyntaxSupport {
                     }
                 }
             } else {
+                if (i < parts.length - 1 && !result.hasDefined(part)) {
+                    // We can't read later parts when this one is undefined
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                }
+                // Now we are either on the last part or the desired part is defined
                 if (result.has(part)) {
                     result = result.get(part);
                 } else {
-                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                    // We are on the last part but it's not in the model. So we don't know if it's a valid part.
+                    // See if the current AD can tell us.
+                    if (attributeDefinition instanceof ObjectTypeAttributeDefinition) {
+                        // See if the part matches a field
+                        AttributeDefinition[] fields = ((ObjectTypeAttributeDefinition) attributeDefinition).getValueTypes();
+                        attributeDefinition = null;
+                        for (AttributeDefinition field : fields) {
+                            if (field.getName().equals(part)) {
+                                attributeDefinition = field;
+                                break;
+                            }
+                        }
+                        if (attributeDefinition == null) { // No match
+                            throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                        }
+                        result = result.get(part);
+                    } else {
+                        // AD can't tell us so we have to assume invalid
+                        throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                    }
                 }
             }
         }
@@ -80,6 +116,7 @@ class EnhancedSyntaxSupport {
     }
 
     static ModelNode updateWithEnhancedSyntax(final String attributeExpression, final ModelNode oldValue, final ModelNode newValue) throws OperationFailedException {
+        assert attributeExpression != null;
         ModelNode result = oldValue;
         for (String part : attributeExpression.split("\\.")) {
             Matcher matcher = BRACKETS_PATTERN.matcher(part);

@@ -88,7 +88,12 @@ public class ListOperations {
 
         @Override
         public void updateModel(OperationContext context, ModelNode model, AttributeDefinition attributeDefinition, ModelNode attribute) throws OperationFailedException {
-            if (attribute.getType() != ModelType.LIST && attributeDefinition.getType() != ModelType.LIST) {
+            // We can't use the AD type to validate undefined, because "attribute" may be a child field of an OBJECT
+            // and the AD is not for the field, it's for the top level attribute
+            //if (attribute.getType() != ModelType.LIST && attributeDefinition.getType() != ModelType.LIST) {
+            if (attribute.isDefined() && attribute.getType() != ModelType.LIST) {
+                // TODO if "attribute" is a field of an OBJECT the AD will not reflect the thing
+                // that is invalid so this message will be strange
                 throw ControllerLogger.MGMT_OP_LOGGER.attributeIsWrongType(attributeDefinition.getName(), ModelType.LIST, attributeDefinition.getType());
             }
             updateModel(context, model, attribute);
