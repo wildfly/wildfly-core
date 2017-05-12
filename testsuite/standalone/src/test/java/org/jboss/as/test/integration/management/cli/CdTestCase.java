@@ -23,6 +23,7 @@ package org.jboss.as.test.integration.management.cli;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,6 +57,29 @@ public class CdTestCase {
             Assert.fail("Can't cd into a non-existing nodepath.");
         } catch(CommandLineException e) {
             // expected
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    public void testNoValidation() throws Exception {
+        final CommandContext ctx = CLITestUtil.getCommandContext();
+        try {
+            ctx.connectController();
+            ctx.handle("cd /subsystem=subsystem --no-validation");
+            DefaultOperationRequestAddress address = new DefaultOperationRequestAddress();
+            address.toNode("subsystem", "subsystem");
+            Assert.assertEquals("Invalid address " + ctx.getCurrentNodePath().getNodeName(),
+                    address.getNodeName(), ctx.getCurrentNodePath().getNodeName());
+            Assert.assertEquals("Invalid address " + ctx.getCurrentNodePath().getNodeType(),
+                    address.getNodeType(), ctx.getCurrentNodePath().getNodeType());
+
+            ctx.handle("cd --no-validation /subsystem=subsystem");
+            Assert.assertEquals("Invalid address " + ctx.getCurrentNodePath().getNodeName(),
+                    address.getNodeName(), ctx.getCurrentNodePath().getNodeName());
+            Assert.assertEquals("Invalid address " + ctx.getCurrentNodePath().getNodeType(),
+                    address.getNodeType(), ctx.getCurrentNodePath().getNodeType());
         } finally {
             ctx.terminateSession();
         }
