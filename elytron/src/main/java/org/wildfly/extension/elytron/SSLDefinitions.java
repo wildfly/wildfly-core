@@ -160,6 +160,7 @@ class SSLDefinitions {
             .setAllowExpression(true)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setValidator(new CipherSuiteFilterValidator())
             .build();
 
     static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
@@ -287,6 +288,24 @@ class SSLDefinitions {
         }
     }
 
+    static class CipherSuiteFilterValidator extends ModelTypeValidator{
+
+        public CipherSuiteFilterValidator() {
+            super(ModelType.STRING, true, true, false);
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName,value);
+            if (value.isDefined()) {
+                try {
+                    CipherSuiteSelector.fromString(value.asString());
+                }catch (IllegalArgumentException e){
+                    throw ROOT_LOGGER.invalidCipherSuiteFilter(e, e.getLocalizedMessage());
+                }
+            }
+        }
+    }
 
     static ResourceDefinition getKeyManagerDefinition() {
 

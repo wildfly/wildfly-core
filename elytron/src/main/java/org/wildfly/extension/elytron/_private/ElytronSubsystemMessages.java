@@ -388,4 +388,6 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1016, value = "Server '%s' not known")
     OperationFailedException serverNotKnown(final String serverAddedd, @Cause UnknownHostException e);
 
+    @Message(id = 1017, value = "Invalid value for cipher-suite-filter. %s")
+    OperationFailedException invalidCipherSuiteFilter(@Cause Throwable cause, String causeMessage);
 }
