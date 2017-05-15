@@ -46,7 +46,7 @@
                 session-timeout="120" wrap="false" key-managers="serverKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
         </server-ssl-contexts>
         <client-ssl-contexts>
-            <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" use-cipher-suites-order="true" key-managers="clientKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
+            <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-managers="clientKey" trust-managers="serverTrust" providers="custom-loader" provider-name="first" />
         </client-ssl-contexts>
     </tls>
     <credential-stores>

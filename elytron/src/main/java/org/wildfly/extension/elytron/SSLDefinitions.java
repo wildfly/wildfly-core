@@ -763,7 +763,7 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { CIPHER_SUITE_FILTER, PROTOCOLS,
-                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
+                KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -776,9 +776,6 @@ class SSLDefinitions {
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
                 final String cipherSuiteFilter = asStringIfDefined(context, CIPHER_SUITE_FILTER, model);
-                final boolean useCipherSuitesOrder = USE_CIPHER_SUITES_ORDER.resolveModelAttribute(context, model).asBoolean();
-                final int maximumSessionCacheSize = MAXIMUM_SESSION_CACHE_SIZE.resolveModelAttribute(context, model).asInt();
-                final int sessionTimeout = SESSION_TIMEOUT.resolveModelAttribute(context, model).asInt();
 
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagersInjector.getOptionalValue());
@@ -793,17 +790,14 @@ class SSLDefinitions {
                     if ( ! protocols.isEmpty()) builder.setProtocolSelector(ProtocolSelector.empty().add(
                             EnumSet.copyOf(protocols.stream().map(Protocol::forName).collect(Collectors.toList()))
                     ));
-                    builder.setClientMode(true)
-                           .setUseCipherSuitesOrder(useCipherSuitesOrder)
-                           .setSessionCacheSize(maximumSessionCacheSize)
-                           .setSessionTimeout(sessionTimeout);
+                    builder.setClientMode(true);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
                                 "ClientSSLContext supplying:  keyManager = %s  trustManager = %s  providers = %s  " +
-                                "cipherSuiteFilter = %s  protocols = %s  maximumSessionCacheSize = %s  sessionTimeout = %s",
+                                "cipherSuiteFilter = %s  protocols = %s",
                                 keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter,
-                                Arrays.toString(protocols.toArray()), maximumSessionCacheSize, sessionTimeout
+                                Arrays.toString(protocols.toArray())
                         );
                     }
 
