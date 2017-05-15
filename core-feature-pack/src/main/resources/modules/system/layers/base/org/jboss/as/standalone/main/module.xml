@@ -43,12 +43,7 @@
              JAXP APIs are fixed on all known JVMs *and* we implement a subsystem to provide a similar
              default/fallback common parser behavior. Please discuss any design changes in this area
              on the WildFly development mailing list before enacting.
-
-             Xalan is optional for deritives of wildfly-core that do not desire TransformerFactory
-             support, or wish to require that deployments bundle an xslt implementaiton to use it,
-             as it will break otherwise.
         -->
-        <module name="org.apache.xalan" services="import" optional="true"/>
         <module name="org.apache.xerces" services="import"/>
         <module name="org.codehaus.woodstox" services="import"/>
         <!-- END JAXP default dependencies -->

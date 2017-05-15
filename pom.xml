@@ -401,6 +401,8 @@
                                             <exclude>sun-jaxb:jaxb-api</exclude>
                                             <exclude>trove:trove</exclude>
                                             <exclude>woodstox:wstx-lgpl</exclude>
+                                            <exclude>xalan:xalan</exclude>
+                                            <exclude>xalan:serializer</exclude>
                                             <exclude>xml-apis:xml-apis</exclude>
                                         </excludes>
                                     </bannedDependencies>
