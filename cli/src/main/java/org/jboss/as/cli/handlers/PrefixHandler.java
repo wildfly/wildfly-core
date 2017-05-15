@@ -65,7 +65,10 @@ public class PrefixHandler extends CommandHandlerWithHelp {
         }
 
         final OperationRequestAddress tmp = new DefaultOperationRequestAddress(prefix);
-        ctx.getCommandLineParser().parse(ctx.getArgumentsString(), new DefaultCallbackHandler(tmp));
+
+        // We need to remove any option
+        String np = LsHandler.getNodePath(ctx.getArgumentsString());
+        ctx.getCommandLineParser().parse(np, new DefaultCallbackHandler(tmp));
         if(!noValidation.isPresent(ctx.getParsedCommandLine())) {
             assertValid(ctx, tmp);
         }
