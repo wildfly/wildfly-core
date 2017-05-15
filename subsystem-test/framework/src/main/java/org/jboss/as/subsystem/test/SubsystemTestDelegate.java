@@ -253,61 +253,6 @@ final class SubsystemTestDelegate {
     }
 
     /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param subsystemXml the subsystem xml to be parsed
-     * @return the kernel services allowing access to the controller and service container
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(String subsystemXml) throws Exception {
-        return createKernelServicesBuilder(null)
-                .setSubsystemXml(subsystemXml)
-                .build();
-    }
-
-    /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param subsystemXml   the subsystem xml to be parsed
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(AdditionalInitialization additionalInit, String subsystemXml) throws Exception {
-        return createKernelServicesBuilder(additionalInit)
-                .setSubsystemXml(subsystemXml)
-                .build();
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(List<ModelNode> bootOperations) throws Exception {
-        return createKernelServicesBuilder(null)
-                .setBootOperations(bootOperations)
-                .build();
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(AdditionalInitialization additionalInit, List<ModelNode> bootOperations) throws Exception {
-        return createKernelServicesBuilder(additionalInit)
-                .setBootOperations(bootOperations)
-                .build();
-    }
-
-    /**
      * Creates a new kernel services builder used to create a new controller containing the subsystem being tested
      *
      * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
@@ -460,7 +405,7 @@ final class SubsystemTestDelegate {
      * @deprecated this might no longer be needed following refactoring of TransformerRegistry
      */
     @Deprecated
-    File generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
+    private File generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
         KernelServices legacy = kernelServices.getLegacyServices(modelVersion);
 
         //Generate the org.jboss.as.controller.transform.subsystem-version.dmr file - just use the format used by TransformerRegistry for now

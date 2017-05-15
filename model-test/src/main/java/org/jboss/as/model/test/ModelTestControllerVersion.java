@@ -28,13 +28,6 @@ public enum ModelTestControllerVersion {
     //AS releases
     MASTER (CurrentVersion.VERSION, false, null),
 
-    //WILDFLY RELEASES
-    @Deprecated
-    WILDFLY_8_0_0_FINAL ("8.0.0.Final", false, "8.0.0", false),
-    @Deprecated
-    WILDFLY_8_1_0_FINAL ("8.1.0.Final", false, "8.0.0", false),
-    @Deprecated
-    WILDFLY_8_2_0_FINAL ("8.2.0.Final", false, "8.0.0", false),
     //EAP releases
 
     EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers

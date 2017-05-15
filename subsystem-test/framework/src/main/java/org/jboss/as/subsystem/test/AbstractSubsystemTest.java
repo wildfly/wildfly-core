@@ -32,11 +32,6 @@ import org.junit.Before;
  */
 public abstract class AbstractSubsystemTest {
 
-    /**
-     * Use {@link AbstractSubsystemTest#getMainSubsystemName()}
-     */
-    @Deprecated
-    protected final String mainSubsystemName;
     private final SubsystemTestDelegate delegate;
 
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension) {
@@ -45,7 +40,6 @@ public abstract class AbstractSubsystemTest {
 
     @SuppressWarnings("deprecation")
     protected AbstractSubsystemTest(final String mainSubsystemName, final Extension mainExtension, final Comparator<PathAddress> removeOrderComparator) {
-        this.mainSubsystemName = mainSubsystemName;
         this.delegate = new SubsystemTestDelegate(this.getClass(), mainSubsystemName, mainExtension, removeOrderComparator);
     }
 
@@ -114,56 +108,6 @@ public abstract class AbstractSubsystemTest {
     protected String outputModel(ModelNode model) throws Exception {
         return delegate.outputModel(model);
 
-    }
-
-    /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param subsystemXml the subsystem xml to be parsed
-     * @return the kernel services allowing access to the controller and service container
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected KernelServices installInController(String subsystemXml) throws Exception {
-        return delegate.installInController(subsystemXml);
-    }
-
-    /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param subsystemXml   the subsystem xml to be parsed
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected KernelServices installInController(AdditionalInitialization additionalInit, String subsystemXml) throws Exception {
-        return delegate.installInController(additionalInit, subsystemXml);
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected KernelServices installInController(List<ModelNode> bootOperations) throws Exception {
-        return delegate.installInController(bootOperations);
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    protected KernelServices installInController(AdditionalInitialization additionalInit, List<ModelNode> bootOperations) throws Exception {
-        return delegate.installInController(additionalInit, bootOperations);
     }
 
     /**
@@ -237,20 +181,6 @@ public abstract class AbstractSubsystemTest {
      */
     protected Resource grabRootResource(ModelTestKernelServices<?> kernelServices) {
         return ModelTestModelControllerService.grabRootResource(kernelServices);
-    }
-
-    /**
-     * Dumps the target subsystem resource description to DMR format, needed by TransformerRegistry for non-standard subsystems
-     *
-     * @param kernelServices the kernel services for the started controller
-     * @param modelVersion   the target subsystem model version
-     * @deprecated this might no longer be needed following refactoring of TransformerRegistry
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected void generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
-        delegate.generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
-
     }
 
     /**
