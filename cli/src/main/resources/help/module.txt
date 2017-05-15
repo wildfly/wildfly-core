@@ -56,13 +56,13 @@ ARGUMENTS
  --resources     - (used with add, resources and/or absolute-resources is required
                    unless module-xml is used) a list of filesystem paths
                    (usually jar files) separated by a filesystem-specific
-                   path separator, i.e. java.io.File.pathSeparatorChar.
+                   path separator, i.e. '/' for Linux and '\' for Windows.
                    The file(s) specified will be copied to the created module's directory.
 
  --absolute-resources - (used with add, resources and/or absolute-resources required
                        unless module-xml is used) a list of filesystem paths
                        (usually jar files) separated by a filesystem-specific
-                       path separator, i.e. java.io.File.pathSeparatorChar.
+                       path separator, i.e. '/' for Linux and '\' for Windows.
                        The file(s) specified will *NOT* be copied to the created
                        module's directory and will be referenced with absolute path(s).
 
