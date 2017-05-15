@@ -45,8 +45,6 @@ import org.xnio.sasl.SaslStrength;
  */
 class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
-    static final RemotingSubsystem10Parser INSTANCE = new RemotingSubsystem10Parser();
-
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
 

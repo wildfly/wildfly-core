@@ -59,8 +59,6 @@ import org.wildfly.common.Assert;
  */
 class RemotingSubsystem11Parser extends RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
-    static final RemotingSubsystem11Parser INSTANCE = new RemotingSubsystem11Parser();
-
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
 

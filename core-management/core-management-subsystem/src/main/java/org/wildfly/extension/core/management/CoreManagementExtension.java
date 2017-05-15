@@ -70,6 +70,6 @@ public class CoreManagementExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, CoreManagementSubsystemParser_1_0.NAMESPACE, CoreManagementSubsystemParser_1_0.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, CoreManagementSubsystemParser_1_0.NAMESPACE, CoreManagementSubsystemParser_1_0::new);
     }
 }

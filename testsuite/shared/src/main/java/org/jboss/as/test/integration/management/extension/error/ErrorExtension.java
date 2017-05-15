@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -78,7 +79,7 @@ public class ErrorExtension implements Extension {
     public static final AttributeDefinition TARGET_HOST = SimpleAttributeDefinitionBuilder.create(HOST, ModelType.STRING, true).build();
     public static final AttributeDefinition TARGET_SERVER = SimpleAttributeDefinitionBuilder.create(SERVER, ModelType.STRING, true).build();
     public static final AttributeDefinition ERROR_POINT = SimpleAttributeDefinitionBuilder.create("error-point", ModelType.STRING)
-            .setValidator(EnumValidator.create(ErrorPoint.class, false, false))
+            .setValidator(EnumValidator.create(ErrorPoint.class, EnumSet.allOf(ErrorPoint.class)))
             .build();
 
     public static final String REGISTERED_MESSAGE = "Registered error-test operations";
@@ -99,7 +100,7 @@ public class ErrorExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, PARSER.getNamespace(), PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, PARSER.getNamespace(), () -> PARSER);
     }
 
     private static class BlockerSubsystemResourceDefinition extends SimpleResourceDefinition {

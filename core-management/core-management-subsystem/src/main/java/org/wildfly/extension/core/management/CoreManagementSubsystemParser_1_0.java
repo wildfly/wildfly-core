@@ -40,9 +40,9 @@ class CoreManagementSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
     static final String NAMESPACE = "urn:jboss:domain:core-management:1.0";
 
-    protected static final CoreManagementSubsystemParser_1_0 INSTANCE = new CoreManagementSubsystemParser_1_0();
-
-    private static final PersistentResourceXMLDescription XML_DESCRIPTION = builder(CoreManagementExtension.SUBSYSTEM_PATH, NAMESPACE)
+    @Override
+    public PersistentResourceXMLDescription getParserDescription() {
+        return builder(CoreManagementExtension.SUBSYSTEM_PATH, NAMESPACE)
                 .addChild(builder(ConfigurationChangeResourceDefinition.PATH).addAttribute(ConfigurationChangeResourceDefinition.MAX_HISTORY))
                 .addChild(builder(CoreManagementExtension.PROCESS_STATE_LISTENER_PATH)
                         .addAttribute(ProcessStateListenerResourceDefinition.LISTENER_CLASS)
@@ -50,12 +50,5 @@ class CoreManagementSubsystemParser_1_0 extends PersistentResourceXMLParser {
                         .addAttribute(ProcessStateListenerResourceDefinition.PROPERTIES)
                         .addAttribute(ProcessStateListenerResourceDefinition.TIMEOUT))
                 .build();
-
-    private CoreManagementSubsystemParser_1_0() {
-    }
-
-    @Override
-    public PersistentResourceXMLDescription getParserDescription() {
-        return XML_DESCRIPTION;
     }
 }

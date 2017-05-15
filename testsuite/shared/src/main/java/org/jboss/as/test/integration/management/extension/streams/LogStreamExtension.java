@@ -86,7 +86,7 @@ public class LogStreamExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, PARSER.getNamespace(), PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, PARSER.getNamespace(), () -> PARSER);
     }
 
     public static String getLogMessage(String key) {
