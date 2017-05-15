@@ -830,6 +830,7 @@ class TlsParser {
                 writer.writeStartElement(KEY_MANAGER);
                 writer.writeAttribute(NAME, name);
                 SSLDefinitions.ALGORITHM.marshallAsAttribute(keyManager, writer);
+                SSLDefinitions.ALIAS_FILTER.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.KEYSTORE.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.PROVIDER_NAME.marshallAsAttribute(keyManager, writer);
