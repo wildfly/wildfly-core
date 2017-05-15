@@ -24,11 +24,13 @@ package org.jboss.as.remoting;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.OutboundSocketBinding;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -43,6 +45,8 @@ import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient
 import org.xnio.OptionMap;
 
 import static java.security.AccessController.doPrivileged;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * A {@link RemoteOutboundConnectionService} manages a remoting connection created out of a remote:// URI scheme.
@@ -67,6 +71,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     private AuthenticationConfiguration configuration;
     private URI destination;
+    private SSLContext sslContext;
 
     public RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
         super();
@@ -94,6 +99,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         final int port = binding.getDestinationPort();
         final URI uri;
         final String username = this.username;
+        final SSLContext sslContext;
         try {
             uri = new URI(protocol, username, hostName, port, null, null, null);
         } catch (URISyntaxException e) {
@@ -102,6 +108,11 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         final AuthenticationContext injectedContext = this.authenticationContext.getOptionalValue();
         if (injectedContext != null) {
             configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null, "connect");
+            try {
+                sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(uri, injectedContext);
+            } catch (GeneralSecurityException e) {
+                throw RemotingLogger.ROOT_LOGGER.failedToObtainSSLContext(e);
+            }
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
             if (securityRealm != null && username != null) {
@@ -113,8 +124,10 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
                 if (callbackHandlerFactory != null) {
                     configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
                 }
+                sslContext = securityRealm.getSSLContext();
             } else {
                 configuration = AuthenticationConfiguration.EMPTY;
+                sslContext = null;
             }
         }
         final OptionMap optionMap = this.connectionCreationOptions;
@@ -123,6 +136,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
         this.configuration = configuration;
         this.destination = uri;
+        this.sslContext = sslContext;
     }
 
     public void stop(final StopContext context) {
@@ -131,6 +145,10 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
         return configuration;
+    }
+
+    public SSLContext getSSLContext() {
+        return sslContext;
     }
 
     public URI getDestinationUri() {
