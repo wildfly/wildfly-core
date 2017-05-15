@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron._private;
 
+import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
@@ -310,8 +311,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 911, value = "Credential store \"%s\" protection parameter cannot be resolved")
     IOException credentialStoreProtectionParameterCannotBeResolved(String name);
 
+    @LogMessage(level = ERROR)
     @Message(id = 912, value = "Credential store issue encountered")
-    OperationFailedException credentialStoreIssueEncountered(@Cause Exception cause);
+    void credentialStoreIssueEncountered(@Cause Exception cause);
 
     @Message(id = 913, value = "Credential alias \"%s\" of credential type \"%s\" already exists in the store")
     OperationFailedException credentialAlreadyExists(String alias, String credentialType);
