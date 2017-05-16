@@ -4740,10 +4740,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    Indicates that the credential store is case sensitive and should then allow for upper case in alias.
+                    Case sensitivity of the credential store. If case insensitive only lower case names are allowed for aliases.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
