@@ -24,6 +24,7 @@ package org.jboss.as.server.deployment;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -72,6 +73,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         this.resource = resource;
     }
 
+    @Override
     public synchronized void start(final StartContext context) throws StartException {
         ServiceTarget target = context.getChildTarget();
         final String deploymentName = context.getController().getName().getSimpleName();
@@ -97,8 +99,15 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         // If a builder was previously attached, reattach to the new deployment unit instance and build the initial phase using that builder
         if (this.phaseBuilder != null) {
             this.deploymentUnit.putAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER, this.phaseBuilder);
+            Set<AttachmentKey<?>> initialAttachmentKeys = this.getDeploymentUnitAttachmentKeys();
+            Consumer<StopContext> uninstaller = stopContext -> {
+                // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
+                this.getDeploymentUnitAttachmentKeys().stream()
+                    .filter(key -> !initialAttachmentKeys.contains(key))
+                    .forEach(key -> this.deploymentUnit.removeAttachment(key));
+            };
             ServiceName serviceName = this.deploymentUnit.getServiceName().append("installer");
-            this.phaseBuilder.build(target, serviceName, new FunctionalVoidService(installer)).install();
+            this.phaseBuilder.build(target, serviceName, new FunctionalVoidService(installer, uninstaller)).install();
         } else {
             installer.accept(context);
         }
@@ -113,6 +122,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
      */
     protected abstract DeploymentUnit createAndInitializeDeploymentUnit(final ServiceRegistry registry);
 
+    @Override
     public synchronized void stop(final StopContext context) {
         final String deploymentName = context.getController().getName().getSimpleName();
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
@@ -124,12 +134,18 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         // Retain any attached builder across restarts
         this.phaseBuilder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
         //clear up all attachments
-        SimpleAttachable attachable = (SimpleAttachable)deploymentUnit;
-        attachable.attachmentKeys().forEach(key -> deploymentUnit.removeAttachment(key));
+        this.getDeploymentUnitAttachmentKeys().forEach(key -> deploymentUnit.removeAttachment(key));
         deploymentUnit = null;
         monitor.removeController(context.getController());
         monitor = null;
         DeploymentResourceSupport.cleanup(resource);
+    }
+
+    /**
+     * Returns a new set containing the keys of all current deployment unit attachments.
+     */
+    private Set<AttachmentKey<?>> getDeploymentUnitAttachmentKeys() {
+        return ((SimpleAttachable) this.deploymentUnit).attachmentKeys();
     }
 
     public synchronized DeploymentUnit getValue() throws IllegalStateException, IllegalArgumentException {
