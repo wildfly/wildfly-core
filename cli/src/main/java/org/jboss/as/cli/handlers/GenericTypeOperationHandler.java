@@ -561,7 +561,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         if(opResponse.hasDefined(Util.RESPONSE_HEADERS)) {
             final ModelNode headers = opResponse.get(Util.RESPONSE_HEADERS);
             final Set<String> keys = headers.keys();
-            final SimpleTable table = new SimpleTable(2);
+            final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
             for(String key : keys) {
                 table.addLine(new String[]{key + ':', headers.get(key).asString()});
             }

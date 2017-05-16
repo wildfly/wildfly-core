@@ -367,7 +367,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 if(!result.isDefined()) {
                     return;
                 }
-                SimpleTable table = new SimpleTable(2);
+                SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
                 table.addLine(new String[]{"Patch ID:", result.get(Constants.PATCH_ID).asString()});
                 table.addLine(new String[]{"Type:", result.get(Constants.TYPE).asString()});
                 table.addLine(new String[]{"Identity name:", result.get(Constants.IDENTITY_NAME).asString()});
@@ -383,7 +383,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
                     ctx.printLine("");
                     ctx.printLine("ELEMENTS");
                     for(ModelNode e : elements.asList()) {
-                        table = new SimpleTable(2);
+                        table = new SimpleTable(2, ctx.getTerminalWidth());
                         table.addLine(new String[]{"Patch ID:", e.get(Constants.PATCH_ID).asString()});
                         table.addLine(new String[]{"Name:", e.get(Constants.NAME).asString()});
                         table.addLine(new String[]{"Type:", e.get(Constants.TYPE).asString()});
@@ -410,7 +410,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
                 if(!result.isDefined()) {
                     return;
                 }
-                SimpleTable table = new SimpleTable(2);
+                SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
                 table.addLine(new String[]{"Version:", result.get(Constants.VERSION).asString()});
                 addPatchesInfo(result, table);
                 ctx.printLine(table.toString(false));
@@ -430,7 +430,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
             final String header = Character.toUpperCase(type.charAt(0)) + type.substring(1) + ':';
             for(String name : layer.keys()) {
                 final ModelNode node = layer.get(name);
-                final SimpleTable table = new SimpleTable(2);
+                final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
                 table.addLine(new String[]{header, name});
                 addPatchesInfo(node, table);
                 ctx.printLine(lineSeparator + table.toString(false));
@@ -552,7 +552,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
 
     private void displayPatchXml(CommandContext ctx, Patch patch) throws CommandLineException {
         final Identity identity = patch.getIdentity();
-        SimpleTable table = new SimpleTable(2);
+        SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
         table.addLine(new String[]{"Patch ID:", patch.getPatchId()});
         table.addLine(new String[]{"Type:", identity.getPatchType().getName()});
         table.addLine(new String[]{"Identity name:", identity.getName()});
@@ -567,7 +567,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
             ctx.printLine("");
             ctx.printLine("ELEMENTS");
             for(PatchElement e : patch.getElements()) {
-                table = new SimpleTable(2);
+                table = new SimpleTable(2, ctx.getTerminalWidth());
                 table.addLine(new String[]{"Patch ID:", e.getId()});
                 table.addLine(new String[]{"Name:", e.getProvider().getName()});
                 table.addLine(new String[]{"Type:", e.getProvider().isAddOn() ? Constants.ADD_ON : Constants.LAYER});

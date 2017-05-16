@@ -230,7 +230,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
         final ModelNode result = response.get(Util.RESULT);
 
         if(composite) {
-            final SimpleTable table = new SimpleTable(2);
+            final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
             final StringBuilder valueBuf = new StringBuilder();
             if(result.hasDefined(Util.STEP_1)) {
                 final ModelNode stepOutcome = result.get(Util.STEP_1);

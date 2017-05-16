@@ -148,7 +148,7 @@ public class ReadOperationHandler extends BaseOperationCommand {
                         buf.append(prop.getName()).append("\n\n");
 
                         final List<Property> propProps = prop.getValue().asPropertyList();
-                        final SimpleTable table = new SimpleTable(2);
+                        final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
                         for(Property propProp : propProps) {
                             if(propProp.getName().equals(Util.DESCRIPTION)) {
                                 buf.append('\t').append(propProp.getValue().asString()).append("\n\n");
@@ -176,7 +176,7 @@ public class ReadOperationHandler extends BaseOperationCommand {
                 } else {
                     buf.append('\n');
 
-                    final SimpleTable table = new SimpleTable(2);
+                    final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
                     StringBuilder vtBuf = null;
                     for(Property prop : props) {
                         ModelType modelType = prop.getValue().getType();
@@ -189,7 +189,7 @@ public class ReadOperationHandler extends BaseOperationCommand {
                                 for(Property vtProp : vtProps) {
                                     vtBuf.append('\n').append(vtProp.getName()).append("\n\n");
                                     final List<Property> vtPropProps = vtProp.getValue().asPropertyList();
-                                    final SimpleTable vtTable = new SimpleTable(2);
+                                    final SimpleTable vtTable = new SimpleTable(2, ctx.getTerminalWidth());
                                     for(Property vtPropProp : vtPropProps) {
                                         if(vtPropProp.getName().equals(Util.DESCRIPTION)) {
                                             vtBuf.append('\t').append(vtPropProp.getValue().asString()).append("\n\n");
