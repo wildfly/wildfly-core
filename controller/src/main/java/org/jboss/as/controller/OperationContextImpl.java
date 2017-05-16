@@ -2581,6 +2581,11 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
+        public boolean hasCapability(String capabilityName) {
+            return managementModel.getCapabilityRegistry().hasCapability(capabilityName, CapabilityScope.GLOBAL);
+        }
+
+        @Override
         public <T> T getCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) throws NoSuchCapabilityException {
             try {
                 return managementModel.getCapabilityRegistry().getCapabilityRuntimeAPI(capabilityName, CapabilityScope.GLOBAL, apiType);

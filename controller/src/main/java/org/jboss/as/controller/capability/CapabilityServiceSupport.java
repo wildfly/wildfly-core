@@ -49,6 +49,13 @@ public interface CapabilityServiceSupport {
             super(message);
         }
     }
+    /**
+     * Gets whether a runtime capability with the given name is registered.
+     *
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @return {@code true} if there is a capability with the given name registered
+     */
+    boolean hasCapability(String capabilityName);
 
     /**
      * Gets the runtime API associated with a given capability, if there is one.
