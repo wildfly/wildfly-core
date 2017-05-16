@@ -4317,27 +4317,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="use-cipher-suites-order" type="xs:boolean" default="true">
-            <xs:annotation>
-                <xs:documentation>
-                    Configure the SSLContext to honor local cipher suites preference.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="maximum-session-cache-size" type="xs:int" default="-1">
-            <xs:annotation>
-                <xs:documentation>
-                    The maximum number of SSL sessions in the cache. The default value -1 means use the JVM default value. Value zero means there is no limit.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="session-timeout" type="xs:int" default="-1">
-            <xs:annotation>
-                <xs:documentation>
-                    The timeout for SSL sessions, in seconds. The default value -1 means use the JVM default value. Value zero means there is no limit.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="key-managers" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
