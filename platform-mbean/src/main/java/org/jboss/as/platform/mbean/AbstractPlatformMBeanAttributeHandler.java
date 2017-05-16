@@ -42,8 +42,8 @@ import org.jboss.dmr.ModelNode;
  */
 abstract class AbstractPlatformMBeanAttributeHandler implements OperationStepHandler {
 
-    protected final ParametersValidator readAttributeValidator = new ParametersValidator();
-    protected final ParametersValidator writeAttributeValidator = new ParametersValidator();
+    private final ParametersValidator readAttributeValidator = new ParametersValidator();
+    final ParametersValidator writeAttributeValidator = new ParametersValidator();
 
     protected AbstractPlatformMBeanAttributeHandler() {
         readAttributeValidator.registerValidator(NAME, new StringLengthValidator(1));
@@ -55,10 +55,10 @@ abstract class AbstractPlatformMBeanAttributeHandler implements OperationStepHan
         String op = operation.require(OP).asString();
         if (READ_ATTRIBUTE_OPERATION.equals(op)) {
             readAttributeValidator.validate(operation);
-            executeReadAttribute(context, operation);
+            context.addStep(this::executeReadAttribute, OperationContext.Stage.RUNTIME);
         } else if (WRITE_ATTRIBUTE_OPERATION.equals(op)) {
             writeAttributeValidator.validate(operation);
-            executeWriteAttribute(context, operation);
+            context.addStep(this::executeWriteAttribute, OperationContext.Stage.RUNTIME);
         }
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);

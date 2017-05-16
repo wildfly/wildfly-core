@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_TIME;
@@ -608,10 +609,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         assert isControllingThread();
 
         Stage currentStage = this.currentStage;
-        assertNotComplete(currentStage);
-        // TODO why do we allow Stage.MODEL?
-        if (! (!modify || currentStage == Stage.RUNTIME || currentStage == Stage.MODEL || currentStage == Stage.VERIFY || isRollingBack())) {
-            throw ControllerLogger.ROOT_LOGGER.serviceRegistryRuntimeOperationsOnly();
+        if (modify) {
+            if (!isRuntimeChangeAllowed()) {
+                throw ControllerLogger.ROOT_LOGGER.serviceRegistryRuntimeOperationsOnly();
+            }
+        } else {
+            assertNotComplete(currentStage);
         }
         authorize(false, modify ? READ_WRITE_RUNTIME : READ_RUNTIME);
         if (modify) {
@@ -628,7 +631,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         assert isControllingThread();
 
-        if (!isRuntimeChangeAllowed(currentStage)) {
+        if (!isRuntimeChangeAllowed()) {
             throw ControllerLogger.ROOT_LOGGER.serviceRemovalRuntimeOperationsOnly();
         }
         authorize(false, WRITE_RUNTIME);
@@ -672,7 +675,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         assert isControllingThread();
 
-        if (!isRuntimeChangeAllowed(currentStage)) {
+        if (!isRuntimeChangeAllowed()) {
             throw ControllerLogger.ROOT_LOGGER.serviceRemovalRuntimeOperationsOnly();
         }
         authorize(false, WRITE_RUNTIME);
@@ -737,7 +740,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         assert isControllingThread();
 
-        if (!isRuntimeChangeAllowed(currentStage)) {
+        if (!isRuntimeChangeAllowed()) {
             throw ControllerLogger.ROOT_LOGGER.serviceTargetRuntimeOperationsOnly();
         }
         ensureWriteLockForRuntime();
@@ -1938,9 +1941,10 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private boolean isRuntimeChangeAllowed(final Stage currentStage) {
+    private boolean isRuntimeChangeAllowed() {
         assertNotComplete(currentStage);
-        return currentStage == Stage.RUNTIME || currentStage == Stage.VERIFY || isRollingBack();
+        boolean validStage = currentStage == Stage.RUNTIME || currentStage == Stage.VERIFY || isRollingBack();
+        return validStage && (getProcessType().isServer() || activeStep == null || activeStep.address.size() < 2 || !PROFILE.equals(activeStep.address.getElement(0).getKey()));
     }
 
     private static void assertNotComplete(final Stage currentStage) {

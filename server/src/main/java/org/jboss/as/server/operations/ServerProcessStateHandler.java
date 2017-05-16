@@ -59,6 +59,10 @@ public class ServerProcessStateHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        context.addStep(this::doExecute, OperationContext.Stage.RUNTIME);
+    }
+
+    private void doExecute(OperationContext context, ModelNode operation) throws OperationFailedException {
         // Acquire the lock and check the write permissions for this operation
         context.getServiceRegistry(true);
         if (reload) {

@@ -679,10 +679,15 @@ public class DetailedOperationsTestCase extends AbstractRbacTestBase {
                     context.getResourceRegistrationForUpdate(); // causes read-config+write-config auth
                 }
                 if (actionEffect == Action.ActionEffect.READ_RUNTIME) {
-                    context.getServiceRegistry(false); // causes read-runtime auth
+                    context.addStep((ctx, op) -> {
+                        ctx.getServiceRegistry(false); // causes read-runtime auth
+                    }, OperationContext.Stage.RUNTIME);
+
                 }
                 if (actionEffect == Action.ActionEffect.WRITE_RUNTIME) {
-                    context.getServiceRegistry(true); // causes read-runtime+write-runtime auth
+                    context.addStep((ctx, op) -> {
+                        ctx.getServiceRegistry(true);  // causes read-runtime+write-runtime auth
+                    }, OperationContext.Stage.RUNTIME);
                 }
             }
 
