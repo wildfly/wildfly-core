@@ -410,12 +410,12 @@ public abstract class SocketBindingsXml {
         requireNoContent(reader);
     }
 
-    void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup)
+    void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup, String name)
             throws XMLStreamException {
 
         writer.writeStartElement(Element.SOCKET_BINDING_GROUP.getLocalName());
 
-        SocketBindingGroupResourceDefinition.NAME.marshallAsAttribute(bindingGroup, writer);
+        writeAttribute(writer, Attribute.NAME, name);
         SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.marshallAsAttribute(bindingGroup, writer);
 
         writeExtraAttributes(writer, bindingGroup);

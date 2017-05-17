@@ -31,11 +31,11 @@ import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.ATTRIB
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
 
+import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 
-import java.util.Arrays;
-import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -45,6 +45,7 @@ import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
+import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.logging.ServerLogger;
@@ -101,10 +102,12 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         String sslContext = commonPolicy.getSSLContext();
         ServiceName sslContextName = sslContext != null ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContext, SSLContext.class) : null;
 
+        final ServiceName sbmName = context.getCapabilityServiceName("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, commonPolicy.getConnectorOptions(),
-                    securityRealmName, saslAuthenticationFactoryName, sslContextName);
+                    securityRealmName, saslAuthenticationFactoryName, sslContextName, sbmName);
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), socketBindingServiceName);
     }
 

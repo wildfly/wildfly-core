@@ -23,6 +23,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.resource.InterfaceDefinition;
@@ -36,17 +37,13 @@ import org.jboss.dmr.ModelNode;
  */
 public class InterfaceAddHandler extends AbstractAddStepHandler {
 
-    @Deprecated
-    public static final InterfaceAddHandler NAMED_INSTANCE = new InterfaceAddHandler(false);
-    @Deprecated
-    public static final InterfaceAddHandler SPECIFIED_INSTANCE = new InterfaceAddHandler(true);
-
     private final boolean specified;
 
     /**
      * Create the InterfaceAddHandler
      */
-    protected InterfaceAddHandler(boolean specified) {
+    protected InterfaceAddHandler(boolean specified, RuntimeCapability capability) {
+        super(capability);
         this.specified = specified;
     }
 

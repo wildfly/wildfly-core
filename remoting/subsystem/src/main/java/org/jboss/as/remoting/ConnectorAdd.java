@@ -23,6 +23,7 @@
 package org.jboss.as.remoting;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
+import static org.jboss.as.remoting.Capabilities.SOCKET_BINDING_MANAGER_CAPABILTIY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
 
 import javax.net.ssl.SSLContext;
@@ -34,6 +35,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
+import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -96,6 +98,9 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceName sslContextName = sslContextModel.isDefined()
                 ? context.getCapabilityServiceName(SSL_CONTEXT_CAPABILITY, sslContextModel.asString(), SSLContext.class) : null;
 
-        RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName, socketBindingName, optionMap, securityRealmName, saslAuthenticationFactoryName, sslContextName);
+        final ServiceName sbmName = context.getCapabilityServiceName(SOCKET_BINDING_MANAGER_CAPABILTIY, SocketBindingManager.class);
+
+        RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName,
+                socketBindingName, optionMap, securityRealmName, saslAuthenticationFactoryName, sslContextName, sbmName);
     }
 }

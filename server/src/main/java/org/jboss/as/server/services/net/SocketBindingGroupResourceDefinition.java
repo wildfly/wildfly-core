@@ -21,15 +21,18 @@
  */
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.SocketBindingGroupRemoveHandler;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
+import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -38,14 +41,27 @@ import org.jboss.dmr.ModelType;
  */
 public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingGroupResourceDefinition {
 
-    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+    static final RuntimeCapability<Void> SOCKET_BINDING_MANAGER_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.socket-binding-manager", SocketBindingManager.class).build();
+
+
+    public static final SimpleAttributeDefinition DEFAULT_INTERFACE = createDefaultInterface(SOCKET_BINDING_MANAGER_CAPABILITY);
 
     public static final SimpleAttributeDefinition PORT_OFFSET = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT_OFFSET, ModelType.INT, true)
             .setAllowExpression(true).setValidator(new IntRangeValidator(-65535, 65535, true, true))
             .setDefaultValue(new ModelNode().set(0)).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
+    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+
     private SocketBindingGroupResourceDefinition() {
-        super(BindingGroupAddHandler.INSTANCE, SocketBindingGroupRemoveHandler.INSTANCE);
+        super(BindingGroupAddHandler.INSTANCE,
+                new ReloadRequiredRemoveStepHandler() {
+                    @Override
+                    protected boolean requiresRuntime(OperationContext context) {
+                        return true;
+                    }
+                },
+                DEFAULT_INTERFACE, SOCKET_BINDING_MANAGER_CAPABILITY);
     }
 
     @Override

@@ -28,6 +28,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -39,10 +41,7 @@ import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 
 /**
  * Handler for the server and host model socket-binding resource's add operation.
@@ -84,9 +83,9 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         return true;
     }
 
-    public static void installBindingService(OperationContext context, ModelNode config, String name)
+    static void installBindingService(OperationContext context, ModelNode config, String name)
             throws UnknownHostException, OperationFailedException {
-        final ServiceTarget serviceTarget = context.getServiceTarget();
+        final CapabilityServiceTarget serviceTarget = context.getCapabilityServiceTarget();
 
         final ModelNode intfNode = AbstractSocketBindingResourceDefinition.INTERFACE.resolveModelAttribute(context, config);
         final String intf = intfNode.isDefined() ? intfNode.asString() : null;
@@ -100,18 +99,17 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(context, mappingsNode) : null;
 
         final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
-        final ServiceName serviceName = SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(name, SocketBinding.class);
-        final ServiceBuilder<SocketBinding> builder = serviceTarget.addService(serviceName, service);
+        final CapabilityServiceBuilder<SocketBinding> builder = serviceTarget.addCapability(SOCKET_BINDING_CAPABILITY, service);
         if (intf != null) {
-            builder.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(intf), NetworkInterfaceBinding.class, service.getInterfaceBinding());
+            builder.addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getInterfaceBinding(), intf);
         }
-        builder.addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, service.getSocketBindings())
+        builder.addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, service.getSocketBindings())
                 .addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name))
                 .setInitialMode(Mode.ON_DEMAND)
                 .install();
     }
 
-    public static List<ClientMapping> parseClientMappings(OperationContext context, ModelNode mappings) throws OperationFailedException {
+    static List<ClientMapping> parseClientMappings(OperationContext context, ModelNode mappings) throws OperationFailedException {
         List<ClientMapping> clientMappings = new ArrayList<ClientMapping>();
         for (ModelNode mappingNode : mappings.asList()) {
             ModelNode sourceNode = AbstractSocketBindingResourceDefinition.CLIENT_MAPPING_SOURCE_NETWORK.resolveModelAttribute(context, mappingNode);

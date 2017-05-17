@@ -240,9 +240,9 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>>, XM
         interfacesXml.writeInterfaces(writer, modelNode);
     }
 
-    protected void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup, boolean fromServer)
+    protected void writeSocketBindingGroup(XMLExtendedStreamWriter writer, ModelNode bindingGroup, String name)
             throws XMLStreamException {
-        socketBindingsXml.writeSocketBindingGroup(writer, bindingGroup);
+        socketBindingsXml.writeSocketBindingGroup(writer, bindingGroup, name);
     }
 
     protected void writeProperties(final XMLExtendedStreamWriter writer, final ModelNode modelNode, Element element,

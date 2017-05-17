@@ -113,8 +113,16 @@ public class RemotingServices {
                                                                           final OptionMap connectorPropertiesOptionMap,
                                                                           final ServiceName securityRealm,
                                                                           final ServiceName saslAuthenticationFactory,
-                                                                          final ServiceName sslContext) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, networkInterfaceBindingName, port, true, connectorPropertiesOptionMap, securityRealm, saslAuthenticationFactory, sslContext);
+                                                                          final ServiceName sslContext,
+                                                                          final ServiceName socketBindingManager) {
+        final InjectedNetworkBindingStreamServerService streamServerService = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port);
+
+        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
+                    .addDependency(networkInterfaceBindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector());
+        if (socketBindingManager != null) {
+            serviceBuilder.addDependency(socketBindingManager, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
+        }
+        installConnectorServices(serviceBuilder, streamServerService, endpointName, securityRealm, saslAuthenticationFactory, sslContext);
     }
 
     public static void installConnectorServicesForSocketBinding(ServiceTarget serviceTarget,
@@ -124,34 +132,23 @@ public class RemotingServices {
                                                                 final OptionMap connectorPropertiesOptionMap,
                                                                 final ServiceName securityRealm,
                                                                 final ServiceName saslAuthenticationFactory,
-                                                                final ServiceName sslContext) {
-        installConnectorServices(serviceTarget, endpointName, connectorName, socketBindingName, 0, false, connectorPropertiesOptionMap, securityRealm, saslAuthenticationFactory, sslContext);
+                                                                final ServiceName sslContext,
+                                                                final ServiceName socketBindingManager) {
+        final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
+        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
+                .addDependency(socketBindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
+                .addDependency(socketBindingManager, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
+
+        installConnectorServices(serviceBuilder, streamServerService, endpointName, securityRealm, saslAuthenticationFactory, sslContext);
     }
 
-    private static void installConnectorServices(ServiceTarget serviceTarget,
+    private static void installConnectorServices(final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder,
+                                                 final AbstractStreamServerService service,
                                                  final ServiceName endpointName,
-                                                 final String connectorName,
-                                                 final ServiceName bindingName,
-                                                 final int port,
-                                                 final boolean isNetworkInterfaceBinding,
-                                                 final OptionMap connectorPropertiesOptionMap,
                                                  final ServiceName securityRealm,
                                                  final ServiceName saslAuthenticationFactory,
                                                  final ServiceName sslContext) {
 
-        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder;
-        final AbstractStreamServerService service;
-        if (isNetworkInterfaceBinding) {
-            final InjectedNetworkBindingStreamServerService streamServerService = (InjectedNetworkBindingStreamServerService) (service = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port));
-            serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(bindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector())
-                    .addDependency(ServiceBuilder.DependencyType.OPTIONAL, SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
-        } else {
-            final InjectedSocketBindingStreamServerService streamServerService = (InjectedSocketBindingStreamServerService) (service = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap));
-            serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(bindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
-                    .addDependency(SocketBindingManager.SOCKET_BINDING_MANAGER, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
-        }
         serviceBuilder.addDependency(endpointName, Endpoint.class, service.getEndpointInjector());
         if (securityRealm != null) {
             serviceBuilder.addDependency(securityRealm, SecurityRealm.class, service.getSecurityRealmInjector());

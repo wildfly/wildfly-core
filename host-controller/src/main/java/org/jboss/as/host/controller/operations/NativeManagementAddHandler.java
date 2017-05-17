@@ -29,10 +29,11 @@ import static org.jboss.as.host.controller.resources.NativeManagementResourceDef
 import static org.jboss.as.remoting.RemotingServices.REMOTING_BASE;
 import static org.jboss.as.remoting.management.ManagementRemotingServices.MANAGEMENT_CONNECTOR;
 
-import javax.net.ssl.SSLContext;
-
 import java.util.Arrays;
 import java.util.List;
+
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
@@ -41,8 +42,8 @@ import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
+import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
-import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -82,7 +83,8 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
 
         OptionMap options = createConnectorOptions(commonPolicy);
 
-        final ServiceName nativeManagementInterfaceBinding = NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(hostControllerInfo.getNativeManagementInterface());
+        final ServiceName nativeManagementInterfaceBinding = context.getCapabilityServiceName("org.wildfly.network.interface",
+                hostControllerInfo.getNativeManagementInterface(), NetworkInterfaceBinding.class);
 
         final String securityRealm = commonPolicy.getSecurityRealm();
         final String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
@@ -102,7 +104,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), nativeManagementInterfaceBinding);
     }
 
-    static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
+    private static void populateHostControllerInfo(LocalHostControllerInfoImpl hostControllerInfo, OperationContext context, ModelNode model) throws OperationFailedException {
         hostControllerInfo.setNativeManagementInterface(NativeManagementResourceDefinition.INTERFACE.resolveModelAttribute(context, model).asString());
         final ModelNode portNode = NativeManagementResourceDefinition.NATIVE_PORT.resolveModelAttribute(context, model);
         hostControllerInfo.setNativeManagementPort(portNode.isDefined() ? portNode.asInt() : -1);

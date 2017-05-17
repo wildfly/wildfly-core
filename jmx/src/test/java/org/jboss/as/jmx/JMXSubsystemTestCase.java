@@ -659,9 +659,10 @@ public class JMXSubsystemTestCase extends AbstractSubsystemTest {
         @Override
         protected void addExtraServices(final ServiceTarget target) {
             ManagementRemotingServices.installRemotingManagementEndpoint(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "localhost", EndpointService.EndpointType.MANAGEMENT);
-            ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
-            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT, "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY, null, null, null);
+            RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
+                    "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY,
+                    null, null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
         }
     }
 

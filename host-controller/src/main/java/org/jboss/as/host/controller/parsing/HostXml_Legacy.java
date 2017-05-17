@@ -1504,7 +1504,6 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     /**
-     * @param allowDiscoveryOptions i.e. are host and port potentially optional?
      * @return true if discovery options are required, i.e. no host and port set and the admin policy requires a config.
      */
     private boolean parseRemoteDomainControllerAttributes_2_0(final XMLExtendedStreamReader reader, final ModelNode address,

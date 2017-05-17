@@ -34,4 +34,5 @@ final class Capabilities {
 
     static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
 
+    static final String SOCKET_BINDING_MANAGER_CAPABILTIY = "org.wildfly.management.socket-binding-manager";
 }

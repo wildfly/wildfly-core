@@ -23,10 +23,8 @@
 package org.jboss.as.controller.resource;
 
 
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -36,13 +34,9 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -52,10 +46,6 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class AbstractSocketBindingGroupResourceDefinition extends SimpleResourceDefinition {
 
-    public static final String SOCKET_BINDING_GROUP_CAPABILITY_NAME = "org.wildfly.domain.socket-binding-group";
-    public static final RuntimeCapability SOCKET_BINDING_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
-            .build();
-
     // Common attributes
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SOCKET_BINDING_GROUP);
@@ -64,20 +54,27 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
             .setResourceOnly()
             .setValidator(new StringLengthValidator(1)).build();
 
-    public static final SimpleAttributeDefinition DEFAULT_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEFAULT_INTERFACE, ModelType.STRING, false)
-            .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_GROUP_CAPABILITY)
-            .build();
+    protected static SimpleAttributeDefinition createDefaultInterface(RuntimeCapability dependentCapability) {
+        return new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEFAULT_INTERFACE, ModelType.STRING, false)
+                .setAllowExpression(true)
+                .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+                .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+                .setCapabilityReference("org.wildfly.network.interface", dependentCapability)
+                .build();
+    }
 
-    public AbstractSocketBindingGroupResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
+    private final AttributeDefinition defaultInterface;
+
+    public AbstractSocketBindingGroupResourceDefinition(final OperationStepHandler addHandler,
+                                                        final OperationStepHandler removeHandler,
+                                                        final AttributeDefinition defaultInterface,
+                                                        final RuntimeCapability exposedCapability) {
         super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING_GROUP))
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
-                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
-                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG)
+                .setCapabilities(exposedCapability));
+        this.defaultInterface = defaultInterface;
     }
 
     @Override
@@ -85,41 +82,6 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
         super.registerAttributes(resourceRegistration);
 
         resourceRegistration.registerReadOnlyAttribute(NAME, null);
-        resourceRegistration.registerReadWriteAttribute(DEFAULT_INTERFACE, null, new ReloadRequiredWriteAttributeHandler(DEFAULT_INTERFACE) {
-            protected void validateUpdatedModel(final OperationContext context, final Resource model) throws OperationFailedException {
-                validateDefaultInterfaceReference(context, model.getModel());
-            }
-        });
-
-    }
-
-    public static void validateDefaultInterfaceReference(final OperationContext context, final ModelNode bindingGroup) throws OperationFailedException {
-
-        ModelNode defaultInterfaceNode = bindingGroup.get(DEFAULT_INTERFACE.getName());
-        if (defaultInterfaceNode.getType() == ModelType.STRING) { // ignore UNDEFINED and EXPRESSION
-            String defaultInterface = defaultInterfaceNode.asString();
-            PathAddress operationAddress = context.getCurrentAddress();
-            //This can be used on both the host and the server, the socket binding group will be a
-            //sibling to the interface in the model
-            PathAddress interfaceAddress = PathAddress.EMPTY_ADDRESS;
-            for (PathElement element : operationAddress) {
-                if (element.getKey().equals(ModelDescriptionConstants.SOCKET_BINDING_GROUP)) {
-                    break;
-                }
-                interfaceAddress = interfaceAddress.append(element);
-            }
-            interfaceAddress = interfaceAddress.append(ModelDescriptionConstants.INTERFACE, defaultInterface);
-            try {
-                context.readResourceFromRoot(interfaceAddress, false);
-            } catch (RuntimeException e) {
-                throw ControllerLogger.ROOT_LOGGER.nonexistentInterface(defaultInterface, DEFAULT_INTERFACE.getName());
-            }
-        }
-
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(SOCKET_BINDING_GROUP_CAPABILITY);
+        resourceRegistration.registerReadWriteAttribute(defaultInterface, null, new ReloadRequiredWriteAttributeHandler(defaultInterface));
     }
 }

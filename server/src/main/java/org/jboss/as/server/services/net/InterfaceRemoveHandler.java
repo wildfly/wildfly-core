@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
@@ -33,14 +34,18 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry
  */
-public class InterfaceRemoveHandler extends org.jboss.as.controller.operations.common.InterfaceRemoveHandler {
+public class InterfaceRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final InterfaceRemoveHandler INSTANCE = new InterfaceRemoveHandler();
 
     /**
      * Create the InterfaceRemoveHandler
      */
-    protected InterfaceRemoveHandler() {
+    InterfaceRemoveHandler() {
+        // Pass the capability through the OSH constructor rather than relying
+        // on the MRR, as in some subsystem test stuff due to restrictions for
+        // legacy controllers the MRR can't record the cap
+        super(InterfaceResourceDefinition.INTERFACE_CAPABILITY);
     }
 
     @Override

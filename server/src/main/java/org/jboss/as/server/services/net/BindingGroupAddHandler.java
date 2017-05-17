@@ -19,22 +19,22 @@
 package org.jboss.as.server.services.net;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT_INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition.SOCKET_BINDING_MANAGER_CAPABILITY;
 
 import java.util.Set;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.operations.common.AbstractSocketBindingGroupAddHandler;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
-import org.jboss.as.controller.resource.AbstractSocketBindingGroupResourceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
@@ -46,7 +46,7 @@ import org.jboss.msc.service.ServiceController;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler {
+public class BindingGroupAddHandler extends AbstractAddStepHandler {
 
     public static ModelNode getOperation(PathAddress address, ModelNode model) {
         ModelNode op = Util.createAddOperation(address);
@@ -58,6 +58,7 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
     public static final BindingGroupAddHandler INSTANCE = new BindingGroupAddHandler();
 
     private BindingGroupAddHandler() {
+        super(SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE, SocketBindingGroupResourceDefinition.PORT_OFFSET);
     }
 
     /**
@@ -67,12 +68,14 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
 
         super.populateModel(context, operation, resource);
-        final ModelNode model = resource.getModel();
 
-        SocketBindingGroupResourceDefinition.PORT_OFFSET.validateAndSet(operation, model);
+        //  We need to store the address value in the 'name' instead of using
+        // ReadResourceNameOperationStepHandler to avoid picky legacy controller
+        // model comparison failures
+        resource.getModel().get(NAME).set(context.getCurrentAddressValue());
 
-        // Validate only a single socket binding group and a valid default interface
-        final PathAddress mine = PathAddress.pathAddress(operation.require(OP_ADDR));
+        // Validate only a single socket binding group
+        final PathAddress mine = context.getCurrentAddress();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -90,8 +93,6 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
                         }
                     }
                 }
-
-                AbstractSocketBindingGroupResourceDefinition.validateDefaultInterfaceReference(context, model);
             }
         }, OperationContext.Stage.MODEL);
     }
@@ -107,9 +108,10 @@ public class BindingGroupAddHandler extends AbstractSocketBindingGroupAddHandler
         String defaultInterface = SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.resolveModelAttribute(context, model).asString();
 
         SocketBindingManagerService service = new SocketBindingManagerService(portOffset);
-        context.getServiceTarget().addService(SocketBindingManager.SOCKET_BINDING_MANAGER, service)
+        context.getCapabilityServiceTarget().addCapability(SOCKET_BINDING_MANAGER_CAPABILITY, service)
+                .addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector(), defaultInterface)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(defaultInterface), NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector())
+                .addAliases(SocketBindingManager.SOCKET_BINDING_MANAGER)
                 .install();
     }
 }

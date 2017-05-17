@@ -303,7 +303,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     }
 
     private static OperationEntry.Flag restartLevelForAdd(OperationStepHandler addHandler) {
-        return addHandler instanceof AbstractBoottimeAddStepHandler
+        return (addHandler instanceof AbstractBoottimeAddStepHandler || addHandler instanceof ReloadRequiredAddStepHandler)
                 ? OperationEntry.Flag.RESTART_ALL_SERVICES : OperationEntry.Flag.RESTART_NONE;
     }
 

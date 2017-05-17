@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.Cancellable;
+import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -128,7 +129,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         PathAddress addr = getSocketBindingGroupAddress("binding-four");
         ModelNode op = Util.createRemoveOperation(addr);
         MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-        DomainSocketBindingGroupRemoveHandler.INSTANCE.execute(operationContext, op);
+        ModelOnlyRemoveStepHandler.INSTANCE.execute(operationContext, op);
         // WFCORE-833 no next validation step any more
         //operationContext.executeNextStep();
     }
@@ -139,7 +140,7 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 //        PathAddress addr = getSocketBindingGroupAddress("binding-three");
 //        ModelNode op = Util.createRemoveOperation(addr);
 //        MockOperationContext operationContext = getOperationContextWithIncludes(addr);
-//        DomainSocketBindingGroupRemoveHandler.INSTANCE.execute(operationContext, op);
+//        ModelOnlyRemoveStepHandler.INSTANCE.execute(operationContext, op);
 //        operationContext.executeNextStep();
 //    }
 

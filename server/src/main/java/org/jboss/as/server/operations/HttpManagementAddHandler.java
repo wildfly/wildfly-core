@@ -23,22 +23,22 @@
 package org.jboss.as.server.operations;
 
 
-import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-
 import static org.jboss.as.remoting.RemotingHttpUpgradeService.HTTP_UPGRADE_REGISTRY;
-
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SECURE_SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING;
 import static org.jboss.as.server.mgmt.HttpManagementResourceDefinition.SOCKET_BINDING_CAPABILITY_NAME;
+import static org.jboss.as.server.mgmt.UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 import javax.net.ssl.SSLContext;
 
 import io.undertow.server.ListenerRegistry;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
@@ -53,7 +53,6 @@ import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
-import org.jboss.as.network.SocketBindingManagerImpl;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
@@ -70,10 +69,8 @@ import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
@@ -91,7 +88,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     public static final HttpManagementAddHandler INSTANCE = new HttpManagementAddHandler();
 
-    public HttpManagementAddHandler() {
+    private HttpManagementAddHandler() {
         super(HttpManagementResourceDefinition.ATTRIBUTE_DEFINITIONS);
     }
 
@@ -110,33 +107,22 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
     @Override
     protected List<ServiceName> installServices(OperationContext context, HttpInterfaceCommonPolicy commonPolicy, ModelNode model) throws OperationFailedException {
-        final ServiceTarget serviceTarget = context.getServiceTarget();
-
-        ServiceName socketBindingServiceName = null;
-        ServiceName secureSocketBindingServiceName = null;
+        final CapabilityServiceTarget serviceTarget = context.getCapabilityServiceTarget();
 
         // Socket-binding reference based config
-        final ModelNode socketBindingNode = SOCKET_BINDING.resolveModelAttribute(context, model);
-        if (socketBindingNode.isDefined()) {
-            final String bindingName = socketBindingNode.asString();
-            socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
-        }
-        final ModelNode secureSocketBindingNode = SECURE_SOCKET_BINDING.resolveModelAttribute(context, model);
-        if (secureSocketBindingNode.isDefined()) {
-            final String bindingName = secureSocketBindingNode.asString();
-            secureSocketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
-        }
+        final String socketBindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asStringOrNull();
+        final String secureSocketBindingName = SECURE_SOCKET_BINDING.resolveModelAttribute(context, model).asStringOrNull();
 
         // Log the config
-        if (socketBindingServiceName != null) {
-            if (secureSocketBindingServiceName != null) {
-                ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSocketAndSecureSocket(socketBindingServiceName.getSimpleName(),
-                        secureSocketBindingServiceName.getSimpleName());
+        if (socketBindingName != null) {
+            if (secureSocketBindingName != null) {
+                ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSocketAndSecureSocket(socketBindingName,
+                        secureSocketBindingName);
             } else {
-                ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSocket(socketBindingServiceName.getSimpleName());
+                ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSocket(socketBindingName);
             }
-        } else if (secureSocketBindingServiceName != null) {
-            ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSecureSocket(secureSocketBindingServiceName.getSimpleName());
+        } else if (secureSocketBindingName != null) {
+            ServerLogger.ROOT_LOGGER.creatingHttpManagementServiceOnSecureSocket(secureSocketBindingName);
         }
 
         ConsoleMode consoleMode = consoleMode(commonPolicy.isConsoleEnabled(), context.getRunningMode() == RunningMode.ADMIN_ONLY);
@@ -149,9 +135,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
-        ServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addService(UndertowHttpManagementService.SERVICE_NAME, undertowService)
-                .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
-                .addDependency(SocketBindingManagerImpl.SOCKET_BINDING_MANAGER, SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
+        CapabilityServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, undertowService).addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
+                .addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
@@ -159,19 +144,18 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, undertowService.getManagementExecutor())
                 .addInjection(undertowService.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
 
-            if (socketBindingServiceName != null) {
-                undertowBuilder.addDependency(socketBindingServiceName, SocketBinding.class, undertowService.getSocketBindingInjector());
-            }
-            if (secureSocketBindingServiceName != null) {
-                undertowBuilder.addDependency(secureSocketBindingServiceName, SocketBinding.class, undertowService.getSecureSocketBindingInjector());
-            }
+        if (socketBindingName != null) {
+            undertowBuilder.addCapabilityRequirement(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, undertowService.getSocketBindingInjector(), socketBindingName);
+        }
+        if (secureSocketBindingName != null) {
+            undertowBuilder.addCapabilityRequirement(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, undertowService.getSecureSocketBindingInjector(), secureSocketBindingName);
+        }
 
         String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
         String securityRealm = commonPolicy.getSecurityRealm();
         if (httpAuthenticationFactory != null) {
-            undertowBuilder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, httpAuthenticationFactory),
-                    HttpAuthenticationFactory.class), HttpAuthenticationFactory.class, undertowService.getHttpAuthenticationFactoryInjector());
+            undertowBuilder.addCapabilityRequirement(HTTP_AUTHENTICATION_FACTORY_CAPABILITY,
+                    HttpAuthenticationFactory.class, undertowService.getHttpAuthenticationFactoryInjector(), httpAuthenticationFactory);
         }
         if (securityRealm != null) {
             SecurityRealm.ServiceUtil.addDependency(undertowBuilder, undertowService.getSecurityRealmInjector(), securityRealm);
@@ -181,9 +165,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         }
         String sslContext = commonPolicy.getSSLContext();
         if (sslContext != null) {
-            undertowBuilder.addDependency(context.getCapabilityServiceName(
-                    buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContext),
-                    SSLContext.class), SSLContext.class, undertowService.getSSLContextInjector());
+            undertowBuilder.addCapabilityRequirement(SSL_CONTEXT_CAPABILITY, SSLContext.class, undertowService.getSSLContextInjector(), sslContext);
         }
 
         undertowBuilder.install();
@@ -202,10 +184,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         if(commonPolicy.isHttpUpgradeEnabled()) {
             final String hostName = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null);
 
-            ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.server.temp.dir");
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostName, context.getServiceRegistry(false));
             final String httpConnectorName;
-            if (socketBindingServiceName != null || (secureSocketBindingServiceName == null)) {
+            if (socketBindingName != null || (secureSocketBindingName == null)) {
                 httpConnectorName = ManagementRemotingServices.HTTP_CONNECTOR;
             } else {
                 httpConnectorName = ManagementRemotingServices.HTTPS_CONNECTOR;
