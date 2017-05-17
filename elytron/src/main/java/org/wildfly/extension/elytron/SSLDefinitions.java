@@ -809,7 +809,8 @@ class SSLDefinitions {
                     if ( ! protocols.isEmpty()) builder.setProtocolSelector(ProtocolSelector.empty().add(
                             EnumSet.copyOf(protocols.stream().map(Protocol::forName).collect(Collectors.toList()))
                     ));
-                    builder.setClientMode(true);
+                    builder.setClientMode(true)
+                        .setWrap(false);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
