@@ -600,26 +600,8 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
     private static void copyDirectory(final File source, final File target,
             CommandContext ctx, ASModuleHandler handler) throws CommandLineException {
-        Path sourcePath = source.toPath();
-        Path targetPath = target.toPath();
         try {
-            Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult preVisitDirectory(final Path dir,
-                        final BasicFileAttributes attrs) throws IOException {
-                    Files.createDirectories(targetPath.resolve(sourcePath
-                            .relativize(dir)));
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFile(final Path file,
-                        final BasicFileAttributes attrs) throws IOException {
-                    Files.copy(file,
-                            targetPath.resolve(sourcePath.relativize(file)));
-                    return FileVisitResult.CONTINUE;
-                }
-            });
+            copyDirectory(source, target);
         } catch (IOException ex) {
             Exception removalException = null;
             try {
@@ -639,6 +621,58 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             }
             throw new CommandLineException(msg);
         }
+    }
+
+    private static void copyDirectory(final File source, final File target) throws IOException {
+        Path sourcePath = source.toPath();
+        Path targetPath = target.toPath();
+        Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(final Path dir,
+                    final BasicFileAttributes attrs) throws IOException {
+                Files.createDirectories(targetPath.resolve(sourcePath
+                        .relativize(dir)));
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(final Path file,
+                    final BasicFileAttributes attrs) throws IOException {
+                if (attrs.isSymbolicLink()) {
+                    Path symTarget = Files.readSymbolicLink(file);
+                    File symTargetFile = symTarget.toFile();
+                    if (!symTargetFile.isAbsolute()) {
+                        if (file.getParent() != null) {
+                            symTarget = file.getParent().resolve(symTarget);
+                        } else {
+                            throw new IOException("Recursive symbolic link: "
+                                    + file.toFile().getAbsolutePath() + "=>"
+                                    + symTargetFile.getCanonicalPath()
+                                    + ". Can't copy directory");
+                        }
+                    }
+                    if (symTarget.toFile().getCanonicalFile().isDirectory()) {
+                        // Resursive link (if the symlink references a parent of the directory
+                        // being copied), we must fail.
+                        if (file.getParent().toFile().getCanonicalPath().
+                                startsWith(symTarget.toFile().getCanonicalPath())) {
+                            throw new IOException("Recursive symbolic link: "
+                                    + file.toFile().getAbsolutePath() + "=>"
+                                    + symTarget.toFile().getCanonicalPath()
+                                    + ". Can't copy directory");
+                        } else {
+                            // copy the directory target.
+                            copyDirectory(symTarget.toFile(), targetPath.resolve(sourcePath
+                                    .relativize(file)).toFile());
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+                Files.copy(file,
+                        targetPath.resolve(sourcePath.relativize(file)));
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     public static void copy(final File source, final File target) throws CommandLineException {

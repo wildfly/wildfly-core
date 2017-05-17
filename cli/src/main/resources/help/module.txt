@@ -60,7 +60,8 @@ ARGUMENTS
                    The file(s) specified will be copied to the created module's directory.
                    If the specified path is a directory, it will be recursively copied to
                    the module directory. If the directory does not exist, an empty directory
-                   will be created in the module directory.
+                   will be created in the module directory. Symbolic links are not
+                   preserved, linked content is copied.
 
  --absolute-resources - (used with add, resources and/or absolute-resources required
                        unless module-xml is used) a list of filesystem paths

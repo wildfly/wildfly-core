@@ -31,7 +31,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -272,6 +274,102 @@ public class ModuleTestCase extends AbstractCliTestBase {
         f.createNewFile();
         Files.write(content.getBytes(), f);
         f.setReadable(false);
+        boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                + " --resources=" + dirFile.getAbsolutePath(), true);
+        Assert.assertFalse(ret);
+        String output = cli.readOutput();
+        Assert.assertTrue(output.contains("Module not added"));
+        File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+        Assert.assertFalse(testModuleRoot.exists());
+    }
+
+    @Test
+    public void addModuleWithDirectoryAndValidLinks() throws Exception {
+        if (Utils.isWindows()) {
+            return;
+        }
+
+        String dir = System.currentTimeMillis() + "dir";
+        File dirFile = new File(TestSuiteEnvironment.getTmpDir(), dir);
+        dirFile.mkdir();
+        String content = "HELLO WORLD";
+        String fileName = System.currentTimeMillis() + "file.txt";
+
+        String dir2 = System.currentTimeMillis() + "dir2";
+        File dirFile2 = new File(TestSuiteEnvironment.getTmpDir(), dir2);
+        dirFile2.mkdir();
+        File f2 = new File(dirFile2, fileName);
+        f2.createNewFile();
+        Files.write(content.getBytes(), f2);
+
+        File subDir = new File(dirFile, "subDirectory");
+        subDir.mkdir();
+        File f = new File(subDir, fileName);
+        f.createNewFile();
+        Files.write(content.getBytes(), f);
+
+        File link1 = new File(dirFile, "linkToSub");
+        java.nio.file.Files.createSymbolicLink(link1.toPath(), subDir.toPath());
+
+        File link2 = new File(dirFile, "linkToExt");
+        java.nio.file.Files.createSymbolicLink(link2.toPath(), dirFile2.toPath());
+
+        File link3 = new File(dirFile, "linkToFile");
+        java.nio.file.Files.createSymbolicLink(link3.toPath(), f2.toPath());
+
+        try {
+            cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile.getAbsolutePath());
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            File moduleDir = new File(testModuleRoot, "main");
+
+            // check that there is a single directory
+            File[] dirs = moduleDir.listFiles(File::isDirectory);
+            Assert.assertEquals(1, dirs.length);
+            Assert.assertEquals(dir, dirs[0].getName());
+            File[] files = dirs[0].listFiles();
+            Assert.assertEquals(4, files.length);
+            Map<String, File> map = new HashMap<>();
+            for (File file : files) {
+                map.put(file.getName(), file);
+            }
+            Assert.assertTrue(map.containsKey(subDir.getName()));
+            Assert.assertTrue(map.containsKey(link1.getName()));
+            Assert.assertTrue(map.containsKey(link2.getName()));
+            Assert.assertTrue(map.containsKey(link3.getName()));
+            File l = map.get(link1.getName());
+            File[] subFiles = l.listFiles();
+            Assert.assertEquals(1, subFiles.length);
+            Assert.assertEquals(fileName, subFiles[0].getName());
+            Assert.assertEquals(content, Files.readFirstLine(subFiles[0], Charsets.UTF_8));
+            Assert.assertTrue(map.containsKey(link2.getName()));
+            File l2 = map.get(link2.getName());
+            File[] extFiles = l2.listFiles();
+            Assert.assertEquals(1, extFiles.length);
+            Assert.assertEquals(fileName, extFiles[0].getName());
+            Assert.assertEquals(content, Files.readFirstLine(extFiles[0], Charsets.UTF_8));
+            File l3 = map.get(link3.getName());
+            Assert.assertEquals(content, Files.readFirstLine(l3, Charsets.UTF_8));
+        } finally {
+            testRemove("main", false);
+        }
+    }
+
+    @Test
+    public void addModuleWithDirectoryAndInvalidLinks() throws Exception {
+        if (Utils.isWindows()) {
+            return;
+        }
+
+        String dir = System.currentTimeMillis() + "dir";
+        File dirFile = new File(TestSuiteEnvironment.getTmpDir(), dir);
+        dirFile.mkdir();
+
+        File subDir = new File(dirFile, "subDirectory");
+        subDir.mkdir();
+        File link1 = new File(subDir, "linkToRoot");
+        java.nio.file.Files.createSymbolicLink(link1.toPath(), dirFile.toPath());
+
         boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
                 + " --resources=" + dirFile.getAbsolutePath(), true);
         Assert.assertFalse(ret);
