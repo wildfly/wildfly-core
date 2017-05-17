@@ -5,6 +5,9 @@
     <management>
         <security-realms>
             <security-realm name="ManagementRealm">
+                <server-identities>
+                    <secret value="wildfly" />
+                </server-identities>
                 <authentication>
                     <local default-user="$local" skip-group-loading="true"/>
                     <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
@@ -20,6 +23,11 @@
                 </authorization>
             </security-realm>
             <security-realm name="UsersRealm">
+                <server-identities>
+                    <secret>
+                        <credential-reference clear-text="secret" />
+                    </secret>
+                </server-identities>
                 <authentication>
                     <users>
                         <user username="test">
