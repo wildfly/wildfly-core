@@ -8,6 +8,7 @@ import java.security.Security;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -34,6 +35,8 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     private final boolean automaticServerControl;
     private final List<ServerSetupTask> serverSetupTasks = new LinkedList<>();
 
+    private final AtomicBoolean doOnce = new AtomicBoolean(false);
+
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
      *
@@ -47,9 +50,6 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         }else{
             automaticServerControl = true;
         }
-        startServerIfRequired();
-        doInject(getTestClass(), null);
-        prepareSetupTasks(getTestClass());
     }
 
     private void doInject(TestClass klass, Object instance) {
@@ -94,7 +94,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                 }
             }
         });
-        startServerIfRequired();
+        configureTestRun();
         if (!serverSetupTasks.isEmpty() && !automaticServerControl) {
             throw new RuntimeException("Can't run setup tasks with manual server control");
         }
@@ -138,7 +138,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         checkServerState();
     }
 
-    private void prepareSetupTasks(TestClass klass) throws InitializationError {
+    private void prepareSetupTasks(TestClass klass) {
         try {
             if (klass.getJavaClass().isAnnotationPresent(ServerSetup.class)) {
                 ServerSetup serverSetup = klass.getAnnotation(ServerSetup.class);
@@ -149,7 +149,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
                 }
             }
         } catch (Exception e) {
-            throw new InitializationError(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -172,5 +172,13 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
             throw new RuntimeException("Failed checking server-state", e);
         }
 
+    }
+
+    private void configureTestRun() {
+        startServerIfRequired();
+        if (doOnce.compareAndSet(false, true)) {
+            doInject(getTestClass(), null);
+            prepareSetupTasks(getTestClass());
+        }
     }
 }
