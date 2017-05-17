@@ -565,8 +565,31 @@ class ManagementXml_5 extends ManagementXml {
         ModelNode secret = new ModelNode();
         secret.get(OP).set(ADD);
         secret.get(OP_ADDR).set(realmAddress).add(SERVER_IDENTITY, SECRET);
-        String secretValue = readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
-        SecretServerIdentityResourceDefinition.VALUE.parseAndSetParameter(secretValue, secret, reader);
+        final int count = reader.getAttributeCount();
+        boolean hasSecret = false;
+        if (count > 0) {
+            String secretValue = readStringAttributeElement(reader, Attribute.VALUE.getLocalName());
+            SecretServerIdentityResourceDefinition.VALUE.parseAndSetParameter(secretValue, secret, reader);
+            hasSecret = true;
+        } else {
+            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                requireNamespace(reader, namespace);
+                final Element element = Element.forName(reader.getLocalName());
+                switch (element) {
+                    case CREDENTIAL_REFERENCE: {
+                        SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE.getParser().parseElement(SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, reader, secret);
+                        hasSecret = true;
+                        break;
+                    }
+                    default: {
+                        throw unexpectedElement(reader);
+                    }
+                }
+            }
+        }
+        if(!hasSecret) {
+            throw missingRequired(reader, Collections.singleton(Attribute.VALUE.getLocalName()));
+        }
 
         list.add(secret);
     }
@@ -2099,9 +2122,17 @@ class ManagementXml_5 extends ManagementXml {
         }
         if (serverIdentities.hasDefined(SECRET)) {
             ModelNode secret = serverIdentities.get(SECRET);
-            writer.writeEmptyElement(Element.SECRET.getLocalName());
+            boolean hasCredential = secret.hasDefined(SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE.getName());
+            if (hasCredential) {
+                writer.writeStartElement(Element.SECRET.getLocalName());
+            } else {
+                writer.writeEmptyElement(Element.SECRET.getLocalName());
+            }
             SecretServerIdentityResourceDefinition.VALUE.marshallAsAttribute(secret, writer);
             SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE.marshallAsElement(secret, writer);
+            if (hasCredential) {
+                writer.writeEndElement();
+            }
         }
 
         writer.writeEndElement();
