@@ -23,18 +23,6 @@
   -->
 
 <configuration>
-    <authentication-client xmlns="urn:elytron:1.0">
-        <authentication-rules>
-            <rule use-configuration="default" />
-        </authentication-rules>
-        <authentication-configurations>
-            <configuration name="default">
-                <allow-sasl-mechanisms names="ANONYMOUS"/>
-                <set-anonymous/>
-                <use-service-loader-providers />
-            </configuration>
-        </authentication-configurations>
-    </authentication-client>
     <endpoint name="test-endpoint" xmlns="urn:jboss-remoting:5.0">
         <connections>
             <connection uri="remote://localhost:32123" immediate="true"/>
