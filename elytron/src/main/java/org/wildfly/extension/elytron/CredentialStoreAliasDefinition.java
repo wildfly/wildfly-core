@@ -176,6 +176,7 @@ class CredentialStoreAliasDefinition extends SimpleResourceDefinition {
          */
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.getServiceRegistry(true);
             if (!CASE_SENSITIVE.resolveModelAttribute(context, context.readResourceFromRoot(context.getCurrentAddress().getParent(), false).getModel()).asBoolean()) {
                 String aliasName = context.getCurrentAddressValue();
                 if (!aliasName.equals(aliasName.toLowerCase(Locale.ROOT))) {
