@@ -111,7 +111,7 @@ public class ProtocolConnectionUtils {
             actualHandler = handler != null ? new WrapperCallbackHandler(defaultTimeoutHandler, handler) : null;
             timeoutHandler = defaultTimeoutHandler;
         } else {
-            actualHandler = handler != null ? handler : null;
+            actualHandler = handler;
         }
 
         final IoFuture<Connection> future = connect(actualHandler, configuration);
@@ -155,21 +155,14 @@ public class ProtocolConnectionUtils {
         mergedConfiguration = configureSaslMechnisms(saslOptions, isLocal(uri), mergedConfiguration);
 
         // Pass through any other SASL options from the ProtocolConnectionConfiguration
-        // If not set, specify quiet authentication for any JBOSS_LOCAL_USER mechanism
-        // When we merge these, any preexisting options already associated with the
+        // When we merge these, any pre-existing options already associated with the
         // AuthenticationConfiguration will take precedence.
         if (saslOptions != null) {
             saslOptions = new HashMap<>(saslOptions);
             // Drop SASL_DISALLOWED_MECHANISMS which we already handled
             saslOptions.remove(Options.SASL_DISALLOWED_MECHANISMS.getName());
-            if (!saslOptions.containsKey(LocalUserClient.QUIET_AUTH)
-                    && !saslOptions.containsKey(LocalUserClient.LEGACY_QUIET_AUTH)) {
-                saslOptions.put(LocalUserClient.QUIET_AUTH, "true");
-            }
-        } else {
-            saslOptions = QUIET_LOCAL_AUTH;
+            mergedConfiguration = mergedConfiguration.useMechanismProperties(saslOptions);
         }
-        mergedConfiguration = mergedConfiguration.useMechanismProperties(saslOptions);
 
         SSLContext sslContext = configuration.getSslContext();
         if (sslContext == null) {
