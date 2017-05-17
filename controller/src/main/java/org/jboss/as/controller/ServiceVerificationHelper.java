@@ -53,6 +53,7 @@ import org.jboss.msc.service.StartException;
  */
 @SuppressWarnings("deprecation")
 class ServiceVerificationHelper extends AbstractServiceListener<Object> implements ServiceListener<Object>, OperationStepHandler {
+
     private final StabilityMonitor monitor = new StabilityMonitor();
 
     @Override
@@ -159,6 +160,10 @@ class ServiceVerificationHelper extends AbstractServiceListener<Object> implemen
             if (context.isRollbackOnRuntimeFailure()) {
                 context.setRollbackOnly();
             }
+
+            // Notify ContainerStateVerificationHandler that we've reported an issue so it
+            // doesn't need to
+            context.attach(ContainerStateVerificationHandler.FAILURE_REPORTED_ATTACHMENT, Boolean.TRUE);
         }
     }
 

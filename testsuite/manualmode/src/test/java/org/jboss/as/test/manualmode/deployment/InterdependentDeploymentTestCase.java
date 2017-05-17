@@ -143,7 +143,13 @@ public class InterdependentDeploymentTestCase {
             validateDeployment(dependent, dependent);
         }
 
-        managementClient.executeForResult(Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
+        ModelNode undeployOp = Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar"));
+        // We can't undeploy without rolling back as the other deployments depend on this one
+        // But we don't want to roll back as we want to check how this is handled
+        undeployOp.get("operation-headers", "rollback-on-runtime-failure").set(false);
+        response = managementClient.getControllerClient().execute(undeployOp);
+        Assert.assertEquals(response.toString(), "failed", response.get("outcome").asString());
+        Assert.assertFalse(response.toString(), response.get("rolled-back").asBoolean(true));
 
         validateNoDeployment("a");
 

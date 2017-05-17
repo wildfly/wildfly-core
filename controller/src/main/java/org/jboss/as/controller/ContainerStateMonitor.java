@@ -46,7 +46,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public final class ContainerStateMonitor extends AbstractServiceListener<Object> {
+final class ContainerStateMonitor extends AbstractServiceListener<Object> {
 
     private final ServiceRegistry serviceRegistry;
     private final StabilityMonitor monitor = new StabilityMonitor();
@@ -54,6 +54,7 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
     final Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
 
     private Set<ServiceName> previousMissingDepSet = new HashSet<ServiceName>();
+    private Set<ServiceController<?>> previousFailedSet = new HashSet<>();
 
     ContainerStateMonitor(final ServiceRegistry registry) {
         serviceRegistry = registry;
@@ -68,7 +69,7 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
         ContainerStateChangeReport changeReport = createContainerStateChangeReport(true);
 
         if (changeReport != null) {
-            final String msg = createChangeReportLogMessage(changeReport);
+            final String msg = createChangeReportLogMessage(changeReport, false);
             ROOT_LOGGER.info(msg);
         }
     }
@@ -160,56 +161,89 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
      */
     private synchronized ContainerStateChangeReport createContainerStateChangeReport(boolean resetHistory) {
 
-        final Map<ServiceName, Set<ServiceName>> missingDeps = new HashMap<ServiceName, Set<ServiceName>>();
-        for (ServiceController<?> controller : problems) {
-            for (ServiceName missing : controller.getImmediateUnavailableDependencies()) {
-                Set<ServiceName> dependents = missingDeps.get(missing);
-                if (dependents == null) {
-                    dependents = new HashSet<ServiceName>();
-                    missingDeps.put(missing, dependents);
-                }
-                dependents.add(controller.getName());
+        final Map<ServiceName, Set<ServiceName>> missingDeps;
+        if (problems.isEmpty()) {
+            missingDeps = Collections.emptyMap();
+        } else {
+            missingDeps =new HashMap<ServiceName, Set<ServiceName>>(problems.size());
+            for (ServiceController<?> controller : problems) {
+                if (controller.getState() != ServiceController.State.REMOVED) {
+                    for (ServiceName missing : controller.getImmediateUnavailableDependencies()) {
+                        Set<ServiceName> dependents = missingDeps.get(missing);
+                        if (dependents == null) {
+                            dependents = new HashSet<ServiceName>();
+                            missingDeps.put(missing, dependents);
+                        }
+                        dependents.add(controller.getName());
+                    }
+                } // else it's no longer a problem
             }
         }
 
         final Set<ServiceName> previousMissing = previousMissingDepSet;
 
         // no longer missing deps...
-        final Map<ServiceName, Boolean> noLongerMissingServices = new TreeMap<ServiceName, Boolean>();
-        for (ServiceName name : previousMissing) {
-            if (! missingDeps.containsKey(name)) {
-                ServiceController<?> controller = serviceRegistry.getService(name);
-                noLongerMissingServices.put(name, controller != null);
+        final Map<ServiceName, Boolean> noLongerMissingServices;
+        if (previousMissing.isEmpty()) {
+            noLongerMissingServices = Collections.emptyMap();
+        } else {
+            noLongerMissingServices = new TreeMap<ServiceName, Boolean>();
+            for (ServiceName name : previousMissing) {
+                if (!missingDeps.containsKey(name)) {
+                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    noLongerMissingServices.put(name, controller != null);
+                }
             }
         }
 
         // newly missing deps
-        final Map<ServiceName, MissingDependencyInfo> missingServices = new TreeMap<ServiceName, MissingDependencyInfo>();
-        for (Map.Entry<ServiceName, Set<ServiceName>> entry : missingDeps.entrySet()) {
-            final ServiceName name = entry.getKey();
-            if (! previousMissing.contains(name)) {
-                ServiceController<?> controller = serviceRegistry.getService(name);
-                boolean unavailable = controller != null;
-                missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
+        final Map<ServiceName, MissingDependencyInfo> missingServices;
+        if (missingDeps.isEmpty()) {
+            missingServices = Collections.emptyMap();
+        } else {
+            missingServices = new TreeMap<ServiceName, MissingDependencyInfo>();
+            for (Map.Entry<ServiceName, Set<ServiceName>> entry : missingDeps.entrySet()) {
+                final ServiceName name = entry.getKey();
+                if (!previousMissing.contains(name)) {
+                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    boolean unavailable = controller != null;
+                    missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
+                }
             }
         }
 
-        final Set<ServiceController<?>> currentFailedControllers = new HashSet<ServiceController<?>>(failed);
+        final Set<ServiceController<?>> currentFailedControllers;
+        final Set<ServiceController<?>> newFailedControllers;
+        if (failed.isEmpty()) {
+            currentFailedControllers = newFailedControllers = Collections.emptySet();
+        } else {
+            currentFailedControllers = new HashSet<>(failed.size());
+            newFailedControllers = new HashSet<>(failed.size());
+            for (ServiceController<?> controller : failed) {
+                if (controller.getState() != ServiceController.State.REMOVED) {
+                    currentFailedControllers.add(controller);
+                    if (!previousFailedSet.contains(controller)) {
+                        newFailedControllers.add(controller);
+                    }
+                } // else it's no longer failed since it's gone
+            }
+        }
 
         if (resetHistory)  {
             previousMissingDepSet = new HashSet<ServiceName>(missingDeps.keySet());
+            previousFailedSet = new HashSet<>(currentFailedControllers);
             failed.clear();
             problems.clear();
         }
 
         boolean needReport = !missingServices.isEmpty() || !currentFailedControllers.isEmpty() || !noLongerMissingServices.isEmpty();
-        return needReport ? new ContainerStateChangeReport(missingServices, currentFailedControllers, noLongerMissingServices) : null;
+        return needReport ? new ContainerStateChangeReport(missingServices, currentFailedControllers, newFailedControllers, noLongerMissingServices) : null;
     }
 
-    private synchronized String createChangeReportLogMessage(ContainerStateChangeReport changeReport) {
+    static String createChangeReportLogMessage(ContainerStateChangeReport changeReport, boolean forException) {
 
         final StringBuilder msg = new StringBuilder();
-        msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportHeader());
+        msg.append(forException ? ControllerLogger.ROOT_LOGGER.serviceStatusReportFailureHeader() : ControllerLogger.ROOT_LOGGER.serviceStatusReportHeader());
         if (!changeReport.getMissingServices().isEmpty()) {
             msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportDependencies());
             for (Map.Entry<ServiceName, MissingDependencyInfo> entry : changeReport.getMissingServices().entrySet()) {
@@ -220,7 +254,7 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
                 }
             }
         }
-        if (!changeReport.getNoLongerMissingServices().isEmpty()) {
+        if (!forException && !changeReport.getNoLongerMissingServices().isEmpty()) {
             msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportCorrected());
             for (Map.Entry<ServiceName, Boolean> entry : changeReport.getNoLongerMissingServices().entrySet()) {
                 if (entry.getValue()) {
@@ -230,9 +264,10 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
                 }
             }
         }
-        if (!changeReport.getFailedControllers().isEmpty()) {
+        Set<ServiceController<?>> failedSet = forException ? changeReport.getNewFailedControllers() : changeReport.getFailedControllers();
+        if (!failedSet.isEmpty()) {
             msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportFailed());
-            for (ServiceController<?> controller : changeReport.getFailedControllers()) {
+            for (ServiceController<?> controller : failedSet) {
                 msg.append("      ").append(controller.getName());
                 //noinspection ThrowableResultOfMethodCallIgnored
                 final StartException startException = controller.getStartException();
@@ -252,36 +287,72 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
         return msg.toString();
     }
 
-    public static class ContainerStateChangeReport {
+    static class ContainerStateChangeReport {
 
         private final Map<ServiceName, MissingDependencyInfo> missingServices;
         private final Set<ServiceController<?>> failedControllers;
+        private final Set<ServiceController<?>> newFailedControllers;
         private final Map<ServiceName, Boolean> noLongerMissingServices;
 
         private ContainerStateChangeReport(final Map<ServiceName, MissingDependencyInfo> missingServices,
                                            final Set<ServiceController<?>> failedControllers,
+                                           final Set<ServiceController<?>> newFailedControllers,
                                            final Map<ServiceName, Boolean> noLongerMissingServices) {
             this.missingServices = missingServices;
             this.failedControllers = failedControllers;
+            this.newFailedControllers = newFailedControllers;
             this.noLongerMissingServices = noLongerMissingServices;
         }
 
-        public final Set<ServiceController<?>> getFailedControllers() {
+        /**
+         * Gets all controllers that had {@link ServiceController.State#START_FAILED failed to start}
+         * with an exception in the service start method at the time this report was created.
+         *
+         * @return the failed controllers. Will not return {@code null}
+         */
+        final Set<ServiceController<?>> getFailedControllers() {
             return failedControllers;
         }
 
-        public Map<ServiceName, MissingDependencyInfo> getMissingServices() {
+        /**
+         * Gets controllers that had {@link ServiceController.State#START_FAILED failed to start}
+         * with an exception in the service start method at the time this report was created and were
+         * not included in the report prior to the last {@link #logContainerStateChangesAndReset() reset}
+         * of the ContainerStateMonitor.
+         *
+         * @return the failed controllers. Will not return {@code null}
+         */
+        final Set<ServiceController<?>> getNewFailedControllers() {
+            return newFailedControllers;
+        }
+
+        /**
+         * Gets information about all services that had missing dependencies at the time this report was created.
+         *
+         * @return a map of the service name of the service that has missing dependencies to
+         *         information about those missing dependencies
+         */
+        Map<ServiceName, MissingDependencyInfo> getMissingServices() {
             return missingServices;
         }
 
         /**
-         * Gets services that are no longer considered to be missing.
+         * Gets services that had previously been reported as missing but were no longer considered to be missing
+         * at the time this report was created.
          * @return a map of the service name of the no-longer-missing service to a boolean indicating
          *          whether or not the service now exists ({@code true} if it does.) If {@code false}
          *          the service is no longer "missing" because it is no longer depended upon
          */
-        public Map<ServiceName, Boolean> getNoLongerMissingServices() {
+        Map<ServiceName, Boolean> getNoLongerMissingServices() {
             return noLongerMissingServices;
+        }
+
+        /**
+         * Gets whether this report contains anything other than no longer missing services.
+         * @return {@code true} if {@link #getNewFailedControllers()} or {@link #getMissingServices()} will return a non-empty collection
+         */
+        boolean hasNewProblems() {
+            return !newFailedControllers.isEmpty() || !missingServices.isEmpty();
         }
     }
 
@@ -304,26 +375,42 @@ public final class ContainerStateMonitor extends AbstractServiceListener<Object>
         }
     }
 
-    public static class MissingDependencyInfo {
+    /** Encapsulates information about dependencies that a service is missing. */
+    static class MissingDependencyInfo {
         private final ServiceName serviceName;
         private final boolean unavailable;
         private final Set<ServiceName> dependents;
 
-        public MissingDependencyInfo(ServiceName serviceName, boolean unavailable, final Set<ServiceName> dependents) {
+        private MissingDependencyInfo(ServiceName serviceName, boolean unavailable, final Set<ServiceName> dependents) {
             this.serviceName = serviceName;
             this.unavailable = unavailable;
             this.dependents = dependents;
         }
 
-        public ServiceName getServiceName() {
+        /**
+         * Gets the name of the service that was missing dependencies.
+         *
+         * @return the name. Will not return {@code null}
+         */
+        ServiceName getServiceName() {
             return serviceName;
         }
 
-        public boolean isUnavailable() {
+        /**
+         * Gets whether the service that was missing dependencies was still installed when this report was created.
+         * Note that "installed" does not mean "started."
+         *
+         * @return {@code true} if the service was still installed.
+         */
+        boolean isUnavailable() {
             return unavailable;
         }
 
-        public Set<ServiceName> getDependents() {
+        /**
+         * Gets the name of the services the service depends on that were missing.
+         * @return  the missing services. Will not return {@code null}
+         */
+        Set<ServiceName> getDependents() {
             return Collections.unmodifiableSet(dependents);
         }
     }
