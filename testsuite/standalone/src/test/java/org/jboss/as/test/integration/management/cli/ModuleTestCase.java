@@ -23,7 +23,6 @@ package org.jboss.as.test.integration.management.cli;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import com.sun.javafx.util.Utils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,6 +41,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import org.apache.commons.io.FileUtils;
 
+import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -262,7 +262,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
 
     @Test
     public void addModuleWithDirectoryError() throws Exception {
-        if (Utils.isWindows()) {
+        if (Util.isWindows()) {
             return;
         }
         String dir = System.currentTimeMillis() + "dir";
@@ -285,7 +285,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
 
     @Test
     public void addModuleWithDirectoryAndValidLinks() throws Exception {
-        if (Utils.isWindows()) {
+        if (Util.isWindows()) {
             return;
         }
 
@@ -357,7 +357,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
 
     @Test
     public void addModuleWithDirectoryAndInvalidLinks() throws Exception {
-        if (Utils.isWindows()) {
+        if (Util.isWindows()) {
             return;
         }
 
