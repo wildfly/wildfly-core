@@ -120,20 +120,20 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     OperationFailedException invalidOperationName(String actualName, String... expectedNames);
 
     /**
-     * An {@link OperationFailedException} where an operation can not be completed.
+     * An {@link RuntimeException} where an operation can not be completed.
      *
      * @param cause the underlying cause of the failure.
-     * @return The {@link OperationFailedException} for the error.
+     * @return The {@link RuntimeException} for the error.
      */
     @Message(id = 9, value = "Unable to complete operation. '%s'")
-    OperationFailedException unableToCompleteOperation(@Cause Throwable cause, String causeMessage);
+    RuntimeException unableToCompleteOperation(@Cause Throwable cause, String causeMessage);
 
     /**
      * An {@link OperationFailedException} where this an attempt to save a KeyStore without a File defined.
      *
      * @return The {@link OperationFailedException} for the error.
      */
-    @Message(id = 10, value = "Unable to complete operation.")
+    @Message(id = 10, value = "Unable to save KeyStore - path is not defined.")
     OperationFailedException cantSaveWithoutFile();
 
     /**
@@ -300,10 +300,19 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 36, value = "Security realm '%s' has been referenced twice in the same security domain.")
     OperationFailedException realmRefererencedTwice(String realmName);
 
+    /**
+     * A {@link StartException} where a specific type is not type of injected value.
+     *
+     * @param type the type required.
+     * @return The {@link StartException} for the error.
+     */
+    @Message(id = 37, value = "Injected value is not of '%s' type.")
+    StartException invalidTypeInjected(final String type);
+
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
-    IllegalArgumentException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
+    OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
     @Message(id = 910, value = "Password cannot be resolved for key-store \"%s\"")
     IOException keyStorePasswordCannotBeResolved(String path);
@@ -330,11 +339,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 917, value = "Password cannot be resolved for dir-context")
     StartException dirContextPasswordCannotBeResolved(@Cause Exception cause);
 
-    @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case alias names")
+    @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case user names")
     OperationFailedException invalidUsername(String username, String realmName);
 
     @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
     OperationFailedException invalidAliasName(String alias, String credntialStore);
+
+    @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
+    OperationFailedException credentialDoesNotExist(String alias, String credentialType);
+
     /*
      * Identity Resource Messages - 1000
      */
@@ -343,37 +356,37 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     OperationFailedException identityAlreadyExists(final String principalName);
 
     @Message(id = 1001, value = "Could not create identity with name [%s].")
-    OperationFailedException couldNotCreateIdentity(final String principalName, @Cause Exception cause);
+    RuntimeException couldNotCreateIdentity(final String principalName, @Cause Exception cause);
 
     @Message(id = 1002, value = "Identity with name [%s] not found.")
     String identityNotFound(final String principalName);
 
     @Message(id = 1003, value = "Could not delete identity with name [%s].")
-    OperationFailedException couldNotDeleteIdentity(final String principalName, @Cause Exception cause);
+    RuntimeException couldNotDeleteIdentity(final String principalName, @Cause Exception cause);
 
     @Message(id = 1004, value = "Identity with name [%s] not authorized.")
     String identityNotAuthorized(final String principalName);
 
     @Message(id = 1005, value = "Could not read identity [%s] from security domain [%s].")
-    OperationFailedException couldNotReadIdentity(final String principalName, final ServiceName domainServiceName, @Cause Exception cause);
+    RuntimeException couldNotReadIdentity(final String principalName, final ServiceName domainServiceName, @Cause Exception cause);
 
     @Message(id = 1006, value = "Unsupported password type [%s].")
     RuntimeException unsupportedPasswordType(final Class passwordType);
 
     @Message(id = 1007, value = "Could not read identity with name [%s].")
-    OperationFailedException couldNotReadIdentity(final String principalName, @Cause Exception cause);
+    RuntimeException couldNotReadIdentity(final String principalName, @Cause Exception cause);
 
     @Message(id = 1008, value = "Failed to obtain the authorization identity.")
-    OperationFailedException couldNotObtainAuthorizationIdentity(@Cause Exception cause);
+    RuntimeException couldNotObtainAuthorizationIdentity(@Cause Exception cause);
 
     @Message(id = 1009, value = "Failed to add attribute.")
-    OperationFailedException couldNotAddAttribute(@Cause Exception cause);
+    RuntimeException couldNotAddAttribute(@Cause Exception cause);
 
     @Message(id = 1010, value = "Failed to remove attribute.")
-    OperationFailedException couldNotRemoveAttribute(@Cause Exception cause);
+    RuntimeException couldNotRemoveAttribute(@Cause Exception cause);
 
     @Message(id = 1011, value = "Could not create password.")
-    OperationFailedException couldNotCreatePassword(@Cause Exception cause);
+    RuntimeException couldNotCreatePassword(@Cause Exception cause);
 
     @Message(id = 1012, value = "Unexpected password type [%s].")
     OperationFailedException unexpectedPasswordType(final String passwordType);
@@ -388,7 +401,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     IllegalStateException unableToPerformOutflow(String identityName, @Cause Exception cause);
 
     @Message(id = 1016, value = "Server '%s' not known")
-    OperationFailedException serverNotKnown(final String serverAddedd, @Cause UnknownHostException e);
+    OperationFailedException serverNotKnown(final String server, @Cause UnknownHostException e);
 
     @Message(id = 1017, value = "Invalid value for cipher-suite-filter. %s")
     OperationFailedException invalidCipherSuiteFilter(@Cause Throwable cause, String causeMessage);

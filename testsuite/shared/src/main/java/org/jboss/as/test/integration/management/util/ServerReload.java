@@ -16,6 +16,8 @@ limitations under the License.
 
 package org.jboss.as.test.integration.management.util;
 
+import static org.jboss.as.controller.client.helpers.ClientConstants.OUTCOME;
+import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -134,12 +136,35 @@ public class ServerReload {
     public static void executeReload(ModelControllerClient client, ModelNode reloadOp) {
         try {
             ModelNode result = client.execute(reloadOp);
-            Assert.assertEquals("success", result.get(ClientConstants.OUTCOME).asString());
+            Assert.assertEquals(SUCCESS, result.get(ClientConstants.OUTCOME).asString());
         } catch (IOException e) {
             final Throwable cause = e.getCause();
             if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException)) {
                 throw new RuntimeException(e);
             } // else ignore, this might happen if the channel gets closed before we got the response
+        }
+    }
+
+
+    public static String getContainerRunningState(ModelControllerClient modelControllerClient) throws IOException {
+        ModelNode operation = new ModelNode();
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        operation.get(NAME).set("server-state");
+        ModelNode rsp = modelControllerClient.execute(operation);
+        return SUCCESS.equals(rsp.get(OUTCOME).asString()) ? rsp.get(RESULT).asString() : "failed";
+    }
+
+
+    /**
+     * Checks if the container status is "reload-required" and if it's the case executes reload and waits for completion.
+     */
+    public static void reloadIfRequired(final ModelControllerClient controllerClient) throws Exception {
+        String runningState = getContainerRunningState(controllerClient);
+        if ("reload-required".equalsIgnoreCase(runningState)) {
+            executeReloadAndWaitForCompletion(controllerClient);
+        } else {
+            Assert.assertEquals("Server state 'running' is expected", "running", runningState);
         }
     }
 

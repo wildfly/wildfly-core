@@ -24,6 +24,8 @@ package org.jboss.as.remoting;
 
 import java.net.URI;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -62,5 +64,9 @@ public class LocalOutboundConnectionService extends AbstractOutboundConnectionSe
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
         return AuthenticationConfiguration.EMPTY;
+    }
+
+    public SSLContext getSSLContext() {
+        return null;
     }
 }

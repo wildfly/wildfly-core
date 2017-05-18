@@ -19,6 +19,8 @@
 
 package org.jboss.as.test.manualmode.mgmt.elytron;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -112,13 +114,16 @@ public class ElytronModelControllerClientTestCase {
         final List<String> commands = new ArrayList<>();
         commands.add("embed-server --server-config=" + config);
         commands.add("/subsystem=elytron/filesystem-realm=testRealm:add(path=fs-realm-users,relative-to=jboss.server.config.dir)");
-        commands.add("/subsystem=elytron/filesystem-realm=testRealm/identity=test-admin:add()");
-        commands.add("/subsystem=elytron/filesystem-realm=testRealm/identity=test-admin:set-password(clear={password=\"admin.12345\"})");
+        commands.add("/subsystem=elytron/filesystem-realm=testRealm:add-identity(identity=test-admin)");
+        commands.add("/subsystem=elytron/filesystem-realm=testRealm:set-password(identity=test-admin, clear={password=\"admin.12345\"})");
         commands.add("/subsystem=elytron/security-domain=testSecurityDomain:add(realms=[{realm=testRealm}],default-realm=testRealm,permission-mapper=default-permission-mapper)");
         commands.add("/subsystem=elytron/sasl-authentication-factory=test-sasl-auth:add(sasl-server-factory=configured, security-domain=testSecurityDomain, mechanism-configurations=[{mechanism-name=DIGEST-MD5, mechanism-realm-configurations=[{realm-name=testRealm}]}])");
         commands.add("/core-service=management/management-interface=http-interface:write-attribute(name=http-upgrade.sasl-authentication-factory, value=test-sasl-auth)");
         commands.add("stop-embedded-server");
-        CustomCLIExecutor.executeOffline(commands);
+
+        String result = CustomCLIExecutor.executeOffline(commands);
+        if (!result.startsWith("0:")) fail(result);
+
         return configFile;
     }
 }

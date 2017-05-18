@@ -109,10 +109,10 @@ class Capabilities {
         .Builder.of(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, true, HttpServerAuthenticationMechanismFactory.class)
         .build();
 
-    static final String KEY_MANAGERS_CAPABILITY = CAPABILITY_BASE + "key-managers";
+    static final String KEY_MANAGER_CAPABILITY = CAPABILITY_BASE + "key-manager";
 
-    static final RuntimeCapability<Void> KEY_MANAGERS_RUNTIME_CAPABILITY =  RuntimeCapability
-            .Builder.of(KEY_MANAGERS_CAPABILITY, true, KeyManager[].class)
+    static final RuntimeCapability<Void> KEY_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(KEY_MANAGER_CAPABILITY, true, KeyManager.class)
             .build();
 
     static final String KEY_STORE_CAPABILITY = CAPABILITY_BASE + "key-store";
@@ -213,10 +213,10 @@ class Capabilities {
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
         .build();
 
-    static final String TRUST_MANAGERS_CAPABILITY = CAPABILITY_BASE + "trust-managers";
+    static final String TRUST_MANAGER_CAPABILITY = CAPABILITY_BASE + "trust-manager";
 
-    static final RuntimeCapability<Void> TRUST_MANAGERS_RUNTIME_CAPABILITY =  RuntimeCapability
-            .Builder.of(TRUST_MANAGERS_CAPABILITY, true, TrustManager[].class)
+    static final RuntimeCapability<Void> TRUST_MANAGER_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(TRUST_MANAGER_CAPABILITY, true, TrustManager.class)
             .build();
 
     static final String DIR_CONTEXT_CAPABILITY = CAPABILITY_BASE + "dir-context";

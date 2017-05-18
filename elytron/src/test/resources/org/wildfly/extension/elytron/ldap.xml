@@ -63,7 +63,7 @@
          <trust-manager algorithm="SunX509" key-store="ElytronCaTruststore" name="ElytronTrustManager"/>
       </trust-managers>
       <client-ssl-contexts>
-         <client-ssl-context name="LdapSslContext" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2 TLSv1.1" trust-managers="ElytronTrustManager"/>
+         <client-ssl-context name="LdapSslContext" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2 TLSv1.1" trust-manager="ElytronTrustManager"/>
       </client-ssl-contexts>
    </tls>
    <dir-contexts>

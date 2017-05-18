@@ -14,7 +14,7 @@
             <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
         </properties-realm>
 
-        <filesystem-realm name="FilesystemRealm" levels="2" case-sensitive="true">
+        <filesystem-realm name="FilesystemRealm" levels="2" case-sensitive="true" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
         </filesystem-realm>
 
@@ -46,7 +46,7 @@
             <trust-manager name="CaTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore"/>
         </trust-managers>
         <client-ssl-contexts>
-            <client-ssl-context name="ClientCaSslContext" trust-managers="CaTrustManager" />
+            <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
         </client-ssl-contexts>
     </tls>
 </subsystem>

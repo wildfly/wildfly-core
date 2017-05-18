@@ -23,7 +23,7 @@
             <trust-manager name="trustmanager" algorithm="SunX509" key-store="truststore"/>
         </trust-managers>
         <client-ssl-contexts>
-            <client-ssl-context name="audit-ssl" trust-managers="trustmanager" />
+            <client-ssl-context name="audit-ssl" trust-manager="trustmanager" />
         </client-ssl-contexts>
     </tls>
 </subsystem>

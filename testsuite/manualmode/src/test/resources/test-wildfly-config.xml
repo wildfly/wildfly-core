@@ -28,7 +28,6 @@
         <authentication-configurations>
             <configuration name="test-login">
                 <allow-sasl-mechanisms names="DIGEST-MD5" />
-                <use-service-loader-providers />
                 <set-user-name name="test-admin" />
                 <credentials>
                     <clear-password password="admin.12345" />

@@ -24,6 +24,8 @@ package org.jboss.as.remoting;
 
 import java.net.URI;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
@@ -67,5 +69,9 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
         return AuthenticationConfiguration.EMPTY;
+    }
+
+    public SSLContext getSSLContext() {
+        return null;
     }
 }

@@ -194,7 +194,7 @@ class TlsParser {
             throw missingRequired(reader, requiredAttributes);
         }
 
-        addKeyManager.get(OP_ADDR).set(parentAddress).add(KEY_MANAGERS, name);
+        addKeyManager.get(OP_ADDR).set(parentAddress).add(KEY_MANAGER, name);
         list.add(addKeyManager);
 
         while(reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -264,7 +264,7 @@ class TlsParser {
             throw missingRequired(reader, requiredAttributes);
         }
 
-        addKeyManager.get(OP_ADDR).set(parentAddress).add(TRUST_MANAGERS, name);
+        addKeyManager.get(OP_ADDR).set(parentAddress).add(TRUST_MANAGER, name);
 
         readCertificateRevocationList(reader, addKeyManager, requiredAttributes);
 
@@ -371,11 +371,11 @@ class TlsParser {
                     case WRAP:
                         SSLDefinitions.WRAP.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
-                    case KEY_MANAGERS:
-                        SSLDefinitions.KEY_MANAGERS.parseAndSetParameter(value, addServerSSLContext, reader);
+                    case KEY_MANAGER:
+                        SSLDefinitions.KEY_MANAGER.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
-                    case TRUST_MANAGERS:
-                        SSLDefinitions.TRUST_MANAGERS.parseAndSetParameter(value, addServerSSLContext, reader);
+                    case TRUST_MANAGER:
+                        SSLDefinitions.TRUST_MANAGER.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
                     case PROVIDERS:
                         SSLDefinitions.PROVIDERS.parseAndSetParameter(value, addServerSSLContext, reader);
@@ -447,11 +447,11 @@ class TlsParser {
                     case SESSION_TIMEOUT:
                         SSLDefinitions.SESSION_TIMEOUT.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
-                    case KEY_MANAGERS:
-                        SSLDefinitions.KEY_MANAGERS.parseAndSetParameter(value, addServerSSLContext, reader);
+                    case KEY_MANAGER:
+                        SSLDefinitions.KEY_MANAGER.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
-                    case TRUST_MANAGERS:
-                        SSLDefinitions.TRUST_MANAGERS.parseAndSetParameter(value, addServerSSLContext, reader);
+                    case TRUST_MANAGER:
+                        SSLDefinitions.TRUST_MANAGER.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
                     case PROVIDERS:
                         SSLDefinitions.PROVIDERS.parseAndSetParameter(value, addServerSSLContext, reader);
@@ -821,15 +821,16 @@ class TlsParser {
     }
 
     private boolean writeKeyManagers(boolean started, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(KEY_MANAGERS)) {
+        if (subsystem.hasDefined(KEY_MANAGER)) {
             startTLS(started, writer);
             writer.writeStartElement(KEY_MANAGERS);
-            ModelNode keyManagers = subsystem.require(KEY_MANAGERS);
+            ModelNode keyManagers = subsystem.require(KEY_MANAGER);
             for (String name : keyManagers.keys()) {
                 ModelNode keyManager = keyManagers.require(name);
                 writer.writeStartElement(KEY_MANAGER);
                 writer.writeAttribute(NAME, name);
                 SSLDefinitions.ALGORITHM.marshallAsAttribute(keyManager, writer);
+                SSLDefinitions.ALIAS_FILTER.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.KEYSTORE.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(keyManager, writer);
                 SSLDefinitions.PROVIDER_NAME.marshallAsAttribute(keyManager, writer);
@@ -846,10 +847,10 @@ class TlsParser {
     }
 
     private boolean writeTrustManagers(boolean started, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(TRUST_MANAGERS)) {
+        if (subsystem.hasDefined(TRUST_MANAGER)) {
             startTLS(started, writer);
             writer.writeStartElement(TRUST_MANAGERS);
-            ModelNode trustManagers = subsystem.require(TRUST_MANAGERS);
+            ModelNode trustManagers = subsystem.require(TRUST_MANAGER);
             for (String name : trustManagers.keys()) {
                 ModelNode trustManager = trustManagers.require(name);
                 writer.writeStartElement(TRUST_MANAGER);
@@ -890,8 +891,8 @@ class TlsParser {
                 SSLDefinitions.MAXIMUM_SESSION_CACHE_SIZE.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.SESSION_TIMEOUT.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.WRAP.marshallAsAttribute(serverSSLContext, writer);
-                SSLDefinitions.KEY_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
-                SSLDefinitions.TRUST_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.KEY_MANAGER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.TRUST_MANAGER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDER_NAME.marshallAsAttribute(serverSSLContext, writer);
 
@@ -920,8 +921,8 @@ class TlsParser {
                 SSLDefinitions.USE_CIPHER_SUITES_ORDER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.MAXIMUM_SESSION_CACHE_SIZE.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.SESSION_TIMEOUT.marshallAsAttribute(serverSSLContext, writer);
-                SSLDefinitions.KEY_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
-                SSLDefinitions.TRUST_MANAGERS.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.KEY_MANAGER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.TRUST_MANAGER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDER_NAME.marshallAsAttribute(serverSSLContext, writer);
 

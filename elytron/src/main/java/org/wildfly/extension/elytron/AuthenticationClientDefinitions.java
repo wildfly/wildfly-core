@@ -326,7 +326,7 @@ class AuthenticationClientDefinitions {
                 if (properties.isDefined()) {
                     Map<String, String> propertiesMap = new HashMap<String, String>();
                     properties.keys().forEach((String s) -> propertiesMap.put(s, properties.require(s).asString()));
-                    configuration = configuration.andThen(c -> c.useMechanismProperties(propertiesMap));
+                    configuration = configuration.andThen(c -> c.useMechanismProperties(propertiesMap, parent == null));
                 }
 
                 ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, model);
