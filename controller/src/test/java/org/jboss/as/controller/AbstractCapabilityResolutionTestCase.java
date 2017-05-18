@@ -289,7 +289,8 @@ abstract class AbstractCapabilityResolutionTestCase {
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.getResult().set(context.hasOptionalCapability(reqName, capName, null));
                     }
-                }, OperationContext.Stage.RUNTIME);
+                //}, OperationContext.Stage.RUNTIME);
+                }, OperationContext.Stage.VERIFY); // use VERIFY to work around the fact we don't allow RUNTIME in /profile=* any more
             }  else {
                 context.getResult().set(true);
             }

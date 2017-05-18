@@ -28,10 +28,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILED_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
@@ -53,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.EnumSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -85,14 +88,21 @@ public class OperationErrorTestCase {
 
     private static final Logger log = Logger.getLogger(OperationErrorTestCase.class);
 
+    private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, ErrorExtension.SUBSYSTEM_NAME);
     private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(
             PathElement.pathElement(PROFILE, "default"),
-            PathElement.pathElement(SUBSYSTEM, ErrorExtension.SUBSYSTEM_NAME));
+            SUBSYSTEM_ELEMENT);
     private static final ModelNode ERROR_OP = Util.createEmptyOperation("error", SUBSYSTEM_ADDRESS);
     private static final PathAddress MGMT_CONTROLLER = PathAddress.pathAddress(
             PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
             PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)
     );
+    private static final PathAddress MASTER_ADDRESS = PathAddress.pathAddress(HOST, MASTER);
+    private static final PathAddress SLAVE_ADDRESS = PathAddress.pathAddress(HOST, "slave");
+
+
+    private static final EnumSet<ErrorExtension.ErrorPoint> RUNTIME_POINTS =
+            EnumSet.of(ErrorExtension.ErrorPoint.RUNTIME, ErrorExtension.ErrorPoint.SERVICE_START, ErrorExtension.ErrorPoint.SERVICE_STOP);
 
     private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
 
@@ -116,25 +126,51 @@ public class OperationErrorTestCase {
         // Initialize the test extension
         ExtensionSetup.initializeErrorExtension(testSupport);
 
-        ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, ErrorExtension.MODULE_NAME)));
+        PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, ErrorExtension.MODULE_NAME);
+        ModelNode addExtension = Util.createAddOperation(extensionAddress);
 
         executeForResponse(addExtension, masterClient);
 
         ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
-                PathElement.pathElement(SUBSYSTEM, ErrorExtension.SUBSYSTEM_NAME)));
+                SUBSYSTEM_ELEMENT));
         executeForResponse(addSubsystem, masterClient);
+
+        ModelNode addMasterExtension = Util.createAddOperation(MASTER_ADDRESS.append(extensionAddress));
+        executeForResponse(addMasterExtension, masterClient);
+
+        ModelNode addMasterSubsystem = Util.createAddOperation(MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResponse(addMasterSubsystem, masterClient);
+
+        ModelNode addSlaveExtension = Util.createAddOperation(SLAVE_ADDRESS.append(extensionAddress));
+        executeForResponse(addSlaveExtension, masterClient);
+
+        ModelNode addSlaveSubsystem = Util.createAddOperation(SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResponse(addSlaveSubsystem, masterClient);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
-                PathElement.pathElement(SUBSYSTEM, ErrorExtension.SUBSYSTEM_NAME)));
+                SUBSYSTEM_ELEMENT));
         executeForResponse(removeSubsystem, masterClient);
 
-        ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, ErrorExtension.MODULE_NAME)));
+        PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, ErrorExtension.MODULE_NAME);
+        ModelNode removeExtension = Util.createEmptyOperation(REMOVE, extensionAddress);
         executeForResponse(removeExtension, masterClient);
+
+        ModelNode removeSlaveSubsystem = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResponse(removeSlaveSubsystem, masterClient);
+
+        ModelNode removeSlaveExtension = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(extensionAddress));
+        executeForResponse(removeSlaveExtension, masterClient);
+
+        ModelNode removeMasterSubsystem = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResponse(removeMasterSubsystem, masterClient);
+
+        ModelNode removeMasterExtension = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(extensionAddress));
+        executeForResponse(removeMasterExtension, masterClient);
 
         testSupport = null;
         masterClient = null;
@@ -370,6 +406,11 @@ public class OperationErrorTestCase {
         if (addRolloutPlan) {
             op.get(OPERATION_HEADERS).set(ROLLOUT_HEADER);
         }
+        if (server == null && RUNTIME_POINTS.contains(errorPoint)) {
+            // retarget the op to the HC subsystem
+            PathAddress addr = host.equals("master") ? MASTER_ADDRESS : SLAVE_ADDRESS;
+            op.get(OP_ADDR).set(addr.append(SUBSYSTEM_ELEMENT).toModelNode());
+        }
 
         ModelNode response;
         if (expectFailure) {
@@ -398,6 +439,8 @@ public class OperationErrorTestCase {
                 // simple structure and want this test to enforce that. OTOH it shouldn't be changed lightly
                 // as it would be easy to mess up.
                 fd = response.get(FAILURE_DESCRIPTION);
+            } else if (RUNTIME_POINTS.contains(errorPoint)) {
+                fd = response.get(FAILURE_DESCRIPTION, HOST_FAILURE_DESCRIPTIONS, host);
             } else {
                 fd = response.get(FAILURE_DESCRIPTION, DOMAIN_FAILURE_DESCRIPTION);
             }

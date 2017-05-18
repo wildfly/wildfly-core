@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -55,7 +56,9 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -92,16 +95,21 @@ public class OperationCancellationTestCase {
 
     private static final Logger log = Logger.getLogger(OperationCancellationTestCase.class);
 
+    private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME);
     private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(
             PathElement.pathElement(PROFILE, "default"),
-            PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME));
+            SUBSYSTEM_ELEMENT);
     private static final ModelNode BLOCK_OP = Util.createEmptyOperation("block", SUBSYSTEM_ADDRESS);
     private static final ModelNode WRITE_FOO_OP = Util.getWriteAttributeOperation(SUBSYSTEM_ADDRESS, BlockerExtension.FOO.getName(), true);
     private static final PathAddress MGMT_CONTROLLER = PathAddress.pathAddress(
             PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
             PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)
     );
+    private static final PathAddress MASTER_ADDRESS = PathAddress.pathAddress(HOST, MASTER);
+    private static final PathAddress SLAVE_ADDRESS = PathAddress.pathAddress(HOST, "slave");
 
+    private static final Set<BlockerExtension.BlockPoint> RUNTIME_POINTS =
+            EnumSet.of(BlockerExtension.BlockPoint.RUNTIME, BlockerExtension.BlockPoint.SERVICE_START, BlockerExtension.BlockPoint.SERVICE_STOP);
     private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
 
     private static DomainTestSupport testSupport;
@@ -115,7 +123,8 @@ public class OperationCancellationTestCase {
         // Initialize the test extension
         ExtensionSetup.initializeBlockerExtension(testSupport);
 
-        ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
+        PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME);
+        ModelNode addExtension = Util.createAddOperation(extensionAddress);
 
         executeForResult(addExtension, masterClient);
 
@@ -123,17 +132,42 @@ public class OperationCancellationTestCase {
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
         executeForResult(addSubsystem, masterClient);
+
+        ModelNode addMasterExtension = Util.createAddOperation(MASTER_ADDRESS.append(extensionAddress));
+        executeForResult(addMasterExtension, masterClient);
+
+        ModelNode addMasterSubsystem = Util.createAddOperation(MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(addMasterSubsystem, masterClient);
+
+        ModelNode addSlaveExtension = Util.createAddOperation(SLAVE_ADDRESS.append(extensionAddress));
+        executeForResult(addSlaveExtension, masterClient);
+
+        ModelNode addSlaveSubsystem = Util.createAddOperation(SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(addSlaveSubsystem, masterClient);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
-                PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
+                SUBSYSTEM_ELEMENT));
         executeForResult(removeSubsystem, masterClient);
 
-        ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
+        PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME);
+        ModelNode removeExtension = Util.createEmptyOperation(REMOVE, extensionAddress);
         executeForResult(removeExtension, masterClient);
+
+        ModelNode removeSlaveSubsystem = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(removeSlaveSubsystem, masterClient);
+
+        ModelNode removeSlaveExtension = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(extensionAddress));
+        executeForResult(removeSlaveExtension, masterClient);
+
+        ModelNode removeMasterSubsystem = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(removeMasterSubsystem, masterClient);
+
+        ModelNode removeMasterExtension = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(extensionAddress));
+        executeForResult(removeMasterExtension, masterClient);
 
         testSupport = null;
         masterClient = null;
@@ -964,6 +998,11 @@ public class OperationCancellationTestCase {
         }
         op.get(BLOCK_POINT.getName()).set(blockPoint.toString());
         op.get(CALLER.getName()).set(getTestMethod());
+        if (server == null && RUNTIME_POINTS.contains(blockPoint)) {
+            // retarget the op to the HC subsystem
+            PathAddress addr = host.equals("master") ? MASTER_ADDRESS : SLAVE_ADDRESS;
+            op.get(OP_ADDR).set(addr.append(SUBSYSTEM_ELEMENT).toModelNode());
+        }
         return masterClient.executeAsync(op, OperationMessageHandler.DISCARD);
     }
 

@@ -24,6 +24,8 @@
 
 package org.wildfly.extension.io;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -201,14 +203,17 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
         public void execute(OperationContext outContext, ModelNode operation) throws OperationFailedException {
             populateValueFromModel(outContext, operation);
-            outContext.addStep((context, op) -> {
-                XnioWorker worker = getXnioWorker(context);
-                if (worker != null) {
-                    executeWithWorker(context, op, worker);
-                }
-            }, OperationContext.Stage.RUNTIME);
+            if (!PROFILE.equals(outContext.getCurrentAddress().getElement(0).getKey())) {
+                outContext.addStep((context, op) -> {
+                    XnioWorker worker = getXnioWorker(context);
+                    if (worker != null) {
+                        executeWithWorker(context, op, worker);
+                    }
+                }, OperationContext.Stage.RUNTIME);
+            }
         }
-         abstract void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException;
+
+        abstract void executeWithWorker(OperationContext context, ModelNode operation, XnioWorker worker) throws OperationFailedException;
     }
 
     private abstract static class WorkerWriteAttributeHandler extends AbstractWriteAttributeHandler {

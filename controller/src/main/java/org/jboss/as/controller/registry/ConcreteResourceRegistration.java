@@ -23,6 +23,7 @@
 package org.jboss.as.controller.registry;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -474,7 +475,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
-        if (isAttributeRegistrationAllowed(definition)) {
+        if (isAttributeRegistrationAllowed(definition) && !isProfileResource()) {
             AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
             storeAttribute(definition, aa);
         }
@@ -495,6 +496,10 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             return true;
         }
         return getProcessType().isServer();
+    }
+
+    private boolean isProfileResource() {
+        return !getProcessType().isServer() && getPathAddress().size() > 1 && PROFILE.equals(getPathAddress().getElement(0).getKey());
     }
 
     private void storeAttribute(AttributeDefinition definition, AttributeAccess aa) {
