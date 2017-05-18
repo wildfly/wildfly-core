@@ -33,6 +33,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
@@ -57,9 +58,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -71,6 +74,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
@@ -220,12 +224,7 @@ class DomainDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        registerIdentityManagementOperations(resourceRegistration);
-    }
-
-    private void registerIdentityManagementOperations(ManagementResourceRegistration resourceRegistration) {
-        IdentityResourceDefinition.ReadSecurityDomainIdentityHandler.register(resourceRegistration, getResourceDescriptionResolver());
-        IdentityResourceDefinition.AuthenticatorOperationHandler.register(resourceRegistration, getResourceDescriptionResolver());
+        ReadSecurityDomainIdentityHandler.register(resourceRegistration, getResourceDescriptionResolver());
     }
 
     private static ServiceController<SecurityDomain> installInitialService(OperationContext context, ServiceName initialName, ModelNode model,
@@ -290,10 +289,10 @@ class DomainDefinition extends SimpleResourceDefinition {
             RealmDependency realmDependency = domain.createRealmDependency(realmName);
             REALM_SERVICE_UTIL.addInjection(domainBuilder, realmDependency.getSecurityRealmInjector() , realmServiceName);
 
-            String principalStranformer = asStringIfDefined(context, REALM_PRINCIPAL_TRANSFORMER, current);
-            if (principalStranformer != null) {
-                Injector<PrincipalTransformer> principalTransformerInjector = realmDependency.getPrincipalTransformerInjector(principalStranformer);
-                injectPrincipalTransformer(principalStranformer, context, domainBuilder, principalTransformerInjector);
+            String principalTransformer = asStringIfDefined(context, REALM_PRINCIPAL_TRANSFORMER, current);
+            if (principalTransformer != null) {
+                Injector<PrincipalTransformer> principalTransformerInjector = realmDependency.getPrincipalTransformerInjector(principalTransformer);
+                injectPrincipalTransformer(principalTransformer, context, domainBuilder, principalTransformerInjector);
             }
             String realmRoleMapper = asStringIfDefined(context, ROLE_MAPPER, current);
             if (realmRoleMapper != null) {
@@ -550,5 +549,66 @@ class DomainDefinition extends SimpleResourceDefinition {
         }
     }
 
-}
+    static class ReadSecurityDomainIdentityHandler extends ElytronRuntimeOnlyHandler {
 
+        public static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+                .setAllowExpression(false)
+                .build();
+
+        static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
+            resourceRegistration.registerOperationHandler(
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
+                            .setParameters(NAME)
+                            .setRuntimeOnly()
+                            .build(),
+                    new ReadSecurityDomainIdentityHandler());
+        }
+
+        private ReadSecurityDomainIdentityHandler() {
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            // Retrieving the modifiable registry here as the SecurityDomain is used to create a new authentication
+            // context.
+            ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+            RuntimeCapability<Void> runtimeCapability = SECURITY_DOMAIN_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            ServiceName domainServiceName = runtimeCapability.getCapabilityServiceName(SecurityDomain.class);
+            ServiceController<SecurityDomain> serviceController = getRequiredService(serviceRegistry, domainServiceName, SecurityDomain.class);
+            SecurityDomain domain = serviceController.getValue();
+            ServerAuthenticationContext authenticationContext = domain.createNewAuthenticationContext();
+            String principalName = NAME.resolveModelAttribute(context, operation).asString();
+
+            try {
+                authenticationContext.setAuthenticationName(principalName);
+
+                if (!authenticationContext.exists()) {
+                    context.getFailureDescription().set(ROOT_LOGGER.identityNotFound(principalName));
+                    return;
+                }
+
+                if (!authenticationContext.authorize(principalName)) {
+                    context.getFailureDescription().set(ROOT_LOGGER.identityNotAuthorized(principalName));
+                    return;
+                }
+
+                SecurityIdentity identity = authenticationContext.getAuthorizedIdentity();
+                ModelNode result = context.getResult();
+
+                result.get(ElytronDescriptionConstants.NAME).set(principalName);
+
+                ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
+
+                identity.getAttributes().entries().forEach(entry -> {
+                    ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
+                    entry.forEach(entryNode::add);
+                });
+
+                ModelNode rolesNode = result.get(ElytronDescriptionConstants.ROLES);
+                identity.getRoles().forEach(rolesNode::add);
+            } catch (RealmUnavailableException e) {
+                throw ROOT_LOGGER.couldNotReadIdentity(principalName, domainServiceName, e);
+            }
+        }
+    }
+}

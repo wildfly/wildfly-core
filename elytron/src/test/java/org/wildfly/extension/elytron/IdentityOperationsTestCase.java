@@ -26,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ATTRIBUTES;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.IDENTITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLES;
@@ -35,7 +34,6 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -44,7 +42,6 @@ import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.wildfly.extension.elytron.IdentityResourceDefinition.AuthenticatorOperationHandler;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.authz.PermissionMappable;
 import org.wildfly.security.authz.PermissionMapper;
@@ -272,8 +269,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
 
         byte[] salt = PasswordUtil.generateRandomSalt(BCryptPassword.BCRYPT_SALT_SIZE);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Bcrypt.OBJECT_DEFINITION, "bcryptPassword", salt, 10, null, null);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Bcrypt.OBJECT_DEFINITION, "bcryptPassword", salt, 10, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -289,8 +286,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -306,8 +303,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.SimpleDigest.OBJECT_DEFINITION, "simpleDigest", null, null, null, SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_1);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION, "simpleDigest", null, null, null, SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_1);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -323,8 +320,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.SaltedSimpleDigest.OBJECT_DEFINITION, "saltedSimpleDigest", PasswordUtil.generateRandomSalt(16), null, null, SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION, "saltedSimpleDigest", PasswordUtil.generateRandomSalt(16), null, null, SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -340,8 +337,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
 
         result = services.executeOperation(operation);
         assertSuccessful(result);
@@ -358,14 +355,14 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
 
         result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -381,14 +378,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         ModelNode result = services.executeOperation(operation);
         assertSuccessful(result);
 
-        operation = createPasswordOperation("default", realmAddress, principalName,
-                IdentityResourceDefinition.PasswordSetHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
-        result = services.executeOperation(operation);
-        assertSuccessful(result);
-
-        PathAddress securityDomainAddress = getSecurityDomainAddress("FileSystemDomain");
-
-        operation = createAuthenticateOperation(securityDomainAddress, "default", principalName, "clearPassword");
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -417,14 +408,20 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     }
 
     private ModelNode createAddIdentityOperation(PathAddress parentAddress, String principalName) {
-        ModelNode address = PathAddress.pathAddress(parentAddress).append(ElytronDescriptionConstants.IDENTITY, principalName).toModelNode();
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ModelDescriptionConstants.ADD, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.IDENTITY)), address)
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.ADD_IDENTITY, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.AddIdentityHandler.IDENTITY, principalName)
                 .build();
     }
 
     private ModelNode createRemoveIdentityOperation(PathAddress parentAddress, String principalName) {
-        ModelNode address = PathAddress.pathAddress(parentAddress).append(ElytronDescriptionConstants.IDENTITY, principalName).toModelNode();
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ModelDescriptionConstants.REMOVE, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.IDENTITY)), address)
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.REMOVE_IDENTITY, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.RemoveIdentityHandler.IDENTITY, principalName)
+                .build();
+    }
+
+    private ModelNode createReadIdentityOperation(PathAddress parentAddress, String principalName) {
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.READ_IDENTITY, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.RemoveIdentityHandler.IDENTITY, principalName)
                 .build();
     }
 
@@ -435,11 +432,10 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
             valuesNode.add(value);
         }
 
-        ModelNode address = PathAddress.pathAddress(parentAddress).append(ElytronDescriptionConstants.IDENTITY, principalName).toModelNode();
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.ADD_ATTRIBUTE,
-                ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.IDENTITY)), address)
-                .addAttribute(IdentityResourceDefinition.AttributeAddHandler.NAME, key)
-                .addAttribute(IdentityResourceDefinition.AttributeAddHandler.VALUE, valuesNode)
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.ADD_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.IDENTITY, principalName)
+                .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.NAME, key)
+                .addAttribute(ModifiableRealmDecorator.AddIdentityAttributeHandler.VALUE, valuesNode)
                 .build();
     }
 
@@ -450,15 +446,14 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
             valuesNode.add(value);
         }
 
-        ModelNode address = PathAddress.pathAddress(parentAddress).append(ElytronDescriptionConstants.IDENTITY, principalName).toModelNode();
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.REMOVE_ATTRIBUTE,
-                ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.IDENTITY)), address)
-                .addAttribute(IdentityResourceDefinition.AttributeAddHandler.NAME, key)
-                .addAttribute(IdentityResourceDefinition.AttributeAddHandler.VALUE, valuesNode)
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.REMOVE_IDENTITY_ATTRIBUTE, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.IDENTITY, principalName)
+                .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.NAME, key)
+                .addAttribute(ModifiableRealmDecorator.RemoveIdentityAttributeHandler.VALUE, valuesNode)
                 .build();
     }
 
-    private ModelNode createPasswordOperation(String credentialName, PathAddress parentAddress, String principalName, ObjectTypeAttributeDefinition passwordDefinition, String password, byte[] salt, Integer iterationCount, String realm, String algorithm) {
+    private ModelNode createSetPasswordOperation(String credentialName, PathAddress parentAddress, String principalName, ObjectTypeAttributeDefinition passwordDefinition, String password, byte[] salt, Integer iterationCount, String realm, String algorithm) {
         ModelNode passwordNode = new ModelNode();
 
         passwordNode.get(ElytronDescriptionConstants.NAME).set(credentialName);
@@ -481,9 +476,8 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
 
         passwordNode.get(ElytronDescriptionConstants.PASSWORD).set(password);
 
-        ModelNode address = PathAddress.pathAddress(parentAddress).append(ElytronDescriptionConstants.IDENTITY, principalName).toModelNode();
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.SET_PASSWORD,
-                ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.IDENTITY)), address)
+        return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.SET_PASSWORD, parentAddress.toModelNode())
+                .addAttribute(ModifiableRealmDecorator.SetPasswordHandler.IDENTITY, principalName)
                 .addAttribute(passwordDefinition, passwordNode)
                 .build();
     }
@@ -491,19 +485,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     private ModelNode createReadSecurityDomainIdentityOperation(PathAddress parentAddress, String principalName) {
         return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)),
                 parentAddress.toModelNode())
-                .addAttribute(IdentityResourceDefinition.ReadSecurityDomainIdentityHandler.NAME, principalName)
-                .build();
-    }
-
-    private ModelNode createReadIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)),
-                PathAddress.pathAddress(parentAddress, PathElement.pathElement(IDENTITY, principalName)).toModelNode()).build();
-    }
-
-    private ModelNode createAuthenticateOperation(PathAddress parentAddress, String credentialName, String principalName, String password) {
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition("authenticate", ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)), parentAddress.toModelNode())
-                .addAttribute(AuthenticatorOperationHandler.USER_NAME, principalName)
-                .addAttribute(AuthenticatorOperationHandler.PASSWORD, password)
+                .addAttribute(DomainDefinition.ReadSecurityDomainIdentityHandler.NAME, principalName)
                 .build();
     }
 

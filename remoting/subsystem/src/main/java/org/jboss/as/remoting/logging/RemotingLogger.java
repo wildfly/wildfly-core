@@ -129,4 +129,7 @@ public interface RemotingLogger extends BasicLogger {
 
     @Message(id = 26, value = "Change of worker to '%s' in remoting might require the same change in resources depending on remoting.")
     String warningOnWorkerChange(String worker);
+
+    @Message(id = 27, value = "Failed to obtain SSLContext")
+    StartException failedToObtainSSLContext(@Cause Exception cause);
 }

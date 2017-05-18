@@ -4209,7 +4209,7 @@
             <xs:annotation>
                 <xs:documentation>
                     To require a client certificate on SSL handshake.
-                    Connection without trusted client certificate (see trust-managers) will be rejected.
+                    Connection without trusted client certificate (see trust-manager) will be rejected.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4255,17 +4255,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="key-managers" type="xs:string" use="optional">
+        <xs:attribute name="key-manager" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Reference to the KeyManagers to be used by this SSLContext.
+                    Reference to the KeyManager to be used by this SSLContext.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="trust-managers" type="xs:string" use="optional">
+        <xs:attribute name="trust-manager" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Reference to the TrustManagers to be used by this SSLContext.
+                    Reference to the TrustManager to be used by this SSLContext.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4324,14 +4324,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="key-managers" type="xs:string" use="optional">
+        <xs:attribute name="key-manager" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    Reference to the KeyManagers to be used by this SSLContext.
+                    Reference to the KeyManager to be used by this SSLContext.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="trust-managers" type="xs:string" use="optional">
+        <xs:attribute name="trust-manager" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     Reference to the TrustManagers to be used by this SSLContext.
@@ -4726,10 +4726,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
+        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    Indicates that the credential store is case sensitive and should then allow for upper case in alias.
+                    Case sensitivity of the credential store. If case insensitive only lower case names are allowed for aliases.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

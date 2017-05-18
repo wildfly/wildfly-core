@@ -147,7 +147,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         // Security Realms
         resourceRegistration.registerSubModel(new AggregateRealmDefinition());
         resourceRegistration.registerSubModel(new CustomComponentDefinition<SecurityRealm>(SecurityRealm.class, ElytronDescriptionConstants.CUSTOM_REALM, SECURITY_REALM_RUNTIME_CAPABILITY));
-        resourceRegistration.registerSubModel(SecurityRealmResourceDecorator.wrap(new CustomComponentDefinition<ModifiableSecurityRealm>(
+        resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new CustomComponentDefinition<ModifiableSecurityRealm>(
                 ModifiableSecurityRealm.class, ElytronDescriptionConstants.CUSTOM_MODIFIABLE_REALM,
                 MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)));
         resourceRegistration.registerSubModel(RealmDefinitions.getIdentityRealmDefinition());
@@ -155,8 +155,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new KeyStoreRealmDefinition());
         resourceRegistration.registerSubModel(new PropertiesRealmDefinition());
         resourceRegistration.registerSubModel(new TokenRealmDefinition());
-        resourceRegistration.registerSubModel(SecurityRealmResourceDecorator.wrap(new LdapRealmDefinition()));
-        resourceRegistration.registerSubModel(SecurityRealmResourceDecorator.wrap(new FileSystemRealmDefinition()));
+        resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new LdapRealmDefinition()));
+        resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new FileSystemRealmDefinition()));
         resourceRegistration.registerSubModel(new CachingRealmDefinition());
 
         // Security Factories

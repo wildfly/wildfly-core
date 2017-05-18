@@ -20,15 +20,15 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGERS_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGERS_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGERS_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.asIntIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
@@ -44,6 +44,8 @@ import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -53,6 +55,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.KeyManager;
@@ -76,7 +79,9 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -222,16 +227,16 @@ class SSLDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition KEY_MANAGERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_MANAGERS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition KEY_MANAGER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_MANAGER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(KEY_MANAGERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(KEY_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition TRUST_MANAGERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRUST_MANAGERS, ModelType.STRING, true)
+    static final SimpleAttributeDefinition TRUST_MANAGER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRUST_MANAGER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(TRUST_MANAGERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(TRUST_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAllowExpression(false)
             .build();
@@ -309,13 +314,17 @@ class SSLDefinitions {
 
     static ResourceDefinition getKeyManagerDefinition() {
 
+        final ServiceUtil<KeyManager> KEY_MANAGER_UTIL = ServiceUtil.newInstance(KEY_MANAGER_RUNTIME_CAPABILITY, ElytronDescriptionConstants.KEY_MANAGER, KeyManager.class);
+
+        final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_MANAGER);
+
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_MANAGERS_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_MANAGER_CAPABILITY, true)
                 .setAllowExpression(false)
                 .build();
 
         final SimpleAttributeDefinition keystoreDefinition = new SimpleAttributeDefinitionBuilder(KEYSTORE)
-                .setCapabilityReference(KEY_STORE_CAPABILITY, KEY_MANAGERS_CAPABILITY, true)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, KEY_MANAGER_CAPABILITY, true)
                 .setAllowExpression(false)
                 .build();
 
@@ -323,10 +332,10 @@ class SSLDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition};
 
-        AbstractAddStepHandler add = new TrivialAddHandler<KeyManager[]>(KeyManager[].class, attributes, KEY_MANAGERS_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<KeyManager>(KeyManager.class, attributes, KEY_MANAGER_RUNTIME_CAPABILITY) {
 
             @Override
-            protected ValueSupplier<KeyManager[]> getValueSupplier(ServiceBuilder<KeyManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<KeyManager> getValueSupplier(ServiceBuilder<KeyManager> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
@@ -352,6 +361,7 @@ class SSLDefinitions {
                 ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
                         CredentialReference.getCredentialSourceSupplier(context, credentialReferenceDefinition, model, serviceBuilder);
 
+                DelegatingKeyManager delegatingKeyManager = new DelegatingKeyManager();
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
                     KeyManagerFactory keyManagerFactory = null;
@@ -404,24 +414,53 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
-                    return keyManagerFactory.getKeyManagers();
+                    KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
+                    for (KeyManager keyManager : keyManagers) {
+                        if (keyManager instanceof X509ExtendedKeyManager) {
+                            delegatingKeyManager.setKeyManager((X509ExtendedKeyManager) keyManager);
+                            return delegatingKeyManager;
+                        }
+                    }
+                    throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
                 };
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.KEY_MANAGERS, add, attributes, KEY_MANAGERS_RUNTIME_CAPABILITY);
+
+        OperationStepHandler init = new ElytronRuntimeOnlyHandler() {
+            @Override
+            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                ServiceName keyStoreName = KEY_MANAGER_UTIL.serviceName(operation);
+                ServiceController<KeyManager> serviceContainer = getRequiredService(context.getServiceRegistry(false), keyStoreName, KeyManager.class);
+                try {
+                    // fictive restart to recreate keyManager and exchange it in delegatingKeyManager
+                    serviceContainer.getService().stop(null);
+                    serviceContainer.getService().start(null);
+                } catch (Exception e) {
+                    throw new OperationFailedException(e);
+                }
+            }
+        };
+
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.KEY_MANAGER, add, attributes, KEY_MANAGER_RUNTIME_CAPABILITY) {
+            @Override
+            public void registerOperations(ManagementResourceRegistration registration) {
+                super.registerOperations(registration);
+                registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER).build(), init);
+            }
+        };
 
     }
 
     static ResourceDefinition getTrustManagerDefinition() {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, TRUST_MANAGERS_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, TRUST_MANAGER_CAPABILITY, true)
                 .setAllowExpression(false)
                 .build();
 
         final SimpleAttributeDefinition keystoreDefinition = new SimpleAttributeDefinitionBuilder(KEYSTORE)
-                .setCapabilityReference(KEY_STORE_CAPABILITY, TRUST_MANAGERS_CAPABILITY, true)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, TRUST_MANAGER_CAPABILITY, true)
                 .setAllowExpression(false)
                 .build();
 
@@ -429,10 +468,10 @@ class SSLDefinitions {
 
         AtomicBoolean reloadCrl = new AtomicBoolean(false);
 
-        AbstractAddStepHandler add = new TrivialAddHandler<TrustManager[]>(TrustManager[].class, attributes, TRUST_MANAGERS_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<TrustManager>(TrustManager.class, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
 
             @Override
-            protected ValueSupplier<TrustManager[]> getValueSupplier(ServiceBuilder<TrustManager[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<TrustManager> getValueSupplier(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
 
@@ -484,11 +523,17 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
-                    return trustManagerFactory.getTrustManagers();
+                    TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+                    for (TrustManager trustManager : trustManagers) {
+                        if (trustManager instanceof X509ExtendedTrustManager) {
+                            return trustManager;
+                        }
+                    }
+                    throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
                 };
             }
 
-            private ValueSupplier<TrustManager[]> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager[]> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode, AtomicBoolean reloadCrl) throws OperationFailedException {
+            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode, AtomicBoolean reloadCrl) throws OperationFailedException {
                 String crlPath = asStringIfDefined(context, PATH, crlNode);
                 String crlRelativeTo = asStringIfDefined(context, RELATIVE_TO, crlNode);
                 int certPath = asIntIfDefined(context, MAXIMUM_CERT_PATH, crlNode);
@@ -514,12 +559,12 @@ class SSLDefinitions {
                         }
                     }
 
-                    return new TrustManager[] {new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, null, certPath, null)};
+                    return new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, null, certPath, null);
                 };
             }
 
-            private TrustManager[] createReloadableX509CRLTrustManager(final AtomicBoolean reloadCrl, final String crlPath, final String crlRelativeTo, final int certPath, final InjectedValue<PathManager> pathManagerInjector, final TrustManagerFactory trustManagerFactory, final KeyStore keyStore, final X509CRLExtendedTrustManager trustManager) {
-                return new TrustManager[] {new X509ExtendedTrustManager() {
+            private TrustManager createReloadableX509CRLTrustManager(final AtomicBoolean reloadCrl, final String crlPath, final String crlRelativeTo, final int certPath, final InjectedValue<PathManager> pathManagerInjector, final TrustManagerFactory trustManagerFactory, final KeyStore keyStore, final X509CRLExtendedTrustManager trustManager) {
+                return new X509ExtendedTrustManager() {
 
                     private volatile X509ExtendedTrustManager delegate = trustManager;
                     private AtomicBoolean reloading = new AtomicBoolean();
@@ -576,7 +621,7 @@ class SSLDefinitions {
                     public X509Certificate[] getAcceptedIssuers() {
                         return getDelegate().getAcceptedIssuers();
                     }
-                }};
+                };
             }
 
             private File resolveFileLocation(String path, String relativeTo, InjectedValue<PathManager> pathManagerInjector) {
@@ -615,7 +660,7 @@ class SSLDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.TRUST_MANAGERS, add, attributes, TRUST_MANAGERS_RUNTIME_CAPABILITY, CREDENTIAL_STORE_RUNTIME_CAPABILITY) {
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.TRUST_MANAGER, add, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY, CREDENTIAL_STORE_RUNTIME_CAPABILITY) {
             @Override
             public void registerOperations(ManagementResourceRegistration resourceRegistration) {
                 super.registerOperations(resourceRegistration);
@@ -635,6 +680,55 @@ class SSLDefinitions {
                 }
             }
         };
+    }
+
+    private static class DelegatingKeyManager extends X509ExtendedKeyManager {
+
+        private final AtomicReference<X509ExtendedKeyManager> delegating = new AtomicReference<>();
+
+        private void setKeyManager(X509ExtendedKeyManager keyManager) {
+            delegating.set(keyManager);
+        }
+
+        @Override
+        public String[] getClientAliases(String s, Principal[] principals) {
+            return delegating.get().getClientAliases(s, principals);
+        }
+
+        @Override
+        public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+            return delegating.get().chooseClientAlias(strings, principals, socket);
+        }
+
+        @Override
+        public String[] getServerAliases(String s, Principal[] principals) {
+            return delegating.get().getServerAliases(s, principals);
+        }
+
+        @Override
+        public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+            return delegating.get().chooseServerAlias(s, principals, socket);
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String s) {
+            return delegating.get().getCertificateChain(s);
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String s) {
+            return delegating.get().getPrivateKey(s);
+        }
+
+        @Override
+        public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+            return delegating.get().chooseEngineClientAlias(keyType, issuers, engine);
+        }
+
+        @Override
+        public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+            return delegating.get().chooseEngineServerAlias(keyType, issuers, engine);
+        }
     }
 
     private static class SSLContextDefinition extends TrivialResourceDefinition {
@@ -692,20 +786,20 @@ class SSLDefinitions {
                 .setAllowExpression(false)
                 .build();
 
-        final SimpleAttributeDefinition keyManagersDefinition = new SimpleAttributeDefinitionBuilder(KEY_MANAGERS)
+        final SimpleAttributeDefinition keyManagersDefinition = new SimpleAttributeDefinitionBuilder(KEY_MANAGER)
                 .setRequired(true)
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { SECURITY_DOMAIN, CIPHER_SUITE_FILTER, PROTOCOLS, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
-                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagersDefinition, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
+                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagersDefinition, TRUST_MANAGER, providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
             protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
 
                 final InjectedValue<SecurityDomain> securityDomainInjector = addDependency(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN, SecurityDomain.class, serviceBuilder, context, model);
-                final InjectedValue<KeyManager[]> keyManagersInjector = addDependency(KEY_MANAGERS_CAPABILITY, KEY_MANAGERS, KeyManager[].class, serviceBuilder, context, model);
-                final InjectedValue<TrustManager[]> trustManagersInjector = addDependency(TRUST_MANAGERS_CAPABILITY, TRUST_MANAGERS, TrustManager[].class, serviceBuilder, context, model);
+                final InjectedValue<KeyManager> keyManagerInjector = addDependency(KEY_MANAGER_CAPABILITY, KEY_MANAGER, KeyManager.class, serviceBuilder, context, model);
+                final InjectedValue<TrustManager> trustManagerInjector = addDependency(TRUST_MANAGER_CAPABILITY, TRUST_MANAGER, TrustManager.class, serviceBuilder, context, model);
                 final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
 
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
@@ -721,8 +815,8 @@ class SSLDefinitions {
 
                 return () -> {
                     SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
-                    X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagersInjector.getOptionalValue());
-                    X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagersInjector.getOptionalValue());
+                    X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
+                    X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
                     Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
 
                     SSLContextBuilder builder = new SSLContextBuilder();
@@ -782,14 +876,14 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { CIPHER_SUITE_FILTER, PROTOCOLS,
-                KEY_MANAGERS, TRUST_MANAGERS, providersDefinition, PROVIDER_NAME };
+                KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
             protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
 
-                final InjectedValue<KeyManager[]> keyManagersInjector = addDependency(KEY_MANAGERS_CAPABILITY, KEY_MANAGERS, KeyManager[].class, serviceBuilder, context, model);
-                final InjectedValue<TrustManager[]> trustManagersInjector = addDependency(TRUST_MANAGERS_CAPABILITY, TRUST_MANAGERS, TrustManager[].class, serviceBuilder, context, model);
+                final InjectedValue<KeyManager> keyManagerInjector = addDependency(KEY_MANAGER_CAPABILITY, KEY_MANAGER, KeyManager.class, serviceBuilder, context, model);
+                final InjectedValue<TrustManager> trustManagerInjector = addDependency(TRUST_MANAGER_CAPABILITY, TRUST_MANAGER, TrustManager.class, serviceBuilder, context, model);
                 final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
 
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
@@ -797,8 +891,8 @@ class SSLDefinitions {
                 final String cipherSuiteFilter = asStringIfDefined(context, CIPHER_SUITE_FILTER, model);
 
                 return () -> {
-                    X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagersInjector.getOptionalValue());
-                    X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagersInjector.getOptionalValue());
+                    X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
+                    X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
                     Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
 
                     SSLContextBuilder builder = new SSLContextBuilder();
@@ -849,32 +943,24 @@ class SSLDefinitions {
                 .toArray(Provider[]::new);
     }
 
-    private static X509ExtendedKeyManager getX509KeyManager(KeyManager[] keyManagers) throws StartException {
-        if (keyManagers == null) {
+    private static X509ExtendedKeyManager getX509KeyManager(KeyManager keyManager) throws StartException {
+        if (keyManager == null) {
             return null;
         }
-
-        for (KeyManager current : keyManagers) {
-            if (current instanceof X509ExtendedKeyManager) {
-                return (X509ExtendedKeyManager) current;
-            }
+        if (keyManager instanceof X509ExtendedKeyManager) {
+            return (X509ExtendedKeyManager) keyManager;
         }
-
-        throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
+        throw ROOT_LOGGER.invalidTypeInjected(X509ExtendedKeyManager.class.getSimpleName());
     }
 
-    private static X509ExtendedTrustManager getX509TrustManager(TrustManager[] trustManagers) throws StartException {
-        if (trustManagers == null) {
+    private static X509ExtendedTrustManager getX509TrustManager(TrustManager trustManager) throws StartException {
+        if (trustManager == null) {
             return null;
         }
-
-        for (TrustManager current : trustManagers) {
-            if (current instanceof X509ExtendedTrustManager) {
-                return (X509ExtendedTrustManager) current;
-            }
+        if (trustManager instanceof X509ExtendedTrustManager) {
+            return (X509ExtendedTrustManager) trustManager;
         }
-
-        throw ROOT_LOGGER.noTypeFound(X509ExtendedTrustManager.class.getSimpleName());
+        throw ROOT_LOGGER.invalidTypeInjected(X509ExtendedTrustManager.class.getSimpleName());
     }
 
     abstract static class SSLContextRuntimeHandler extends ElytronRuntimeOnlyHandler {
