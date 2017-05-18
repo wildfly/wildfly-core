@@ -507,6 +507,13 @@ class DomainDefinition extends SimpleResourceDefinition {
         }
 
         @Override
+        protected void removeServices(final OperationContext context, final ServiceName parentService, final ModelNode parentModel) throws OperationFailedException {
+            // WFCORE-2632, just for security-domain, remove also service with initial suffix.
+            context.removeService(parentService.append(INITIAL));
+            super.removeServices(context, parentService, parentModel);
+        }
+
+        @Override
         protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel)
                 throws OperationFailedException {
             installService(context, getParentServiceName(parentAddress), parentModel);
