@@ -58,7 +58,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     private static final String CLASS = "class";
     private static final String PROCESS_STATE_LISTENER_CAPABILITY_NAME = "org.wildfly.extension.core-management.process-state";
     static final RuntimeCapability<Void> PROCESS_STATE_LISTENER_CAPABILITY =
-            RuntimeCapability.Builder.of(PROCESS_STATE_LISTENER_CAPABILITY_NAME, true, ProcessStateListenerService.class)
+            RuntimeCapability.Builder.of(PROCESS_STATE_LISTENER_CAPABILITY_NAME, true)
                     .addRequirements(EXECUTOR_CAPABILITY.getName())
                     .build();
 
