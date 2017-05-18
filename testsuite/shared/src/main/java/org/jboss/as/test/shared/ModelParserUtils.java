@@ -164,15 +164,15 @@ public class ModelParserUtils {
 
     private static void assertProcessState(CLIWrapper cli, String expected, int timeout, boolean forHost) throws IOException, InterruptedException {
         long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
-        String history = "";
+        StringBuilder historyBuf = new StringBuilder();
         String state = null;
         do {
             try {
                 state = forHost ? getHostState(cli) : getServerState(cli);
-                history += state+"\n";
+                historyBuf.append(state).append("\n");
             } catch (Exception ignored) {
                 //
-                history += ignored.toString()+ "--" + cli.readOutput() + "\n";
+                historyBuf.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
             }
             if (expected.equals(state)) {
                 return;
@@ -180,7 +180,7 @@ public class ModelParserUtils {
                 Thread.sleep(20);
             }
         } while (timeout > 0 && System.currentTimeMillis() < done);
-        assertEquals(history, expected, state);
+        assertEquals(historyBuf.toString(), expected, state);
     }
 
     private static String getServerState(CLIWrapper cli) throws IOException {

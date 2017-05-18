@@ -469,11 +469,11 @@ public class ModelTestUtils {
     }
 
     private static String getCompareStackAsString(Stack<String> stack) {
-        String result = "";
+        StringBuilder buf = new StringBuilder();
         for (String element : stack) {
-            result += element;
+            buf.append(element);
         }
-        return result;
+        return buf.toString();
     }
 
     public static void checkModelAgainstDefinition(final ModelNode model, ManagementResourceRegistration rr) {

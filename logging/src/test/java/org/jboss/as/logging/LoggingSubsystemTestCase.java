@@ -87,9 +87,10 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         Assert.assertNotNull("jboss.server.config.dir could not be resolved", dir);
         final LogContext logContext = LogContext.create();
         final ConfigurationPersistence config = ConfigurationPersistence.getOrCreateConfigurationPersistence(logContext);
-        final FileInputStream in = new FileInputStream(new File(dir, "logging.properties"));
-        config.configure(in);
-        compare(currentModel, config);
+        try (final FileInputStream in = new FileInputStream(new File(dir, "logging.properties"))) {
+            config.configure(in);
+            compare(currentModel, config);
+        }
     }
 
     @Test
