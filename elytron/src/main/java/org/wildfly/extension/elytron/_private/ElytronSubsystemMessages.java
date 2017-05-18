@@ -120,20 +120,20 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     OperationFailedException invalidOperationName(String actualName, String... expectedNames);
 
     /**
-     * An {@link OperationFailedException} where an operation can not be completed.
+     * An {@link RuntimeException} where an operation can not be completed.
      *
      * @param cause the underlying cause of the failure.
-     * @return The {@link OperationFailedException} for the error.
+     * @return The {@link RuntimeException} for the error.
      */
     @Message(id = 9, value = "Unable to complete operation. '%s'")
-    OperationFailedException unableToCompleteOperation(@Cause Throwable cause, String causeMessage);
+    RuntimeException unableToCompleteOperation(@Cause Throwable cause, String causeMessage);
 
     /**
      * An {@link OperationFailedException} where this an attempt to save a KeyStore without a File defined.
      *
      * @return The {@link OperationFailedException} for the error.
      */
-    @Message(id = 10, value = "Unable to complete operation.")
+    @Message(id = 10, value = "Unable to save KeyStore - path is not defined.")
     OperationFailedException cantSaveWithoutFile();
 
     /**
@@ -312,7 +312,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
-    IllegalArgumentException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
+    OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
     @Message(id = 910, value = "Password cannot be resolved for key-store \"%s\"")
     IOException keyStorePasswordCannotBeResolved(String path);
@@ -344,6 +344,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
     OperationFailedException invalidAliasName(String alias, String credntialStore);
+
+    @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
+    OperationFailedException credentialDoesNotExist(String alias, String credentialType);
+
     /*
      * Identity Resource Messages - 1000
      */

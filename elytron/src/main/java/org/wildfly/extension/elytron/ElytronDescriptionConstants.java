@@ -29,6 +29,8 @@ interface ElytronDescriptionConstants {
     String ACTIVE_SESSION_COUNT = "active-session-count";
     String ADD_IDENTITY = "add-identity";
     String ADD_IDENTITY_ATTRIBUTE = "add-identity-attribute";
+    String ADD_ALIAS = "add-alias";
+    String ADD_ATTRIBUTE = "add-attribute";
     String ADD_PREFIX_ROLE_MAPPER = "add-prefix-role-mapper";
     String ADD_SUFFIX_ROLE_MAPPER = "add-suffix-role-mapper";
     String AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY = "aggregate-http-server-mechanism-factory";
@@ -416,6 +418,7 @@ interface ElytronDescriptionConstants {
     String SERVER_SSL_CONTEXTS = "server-ssl-contexts";
     String SESSION_TIMEOUT = "session-timeout";
     String SET_PASSWORD = "set-password";
+    String SET_SECRET = "set-secret";
     String SERVICE = "service";
     String SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY = "service-loader-http-server-mechanism-factory";
     String SERVICE_LOADER_SASL_SERVER_FACTORY = "service-loader-sasl-server-factory";
