@@ -19,6 +19,7 @@ package org.jboss.as.controller.registry;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.OperationAttachments;
@@ -44,7 +45,7 @@ public class ProxyControllerRegistrationUnitTestCase {
 
     @Before
     public void setup() {
-        root = ManagementResourceRegistration.Factory.create(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()));
+        root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.HOST_CONTROLLER).createRegistration(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()));
         proxyController = new ProxyController() {
             @Override
             public PathAddress getProxyNodeAddress() {

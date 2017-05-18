@@ -22,11 +22,10 @@
 
 package org.jboss.as.controller.registry;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -35,11 +34,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
-import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.wildfly.common.Assert;
 
@@ -333,18 +329,14 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     class Factory {
 
         /**
-         * The default factory for creating a new, root model node registration.
+         * Creates a factory {@link #forProcessType(ProcessType) for ProcessType.EMBEDDED_SERVER}.
          *
-         * Root model node registration created by this factory will always register metrics
-         * regardless of the process type.
+         * @deprecated use {@link #forProcessType(ProcessType)}.
          */
-        public static final Factory DEFAULT = new Factory();
+        @Deprecated
+        public static final Factory DEFAULT = forProcessType(ProcessType.EMBEDDED_SERVER);
 
         private final ProcessType processType;
-
-        private Factory() {
-            processType = null;
-        }
 
         private Factory(ProcessType processType) {
             this.processType = processType;
@@ -368,103 +360,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
         /**
          * Create a new root model node registration.
          *
-         * @param rootModelDescriptionProvider the model description provider for the root model node
-         * @return the new root model node registration
-         *
-         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         * @deprecated DescriptionProvider shouldn't be used anymore, use ResourceDefinition variant
-         */
-        @Deprecated
-        public static ManagementResourceRegistration create(final DescriptionProvider rootModelDescriptionProvider) {
-            return create(rootModelDescriptionProvider, null);
-        }
-
-        /**
-         * Create a new root model node registration.
-         *
-         * @param rootModelDescriptionProvider the model description provider for the root model node
-         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
-         *                                      tracking access constraint usage is not supported
-         * @return the new root model node registration
-         *
-         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         * @deprecated DescriptionProvider shouldn't be used anymore, use ResourceDefinition variant
-         */
-        @Deprecated
-        public static ManagementResourceRegistration create(final DescriptionProvider rootModelDescriptionProvider,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
-            Assert.checkNotNullParam("rootModelDescriptionProvider", rootModelDescriptionProvider);
-            ResourceDefinition rootResourceDefinition = new ResourceDefinition() {
-
-                @Override
-                public PathElement getPathElement() {
-                    return null;
-                }
-
-                @Override
-                public DescriptionProvider getDescriptionProvider(ImmutableManagementResourceRegistration resourceRegistration) {
-                    return rootModelDescriptionProvider;
-                }
-
-                @Override
-                public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-                    //  no-op
-                }
-
-                @Override
-                public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                    //  no-op
-                }
-
-                @Override
-                public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-                    //  no-op
-                }
-
-                @Override
-                public void registerNotifications(ManagementResourceRegistration resourceRegistration) {
-                    //  no-op
-                }
-
-                @Override
-                public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-                    // no-op
-                }
-
-                @Override
-                public List<AccessConstraintDefinition> getAccessConstraints() {
-                    return Collections.emptyList();
-                }
-
-                @Override
-                public boolean isRuntime() {
-                    return false;
-                }
-
-                @Override
-                public boolean isOrderedChild() {
-                    return false;
-                }
-            };
-            return new ConcreteResourceRegistration(null, null, rootResourceDefinition, constraintUtilizationRegistry, false, null, null);
-        }
-
-        /**
-         * Create a new root model node registration.
-         *
-         * @param resourceDefinition the facotry for the model description provider for the root model node
-         * @return the new root model node registration
-         *
-         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         */
-        @Deprecated
-        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
-            return DEFAULT.createRegistration(resourceDefinition, null, null);
-        }
-
-        /**
-         * Create a new root model node registration.
-         *
          * @param resourceDefinition the facotry for the model description provider for the root model node
          * @return the new root model node registration
          *
@@ -475,24 +370,23 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
         }
 
         /**
-         * Create a new root model node registration.
+         * Create a new root model node registration for ProcessType.EMBEDDED_SERVER}.
          *
-         * @param resourceDefinition            the facotry for the model description provider for the root model node
-         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
-         *                                      tracking access constraint usage is not supported
+         * @param resourceDefinition the facotry for the model description provider for the root model node
          * @return the new root model node registration
+         *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         * @deprecated use {@link #create(ResourceDefinition, AccessConstraintUtilizationRegistry, CapabilityRegistry)}
+         *
+         * @deprecated use {@link #forProcessType(ProcessType)}.
          */
         @Deprecated
-        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry) {
-            return DEFAULT.createRegistration(resourceDefinition, constraintUtilizationRegistry, null);
+        @SuppressWarnings("deprecation")
+        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
+            return DEFAULT.createRegistration(resourceDefinition, null, null);
         }
 
-
         /**
-         * Create a new root model node registration.
+         * Create a new root model node registration for ProcessType.EMBEDDED_SERVER}.
          *
          * @param resourceDefinition the factory for the model description provider for the root model node
          * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
@@ -500,14 +394,16 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          * @return the new root model node registration
          *
          * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+         *
+         * @deprecated use {@link #forProcessType(ProcessType)}.
          */
         @Deprecated
+        @SuppressWarnings("deprecation")
         public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
                                                             AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
                                                             CapabilityRegistry registry) {
             return DEFAULT.createRegistration(resourceDefinition, constraintUtilizationRegistry, registry);
         }
-
 
         /**
          * Create a new root model node registration.
