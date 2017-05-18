@@ -74,12 +74,12 @@ public class HttpMgmtInterfaceElytronAuthenticationTestCase {
             final List<String> roles = new ArrayList<>();
 
             cli.sendLine(String.format("/subsystem=elytron/filesystem-realm=%s:add(path=\"%s\", %s)", MANAGEMENT_FILESYSTEM_NAME, escapePath(fsRealmPath), levelStr));
-            cli.sendLine(String.format("/subsystem=elytron/filesystem-realm=%s/identity=%s:add()", MANAGEMENT_FILESYSTEM_NAME, USER));
-            cli.sendLine(String.format("/subsystem=elytron/filesystem-realm=%s/identity=%s:set-password(clear={password=\"%s\"})",
+            cli.sendLine(String.format("/subsystem=elytron/filesystem-realm=%s:add-identity(identity=%s)", MANAGEMENT_FILESYSTEM_NAME, USER));
+            cli.sendLine(String.format("/subsystem=elytron/filesystem-realm=%s:set-password(identity=%s, clear={password=\"%s\"})",
                     MANAGEMENT_FILESYSTEM_NAME, USER, CORRECT_PASSWORD));
             if (!roles.isEmpty()) {
                 cli.sendLine(String.format(
-                        "/subsystem=elytron/filesystem-realm=%s/identity=%s:add-attribute(name=groups, value=[%s])", MANAGEMENT_FILESYSTEM_NAME,
+                        "/subsystem=elytron/filesystem-realm=%s:add-identity-attribute=%s:add-attribute(name=groups, value=[%s])", MANAGEMENT_FILESYSTEM_NAME,
                        USER, String.join(",", roles)));
             }
 
