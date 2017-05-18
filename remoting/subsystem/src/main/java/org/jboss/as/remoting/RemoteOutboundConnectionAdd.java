@@ -66,7 +66,7 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final ServiceName outboundSocketBindingDependency = context.getCapabilityServiceName(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, outboundSocketBindingRef, OutboundSocketBinding.class);
         // fetch the connection creation options from the model
         final OptionMap connectionCreationOptions = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
-        final String username = RemoteOutboundConnectionResourceDefinition.USERNAME.resolveModelAttribute(context, fullModel).asString();
+        final String username = RemoteOutboundConnectionResourceDefinition.USERNAME.resolveModelAttribute(context, fullModel).asStringOrNull();
         final String securityRealm = fullModel.hasDefined(CommonAttributes.SECURITY_REALM) ? fullModel.require(CommonAttributes.SECURITY_REALM).asString() : null;
         final String authenticationContext = fullModel.hasDefined(CommonAttributes.AUTHENTICATION_CONTEXT) ? fullModel.require(CommonAttributes.AUTHENTICATION_CONTEXT).asString() : null;
 

@@ -64,14 +64,14 @@
             </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
-            <server-ssl-context name="ServerSslContextNoAuth" key-managers="ServerKeyManager" trust-managers="CaTrustManager"/>
-            <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-managers="ServerKeyManager" trust-managers="CaTrustManager"
+            <server-ssl-context name="ServerSslContextNoAuth" key-manager="ServerKeyManager" trust-manager="CaTrustManager"/>
+            <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" use-cipher-suites-order="false"
                                 providers="ManagerProviderLoader" provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
         </server-ssl-contexts>
         <client-ssl-contexts>
-            <client-ssl-context name="ClientSslContextNoAuth" trust-managers="CaTrustManager" />
-            <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-managers="ClientKeyManager" trust-managers="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
+            <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
         </client-ssl-contexts>
     </tls>
 </subsystem>

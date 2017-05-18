@@ -51,6 +51,8 @@
         <xslt.scripts.dir>${basedir}/../src/test/xslt</xslt.scripts.dir>
         <enforcer.skip>true</enforcer.skip>
         <jbossas.ts.dir>${basedir}/..</jbossas.ts.dir>
+
+        <ts.elytron.cli>../shared/enable-elytron.cli</ts.elytron.cli>
     </properties>
 
     <!--
@@ -78,6 +80,11 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-feature-pack</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-vault-test-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
 
@@ -199,6 +206,7 @@
                          <include>org/jboss/as/test/integration/domain/suspendresume/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/slavereconnect/*TestCase.java</include>
                          <include>org/jboss/as/test/integration/domain/management/*TestCase.java</include>
+                         <include>org/jboss/as/test/integration/domain/elytron/*TestCase.java</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -265,6 +273,48 @@
                 </plugins>
             </build>
         </profile>
-    </profiles>
+
+        <!-- profile to configure WildFly to use Elytron instead of legacy security: -Delytron -->
+        <profile>
+            <id>elytron.profile</id>
+            <activation>
+                <property>
+                    <name>elytron</name>
+                </property>
+                <file>
+                    <exists>${ts.elytron.cli}</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
+                        <version>${version.org.wildfly.plugin}</version>
+                        <executions>
+                            <execution>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute-commands</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <offline>true</offline>
+                            <scripts>
+                                <script>${ts.elytron.cli}</script>
+                            </scripts>
+                            <jboss-home>${project.build.directory}/wildfly-core</jboss-home>
+                            <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
+                            <system-properties>
+                                <maven.repo.local>${settings.localRepository}</maven.repo.local>
+                                <module.path>${jboss.dist}/modules</module.path>
+                            </system-properties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+      </profiles>
 
 </project>

@@ -46,6 +46,7 @@ import java.io.IOException;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.auth.callback.OptionalNameCallback;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.password.interfaces.ClearPassword;
 
@@ -142,6 +143,8 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
                     rcb.setText(defaultText); // For now just use the realm suggested.
                 } else if (current instanceof RealmChoiceCallback) {
                     throw DomainManagementLogger.ROOT_LOGGER.realmNotSupported(current);
+                } else if (current instanceof OptionalNameCallback) {
+                    // Do nothing as we don't want to set a name for local authentication.
                 } else if (current instanceof NameCallback) {
                     NameCallback ncb = (NameCallback) current;
                     ncb.setName(userName);

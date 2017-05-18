@@ -24,6 +24,8 @@ package org.jboss.as.remoting;
 
 import java.net.URI;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -69,4 +71,11 @@ public abstract class AbstractOutboundConnectionService {
      * @return the authentication configuration
      */
     public abstract AuthenticationConfiguration getAuthenticationConfiguration();
+
+    /**
+     * Get the connection SSL Context.
+     *
+     * @return the SSL context
+     */
+    public abstract SSLContext getSSLContext();
 }

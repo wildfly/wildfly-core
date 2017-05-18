@@ -27,6 +27,9 @@ interface ElytronDescriptionConstants {
 
     String ACTION = "action";
     String ACTIVE_SESSION_COUNT = "active-session-count";
+    String ADD_IDENTITY = "add-identity";
+    String ADD_IDENTITY_ATTRIBUTE = "add-identity-attribute";
+    String ADD_ALIAS = "add-alias";
     String ADD_ATTRIBUTE = "add-attribute";
     String ADD_PREFIX_ROLE_MAPPER = "add-prefix-role-mapper";
     String ADD_SUFFIX_ROLE_MAPPER = "add-suffix-role-mapper";
@@ -192,6 +195,7 @@ interface ElytronDescriptionConstants {
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String INDEX = "index";
     String INFO = "info";
+    String INIT = "init";
     String INITIAL = "initial";
     String INITIAL_PROVIDERS = "initial-providers";
     String INTROSPECTION_URL = "introspection-url";
@@ -359,10 +363,10 @@ interface ElytronDescriptionConstants {
     String REFERRAL_MODE = "referral-mode";
     String REGEX_PRINCIPAL_TRANSFORMER = "regex-principal-transformer";
     String REGEX_VALIDATING_PRINCIPAL_TRANSFORMER = "regex-validating-principal-transformer";
-    String REGISTER = "register";
     String RELATIVE_TO = "relative-to";
     String REMOVE_ALIAS = "remove-alias";
-    String REMOVE_ATTRIBUTE = "remove-attribute";
+    String REMOVE_IDENTITY = "remove-identity";
+    String REMOVE_IDENTITY_ATTRIBUTE = "remove-identity-attribute";
     String REPLACE_ALL = "replace-all";
     String REPLACEMENT = "replacement";
     String REQUEST_LIFETIME = "request-lifetime";
@@ -414,6 +418,7 @@ interface ElytronDescriptionConstants {
     String SERVER_SSL_CONTEXTS = "server-ssl-contexts";
     String SESSION_TIMEOUT = "session-timeout";
     String SET_PASSWORD = "set-password";
+    String SET_SECRET = "set-secret";
     String SERVICE = "service";
     String SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY = "service-loader-http-server-mechanism-factory";
     String SERVICE_LOADER_SASL_SERVER_FACTORY = "service-loader-sasl-server-factory";
