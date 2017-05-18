@@ -46,6 +46,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.repository.PathUtil;
 import org.jboss.as.test.manualmode.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.module.util.TestModule;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -97,7 +98,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
         // setup listener in server
         try {
             controller.startInAdminMode();
-            addListener(LISTENER_ADDRESS, TestListener.class.getPackage().getName(), null, null);
+            addListener(LISTENER_ADDRESS, TestListener.class.getPackage().getName(), null, TimeoutUtil.adjust(5));
         } finally {
             controller.stop();
         }
@@ -168,7 +169,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
 
             // try to add new listener with non-existing module
             try {
-                addListener(WRONG_MODULE_LISTENER_ADDRESS, "non.existing.module", null, null);
+                addListener(WRONG_MODULE_LISTENER_ADDRESS, "non.existing.module", null, TimeoutUtil.adjust(5));
                 fail("Command should fail");
             } catch (UnsuccessfulOperationException uoe) {
                 // expected
@@ -187,12 +188,12 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             controller.getClient().executeForResult(Util.createRemoveOperation(FAIL_STATE_CHANGED_MODULE_LISTENER_ADDRESS));
 
             // check log for NPE introduced by listener where both *stateChanged methods throws exception
-            assertLogContains("java.lang.NullPointerException: " + TestListener.FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
-            assertLogContains("java.lang.NullPointerException: " + TestListener.FAIL_RUNNING_STATE_CHANGED);
+            assertLogContains("org.wildfly.test.events.provider.ListenerFailureException: " + TestListener.FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
+            assertLogContains("org.wildfly.test.events.provider.ListenerFailureException: " + TestListener.FAIL_RUNNING_STATE_CHANGED);
 
-            controller.reload(true, 30 * 1000);
+            controller.reload(Server.StartMode.ADMIN_ONLY);
             controller.reload();
-            controller.reload(true, 30 * 1000);
+            controller.reload(Server.StartMode.ADMIN_ONLY);
         } finally {
             controller.stop();
         }
@@ -202,7 +203,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
         runtimeConfigChanges.add(STANDALONE_SERVER, ADMIN_ONLY, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
         // stop
         runtimeConfigChanges.add(STANDALONE_SERVER, ADMIN_ONLY, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
-        // start to admin_only
+        // start to admin_only to get failures
         runtimeConfigChanges.add(STANDALONE_SERVER, ADMIN_ONLY, Process.RuntimeConfigurationState.STARTING, Process.RuntimeConfigurationState.RUNNING);
         // reload to admin only
         runtimeConfigChanges.add(STANDALONE_SERVER, ADMIN_ONLY, Process.RuntimeConfigurationState.RUNNING, Process.RuntimeConfigurationState.STOPPING);
@@ -253,7 +254,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             controller.start();
             controller.stop();
             controller.start();
-            controller.reload(true, 30 * 1000);
+            controller.reload(Server.StartMode.ADMIN_ONLY);
             controller.reload();
             suspendServer();
             resumeServer();
@@ -453,7 +454,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             //MatcherAssert.assertThat(lines, Is.is(changes));
             for(int i = 0; i <lines.size(); i++) {
-                Assert.assertThat("Incorrect match at line " + i, lines.get(i), is(changes.get(i)));
+                Assert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
             }
         }
     }

@@ -302,8 +302,8 @@ public class ProcessStateListenerTestCase {
         public void verify() throws IOException {
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             //MatcherAssert.assertThat(lines, Is.is(changes));
-            for (int i = 0; i < lines.size(); i++) {
-                Assert.assertThat("Incorrect match at line " + i, lines.get(i), is(changes.get(i)));
+            for(int i = 0; i <lines.size(); i++) {
+                Assert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
             }
         }
     }

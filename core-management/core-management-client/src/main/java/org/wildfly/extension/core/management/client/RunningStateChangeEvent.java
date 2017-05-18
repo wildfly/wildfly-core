@@ -42,4 +42,9 @@ public class RunningStateChangeEvent {
         return newState;
     }
 
+    @Override
+    public String toString() {
+        return "RunningStateChangeEvent{" + "oldState=" + oldState + ", newState=" + newState + '}';
+    }
+
 }
