@@ -14,7 +14,7 @@
             <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
         </properties-realm>
 
-        <filesystem-realm name="FilesystemRealm" levels="2" case-sensitive="true">
+        <filesystem-realm name="FilesystemRealm" levels="2" case-sensitive="true" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
         </filesystem-realm>
 
