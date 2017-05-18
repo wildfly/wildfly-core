@@ -57,6 +57,7 @@ public class CachedDcDomainTestCase {
 
     private static final long TIMEOUT_S = TimeoutUtil.adjust(30);
     private static final long NOT_STARTED_TIMEOUT_S = TimeoutUtil.adjust(7);
+    private static final int TIMEOUT_SLEEP_MILLIS = 50;
 
     private static final String TEST_LOGGER_NAME = "org.jboss.test";
     private static final String DOMAIN_CACHED_REMOTE_XML_FILE_NAME = "domain.cached-remote.xml";
@@ -194,6 +195,22 @@ public class CachedDcDomainTestCase {
         domainManager.start();
         domainManager.getDomainSlaveLifecycleUtil().stop();
 
+        // WFCORE-2836
+        // this is a bit flaky in CI. It seems that the logger add below begins
+        // occasionally before the slave host unregisters completely, then when the
+        // slave unregisters the op is rolled back.
+        long deadline = System.currentTimeMillis() + 1000;
+        while (true) {
+            if (!domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted()) {
+                break;
+            }
+            if (System.currentTimeMillis() > deadline) {
+                break;
+            }
+            Thread.sleep(TIMEOUT_SLEEP_MILLIS);
+        }
+
+        Assert.assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
         domainManager.getDomainMasterLifecycleUtil()
             .executeForResult(getCreateOperationTestLoggingCategory());
         domainManager.stop();
@@ -406,16 +423,15 @@ public class CachedDcDomainTestCase {
     private <T> T runWithTimeout(long timeoutSeconds, Supplier<T> function) {
         final long timeoutTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutSeconds);
         while(true) {
-            long currentTime = System.currentTimeMillis();
             try {
                 return function.get();
             } catch (Throwable t) {
-                if(timeoutTime < currentTime) {
+                if(timeoutTime < System.currentTimeMillis()) {
                     throw new IllegalStateException("Function '" + function
                         + "' failed to process in " + timeoutSeconds + " s, caused: " + t.getMessage() , t);
                 }
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(TIMEOUT_SLEEP_MILLIS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
