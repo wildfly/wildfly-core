@@ -421,8 +421,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
                                                                  CapabilityRegistry registry) {
             Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
             ConcreteResourceRegistration resourceRegistration =
-                    new ConcreteResourceRegistration(null, null, resourceDefinition,
-                            constraintUtilizationRegistry, false, registry, processType);
+                    new ConcreteResourceRegistration(resourceDefinition, constraintUtilizationRegistry, registry, processType);
             resourceDefinition.registerAttributes(resourceRegistration);
             resourceDefinition.registerOperations(resourceRegistration);
             resourceDefinition.registerChildren(resourceRegistration);

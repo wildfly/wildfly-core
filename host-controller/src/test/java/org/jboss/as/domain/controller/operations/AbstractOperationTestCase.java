@@ -793,6 +793,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public ProcessType getProcessType() {
+            return ProcessType.HOST_CONTROLLER;
+        }
+
+        @Override
         public ManagementResourceRegistration getSubModel(PathAddress address) {
             return this;
         }

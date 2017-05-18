@@ -961,6 +961,11 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public ProcessType getProcessType() {
+            return ProcessType.STANDALONE_SERVER;
+        }
+
+        @Override
         public ImmutableManagementResourceRegistration getParent() {
             return null;
         }

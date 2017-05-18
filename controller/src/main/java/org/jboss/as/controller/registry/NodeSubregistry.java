@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -62,6 +63,7 @@ final class NodeSubregistry {
     private final ConcreteResourceRegistration parent;
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
     private final CapabilityRegistry capabilityRegistry;
+    private final ProcessType processType;
     @SuppressWarnings( { "unused" })
     private volatile Map<String, AbstractResourceRegistration> childRegistries;
 
@@ -72,6 +74,7 @@ final class NodeSubregistry {
         this.parent = parent;
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
+        this.processType = parent.getProcessType();
         childRegistriesUpdater.clear(this);
     }
 
@@ -91,7 +94,7 @@ final class NodeSubregistry {
         boolean ordered = provider.isOrderedChild();
 
         final ConcreteResourceRegistration newRegistry =
-                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry, parent.processType);
+                new ConcreteResourceRegistration(elementValue, this, provider, constraintUtilizationRegistry, ordered, capabilityRegistry);
 
         newRegistry.beginInitialization();
         try {
@@ -458,6 +461,10 @@ final class NodeSubregistry {
             }
         }
         return result;
+    }
+
+    ProcessType getProcessType() {
+        return processType;
     }
 
     /**

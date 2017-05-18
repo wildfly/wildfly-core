@@ -83,35 +83,41 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     private final Lock readLock;
     private final Lock writeLock;
-    /**
-     * Can be {@code null}. In that case, the MMR will always register metrics.
-     */
-    final ProcessType processType;
 
+    /** Constructor for a root MRR */
+    ConcreteResourceRegistration(final ResourceDefinition definition,
+                                 final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
+                                 final CapabilityRegistry capabilityRegistry,
+                                 final ProcessType processType) {
+        super(processType);
+        this.constraintUtilizationRegistry = constraintUtilizationRegistry;
+        this.capabilityRegistry = capabilityRegistry;
+        this.resourceDefinition = definition;
+        this.runtimeOnly = definition.isRuntime();
+        this.accessConstraintDefinitions = buildAccessConstraints();
+        this.ordered = false;
+        // For a root MRR we expect concurrent reads in critical performance code, i.e. boot
+        // So we use a read-write lock
+        ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+        this.readLock = rwLock.readLock();
+        this.writeLock = rwLock.writeLock();
+    }
+
+    /** Constructor for a non-root MRR */
     ConcreteResourceRegistration(final String valueString, final NodeSubregistry parent, final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                 final boolean ordered, CapabilityRegistry capabilityRegistry, ProcessType processType) {
+                                 final boolean ordered, CapabilityRegistry capabilityRegistry) {
         super(valueString, parent);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;
-        this.processType = processType;
         this.runtimeOnly = definition.isRuntime();
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
-        if (parent == null) {
-            // For a root MRR we expect concurrent reads in critical performance code, i.e. boot
-            // So we use a read-write lock
-            ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
-            this.readLock = rwLock.readLock();
-            this.writeLock = rwLock.writeLock();
-        } else {
-            // For non-root MRRs we don't expect much in the way of concurrent reads in performance
-            // critical situations, so we want lock/unlock to be as simple and fast as possible
-            // So we just use a single non-r/w lock for both reads and writes
-            this.readLock = this.writeLock = new ReentrantLock();
-        }
-
+        // For non-root MRRs we don't expect much in the way of concurrent reads in performance
+        // critical situations, so we want lock/unlock to be as simple and fast as possible
+        // So we just use a single non-r/w lock for both reads and writes
+        this.readLock = this.writeLock = new ReentrantLock();
     }
 
     void beginInitialization() {
@@ -480,9 +486,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
      * {@link AttributeAccess.Flag#RUNTIME_SERVICE_NOT_REQUIRED}, they are registered regardless of the process type.
      */
     private boolean isAttributeRegistrationAllowed(AttributeDefinition definition) {
-        if (processType ==  null) {
-            return true;
-        }
         boolean runtime = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
         if (!runtime) {
             return true;
@@ -491,7 +494,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (runtimeServiceNotRequired) {
             return true;
         }
-        return processType.isServer();
+        return getProcessType().isServer();
     }
 
     private void storeAttribute(AttributeDefinition definition, AttributeAccess aa) {

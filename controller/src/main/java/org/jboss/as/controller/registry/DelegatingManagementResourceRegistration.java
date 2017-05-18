@@ -32,6 +32,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -92,6 +93,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     @Override
     public PathAddress getPathAddress() {
         return getDelegate().getPathAddress();
+    }
+
+    @Override
+    public ProcessType getProcessType() {
+        return getDelegate().getProcessType();
     }
 
     @Override

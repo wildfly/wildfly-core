@@ -30,6 +30,7 @@ import java.util.Set;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
@@ -56,6 +57,12 @@ public interface ImmutableManagementResourceRegistration {
      * @return the address. Will not be {@code null}
      */
     PathAddress getPathAddress();
+
+    /**
+     * Gets the type of process in which this management resource type is registered.
+     * @return the process type. Will not return {@code null}
+     */
+    ProcessType getProcessType();
 
     /**
      * Gets the registration for this resource type's parent, if there is one.
