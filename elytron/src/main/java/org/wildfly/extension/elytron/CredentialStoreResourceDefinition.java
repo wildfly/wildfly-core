@@ -256,7 +256,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(RELOAD, CredentialStoreHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(READ_ALIASES, CredentialStoreHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(READ_ALIASES, CredentialStoreReadAliasesHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(ADD_ALIAS, CredentialStoreHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(REMOVE_ALIAS, CredentialStoreHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(SET_SECRET, CredentialStoreHandler.INSTANCE);
@@ -393,14 +393,6 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                     }
                     break;
 
-                case ElytronDescriptionConstants.READ_ALIASES:
-                    try {
-                        result.set(credentialStoreService.getValue().getAliases().stream().map(ModelNode::new).collect(Collectors.toList()));
-                    } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
-                    }
-                    break;
-
                 case ElytronDescriptionConstants.ADD_ALIAS:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
@@ -463,6 +455,23 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
                 default:
                     throw ROOT_LOGGER.invalidOperationName(operationName, ElytronDescriptionConstants.LOAD);
+            }
+        }
+    }
+
+    private static class CredentialStoreReadAliasesHandler extends CredentialStoreRuntimeOnlyHandler {
+        private static final CredentialStoreReadAliasesHandler INSTANCE = new CredentialStoreReadAliasesHandler();
+
+        private CredentialStoreReadAliasesHandler() {
+            super(true);
+        }
+
+        @Override
+        protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
+            try {
+                result.set(credentialStoreService.getValue().getAliases().stream().map(ModelNode::new).collect(Collectors.toList()));
+            } catch (CredentialStoreException e) {
+                throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
             }
         }
     }
