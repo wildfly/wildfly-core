@@ -95,6 +95,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -109,6 +110,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class ExtensionRegistry {
 
+    private static final int PARALLEL_BOOT_FACTOR;
     // Hack to restrict the extensions to which we expose ExtensionContextSupplement
     private static final Set<String> legallySupplemented;
     static {
@@ -116,6 +118,33 @@ public class ExtensionRegistry {
         set.add("org.jboss.as.jmx");
         set.add("Test");  // used by shared subsystem test fixture TestModelControllerService
         legallySupplemented = Collections.unmodifiableSet(set);
+
+        // This is configurable to allow experimentation by WildFly developers. It is not
+        // a supported configuration option and may be removed at any time.
+        // Value drives # of boot task chunks as a % of # of CPUs, so 100 means one per cpu.
+        //
+        // There will be a max of two threads in concurrent use per # of chunks.
+        // There will be 3 main categories of task chunks:
+        // 1) Extension initialization. This type will do a lot of classloading, and hence threads
+        //    being unscheduled waiting for IO is a factor. Concurrent loading of classes from the same
+        //    JBoss Modules modules may also be a factor. The number of tasks being concurrently executed
+        //    for this is currently 2X the number of chunks calculated.
+        // 2) Subsystem model stage execution. This should largely be non-blocking so a different number chunks running
+        //    than # of CPUs will be wasteful. OTOH, this category has the lowest overall perf impact so optimizing
+        //    for it is not the main place to focus.
+        // 3) Subsystem runtime stage execution. This will involve classloading of runtime classes used
+        //    by the subsystem (meaning threads may be unscheduled waiting for IO), but will also result in MSC tasks
+        //    being concurrently executed (meaning the CPUs have other work to do besides running these task chunks.)
+        int perCpu = 75;
+        String tasksPerCpu = System.getProperty("wildfly.unsupported.parallel.boot.factor");
+        if (tasksPerCpu != null) {
+            try {
+                perCpu = Math.max(0, Integer.parseInt(tasksPerCpu));
+            } catch (NumberFormatException ignored) {
+                //
+            }
+        }
+        PARALLEL_BOOT_FACTOR = perCpu;
     }
 
     private final ProcessType processType;
@@ -133,6 +162,7 @@ public class ExtensionRegistry {
     private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
+    private volatile int maxParallelBootTaskCount = -1;
 
     /**
      * Constructor
@@ -365,6 +395,7 @@ public class ExtensionRegistry {
             extensions.clear();
             reverseMap.clear();
             subsystemsInfo.clear();
+            maxParallelBootTaskCount = -1;
         }
     }
 
@@ -408,6 +439,14 @@ public class ExtensionRegistry {
 
     public TransformerRegistry getTransformerRegistry() {
         return transformerRegistry;
+    }
+
+    public int getMaxParallelBootTasks() {
+        if (maxParallelBootTaskCount < 0) {
+            maxParallelBootTaskCount = Math.max(0, ProcessorInfo.availableProcessors() * PARALLEL_BOOT_FACTOR / 100);
+            ControllerLogger.ROOT_LOGGER.debugf("maxParallelBootTaskCount is %d", maxParallelBootTaskCount);
+        }
+        return maxParallelBootTaskCount;
     }
 
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {

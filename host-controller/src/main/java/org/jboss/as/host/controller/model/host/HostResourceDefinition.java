@@ -393,7 +393,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         super.registerChildren(hostRegistration);
 
         //Extensions
-        hostRegistration.registerSubModel(new ExtensionResourceDefinition(hostExtensionRegistry, true,
+        hostRegistration.registerSubModel(new ExtensionResourceDefinition(hostExtensionRegistry,
+                hostExtensionRegistry.getMaxParallelBootTasks() > 1,
                 ExtensionRegistryType.HOST,
                 new MutableRootResourceRegistrationProvider() {
                     @Override
