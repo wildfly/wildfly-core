@@ -23,6 +23,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -69,16 +70,19 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
             .setMinSize(1)
             .setCapabilityReference(SECURITY_REALM_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition MAXIMUM_ENTRIES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_ENTRIES, ModelType.INT, true)
             .setDefaultValue(new ModelNode(16))
             .setMinSize(1)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition MAXIMUM_AGE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_AGE, ModelType.LONG, true)
             .setDefaultValue(new ModelNode(-1L))
             .setMinSize(1)
+            .setRestartAllServices()
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {REALM_NAME, MAXIMUM_ENTRIES, MAXIMUM_AGE};
@@ -97,7 +101,7 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        WriteAttributeHandler write = new WriteAttributeHandler(ElytronDescriptionConstants.CACHING_REALM);
+        AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition current : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, write);
         }
@@ -160,18 +164,6 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
             REALM_SERVICE_UTIL.addInjection(serviceBuilder, securityRealmInjector, realmServiceName);
         }
 
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler(final String key) {
-            super(key, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(SecurityRealm.class);
-        }
     }
 
     private static class ClearCacheHandler extends ElytronRuntimeOnlyHandler {

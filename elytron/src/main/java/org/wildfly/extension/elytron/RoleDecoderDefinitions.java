@@ -21,18 +21,15 @@ import static org.wildfly.extension.elytron.Capabilities.ROLE_DECODER_RUNTIME_CA
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
@@ -53,7 +50,7 @@ class RoleDecoderDefinitions {
     static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ATTRIBUTE, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static ResourceDefinition getSimpleRoleDecoderDefinition() {
@@ -76,7 +73,8 @@ class RoleDecoderDefinitions {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerReadWriteAttribute(ATTRIBUTE, null, new WriteAttributeHandler(ElytronDescriptionConstants.SIMPLE_ROLE_DECODER, ATTRIBUTE));
+            resourceRegistration.registerReadWriteAttribute(ATTRIBUTE, null,
+                    new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTE));
         }
 
     }
@@ -106,15 +104,4 @@ class RoleDecoderDefinitions {
 
     }
 
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler(String parentName, AttributeDefinition ... attributes) {
-            super(parentName, attributes);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return ROLE_DECODER_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(RoleDecoder.class);
-        }
-    }
 }

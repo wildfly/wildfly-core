@@ -119,13 +119,17 @@ public final class CredentialReference {
                 .setAllowExpression(true)
                 .setAlternatives(STORE)
                 .build();
-        credentialReferenceAD = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false, false).build();
+        credentialReferenceAD = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false, false)
+                .setRestartAllServices()
+                .build();
 
         credentialStoreAttributeWithCapabilityReference = new SimpleAttributeDefinitionBuilder(credentialStoreAttribute)
                 .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY)
                 .build();
 
-        credentialReferenceADWithCapabilityReference = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false, true).build();
+        credentialReferenceADWithCapabilityReference = getAttributeBuilder(CREDENTIAL_REFERENCE, CREDENTIAL_REFERENCE, false, true)
+                .setRestartAllServices()
+                .build();
     }
 
     private CredentialReference() {

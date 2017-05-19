@@ -33,11 +33,11 @@ import java.util.HashSet;
 import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -64,10 +64,12 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ClassLoadingAttributeDefinitions.MODULE)
         .setRequired(true)
+        .setRestartAllServices()
         .build();
 
     static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
         .setAllowExpression(true)
+        .setRestartAllServices()
         .build();
 
     private final Class<T> serviceType;
@@ -99,7 +101,7 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        WriteAttributeHandler<T> writeHandler = new WriteAttributeHandler<T>(serviceType, runtimeCapabilities[0], pathKey);
+        AbstractWriteAttributeHandler writeHandler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition current : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, writeHandler);
         }
@@ -181,24 +183,6 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
                 throw new StartException(e);
             }
         }
-    }
-
-    private static class WriteAttributeHandler<T> extends ElytronRestartParentWriteAttributeHandler {
-
-        private final RuntimeCapability<?> runtimeCapability;
-        private final Class<T> serviceType;
-
-        WriteAttributeHandler(Class<T> serviceType, RuntimeCapability<?> runtimeCapability, String pathKey) {
-            super(pathKey, ATTRIBUTES);
-            this.serviceType = serviceType;
-            this.runtimeCapability = runtimeCapability;
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return runtimeCapability.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(serviceType);
-        }
-
     }
 
 }

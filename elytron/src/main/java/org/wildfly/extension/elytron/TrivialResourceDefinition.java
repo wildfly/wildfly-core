@@ -18,18 +18,15 @@
 package org.wildfly.extension.elytron;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.msc.service.ServiceName;
 
 /**
  * A trivial {@link ResourceDefinition}
@@ -63,25 +60,11 @@ class TrivialResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
          if (attributes != null && attributes.length > 0) {
-             WriteAttributeHandler restartParentWriteHandler = new WriteAttributeHandler(pathKey, attributes);
-             ReloadRequiredWriteAttributeHandler reloadRequiredWriteHandler = new ReloadRequiredWriteAttributeHandler(attributes);
+             AbstractWriteAttributeHandler writeHandler = new ElytronReloadRequiredWriteAttributeHandler(attributes);
              for (AttributeDefinition current : attributes) {
-                 boolean restartAll = current.getFlags().contains(AttributeAccess.Flag.RESTART_ALL_SERVICES);
-                 resourceRegistration.registerReadWriteAttribute(current, null, restartAll ? reloadRequiredWriteHandler : restartParentWriteHandler);
+                 resourceRegistration.registerReadWriteAttribute(current, null, writeHandler);
              }
          }
-    }
-
-    private class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler(String parentName, AttributeDefinition ... attributes) {
-            super(parentName, attributes);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return firstCapability.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName();
-        }
     }
 
 }

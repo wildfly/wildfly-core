@@ -44,7 +44,6 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -56,7 +55,6 @@ import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.inject.InjectionException;
@@ -465,6 +463,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         static final ObjectListAttributeDefinition PRINCIPAL_QUERIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
+                .setRestartAllServices()
                 .build();
     }
 
@@ -472,7 +471,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
-    private static final OperationStepHandler WRITE = new WriteAttributeHandler();
+    private static final OperationStepHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
 
     JdbcRealmDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.JDBC_REALM))
@@ -552,24 +551,6 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             }
 
             return attributeMappers.toArray(new AttributeMapper[attributeMappers.size()]);
-        }
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.JDBC_REALM, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(SecurityRealm.class);
-        }
-
-        @Override
-        protected void validateUpdatedModel(OperationContext context, Resource model) throws OperationFailedException {
-            ModelNode principalQuery = model.getModel().get(ElytronDescriptionConstants.PRINCIPAL_QUERY).get(0);
-            resolveKeyMappers(context, principalQuery);
         }
     }
 

@@ -29,11 +29,11 @@ import java.nio.file.Path;
 import java.security.KeyStore;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -67,17 +67,20 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
                     .setAttributeGroup(ElytronDescriptionConstants.FILE)
                     .setRequired(true)
+                    .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
                     .setAttributeGroup(ElytronDescriptionConstants.FILE)
+                    .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition LEVELS =
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEVELS, ModelType.INT, true)
                     .setDefaultValue(new ModelNode(2))
                     .setAllowExpression(true)
+                    .setRestartAllServices()
                     .build();
 
     static final SimpleAttributeDefinition ENCODED =
@@ -103,7 +106,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new WriteAttributeHandler();
+        AbstractWriteAttributeHandler handler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attr : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(attr, null, handler);
         }
@@ -173,16 +176,4 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
     }
 
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.FILESYSTEM_REALM, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            final String name = parentAddress.getLastElement().getValue();
-            return MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(name).getCapabilityServiceName();
-        }
-    }
 }

@@ -23,12 +23,10 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -88,11 +86,12 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
             .setMinSize(2)
             .setRequired(true)
             .setCapabilityReference(capabilityName, capabilityName, true)
+            .setRestartAllServices()
             .build();
 
         AbstractAddStepHandler add = new AggregateComponentAddHandler<T>(aggregationType, aggregator, aggregateReferences, runtimeCapability, dependOnProviderRegistration);
         OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapability);
-        OperationStepHandler write = new WriteAttributeHandler<T>(aggregationType, runtimeCapability, componentName, aggregateReferences);
+        OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(aggregateReferences);
 
         return new AggregateComponentDefinition<T>(aggregationType, componentName, add, remove, aggregateReferences, write, runtimeCapability);
     }
@@ -140,25 +139,6 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
             commonDependencies(serviceBuilder, true, dependOnProviderRegistration)
                 .setInitialMode(Mode.LAZY)
                 .install();
-        }
-
-    }
-
-    private static class WriteAttributeHandler<T> extends ElytronRestartParentWriteAttributeHandler {
-
-        private final Class<T> serviceType;
-        private final RuntimeCapability<?> runtimeCapability;
-
-
-        WriteAttributeHandler(Class<T> serviceType, RuntimeCapability<?> runtimeCapability, String pathKey, AttributeDefinition attribute) {
-            super(pathKey, attribute);
-            this.serviceType = serviceType;
-            this.runtimeCapability = runtimeCapability;
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return runtimeCapability.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(serviceType);
         }
 
     }
