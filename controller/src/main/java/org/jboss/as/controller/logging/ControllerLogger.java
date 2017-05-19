@@ -168,11 +168,11 @@ public interface ControllerLogger extends BasicLogger {
      * boot operations.
      *
      * @param cause the cause of the error.
-     * @param name  the name of subsystem.
+     * @param names  the names of subsystems.
      */
     @LogMessage(level = ERROR)
-    @Message(id = 6, value = "Failed executing subsystem %s boot operations")
-    void failedSubsystemBootOperations(@Cause Throwable cause, String name);
+    @Message(id = 6, value = "Failed executing subsystem boot operations for %s")
+    void failedSubsystemBootOperations(@Cause Throwable cause, Set<String> names);
 
     /**
      * Logs an error message indicating to failure to close the resource represented by the {@code closeable} parameter.
@@ -2186,20 +2186,21 @@ public interface ControllerLogger extends BasicLogger {
      * A message indicating the boot operations for the subsystem, represented by the {@code name} parameter, failed
      * without explanation.
      *
-     * @param name the name of the subsystem.
+     * @param names the names of the subsystems.
      *
      * @return the message.
      */
-    @Message(id = 192, value = "Boot operations for subsystem %s failed without explanation")
-    String subsystemBootOperationFailed(String name);
+    @Message(id = 192, value = "Boot operations for subsystems %s failed without explanation")
+    String subsystemBootOperationFailed(Set<String> names);
 
     /**
      * A message indicating a failure executing subsystem boot operations.
      *
+     * @param names the names of the subsystems
      * @return the message.
      */
-    @Message(id = 193, value = "Failed executing subsystem %s boot operations")
-    String subsystemBootOperationFailedExecuting(String name);
+    @Message(id = 193, value = "Failed executing subsystem boot operations for %s")
+    String subsystemBootOperationFailedExecuting(Set<String> names);
 
     /**
      * Creates an exception indicating the table is full.

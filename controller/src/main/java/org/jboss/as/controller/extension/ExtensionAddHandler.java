@@ -54,7 +54,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
     /**
      * Create the AbstractAddExtensionHandler
      * @param extensionRegistry registry for extensions
-     * @param parallelBoot {@code true} is parallel initialization of extensions is in progress; {@code false} if not
+     * @param parallelBoot {@code true} if parallel initialization of extensions during boot is possible; {@code false} if not
      * @param extensionRegistryType {@code true} if this handler will execute in a master HostController
      * @param rootResourceRegistrationProvider provides access to the root {@code ManagementResourceRegistration}
      */

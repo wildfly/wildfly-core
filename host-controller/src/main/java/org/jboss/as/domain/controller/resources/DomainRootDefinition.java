@@ -348,7 +348,8 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
 
         // Extensions
         ExtensionRegistryType registryType = isMaster ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
-        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, true, registryType, rootResourceRegistrationProvider));
+        resourceRegistration.registerSubModel(new ExtensionResourceDefinition(extensionRegistry, extensionRegistry.getMaxParallelBootExtensionTasks() > 1,
+                registryType, rootResourceRegistrationProvider));
 
         // Domain configured host-ignored resources
         resourceRegistration.registerSubModel(new HostExcludeResourceDefinition(domainHostExcludeRegistry));
