@@ -18,39 +18,25 @@
 
 package org.jboss.as.test.manualmode.auditlog;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
+
 import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.test.categories.CommonCriteria;
-import org.jboss.as.test.integration.auditlog.AuditLogToSyslogSetup;
 import org.jboss.as.test.integration.auditlog.AuditLogToUDPSyslogSetup;
-import org.jboss.as.test.integration.security.common.CoreUtils;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.as.test.syslogserver.BlockedSyslogServerEventHandler;
 import org.jboss.as.test.syslogserver.Rfc5424SyslogEvent;
@@ -76,23 +62,64 @@ import org.xnio.IoUtils;
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
-public class AuditLogFieldsOfLogTestCase {
+public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase {
 
     private final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
-
+    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
     private static final AuditLogToUDPSyslogSetup SYSLOG_SETUP = new AuditLogToUDPSyslogSetup();
-    private final Pattern DATE_STAMP_PATTERN = Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d - \\{");
+    private final PathAddress auditLogConfigAddress = PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT,
+            AccessAuditResourceDefinition.PATH_ELEMENT, AuditLogLoggerResourceDefinition.PATH_ELEMENT);
 
     @Inject
     private ServerController container;
 
-    private File file;
+    @Before
+    public void beforeTest() throws Exception {
+        Files.deleteIfExists(FILE);
 
-    private PathAddress auditLogConfigAddress;
-    private PathAddress mgmtRealmConfigAddress;
-    private PathAddress syslogHandlerAddress;
-    private PathAddress addSyslogHandler;
-    private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+        container.start();
+        final ModelControllerClient client = container.getClient().getControllerClient();
+
+        SYSLOG_SETUP.setup(container.getClient());
+
+        final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
+
+        configureUser(client, compositeOp);
+
+        // Don't log boot operations by default
+        compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(false)));
+        compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
+                new ModelNode(true)));
+
+        executeForSuccess(client, compositeOp.build());
+
+        ServerReload.executeReloadAndWaitForCompletion(client);
+    }
+
+    @After
+    public void afterTest() throws Exception {
+        SYSLOG_SETUP.tearDown(container.getClient());
+        final ModelControllerClient client = container.getClient().getControllerClient();
+        final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
+
+        compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
+                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
+
+        resetUser(compositeOp);
+
+        try {
+            executeForSuccess(client, compositeOp.build());
+        } finally {
+            try {
+                // Stop the container
+                container.stop();
+            } finally {
+                IoUtils.safeClose(client);
+                Files.deleteIfExists(FILE);
+            }
+        }
+    }
 
     /**
      * @test.objective Test whether fields in Audit Log have right content
@@ -100,11 +127,6 @@ public class AuditLogFieldsOfLogTestCase {
      */
     @Test
     public void testAuditLoggingFields() throws Exception {
-        container.start();
-        if (file.exists()) {
-            file.delete();
-        }
-
         queue.clear();
         SyslogServerEventIF syslogEvent = null;
 
@@ -118,7 +140,7 @@ public class AuditLogFieldsOfLogTestCase {
         message = DATE_STAMP_PATTERN.matcher(message).replaceFirst("{");
         ModelNode syslogNode = ModelNode.fromJSONString(message);
         checkLog("Syslog", syslogNode);
-        List<ModelNode> logs = readFile(file, 1);
+        List<ModelNode> logs = readFile(1);
         ModelNode log = logs.get(0);
         checkLog("File", log);
     }
@@ -142,99 +164,6 @@ public class AuditLogFieldsOfLogTestCase {
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress,
                 AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(true));
         ModelNode result = container.getClient().getControllerClient().execute(op);
-        return SUCCESS.equals(result.get(OUTCOME).asString());
+        return Operations.isSuccessfulOutcome(result);
     }
-
-    @Before
-    public void beforeTest() throws Exception {
-        file = new File(System.getProperty("jboss.home"));
-        file = new File(file, "standalone");
-        file = new File(file, "data");
-        file = new File(file, "audit-log.log");
-        if (file.exists()) {
-            file.delete();
-        }
-
-        container.start();
-        final ModelControllerClient client = container.getClient().getControllerClient();
-
-        ModelNode op;
-        ModelNode result;
-
-        mgmtRealmConfigAddress = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
-                PathElement.pathElement(SECURITY_REALM, "ManagementRealm"), PathElement.pathElement(AUTHENTICATION, LOCAL));
-        op = Util.getWriteAttributeOperation(mgmtRealmConfigAddress, "default-user", new ModelNode("IAmAdmin"));
-        result = client.execute(op);
-
-        auditLogConfigAddress = PathAddress.pathAddress(CoreManagementResourceDefinition.PATH_ELEMENT,
-                AccessAuditResourceDefinition.PATH_ELEMENT, AuditLogLoggerResourceDefinition.PATH_ELEMENT);
-
-        op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true));
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
-
-        SYSLOG_SETUP.setup(container.getClient());
-
-        op = Util.getWriteAttributeOperation(AuditLogToSyslogSetup.AUDIT_LOG_LOGGER_ADDR, ENABLED, true);
-        CoreUtils.applyUpdate(op, client);
-
-        container.stop();
-    }
-
-    @After
-    public void afterTest() throws Exception {
-        SYSLOG_SETUP.tearDown(container.getClient());
-        final ModelControllerClient client = container.getClient().getControllerClient();
-
-        ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false));
-        client.execute(op);
-        op = Util.getWriteAttributeOperation(mgmtRealmConfigAddress, "default-user", new ModelNode("$local"));
-        client.execute(op);
-
-        op = Util.getResourceRemoveOperation(addSyslogHandler);
-        client.execute(op);
-        op = Util.getResourceRemoveOperation(syslogHandlerAddress);
-        client.execute(op);
-
-        if (file.exists()) {
-            file.delete();
-        }
-        try {
-            // Stop the container
-            container.stop();
-        } finally {
-            IoUtils.safeClose(client);
-        }
-    }
-
-    protected List<ModelNode> readFile(File file, int expectedRecords) throws IOException {
-        List<ModelNode> list = new ArrayList<>();
-        final BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8);
-        try {
-            StringWriter writer = null;
-            String line = reader.readLine();
-            while (line != null) {
-                if (DATE_STAMP_PATTERN.matcher(line).find()) {
-                    if (writer != null) {
-                        list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
-                    }
-                    writer = new StringWriter();
-                    writer.append("{");
-                } else {
-                    if (writer != null) { writer.append("\n" + line); }
-                }
-                line = reader.readLine();
-            }
-            if (writer != null) {
-                list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
-            }
-        } finally {
-            IoUtils.safeClose(reader);
-        }
-        Assert.assertEquals(list.toString(), expectedRecords, list.size());
-        return list;
-    }
-
 }

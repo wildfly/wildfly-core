@@ -21,16 +21,22 @@
  */
 package org.jboss.as.test.manualmode.management.cli;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import javax.inject.Inject;
+
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,6 +54,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerControl(manual = true)
 public class RemoveManagementRealmTestCase {
 
+    private String removeLocalAuthCommand = "/core-service=management/security-realm=ManagementRealm/authentication=local:remove";
+
     @Inject
     private ServerController container;
 
@@ -63,6 +71,24 @@ public class RemoveManagementRealmTestCase {
         source = Paths.get(jbossDist, "standalone", "configuration", "standalone.xml");
         target = Paths.get(temporaryUserHome.getRoot().getAbsolutePath(), "standalone.xml");
         Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+
+        // Determine the command to use
+        final ModelControllerClient client = container.getClient().getControllerClient();
+        ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("core-service", "management", "management-interface", "http-interface"));
+        ModelNode result = client.execute(op);
+        if (Operations.isSuccessfulOutcome(result)) {
+            result = Operations.readResult(result);
+            if (result.hasDefined("http-upgrade")) {
+                final ModelNode httpUpgrade = result.get("http-upgrade");
+                if (httpUpgrade.hasDefined("sasl-authentication-factory")) {
+                    // We could query this further to get the actual name of the configurable-sasl-server-factory. Since this
+                    // is a test we're making some assumptions to limit the number of query calls made to the server.
+                    removeLocalAuthCommand = "/subsystem=elytron/configurable-sasl-server-factory=configured:map-remove(name=properties, key=wildfly.sasl.local-user.default-user)";
+                }
+            }
+        } else {
+            fail(Operations.getFailureDescription(result).asString());
+        }
     }
 
     @After
@@ -84,7 +110,7 @@ public class RemoveManagementRealmTestCase {
                 addCliArgument("--connect");
         cli.executeInteractive();
         cli.clearOutput();
-        cli.pushLineAndWaitForResults("/core-service=management/security-realm=ManagementRealm/authentication=local:remove");
+        cli.pushLineAndWaitForResults(removeLocalAuthCommand);
         cmdAndCtrlC("reload", cli);
     }
 
@@ -115,7 +141,7 @@ public class RemoveManagementRealmTestCase {
         cli2.executeInteractive();
         cli2.clearOutput();
 
-        cli1.pushLineAndWaitForResults("/core-service=management/security-realm=ManagementRealm/authentication=local:remove");
+        cli1.pushLineAndWaitForResults(removeLocalAuthCommand);
         cmdAndCtrlC("reload", cli1);
 
         // Send ls from cli2.

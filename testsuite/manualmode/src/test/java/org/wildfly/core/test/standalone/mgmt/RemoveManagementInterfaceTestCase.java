@@ -34,9 +34,11 @@ import javax.inject.Inject;
 import org.hamcrest.CoreMatchers;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.categories.CommonCriteria;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -65,6 +67,9 @@ public class RemoveManagementInterfaceTestCase {
 
     @Inject
     protected static ServerController controller;
+
+    private static String securityRealm = "ManagementRealm";
+    private static String saslAuthFactory = null;
 
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
@@ -120,9 +125,26 @@ public class RemoveManagementInterfaceTestCase {
         operation.get("interface").set("management");
         CoreUtils.applyUpdate(operation, client);
 
+        // Determine the we should be using a security-realm or SASL
+        ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("core-service", "management", "management-interface", "http-interface"));
+        ModelNode result = ManagementOperations.executeOperation(client, op);
+        if (result.hasDefined("security-realm")) {
+            securityRealm = result.get("security-realm").asString();
+        } else if (result.hasDefined("http-upgrade")) {
+            final ModelNode httpUpgrade = result.get("http-upgrade");
+            if (httpUpgrade.hasDefined("sasl-authentication-factory")) {
+                saslAuthFactory = httpUpgrade.get("sasl-authentication-factory").asString();
+            }
+        }
+
         // create native interface to control server while http interface will be removed
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
-        operation.get("security-realm").set("ManagementRealm");
+
+        if (saslAuthFactory != null) {
+            operation.get("sasl-authentication-factory").set(saslAuthFactory);
+        } else {
+            operation.get("security-realm").set(securityRealm);
+        }
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
     }
@@ -143,9 +165,15 @@ public class RemoveManagementInterfaceTestCase {
         if (response.hasDefined(OUTCOME) && FAILED.equals(response.get(OUTCOME).asString())) {
             // create http interface to control server
             operation = createOpNode("core-service=management/management-interface=http-interface", ModelDescriptionConstants.ADD);
-            operation.get("security-realm").set("ManagementRealm");
+            final ModelNode httpUpgrade = new ModelNode().setEmptyObject();
+            httpUpgrade.get("enabled").set(true);
+            if (saslAuthFactory != null) {
+                httpUpgrade.get("sasl-authentication-factory").set(saslAuthFactory);
+            } else {
+                operation.get("security-realm").set(securityRealm);
+            }
             operation.get("socket-binding").set("management-http");
-            operation.get("http-upgrade-enabled").set(true);
+            operation.get("http-upgrade").set(httpUpgrade);
             CoreUtils.applyUpdate(operation, client);
         }
         // To recreate http interface, a reload of server is required

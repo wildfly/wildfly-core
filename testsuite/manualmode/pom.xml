@@ -239,6 +239,16 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- This should be removed once all JIRA's are solved -->
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <!-- WFCORE-2860 -->
+                                <exclude>**/ReloadRedirectTestCase.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.wildfly.plugins</groupId>
                         <artifactId>wildfly-maven-plugin</artifactId>
