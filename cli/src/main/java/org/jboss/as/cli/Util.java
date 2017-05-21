@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.CharacterCodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -207,6 +208,8 @@ public class Util {
     public static final String DESCRIPTION_RESPONSE = "DESCRIPTION_RESPONSE";
 
     public static final String NOT_OPERATOR = "!";
+
+    private static final String ENCODING_EXCEPTION_MESSAGE = "Encoding exception.";
 
     private static Logger LOG = Logger.getLogger(Util.class);
 
@@ -1215,7 +1218,7 @@ public class Util {
         return request;
     }
 
-    public static String getMessagesFromThrowable(Throwable t){
+    public static String getMessagesFromThrowable(Throwable t) {
         final StringBuilder buf = new StringBuilder();
 
         if (t.getLocalizedMessage() != null) {
@@ -1224,12 +1227,22 @@ public class Util {
             buf.append(t.getClass().getName());
         }
 
+        boolean encodingSeen = false;
+        if (t instanceof CharacterCodingException) {
+            encodingSeen = true;
+            buf.append(": " + ENCODING_EXCEPTION_MESSAGE);
+        }
+
         Throwable t1 = t.getCause();
         while (t1 != null) {
             if (t1.getLocalizedMessage() != null) {
                 buf.append(": ").append(t1.getLocalizedMessage());
             } else {
                 buf.append(": ").append(t1.getClass().getName());
+            }
+            if (!encodingSeen && t1 instanceof CharacterCodingException) {
+                encodingSeen = true;
+                buf.append(": " + ENCODING_EXCEPTION_MESSAGE);
             }
             t1 = t1.getCause();
         }

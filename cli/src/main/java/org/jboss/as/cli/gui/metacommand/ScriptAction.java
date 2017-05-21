@@ -19,12 +19,12 @@
 package org.jboss.as.cli.gui.metacommand;
 
 import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
+import java.io.FileReader;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
@@ -84,11 +84,17 @@ public abstract class ScriptAction extends AbstractAction {
 
     // read the file as a list of text lines
     private List<String> getCommandLines(File file) {
-        try {
-            return Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line = reader.readLine();
+            while (line != null) {
+                lines.add(line);
+                line = reader.readLine();
+            }
+        } catch (Throwable e) {
             throw new IllegalStateException("Failed to process file " + file.getAbsolutePath(), e);
         }
+        return lines;
     }
 
     // We need this class because we have to pass on whether or not a

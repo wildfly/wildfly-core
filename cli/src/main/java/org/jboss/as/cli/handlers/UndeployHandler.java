@@ -25,9 +25,8 @@ package org.jboss.as.cli.handlers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -350,9 +349,7 @@ public class UndeployHandler extends DeploymentHandler {
                     throw new CommandFormatException("ERROR: script '" + script + "' not found in archive '" + f.getAbsolutePath() + "'.");
                 }
 
-                BufferedReader reader = null;
-                try {
-                    reader = Files.newBufferedReader(scriptFile.toPath(), StandardCharsets.UTF_8);
+                try (BufferedReader reader = new BufferedReader(new FileReader(scriptFile))) {
                     String line = reader.readLine();
                     while (!ctx.isTerminated() && line != null) {
                         ctx.handle(line);
@@ -364,13 +361,6 @@ public class UndeployHandler extends DeploymentHandler {
                     throw new CommandFormatException("Failed to read the next command from " + scriptFile.getName() + ": " + e.getMessage(), e);
                 } catch (CommandLineException e) {
                     throw new CommandFormatException(e.getMessage(), e);
-                } finally {
-                    if(reader != null) {
-                        try {
-                            reader.close();
-                        } catch (IOException e) {
-                        }
-                    }
                 }
 
                 return ctx.getBatchManager().getActiveBatch().toRequest();
