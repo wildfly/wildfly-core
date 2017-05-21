@@ -124,8 +124,13 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
     protected static class ShowInMemoryLogsHandler extends AbstractRuntimeOnlyHandler {
         private final ManagedAuditLogger auditLogger;
 
-        public ShowInMemoryLogsHandler(ManagedAuditLogger auditLogger) {
+        ShowInMemoryLogsHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
+        }
+
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
         }
 
         @Override

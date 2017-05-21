@@ -120,8 +120,13 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
     private static class HandlerRuntimeAttributeHandler extends AbstractRuntimeOnlyHandler {
         private final ManagedAuditLogger auditLogger;
 
-        public HandlerRuntimeAttributeHandler(ManagedAuditLogger auditLogger) {
+        HandlerRuntimeAttributeHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
+        }
+
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
         }
 
         @Override
@@ -139,8 +144,13 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
     private static class HandlerRecycleHandler extends AbstractRuntimeOnlyHandler {
         private final ManagedAuditLogger auditLogger;
 
-        public HandlerRecycleHandler(ManagedAuditLogger auditLogger) {
+        HandlerRecycleHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
+        }
+
+        @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
         }
 
         @Override
@@ -152,7 +162,7 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
     static class HandlerRemoveHandler extends AbstractRemoveStepHandler {
         private final ManagedAuditLogger auditLogger;
 
-        public HandlerRemoveHandler(ManagedAuditLogger auditLogger) {
+        HandlerRemoveHandler(ManagedAuditLogger auditLogger) {
             this.auditLogger = auditLogger;
         }
 
@@ -176,7 +186,7 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
         final ManagedAuditLogger auditLogger;
         final PathManagerService pathManager;
 
-        public HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
+        HandlerWriteAttributeHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition... attributeDefinitions) {
             super(attributeDefinitions);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;

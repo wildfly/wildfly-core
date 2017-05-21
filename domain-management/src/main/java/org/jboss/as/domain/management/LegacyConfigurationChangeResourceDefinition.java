@@ -201,6 +201,11 @@ public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceD
         }
 
         @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
+        }
+
+        @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
             if (collector != null) {
                 ModelNode result = context.getResult().setEmptyList();
