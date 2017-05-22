@@ -4182,7 +4182,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cipher-suite-filter" type="xs:string" use="optional">
+        <xs:attribute name="cipher-suite-filter" type="xs:string" use="optional" default="DEFAULT">
             <xs:annotation>
                 <xs:documentation>
                     The filter to be applied to the cipher suites made available by this SSLContext.
@@ -4310,7 +4310,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cipher-suite-filter" type="xs:string" use="optional">
+        <xs:attribute name="cipher-suite-filter" type="xs:string" use="optional" default="DEFAULT">
             <xs:annotation>
                 <xs:documentation>
                     The filter to be applied to the cipher suites made available by this SSLContext.
