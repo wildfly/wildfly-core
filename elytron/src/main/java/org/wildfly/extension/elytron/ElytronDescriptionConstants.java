@@ -391,6 +391,7 @@ interface ElytronDescriptionConstants {
     String SALTED_SIMPLE_DIGEST_MAPPER = "salted-simple-digest-mapper";
     String SASL = "sasl";
     String SASL_AUTHENTICATION_FACTORY = "sasl-authentication-factory";
+    String SASL_MECHANISM_SELECTOR = "sasl-mechanism-selector";
     String SASL_SERVER_FACTORIES = "sasl-server-factories";
     String SASL_SERVER_FACTORY = "sasl-server-factory";
     String SCRAM_MAPPER = "scram-mapper";

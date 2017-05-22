@@ -247,6 +247,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name = "sasl-mechanism-selector" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The SASL mechanism selector string.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="kerberos-security-factory" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
