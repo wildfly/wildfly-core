@@ -166,6 +166,7 @@ class SSLDefinitions {
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setValidator(new CipherSuiteFilterValidator())
+            .setDefaultValue(new ModelNode("DEFAULT"))
             .build();
 
     static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
