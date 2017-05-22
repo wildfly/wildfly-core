@@ -30,12 +30,12 @@ import java.util.Properties;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -44,7 +44,6 @@ import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.EnumValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.security.CredentialReference;
@@ -78,19 +77,19 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.URL, ModelType.STRING, false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_LEVEL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_LEVEL, ModelType.STRING, true)
             .setDefaultValue(new ModelNode("simple"))
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PRINCIPAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE =
@@ -101,7 +100,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition ENABLE_CONNECTION_POOLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLE_CONNECTION_POOLING, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition REFERRAL_MODE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REFERRAL_MODE, ModelType.STRING, true)
@@ -109,42 +108,43 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .setAllowedValues(ReferralMode.FOLLOW.name(), ReferralMode.IGNORE.name(), ReferralMode.THROW.name())
             .setValidator(EnumValidator.create(ReferralMode.class, true, true))
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
             .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE, ElytronDescriptionConstants.SSL_CONTEXT,ElytronDescriptionConstants.PRINCIPAL)
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
             .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT)
             .build();
 
     static final SimpleAttributeDefinition CONNECTION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONNECTION_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition READ_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.READ_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, ModelType.STRING, true)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setRestartAllServices()
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {URL, AUTHENTICATION_LEVEL, PRINCIPAL, CREDENTIAL_REFERENCE, ENABLE_CONNECTION_POOLING, REFERRAL_MODE, AUTHENTICATION_CONTEXT, SSL_CONTEXT, CONNECTION_TIMEOUT, READ_TIMEOUT, PROPERTIES,MODULE};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {URL, AUTHENTICATION_LEVEL, PRINCIPAL, CREDENTIAL_REFERENCE, ENABLE_CONNECTION_POOLING, REFERRAL_MODE, AUTHENTICATION_CONTEXT, SSL_CONTEXT, CONNECTION_TIMEOUT, READ_TIMEOUT, PROPERTIES, MODULE};
 
     DirContextDefinition() {
         super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.DIR_CONTEXT))
@@ -157,7 +157,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new WriteAttributeHandler();
+        AbstractWriteAttributeHandler handler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition current : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, handler);
         }
@@ -269,17 +269,4 @@ class DirContextDefinition extends SimpleResourceDefinition {
     };
 
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, DIR_CONTEXT_RUNTIME_CAPABILITY);
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.DIR_CONTEXT, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            final String name = parentAddress.getLastElement().getValue();
-            return DIR_CONTEXT_RUNTIME_CAPABILITY.fromBaseCapability(name).getCapabilityServiceName();
-        }
-    }
 }

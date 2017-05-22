@@ -36,18 +36,21 @@ class ClassLoadingAttributeDefinitions {
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(false)
         .setMinSize(1)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition CLASS_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLASS_NAME, ModelType.STRING, false)
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(false)
         .setMinSize(1)
+        .setRestartAllServices()
         .build();
 
     static final StringListAttributeDefinition CLASS_NAMES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.CLASS_NAMES)
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(false)
         .setRequired(false)
+        .setRestartAllServices()
         .build();
 
     static ClassLoader resolveClassLoader(String module) throws ModuleLoadException {

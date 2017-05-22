@@ -54,7 +54,6 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -88,11 +87,11 @@ import org.wildfly.security.auth.server.SecurityRealm;
 class TokenRealmDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition PRINCIPAL_CLAIM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_CLAIM, ModelType.STRING, true)
-                                                                     .setDefaultValue(new ModelNode("username"))
-                                                                     .setAllowExpression(true)
-                                                                     .setMinSize(1)
-                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                     .build();
+            .setDefaultValue(new ModelNode("username"))
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
 
     static class JwtValidatorAttributes {
 
@@ -135,9 +134,9 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{ISSUER, AUDIENCE, PUBLIC_KEY};
 
         static final ObjectTypeAttributeDefinition JWT_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(JWT, ISSUER, AUDIENCE, PUBLIC_KEY, KEY_STORE, CERTIFICATE)
-                                                                           .setRequired(false)
-                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                           .build();
+                .setRequired(false)
+                .setRestartAllServices()
+                .build();
     }
 
     static class OAuth2IntrospectionValidatorAttributes {
@@ -178,7 +177,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
         static final ObjectTypeAttributeDefinition OAUTH2_INTROSPECTION_VALIDATOR = new ObjectTypeAttributeDefinition.Builder(OAUTH2_INTROSPECTION, CLIENT_ID, CLIENT_SECRET, INTROSPECTION_URL, SSL_CONTEXT, HOSTNAME_VERIFICATION_POLICY)
                 .setRequired(false)
-                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setRestartAllServices()
                 .build();
 
         enum HostnameVerificationPolicy {
@@ -213,7 +212,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler handler = new WriteAttributeHandler();
+        OperationStepHandler handler = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition attr : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(attr, null, handler);
         }
@@ -354,19 +353,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 return response;
             }
             return null;
-        }
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.TOKEN_REALM, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress parentAddress) {
-            final String name = parentAddress.getLastElement().getValue();
-            return MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(name).getCapabilityServiceName();
         }
     }
 

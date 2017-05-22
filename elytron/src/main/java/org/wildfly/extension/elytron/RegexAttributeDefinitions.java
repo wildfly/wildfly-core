@@ -25,7 +25,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -37,17 +36,17 @@ import org.jboss.dmr.ModelType;
 class RegexAttributeDefinitions {
 
     static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN, ModelType.STRING, false)
-        .setAllowExpression(true)
-        .setValidator(new RexExValidator())
-        .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-        .build();
+            .setAllowExpression(true)
+            .setValidator(new RexExValidator())
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
 
     static final SimpleAttributeDefinition PATTERN_CAPTURE_GROUP = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN, ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new CaptureGroupRexExValidator())
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     private static class RexExValidator extends StringLengthValidator {

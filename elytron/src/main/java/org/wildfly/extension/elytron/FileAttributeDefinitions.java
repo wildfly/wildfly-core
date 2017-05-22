@@ -24,7 +24,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
@@ -44,14 +43,14 @@ class FileAttributeDefinitions {
         .setAllowExpression(true)
         .setMinSize(1)
         .setAttributeGroup(ElytronDescriptionConstants.FILE)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, ModelType.STRING, true)
         .setMinSize(1)
         .setAttributeGroup(ElytronDescriptionConstants.FILE)
         .setRequires(ElytronDescriptionConstants.PATH)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static ServiceName pathName(String relativeTo) {

@@ -77,7 +77,7 @@ class AuthenticationClientDefinitions {
     /* *************************************** */
 
     static final SimpleAttributeDefinition CONFIGURATION_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXTENDS, ModelType.STRING, true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(AUTHENTICATION_CONFIGURATION_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
@@ -85,42 +85,42 @@ class AuthenticationClientDefinitions {
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
             .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHORIZATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHORIZATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition HOST = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PORT, ModelType.INT, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
@@ -128,7 +128,7 @@ class AuthenticationClientDefinitions {
     static final SimpleAttributeDefinition ALLOW_ALL_MECHANISMS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setAlternatives(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
             .build();
 
@@ -136,7 +136,7 @@ class AuthenticationClientDefinitions {
             .setMinSize(0)
             .setRequired(false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS)
             .build();
 
@@ -144,19 +144,21 @@ class AuthenticationClientDefinitions {
             .setMinSize(0)
             .setRequired(false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleMapAttributeDefinition MECHANISM_PROPERTIES = new SimpleMapAttributeDefinition.Builder(CommonAttributes.PROPERTIES)
             .setName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
             .setXmlName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
+            .setRestartAllServices()
             .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, true)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition KERBEROS_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY, ModelType.STRING, true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN)
             .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
@@ -230,7 +232,7 @@ class AuthenticationClientDefinitions {
             .build();
 
     static final SimpleAttributeDefinition CONTEXT_EXTENDS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXTENDS, ModelType.STRING, true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, AUTHENTICATION_CONTEXT_RUNTIME_CAPABILITY)
             .build();
 
@@ -250,6 +252,7 @@ class AuthenticationClientDefinitions {
 
     static final ObjectListAttributeDefinition MATCH_RULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULES, MATCH_RULE)
             .setRequired(false)
+            .setRestartAllServices()
             .build();
 
     static ResourceDefinition getAuthenticationClientDefinition() {

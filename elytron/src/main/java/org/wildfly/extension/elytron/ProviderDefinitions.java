@@ -88,17 +88,20 @@ class ProviderDefinitions {
     static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
             .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
             .setAlternatives(ElytronDescriptionConstants.CONFIGURATION)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, FileAttributeDefinitions.RELATIVE_TO)
             .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
             .setRequires(ElytronDescriptionConstants.PATH)
+            .setRestartAllServices()
             .build();
 
     static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
             .setAllowExpression(true)
             .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.ARGUMENT)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition ARGUMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ARGUMENT, ModelType.STRING, true)
@@ -106,6 +109,7 @@ class ProviderDefinitions {
             .setRequires(ElytronDescriptionConstants.CLASS_NAMES)
             .setAlternatives(ElytronDescriptionConstants.PATH, ElytronDescriptionConstants.CONFIGURATION)
             .setAllowExpression(true)
+            .setRestartAllServices()
             .build();
 
     private static final AggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = AggregateComponentDefinition.create(Provider[].class,

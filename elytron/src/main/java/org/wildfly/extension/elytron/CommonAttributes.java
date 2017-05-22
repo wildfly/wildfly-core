@@ -59,6 +59,6 @@ class CommonAttributes {
             }
         }
 
-    }).build();
+        }).setRestartAllServices().build();
 
 }

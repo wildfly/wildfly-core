@@ -37,13 +37,13 @@ import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.ldap.LdapName;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -77,44 +77,44 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition DIR_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIR_CONTEXT, ModelType.STRING, false)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(DIR_CONTEXT_CAPABILITY, KEY_STORE_CAPABILITY, true)
             .build();
 
     static final SimpleAttributeDefinition SEARCH_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_PATH, ModelType.STRING, false)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SEARCH_RECURSIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SEARCH_TIME_LIMIT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_TIME_LIMIT, ModelType.INT, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition FILTER_ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_ALIAS, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition FILTER_CERTIFICATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_CERTIFICATE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition FILTER_ITERATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_ITERATE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static class NewItemTemplateObjectDefinition {
@@ -141,49 +141,50 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { NEW_ITEM_PATH, NEW_ITEM_RDN, NEW_ITEM_ATTRIBUTES };
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.NEW_ITEM_TEMPLATE, ATTRIBUTES)
+                .setRestartAllServices()
                 .build();
     }
 
     static final SimpleAttributeDefinition ALIAS_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ENCODING, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition KEY_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition KEY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_KEY_STORE);
@@ -204,7 +205,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler();
+    private static final AbstractWriteAttributeHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
 
     LdapKeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.LDAP_KEY_STORE), RESOURCE_RESOLVER)
@@ -317,18 +318,6 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             serviceBuilder.addDependency(dirContextServiceName, DirContextSupplier.class, keyStoreService.getDirContextSupplierInjector());
 
             commonDependencies(serviceBuilder).install();
-        }
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.LDAP_KEY_STORE, CONFIG_ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(KeyStore.class);
         }
     }
 

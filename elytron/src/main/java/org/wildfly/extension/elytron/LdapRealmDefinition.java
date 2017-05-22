@@ -44,7 +44,6 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -370,33 +369,34 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                     X509CredentialMappingObjectDefinition.OBJECT_DEFINITION
                 )
                 .setRequired(true)
+                .setRestartAllServices()
                 .build();
     }
 
     static final SimpleAttributeDefinition DIR_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIR_CONTEXT, ModelType.STRING, false)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(DIR_CONTEXT_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
             .build();
 
     static final SimpleAttributeDefinition DIRECT_VERIFICATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIRECT_VERIFICATION, ModelType.BOOLEAN, true)
         .setDefaultValue(new ModelNode(false))
         .setAllowExpression(true)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition ALLOW_BLANK_PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALLOW_BLANK_PASSWORD, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setRequires(ElytronDescriptionConstants.DIRECT_VERIFICATION)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {IdentityMappingObjectDefinition.OBJECT_DEFINITION, DIR_CONTEXT, DIRECT_VERIFICATION, ALLOW_BLANK_PASSWORD};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
-    private static final OperationStepHandler WRITE = new WriteAttributeHandler();
+    private static final OperationStepHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
 
     LdapRealmDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM), ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_REALM))
@@ -583,16 +583,4 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
     }
 
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.LDAP_REALM, ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue())
-                    .getCapabilityServiceName();
-        }
-    }
 }

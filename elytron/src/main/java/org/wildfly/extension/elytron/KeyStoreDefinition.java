@@ -41,13 +41,13 @@ import java.security.Provider;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.RollbackHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -57,7 +57,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -87,20 +86,20 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition PROVIDER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDER_NAME, ModelType.STRING, true)
         .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
         .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_STORE_CAPABILITY, true)
         .build();
 
@@ -111,13 +110,13 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         .setAllowExpression(true)
         .setAttributeGroup(ElytronDescriptionConstants.FILE)
         .setRequires(ElytronDescriptionConstants.PATH)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition ALIAS_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS_FILTER, ModelType.STRING, true)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     // Resource Resolver
@@ -150,7 +149,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler();
+    private static final AbstractWriteAttributeHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
 
     KeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE), RESOURCE_RESOLVER)
@@ -272,18 +271,6 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
                     .inject(CredentialReference.getCredentialSourceSupplier(context, KeyStoreDefinition.CREDENTIAL_REFERENCE, model, serviceBuilder));
 
             commonDependencies(serviceBuilder).install();
-        }
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.KEY_STORE, CONFIG_ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(KeyStore.class);
         }
     }
 

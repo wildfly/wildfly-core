@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -36,7 +36,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
@@ -64,64 +63,65 @@ class PrincipalDecoderDefinitions {
         .setAllowExpression(true)
         .setMinSize(1)
         .setAlternatives(ElytronDescriptionConstants.ATTRIBUTE_NAME)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition ATTRIBUTE_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ATTRIBUTE_NAME, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .setAlternatives(ElytronDescriptionConstants.OID)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition JOINER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.JOINER, ModelType.STRING, true)
         .setAllowExpression(true)
         .setMinSize(0)
         .setDefaultValue(new ModelNode("."))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition START_SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.START_SEGMENT, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(0))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition MAXIMUM_SEGMENTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_SEGMENTS, ModelType.INT, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(Integer.MAX_VALUE))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition REVERSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REVERSE, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(false))
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final StringListAttributeDefinition REQUIRED_OIDS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REQUIRED_OIDS)
         .setRequired(false)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final StringListAttributeDefinition REQUIRED_ATTRIBUTES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REQUIRED_ATTRIBUTES)
         .setRequired(false)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition CONSTANT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONSTANT, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final StringListAttributeDefinition PRINCIPAL_DECODERS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_DECODERS)
         .setMinSize(2)
         .setRequired(true)
         .setCapabilityReference(PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), true)
+        .setRestartAllServices()
         .build();
 
     private static final AggregateComponentDefinition<PrincipalDecoder> AGGREGATE_PRINCIPAL_DECODER = AggregateComponentDefinition.create(PrincipalDecoder.class,
@@ -236,7 +236,7 @@ class PrincipalDecoderDefinitions {
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
              if (attributes != null && attributes.length > 0) {
-                 WriteAttributeHandler write = new WriteAttributeHandler(pathKey, attributes);
+                 AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(attributes);
                  for (AttributeDefinition current : attributes) {
                      resourceRegistration.registerReadWriteAttribute(current, null, write);
                  }
@@ -272,20 +272,8 @@ class PrincipalDecoderDefinitions {
 
         protected ValueSupplier<PrincipalDecoder> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
             return () -> null;
-        };
-
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler(String parentName, AttributeDefinition ... attributes) {
-            super(parentName, attributes);
         }
 
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return PRINCIPAL_DECODER_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(PrincipalDecoder.class);
-        }
     }
 
 }

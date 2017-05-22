@@ -47,7 +47,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
@@ -79,66 +78,71 @@ class AuditResourceDefinitions {
 
     static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(FileAttributeDefinitions.PATH)
             .setRequired(true)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(true))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition FORMAT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FORMAT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(Format.SIMPLE.toString()))
             .setAllowedValues(Format.SIMPLE.toString(), Format.JSON.toString())
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SERVER_ADDRESS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER_ADDRESS, ModelType.STRING, false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PORT, ModelType.INT, false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition TRANSPORT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRANSPORT, ModelType.STRING, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(Transport.TCP.toString()))
             .setAllowedValues(Transport.TCP.toString(), Transport.UDP.toString(), Transport.SSL_TCP.toString())
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition HOST_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HOST_NAME, ModelType.STRING, false)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition MAX_BACKUP_INDEX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAX_BACKUP_INDEX, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(1))
             .setValidator(new IntRangeValidator(1, true))
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_ON_BOOT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.LONG, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(2000))
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY, true)
             .build();
 

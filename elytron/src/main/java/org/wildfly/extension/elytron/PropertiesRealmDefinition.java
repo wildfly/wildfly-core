@@ -99,18 +99,18 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     static final ObjectTypeAttributeDefinition USERS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.USERS_PROPERTIES, PATH, RELATIVE_TO, DIGEST_REALM_NAME, PLAIN_TEXT)
         .setRequired(true)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final ObjectTypeAttributeDefinition GROUPS_PROPERTIES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.GROUPS_PROPERTIES, PATH, RELATIVE_TO)
         .setRequired(false)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition GROUPS_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.GROUPS_ATTRIBUTE, ModelType.STRING, true)
         .setDefaultValue(new ModelNode(ElytronDescriptionConstants.GROUPS))
         .setAllowExpression(true)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)

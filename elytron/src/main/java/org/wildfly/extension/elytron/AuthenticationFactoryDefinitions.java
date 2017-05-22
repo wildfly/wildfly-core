@@ -106,7 +106,7 @@ class AuthenticationFactoryDefinitions {
 
     static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY, true)
             .build();
 
@@ -197,7 +197,7 @@ class AuthenticationFactoryDefinitions {
 
         return new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATIONS, mechanismConfiguration)
                 .setRequired(false)
-                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setRestartAllServices()
                 .build();
     }
 
@@ -355,6 +355,7 @@ class AuthenticationFactoryDefinitions {
 
         SimpleAttributeDefinition securityDomainAttribute = new SimpleAttributeDefinitionBuilder(BASE_SECURITY_DOMAIN_REF)
                 .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY, true)
+                .setRestartAllServices()
                 .build();
 
         AttributeDefinition mechanismConfigurationAttribute = getMechanismConfiguration(HTTP_AUTHENTICATION_FACTORY_CAPABILITY);
@@ -422,6 +423,7 @@ class AuthenticationFactoryDefinitions {
     static ResourceDefinition getSaslAuthenticationFactory() {
         SimpleAttributeDefinition securityDomainAttribute = new SimpleAttributeDefinitionBuilder(BASE_SECURITY_DOMAIN_REF)
                 .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY, true)
+                .setRestartAllServices()
                 .build();
 
         AttributeDefinition mechanismConfigurationAttribute = getMechanismConfiguration(SASL_AUTHENTICATION_FACTORY_CAPABILITY);

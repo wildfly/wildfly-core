@@ -40,7 +40,6 @@ import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -48,7 +47,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
@@ -73,13 +71,13 @@ class RealmMapperDefinitions {
 
     static final SimpleAttributeDefinition DELEGATE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DELEGATE_REALM_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .setCapabilityReference(REALM_MAPPER_CAPABILITY, REALM_MAPPER_CAPABILITY, true)
         .build();
 
     static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_NAME, ModelType.STRING, false)
         .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
     static final SimpleMapAttributeDefinition REALM_REALM_MAP = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.REALM_MAP, ModelType.STRING, false)
@@ -101,7 +99,7 @@ class RealmMapperDefinitions {
                 })
         .setMinSize(1)
         .setAllowExpression(true)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+        .setRestartAllServices()
         .build();
 
 
@@ -148,7 +146,7 @@ class RealmMapperDefinitions {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            OperationStepHandler write = new WriteAttributeHandler(ElytronDescriptionConstants.SIMPLE_REGEX_REALM_MAPPER, ATTRIBUTES);
+            OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
             for (AttributeDefinition current : ATTRIBUTES) {
                 resourceRegistration.registerReadWriteAttribute(current, null, write);
             }
@@ -218,7 +216,7 @@ class RealmMapperDefinitions {
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            OperationStepHandler write = new WriteAttributeHandler(ElytronDescriptionConstants.MAPPED_REGEX_REALM_MAPPER, ATTRIBUTES);
+            OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
             for (AttributeDefinition current : ATTRIBUTES) {
                 resourceRegistration.registerReadWriteAttribute(current, null, write);
             }
@@ -274,18 +272,6 @@ class RealmMapperDefinitions {
                 .install();
         }
 
-    }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler(String parentName, AttributeDefinition ... attributes) {
-            super(parentName, attributes);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return REALM_MAPPER_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(RealmMapper.class);
-        }
     }
 
 }

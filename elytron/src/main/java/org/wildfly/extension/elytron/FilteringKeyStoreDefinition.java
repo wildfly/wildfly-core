@@ -27,11 +27,11 @@ import static org.wildfly.extension.elytron.ServiceStateDefinition.populateRespo
 
 import java.security.KeyStore;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -39,7 +39,6 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -63,14 +62,14 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, false)
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(KEY_STORE_CAPABILITY, KEY_STORE_CAPABILITY, true)
             .build();
 
     static final SimpleAttributeDefinition ALIAS_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS_FILTER, ModelType.STRING, false)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILTERING_KEY_STORE);
@@ -79,7 +78,7 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
 
     private static final KeyStoreAddHandler ADD = new KeyStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, KEY_STORE_RUNTIME_CAPABILITY);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler();
+    private static final AbstractWriteAttributeHandler WRITE = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
 
     FilteringKeyStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.FILTERING_KEY_STORE), RESOURCE_RESOLVER)
@@ -140,17 +139,4 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
             commonDependencies(serviceBuilder).install();
         }
     }
-
-    private static class WriteAttributeHandler extends ElytronRestartParentWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(ElytronDescriptionConstants.FILTERING_KEY_STORE, CONFIG_ATTRIBUTES);
-        }
-
-        @Override
-        protected ServiceName getParentServiceName(PathAddress pathAddress) {
-            return KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(pathAddress.getLastElement().getValue()).getCapabilityServiceName(KeyStore.class);
-        }
-    }
-
 }
