@@ -130,7 +130,7 @@ class AuthenticationClientDefinitions {
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
+            .setAlternatives(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
             .build();
 
     static final StringListAttributeDefinition ALLOW_SASL_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
@@ -138,7 +138,7 @@ class AuthenticationClientDefinitions {
             .setRequired(false)
             .setAllowExpression(true)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
+            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
             .build();
 
     static final StringListAttributeDefinition FORBID_SASL_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.FORBID_SASL_MECHANISMS)
@@ -146,7 +146,7 @@ class AuthenticationClientDefinitions {
             .setRequired(false)
             .setAllowExpression(true)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
+            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
             .build();
 
     static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
