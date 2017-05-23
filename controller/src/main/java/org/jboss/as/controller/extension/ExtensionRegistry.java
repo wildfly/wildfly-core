@@ -811,6 +811,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public ProcessType getProcessType() {
+            return deployments.getProcessType();
+        }
+
+        @Override
         public ImmutableManagementResourceRegistration getParent() {
             ManagementResourceRegistration deplParent = (ManagementResourceRegistration) deployments.getParent();
             ManagementResourceRegistration subParent = (ManagementResourceRegistration) subdeployments.getParent();

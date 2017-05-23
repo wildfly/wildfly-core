@@ -29,6 +29,7 @@ import java.util.Set;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -57,6 +58,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public PathAddress getPathAddress() {
         return delegate.getPathAddress();
+    }
+
+    @Override
+    public ProcessType getProcessType() {
+        return delegate.getProcessType();
     }
 
     @Override

@@ -35,6 +35,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -58,13 +59,25 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     private final String valueString;
     private final NodeSubregistry parent;
     private final PathAddress pathAddress;
+    private final ProcessType processType;
     private RootInvocation rootInvocation;
 
+    /** Constructor for a root MRR */
+    AbstractResourceRegistration(final ProcessType processType) {
+        checkPermission();
+        this.valueString = null;
+        this.parent = null;
+        this.pathAddress = PathAddress.EMPTY_ADDRESS;
+        this.processType = Assert.checkNotNullParam("processType", processType);
+    }
+
+    /** Constructor for a non-root MRR */
     AbstractResourceRegistration(final String valueString, final NodeSubregistry parent) {
         checkPermission();
-        this.valueString = valueString;
-        this.parent = parent;
-        this.pathAddress = parent == null ? PathAddress.EMPTY_ADDRESS : parent.getPathAddress(valueString);
+        this.valueString = Assert.checkNotNullParam("valueString", valueString);
+        this.parent = Assert.checkNotNullParam("parent", parent);
+        this.pathAddress = parent.getPathAddress(valueString);
+        this.processType = parent.getProcessType();
     }
 
     static void checkPermission() {
@@ -80,6 +93,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
 
     void addAccessConstraints(List<AccessConstraintDefinition> list) {
         // no-op in the base class
+    }
+
+    @Override
+    public ProcessType getProcessType() {
+        return processType;
     }
 
     /** {@inheritDoc} */
