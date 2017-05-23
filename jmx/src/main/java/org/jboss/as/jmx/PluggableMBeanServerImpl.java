@@ -48,10 +48,6 @@ import static org.jboss.as.jmx.SecurityActions.createCaller;
 
 import java.io.ObjectInputStream;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.net.InetAddress;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -87,7 +83,6 @@ import javax.management.QueryExp;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
 import javax.management.loading.ClassLoaderRepository;
-import javax.security.auth.Subject;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -97,8 +92,6 @@ import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.management.JmxAuthorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
-import org.jboss.as.controller.security.InetAddressPrincipal;
-import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
@@ -1184,11 +1177,11 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     }
 
     void log(boolean readOnly, Throwable error, String methodName, String[] methodSignature, Object...methodParams) {
-        AccessControlContext acc = AccessController.getContext();
+        final String userId = securityIdentitySupplier != null ? securityIdentitySupplier.get().getPrincipal().getName() : null;
         if (WildFlySecurityManager.isChecking()) {
-            doPrivileged(new LogAction(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams));
+            doPrivileged(new LogAction(userId, auditLogger, readOnly, error, methodName, methodSignature, methodParams));
         } else {
-            LogAction.doLog(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams);
+            LogAction.doLog(userId, auditLogger, readOnly, error, methodName, methodSignature, methodParams);
         }
     }
 
@@ -1257,7 +1250,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
     }
 
     static final class LogAction implements PrivilegedAction<Void> {
-        final AccessControlContext acc;
+        final String userId;
         final ManagedAuditLogger auditLogger;
         final boolean readOnly;
         final Throwable error;
@@ -1265,9 +1258,9 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         final String[] methodSignature;
         final Object[] methodParams;
 
-        public LogAction(AccessControlContext acc, ManagedAuditLogger auditLogger, boolean readOnly, Throwable error, String methodName,
+        public LogAction(String userId, ManagedAuditLogger auditLogger, boolean readOnly, Throwable error, String methodName,
                 String[] methodSignature, Object[] methodParams) {
-            this.acc = acc;
+            this.userId = userId;
             this.auditLogger = auditLogger;
             this.readOnly = readOnly;
             this.error = error;
@@ -1278,56 +1271,26 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
         @Override
         public Void run() {
-            doLog(acc, auditLogger, readOnly, error, methodName, methodSignature, methodParams);
+            doLog(userId, auditLogger, readOnly, error, methodName, methodSignature, methodParams);
             return null;
         }
 
-        static void doLog(AccessControlContext acc, ManagedAuditLogger auditLogger, boolean readOnly, Throwable error, String methodName, String[] methodSignature, Object...methodParams) {
+        static void doLog(String userId, ManagedAuditLogger auditLogger, boolean readOnly, Throwable error, String methodName, String[] methodSignature, Object...methodParams) {
             if (auditLogger != null) {
-                Subject subject = Subject.getSubject(acc);
                 AccessAuditContext auditContext = SecurityActions.currentAccessAuditContext();
                 auditLogger.logJmxMethodAccess(
                         readOnly,
-                        getCallerUserId(subject),
+                        userId,
                         auditContext == null ? null : auditContext.getDomainUuid(),
                         auditContext == null ? null : auditContext.getAccessMechanism(),
-                        getSubjectInetAddress(subject),
+                        auditContext == null ? null : auditContext.getRemoteAddress(),
                         methodName,
                         methodSignature,
                         methodParams,
                         error);
             }
         }
-
-        private static String getCallerUserId(Subject subject) {
-            String userId = null;
-            if (subject != null) {
-                Set<RealmUser> realmUsers = subject.getPrincipals(RealmUser.class);
-                if (!realmUsers.isEmpty()) {
-                    RealmUser user = realmUsers.iterator().next();
-                    userId = user.getName();
-                }
-            }
-            return userId;
-        }
-
-        private static InetAddress getSubjectInetAddress(Subject subject) {
-            InetAddressPrincipal principal = getPrincipal(subject, InetAddressPrincipal.class);
-            return principal != null ? principal.getInetAddress() : null;
-        }
-
-        private static <T extends Principal> T getPrincipal(Subject subject, Class<T> clazz) {
-            if (subject == null) {
-                return null;
-            }
-            Set<T> principals = subject.getPrincipals(clazz);
-            assert principals.size() <= 1;
-            if (principals.isEmpty()) {
-                return null;
-            }
-            return principals.iterator().next();
-        }
-    };
+    }
 
     private class TcclMBeanServer implements MBeanServerPlugin {
 
