@@ -164,7 +164,7 @@ class SaslServerDefinitions {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, false)
         .setAllowExpression(true)
         .setXmlName(VALUE)
         .setAllowedValues(NamePredicate.names())
