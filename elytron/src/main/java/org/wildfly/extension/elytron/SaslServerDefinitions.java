@@ -164,7 +164,7 @@ class SaslServerDefinitions {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, true)
+    static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, false)
         .setAllowExpression(true)
         .setXmlName(VALUE)
         .setAllowedValues(NamePredicate.names())
@@ -235,7 +235,7 @@ class SaslServerDefinitions {
                 final Map<String, String> propertiesMap;
                 ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
                 if (properties.isDefined()) {
-                    propertiesMap = new HashMap<String, String>();
+                    propertiesMap = new HashMap<>();
                     properties.keys().forEach((String s) -> propertiesMap.put(s, properties.require(s).asString()));
                 } else {
                     propertiesMap = null;
@@ -267,9 +267,9 @@ class SaslServerDefinitions {
                 }
 
 
-                final InjectedValue<SaslServerFactory> saslServerFactoryInjector = new InjectedValue<SaslServerFactory>();
+                final InjectedValue<SaslServerFactory> saslServerFactoryInjector = new InjectedValue<>();
 
-                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<SaslServerFactory>(() -> {
+                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<>(() -> {
                     SaslServerFactory theFactory = saslServerFactoryInjector.getValue();
                     theFactory = new SetMechanismInformationSaslServerFactory(theFactory);
                     theFactory = protocol != null ? new ProtocolSaslServerFactory(theFactory, protocol) : theFactory;
@@ -304,10 +304,10 @@ class SaslServerDefinitions {
 
                 String providers = asStringIfDefined(context, PROVIDERS, model);
 
-                final InjectedValue<Provider[]> providerInjector = new InjectedValue<Provider[]>();
+                final InjectedValue<Provider[]> providerInjector = new InjectedValue<>();
                 final Supplier<Provider[]> providerSupplier = providers != null ? (providerInjector::getValue) : (Security::getProviders);
 
-                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<SaslServerFactory>(() -> new SecurityProviderSaslServerFactory(providerSupplier));
+                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<>(() -> new SecurityProviderSaslServerFactory(providerSupplier));
 
                 ServiceTarget serviceTarget = context.getServiceTarget();
 
@@ -395,9 +395,9 @@ class SaslServerDefinitions {
                 }
 
                 final BiPredicate<String, Provider> finalPredicate = predicate;
-                final InjectedValue<SaslServerFactory> saslServerFactoryInjector = new InjectedValue<SaslServerFactory>();
+                final InjectedValue<SaslServerFactory> saslServerFactoryInjector = new InjectedValue<>();
 
-                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<SaslServerFactory>(() -> {
+                TrivialService<SaslServerFactory> saslServiceFactoryService = new TrivialService<>(() -> {
                     SaslServerFactory theFactory = saslServerFactoryInjector.getValue();
                     theFactory = finalPredicate != null ? new MechanismProviderFilteringSaslServerFactory(theFactory, finalPredicate) : theFactory;
 
@@ -479,7 +479,7 @@ class SaslServerDefinitions {
 
         protected ServiceBuilder<SaslServerFactory> installService(OperationContext context, ServiceName saslServerFactoryName, ModelNode model) throws OperationFailedException {
             ServiceTarget serviceTarget = context.getServiceTarget();
-            TrivialService<SaslServerFactory> saslServerFactoryService = new TrivialService<SaslServerFactory>(getValueSupplier(context, model));
+            TrivialService<SaslServerFactory> saslServerFactoryService = new TrivialService<>(getValueSupplier(context, model));
 
             return serviceTarget.addService(saslServerFactoryName, saslServerFactoryService);
         }
