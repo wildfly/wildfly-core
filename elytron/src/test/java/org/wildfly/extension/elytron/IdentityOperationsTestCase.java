@@ -49,6 +49,7 @@ import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.Roles;
 import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
 import org.wildfly.security.password.util.PasswordUtil;
@@ -270,7 +271,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         byte[] salt = PasswordUtil.generateRandomSalt(BCryptPassword.BCRYPT_SALT_SIZE);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Bcrypt.OBJECT_DEFINITION, "bcryptPassword", salt, 10, null, null);
+                ModifiableRealmDecorator.SetPasswordHandler.Bcrypt.OBJECT_DEFINITION, "bcryptPassword", salt, 10, null, null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -287,7 +288,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -304,7 +305,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION, "simpleDigest", null, null, null, SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_1);
+                ModifiableRealmDecorator.SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION, "simpleDigest", null, null, null, SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_1, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -321,7 +322,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION, "saltedSimpleDigest", PasswordUtil.generateRandomSalt(16), null, null, SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256);
+                ModifiableRealmDecorator.SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION, "saltedSimpleDigest", PasswordUtil.generateRandomSalt(16), null, null, SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -338,7 +339,25 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
+                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5, null, null, null);
+
+        result = services.executeOperation(operation);
+        assertSuccessful(result);
+    }
+
+    @Test
+    public void testOneTimePassword() throws Exception {
+        KernelServices services = createKernelServicesBuilder(null)
+                .setSubsystemXmlResource("identity-management.xml")
+                .build();
+        String principalName = "plainUser";
+        PathAddress realmAddress = getSecurityRealmAddress("FileSystemRealm");
+        ModelNode operation = createAddIdentityOperation(realmAddress, principalName);
+        ModelNode result = services.executeOperation(operation);
+        assertSuccessful(result);
+
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.OTPassword.OBJECT_DEFINITION, null, null, null, "Elytron Realm", OneTimePassword.ALGORITHM_OTP_MD5, "abcde", "fghi", 123);
 
         result = services.executeOperation(operation);
         assertSuccessful(result);
@@ -356,13 +375,13 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5);
+                ModifiableRealmDecorator.SetPasswordHandler.Digest.OBJECT_DEFINITION, "digestPassword", null, null, "Elytron Realm", DigestPassword.ALGORITHM_DIGEST_MD5, null, null, null);
 
         result = services.executeOperation(operation);
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -379,7 +398,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         assertSuccessful(result);
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
-                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null);
+                ModifiableRealmDecorator.SetPasswordHandler.Clear.OBJECT_DEFINITION, "clearPassword", null, null, null, null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }
@@ -453,7 +472,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
                 .build();
     }
 
-    private ModelNode createSetPasswordOperation(String credentialName, PathAddress parentAddress, String principalName, ObjectTypeAttributeDefinition passwordDefinition, String password, byte[] salt, Integer iterationCount, String realm, String algorithm) {
+    private ModelNode createSetPasswordOperation(String credentialName, PathAddress parentAddress, String principalName, ObjectTypeAttributeDefinition passwordDefinition, String password, byte[] salt, Integer iterationCount, String realm, String algorithm, String hash, String seed, Integer sequence) {
         ModelNode passwordNode = new ModelNode();
 
         passwordNode.get(ElytronDescriptionConstants.NAME).set(credentialName);
@@ -474,7 +493,21 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
             passwordNode.get(REALM).set(realm);
         }
 
-        passwordNode.get(ElytronDescriptionConstants.PASSWORD).set(password);
+        if (password != null) {
+            passwordNode.get(ElytronDescriptionConstants.PASSWORD).set(password);
+        }
+
+        if (hash != null) {
+            passwordNode.get(ElytronDescriptionConstants.HASH).set(hash);
+        }
+
+        if (seed != null) {
+            passwordNode.get(ElytronDescriptionConstants.SEED).set(seed);
+        }
+
+        if (sequence != null) {
+            passwordNode.get(ElytronDescriptionConstants.SEQUENCE).set(sequence);
+        }
 
         return SubsystemOperations.OperationBuilder.create(ElytronDescriptionConstants.SET_PASSWORD, parentAddress.toModelNode())
                 .addAttribute(ModifiableRealmDecorator.SetPasswordHandler.IDENTITY, principalName)
