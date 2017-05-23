@@ -77,7 +77,6 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-@Ignore("[WFCORE-2068] Test failure during clean up.")
 public class HTTPSManagementInterfaceTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar + "https-mgmt-workdir");
