@@ -138,7 +138,7 @@ class AuthenticationClientDefinitions {
             .setRequired(false)
             .setAllowExpression(true)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS)
+            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
             .build();
 
     static final StringListAttributeDefinition FORBID_SASL_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.FORBID_SASL_MECHANISMS)
@@ -146,11 +146,13 @@ class AuthenticationClientDefinitions {
             .setRequired(false)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setAlternatives(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
             .build();
 
     static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
             .build();
 
     static final SimpleMapAttributeDefinition MECHANISM_PROPERTIES = new SimpleMapAttributeDefinition.Builder(CommonAttributes.PROPERTIES)
@@ -173,7 +175,7 @@ class AuthenticationClientDefinitions {
             PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
+            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
 
     /* *************************************** */
     /* Authentication Context Attributes */
