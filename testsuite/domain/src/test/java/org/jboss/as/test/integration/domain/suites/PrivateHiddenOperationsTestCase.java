@@ -101,6 +101,8 @@ public class PrivateHiddenOperationsTestCase {
             }
         }
 
+        ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
+
         testSupport = null;
         managementClient = null;
         DomainTestSuite.stopSupport();

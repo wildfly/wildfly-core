@@ -16,17 +16,26 @@ limitations under the License.
 
 package org.jboss.as.test.integration.management.extension.optypes;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.Set;
+
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.NoopOperationStepHandler;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
@@ -35,6 +44,8 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * Extension whose subsystem exposes different types of operations besides the typical ones.
@@ -72,6 +83,27 @@ public class OpTypesExtension implements Extension {
             .setRuntimeOnly()
             .build();
 
+    private static final AttributeDefinition TARGET_HOST = SimpleAttributeDefinitionBuilder.create(HOST, ModelType.STRING, true).build();
+
+    private static final OperationDefinition RUNTIME_ONLY = new SimpleOperationDefinitionBuilder("runtime-only", NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setParameters(TARGET_HOST)
+            .setRuntimeOnly()
+            .build();
+    private static final OperationDefinition DOMAIN_RUNTIME_PRIVATE = new SimpleOperationDefinitionBuilder("domain-runtime-private", NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setRuntimeOnly()
+            .build();
+    private static final OperationDefinition DOMAIN_SERVER_RUNTIME_PRIVATE = new SimpleOperationDefinitionBuilder("domain-runtime-private", NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setPrivateEntry()
+            .setRuntimeOnly()
+            .build();
+
+    private static final AttributeDefinition RUNTIME_ONLY_ATTR = SimpleAttributeDefinitionBuilder.create("runtime-only-attr", ModelType.BOOLEAN)
+            .setRequired(false)
+            .setStorageRuntime()
+            .build();
+    private static final AttributeDefinition METRIC = SimpleAttributeDefinitionBuilder.create("metric", ModelType.BOOLEAN)
+            .setUndefinedMetricValue(new ModelNode(false))
+            .build();
 
     @Override
     public void initialize(ExtensionContext context) {
@@ -105,12 +137,42 @@ public class OpTypesExtension implements Extension {
             resourceRegistration.registerOperationHandler(PUBLIC, NoopOperationStepHandler.WITH_RESULT);
             resourceRegistration.registerOperationHandler(HIDDEN, NoopOperationStepHandler.WITH_RESULT);
             resourceRegistration.registerOperationHandler(PRIVATE, NoopOperationStepHandler.WITH_RESULT);
+            resourceRegistration.registerOperationHandler(RUNTIME_ONLY, RuntimeOnlyHandler.INSTANCE);
 
             if (processType == ProcessType.DOMAIN_SERVER) {
                 resourceRegistration.registerOperationHandler(DOMAIN_HIDDEN, NoopOperationStepHandler.WITH_RESULT);
                 resourceRegistration.registerOperationHandler(DOMAIN_SERVER_PRIVATE, NoopOperationStepHandler.WITH_RESULT);
+                resourceRegistration.registerOperationHandler(DOMAIN_SERVER_RUNTIME_PRIVATE, RuntimeOnlyHandler.INSTANCE);
             } else if (!processType.isServer()) {
                 resourceRegistration.registerOperationHandler(DOMAIN_PRIVATE, NoopOperationStepHandler.WITH_RESULT);
+                resourceRegistration.registerOperationHandler(DOMAIN_RUNTIME_PRIVATE, RuntimeOnlyHandler.INSTANCE);
+            }
+        }
+
+        @Override
+        public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+            resourceRegistration.registerReadOnlyAttribute(RUNTIME_ONLY_ATTR, RuntimeOnlyHandler.INSTANCE);
+            resourceRegistration.registerMetric(METRIC, RuntimeOnlyHandler.INSTANCE);
+        }
+    }
+
+    private static class RuntimeOnlyHandler implements OperationStepHandler {
+
+        private static final RuntimeOnlyHandler INSTANCE = new RuntimeOnlyHandler();
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            boolean forMe = context.getProcessType() == ProcessType.DOMAIN_SERVER;
+            if (!forMe) {
+                String targetHost = TARGET_HOST.resolveModelAttribute(context, operation).asStringOrNull();
+                if (targetHost != null) {
+                    Set<String> hosts = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).getChildrenNames(HOST);
+                    String name = hosts.size() > 1 ? "master": hosts.iterator().next();
+                    forMe = targetHost.equals(name);
+                }
+            }
+            if (forMe) {
+                context.addStep((ctx, op) -> ctx.getResult().set(true), OperationContext.Stage.RUNTIME);
             }
         }
     }

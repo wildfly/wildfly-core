@@ -62,6 +62,7 @@ import org.junit.runners.Suite;
         OperationWarningTestsCase.class,
         PrivateHiddenOperationsTestCase.class,
         ResponseStreamTestCase.class,
+        RuntimeOnlyOperationsTestCase.class,
         ServerRestartRequiredTestCase.class,
         ValidateAddressOperationTestCase.class,
         ValidateOperationOperationTestCase.class,
