@@ -193,22 +193,7 @@ public class CachedDcDomainTestCase {
         domainConfig.getSlaveConfiguration().setCachedDC(true);
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.start();
-        domainManager.getDomainSlaveLifecycleUtil().stop();
-
-        // WFCORE-2836
-        // this is a bit flaky in CI. It seems that the logger add below begins
-        // occasionally before the slave host unregisters completely, then when the
-        // slave unregisters the op is rolled back.
-        long deadline = System.currentTimeMillis() + 1000;
-        while (true) {
-            if (!domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted()) {
-                break;
-            }
-            if (System.currentTimeMillis() > deadline) {
-                break;
-            }
-            Thread.sleep(TIMEOUT_SLEEP_MILLIS);
-        }
+        stopSlaveAndWaitForUnregistration();
 
         Assert.assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
         domainManager.getDomainMasterLifecycleUtil()
@@ -284,8 +269,8 @@ public class CachedDcDomainTestCase {
         domainConfig.getSlaveConfiguration().setBackupDC(true).setCachedDC(false);
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.start();
-        // domain.cached-remote.xml was created now stopping HC
-        domainManager.getDomainSlaveLifecycleUtil().stop();
+        // domain.cached-remote.xml was created now stop slave HC
+        stopSlaveAndWaitForUnregistration();
 
         // changing parameter which needs reload
         DomainClient client = domainManager.getDomainMasterLifecycleUtil().getDomainClient();
@@ -526,5 +511,23 @@ public class CachedDcDomainTestCase {
         ModelNode op = Operations.createOperation("reload-servers");
         op.get("blocking").set("true");
         clientMaster.execute(op);
+    }
+
+    private void stopSlaveAndWaitForUnregistration() throws InterruptedException  {
+        domainManager.getDomainSlaveLifecycleUtil().stop();
+        // WFCORE-2836
+        // this is a bit flaky in CI. It seems that the logger add below begins
+        // occasionally before the slave host unregisters completely, then when the
+        // slave unregisters the op is rolled back.
+        long deadline = System.currentTimeMillis() + 1000;
+        while (true) {
+            if (!domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted()) {
+                break;
+            }
+            if (System.currentTimeMillis() > deadline) {
+                break;
+            }
+            Thread.sleep(TIMEOUT_SLEEP_MILLIS);
+        }
     }
 }
