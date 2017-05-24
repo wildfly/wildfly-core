@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
@@ -109,6 +110,7 @@ class OperationRouting {
 
         Set<String> targetHost = null;
         boolean compositeOp = false;
+        boolean profileChildOp = false;
         if (address.size() > 0) {
             PathElement first = address.getElement(0);
             if (HOST.equals(first.getKey())) {
@@ -124,6 +126,8 @@ class OperationRouting {
                 } else {
                     targetHost = Collections.singleton(first.getValue());
                 }
+            } else if (PROFILE.equals(first.getKey())) {
+                profileChildOp = address.size() > 1;
             }
         } else {
             compositeOp = COMPOSITE.equals(operationName);
@@ -187,8 +191,15 @@ class OperationRouting {
             }
         } else {
             // Domain level operation
-            if (operationFlags.contains(OperationEntry.Flag.READ_ONLY) && !operationFlags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)) {
-                // Direct read of domain model
+            // Reads execute locally, except those specifically configured for multiphase (DOMAIN_PUSH_TO_SERVERS)
+            // or runtime-only ops against profile subsystems (where locally there should be no runtime to read).
+            // The HOST_CONTROLLER_ONLY flag forces the read to stay local, primarily as a way to retain legacy
+            // behavior for runtime-only ops that were registered against profile subsystems and should not have been
+            if (operationFlags.contains(OperationEntry.Flag.READ_ONLY)
+                    && ((!operationFlags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)
+                    && (!profileChildOp || !operationFlags.contains(OperationEntry.Flag.RUNTIME_ONLY)))
+                    || operationFlags.contains(OperationEntry.Flag.HOST_CONTROLLER_ONLY))) {
+                // Execute locally
                 routing = new OperationRouting(localHostControllerInfo);
             } else if (!localHostControllerInfo.isMasterDomainController()) {
                 // Route to master
@@ -196,7 +207,7 @@ class OperationRouting {
             } else if (operationFlags.contains(OperationEntry.Flag.MASTER_HOST_CONTROLLER_ONLY)) {
                 // Deployment ops should be executed on the master DC only
                 routing = new OperationRouting(localHostControllerInfo);
-            }
+            } // else fall through to multiphase routing
         }
 
         if (routing == null) {

@@ -96,6 +96,10 @@ public class OpTypesExtension implements Extension {
             .setPrivateEntry()
             .setRuntimeOnly()
             .build();
+    private static final OperationDefinition RUNTIME_READ_ONLY = new SimpleOperationDefinitionBuilder("runtime-read-only", NonResolvingResourceDescriptionResolver.INSTANCE)
+            .setReadOnly()
+            .setRuntimeOnly()
+            .build();
 
     private static final AttributeDefinition RUNTIME_ONLY_ATTR = SimpleAttributeDefinitionBuilder.create("runtime-only-attr", ModelType.BOOLEAN)
             .setRequired(false)
@@ -138,6 +142,7 @@ public class OpTypesExtension implements Extension {
             resourceRegistration.registerOperationHandler(HIDDEN, NoopOperationStepHandler.WITH_RESULT);
             resourceRegistration.registerOperationHandler(PRIVATE, NoopOperationStepHandler.WITH_RESULT);
             resourceRegistration.registerOperationHandler(RUNTIME_ONLY, RuntimeOnlyHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(RUNTIME_READ_ONLY, RuntimeOnlyHandler.INSTANCE);
 
             if (processType == ProcessType.DOMAIN_SERVER) {
                 resourceRegistration.registerOperationHandler(DOMAIN_HIDDEN, NoopOperationStepHandler.WITH_RESULT);

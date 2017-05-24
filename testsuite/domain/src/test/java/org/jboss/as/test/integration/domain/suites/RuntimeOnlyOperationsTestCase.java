@@ -137,11 +137,18 @@ public class RuntimeOnlyOperationsTestCase {
         runtimeOnlyTest("domain-runtime-private", false);
     }
 
+    @Test
+    public void testRuntimeReadOnlyOp() throws IOException {
+        runtimeOnlyTest("runtime-read-only", true);
+    }
+
     private void runtimeOnlyTest(String opName, boolean directServerSuccess) throws IOException {
         ModelNode op = Util.createEmptyOperation(opName, PROFILE.append(SUBSYSTEM));
         ModelNode response = executeOp(op, SUCCESS);
         assertFalse(response.toString(), response.hasDefined(RESULT)); // handler doesn't set a result on profile
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result"));
         assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result"));
         assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result").asBoolean());
 
         // Now check direct invocation on servers
