@@ -24,6 +24,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOG
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -135,7 +137,7 @@ public class CachedDcDomainTestCase {
         domainManager.getDomainSlaveLifecycleUtil().startAsync();
 
         // expecting that HC is not started
-        try (DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(NOT_STARTED_TIMEOUT_S, client);
             Assert.fail("DC not started, domain.cached-remote.xml does not exist but "
                 + "slave host controller was started ");
@@ -174,7 +176,7 @@ public class CachedDcDomainTestCase {
         domainManager.stop();
         domainManager.getDomainSlaveLifecycleUtil().startAsync();
 
-        try (DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, client);
             waitForServersBeingStarted(TIMEOUT_S, client);
             checkTestLoggerFromSlaveHost(client);
@@ -195,7 +197,7 @@ public class CachedDcDomainTestCase {
         domainManager.start();
         stopSlaveAndWaitForUnregistration();
 
-        Assert.assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
+        assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
         domainManager.getDomainMasterLifecycleUtil()
             .executeForResult(getCreateOperationTestLoggingCategory());
         domainManager.stop();
@@ -206,14 +208,14 @@ public class CachedDcDomainTestCase {
 
         // HC started with old domain.cached-remote.xml
         domainManager.getDomainSlaveLifecycleUtil().startAsync();
-        try (DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientSlave);
             waitForServersBeingStarted(TIMEOUT_S, clientSlave);
         }
 
         // DC started where domain config contains a configuration change (a new logger was created)
         domainManager.getDomainMasterLifecycleUtil().startAsync();
-        try (DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
             waitForServersBeingStarted(TIMEOUT_S, clientMaster);
         }
@@ -236,18 +238,18 @@ public class CachedDcDomainTestCase {
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.start();
 
-        boolean isAddLoggingApiDependencies = setLoggingApiDependencies(domainManager.getDomainMasterLifecycleUtil().getDomainClient());
+        final boolean isAddLoggingApiDependencies = setLoggingApiDependencies(domainManager.getDomainMasterLifecycleUtil().getDomainClient());
 
         // property was changed - checking if change is visible at profile level
         ModelNode profileRead = readLoggingApiDependencies(domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
-        Assert.assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + profileRead,
+        assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + profileRead,
                 isAddLoggingApiDependencies, profileRead.get("result").asBoolean());
         // property was changed - checking if change is visible at HC
         ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
-        Assert.assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
-        Assert.assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + hostRead,
+        assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
+        assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + hostRead,
                 isAddLoggingApiDependencies, hostRead.get("result").asBoolean());
-        Assert.assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
+        assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
                 "reload-required", hostRead.get("response-headers").get("process-state").asString());
     }
 
@@ -273,10 +275,10 @@ public class CachedDcDomainTestCase {
         stopSlaveAndWaitForUnregistration();
 
         // changing parameter which needs reload
-        DomainClient client = domainManager.getDomainMasterLifecycleUtil().getDomainClient();
-        boolean isAddLoggingApiDependencies = setLoggingApiDependencies(client);
-        ModelNode profileRead = readLoggingApiDependencies(client);
-        Assert.assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + profileRead,
+        final DomainClient client = domainManager.getDomainMasterLifecycleUtil().getDomainClient();
+        final boolean isAddLoggingApiDependencies = setLoggingApiDependencies(client);
+        final ModelNode profileRead = readLoggingApiDependencies(client);
+        assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + profileRead,
             isAddLoggingApiDependencies, profileRead.get("result").asBoolean());
         domainManager.stop();
 
@@ -288,33 +290,33 @@ public class CachedDcDomainTestCase {
 
         // starting HC with old domain.cached-remote.xml
         domainManager.getDomainSlaveLifecycleUtil().startAsync();
-        try (DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientSlave);
             waitForServersBeingStarted(TIMEOUT_S, clientSlave);
         }
 
         // starting DC where domain config contains a configuration change
         domainManager.getDomainMasterLifecycleUtil().startAsync();
-        try (DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
             waitForServersBeingStarted(TIMEOUT_S, clientMaster);
         }
 
-        try (DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
             runWithTimeout(TIMEOUT_S, () -> {
                 ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(clientSlave);
-                Assert.assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
-                Assert.assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
+                assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
+                assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
                     "reload-required", hostRead.get("response-headers").get("process-state").asString());
             });
         }
-        try (DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
+        try (final DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
             reloadServers(clientMaster);
         }
-        try (DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
+        try (final DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
             runWithTimeout(TIMEOUT_S, () -> {
                 ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(clientMaster);
-                Assert.assertEquals("Expecting value of attribute 'add-logging-api-dependencies' changed: " + hostRead,
+                assertEquals("Expecting value of attribute 'add-logging-api-dependencies' changed: " + hostRead,
                         isAddLoggingApiDependencies, hostRead.get("result").asBoolean());
             });
         }
@@ -337,7 +339,7 @@ public class CachedDcDomainTestCase {
         slaveHost.startAsync();
 
         // check that HC and servers were started
-        try (DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, client);
             waitForServersBeingStarted(TIMEOUT_S, client);
         }
@@ -350,7 +352,7 @@ public class CachedDcDomainTestCase {
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.getDomainSlaveLifecycleUtil().startAsync();
 
-        try (DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
             // getting statuses of servers from slave HC as waiting for HC being ready
             runWithTimeout(TimeoutUtil.adjust(5), () -> client.getServerStatuses());
             Assert.fail("DC started with no param, it's waiting for DC but it's not possible to connect to it");
@@ -360,16 +362,16 @@ public class CachedDcDomainTestCase {
 
         // after starting DC, HC is ready to use with all its servers
         domainManager.getDomainMasterLifecycleUtil().start();
-        try (DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
+        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, client);
             waitForServersBeingStarted(TIMEOUT_S, client);
         }
     }
 
     private DomainClient getDomainClient(WildFlyManagedConfiguration config) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(config.getHostControllerManagementAddress());
-        int port = config.getHostControllerManagementPort();
-        String protocol = config.getHostControllerManagementProtocol();
+        final InetAddress address = InetAddress.getByName(config.getHostControllerManagementAddress());
+        final int port = config.getHostControllerManagementPort();
+        final String protocol = config.getHostControllerManagementProtocol();
         return new DomainClientImpl(protocol, address, port);
     }
 
@@ -425,15 +427,15 @@ public class CachedDcDomainTestCase {
     }
 
     private File getDomainCachedRemoteXmlFile(WildFlyManagedConfiguration appConfiguration) {
-        File rootDir = new File(appConfiguration.getDomainDirectory());
+        final File rootDir = new File(appConfiguration.getDomainDirectory());
         return new File(rootDir, "configuration" + File.separator + DOMAIN_CACHED_REMOTE_XML_FILE_NAME);
     }
 
     private void checkHostControllerLogFile(WildFlyManagedConfiguration appConfiguration, String containString) {
-        File logFile = new File(appConfiguration.getDomainDirectory(), "log" + File.separator + "host-controller.log");
+        final File logFile = new File(appConfiguration.getDomainDirectory(), "log" + File.separator + "host-controller.log");
         Assert.assertTrue("Log file '" + logFile + "' does not exist", logFile.exists());
         try {
-            String content = com.google.common.io.Files.toString(logFile, Charset.forName("UTF-8"));
+            final String content = com.google.common.io.Files.toString(logFile, Charset.forName("UTF-8"));
             Assert.assertTrue("Expecting log file '" + logFile + " contains string '" + containString + "'",
                 content.contains(containString));
         } catch (IOException ioe) {
@@ -448,44 +450,48 @@ public class CachedDcDomainTestCase {
     }
 
     private ModelNode getCreateOperationTestLoggingCategory() {
-        ModelNode addrLogger = getProfileDefaultLoggingAddr();
+        final ModelNode addrLogger = getProfileDefaultLoggingAddr();
         addrLogger.add(LOGGER, TEST_LOGGER_NAME);
 
-        ModelNode createOp = Operations.createAddOperation(addrLogger);
+        final ModelNode createOp = Operations.createAddOperation(addrLogger);
         createOp.get("level").set("TRACE");
         createOp.get("category").set(TEST_LOGGER_NAME);
         return createOp;
     }
 
     private ModelNode readResourceTestLoggerFromSlaveHost(DomainClient client) throws IOException {
-        ModelNode hostLoggerAddress = new ModelNode()
+        final ModelNode hostLoggerAddress = new ModelNode()
                 .add(HOST, "slave")
                 .add(SERVER, "other-two")
                 .add(SUBSYSTEM, "logging")
                 .add(LOGGER, TEST_LOGGER_NAME);
-        ModelNode readResourceOp = Operations.createReadResourceOperation(hostLoggerAddress);
-        return client.execute(readResourceOp);
+        final ModelNode readResourceOp = Operations.createReadResourceOperation(hostLoggerAddress);
+        final ModelNode result = client.execute(readResourceOp);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        return result;
     }
 
     /**
      * ls /host=slave/server=other-two/subsystem=logging/logger
      */
     private void checkTestLoggerFromSlaveHost(DomainClient client) throws IOException {
-        ModelNode result = readResourceTestLoggerFromSlaveHost(client);
-        Assert.assertEquals("Reading logger '"  + TEST_LOGGER_NAME + "' resource does not finish with success: " + result,
+        final ModelNode result = readResourceTestLoggerFromSlaveHost(client);
+        assertEquals("Reading logger '"  + TEST_LOGGER_NAME + "' resource does not finish with success: " + result,
             SUCCESS, result.get(OUTCOME).asString());
     }
 
     private ModelNode readLoggingApiDependenciesAtServerOtherTwo(DomainClient client) {
-        ModelNode hostLoggingAddress = new ModelNode()
+        final ModelNode hostLoggingAddress = new ModelNode()
                 .add(HOST, "slave")
                 .add(SERVER, "other-two")
                 .add(SUBSYSTEM, "logging");
 
-        ModelNode readAttributeOp = Operations
+        final ModelNode readAttributeOp = Operations
                 .createReadAttributeOperation(hostLoggingAddress, "add-logging-api-dependencies");
         try {
-            return client.execute(readAttributeOp);
+            final ModelNode result = client.execute(readAttributeOp);
+            assertEquals(SUCCESS, result.get(OUTCOME).asString());
+            return result;
         } catch (IOException ioe) {
             throw new RuntimeException("Can't read attribute 'add-logging-api-dependencies' from address "
                 + hostLoggingAddress, ioe);
@@ -493,24 +499,28 @@ public class CachedDcDomainTestCase {
     }
 
     private ModelNode readLoggingApiDependencies(DomainClient client) throws IOException {
-        ModelNode readAttributeOp = Operations
+        final ModelNode readAttributeOp = Operations
                 .createReadAttributeOperation(getProfileDefaultLoggingAddr(), "add-logging-api-dependencies");
-        return client.execute(readAttributeOp);
+        final ModelNode result = client.execute(readAttributeOp);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        return result;
     }
 
     private boolean setLoggingApiDependencies(DomainClient client) throws IOException {
         boolean isAddLoggingApiDependencies = readLoggingApiDependencies(client).get("result").asBoolean();
 
-        ModelNode writeAttributeOp = Operations
+        final ModelNode writeAttributeOp = Operations
             .createWriteAttributeOperation(getProfileDefaultLoggingAddr(), "add-logging-api-dependencies", !isAddLoggingApiDependencies);
-        client.execute(writeAttributeOp);
+        final ModelNode result = client.execute(writeAttributeOp);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
         return !isAddLoggingApiDependencies;
     }
 
     private void reloadServers(DomainClient clientMaster) throws IOException {
-        ModelNode op = Operations.createOperation("reload-servers");
+        final ModelNode op = Operations.createOperation("reload-servers");
         op.get("blocking").set("true");
-        clientMaster.execute(op);
+        final ModelNode result = clientMaster.execute(op);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
     }
 
     private void stopSlaveAndWaitForUnregistration() throws InterruptedException  {
@@ -519,7 +529,7 @@ public class CachedDcDomainTestCase {
         // this is a bit flaky in CI. It seems that the logger add below begins
         // occasionally before the slave host unregisters completely, then when the
         // slave unregisters the op is rolled back.
-        long deadline = System.currentTimeMillis() + 1000;
+        final long deadline = System.currentTimeMillis() + 1000;
         while (true) {
             if (!domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted()) {
                 break;
