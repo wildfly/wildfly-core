@@ -49,7 +49,6 @@ public class ListOperations {
             .build();
     public static final OperationDefinition LIST_GET_DEFINITION = new SimpleOperationDefinitionBuilder("list-get", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME, AbstractListHandler.INDEX)
-            .setRuntimeOnly()
             .setReadOnly()
             .build();
     public static final OperationDefinition LIST_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("list-remove", ControllerResolver.getResolver("global"))

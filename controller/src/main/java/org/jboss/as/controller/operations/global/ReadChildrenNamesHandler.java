@@ -62,7 +62,6 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_NAMES_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(CHILD_TYPE, INCLUDE_SINGLETONS)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.STRING)
             .build();

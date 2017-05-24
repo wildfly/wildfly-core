@@ -76,7 +76,6 @@ public class ReadOperationDescriptionHandler implements OperationStepHandler {
             .setParameters(NAME, LOCALE, ACCESS_CONTROL)
             .setReplyType(ModelType.OBJECT)
             .setReadOnly()
-            .setRuntimeOnly()
             .build();
 
     static final OperationStepHandler INSTANCE = new ReadOperationDescriptionHandler();

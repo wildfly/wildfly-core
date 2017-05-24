@@ -45,7 +45,6 @@ public class MapOperations {
             .build();
     public static final OperationDefinition MAP_GET_DEFINITION = new SimpleOperationDefinitionBuilder("map-get", ControllerResolver.getResolver("global"))
             .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY)
-            .setRuntimeOnly()
             .setReadOnly()
             .build();
     public static final OperationDefinition MAP_PUT_DEFINITION = new SimpleOperationDefinitionBuilder("map-put", ControllerResolver.getResolver("global"))
