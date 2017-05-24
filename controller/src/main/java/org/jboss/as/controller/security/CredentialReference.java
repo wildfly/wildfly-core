@@ -36,9 +36,11 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.value.InjectedValue;
+import org.jboss.msc.service.ServiceRegistry;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.credential.Credential;
@@ -311,12 +313,17 @@ public final class CredentialReference {
             secret = null;
         }
 
-        final InjectedValue<CredentialStore> credentialStoreInjectedValue = new InjectedValue<>();
+        final ServiceRegistry serviceRegistry;
+        final ServiceName credentialStoreServiceName;
         if (credentialAlias != null) {
             // use credential store service
             String credentialStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(CREDENTIAL_STORE_CAPABILITY, credentialStoreName);
-            ServiceName credentialStoreServiceName = context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class);
-            serviceBuilder.addDependency(ServiceBuilder.DependencyType.REQUIRED, credentialStoreServiceName, CredentialStore.class, credentialStoreInjectedValue);
+            credentialStoreServiceName = context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class);
+            serviceBuilder.addDependency(ServiceBuilder.DependencyType.REQUIRED, credentialStoreServiceName);
+            serviceRegistry = context.getServiceRegistry(false);
+        } else {
+            credentialStoreServiceName = null;
+            serviceRegistry = null;
         }
 
         return new ExceptionSupplier<CredentialSource, Exception>() {
@@ -345,7 +352,16 @@ public final class CredentialReference {
             @Override
             public CredentialSource get() throws Exception {
                 if (credentialAlias != null) {
-                    return new CredentialStoreCredentialSource(credentialStoreInjectedValue.getValue(), credentialAlias);
+                    return new CredentialStoreCredentialSource(
+                            () -> {
+                                ServiceController<?> controller = serviceRegistry.getService(credentialStoreServiceName);
+                                if (controller != null) {
+                                    Service<CredentialStore> credentialStoreService = (Service<CredentialStore>) controller.getService();
+                                    return credentialStoreService.getValue();
+                                } else {
+                                    return null;
+                                }
+                            }, credentialAlias);
                 } else if (credentialType != null && credentialType.equalsIgnoreCase("COMMAND")) {
                     CommandCredentialSource.Builder command = CommandCredentialSource.builder();
                     String commandSpec = secret.trim();
