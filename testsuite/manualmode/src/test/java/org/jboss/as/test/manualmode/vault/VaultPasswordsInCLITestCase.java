@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
 import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
@@ -50,7 +51,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -70,7 +70,6 @@ import org.wildfly.test.api.Authentication.CallbackHandler;
 
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class VaultPasswordsInCLITestCase {
 
     private static Logger LOGGER = Logger.getLogger(VaultPasswordsInCLITestCase.class);
