@@ -39,11 +39,9 @@ import org.jboss.dmr.ModelType;
 public class MapOperations {
     public static final OperationDefinition MAP_CLEAR_DEFINITION = new SimpleOperationDefinitionBuilder("map-clear", ControllerResolver.getResolver("global"))
             .setParameters(AbstractMapHandler.NAME)
-            .setRuntimeOnly()
             .build();
     public static final OperationDefinition MAP_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("map-remove", ControllerResolver.getResolver("global"))
             .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY)
-            .setRuntimeOnly()
             .build();
     public static final OperationDefinition MAP_GET_DEFINITION = new SimpleOperationDefinitionBuilder("map-get", ControllerResolver.getResolver("global"))
             .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY)
@@ -52,7 +50,6 @@ public class MapOperations {
             .build();
     public static final OperationDefinition MAP_PUT_DEFINITION = new SimpleOperationDefinitionBuilder("map-put", ControllerResolver.getResolver("global"))
             .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY, AbstractMapHandler.VALUE)
-            .setRuntimeOnly()
             .build();
 
     public static final OperationStepHandler MAP_CLEAR_HANDLER = new MapClearHandler();

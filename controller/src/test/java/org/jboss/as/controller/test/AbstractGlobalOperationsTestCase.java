@@ -40,6 +40,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_NAMES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_GROUP_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
@@ -353,19 +355,11 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (operations) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 23, ops.size());
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 13 : 23, ops.size());
             boolean runtimeOnly = processType != ProcessType.DOMAIN_SERVER;
             assertEquals(runtimeOnly, ops.contains("testA1-1"));
             assertEquals(runtimeOnly, ops.contains("testA1-2"));
-            assertTrue(ops.contains(READ_RESOURCE_OPERATION));
-            assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
-            assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_TYPES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_RESOURCES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_DESCRIPTION_OPERATION));
-            assertEquals(runtimeOnly, ops.contains(WRITE_ATTRIBUTE_OPERATION));
+            assertGlobalOperations(ops);
 
         } else {
             assertFalse(result.get(OPERATIONS).isDefined());
@@ -393,6 +387,38 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         checkType2Description(result.require(CHILDREN).require("type2").require(MODEL_DESCRIPTION).require("other"));
     }
 
+    private void assertGlobalOperations(Set<String> ops) {
+        assertTrue(ops.contains(READ_RESOURCE_OPERATION));
+        assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
+        assertTrue(ops.contains(READ_ATTRIBUTE_GROUP_OPERATION));
+        assertTrue(ops.contains(READ_ATTRIBUTE_GROUP_NAMES_OPERATION));
+        assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
+        assertTrue(ops.contains(READ_CHILDREN_NAMES_OPERATION));
+        assertTrue(ops.contains(READ_CHILDREN_TYPES_OPERATION));
+        assertTrue(ops.contains(READ_CHILDREN_RESOURCES_OPERATION));
+        assertTrue(ops.contains(READ_OPERATION_NAMES_OPERATION));
+        assertTrue(ops.contains(READ_OPERATION_DESCRIPTION_OPERATION));
+        assertTrue(ops.contains("list-get"));
+        assertTrue(ops.contains("map-get"));
+        if (processType == ProcessType.DOMAIN_SERVER) {
+            assertFalse(ops.contains(WRITE_ATTRIBUTE_OPERATION));
+            assertFalse(ops.contains("list-add"));
+            assertFalse(ops.contains("list-remove"));
+            assertFalse(ops.contains("list-clear"));
+            assertFalse(ops.contains("map-put"));
+            assertFalse(ops.contains("map-remove"));
+            assertFalse(ops.contains("map-clear"));
+        } else {
+            assertTrue(ops.contains(WRITE_ATTRIBUTE_OPERATION));
+            assertTrue(ops.contains("list-add"));
+            assertTrue(ops.contains("list-remove"));
+            assertTrue(ops.contains("list-clear"));
+            assertTrue(ops.contains("map-put"));
+            assertTrue(ops.contains("map-remove"));
+            assertTrue(ops.contains("map-clear"));
+        }
+    }
+
     protected void checkType1Description(ModelNode result) {
         assertNotNull(result);
         assertEquals(ModelType.STRING, result.require(ATTRIBUTES).require("name").require(TYPE).asType());
@@ -405,17 +431,8 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 21, ops.size());
-            assertTrue(ops.contains(READ_RESOURCE_OPERATION));
-            assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
-            assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_TYPES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_RESOURCES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_DESCRIPTION_OPERATION));
-            assertEquals(processType != ProcessType.DOMAIN_SERVER, ops.contains(WRITE_ATTRIBUTE_OPERATION));
-
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 13 : 21, ops.size());
+            assertGlobalOperations(ops);
         }
 
         if (result.hasDefined(NOTIFICATIONS)) {
@@ -440,16 +457,8 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         if (result.hasDefined(OPERATIONS)) {
             assertTrue(result.require(OPERATIONS).isDefined());
             Set<String> ops = result.require(OPERATIONS).keys();
-            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 19 : 21, ops.size());
-            assertTrue(ops.contains(READ_RESOURCE_OPERATION));
-            assertTrue(ops.contains(READ_ATTRIBUTE_OPERATION));
-            assertTrue(ops.contains(READ_RESOURCE_DESCRIPTION_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_TYPES_OPERATION));
-            assertTrue(ops.contains(READ_CHILDREN_RESOURCES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_NAMES_OPERATION));
-            assertTrue(ops.contains(READ_OPERATION_DESCRIPTION_OPERATION));
-            assertEquals(processType != ProcessType.DOMAIN_SERVER, ops.contains(WRITE_ATTRIBUTE_OPERATION));
+            assertEquals(processType == ProcessType.DOMAIN_SERVER ? 13 : 21, ops.size());
+            assertGlobalOperations(ops);
         }
 
         if (result.hasDefined(NOTIFICATIONS)) {
