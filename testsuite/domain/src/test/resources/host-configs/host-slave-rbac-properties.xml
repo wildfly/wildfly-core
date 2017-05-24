@@ -114,22 +114,30 @@
     <jvms>
         <jvm name="default">
             <heap size="64m" max-size="128m"/>
-            <jvm-options><option value="-ea"/></jvm-options>
+            <jvm-options>
+                <option value="-ea"/>
+                <option value="--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"/>
+                <option value="--permit-illegal-access"/>
+            </jvm-options>
         </jvm>
     </jvms>
 
     <servers directory-grouping="by-type">
         <server name="slave-a" group="server-group-a" auto-start="false">
             <socket-bindings socket-binding-group="sockets-a" port-offset="400"/>
+            <jvm name="default" />
         </server>
         <server name="slave-b" group="server-group-b">
             <socket-bindings socket-binding-group="sockets-b" port-offset="500"/>
+            <jvm name="default" />
         </server>
         <server name="slave-c" group="server-group-c" auto-start="false">
             <socket-bindings socket-binding-group="sockets-shared" port-offset="600"/>
+            <jvm name="default" />
         </server>
         <server name="slave-d" group="server-group-d" auto-start="false">
             <socket-bindings socket-binding-group="sockets-shared" port-offset="700"/>
+            <jvm name="default" />
         </server>
     </servers>
 </host>

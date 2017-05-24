@@ -84,13 +84,17 @@
         </interface>
     </interfaces>
 
-	<jvms>
-	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-           <jvm-options><option value="-ea"/></jvm-options>
-          <environment-variables>
-              <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-          </environment-variables>
+    <jvms>
+        <jvm name="default" >
+            <heap size="64m" max-size="128m"/>
+            <jvm-options>
+                <option value="-ea"/>
+                <option value="--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"/>
+                <option value="--permit-illegal-access"/>
+            </jvm-options>
+            <environment-variables>
+                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+            </environment-variables>
         </jvm>
     </jvms>
 
@@ -120,9 +124,7 @@
             <!-- server-two avoids port conflicts by incrementing the ports in
             the default socket-group declared in the server-group -->
             <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
-            <jvm name="default">
-                <heap size="64m" max-size="256m"/>
-            </jvm>
+            <jvm name="default" />
         </server>
         <server name="other-one" group="other-server-group" auto-start="false" update-auto-start-with-server-status="true">
             <interfaces>
@@ -131,6 +133,7 @@
                 </interface>
             </interfaces>
             <socket-bindings port-offset="250"/>
+            <jvm name="default" />
         </server>
         <server name="other-two" group="other-server-group" auto-start="false" update-auto-start-with-server-status="false">
             <interfaces>

@@ -130,7 +130,7 @@ public class CoreResourceManagementTestCase {
     private static final ModelNode SERVER_PROP_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
-    private static final ModelNode MAIN_RUNNING_SERVER_CONFIG_ADDRESS = new ModelNode();
+    private static final PathAddress MAIN_RUNNING_SERVER_CONFIG_ADDRESS = PathAddress.pathAddress(HOST, "master").append(SERVER_CONFIG, "main-one");
     private static final ModelNode MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
@@ -167,9 +167,6 @@ public class CoreResourceManagementTestCase {
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         MAIN_RUNNING_SERVER_PROP_ADDRESS.protect();
-        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.add(HOST, "master");
-        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.add(SERVER_CONFIG, "main-one");
-        MAIN_RUNNING_SERVER_CONFIG_ADDRESS.protect();
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "master");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(CORE_SERVICE, PLATFORM_MBEAN);
@@ -392,7 +389,7 @@ public class CoreResourceManagementTestCase {
     @Test //Covers WFCORE-499
     public void testSystemPropertyBootTime() throws IOException, MgmtOperationException {
         DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        ModelNode propertyAddress = MAIN_RUNNING_SERVER_CONFIG_ADDRESS.clone().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        ModelNode propertyAddress = MAIN_RUNNING_SERVER_CONFIG_ADDRESS.toModelNode().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
         validateBootProperty(masterClient, propertyAddress);
         propertyAddress = new ModelNode().add(SERVER_GROUP, "main-server-group").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
         validateBootProperty(masterClient, propertyAddress);
@@ -1175,10 +1172,10 @@ public class CoreResourceManagementTestCase {
         return op;
     }
 
-    private void restartServer(DomainClient client, ModelNode serverAddress) throws IOException {
+    private void restartServer(DomainClient client, PathAddress serverAddress) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("restart");
-        operation.get(OP_ADDR).set(serverAddress);
+        operation.get(OP_ADDR).set(serverAddress.toModelNode());
         operation.get(BLOCKING).set(true);
         ModelNode response = client.execute(operation);
         validateResponse(response, true);

@@ -74,21 +74,10 @@ public class SlaveSynchronizationTestCase {
     private static final String masterAddress = System.getProperty("jboss.test.host.master.address");
     private static final String slaveAddress = System.getProperty("jboss.test.host.slave.address");
 
-    private static final ModelNode hc1RemovedServer = new ModelNode();
-    private static final ModelNode hc2RemovedServer = new ModelNode();
-    private static final ModelNode hc1RemovedServerConfig = new ModelNode();
-    private static final ModelNode hc2RemovedServerConfig = new ModelNode();
-
-    static {
-        hc1RemovedServerConfig.add("host", "hc1");
-        hc1RemovedServerConfig.add("server-config", "server-one");
-        hc1RemovedServer.add("host", "hc1");
-        hc1RemovedServer.add("server", "server-one");
-        hc2RemovedServerConfig.add("host", "hc1");
-        hc2RemovedServerConfig.add("server-config", "server-two");
-        hc2RemovedServer.add("host", "hc1");
-        hc2RemovedServer.add("server", "server-two");
-    }
+    private static final PathAddress hc1RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-one");
+    private static final PathAddress hc2RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-two");
+    private static final PathAddress hc1RemovedServerConfig = PathAddress.pathAddress("host", "hc1").append("server-config", "server-one");
+    private static final PathAddress hc2RemovedServerConfig = PathAddress.pathAddress("host", "hc1").append("server-config", "server-two");
 
     private static DomainControllerClientConfig domainControllerClientConfig;
     private static DomainLifecycleUtil[] hostUtils = new DomainLifecycleUtil[3];
@@ -142,9 +131,10 @@ public class SlaveSynchronizationTestCase {
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
         hostConfig.setHostControllerManagementAddress(host == 0 ? masterAddress : slaveAddress);
-        hostConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress + " -Djboss.test.host.slave.address=" + slaveAddress);
-        hostConfig.setHostCommandLineProperties("-D" + ErrorExtension.FAIL_REMOVAL + "=true " +
-                        hostConfig.getHostCommandLineProperties());
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.master.address=" + masterAddress);
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.slave.address=" + slaveAddress);
+        hostConfig.addHostCommandLineProperty("-D" + ErrorExtension.FAIL_REMOVAL + "=true");
+
         if (Boolean.getBoolean("wildfly."+ HOSTS[host] + ".debug")) {
             hostConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y "
                     + hostConfig.getHostCommandLineProperties());
@@ -194,19 +184,19 @@ public class SlaveSynchronizationTestCase {
     @Test
     public void testRemoveRunningServer() throws Exception {
        PathAddress mainOneAddress = PathAddress.pathAddress("host", "hc2").append("server-config", "server-one");
-       Assert.assertTrue(DomainTestUtils.checkState(masterClient, mainOneAddress.toModelNode(), "STARTED"));
+       Assert.assertTrue(DomainTestUtils.checkState(masterClient, mainOneAddress, "STARTED"));
        ModelNode result = masterClient.execute(Util.createRemoveOperation(mainOneAddress));
        ModelNode failure = DomainTestSupport.validateFailedResponse(result);
        Assert.assertThat("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString(), is(HostControllerLogger.ROOT_LOGGER.serverStillRunning("server-one")));
     }
 
-    private ModelNode removeServer(final ModelControllerClient client, final ModelNode address) throws IOException, MgmtOperationException {
-        return client.execute(Util.createRemoveOperation(PathAddress.pathAddress(address)));
+    private ModelNode removeServer(final ModelControllerClient client, final PathAddress address) throws IOException, MgmtOperationException {
+        return client.execute(Util.createRemoveOperation(address));
     }
 
-    private void stopServer(final ModelControllerClient client, final ModelNode address) throws IOException, MgmtOperationException {
+    private void stopServer(final ModelControllerClient client, final PathAddress address) throws IOException, MgmtOperationException {
         final ModelNode stopServer = new ModelNode();
-        stopServer.get(OP_ADDR).set(address);
+        stopServer.get(OP_ADDR).set(address.toModelNode());
         stopServer.get(OP).set(STOP);
         stopServer.get(BLOCKING).set(true);
         ModelNode result = client.execute(stopServer);
@@ -214,8 +204,7 @@ public class SlaveSynchronizationTestCase {
         Assert.assertEquals("STOPPED", DomainTestUtils.getServerState(masterClient, address));
     }
 
-    private boolean exists(final ModelControllerClient client, final ModelNode address) throws IOException, MgmtOperationException {
-        PathAddress pathAddress = PathAddress.pathAddress(address);
+    private boolean exists(final ModelControllerClient client, final PathAddress pathAddress) throws IOException, MgmtOperationException {
         final ModelNode childrenNamesOp = new ModelNode();
         childrenNamesOp.get(OP).set(READ_CHILDREN_NAMES_OPERATION);
         childrenNamesOp.get(OP_ADDR).set(pathAddress.getParent().toModelNode());

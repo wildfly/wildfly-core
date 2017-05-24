@@ -79,6 +79,7 @@
     <server-groups>
         <server-group name="main-server-group" profile="cached-remote-test">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
     </server-groups>
 
