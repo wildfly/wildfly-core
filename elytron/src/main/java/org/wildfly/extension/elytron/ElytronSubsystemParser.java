@@ -118,9 +118,7 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
                         ElytronDefinition.FINAL_PROVIDERS.parseAndSetParameter(value, subsystemAdd, reader);
                         break;
                     case DISALLOWED_PROVIDERS:
-                        for (String disallowed : reader.getListAttributeValue(i)) {
-                            ElytronDefinition.DISALLOWED_PROVIDERS.parseAndAddParameterElement(disallowed, subsystemAdd, reader);
-                        }
+                        ElytronDefinition.DISALLOWED_PROVIDERS.parseAndSetParameter(value, subsystemAdd, reader);
                         break;
                     default:
                         throw unexpectedAttribute(reader, i);
@@ -141,7 +139,7 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
                     readSecurityProperties(parentAddress, reader, operations);
                     break;
                 case AUTHENTICATION_CLIENT:
-                    clientParser.readAuthenitcationClient(parentAddress, reader, operations);
+                    clientParser.readAuthenticationClient(parentAddress, reader, operations);
                     break;
                 case PROVIDERS:
                     providerParser.readProviders(parentAddress, reader, operations);

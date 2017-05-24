@@ -257,7 +257,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     }
 
     /**
-     * parses whole value as list attribute and uses "," separator splitting list elements
+     * Parses whole value as list attribute
      * @deprecated in favour of using  {@link AttributeParser attribute parser}
      * @param value String with "," separated string elements
      * @param operation operation to with this list elements are added
@@ -266,11 +266,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      */
     @Deprecated
     public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-        if (value != null) {
-            for (String element : value.split(",")) {
-                parseAndAddParameterElement(element.trim(), operation, reader);
-            }
-        }
+        getParser().parseAndSetParameter(this, value, operation, reader);
     }
 
     public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends ListAttributeDefinition>
@@ -282,15 +278,18 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
 
         protected Builder(String attributeName) {
             super(attributeName, ModelType.LIST);
+            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
         }
 
         protected Builder(String attributeName, boolean optional) {
             super(attributeName, ModelType.LIST, optional);
+            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
         }
 
         public Builder(ListAttributeDefinition basis) {
             super(basis);
             this.elementValidator = basis.getElementValidator();
+            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
         }
 
         /**
