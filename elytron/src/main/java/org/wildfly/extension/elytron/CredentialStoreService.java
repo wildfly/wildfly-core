@@ -114,9 +114,6 @@ class CredentialStoreService implements Service<CredentialStore> {
             credentialStoreAttributes.put(CS_LOCATION_ATTRIBUTE, loc.toAbsolutePath().toString());
             credentialStore = getCredentialStoreInstance();
             credentialStore.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProviders.getOptionalValue());
-            if ( credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && !loc.toFile().exists() ){
-                credentialStore.flush();
-            }
         } catch (Exception e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.unableToStartService(e);
         }
