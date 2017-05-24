@@ -21,6 +21,7 @@
 */
 package org.jboss.as.host.controller.model.jvm;
 
+import java.util.EnumSet;
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -150,7 +151,7 @@ public class JvmAttributes {
     public static final SimpleAttributeDefinition TYPE =
             SimpleAttributeDefinitionBuilder.create(JvmAttributes.JVM_TYPE, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setValidator(new EnumValidator<JvmType>(JvmType.class, true, true))
+            .setValidator(new EnumValidator<>(JvmType.class, EnumSet.allOf(JvmType.class)))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.JVM)
             .build();
 

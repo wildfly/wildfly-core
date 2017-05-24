@@ -26,7 +26,9 @@ package org.jboss.as.host.controller.model.jvm;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public enum JvmType {
-    SUN,
+    ORACLE,
     IBM,
-    OTHER
+    OTHER,
+    @Deprecated
+    SUN
 }
