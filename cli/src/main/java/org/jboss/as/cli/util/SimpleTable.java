@@ -37,8 +37,10 @@ public class SimpleTable {
     private final Object[] header;
     private final int[] columnLengths;
     private final List<String[]> lines = new ArrayList<String[]>();
+    private final int terminalWidth;
 
-    public SimpleTable(String[] header) {
+    public SimpleTable(String[] header, int terminalWidth) {
+        this.terminalWidth = terminalWidth;
         if(header == null || header.length == 0) {
             throw new IllegalArgumentException("header can't be null or empty.");
         }
@@ -54,7 +56,8 @@ public class SimpleTable {
         }
     }
 
-    public SimpleTable(int columnsTotal) {
+    public SimpleTable(int columnsTotal, int terminalWidth) {
+        this.terminalWidth = terminalWidth;
         this.header = null;
         columnLengths = new int[columnsTotal];
     }
@@ -78,8 +81,9 @@ public class SimpleTable {
                 value = "null";
             }
             values[i] = value;
-            if(columnLengths[i] < value.length() + 1) {
-                columnLengths[i] = value.length() + 1;
+            if (columnLengths[i] < value.length() + 1) {
+                if (terminalWidth <= 0 || value.length() < terminalWidth) // WFCORE-2812, terminalWidth could be 0 or -1 in tests
+                    columnLengths[i] = value.length() + 1;
             }
         }
         lines.add(values);

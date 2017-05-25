@@ -152,7 +152,7 @@ public class JDBCDriverInfoHandler extends BaseOperationCommand {
         }
         final List<ModelNode> list = result.asList();
         if (!name.isPresent(ctx.getParsedCommandLine())) {
-            final SimpleTable table = new SimpleTable(new String[] { "NAME", "SOURCE" });
+            final SimpleTable table = new SimpleTable(new String[] { "NAME", "SOURCE" }, ctx.getTerminalWidth());
             for (ModelNode node : list) {
                 final ModelNode driverName = node.get(Util.DRIVER_NAME);
                 if (!driverName.isDefined()) {
@@ -176,7 +176,7 @@ public class JDBCDriverInfoHandler extends BaseOperationCommand {
             ctx.printLine(table.toString(true));
         } else {
             final String name = this.name.getValue(ctx.getParsedCommandLine());
-            final SimpleTable table = new SimpleTable(2);
+            final SimpleTable table = new SimpleTable(2, ctx.getTerminalWidth());
             for (ModelNode node : list) {
                 final ModelNode driverName = node.get(Util.DRIVER_NAME);
                 if (!driverName.isDefined()) {

@@ -317,7 +317,7 @@ public class DeploymentInfoHandler extends BaseOperationCommand {
                     final String deploymentName = name.getValue(ctx.getParsedCommandLine());
                     final Pattern pattern = Pattern.compile(Util.wildcardToJavaRegex(deploymentName == null ? "*" : deploymentName));
 
-                    final SimpleTable table = new SimpleTable(new String[] { NAME, RUNTIME_NAME, STATE });
+                    final SimpleTable table = new SimpleTable(new String[] { NAME, RUNTIME_NAME, STATE }, ctx.getTerminalWidth());
                     for(String name : allDeployments.keys()) {
                         if(!pattern.matcher(name).matches()) {
                             continue;
@@ -339,7 +339,7 @@ public class DeploymentInfoHandler extends BaseOperationCommand {
                     table.addCell(Util.NAME, stepResponse.get(Util.NAME).asString());
                     table.addCell(Util.RUNTIME_NAME, stepResponse.get(Util.RUNTIME_NAME).asString());
                     ctx.printLine(table.toString());
-                    final SimpleTable groups = new SimpleTable(new String[] { SERVER_GROUP, STATE });
+                    final SimpleTable groups = new SimpleTable(new String[] { SERVER_GROUP, STATE }, ctx.getTerminalWidth());
                     if (addedServerGroups == null) {
                         if (steps.hasNext()) {
                             throw new CommandFormatException("Didn't expect results for server groups but received "
@@ -375,7 +375,7 @@ public class DeploymentInfoHandler extends BaseOperationCommand {
                     ctx.printLine(groups.toString(true));
                 }
             } else {
-                final SimpleTable table = new SimpleTable(new String[] { NAME, RUNTIME_NAME, PERSISTENT, ENABLED, STATUS });
+                final SimpleTable table = new SimpleTable(new String[] { NAME, RUNTIME_NAME, PERSISTENT, ENABLED, STATUS }, ctx.getTerminalWidth());
                 final String deploymentName = name.getValue(ctx.getParsedCommandLine());
                 if(deploymentName == null || deploymentName.indexOf('*') >= 0) {
                     final List<Property> list = result.asPropertyList();

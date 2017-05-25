@@ -253,12 +253,12 @@ public class LsHandler extends BaseOperationCommand {
                                 for (String additional : additionalProps) {
                                     headers[i++] = additional.toUpperCase(Locale.ENGLISH);
                                 }
-                                attrTable = new SimpleTable(headers);
+                                attrTable = new SimpleTable(headers, ctx.getTerminalWidth());
                             } else {
-                                attrTable = new SimpleTable(new String[] { "ATTRIBUTE", "VALUE", "TYPE" });
+                                attrTable = new SimpleTable(new String[] { "ATTRIBUTE", "VALUE", "TYPE" }, ctx.getTerminalWidth());
                             }
                         }
-                        SimpleTable childrenTable = childDescriptions == null ? null : new SimpleTable(new String[] { "CHILD", "MIN-OCCURS", "MAX-OCCURS" });
+                        SimpleTable childrenTable = childDescriptions == null ? null : new SimpleTable(new String[] { "CHILD", "MIN-OCCURS", "MAX-OCCURS" }, ctx.getTerminalWidth());
                         if (typeNames == null && attrTable == null && childrenTable == null) {
                             typeNames = new ArrayList<String>();
                             names = typeNames;
