@@ -58,7 +58,7 @@ class AuthenticationClientParser {
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    void readAuthenitcationClient(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    void readAuthenticationClient(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {
         requireNoAttributes(reader);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

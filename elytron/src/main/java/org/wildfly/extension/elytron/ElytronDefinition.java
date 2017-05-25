@@ -36,6 +36,8 @@ import java.security.Provider;
 import java.util.List;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -106,6 +108,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     static final StringListAttributeDefinition DISALLOWED_PROVIDERS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.DISALLOWED_PROVIDERS)
             .setRequired(false)
+            .setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST)
+            .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
             .setRestartJVM()
             .setElementValidator(new StringLengthValidator(1))
             .setAllowExpression(true)
