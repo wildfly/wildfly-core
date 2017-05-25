@@ -38,7 +38,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import org.junit.Assert;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
@@ -67,29 +70,15 @@ public class CustomCLIExecutor {
     private static Logger LOGGER = Logger.getLogger(CustomCLIExecutor.class);
 
     private static final int CLI_PROC_TIMEOUT = TimeoutUtil.adjust(30000);
-    private static final int STATUS_CHECK_INTERVAL = TimeoutUtil.adjust(2000);
-    private static final byte[] NEW_LINE = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
 
     public static String execute(File cliConfigFile, String operation) {
 
         String defaultController = TestSuiteEnvironment.getServerAddress() + ":" + TestSuiteEnvironment.getServerPort();
-        return execute(cliConfigFile, operation, defaultController, false);
+        return execute(cliConfigFile, operation, defaultController, true);
     }
 
     public static String execute(File cliConfigFile, String operation, String controller) {
-
-
-        return execute(cliConfigFile, operation, controller, false);
-    }
-
-    /**
-     * Externally executes CLI operation with cliConfigFile settings via defined
-     * controller
-     *
-     * @return String cliOutput
-     */
-    public static String execute(File cliConfigFile, String operation, String controller, boolean logFailure) {
-        return execute(cliConfigFile, operation, controller, logFailure, null);
+        return execute(cliConfigFile, operation, controller, true);
     }
 
     /**
@@ -100,11 +89,10 @@ public class CustomCLIExecutor {
      * @param operation       the CLI operation to execute
      * @param controller      the controller to use
      * @param logFailure      {@code true} to log failures otherwise {@code false}
-     * @param failureResponse a response that can be sent to stdin of the launched processes or {@code null}
      *
      * @return the stdout response from the process
      */
-    public static String execute(File cliConfigFile, String operation, String controller, boolean logFailure, String failureResponse) {
+    public static String execute(File cliConfigFile, String operation, String controller, boolean logFailure) {
 
         String jbossDist = System.getProperty("jboss.dist");
         if (jbossDist == null) {
@@ -134,6 +122,7 @@ public class CustomCLIExecutor {
         }
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
         commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
+        commandBuilder.addCliArgument("--error-on-interact"); // if server prompt for certificate to accept
 
         // propagate JVM args to the CLI
         String cliJvmArgs = System.getProperty("cli.jvm.args");
@@ -148,7 +137,7 @@ public class CustomCLIExecutor {
         // Set the connection command
         commandBuilder.setConnection(controller);
         commandBuilder.addCliArgument(operation);
-        return executeProcess(commandBuilder, logFailure, failureResponse, Collections.emptyMap());
+        return executeProcess(commandBuilder, logFailure, Collections.emptyMap());
     }
 
     /**
@@ -223,7 +212,7 @@ public class CustomCLIExecutor {
                 if (cliJvmArgs != null) {
                     commandBuilder.addJavaOptions(cliJvmArgs.split("\\s+"));
                 }
-                return executeProcess(commandBuilder, logFailure, null, Collections.singletonMap("JBOSS_HOME", jbossDist));
+                return executeProcess(commandBuilder, logFailure, Collections.singletonMap("JBOSS_HOME", jbossDist));
             } finally {
                 try {
                     Files.deleteIfExists(cliScript);
@@ -238,7 +227,7 @@ public class CustomCLIExecutor {
         }
     }
 
-    private static String executeProcess(final CliCommandBuilder commandBuilder, final boolean logFailure, final String failureResponse, final Map<String, String> env) {
+    private static String executeProcess(final CliCommandBuilder commandBuilder, final boolean logFailure, final Map<String, String> env) {
         Process cliProc = null;
         try {
             cliProc = Launcher.of(commandBuilder)
@@ -252,37 +241,19 @@ public class CustomCLIExecutor {
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
         CustomCLIExecutor.ConsoleConsumer.start(cliProc.getInputStream(), out);
         CustomCLIExecutor.ConsoleConsumer.start(cliProc.getErrorStream(), err);
-        boolean wait = true;
-        int runningTime = 0;
         int exitCode = Integer.MIN_VALUE;
-        do {
-            try {
-                Thread.sleep(STATUS_CHECK_INTERVAL);
-            } catch (InterruptedException e) {
-            }
-            runningTime += STATUS_CHECK_INTERVAL;
-            try {
+        try {
+            boolean finished = cliProc.waitFor(CLI_PROC_TIMEOUT, TimeUnit.MILLISECONDS);
+            if (finished) {
                 exitCode = cliProc.exitValue();
-                wait = false;
-            } catch (IllegalThreadStateException e) {
-                // cli still working
-                if (failureResponse != null) {
-                    try {
-                        final OutputStream stdin = cliProc.getOutputStream();
-                        stdin.write(failureResponse.getBytes(StandardCharsets.UTF_8));
-                        stdin.write(NEW_LINE);
-                        stdin.flush();
-                    } catch (IOException e1) {
-                        LOGGER.debug(out.toString(), e);
-                    }
-                }
-            }
-            if (runningTime >= CLI_PROC_TIMEOUT) {
-                cliProc.destroy();
-                wait = false;
+            } else {
                 LOGGER.info("A timeout has occurred while invoking CLI command.");
             }
-        } while (wait);
+        } catch (InterruptedException e1) {
+            Assert.fail("Interupted while waiting. Error Message" + e1.getMessage());
+        } finally {
+            cliProc.destroyForcibly();
+        }
 
         final String cliOutput = out.toString();
 

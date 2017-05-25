@@ -22,8 +22,18 @@
 
 package org.wildfly.core.test.standalone.mgmt;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.HTTPS_CONTROLLER;
+import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.io.IOException;
+
 import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
@@ -53,15 +63,6 @@ import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.HTTPS_CONTROLLER;
-import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
-import static org.junit.Assert.assertThat;
 
 /**
  * Testing https connection to the http management interface with cli console
@@ -121,7 +122,7 @@ public class HTTPSConnectionWithCLITestCase {
      */
     @Test
     public void testDefaultCLIConfiguration() throws InterruptedException, IOException {
-        String cliOutput = CustomCLIExecutor.execute(null, TESTING_OPERATION, HTTPS_CONTROLLER, true, "N");
+        String cliOutput = CustomCLIExecutor.execute(null, TESTING_OPERATION, HTTPS_CONTROLLER, true);
         assertThat("Untrusted client should not be authenticated.", cliOutput, not(containsString("\"outcome\" => \"success\"")));
 
     }
