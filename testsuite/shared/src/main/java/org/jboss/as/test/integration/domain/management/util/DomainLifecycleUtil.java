@@ -494,15 +494,13 @@ public class DomainLifecycleUtil {
         boolean serversAvailable = false;
         long deadline = start + configuration.getStartupTimeoutInSeconds() * 1000;
         while (!serversAvailable && getProcessExitCode() < 0) {
+            serversAvailable = areServersStarted();
             long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {
                 break;
             }
             TimeUnit.MILLISECONDS.sleep(250);
-
-            serversAvailable = areServersStarted();
         }
-
         if (!serversAvailable) {
             throw new TimeoutException(String.format("Managed servers were not started within [%d] seconds", configuration.getStartupTimeoutInSeconds()));
         }
@@ -513,12 +511,12 @@ public class DomainLifecycleUtil {
         boolean hcAvailable = false;
         long deadline = start + configuration.getStartupTimeoutInSeconds() * 1000;
         while (!hcAvailable && getProcessExitCode() < 0) {
+            hcAvailable = isHostControllerStarted();
             long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {
                 break;
             }
             TimeUnit.MILLISECONDS.sleep(250);
-            hcAvailable = isHostControllerStarted();
         }
         if (!hcAvailable) {
             throw new TimeoutException(String.format("HostController was not started within [%d] seconds", configuration.getStartupTimeoutInSeconds()));

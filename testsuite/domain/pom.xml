@@ -195,16 +195,16 @@
                         <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
                     </systemPropertyVariables>
                     <includes>
-                         <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/cacheddc/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/respawn/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/events/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/suites/*TestSuite.java</include>
-                         <include>org/jboss/as/test/integration/domain/suspendresume/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/slavereconnect/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/management/*TestCase.java</include>
-                         <include>org/jboss/as/test/integration/domain/elytron/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/cacheddc/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/respawn/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/events/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/suites/*TestSuite.java</include>
+                        <include>org/jboss/as/test/integration/domain/suspendresume/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/slavereconnect/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/management/*TestCase.java</include>
+                        <include>org/jboss/as/test/integration/domain/elytron/*TestCase.java</include>
                     </includes>
                 </configuration>
             </plugin>
