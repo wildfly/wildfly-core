@@ -67,6 +67,9 @@ if "x%JBOSS_MODULEPATH%" == "x" (
 rem Add base package for L&F
 set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.system.pkgs=com.sun.java.swing"
 
+rem Override ibm JRE behavior
+set "JAVA_OPTS=%JAVA_OPTS% -Dcom.ibm.jsse2.overrideDefaultTLS=true"
+
 set LOGGING_CONFIG=
 echo "%JAVA_OPTS%" | findstr /I "logging.configuration" > nul
 if errorlevel == 1 (
