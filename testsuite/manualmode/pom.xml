@@ -41,7 +41,7 @@
 
         <ts.elytron.cli>../shared/enable-elytron.cli</ts.elytron.cli>
     </properties>
-
+    
     <dependencies>
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -168,6 +168,9 @@
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
                             </systemPropertyVariables>
+                             <environmentVariables>
+                                <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
+                             </environmentVariables>
                         </configuration>
                     </plugin>
                     <plugin>
