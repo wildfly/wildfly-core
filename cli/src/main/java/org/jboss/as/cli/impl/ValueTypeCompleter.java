@@ -498,6 +498,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 case ']':
                 case '=':
                 case ',':
+                    // If the instance is complete, buffer will be returned as is
+                    // starting at 0;
+                    if (currentInstance != null
+                            && currentInstance.parent == null
+                            && currentInstance.isComplete()) {
+                        return 0;
+                    }
                     return lastStateIndex + (valLength == 0 ? 1 : valLength);
             }
             // Some value completer compute an offset between the lastStateIndex

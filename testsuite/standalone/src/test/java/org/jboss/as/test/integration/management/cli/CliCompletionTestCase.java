@@ -66,6 +66,25 @@ public class CliCompletionTestCase {
                 assertEquals(candidates.toString(), Arrays.asList("admin-only",
                         "normal", "suspend"), candidates);
             }
+
+            {
+                String cmd = "/subsystem=elytron/token-realm=JwtRealm:add(jwt={}";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList(","), candidates);
+            }
+
+            {
+                String cmd = "/subsystem=logging/logger=cdsc:add(category=cdsc,"
+                        + "filter={accept=true,all={},change-level=ALL,not={},"
+                        + "level-range={min-level=ALL,max-level=ALL,"
+                        + "max-inclusive=true,min-inclusive=false}";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList(","), candidates);
+            }
         } finally {
             ctx.terminateSession();
         }
