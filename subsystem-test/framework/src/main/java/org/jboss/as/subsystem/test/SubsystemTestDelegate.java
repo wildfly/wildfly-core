@@ -28,15 +28,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -253,61 +249,6 @@ final class SubsystemTestDelegate {
     }
 
     /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param subsystemXml the subsystem xml to be parsed
-     * @return the kernel services allowing access to the controller and service container
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(String subsystemXml) throws Exception {
-        return createKernelServicesBuilder(null)
-                .setSubsystemXml(subsystemXml)
-                .build();
-    }
-
-    /**
-     * Initializes the controller and populates the subsystem model from the passed in xml.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param subsystemXml   the subsystem xml to be parsed
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(AdditionalInitialization additionalInit, String subsystemXml) throws Exception {
-        return createKernelServicesBuilder(additionalInit)
-                .setSubsystemXml(subsystemXml)
-                .build();
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(List<ModelNode> bootOperations) throws Exception {
-        return createKernelServicesBuilder(null)
-                .setBootOperations(bootOperations)
-                .build();
-    }
-
-    /**
-     * Create a new controller with the passed in operations.
-     *
-     * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
-     * @param bootOperations the operations
-     * @deprecated Use {@link #createKernelServicesBuilder(AdditionalInitialization)} instead
-     */
-    @Deprecated
-    KernelServices installInController(AdditionalInitialization additionalInit, List<ModelNode> bootOperations) throws Exception {
-        return createKernelServicesBuilder(additionalInit)
-                .setBootOperations(bootOperations)
-                .build();
-    }
-
-    /**
      * Creates a new kernel services builder used to create a new controller containing the subsystem being tested
      *
      * @param additionalInit Additional initialization that should be done to the parsers, controller and service container before initializing our extension
@@ -452,39 +393,7 @@ final class SubsystemTestDelegate {
         }
     }
 
-    /**
-     * Dumps the target subsystem resource description to DMR format, needed by TransformerRegistry for non-standard subsystems
-     *
-     * @param kernelServices the kernel services for the started controller
-     * @param modelVersion   the target subsystem model version
-     * @deprecated this might no longer be needed following refactoring of TransformerRegistry
-     */
-    @Deprecated
-    File generateLegacySubsystemResourceRegistrationDmr(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
-        KernelServices legacy = kernelServices.getLegacyServices(modelVersion);
 
-        //Generate the org.jboss.as.controller.transform.subsystem-version.dmr file - just use the format used by TransformerRegistry for now
-        PathAddress pathAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName));
-        ModelNode desc = ((KernelServicesInternal)legacy).readFullModelDescription(pathAddress.toModelNode());
-        File dmrFile = getDmrFile(kernelServices, modelVersion);
-        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(dmrFile.toPath(), StandardCharsets.UTF_8))){
-            desc.writeString(pw, false);
-            //System.out.println("Legacy resource definition dmr written to: " + dmrFile.getAbsolutePath());
-            return dmrFile;
-        }
-    }
-
-    private File getDmrFile(KernelServices kernelServices, ModelVersion modelVersion) {
-        File file = new File("target/test-classes").getAbsoluteFile();
-        Assert.assertTrue(file.exists());
-        for (String part : kernelServices.getTestClass().getPackage().getName().split("\\.")) {
-            file = new File(file, part);
-            if (!file.exists()) {
-                file.mkdir();
-            }
-        }
-        return new File(file, mainSubsystemName + "-" + modelVersion.getMajor() + "." + modelVersion.getMinor() +"."+modelVersion.getMicro()+ ".dmr");
-    }
 
     /**
      * Checks that the transformed model is the same as the model built up in the legacy subsystem controller via the transformed operations,
@@ -521,28 +430,11 @@ final class SubsystemTestDelegate {
         ModelTestUtils.compare(legacySubsystem, transformed, true);
 
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
-        ResourceDefinition rd = getResourceDefinition(kernelServices, modelVersion);
+        ResourceDefinition rd = TransformationUtils.getResourceDefinition(kernelServices, modelVersion, mainSubsystemName);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
         ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType()).createRegistration(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
-    }
-
-    private ResourceDefinition getResourceDefinition(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
-        //Look for the file in the org.jboss.as.subsystem.test package - this is where we used to store them before the split
-        ResourceDefinition rd = TransformationUtils.loadSubsystemDefinitionFromFile(this.getClass(), mainSubsystemName, modelVersion);
-
-        if (rd == null) {
-            //This is the 'new' post-split way. First check for a cached .dmr file. This which also allows people
-            //to override the file for the very rare cases where the rd needed touching up (probably only the case for 7.1.x descriptions).
-            File file = getDmrFile(kernelServices, modelVersion);
-            if (!file.exists()) {
-                generateLegacySubsystemResourceRegistrationDmr(kernelServices, modelVersion);
-            }
-            //System.out.println("Using legacy resource definition dmr: " + file);
-            rd = TransformationUtils.loadSubsystemDefinitionFromFile(kernelServices.getTestClass(), mainSubsystemName, modelVersion);
-        }
-        return rd;
     }
 
     void addAdditionalParsers(AdditionalParsers additionalParsers) {

@@ -72,7 +72,7 @@ public class OldExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, EXTENSION_NAME, new EmptyParser());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, EXTENSION_NAME, EmptyParser::new);
     }
 
     private void registerTransformers(SubsystemRegistration subsystem) {

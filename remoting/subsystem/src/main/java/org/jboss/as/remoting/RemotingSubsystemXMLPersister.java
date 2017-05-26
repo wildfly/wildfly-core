@@ -135,10 +135,7 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
     }
 
     private void writeEndpointIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
-        ModelNode endpointConfig = model.get(RemotingEndpointResource.ENDPOINT_PATH.getKey(),
-                RemotingEndpointResource.ENDPOINT_PATH.getValue());
         RemotingSubsystem30Parser.ENDPOINT_PARSER.persist(writer, model);
-
     }
 
     private void writeConnector(final XMLExtendedStreamWriter writer, final ModelNode node, final String name) throws XMLStreamException {

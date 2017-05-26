@@ -134,7 +134,6 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
         Assert.assertTrue(legacySubsystem.hasDefined("element"));
         Assert.assertTrue(legacySubsystem.get("element").hasDefined("renamed"));
 
-        generateLegacySubsystemResourceRegistrationDmr(mainServices, oldVersion);
         checkSubsystemModelTransformation(mainServices, oldVersion);
 
         PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM, "test-subsystem");

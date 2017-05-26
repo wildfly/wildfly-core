@@ -32,6 +32,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -75,7 +76,7 @@ public class ListOperations {
      * @author Tomaz Cerar (c) 2014 Red Hat Inc.
      */
     abstract static class AbstractListHandler extends AbstractCollectionHandler {
-        static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinition("index", ModelType.INT, true);
+        static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder("index", ModelType.INT).setRequired(false).build();
 
         AbstractListHandler(AttributeDefinition... attributes) {
             super(attributes);

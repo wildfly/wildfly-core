@@ -30,6 +30,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
@@ -43,7 +44,7 @@ import org.jboss.dmr.ModelType;
  */
 abstract class AbstractCollectionHandler implements OperationStepHandler {
 
-    static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinition("name", ModelType.STRING, false);
+    static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING).setRequired(true).build();
     static final SimpleAttributeDefinition VALUE = GlobalOperationAttributes.VALUE;
 
     private final AttributeDefinition[] attributes;

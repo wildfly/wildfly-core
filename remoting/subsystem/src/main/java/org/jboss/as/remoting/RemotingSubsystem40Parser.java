@@ -49,12 +49,7 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
-
-    static final RemotingSubsystem40Parser INSTANCE = new RemotingSubsystem40Parser();
-
-    private RemotingSubsystem40Parser() {
-    }
+class RemotingSubsystem40Parser extends RemotingSubsystem30Parser {
 
     @Override
     void parseConnector(boolean http, XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)

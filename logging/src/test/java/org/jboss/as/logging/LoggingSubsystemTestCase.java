@@ -234,40 +234,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
     }
 
     @Test
-    public void testTransformersWildFly800() throws Exception {
-        testWildFlyTransformer(ModelTestControllerVersion.WILDFLY_8_0_0_FINAL, ModelVersion.create(2, 0, 0), readResource("/logging_2_0.xml"),
-                // In WildFly Core the default formatter changed from %E (extended exceptions) to %e. When the legacy
-                // model is compared to the new model and the formatter is not defined or a named-formatter is used the
-                // check fails due to the formatter difference. This is not ideal, but will work as the difference isn't
-                // important.
-                new AttributeValueChangerModelFixer(AbstractHandlerDefinition.FORMATTER, "%E", "%e")
-        );
-    }
-
-    @Test
-    public void testFailedTransformersWildFly800() throws Exception {
-        final ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.WILDFLY_8_0_0_FINAL;
-        final ModelVersion modelVersion = ModelVersion.create(2, 0, 0);
-        final PathAddress loggingProfileAddress = SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE);
-
-        // Test against current
-        testWildFlyFailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX))
-                        .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(loggingProfileAddress.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(loggingProfileAddress.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX)));
-    }
-
-    @Test
     public void testTransformersEAP700() throws Exception {
         testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml") );
     }

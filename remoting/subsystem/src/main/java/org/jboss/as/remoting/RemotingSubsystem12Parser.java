@@ -53,8 +53,6 @@ import static org.jboss.as.remoting.CommonAttributes.SOCKET_BINDING;
  */
 class RemotingSubsystem12Parser extends RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
-    static final RemotingSubsystem12Parser INSTANCE = new RemotingSubsystem12Parser();
-
     void parseConnector(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         String name = null;
