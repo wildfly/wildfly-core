@@ -264,14 +264,17 @@
 
         <server-group name="ignored-profile" profile="ignored">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
 
         <server-group name="ignored-sockets" profile="default">
             <socket-binding-group ref="ignored"/>
+            <jvm name="default" />
         </server-group>
 
         <server-group name="minimal" profile="minimal">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
 
         <server-group name="reload-test-group" profile="minimal">

@@ -39,13 +39,13 @@
     <name>WildFly: Vault Test Feature Pack</name>
     <packaging>pom</packaging>
     <description>
-	  Provides a stripped down version of the org.picketbox
-	  module solely for WildFly Core testsuite use in testing its security vault functionality
-	</description>
+        Provides a stripped down version of the org.picketbox
+        module solely for WildFly Core testsuite use in testing its security vault functionality
+    </description>
 
     <dependencies>
 
-		<!-- feature pack dependencies -->
+        <!-- feature pack dependencies -->
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -59,7 +59,7 @@
             </exclusions>
         </dependency>
 
-		<!-- module and copy artifact dependencies -->
+        <!-- module and copy artifact dependencies -->
 
         <dependency>
             <groupId>org.picketbox</groupId>

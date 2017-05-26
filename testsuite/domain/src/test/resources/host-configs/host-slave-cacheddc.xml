@@ -73,12 +73,16 @@
         </interface>
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-           <jvm-options><option value="-ea"/></jvm-options>
-       </jvm>
- 	</jvms>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="128m"/>
+            <jvm-options>
+                <option value="-ea"/>
+                <option value="--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"/>
+                <option value="--permit-illegal-access"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
 
     <servers directory-grouping="by-type">
         <server name="other-two" group="other-server-group">
@@ -88,6 +92,7 @@
                 </interface>
             </interfaces>
             <socket-bindings socket-binding-group="other-sockets" port-offset="550"/>
+            <jvm name="default"/>
         </server>
     </servers>
 </host>

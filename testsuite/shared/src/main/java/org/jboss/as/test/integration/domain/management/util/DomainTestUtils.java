@@ -95,10 +95,9 @@ public class DomainTestUtils {
      * @param serverName the server name
      * @return the address
      */
-    public static ModelNode getServerConfigAddress(final String hostName, final String serverName) {
-        final ModelNode address = getHostAddress(hostName);
-        address.add(SERVER_CONFIG, serverName);
-        return address;
+    public static PathAddress getServerConfigAddress(final String hostName, final String serverName) {
+        final PathAddress address = PathAddress.pathAddress(getHostAddress(hostName));
+        return address.append(SERVER_CONFIG, serverName);
     }
 
     /**
@@ -202,7 +201,7 @@ public class DomainTestUtils {
      * @param state the required state
      * @throws IOException
      */
-    public static void waitUntilState(final ModelControllerClient client, final ModelNode serverAddress, final String state) throws IOException {
+    public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
         waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
     }
 
@@ -282,10 +281,10 @@ public class DomainTestUtils {
      * @throws MgmtOperationException
      */
     public static String startServer(final ModelControllerClient connection, final String host, final String server, final boolean blocking) throws IOException, MgmtOperationException {
-        final ModelNode address = getServerConfigAddress(host, server);
+        final PathAddress address = getServerConfigAddress(host, server);
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("start");
-        operation.get(OP_ADDR).set(address);
+        operation.get(OP_ADDR).set(address.toModelNode());
         operation.get("blocking").set(blocking);
         // Start
         executeForResult(operation, connection);
@@ -303,7 +302,7 @@ public class DomainTestUtils {
      * @param unit the time unit
      * @throws IOException
      */
-    public static void waitUntilState(final ModelControllerClient client, final ModelNode serverAddress, final String required, final long timeout, final TimeUnit unit) throws IOException {
+    public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String required, final long timeout, final TimeUnit unit) throws IOException {
         final long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         for(;;) {
             final long remaining = deadline - System.currentTimeMillis();
@@ -332,10 +331,10 @@ public class DomainTestUtils {
      * @return the server state
      * @throws IOException
      */
-    public static String getServerState(final ModelControllerClient client, final ModelNode serverAddress) throws IOException {
+    public static String getServerState(final ModelControllerClient client, final PathAddress serverAddress) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).set(serverAddress);
+        operation.get(OP_ADDR).set(serverAddress.toModelNode());
         operation.get(NAME).set("status");
 
         ModelNode status = client.execute(operation);
@@ -351,7 +350,7 @@ public class DomainTestUtils {
      * @return {@code true} if the state matches, {@code false} otherwise
      * @throws IOException
      */
-    public static boolean checkState(final ModelControllerClient client, final ModelNode serverAddress, final String state) throws IOException {
+    public static boolean checkState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
         final String serverState = getServerState(client, serverAddress);
         return state.equals(serverState);
     }

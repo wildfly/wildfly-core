@@ -152,6 +152,7 @@
     <server-groups>
         <server-group name="server-group-a" profile="profile-a">
             <socket-binding-group ref="sockets-a"/>
+            <jvm name="default" />
         </server-group>
 
         <server-group name="server-group-b" profile="profile-b">
@@ -163,10 +164,12 @@
 
         <server-group name="server-group-c" profile="profile-shared">
             <socket-binding-group ref="sockets-shared"/>
+            <jvm name="default" />
         </server-group>
 
         <server-group name="server-group-d" profile="profile-shared">
             <socket-binding-group ref="sockets-shared"/>
+            <jvm name="default" />
         </server-group>
 
     </server-groups>

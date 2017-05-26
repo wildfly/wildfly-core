@@ -33,7 +33,6 @@
     <paths>
         <path name="domainTestPath" />
     </paths>
-
     <profiles>
 
         <profile name="default">
@@ -120,15 +119,19 @@
     <server-groups>
         <server-group name="main-server-group" profile="default">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
         <server-group name="other-server-group" profile="default">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
         <server-group name="minimal" profile="default">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
         <server-group name="reload-test-group" profile="default">
             <socket-binding-group ref="standard-sockets"/>
+            <jvm name="default" />
         </server-group>
     </server-groups>
 

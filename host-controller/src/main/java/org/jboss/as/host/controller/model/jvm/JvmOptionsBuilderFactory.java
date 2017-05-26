@@ -23,6 +23,7 @@ package org.jboss.as.host.controller.model.jvm;
 
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +46,10 @@ public class JvmOptionsBuilderFactory {
     private static final Map<JvmType, JvmOptionsBuilder> BUILDERS;
     static {
         Map<JvmType, JvmOptionsBuilder> map = new HashMap<>();
-        map.put(JvmType.SUN, new SunJvmOptionsBuilder(JvmType.SUN));
-        map.put(JvmType.IBM, new IbmJvmOptionsBuilder(JvmType.IBM));
+        map.put(JvmType.ORACLE, new OracleJvmOptionsBuilder(JvmType.ORACLE));
+        //map.put(JvmType.IBM, new IbmJvmOptionsBuilder(JvmType.IBM));
+        map.put(JvmType.IBM, new OracleJvmOptionsBuilder(JvmType.IBM)); //for now the same, as only thing we do is filter out openjdk 9 related params.
+        map.put(JvmType.SUN, new OracleJvmOptionsBuilder(JvmType.SUN));
         BUILDERS = Collections.unmodifiableMap(map);
     }
 
@@ -147,7 +150,9 @@ public class JvmOptionsBuilderFactory {
                     if (!checkOption(jvmElement.getJavaagent() != null && option.startsWith("-XX:MaxPermSize"), jvmName, option, Element.PERMGEN.toString())) {
                         continue;
                     }
-                    command.add(option);
+                    if (checkAdditionalJvmOption(option)) {
+                        command.add(option);
+                    }
                 }
             }
         }
@@ -165,14 +170,29 @@ public class JvmOptionsBuilderFactory {
                 ROOT_LOGGER.ignoringPermGen(type, jvmElement.getName());
             }
         }
+        boolean checkAdditionalJvmOption(String option){
+            return true;
+        }
     }
 
-    private static class SunJvmOptionsBuilder extends JvmOptionsBuilder {
-        private SunJvmOptionsBuilder(JvmType type) {
+    private static class OracleJvmOptionsBuilder extends JvmOptionsBuilder {
+        private static final int JVM_MAJOR_VERSION = JvmElement.getJVMMajorVersion();
+        private static final List<String> ALLOWED_JDK9_PARAMS = Arrays.asList("--permit-illegal-access", "--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
+
+        private OracleJvmOptionsBuilder(JvmType type) {
             super(type);
         }
 
-        // This builder doesn't override anything currently, since the addPermgen behavior
+        @Override
+        boolean checkAdditionalJvmOption(String option) {
+            if (JVM_MAJOR_VERSION==9){
+                return true; //all params are fine
+            }else if (ALLOWED_JDK9_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)){ //drop jdk9 specific params on jdk 8
+                return false;
+            }
+            return true;
+        }
+// This builder doesn't override anything currently, since the addPermgen behavior
         // became standard. But we keep the concept in case we do vm-specific stuff
         // in the future
     }

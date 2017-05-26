@@ -81,11 +81,9 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -100,18 +98,14 @@ public class ServerManagementTestCase {
 
     private static final ModelNode slave = new ModelNode();
     private static final ModelNode mainOne = new ModelNode();
-    private static final ModelNode newServerConfigAddress = new ModelNode();
-    private static final ModelNode newRunningServerAddress = new ModelNode();
+    // (host=slave),(server-config=new-server)
+    private static final PathAddress newServerConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "new-server");
+    // (host=slave),(server=new-server)
+    private static final PathAddress newRunningServerAddress = PathAddress.pathAddress("host", "slave").append("server", "new-server");
 
     static {
         // (host=slave)
         slave.add("host", "slave");
-        // (host=slave),(server-config=new-server)
-        newServerConfigAddress.add("host", "slave");
-        newServerConfigAddress.add("server-config", "new-server");
-        // (host=slave),(server=new-server)
-        newRunningServerAddress.add("host", "slave");
-        newRunningServerAddress.add("server", "new-server");
         // (host=master),(server-config=main-one)
         mainOne.add("host", "master");
         mainOne.add("server-config", "main-one");
@@ -201,7 +195,7 @@ public class ServerManagementTestCase {
 
         final ModelNode addServer = new ModelNode();
         addServer.get(OP).set(ADD);
-        addServer.get(OP_ADDR).set(newServerConfigAddress);
+        addServer.get(OP_ADDR).set(newServerConfigAddress.toModelNode());
         addServer.get(GROUP).set("minimal");
         addServer.get(SOCKET_BINDING_GROUP).set("standard-sockets");
         addServer.get(SOCKET_BINDING_PORT_OFFSET).set(650);
@@ -211,6 +205,7 @@ public class ServerManagementTestCase {
         Assert.assertFalse(exists(client, newRunningServerAddress));
 
         ModelNode result = client.execute(addServer);
+        client.execute(Util.createAddOperation(newServerConfigAddress.append("jvm", "default")));
 
         DomainTestSupport.validateResponse(result, false);
 
@@ -225,7 +220,7 @@ public class ServerManagementTestCase {
 
         final ModelNode stopServer = new ModelNode();
         stopServer.get(OP).set("stop");
-        stopServer.get(OP_ADDR).set(newServerConfigAddress);
+        stopServer.get(OP_ADDR).set(newServerConfigAddress.toModelNode());
         stopServer.get("blocking").set(true);
         result = client.execute(stopServer);
         DomainTestSupport.validateResponse(result);
@@ -236,7 +231,7 @@ public class ServerManagementTestCase {
 
         final ModelNode removeServer = new ModelNode();
         removeServer.get(OP).set(REMOVE);
-        removeServer.get(OP_ADDR).set(newServerConfigAddress);
+        removeServer.get(OP_ADDR).set(newServerConfigAddress.toModelNode());
 
         result = client.execute(removeServer);
         DomainTestSupport.validateResponse(result);
@@ -248,11 +243,11 @@ public class ServerManagementTestCase {
     @Test
     public void testReloadServer() throws Exception {
         final DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
-        final ModelNode address = getServerConfigAddress("slave", "main-three");
+        final PathAddress address = getServerConfigAddress("slave", "main-three");
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("reload");
-        operation.get(OP_ADDR).set(address);
+        operation.get(OP_ADDR).set(address.toModelNode());
         operation.get(BLOCKING).set(true);
 
         executeForResult(client, operation);
@@ -445,6 +440,7 @@ public class ServerManagementTestCase {
                     add.get(GROUP).set("test-group");
                     add.get(PORT_OFFSET).set("550");
                     DomainTestUtils.executeForResult(add, masterClient);
+                    DomainTestUtils.executeForResult(Util.createAddOperation(serverConfAddr.append("jvm","default")), masterClient);
 
                     try {
                         ModelNode start = Util.createEmptyOperation(START, serverConfAddr);
@@ -528,6 +524,7 @@ public class ServerManagementTestCase {
                         add.get(GROUP).set("test-group");
                         add.get(PORT_OFFSET).set("550");
                         DomainTestUtils.executeForResult(add, masterClient);
+                        DomainTestUtils.executeForResult(Util.createAddOperation(serverConfAddr.append("jvm","default")), masterClient);
                         try {
                             final ModelNode start = Util.createEmptyOperation(START, serverConfAddr);
                             start.get(BLOCKING).set(true);
@@ -629,29 +626,22 @@ public class ServerManagementTestCase {
         return DomainTestSupport.validateResponse(result);
     }
 
-    private boolean exists(final ModelControllerClient client, final ModelNode address) throws IOException {
-        final ModelNode parentAddress = new ModelNode();
-        final int size = address.asInt();
-        for(int i = 0; i < size - 1; i++) {
-            final Property property = address.get(i).asProperty();
-            parentAddress.add(property.getName(), property.getValue());
-        }
-        final Property last = address.get(size -1).asProperty();
+    private boolean exists(final ModelControllerClient client, final PathAddress address) throws IOException {
 
         final ModelNode childrenNamesOp = new ModelNode();
         childrenNamesOp.get(OP).set(READ_CHILDREN_NAMES_OPERATION);
-        childrenNamesOp.get(OP_ADDR).set(parentAddress);
-        childrenNamesOp.get(CHILD_TYPE).set(last.getName());
+        childrenNamesOp.get(OP_ADDR).set(address.getParent().toModelNode());
+        childrenNamesOp.get(CHILD_TYPE).set(address.getLastElement().getKey());
 
         final ModelNode result = executeForResult(client, childrenNamesOp);
-        return result.asList().contains(last.getValue());
+        return result.asList().contains(new ModelNode(address.getLastElement().getValue()));
     }
 
     private void resetServerToExpectedState(final ModelControllerClient client, final String hostName, final String serverName, final String state) throws IOException {
-        final ModelNode serverConfigAddress = new ModelNode().add(HOST, hostName).add(SERVER_CONFIG, serverName);
+        final PathAddress serverConfigAddress = PathAddress.pathAddress(HOST, hostName).append(SERVER_CONFIG, serverName);
         if (!checkState(client, serverConfigAddress, state)) {
             final ModelNode operation = new ModelNode();
-            operation.get(OP_ADDR).set(serverConfigAddress);
+            operation.get(OP_ADDR).set(serverConfigAddress.toModelNode());
             if (state.equals("STARTED")) {
                 //start server
                 operation.get(OP).set(START);

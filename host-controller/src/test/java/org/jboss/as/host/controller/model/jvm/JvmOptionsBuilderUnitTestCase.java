@@ -37,7 +37,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testNoOptionsSun() {
-        testNoOptions(JvmType.SUN);
+        testNoOptions(JvmType.ORACLE);
     }
 
     @Test
@@ -56,7 +56,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testDebugOptionsNotEnabledSun() {
-        testDebugOptionsNotEnabled(JvmType.SUN);
+        testDebugOptionsNotEnabled(JvmType.ORACLE);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testDebugOptionsAndEnabledSun() {
-        testDebugOptionsAndEnabled(JvmType.SUN);
+        testDebugOptionsAndEnabled(JvmType.ORACLE);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testHeapSun() {
-        testHeap(JvmType.SUN);
+        testHeap(JvmType.ORACLE);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testPermgenSun() {
-        JvmElement element = JvmElementTestUtils.create(JvmType.SUN);
+        JvmElement element = JvmElementTestUtils.create(JvmType.ORACLE);
         JvmElementTestUtils.setPermgenSize(element, "32M");
         JvmElementTestUtils.setMaxPermgen(element, "64M");
 
@@ -146,8 +146,26 @@ public class JvmOptionsBuilderUnitTestCase {
     }
 
     @Test
+    public void testJDK9Params() {
+        JvmElement element = JvmElementTestUtils.create(JvmType.ORACLE);
+
+        element.getJvmOptions().addOption("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
+        element.getJvmOptions().addOption("--add-opens=java.base/sun.nio.ch=ALL-UNNAMED");
+        element.getJvmOptions().addOption("--add-reads=java.base/sun.nio.ch=ALL-UNNAMED");
+        element.getJvmOptions().addOption("--permit-illegal-access"); //this one is going away
+        element.getJvmOptions().addOption("--illegal-access");
+        List<String> command = new ArrayList<String>();
+        JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
+        if (JvmElement.getJVMMajorVersion() < 9) {
+            Assert.assertEquals(0, command.size());
+        } else {
+            Assert.assertEquals(5, command.size());
+        }
+    }
+
+    @Test
     public void testStackSun() {
-        testStack(JvmType.SUN);
+        testStack(JvmType.ORACLE);
     }
 
     @Test
@@ -168,7 +186,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testAgentLibSun() {
-        testAgentLib(JvmType.SUN);
+        testAgentLib(JvmType.ORACLE);
     }
 
     @Test
@@ -190,7 +208,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testAgentPathSun() {
-        testAgentPath(JvmType.SUN);
+        testAgentPath(JvmType.ORACLE);
     }
 
     @Test
@@ -211,7 +229,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testJavaagentSun() {
-        testJavaagent(JvmType.SUN);
+        testJavaagent(JvmType.ORACLE);
     }
 
     @Test
@@ -232,7 +250,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testJvmOptionsSun() {
-        testJvmOptions(JvmType.SUN);
+        testJvmOptions(JvmType.ORACLE);
     }
 
     @Test
@@ -255,7 +273,7 @@ public class JvmOptionsBuilderUnitTestCase {
 
     @Test
     public void testJvmOptionsIgnoredWhenInMainSchemaSun() {
-        testJvmOptionsIgnoredWhenInMainSchema(JvmType.SUN);
+        testJvmOptionsIgnoredWhenInMainSchema(JvmType.ORACLE);
     }
 
     @Test

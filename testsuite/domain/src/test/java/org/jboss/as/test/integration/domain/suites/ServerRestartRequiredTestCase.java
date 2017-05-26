@@ -55,6 +55,8 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 
 import java.io.IOException;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -80,25 +82,14 @@ public class ServerRestartRequiredTestCase {
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
-    private static final ModelNode reloadOneAddress = new ModelNode();
-    private static final ModelNode reloadTwoAddress = new ModelNode();
-    private static final ModelNode reloadOneConfigAddress = new ModelNode();
-    private static final ModelNode reloadTwoConfigAddress = new ModelNode();
-
-    static {
-        // (host=slave),(server-config=reload-one)
-        reloadOneConfigAddress.add("host", "master");
-        reloadOneConfigAddress.add("server-config", "reload-one");
-        // (host=slave),(server=reload-one)
-        reloadOneAddress.add("host", "master");
-        reloadOneAddress.add("server", "reload-one");
-        // (host=slave),(server-config=reload-two)
-        reloadTwoConfigAddress.add("host", "slave");
-        reloadTwoConfigAddress.add("server-config", "reload-two");
-        // (host=slave),(server=reload-two)
-        reloadTwoAddress.add("host", "slave");
-        reloadTwoAddress.add("server", "reload-two");
-    }
+    // (host=slave),(server=reload-one)
+    private static final PathAddress reloadOneAddress = PathAddress.pathAddress("host", "master").append("server", "reload-one");
+    // (host=slave),(server=reload-two)
+    private static final PathAddress reloadTwoAddress = PathAddress.pathAddress("host", "slave").append("server", "reload-two");
+    // (host=slave),(server-config=reload-one)
+    private static final PathAddress reloadOneConfigAddress = PathAddress.pathAddress("host", "master").append("server-config", "reload-one");
+    // (host=slave),(server-config=reload-two)
+    private static final PathAddress reloadTwoConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "reload-two");
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -135,10 +126,10 @@ public class ServerRestartRequiredTestCase {
 
         final ModelNode stopServer = new ModelNode();
         stopServer.get(OP).set("stop");
-        stopServer.get(OP_ADDR).set(reloadOneConfigAddress);
+        stopServer.get(OP_ADDR).set(reloadOneConfigAddress.toModelNode());
         client.execute(stopServer);
         waitUntilState(client, reloadOneConfigAddress, "DISABLED");
-        stopServer.get(OP_ADDR).set(reloadTwoConfigAddress);
+        stopServer.get(OP_ADDR).set(reloadTwoConfigAddress.toModelNode());
         client.execute(stopServer);
         waitUntilState(client, reloadTwoConfigAddress, "DISABLED");
     }
@@ -169,12 +160,12 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testChangeGroup() throws Exception {
 
-        final ModelNode address = reloadTwoConfigAddress;
+        final PathAddress address = reloadTwoConfigAddress;
 
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         final ModelNode stopOP = new ModelNode();
         stopOP.get(OP).set("stop");
-        stopOP.get(OP_ADDR).set(address);
+        stopOP.get(OP_ADDR).set(address.toModelNode());
 
         // Stop and wait
         executeForResult(stopOP, client);
@@ -186,7 +177,7 @@ public class ServerRestartRequiredTestCase {
 
         final ModelNode updateGroup = composite.get(STEPS).add();
         updateGroup.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        updateGroup.get(OP_ADDR).set(address);
+        updateGroup.get(OP_ADDR).set(address.toModelNode());
         updateGroup.get(NAME).set("group");
         updateGroup.get(VALUE).set("reload-test-group");
 
@@ -256,11 +247,11 @@ public class ServerRestartRequiredTestCase {
 
         final ModelNode rr = steps.add();
         rr.get(OP).set(READ_RESOURCE_OPERATION);
-        rr.get(OP_ADDR).set(reloadOneConfigAddress).add(JVM, "default");
+        rr.get(OP_ADDR).set(reloadOneConfigAddress.toModelNode()).add(JVM, "default");
 
         final ModelNode rs = steps.add();
         rs.get(OP).set(READ_RESOURCE_OPERATION);
-        rs.get(OP_ADDR).set(reloadTwoConfigAddress).add(JVM, "default");
+        rs.get(OP_ADDR).set(reloadTwoConfigAddress.toModelNode()).add(JVM, "default");
 
         domainMasterLifecycleUtil.executeForResult(composite);
 
@@ -286,13 +277,13 @@ public class ServerRestartRequiredTestCase {
         executeOperation(operation, client);
 
         // check the process state for reload-one
-        final ModelNode serverOne = reloadOneAddress;
+        final PathAddress serverOne = reloadOneAddress;
 
         final ModelNode resultOne = getServerState(serverOne, client);
         Assert.assertEquals("running", resultOne.asString());
 
         // check the process state for reload-two
-        final ModelNode serverTwo = reloadTwoAddress;
+        final PathAddress serverTwo = reloadTwoAddress;
         final ModelNode resultTwo = getServerState(serverTwo, client);
         Assert.assertEquals(RESTART_REQUIRED, resultTwo.asString());
     }
@@ -301,12 +292,12 @@ public class ServerRestartRequiredTestCase {
     public void testServerConfigVM() throws Exception {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
 
-        final ModelNode address = reloadTwoConfigAddress.clone();
-        address.add(JVM, "default");
+        final PathAddress address = PathAddress.pathAddress(reloadTwoConfigAddress, PathElement.pathElement(JVM, "default"));
+
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).set(address);
+        operation.get(OP_ADDR).set(address.toModelNode());
         operation.get(NAME).set("heap-size");
         operation.get(VALUE).set("32M");
 
@@ -314,12 +305,12 @@ public class ServerRestartRequiredTestCase {
         executeOperation(operation, client);
 
         // check the process state for reload-one
-        final ModelNode serverOne = reloadOneAddress;
+        final PathAddress serverOne = reloadOneAddress;
         final ModelNode resultOne = getServerState(serverOne, client);
         Assert.assertEquals("running", resultOne.asString());
 
         // check the process state for reload-two
-        final ModelNode serverTwo = reloadTwoAddress;
+        final PathAddress serverTwo = reloadTwoAddress;
         final ModelNode resultTwo = getServerState(serverTwo, client);
         Assert.assertEquals(RESTART_REQUIRED, resultTwo.asString());
     }
@@ -375,16 +366,16 @@ public class ServerRestartRequiredTestCase {
         assertServerState(reloadTwoAddress, client, expected);
     }
 
-    protected void assertServerState(final ModelNode address, final ModelControllerClient client, final String expected) throws Exception {
+    protected void assertServerState(final PathAddress address, final ModelControllerClient client, final String expected) throws Exception {
         final ModelNode resultTwo = getServerState(address, client);
         Assert.assertEquals(expected, resultTwo.asString());
     }
 
-    private ModelNode getServerState(final ModelNode address, final ModelControllerClient client) throws Exception {
+    private ModelNode getServerState(final PathAddress address, final ModelControllerClient client) throws Exception {
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).set(address);
+        operation.get(OP_ADDR).set(address.toModelNode());
         operation.get(NAME).set("server-state");
 
         return executeOperation(operation, client);

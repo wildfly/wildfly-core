@@ -27,11 +27,13 @@ package org.jboss.as.host.controller.model.jvm;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A Java Virtual Machine configuration.
@@ -44,7 +46,7 @@ public class JvmElement {
 
     //Attributes
     private final String name;
-    private JvmType type = JvmType.SUN;
+    private JvmType type = JvmType.ORACLE;
     private String javaHome;
     private Boolean debugEnabled;
     private String debugOptions;
@@ -68,7 +70,7 @@ public class JvmElement {
     }
 
     public JvmElement(final String name, ModelNode ... toCombine) {
-
+        determinateJVMParams();
         this.name = name;
         if(name == null) {
             heapSize = "64m";
@@ -262,8 +264,27 @@ public class JvmElement {
         this.javaagent = javaagent;
     }
 
-    static boolean isDefined(final ModelNode node) {
-        return node.getType() != ModelType.UNDEFINED;
+    private void determinateJVMParams() {
+        String vendor = WildFlySecurityManager.getPropertyPrivileged("java.vendor", "oracle").toLowerCase();
+        if (vendor.contains("ibm")) {
+            type = JvmType.IBM;
+        } else {
+            type = JvmType.ORACLE; //default to oracle
+        }
+    }
+
+    public static int getJVMMajorVersion() {
+        try {
+            String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
+            Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(vmVersionStr); //match 1.<number> or <number>
+            if (matcher.find()) {
+                return Integer.valueOf(matcher.group(1));
+            } else {
+                throw new RuntimeException("Unknown version of jvm " + vmVersionStr);
+            }
+        } catch (Exception e) {
+            return 8;
+        }
     }
 
 }
