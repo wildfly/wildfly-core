@@ -30,6 +30,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
@@ -64,11 +65,30 @@ public abstract class ClientCompatibilityUnitTestBase {
 
             ManagementOperations.executeOperation(client, socketBindingOp);
 
-            ModelNode op = new ModelNode();
+            // Determine the we should be using a security-realm or SASL
+            String securityRealm = "ManagementRealm";
+            String saslAuthFactory = null;
+            ModelNode op = Operations.createReadResourceOperation(Operations.createAddress("core-service", "management", "management-interface", "http-interface"));
+            ModelNode result = ManagementOperations.executeOperation(client, op);
+            if (result.hasDefined("security-realm")) {
+                securityRealm = result.get("security-realm").asString();
+            } else if (result.hasDefined("http-upgrade")) {
+                final ModelNode httpUpgrade = result.get("http-upgrade");
+                if (httpUpgrade.hasDefined("sasl-authentication-factory")) {
+                    saslAuthFactory = httpUpgrade.get("sasl-authentication-factory").asString();
+                }
+            }
+
+            op = new ModelNode();
             op.get(ModelDescriptionConstants.OP_ADDR).set(address());
             op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
             op.get(ModelDescriptionConstants.SOCKET_BINDING).set("management-native");
-            op.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
+
+            if (saslAuthFactory != null) {
+                op.get("sasl-authentication-factory").set(saslAuthFactory);
+            } else {
+                op.get(ModelDescriptionConstants.SECURITY_REALM).set(securityRealm);
+            }
             ManagementOperations.executeOperation(client, op);
         }
 

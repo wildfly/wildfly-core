@@ -1,25 +1,11 @@
 package org.jboss.as.test.manualmode.auditlog;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT_LOG;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HANDLER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.management.MBeanServerConnection;
@@ -31,13 +17,14 @@ import javax.management.remote.JMXServiceURL;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -52,17 +39,14 @@ import org.xnio.IoUtils;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("[WFCORE-1956] Audit logging after migrating to WildFly Elytron.")
-public class JmxAuditLogFieldsOfLogTestCase {
+public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase {
     @Inject
     private ServerController container;
 
-    private File file;
     private PathAddress auditLogConfigAddress;
-    private PathAddress mgmtRealmConfigAddress;
 
-    static JMXConnector connector;
-    static MBeanServerConnection connection;
+    private JMXConnector connector;
+    private MBeanServerConnection connection;
 
     private static final String JMX = "jmx";
     private static final String CONFIGURATION = "configuration";
@@ -70,14 +54,10 @@ public class JmxAuditLogFieldsOfLogTestCase {
 
     @Test
     public void testJmxAuditLoggingFields() throws Exception {
-        container.start();
         connection = setupAndGetConnection();
-        if (file.exists()) {
-            file.delete();
-        }
         makeOneLog();
-        Assert.assertTrue(file.exists());
-        List<ModelNode> logs = readFile(file, 1);
+        Assert.assertTrue(Files.exists(FILE));
+        List<ModelNode> logs = readFile(1);
         ModelNode log = logs.get(0);
         Assert.assertEquals("jmx", log.get("type").asString());
         Assert.assertEquals("true", log.get("r/o").asString());
@@ -106,70 +86,47 @@ public class JmxAuditLogFieldsOfLogTestCase {
 
     @Before
     public void beforeTest() throws Exception {
-        file = new File(System.getProperty("jboss.home"));
-        file = new File(file, "standalone");
-        file = new File(file, "data");
-        file = new File(file, "audit-log.log");
-        if (file.exists()) {
-            file.delete();
-        }
-
+        Files.deleteIfExists(FILE);
         // Start the server
         container.start();
         final ModelControllerClient client = container.getClient().getControllerClient();
 
-        ModelNode op;
-        ModelNode result;
+        final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
 
-        mgmtRealmConfigAddress = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
-                PathElement.pathElement(SECURITY_REALM, "ManagementRealm"), PathElement.pathElement(AUTHENTICATION, LOCAL));
-        op = Util.getWriteAttributeOperation(mgmtRealmConfigAddress, "default-user", new ModelNode("IAmAdmin"));
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
+        configureUser(client, compositeOp);
 
         auditLogConfigAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, JMX),
                 PathElement.pathElement(CONFIGURATION, AUDIT_LOG));
 
-        op = Util.createAddOperation(auditLogConfigAddress);
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
+        ModelNode op = Util.createAddOperation(auditLogConfigAddress);
+        // Don't log boot operations by default
+        op.get(AuditLogLoggerResourceDefinition.LOG_BOOT.getName()).set(false);
+        op.get(AuditLogLoggerResourceDefinition.LOG_READ_ONLY.getName()).set(true);
+        op.get(AuditLogLoggerResourceDefinition.ENABLED.getName()).set(true);
+        compositeOp.addStep(op);
+        compositeOp.addStep(Util.createAddOperation(PathAddress.pathAddress(auditLogConfigAddress,
+                PathElement.pathElement(HANDLER, HANDLER_NAME))));
 
-        op = Util.createAddOperation(PathAddress.pathAddress(auditLogConfigAddress,
-                PathElement.pathElement(HANDLER, HANDLER_NAME)));
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
-
-        op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.LOG_READ_ONLY.getName(),
-                new ModelNode(true));
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
-
-        op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true));
-        result = client.execute(op);
-        Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
-        container.stop();
+        executeForSuccess(client, compositeOp.build());
+        ServerReload.executeReloadAndWaitForCompletion(client);
     }
 
     @After
     public void afterTest() throws Exception {
         final ModelControllerClient client = container.getClient().getControllerClient();
-        ModelNode op = Util.getWriteAttributeOperation(mgmtRealmConfigAddress, "default-user", new ModelNode("$local"));
-        client.execute(op);
-        op = Util.getResourceRemoveOperation(PathAddress.pathAddress(auditLogConfigAddress,
-                PathElement.pathElement(HANDLER, HANDLER_NAME)));
-        client.execute(op);
-        op = Util.getResourceRemoveOperation(auditLogConfigAddress);
-        client.execute(op);
-        if (file.exists()) {
-            file.delete();
-        }
         IoUtils.safeClose(connector);
+
+        final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
+        resetUser(compositeOp);
+        compositeOp.addStep(Util.getResourceRemoveOperation(PathAddress.pathAddress(auditLogConfigAddress,
+                PathElement.pathElement(HANDLER, HANDLER_NAME))));
+        compositeOp.addStep(Util.getResourceRemoveOperation(auditLogConfigAddress));
+
         try {
-            // Stop the container
-            container.stop();
+            executeForSuccess(client, compositeOp.build());
         } finally {
-            IoUtils.safeClose(client);
+            Files.deleteIfExists(FILE);
+            container.stop();
         }
     }
 
@@ -179,35 +136,5 @@ public class JmxAuditLogFieldsOfLogTestCase {
         JMXServiceURL serviceURL = new JMXServiceURL(urlString);
         connector = JMXConnectorFactory.connect(serviceURL, null);
         return connector.getMBeanServerConnection();
-    }
-
-    private final Pattern DATE_STAMP_PATTERN = Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d - \\{");
-
-    protected List<ModelNode> readFile(File file, int expectedRecords) throws IOException {
-        List<ModelNode> list = new ArrayList<ModelNode>();
-        final BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8);
-        try {
-            StringWriter writer = null;
-            String line = reader.readLine();
-            while (line != null) {
-                if (DATE_STAMP_PATTERN.matcher(line).matches()) {
-                    if (writer != null) {
-                        list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
-                    }
-                    writer = new StringWriter();
-                    writer.append("{");
-                } else {
-                    writer.append("\n" + line);
-                }
-                line = reader.readLine();
-            }
-            if (writer != null) {
-                list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
-            }
-        } finally {
-            IoUtils.safeClose(reader);
-        }
-        Assert.assertEquals(list.toString(), expectedRecords, list.size());
-        return list;
     }
 }

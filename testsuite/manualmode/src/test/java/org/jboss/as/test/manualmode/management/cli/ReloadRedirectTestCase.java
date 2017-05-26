@@ -59,6 +59,7 @@ public class ReloadRedirectTestCase {
     @Inject
     private static ServerController container;
 
+    private static boolean elytron;
     @BeforeClass
     public static void initServer() throws Exception {
         container.start();
@@ -85,6 +86,15 @@ public class ReloadRedirectTestCase {
         operation.get("security-realm").set("native-realm");
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
+
+        // elytron or legacy
+        try {
+            container.getClient().executeForResult(createOpNode("core-service=management/"
+                    + "security-realm=ManagementRealm/", "read-resource"));
+            elytron = false;
+        } catch (UnsuccessfulOperationException ignored) {
+            elytron = true;
+        }
     }
 
     @AfterClass
@@ -151,8 +161,21 @@ public class ReloadRedirectTestCase {
         client.executeForResult(undefine);
     }
 
-    private static void removeSsl(ManagementClient client) {
-        String addr = "core-service=management/security-realm=ManagementRealm/server-identity=ssl";
+    private static void removeSsl(ManagementClient client) throws UnsuccessfulOperationException {
+        if (elytron) {
+            ModelNode undefine = createOpNode("core-service=management/management-interface=http-interface",
+                    "undefine-attribute");
+            undefine.get("name").set("ssl-context");
+            client.executeForResult(undefine);
+            remove(client, "subsystem=elytron/server-ssl-context=elytronHttpsSSC");
+            remove(client, "subsystem=elytron/key-manager=elytronHttpsKM");
+            remove(client, "subsystem=elytron/key-store=elytronHttpsKS");
+        } else {
+            remove(client, "core-service=management/security-realm=ManagementRealm/server-identity=ssl");
+        }
+    }
+
+    private static void remove(ManagementClient client, String addr) {
         try {
             ModelNode remove = createOpNode(addr, "remove");
             client.executeForResult(remove);
@@ -209,24 +232,61 @@ public class ReloadRedirectTestCase {
         try {
             cliProc.executeInteractive();
             cliProc.clearOutput();
-            boolean promptFound = cliProc.
-                    pushLineAndWaitForResults("/core-service=management/"
-                            + "security-realm=ManagementRealm/"
-                            + "server-identity=ssl:add(keystore-path=management.keystore,"
-                            + "keystore-relative-to=jboss.server.config.dir,"
-                            + "keystore-password=password,alias=server,key-password=password,"
-                            + "generate-self-signed-certificate-host=localhost)", null);
-            assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
-            cliProc.clearOutput();
-            promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
-                    + "management-interface=http-interface:"
-                    + "write-attribute(name=secure-socket-binding,value=management-https)", null);
-            assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
-            cliProc.clearOutput();
-            promptFound = cliProc.pushLineAndWaitForResults("reload", "Accept certificate");
+            setupSSL(cliProc);
+            boolean promptFound = cliProc.pushLineAndWaitForResults("reload", "Accept certificate");
             assertTrue("No certificate prompt " + cliProc.getOutput(), promptFound);
         } finally {
             cliProc.ctrlCAndWaitForClose();
         }
+    }
+
+    private void setupSSL(CliProcessWrapper cliProc) throws Exception {
+        if (elytron) {
+            setupElytronSSL(cliProc);
+        } else {
+            setupLegacySSL(cliProc);
+        }
+        boolean promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
+                + "management-interface=http-interface:"
+                + "write-attribute(name=secure-socket-binding,value=management-https)", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
+    }
+
+    private void setupElytronSSL(CliProcessWrapper cliProc) throws Exception {
+        boolean promptFound = cliProc.
+                pushLineAndWaitForResults("/subsystem=elytron/key-store=elytronHttpsKS:"
+                        + "add(path=target/server.keystore.jks,"
+                        + "credential-reference={clear-text=secret}, "
+                        + "type=JKS)", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
+        promptFound = cliProc.pushLineAndWaitForResults("/subsystem=elytron/"
+                + "key-manager=elytronHttpsKM:add(key-store=elytronHttpsKS,"
+                + "credential-reference={clear-text=secret})", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
+        promptFound = cliProc.pushLineAndWaitForResults("/subsystem=elytron/"
+                + "server-ssl-context=elytronHttpsSSC:add(key-manager=elytronHttpsKM,"
+                + "protocols=[TLSv1.2])", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
+        promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
+                + "management-interface=http-interface:write-attribute(name=ssl-context,"
+                + "value=elytronHttpsSSC)", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
+    }
+
+    private void setupLegacySSL(CliProcessWrapper cliProc) throws Exception {
+        boolean promptFound = cliProc.
+                pushLineAndWaitForResults("/core-service=management/"
+                        + "security-realm=ManagementRealm/"
+                        + "server-identity=ssl:add(keystore-path=management.keystore,"
+                        + "keystore-relative-to=jboss.server.config.dir,"
+                        + "keystore-password=password,alias=server,key-password=password,"
+                        + "generate-self-signed-certificate-host=localhost)", null);
+        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
+        cliProc.clearOutput();
     }
 }

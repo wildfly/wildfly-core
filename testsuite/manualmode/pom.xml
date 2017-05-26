@@ -200,6 +200,9 @@
                                 <goals>
                                     <goal>clean</goal>
                                 </goals>
+                                <configuration>
+                                    <keystore>${basedir}/target/cli-vault.keystore</keystore>
+                                </configuration>
                             </execution>
                             <execution>
                                 <phase>generate-test-resources</phase>
@@ -207,19 +210,47 @@
                                 <goals>
                                     <goal>generateSecretKey</goal>
                                 </goals>
+                                <configuration>
+                                    <keystore>${basedir}/target/cli-vault.keystore</keystore>
+                                    <dname>cn=JBoss Security,ou=JBoss Division,o=RedHatInc,l=Raleigh,st=NC,c=US</dname>
+                                    <keypass>secret_1</keypass>
+                                    <storepass>secret_1</storepass>
+                                    <storetype>jceks</storetype>
+                                    <alias>vault</alias>
+                                    <keyalg>AES</keyalg>
+                                    <keysize>128</keysize>
+                                    <validity>365</validity>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <phase>generate-test-resources</phase>
+                                <id>clean-server-keystore</id>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <configuration>
+                                    <keystore>${basedir}/target/server.keystore.jks</keystore>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <phase>generate-test-resources</phase>
+                                <id>genKeyPair-server-keystore</id>
+                                <goals>
+                                    <goal>generateKeyPair</goal>
+                                </goals>
+                                <configuration>
+                                    <keystore>${basedir}/target/server.keystore.jks</keystore>
+                                    <dname>cn=JBoss Security,ou=JBoss Division,o=RedHatInc,l=Raleigh,st=NC,c=US</dname>
+                                    <keypass>secret</keypass>
+                                    <storepass>secret</storepass>
+                                    <storetype>jks</storetype>
+                                    <alias>localhost</alias>
+                                    <keyalg>RSA</keyalg>
+                                    <keysize>1024</keysize>
+                                    <validity>365</validity>
+                                </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <keystore>${basedir}/target/cli-vault.keystore</keystore>
-                            <dname>cn=JBoss Security,ou=JBoss Division,o=RedHatInc,l=Raleigh,st=NC,c=US</dname>
-                            <keypass>secret_1</keypass>
-                            <storepass>secret_1</storepass>
-                            <storetype>jceks</storetype>
-                            <alias>vault</alias>
-                            <keyalg>AES</keyalg>
-                            <keysize>128</keysize>
-                            <validity>365</validity>
-                        </configuration>
                     </plugin>
 
                 </plugins>

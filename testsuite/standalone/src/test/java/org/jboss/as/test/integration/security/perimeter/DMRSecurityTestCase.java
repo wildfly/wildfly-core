@@ -19,18 +19,14 @@
 
 package org.jboss.as.test.integration.security.perimeter;
 
-import java.io.File;
-
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.as.test.shared.assume.AssumeTestGroupUtil;
 import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -39,34 +35,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author <a href="mailto:jlanik@redhat.com">Jan Lanik</a>.
  */
 @RunWith(WildflyTestRunner.class)
+@ServerSetup(DisableLocalAuthServerSetupTask.class)
 public class DMRSecurityTestCase {
-
-    private static final String JBOSS_INST = TestSuiteEnvironment.getJBossHome();
-
-    private static final File originalTokenDir = new File(JBOSS_INST, "/standalone/tmp/auth");
-    private static final File renamedTokenDir = new File(JBOSS_INST, "/standalone/tmp/auth.renamed");
-
-    @BeforeClass
-    @SuppressWarnings("deprecation")
-    public static void beforeClass() {
-        AssumeTestGroupUtil.assumeElytronProfileTestsEnabled();
-    }
-
-    /**
-     * Workaround to disable silent login on localhost.
-     */
-    @BeforeClass
-    public static void renameTokenDir() {
-        Assert.assertTrue(originalTokenDir.renameTo(renamedTokenDir));
-    }
-
-    /**
-     * Enables silent login after the test is completed.
-     */
-    @AfterClass
-    public static void cleanup() {
-        Assert.assertTrue(renamedTokenDir.renameTo(originalTokenDir));
-    }
 
     /**
      * This test checks that CLI access is secured.

@@ -21,17 +21,12 @@ package org.jboss.as.test.integration.security.perimeter;
 
 import static org.junit.Assert.assertFalse;
 
-import java.io.File;
-
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.as.test.shared.assume.AssumeTestGroupUtil;
 import org.jboss.logging.Logger;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -40,14 +35,10 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author <a href="mailto:jlanik@redhat.com">Jan Lanik</a>.
  */
 @RunWith(WildflyTestRunner.class)
+@ServerSetup(DisableLocalAuthServerSetupTask.class)
 public class CLISecurityTestCase {
 
-    Logger logger = Logger.getLogger(CLISecurityTestCase.class);
-
-    private static final String JBOSS_INST = TestSuiteEnvironment.getJBossHome();
-
-    private static final File originalTokenDir = new File(JBOSS_INST, "/standalone/tmp/auth");
-    private static final File renamedTokenDir = new File(JBOSS_INST, "/standalone/tmp/auth.renamed");
+    private static final Logger logger = Logger.getLogger(CLISecurityTestCase.class);
 
     /**
      * Auxiliary class which extends CLIWrapper for specific purposes of this test case.
@@ -62,32 +53,6 @@ public class CLISecurityTestCase {
         protected String getUsername() {
             return null;
         }
-
-        public synchronized void shutdown() {
-            this.quit();
-        }
-    }
-
-    @BeforeClass
-    @SuppressWarnings("deprecation")
-    public static void beforeClass() {
-        AssumeTestGroupUtil.assumeElytronProfileTestsEnabled();
-    }
-
-    /**
-     * Workaround to disable silent login on localhost.
-     */
-    @BeforeClass
-    public static void renameTokenDir() {
-        Assert.assertTrue(originalTokenDir.renameTo(renamedTokenDir));
-    }
-
-    /**
-     * Enables silent login after the test is completed.
-     */
-    @AfterClass
-    public static void cleanup() {
-        Assert.assertTrue(renamedTokenDir.renameTo(originalTokenDir));
     }
 
     /**
@@ -101,11 +66,11 @@ public class CLISecurityTestCase {
         UnauthentizedCLI cli = new UnauthentizedCLI();
 
         assertFalse(cli.isConnected());
-        cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":" + TestSuiteEnvironment.getServerPort(), true);
+        assertFalse(cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":" + TestSuiteEnvironment.getServerPort(), true));
         final String line = cli.readOutput();
         logger.tracef("cli response: ", line);
         assertFalse("CLI should not be connected: " + line, cli.isConnected());
 
-        cli.shutdown();
+        cli.quit();
     }
 }
