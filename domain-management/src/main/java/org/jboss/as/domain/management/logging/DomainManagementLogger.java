@@ -1564,5 +1564,11 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Using realm '%s' as discovered from the existing property files.")
     String discoveredRealm(final String realmName);
 
+    /**
+     * Message stating multiple realm name declarations are in users properties file.
+     */
+    @Message(id = Message.NONE, value = "Users properties file '%s' contains multiple realm name declarations")
+    IOException multipleRealmDeclarations(final String usersFile);
+
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!
 }
