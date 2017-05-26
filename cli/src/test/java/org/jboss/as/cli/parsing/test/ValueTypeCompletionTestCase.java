@@ -705,6 +705,12 @@ public class ValueTypeCompletionTestCase {
                 + "replace={pattern=cdsc},accept=true", 0, candidates);
         assertEquals(Arrays.asList("}"), candidates);
         assertEquals(109, i);
+
+        candidates.clear();
+        String str = "{}";
+        i = new ValueTypeCompleter(propDescr).complete(null, str, str.length(), candidates);
+        assertEquals(Arrays.asList(str), candidates);
+        assertEquals(0, i);
     }
 
     @Test
@@ -1527,8 +1533,13 @@ public class ValueTypeCompletionTestCase {
                 + "prop1_2={}},prop2={}}";
         i = new ValueTypeCompleter(propDescr).complete(null, cmd, 0, candidates);
         assertEquals(Arrays.asList(cmd), candidates);
-        // Is one, due to logic when lastStateChar is '}'
-        assertEquals(i, 1);
+        assertEquals(i, 0);
+
+        candidates.clear();
+        String str = "{}";
+        i = new ValueTypeCompleter(propDescr).complete(null, str, str.length(), candidates);
+        assertEquals(Arrays.asList(str), candidates);
+        assertEquals(0, i);
     }
 
     @Test
