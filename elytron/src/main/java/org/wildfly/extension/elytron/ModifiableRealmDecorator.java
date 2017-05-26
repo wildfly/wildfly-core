@@ -53,15 +53,18 @@ import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
+import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
+import org.wildfly.security.password.spec.OneTimePasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.password.spec.SaltedPasswordAlgorithmSpec;
 
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -342,7 +345,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
 
             static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .setMinSize(1)
                     .build();
 
             static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT, ModelType.INT, false)
@@ -365,7 +367,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
 
             static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .setMinSize(1)
                     .build();
 
 
@@ -390,7 +391,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
 
             static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .setMinSize(1)
                     .build();
 
 
@@ -454,6 +454,35 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
         }
 
+        static class OTPassword {
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+                    .setRequired(false)
+                    .setDefaultValue(new ModelNode(OneTimePassword.ALGORITHM_OTP_SHA1))
+                    .setValidator(new StringAllowedValuesValidator(
+                            OneTimePassword.ALGORITHM_OTP_MD5,
+                            OneTimePassword.ALGORITHM_OTP_SHA1
+                    ))
+                    .setAllowExpression(false)
+                    .build();
+
+            static final SimpleAttributeDefinition HASH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH, ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .build();
+
+            static final SimpleAttributeDefinition SEED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEED, ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .build();
+
+            static final SimpleAttributeDefinition SEQUENCE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEQUENCE, ModelType.INT, false)
+                    .setAllowExpression(true)
+                    .build();
+
+            static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
+                    ElytronDescriptionConstants.OTP, ALGORITHM, HASH, SEED, SEQUENCE)
+                    .setAllowNull(true)
+                    .build();
+        }
+
         static final SimpleAttributeDefinition IDENTITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.IDENTITY, ModelType.STRING, false)
                 .build();
 
@@ -462,7 +491,8 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 SetPasswordHandler.Clear.OBJECT_DEFINITION,
                 SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION,
-                SetPasswordHandler.Digest.OBJECT_DEFINITION
+                SetPasswordHandler.Digest.OBJECT_DEFINITION,
+                SetPasswordHandler.OTPassword.OBJECT_DEFINITION
         };
 
         static AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {
@@ -471,7 +501,8 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 SetPasswordHandler.Clear.OBJECT_DEFINITION,
                 SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION,
-                SetPasswordHandler.Digest.OBJECT_DEFINITION
+                SetPasswordHandler.Digest.OBJECT_DEFINITION,
+                SetPasswordHandler.OTPassword.OBJECT_DEFINITION
         };
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
@@ -503,31 +534,48 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
         }
 
         private Password createPassword(final OperationContext parentContext, final String principalName, String passwordType, ModelNode passwordNode) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException {
-            String password = SetPasswordHandler.Bcrypt.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
+            String password;
             final PasswordSpec passwordSpec;
             final String algorithm;
 
             if (passwordType.equals(ElytronDescriptionConstants.BCRYPT)) {
-                byte[] salt = SetPasswordHandler.Bcrypt.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
-                int iterationCount = SetPasswordHandler.Bcrypt.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
+                password = Bcrypt.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
+                byte[] salt = Bcrypt.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
+                int iterationCount = Bcrypt.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt));
-                algorithm = SetPasswordHandler.Bcrypt.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                algorithm = Bcrypt.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+
             } else if (passwordType.equals(ElytronDescriptionConstants.CLEAR)) {
+                password = Clear.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 passwordSpec = new ClearPasswordSpec(password.toCharArray());
-                algorithm = SetPasswordHandler.Clear.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                algorithm = Clear.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+
             } else if (passwordType.equals(ElytronDescriptionConstants.SIMPLE_DIGEST)) {
+                password = SimpleDigest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), null);
-                algorithm = SetPasswordHandler.SimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                algorithm = SimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+
             } else if (passwordType.equals(ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST)) {
-                byte[] salt = SetPasswordHandler.SaltedSimpleDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
+                password = SaltedSimpleDigest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
+                byte[] salt = SaltedSimpleDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 SaltedPasswordAlgorithmSpec spec = new SaltedPasswordAlgorithmSpec(salt);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec);
-                algorithm = SetPasswordHandler.SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                algorithm = SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+
             } else if (passwordType.equals(ElytronDescriptionConstants.DIGEST)) {
-                String realm = SetPasswordHandler.Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
-                algorithm = SetPasswordHandler.Digest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                password = Digest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
+                String realm = Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
+                algorithm = Digest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 DigestPasswordAlgorithmSpec dpas = new DigestPasswordAlgorithmSpec(principalName, realm);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), dpas);
+
+            } else if (passwordType.equals(ElytronDescriptionConstants.OTP)) {
+                algorithm = OTPassword.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+                byte[] hash = OTPassword.HASH.resolveModelAttribute(parentContext, passwordNode).asBytes();
+                byte[] seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString().getBytes(StandardCharsets.US_ASCII);
+                int sequenceNumber = OTPassword.SEQUENCE.resolveModelAttribute(parentContext, passwordNode).asInt();
+                passwordSpec = new OneTimePasswordSpec(hash, seed, sequenceNumber);
+
             } else {
                 throw ROOT_LOGGER.unexpectedPasswordType(passwordType);
             }

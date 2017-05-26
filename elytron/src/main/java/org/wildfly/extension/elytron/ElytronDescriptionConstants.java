@@ -182,6 +182,7 @@ interface ElytronDescriptionConstants {
     String HOST = "host";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
+    String HASH = "hash";
     String HASH_FROM = "hash-from";
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
@@ -295,6 +296,7 @@ interface ElytronDescriptionConstants {
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
     String OID = "oid";
     String OTHER_PROVIDERS = "other-providers";
+    String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
     String OPTION = "option";
     String OPTIONS = "options";
@@ -409,6 +411,7 @@ interface ElytronDescriptionConstants {
     String SECURITY_REALMS = "security-realms";
     String SECRET_VALUE = "secret-value";
     String SELECTION_CRITERIA = "selection-criteria";
+    String SEED = "seed";
     String SEED_FROM = "seed-from";
     String SERVER_NAME = "server-name";
     String SERIAL_NUMBER = "serial-number";
@@ -424,6 +427,7 @@ interface ElytronDescriptionConstants {
     String SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY = "service-loader-http-server-mechanism-factory";
     String SERVICE_LOADER_SASL_SERVER_FACTORY = "service-loader-sasl-server-factory";
     String SERVICES = "services";
+    String SEQUENCE = "sequence";
     String SEQUENCE_FROM = "sequence-from";
     String SHA_1_DIGEST = "sha-1-digest";
     String SHA_256_DIGEST = "sha-256-digest";
