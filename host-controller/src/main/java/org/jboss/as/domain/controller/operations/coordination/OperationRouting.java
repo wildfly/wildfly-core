@@ -168,7 +168,7 @@ class OperationRouting {
                 boolean twoStep = false;
                 for (ModelNode step : operation.get(STEPS).asList()) {
                     OperationRouting stepRouting = determineRouting(step, localHostControllerInfo, rootRegistration, hostNames);
-                    if (stepRouting.isTwoStep()) {
+                    if (stepRouting.isMultiphase()) {
                         twoStep = true;
                         // Make sure we don't loose the information that we have to execute the operation on all hosts
                         fwdToAllHosts = fwdToAllHosts || stepRouting.getHosts().isEmpty();
@@ -220,56 +220,56 @@ class OperationRouting {
     }
 
     private final Set<String> hosts = new HashSet<String>();
-    private final boolean twoStep;
+    private final boolean multiphase;
 
     /** Constructor for domain-level requests where we are not master */
     private OperationRouting() {
-        twoStep = false;
+        multiphase = false;
     }
 
-    /** Constructor for multi-host ops */
-    private OperationRouting(final boolean twoStep) {
-        this.twoStep = twoStep;
+    /** Constructor for multi-process ops */
+    private OperationRouting(final boolean multiphase) {
+        this.multiphase = multiphase;
     }
 
     /**
-     * Constructor for a non-two-step request routed to this host
+     * Constructor for a non-multiphase request routed to this host
      *
      * @param localHostControllerInfo information describing this host
      */
     private OperationRouting(LocalHostControllerInfo localHostControllerInfo) {
         this.hosts.add(localHostControllerInfo.getLocalHostName());
-        this.twoStep = false;
+        this.multiphase = false;
     }
 
     /**
      * Constructor for a request routed to a single host
      *
      * @param hosts the name of the hosts
-     * @param twoStep true if a two-step execution is needed
+     * @param multiphase true if a multiphase execution is needed
      */
-    private OperationRouting(Set<String> hosts, boolean twoStep) {
+    private OperationRouting(Set<String> hosts, boolean multiphase) {
         this.hosts.addAll(hosts);
-        this.twoStep = twoStep;
+        this.multiphase = multiphase;
     }
 
-    public Set<String> getHosts() {
+    Set<String> getHosts() {
         return hosts;
     }
 
-    public String getSingleHost() {
+    String getSingleHost() {
         return hosts.size() == 1 ? hosts.iterator().next() : null;
     }
 
-    public boolean isTwoStep() {
-        return twoStep;
+    boolean isMultiphase() {
+        return multiphase;
     }
 
-    public boolean isLocalOnly(final String localHostName) {
+    boolean isLocalOnly(final String localHostName) {
         return hosts.size() == 1 && hosts.contains(localHostName);
     }
 
-    public boolean isLocalCallNeeded(final String localHostName) {
+    boolean isLocalCallNeeded(final String localHostName) {
         return hosts.size() == 0 || hosts.contains(localHostName);
     }
 
@@ -277,7 +277,7 @@ class OperationRouting {
     public String toString() {
         return "OperationRouting{" +
                 "hosts=" + hosts +
-                ", twoStep=" + twoStep +
+                ", multiphase=" + multiphase +
                 '}';
     }
 }
