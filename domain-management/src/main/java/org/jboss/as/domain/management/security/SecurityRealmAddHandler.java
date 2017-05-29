@@ -652,11 +652,14 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addKeyManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
                                       ServiceTarget serviceTarget) throws OperationFailedException {
-
-        char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString().toCharArray();
         final ServiceBuilder<AbstractKeyManagerService> serviceBuilder;
 
-        String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
+        ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
+        char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
+
+        ModelNode providerNode = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl);
+        String provider = providerNode.isDefined() ? providerNode.asString() : null;
+
         String autoGenerateCertHostName = null;
         ModelNode autoGenerateCertHostNode = KeystoreAttributes.GENERATE_SELF_SIGNED_CERTIFICATE_HOST.resolveModelAttribute(context, ssl);
         if(autoGenerateCertHostNode.isDefined()) {
@@ -671,13 +674,9 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         } else {
             String path = pathNode.asString();
 
-            final char[] keyPassword;
-            ModelNode pwordNode = KeystoreAttributes.KEY_PASSWORD.resolveModelAttribute(context, ssl);
-            if (pwordNode.isDefined()) {
-                keyPassword = pwordNode.asString().toCharArray();
-            } else {
-                keyPassword = null;
-            }
+            ModelNode keyPasswordNode = KeystoreAttributes.KEY_PASSWORD.resolveModelAttribute(context, ssl);
+            final char[] keyPassword = keyPasswordNode.isDefined() ? keyPasswordNode.asString().toCharArray() : null;
+
             ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
             String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
