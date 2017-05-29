@@ -21,7 +21,8 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
@@ -33,7 +34,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -57,13 +59,16 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.extension.elytron.validators.SizeValidator;
+import org.wildfly.extension.elytron.validators.SuffixValidator;
 import org.wildfly.security.audit.AuditEndpoint;
 import org.wildfly.security.audit.AuditLogger;
 import org.wildfly.security.audit.EventPriority;
 import org.wildfly.security.audit.FileAuditEndpoint;
 import org.wildfly.security.audit.JsonSecurityEventFormatter;
-import org.wildfly.security.audit.RotatingFileAuditEndpoint;
+import org.wildfly.security.audit.PeriodicRotatingFileAuditEndpoint;
 import org.wildfly.security.audit.SimpleSecurityEventFormatter;
+import org.wildfly.security.audit.SizeRotatingFileAuditEndpoint;
 import org.wildfly.security.audit.SyslogAuditEndpoint;
 import org.wildfly.security.auth.server.event.SecurityEventVisitor;
 
@@ -129,14 +134,22 @@ class AuditResourceDefinitions {
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.LONG, true)
+    static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(2000))
+            .setValidator(new org.wildfly.extension.elytron.validators.SizeValidator())
+            .setDefaultValue(new ModelNode("10m"))
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, true)
+    static final SimpleAttributeDefinition SIZE_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition PERIODIC_SUFFIX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SUFFIX, ModelType.STRING)
+            .setAllowExpression(true)
+            .setRequired(true)
+            .setValidator(new SuffixValidator())
             .setRestartAllServices()
             .build();
 
@@ -187,10 +200,13 @@ class AuditResourceDefinitions {
                     }
                     File resolvedPath = pathResolver.resolve();
 
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
+                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
                     AuditEndpoint endpoint;
                     try {
-                        endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath()).setSyncOnAccept(synv).setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
+                        endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath())
+                                .setSyncOnAccept(synv)
+                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
                     } catch (IOException e) {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
@@ -207,8 +223,8 @@ class AuditResourceDefinitions {
         return new TrivialResourceDefinition(FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
-    static ResourceDefinition getRotatingFileAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SUFFIX };
+    static ResourceDefinition getPeriodicRotatingFileAuditLogResourceDefinition() {
+        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, PERIODIC_SUFFIX };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -218,10 +234,7 @@ class AuditResourceDefinitions {
 
                 final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
-                final int maxBackupIndex = MAX_BACKUP_INDEX.resolveModelAttribute(context, model).asInt(0);
-                final boolean rotateOnBoot = ROTATE_ON_BOOT.resolveModelAttribute(context, model).asBoolean();
-                final long rotateSize = ROTATE_SIZE.resolveModelAttribute(context, model).asLong(0);
-                final String suffix = SUFFIX.resolveModelAttribute(context, model).asString();
+                final String suffix = PERIODIC_SUFFIX.resolveModelAttribute(context, model).asString();
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
 
@@ -241,17 +254,17 @@ class AuditResourceDefinitions {
                     }
                     File resolvedPath = pathResolver.resolve();
 
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
+                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
                     AuditEndpoint endpoint;
                     try {
-                        endpoint = RotatingFileAuditEndpoint.builder()
-                                .setMaxBackupIndex(maxBackupIndex)
-                                .setRotateOnBoot(rotateOnBoot)
-                                .setRotateSize(rotateSize)
+                        FileAuditEndpoint.Builder builder =  PeriodicRotatingFileAuditEndpoint.builder()
                                 .setSuffix(suffix)
                                 .setLocation(resolvedPath.toPath())
                                 .setSyncOnAccept(synv)
-                                .build();
+                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
+
+                        endpoint = builder.build();
                     } catch (IOException e) {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
@@ -265,7 +278,73 @@ class AuditResourceDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+        return new TrivialResourceDefinition(PERIODIC_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
+    }
+
+    static ResourceDefinition getSizeRotatingFileAuditLogResourceDefinition() {
+        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SIZE_SUFFIX };
+        AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
+
+            @Override
+            protected ValueSupplier<SecurityEventListener> getValueSupplier(
+                    ServiceBuilder<SecurityEventListener> serviceBuilder, OperationContext context, ModelNode model)
+                    throws OperationFailedException {
+
+                final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
+                final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
+                final int maxBackupIndex = MAX_BACKUP_INDEX.resolveModelAttribute(context, model).asInt(0);
+                final boolean rotateOnBoot = ROTATE_ON_BOOT.resolveModelAttribute(context, model).asBoolean();
+                final long rotateSize = SizeValidator.parseSize(ROTATE_SIZE.resolveModelAttribute(context, model));
+                final ModelNode suffix = SIZE_SUFFIX.resolveModelAttribute(context, model);
+
+                final InjectedValue<PathManager> pathManager = new InjectedValue<>();
+
+                final String path = PATH.resolveModelAttribute(context, model).asString();
+                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+
+                if (relativeTo != null) {
+                    serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
+                    serviceBuilder.addDependency(pathName(relativeTo));
+                }
+
+                return () -> {
+                    PathResolver pathResolver = pathResolver();
+                    pathResolver.path(path);
+                    if (relativeTo != null) {
+                        pathResolver.relativeTo(relativeTo, pathManager.getValue());
+                    }
+                    File resolvedPath = pathResolver.resolve();
+
+                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                    AuditEndpoint endpoint;
+                    try {
+                        SizeRotatingFileAuditEndpoint.Builder builder =  SizeRotatingFileAuditEndpoint.builder()
+                                .setMaxBackupIndex(maxBackupIndex)
+                                .setRotateOnBoot(rotateOnBoot)
+                                .setRotateSize(rotateSize);
+                        if ( suffix.isDefined() ){
+                            builder.setSuffix(suffix.asString());
+                        }
+                        builder.setLocation(resolvedPath.toPath())
+                                .setSyncOnAccept(synv)
+                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
+
+                        endpoint = builder.build();
+                    } catch (IOException e) {
+                        throw ROOT_LOGGER.unableToStartService(e);
+                    }
+
+                    return SecurityEventListener.from(AuditLogger.builder()
+                            .setPriorityMapper(m -> EventPriority.WARNING)
+                            .setMessageFormatter(m -> m.accept(formatter, null))
+                            .setAuditEndpoint(endpoint)
+                            .build());
+                };
+            }
+        };
+
+        return new TrivialResourceDefinition(SIZE_ROTATING_FILE_AUDIT_LOG, add, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY);
     }
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {
@@ -298,7 +377,8 @@ class AuditResourceDefinitions {
                 }
 
                 return () -> {
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build() : SimpleSecurityEventFormatter.builder().setDateFormatSupplier(bind(SimpleDateFormat::new, DATE_FORMAT)).build();
+                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
                     final AuditEndpoint endpoint;
                     final SSLContext sslContext = sslContextInjector.getOptionalValue();
                     try {
@@ -337,3 +417,4 @@ class AuditResourceDefinitions {
         return () -> fn.apply(val);
     }
 }
+
