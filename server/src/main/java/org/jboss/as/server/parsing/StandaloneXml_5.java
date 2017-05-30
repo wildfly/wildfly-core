@@ -930,7 +930,7 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
         }
 
-        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getAttributeMarshaller().marshallAsAttribute(
+        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
                 HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
 
         if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {

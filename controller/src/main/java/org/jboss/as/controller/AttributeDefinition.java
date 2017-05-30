@@ -130,7 +130,7 @@ public abstract class AttributeDefinition {
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
                                 final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
-                                final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
+                                final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
                                 ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
@@ -153,7 +153,7 @@ public abstract class AttributeDefinition {
         this.valueCorrector = valueCorrector;
         this.validator = validator;
         this.flags = flags;
-        this.attributeMarshaller = attributeMarshaller != null ? attributeMarshaller : AttributeMarshaller.SIMPLE;
+        this.attributeMarshaller = marshaller != null ? marshaller : AttributeMarshaller.SIMPLE;
         this.resourceOnly = resourceOnly;
         this.accessConstraints = accessConstraints;
         this.deprecationData = deprecationData;
@@ -723,20 +723,20 @@ public abstract class AttributeDefinition {
      * @param writer stream writer to use for writing the attribute
      * @throws javax.xml.stream.XMLStreamException if thrown by {@code writer}
      */
-    public void marshallAsElement(final ModelNode resourceModel, final XMLStreamWriter writer) throws XMLStreamException{
-        marshallAsElement(resourceModel,true,writer);
+    public void marshallAsElement(final ModelNode resourceModel, final XMLStreamWriter writer) throws XMLStreamException {
+        marshallAsElement(resourceModel, true, writer);
     }
 
     /**
      * Marshalls the value from the given {@code resourceModel} as an xml element, if it
      * {@link #isMarshallable(org.jboss.dmr.ModelNode, boolean) is marshallable}.
      *
-     * @param resourceModel the model, a non-null node of {@link org.jboss.dmr.ModelType#OBJECT}.
+     * @param resourceModel   the model, a non-null node of {@link org.jboss.dmr.ModelType#OBJECT}.
      * @param marshallDefault {@code true} if the value should be marshalled even if it matches the default value
-     * @param writer        stream writer to use for writing the attribute
+     * @param writer          stream writer to use for writing the attribute
      * @throws javax.xml.stream.XMLStreamException if thrown by {@code writer}
      */
-    public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException{
+    public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (this.attributeMarshaller.isMarshallableAsElement()) {
             this.attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
         } else {
@@ -999,9 +999,9 @@ public abstract class AttributeDefinition {
             }
         }
         addAllowedValuesToDescription(result, validator);
-        arbitraryDescriptors.entrySet().stream().forEach((arbitraryDescriptor) -> {
-            assert !result.hasDefined(arbitraryDescriptor.getKey()); //You can't override an arbitrary descriptor set through other properties.
-            result.get(arbitraryDescriptor.getKey()).set(arbitraryDescriptor.getValue());
+        arbitraryDescriptors.forEach((key, value) -> {
+            assert !result.hasDefined(key); //You can't override an arbitrary descriptor set through other properties.
+            result.get(key).set(value);
         });
         return result;
     }
@@ -1202,7 +1202,21 @@ public abstract class AttributeDefinition {
         return convertToExpectedType(node);
     }
 
+    /**
+     *
+     * @return AttributeMarshaller that provides means to marshal attribute to xml
+     * @deprecated use {@link #getMarshaller()}
+     */
+    @Deprecated
     public AttributeMarshaller getAttributeMarshaller() {
+        return attributeMarshaller;
+    }
+
+    /**
+     *
+     * @return attribute marshaller that can be used to persist attribute to XML
+     */
+    public AttributeMarshaller getMarshaller() {
         return attributeMarshaller;
     }
 

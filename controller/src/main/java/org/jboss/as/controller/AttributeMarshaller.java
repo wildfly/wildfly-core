@@ -156,7 +156,7 @@ public abstract class AttributeMarshaller {
                         if(marshallSimpleTypeAsElement) {
                             valueType.marshallAsElement(handler, marshallDefault, writer);
                         } else {
-                            valueType.getAttributeMarshaller().marshall(valueType, handler, marshallDefault, writer);
+                            valueType.getMarshaller().marshall(valueType, handler, marshallDefault, writer);
                         }
                     }
                 }
@@ -188,7 +188,7 @@ public abstract class AttributeMarshaller {
 
         private boolean isMarshallable(AttributeDefinition[] valueTypes, ModelNode element){
             for (AttributeDefinition valueType : valueTypes) {
-                if (valueType.getAttributeMarshaller().isMarshallable(valueType, element)){
+                if (valueType.getMarshaller().isMarshallable(valueType, element)){
                     return true;
                 }
             }
@@ -200,7 +200,7 @@ public abstract class AttributeMarshaller {
                 if (isMarshallable(valueTypes, element)) {
                     writer.writeStartElement(objectType.getXmlName());
                     for (AttributeDefinition valueType : valueTypes) {
-                        valueType.getAttributeMarshaller().marshall(valueType, element, false, writer);
+                        valueType.getMarshaller().marshall(valueType, element, false, writer);
                     }
                     writer.writeEndElement();
                 }

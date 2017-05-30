@@ -131,7 +131,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.validator = basis.getValidator();
         this.alternatives = basis.getAlternatives();
         this.requires = basis.getRequires();
-        this.attributeMarshaller = basis.getAttributeMarshaller();
+        this.attributeMarshaller = basis.getMarshaller();
         this.resourceOnly = basis.isResourceOnly();
         this.deprecated = basis.getDeprecationData();
         this.nullSignificant = basis.getNilSignificant();

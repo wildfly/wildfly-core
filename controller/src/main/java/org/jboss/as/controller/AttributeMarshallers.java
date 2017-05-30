@@ -156,7 +156,7 @@ public interface AttributeMarshallers {
             Property p = property.asProperty();
             writer.writeAttribute(keyAttributeName, p.getName());
             for (AttributeDefinition valueType : valueTypes) {
-                valueType.getAttributeMarshaller().marshall(valueType, p.getValue(), false, writer);
+                valueType.getMarshaller().marshall(valueType, p.getValue(), false, writer);
             }
         }
     }
@@ -177,7 +177,7 @@ public interface AttributeMarshallers {
                     writer.writeStartElement(attribute.getXmlName());
                 }
                 for (ModelNode handler : resourceModel.get(attribute.getName()).asList()) {
-                    attr.getValueType().marshallAsElement(handler, writer);
+                    attr.getValueType().getMarshaller().marshallAsElement(attribute, handler, true, writer);
                 }
                 if (wrap) {
                     writer.writeEndElement();

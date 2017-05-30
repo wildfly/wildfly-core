@@ -28,6 +28,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.dmr.ModelNode;
@@ -65,7 +66,7 @@ public class MapOperations {
      * @author Tomaz Cerar (c) 2014 Red Hat Inc.
      */
     abstract static class AbstractMapHandler extends AbstractCollectionHandler {
-        static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinition("key", ModelType.STRING, false);
+        static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder("key", ModelType.STRING, false).build();
 
         AbstractMapHandler(AttributeDefinition... attributes) {
             super(attributes);

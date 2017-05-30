@@ -720,7 +720,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
 
         writer.writeStartElement(Element.PROFILE.getLocalName());
         writer.writeAttribute(Attribute.NAME.getLocalName(), profileName);
-        ProfileResourceDefinition.INCLUDES.getAttributeMarshaller().marshallAsAttribute(ProfileResourceDefinition.INCLUDES, profileNode, false, writer);
+        ProfileResourceDefinition.INCLUDES.getMarshaller().marshallAsAttribute(ProfileResourceDefinition.INCLUDES, profileNode, false, writer);
 
         if (profileNode.hasDefined(SUBSYSTEM)) {
             final Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
@@ -1097,9 +1097,9 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
             writer.writeStartElement(Element.HOST_EXCLUDE.getLocalName());
             writer.writeAttribute(Attribute.NAME.getLocalName(), exclude);
             ModelNode excludeNode = modelNode.get(exclude);
-            HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS.getAttributeMarshaller()
+            HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS.getMarshaller()
                     .marshall(HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS, excludeNode, false, writer);
-            HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS.getAttributeMarshaller()
+            HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS.getMarshaller()
                     .marshall(HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS, excludeNode, false, writer);
             if (HostExcludeResourceDefinition.HOST_RELEASE.isMarshallable(excludeNode)) {
                 writer.writeEmptyElement(Element.HOST_RELEASE.getLocalName());

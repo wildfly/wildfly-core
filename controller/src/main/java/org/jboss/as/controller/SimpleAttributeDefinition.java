@@ -50,7 +50,6 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
     //
     // Use the constructor that takes a builder
 
-
     /**
      * Creates a new attribute definition.
      *
@@ -170,7 +169,9 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @throws javax.xml.stream.XMLStreamException if {@code value} is not valid
      *
      * @see #parseAndSetParameter(String, ModelNode, XMLStreamReader)
+     * @deprecated use {@link #getParser()}
      */
+    @Deprecated
     public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
         try {
             return parse(this, this.getValidator(), value);
@@ -238,11 +239,13 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @param marshallDefault
      * @throws javax.xml.stream.XMLStreamException
      */
+    @Deprecated
     @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
     }
 
+    @Deprecated
     static ModelNode parse(AttributeDefinition attribute, ParameterValidator validator, final String value) throws OperationFailedException  {
         ModelNode node = ParseUtils.parseAttributeValue(value, attribute.isAllowExpression(), attribute.getType());
         validator.validateParameter(attribute.getXmlName(), node);
