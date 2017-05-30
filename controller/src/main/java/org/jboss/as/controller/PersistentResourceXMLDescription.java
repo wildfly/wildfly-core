@@ -492,7 +492,7 @@ public final class PersistentResourceXMLDescription {
         private final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
         private boolean useElementsForGroups = true;
         private String forcedName;
-        private boolean marshallDefaultValues = false;
+        private boolean marshallDefaultValues = true;
         private String nameAttributeName = NAME;
 
         private PersistentResourceXMLBuilder(final PathElement pathElement) {
