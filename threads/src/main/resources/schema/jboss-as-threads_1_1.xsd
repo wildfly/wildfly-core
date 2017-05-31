@@ -27,7 +27,7 @@
             xmlns="urn:jboss:domain:threads:1.1"
             elementFormDefault="qualified"
             attributeFormDefault="unqualified"
-            version="1.0">
+            version="1.1">
 
     <!-- The threads subsystem root element -->
     <xs:element name="subsystem" type="subsystem"/>
