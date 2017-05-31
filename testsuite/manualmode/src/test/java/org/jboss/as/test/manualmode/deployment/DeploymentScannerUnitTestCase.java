@@ -119,7 +119,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
 
                 createDeployment(deploymentOne, "org.jboss.modules");
                 createDeployment(deploymentTwo, "non.existing.dependency");
-                addDeploymentScanner(0);
+                addDeploymentScanner(0, false);
                 try {
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TIMEOUT;
@@ -130,9 +130,12 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
                     Assert.assertTrue(exists(DEPLOYMENT_TWO));
                     Assert.assertEquals("FAILED", deploymentState(DEPLOYMENT_TWO));
-
                     Assert.assertTrue(Files.exists(oneDeployed));
                     Assert.assertTrue(Files.exists(twoFailed));
+
+                    ModelNode rollBackOnBoot  = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "runtime-failure-causes-rollback", true);
+                    ModelNode result = executeOperation(rollBackOnBoot);
+                    assertEquals("Unexpected outcome of rollbacking the test deployment scanner: " + rollBackOnBoot, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
                     // Restart ...
                     client.close();
@@ -156,9 +159,9 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     while (exists(DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }
-                    Assert.assertFalse("Deployment two shouldn't exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(DEPLOYMENT_TWO));
+                    Assert.assertFalse("Deployment two should exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
-                    ModelNode result = executeOperation(disableScanner);
+                    result = executeOperation(disableScanner);
                     assertEquals("Unexpected outcome of disabling the test deployment scanner: " + disableScanner, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
                     final ModelNode undeployOp = Util.getEmptyOperation(DeploymentUndeployHandler.OPERATION_NAME, DEPLOYMENT_ONE.toModelNode());
@@ -210,7 +213,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
 
                 // deploy an invalid file-system deployment
 
-                addDeploymentScanner(0);
+                addDeploymentScanner(0, true);
                 try {
                     container.stop();
                     createDeployment(deployDir.resolve(JAR_TWO), "not.existing.dependency");
@@ -247,7 +250,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
             client = TestSuiteEnvironment.getModelControllerClient();
             try {
                 final PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
-                addDeploymentScanner(0);
+                addDeploymentScanner(0, true);
                 try {
                     // deploy an file-system deployment
                     container.stop();
@@ -286,7 +289,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         try {
             client = TestSuiteEnvironment.getModelControllerClient();
 
-            addDeploymentScanner(0);
+            addDeploymentScanner(0, true);
             try {
                 container.stop();
 
@@ -311,7 +314,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         try {
             client = TestSuiteEnvironment.getModelControllerClient();
 
-            addDeploymentScanner(0);
+            addDeploymentScanner(0, true);
             try {
                 container.stop();
 
