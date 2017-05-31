@@ -2244,6 +2244,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="required" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Is the keytab file with adequate principal required to exist at the time the service starts?
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="mechanism-names" type="stringListType" default="KRB5 SPNEGO">
                     <xs:annotation>
                         <xs:documentation>

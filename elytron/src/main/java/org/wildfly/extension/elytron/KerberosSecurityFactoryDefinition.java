@@ -118,6 +118,12 @@ class KerberosSecurityFactoryDefinition {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REQUIRED, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(false))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     private static final ModelNode mechanismsDefault = new ModelNode();
     private static final String[] mechanismAllowedValues = new String[]{"KRB5LEGACY","GENERIC","KRB5","KRB5V2","SPNEGO"};
     static {
@@ -162,7 +168,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -174,6 +180,7 @@ class KerberosSecurityFactoryDefinition {
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
                 final boolean wrapGssCredential = WRAP_GSS_CREDENTIAL.resolveModelAttribute(context, model).asBoolean();
+                final boolean required = REQUIRED.resolveModelAttribute(context, model).asBoolean();
 
                 Stream<String> oidsFromNames = MECHANISM_NAMES.unwrap(context, model).stream()
                         .map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.GSS, name));
@@ -223,6 +230,7 @@ class KerberosSecurityFactoryDefinition {
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
                         .setWrapGssCredential(wrapGssCredential)
+                        .setCheckKeyTab(required)
                         .setOptions(options);
                     mechanismOids.forEach(builder::addMechanismOid);
 

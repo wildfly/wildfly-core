@@ -43,6 +43,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PATH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.RELATIVE_TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REQUEST_LIFETIME;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REQUIRED;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL;
@@ -133,6 +134,9 @@ class CredentialSecurityFactoryParser {
                         break;
                     case WRAP_GSS_CREDENTIAL:
                         KerberosSecurityFactoryDefinition.WRAP_GSS_CREDENTIAL.parseAndSetParameter(value, add, reader);
+                        break;
+                    case REQUIRED:
+                        KerberosSecurityFactoryDefinition.REQUIRED.parseAndSetParameter(value, add, reader);
                         break;
                     case MECHANISM_NAMES:
                         for (String mechanismName : reader.getListAttributeValue(i)) {
@@ -246,6 +250,7 @@ class CredentialSecurityFactoryParser {
                 KerberosSecurityFactoryDefinition.OBTAIN_KERBEROS_TICKET.marshallAsAttribute(factory, false, writer);
                 KerberosSecurityFactoryDefinition.DEBUG.marshallAsAttribute(factory, false, writer);
                 KerberosSecurityFactoryDefinition.WRAP_GSS_CREDENTIAL.marshallAsAttribute(factory, false, writer);
+                KerberosSecurityFactoryDefinition.REQUIRED.marshallAsAttribute(factory, false, writer);
                 KerberosSecurityFactoryDefinition.MECHANISM_NAMES.getAttributeMarshaller().marshallAsAttribute(KerberosSecurityFactoryDefinition.MECHANISM_NAMES, factory, false, writer);
                 KerberosSecurityFactoryDefinition.MECHANISM_OIDS.getAttributeMarshaller().marshallAsAttribute(KerberosSecurityFactoryDefinition.MECHANISM_OIDS, factory, false, writer);
                 KerberosSecurityFactoryDefinition.OPTIONS.marshallAsElement(factory, writer);
