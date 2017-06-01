@@ -132,8 +132,12 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
         if(keyStore == null && startup) {
             return null;
         }
+
+        char[] keyPass = resolveKeyPassword();
+        if (keyPass == null) keyPass = resolveKeystorePassword();
+
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keyStore, keyPassword == null ? keystorePassword : keyPassword);
+        keyManagerFactory.init(keyStore, keyPass);
 
         return keyManagerFactory.getKeyManagers();
     }
