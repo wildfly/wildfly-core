@@ -155,7 +155,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     private Map<PathAddress, Object> restartedResources = Collections.emptyMap();
     private final ContextAttachments contextAttachments = new ContextAttachments();
     private final Map<OperationId, AuthorizationResponseImpl> authorizations = new ConcurrentHashMap<>();
-    private final Set<ContextServiceTarget> serviceTargets = new HashSet<>();
+    private final Set<ContextServiceTarget> serviceTargets = Collections.synchronizedSet(new HashSet<>());
+    private final Set<OperationContextServiceRegistry> serviceRegistries = Collections.synchronizedSet(new HashSet<>());
     private volatile BlockingTimeout blockingTimeout;
     private final long startTime = System.nanoTime();
     private volatile long exclusiveStartTime = -1;
@@ -616,7 +617,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (modify) {
             ensureWriteLockForRuntime();
         }
-        return new OperationContextServiceRegistry(modelController.getServiceRegistry(), registryActiveStep);
+        OperationContextServiceRegistry registry = new OperationContextServiceRegistry(modelController.getServiceRegistry(), registryActiveStep);
+        serviceRegistries.add(registry);
+        return registry;
     }
 
     public ServiceController<?> removeService(final ServiceName name) throws UnsupportedOperationException {
@@ -760,9 +763,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         };
         ServiceTarget delegate = targetActiveStep.getScopedServiceTarget(modelController.getServiceTarget());
         ContextServiceTarget cst = new ContextServiceTarget(delegate, supplier, targetActiveStep.address);
-        synchronized (serviceTargets) {  // synchronized because this can be called concurrently by ParallelBootOperationContext
-            serviceTargets.add(cst);
-        }
+        serviceTargets.add(cst);
         return cst;
     }
 
@@ -1398,9 +1399,14 @@ final class OperationContextImpl extends AbstractOperationContext {
             return super.executeOperation();
         } finally {
             try {
-                // Decouple any ServiceTarget we have created from this object
-                serviceTargets.forEach(ContextServiceTarget::done);
-                serviceTargets.clear();
+                // Decouple any ServiceTarget or ServiceRegistry we have created from this object
+                try {
+                    serviceTargets.forEach(ContextServiceTarget::done);
+                    serviceTargets.clear();
+                } finally {
+                    serviceRegistries.forEach(OperationContextServiceRegistry::done);
+                    serviceRegistries.clear();
+                }
             } finally {
                 synchronized (done) {
                     if (done.done) {
@@ -2044,7 +2050,7 @@ final class OperationContextImpl extends AbstractOperationContext {
          * Signal that any management op that was executing when this target was created is done
          * and any future use of it should not integrate with that op nor be limited to authorized management uses.
          */
-        void done() {
+        synchronized void done() {
             builderSupplier = null;
             builders.forEach(ContextServiceBuilder::done);
             builders.clear();
@@ -2060,15 +2066,14 @@ final class OperationContextImpl extends AbstractOperationContext {
             final ServiceBuilder<T> realBuilder = delegate.addServiceValue(name, value);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
-            final ContextServiceBuilderSupplier delegateSupplier = this.builderSupplier;
-            if (delegateSupplier == null) {
-                return realBuilder;
-            }
-            ContextServiceBuilder<T> csb = delegateSupplier.getContextServiceBuilder(realBuilder, name);
-            synchronized (builders) {
+            synchronized (this) {
+                if (builderSupplier == null) {
+                    return realBuilder;
+                }
+                ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
                 builders.add(csb);
+                return csb;
             }
-            return csb;
         }
 
         public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
@@ -2278,29 +2283,54 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private class OperationContextServiceRegistry implements ServiceRegistry {
+    private static class OperationContextServiceRegistry implements ServiceRegistry {
         private final ServiceRegistry registry;
-        private final Step registryActiveStep;
+        private final Set<OperationContextServiceController> controllers = Collections.synchronizedSet(new HashSet<>());
+        private Step registryActiveStep;
 
-        public OperationContextServiceRegistry(ServiceRegistry registry, Step registryActiveStep) {
+        private OperationContextServiceRegistry(ServiceRegistry registry, Step registryActiveStep) {
             this.registry = registry;
             this.registryActiveStep = registryActiveStep;
+        }
+
+        /**
+         * Signal that any management op that was executing when this target was created is done
+         * and any future use of it should not integrate with that op nor be limited to authorized management uses.
+         */
+        synchronized void done() {
+            registryActiveStep = null;
+            controllers.forEach(OperationContextServiceController::done);
+            controllers.clear();
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public ServiceController<?> getRequiredService(ServiceName serviceName) throws ServiceNotFoundException {
-            return new OperationContextServiceController(registry.getRequiredService(serviceName), registryActiveStep);
+            ServiceController<?> result = registry.getRequiredService(serviceName);
+            synchronized (this) {
+                if (registryActiveStep != null) {
+                    OperationContextServiceController ocsc = new OperationContextServiceController(result, registryActiveStep);
+                    result = ocsc;
+                    controllers.add(ocsc);
+                }
+            }
+            return result;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public ServiceController<?> getService(ServiceName serviceName) {
-            ServiceController<?> controller = registry.getService(serviceName);
-            if (controller == null) {
-                return null;
+            ServiceController<?> result = registry.getService(serviceName);
+            if (result != null) {
+                synchronized (this) {
+                    if (registryActiveStep != null) {
+                        OperationContextServiceController ocsc = new OperationContextServiceController(result, registryActiveStep);
+                        result = ocsc;
+                        controllers.add(ocsc);
+                    }
+                }
             }
-            return new OperationContextServiceController(controller, registryActiveStep);
+            return result;
         }
 
         @Override
@@ -2309,13 +2339,17 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private class OperationContextServiceController<S> implements ServiceController<S> {
+    private static class OperationContextServiceController<S> implements ServiceController<S> {
         private final ServiceController<S> controller;
-        private final Step registryActiveStep;
+        private volatile Step registryActiveStep;
 
-        public OperationContextServiceController(ServiceController<S> controller, Step registryActiveStep) {
+        private OperationContextServiceController(ServiceController<S> controller, Step registryActiveStep) {
             this.controller = controller;
             this.registryActiveStep = registryActiveStep;
+        }
+
+        void done() {
+            this.registryActiveStep = null;
         }
 
         public ServiceController<?> getParent() {
@@ -2334,8 +2368,9 @@ final class OperationContextImpl extends AbstractOperationContext {
                                          org.jboss.msc.service.ServiceController.Mode newMode) {
             checkModeTransition(newMode);
             boolean changed = controller.compareAndSetMode(expected, newMode);
-            if (changed) {
-                registryActiveStep.serviceModeChanged(controller);
+            Step step = registryActiveStep;
+            if (changed && step != null) {
+                step.serviceModeChanged(controller);
             }
             return changed;
         }
@@ -2343,7 +2378,10 @@ final class OperationContextImpl extends AbstractOperationContext {
         public void setMode(Mode mode) {
             checkModeTransition(mode);
             controller.setMode(mode);
-            registryActiveStep.serviceModeChanged(controller);
+            Step step = registryActiveStep;
+            if (step != null) {
+                step.serviceModeChanged(controller);
+            }
         }
 
         private void checkModeTransition(Mode mode) {

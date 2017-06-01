@@ -31,6 +31,7 @@ import java.util.function.Function;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.common.Assert;
 
 /**
  * A capability exposed in a running WildFly process.
@@ -89,6 +90,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
 
     // Default value for allowMultipleRegistrations.
     private static final boolean ALLOW_MULTIPLE = false;
+    private static final ServiceName ORG_WILDFLY = ServiceName.parse("org.wildfly");
 
     private final Class<?> serviceValueType;
     private final ServiceName serviceName;
@@ -152,25 +154,40 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements, builder.dynamicNameMapper);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
-        this.serviceName = ServiceName.parse(builder.baseName);
+        this.serviceName = this.serviceValueType == null ? null : toServiceName(builder.baseName);
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
+    }
+
+    private static ServiceName toServiceName(String capabilityName) {
+        if (capabilityName.startsWith("org.wildfly.")) {
+            ServiceName toAppend = ServiceName.parse(capabilityName.substring("org.wildfly.".length()));
+            return ORG_WILDFLY.append(toAppend);
+        } else {
+            return ServiceName.parse(capabilityName);
+        }
     }
 
     /**
      * Constructor for use by {@link #fromBaseCapability(String...)}
      */
-    private RuntimeCapability(String baseName, Class<?> serviceValueType, T runtimeAPI,
+    private RuntimeCapability(String baseName, Class<?> serviceValueType, ServiceName baseServiceName, T runtimeAPI,
                               Set<String> requirements, Set<String> optionalRequirements,
                               Set<String> runtimeOnlyRequirements, Set<String> dynamicRequirements,
                               Set<String> dynamicOptionalRequirements,
                               boolean allowMultipleRegistrations,
-                              Function<PathAddress,String[]> dynamicNameMapper, String... dynamicElement
-                              ) {
+                              Function<PathAddress, String[]> dynamicNameMapper, String... dynamicElement
+    ) {
         super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements,
                 optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements, dynamicNameMapper);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
-        this.serviceName = dynamicElement == null ? ServiceName.parse(baseName) : ServiceName.parse(baseName).append(dynamicElement);
+        if (serviceValueType != null) {
+            Assert.assertNotNull(baseServiceName);
+            this.serviceName = dynamicElement == null ? baseServiceName : baseServiceName.append(dynamicElement);
+        } else {
+            assert baseServiceName == null;
+            this.serviceName = null;
+        }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
     }
 
@@ -320,7 +337,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert isDynamicallyNamed();
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<T>(getName(), serviceValueType, runtimeAPI,
+        return new RuntimeCapability<T>(getName(), serviceValueType, serviceName, runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
                 getRuntimeOnlyRequirements(), getDynamicRequirements(),
                 getDynamicOptionalRequirements(), allowMultipleRegistrations,
@@ -343,7 +360,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert path != null;
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<>(getName(), serviceValueType, runtimeAPI,
+        return new RuntimeCapability<>(getName(), serviceValueType, serviceName, runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
                 getRuntimeOnlyRequirements(), getDynamicRequirements(),
                         getDynamicOptionalRequirements(), allowMultipleRegistrations,
