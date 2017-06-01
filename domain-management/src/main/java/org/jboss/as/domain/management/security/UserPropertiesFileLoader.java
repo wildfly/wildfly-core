@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+
 /**
  * An extension of {@link PropertiesFileLoader} that is realm aware.
  *
@@ -101,7 +103,7 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
         try {
             br = Files.newBufferedReader(propertiesFile.toPath(), StandardCharsets.UTF_8);
             String currentLine;
-            while (realmName == null && (currentLine = br.readLine()) != null) {
+            while ((currentLine = br.readLine()) != null) {
                 final String trimmed = currentLine.trim();
                 final Matcher matcher = PROPERTY_PATTERN.matcher(currentLine.trim());
                 if (matcher.matches()) {
@@ -116,6 +118,9 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
                     int start = trimmed.indexOf(REALM_COMMENT_PREFIX) + REALM_COMMENT_PREFIX.length();
                     int end = trimmed.indexOf(REALM_COMMENT_SUFFIX, start);
                     if (end > -1) {
+                        if (realmName != null) {
+                            throw ROOT_LOGGER.multipleRealmDeclarations(propertiesFile.getAbsolutePath());
+                        }
                         realmName = trimmed.substring(start, end);
                     }
                 }
