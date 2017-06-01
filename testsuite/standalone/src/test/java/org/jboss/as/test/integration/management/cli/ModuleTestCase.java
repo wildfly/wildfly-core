@@ -227,6 +227,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
             Assert.assertEquals(dir, dirs[0].getName());
             Assert.assertEquals(0, dirs[0].listFiles().length);
         } finally {
+            FileUtils.deleteDirectory(dirFile);
             testRemove("main", false);
         }
     }
@@ -256,6 +257,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
             Assert.assertEquals(fileName, files[0].getName());
             Assert.assertEquals(content, Files.readFirstLine(files[0], Charsets.UTF_8));
         } finally {
+            FileUtils.deleteDirectory(dirFile);
             testRemove("main", false);
         }
     }
@@ -268,19 +270,23 @@ public class ModuleTestCase extends AbstractCliTestBase {
         String dir = System.currentTimeMillis() + "dir";
         File dirFile = new File(TestSuiteEnvironment.getTmpDir() + File.separator + dir);
         dirFile.mkdir();
-        String content = "HELLO WORLD";
-        String fileName = System.currentTimeMillis() + "file.txt";
-        File f = new File(dirFile, fileName);
-        f.createNewFile();
-        Files.write(content.getBytes(), f);
-        f.setReadable(false);
-        boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
-                + " --resources=" + dirFile.getAbsolutePath(), true);
-        Assert.assertFalse(ret);
-        String output = cli.readOutput();
-        Assert.assertTrue(output.contains("Module not added"));
-        File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
-        Assert.assertFalse(testModuleRoot.exists());
+        try {
+            String content = "HELLO WORLD";
+            String fileName = System.currentTimeMillis() + "file.txt";
+            File f = new File(dirFile, fileName);
+            f.createNewFile();
+            Files.write(content.getBytes(), f);
+            f.setReadable(false);
+            boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile.getAbsolutePath(), true);
+            Assert.assertFalse(ret);
+            String output = cli.readOutput();
+            Assert.assertTrue(output.contains("Module not added"));
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            Assert.assertFalse(testModuleRoot.exists());
+        } finally {
+            FileUtils.deleteDirectory(dirFile);
+        }
     }
 
     @Test
@@ -351,6 +357,8 @@ public class ModuleTestCase extends AbstractCliTestBase {
             File l3 = map.get(link3.getName());
             Assert.assertEquals(content, Files.readFirstLine(l3, Charsets.UTF_8));
         } finally {
+            FileUtils.deleteDirectory(dirFile);
+            FileUtils.deleteDirectory(dirFile2);
             testRemove("main", false);
         }
     }
@@ -364,19 +372,100 @@ public class ModuleTestCase extends AbstractCliTestBase {
         String dir = System.currentTimeMillis() + "dir";
         File dirFile = new File(TestSuiteEnvironment.getTmpDir(), dir);
         dirFile.mkdir();
+        try {
+            File subDir = new File(dirFile, "subDirectory");
+            subDir.mkdir();
+            File link1 = new File(subDir, "linkToRoot");
+            java.nio.file.Files.createSymbolicLink(link1.toPath(), dirFile.toPath());
 
-        File subDir = new File(dirFile, "subDirectory");
-        subDir.mkdir();
-        File link1 = new File(subDir, "linkToRoot");
-        java.nio.file.Files.createSymbolicLink(link1.toPath(), dirFile.toPath());
+            boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile.getAbsolutePath(), true);
+            Assert.assertFalse(ret);
+            String output = cli.readOutput();
+            Assert.assertTrue(output.contains("Module not added"));
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            Assert.assertFalse(testModuleRoot.exists());
+        } finally {
+            FileUtils.deleteDirectory(dirFile);
+        }
+    }
 
-        boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
-                + " --resources=" + dirFile.getAbsolutePath(), true);
-        Assert.assertFalse(ret);
-        String output = cli.readOutput();
-        Assert.assertTrue(output.contains("Module not added"));
-        File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
-        Assert.assertFalse(testModuleRoot.exists());
+    @Test
+    public void addModuleWithDirectoryAndInvalidLinks2() throws Exception {
+        if (Util.isWindows()) {
+            return;
+        }
+
+        String dir1 = System.currentTimeMillis() + "dir1";
+        File dirFile1 = new File(TestSuiteEnvironment.getTmpDir(), dir1);
+        dirFile1.mkdir();
+
+        String dir2 = System.currentTimeMillis() + "dir2";
+        File dirFile2 = new File(TestSuiteEnvironment.getTmpDir(), dir2);
+        dirFile2.mkdir();
+
+        try {
+            File link = new File(dirFile1, "linkToDir2");
+            java.nio.file.Files.createSymbolicLink(link.toPath(), dirFile2.toPath());
+
+            File link2 = new File(dirFile2, "linkToDir1");
+            java.nio.file.Files.createSymbolicLink(link2.toPath(), dirFile1.toPath());
+
+            boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + dirFile1.getAbsolutePath(), true);
+            Assert.assertFalse(ret);
+            String output = cli.readOutput();
+            Assert.assertTrue(output, output.contains("Module not added"));
+            Assert.assertFalse(output, output.contains("File name too long"));
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            Assert.assertFalse(testModuleRoot.exists());
+        } finally {
+            FileUtils.deleteDirectory(dirFile1);
+            FileUtils.deleteDirectory(dirFile2);
+        }
+    }
+
+    @Test
+    public void addModuleWithDirectoryAndInvalidLinks3() throws Exception {
+        if (Util.isWindows()) {
+            return;
+        }
+        // Deploy A
+        // A/B/linkToC
+        // C/D/linkToB
+
+        String A = "A";
+        File AFile = new File(TestSuiteEnvironment.getTmpDir(), A);
+        AFile.mkdir();
+        String B = "B";
+        File BFile = new File(AFile, B);
+        BFile.mkdir();
+
+        String C = "C";
+        File CFile = new File(TestSuiteEnvironment.getTmpDir(), C);
+        CFile.mkdir();
+        String D = "D";
+        File DFile = new File(CFile, D);
+        DFile.mkdir();
+        try {
+            File linkToC = new File(BFile, "C");
+            java.nio.file.Files.createSymbolicLink(linkToC.toPath(), CFile.toPath());
+
+            File linkToB = new File(DFile, "B");
+            java.nio.file.Files.createSymbolicLink(linkToB.toPath(), BFile.toPath());
+
+            boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
+                    + " --resources=" + AFile.getAbsolutePath(), true);
+            Assert.assertFalse(ret);
+            String output = cli.readOutput();
+            Assert.assertTrue(output, output.contains("Module not added"));
+            Assert.assertFalse(output, output.contains("File name too long"));
+            File testModuleRoot = new File(getModulePath(), MODULE_NAME.replace('.', File.separatorChar));
+            Assert.assertFalse(testModuleRoot.exists());
+        } finally {
+            FileUtils.deleteDirectory(AFile);
+            FileUtils.deleteDirectory(CFile);
+        }
     }
 
     private void testAddRemove(String slotName, boolean addModuleRootDir, boolean addResources,

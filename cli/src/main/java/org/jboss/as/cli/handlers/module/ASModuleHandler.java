@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -601,7 +602,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private static void copyDirectory(final File source, final File target,
             CommandContext ctx, ASModuleHandler handler) throws CommandLineException {
         try {
-            copyDirectory(source, target);
+            copyDirectory(source, target, new ArrayList<>());
         } catch (IOException ex) {
             Exception removalException = null;
             try {
@@ -623,9 +624,10 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         }
     }
 
-    private static void copyDirectory(final File source, final File target) throws IOException {
+    private static void copyDirectory(final File source, final File target, final List<Path> seen) throws IOException {
         Path sourcePath = source.toPath();
         Path targetPath = target.toPath();
+        seen.add(sourcePath);
         Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(final Path dir,
@@ -652,10 +654,9 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                         }
                     }
                     if (symTarget.toFile().getCanonicalFile().isDirectory()) {
-                        // Resursive link (if the symlink references a parent of the directory
-                        // being copied), we must fail.
-                        if (file.getParent().toFile().getCanonicalPath().
-                                startsWith(symTarget.toFile().getCanonicalPath())) {
+                        // Resursive link (if the symlink target has already been copied
+                        // as a linked directory).
+                        if (seen.contains(symTarget)) {
                             throw new IOException("Recursive symbolic link: "
                                     + file.toFile().getAbsolutePath() + "=>"
                                     + symTarget.toFile().getCanonicalPath()
@@ -663,7 +664,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                         } else {
                             // copy the directory target.
                             copyDirectory(symTarget.toFile(), targetPath.resolve(sourcePath
-                                    .relativize(file)).toFile());
+                                    .relativize(file)).toFile(), seen);
                         }
                         return FileVisitResult.CONTINUE;
                     }
