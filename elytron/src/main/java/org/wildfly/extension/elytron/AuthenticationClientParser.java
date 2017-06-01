@@ -50,7 +50,7 @@ class AuthenticationClientParser {
     private final PersistentResourceXMLDescription authenticationConfigurationParser = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION), null)
             .addAttributes(AuthenticationClientDefinitions.AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES)
             .addAttribute(AuthenticationClientDefinitions.MECHANISM_PROPERTIES, AttributeParser.PROPERTIES_PARSER, AttributeMarshaller.PROPERTIES_MARSHALLER)
-            .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getAttributeMarshaller())
+            .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getMarshaller())
             .build();
 
     private final PersistentResourceXMLDescription authenticationContextParser = builder(PathElement.pathElement(AUTHENTICATION_CONTEXT), null)
@@ -58,13 +58,14 @@ class AuthenticationClientParser {
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
-    void readAuthenticationClient(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
+
+
+    void readAuthenticationClient(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {
         requireNoAttributes(reader);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
             String localName = reader.getLocalName();
-            PathAddress parentAddress = PathAddress.pathAddress(parentAddressNode);
             switch (localName) {
                 case AUTHENTICATION_CONFIGURATION:
                     authenticationConfigurationParser.parse(reader, parentAddress, operations);

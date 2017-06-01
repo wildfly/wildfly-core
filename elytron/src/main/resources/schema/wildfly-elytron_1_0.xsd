@@ -2132,7 +2132,7 @@
                             </xs:documentation>
                         </xs:annotation>
                         <xs:complexType>
-                            <xs:attribute name="key" type="xs:string" use="required">
+                            <xs:attribute name="name" type="xs:string" use="required">
                                 <xs:annotation>
                                     <xs:documentation>
                                         The key of the option.
@@ -3478,24 +3478,13 @@
                             <xs:sequence>
                                 <xs:element name="filter" maxOccurs="unbounded">
                                     <xs:complexType>
-                                        <xs:sequence>
-                                            <xs:element name="pattern-filter">
-                                                <xs:annotation>
-                                                    <xs:documentation>
-                                                        A fiter that filters mechanism names using a regular expression pattern.
-                                                    </xs:documentation>
-                                                </xs:annotation>
-                                                <xs:complexType>
-                                                    <xs:attribute name="value" type="xs:string" use="required">
-                                                        <xs:annotation>
-                                                            <xs:documentation>
-                                                                The regular expression.
-                                                            </xs:documentation>
-                                                        </xs:annotation>
-                                                    </xs:attribute>
-                                                </xs:complexType>
-                                            </xs:element>
-                                        </xs:sequence>
+                                        <xs:attribute name="pattern" type="xs:string" >
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    A regular expression that filters mechanism names using a regular expression pattern.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
                                         <xs:attribute name="enabling" type="xs:boolean" default="true">
                                             <xs:annotation>
                                                 <xs:documentation>
@@ -3680,46 +3669,25 @@
                             <xs:sequence>
                                 <xs:element name="filter" maxOccurs="unbounded">
                                     <xs:complexType>
-                                        <xs:choice maxOccurs="unbounded">
-                                            <xs:element name="predefined-filter">
-                                                <xs:annotation>
-                                                    <xs:documentation>
-                                                        A predefined filter to filter mechanisms.
-                                                    </xs:documentation>
-                                                </xs:annotation>
-                                                <xs:complexType>
-                                                    <xs:attribute name="value" type="predefinedFilterType" use="required">
-                                                        <xs:annotation>
-                                                            <xs:documentation>
-                                                                The name of the predefined filter.
-                                                            </xs:documentation>
-                                                        </xs:annotation>
-                                                    </xs:attribute>
-                                                </xs:complexType>
-                                            </xs:element>
-                                            <xs:element name="pattern-filter">
-                                                <xs:annotation>
-                                                    <xs:documentation>
-                                                        A fiter that filters mechanism names using a regular expression pattern.
-                                                    </xs:documentation>
-                                                </xs:annotation>
-                                                <xs:complexType>
-                                                    <xs:attribute name="value" type="xs:string" use="required">
-                                                        <xs:annotation>
-                                                            <xs:documentation>
-                                                                The regular expression.
-                                                            </xs:documentation>
-                                                        </xs:annotation>
-                                                    </xs:attribute>
-                                                </xs:complexType>
-                                            </xs:element>
-                                        </xs:choice>
                                         <xs:attribute name="enabling" type="xs:boolean" default="true">
                                             <xs:annotation>
                                                 <xs:documentation>
                                                     When set to true all mechanisms are disabled unless enabled by matching one of the defined filters.
-
                                                     When set to false all mechanisms are enabled unless disabled by matching one of the defined filters.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
+                                        <xs:attribute name="pattern" type="xs:string" >
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    A regular expression filter that filters mechanism names using a regular expression pattern.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
+                                        <xs:attribute name="predefined" type="xs:string" >
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    A predefined filter to filter mechanisms.
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:attribute>
@@ -4384,30 +4352,12 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="keyStoreType">
+    <xs:complexType name="keyStoreImplementationType">
         <xs:annotation>
             <xs:documentation>
-                An individual names KeyStore definition.
+                keystore implementation details
             </xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:element name="file" type="fileType" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The location of the file to use to initialise the KeyStore instance.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        The credential reference to credential store or clear text (password)
-                        to use to initialize or load the KeyStore.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required" />
         <xs:attribute name="type" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -4436,6 +4386,40 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+
+    <xs:complexType name="keyStoreType">
+        <xs:annotation>
+            <xs:documentation>
+                An individual names KeyStore definition.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The credential reference to credential store or clear text (password)
+                        to use to initialize or load the KeyStore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="implementation" type="keyStoreImplementationType" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Implementation details
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="file" type="fileType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The location of the file to use to initialise the KeyStore instance.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
         <xs:attribute name="alias-filter" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4506,7 +4490,60 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="ldap-mapping" minOccurs="0">
+            <xs:element name="search" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Search LDAP configuration
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="path" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The LDAP path, where will be keystore items searched.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="recursive" type="xs:boolean" use="optional" default="true">
+                        <xs:annotation>
+                            <xs:documentation>
+                                If the search in search-path should be recursive.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="time-limit" type="xs:integer" use="optional" default="10000">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The time limit for LDAP search in miliseconds.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias-attribute={0})">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The LDAP filter, which will be used to obtain keystore item by alias.
+                                The string "{0}" will by replaced by searched alias.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate-attribute={0})">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The LDAP filter, which will be used to obtain keystore item by certificate.
+                                The string "{0}" will by replaced by searched encoded certificate.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias-attribute=*)">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The LDAP filter, which will be used to obtain keystore item by certificate.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="attribute-mapping" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Mapping of keystore item parts to LDAP attributes.
@@ -4580,50 +4617,6 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of dir-context used to connect to the LDAP server.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="search-path" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The LDAP path, where will be keystore items searched.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="search-recursive" type="xs:boolean" use="optional" default="true">
-            <xs:annotation>
-                <xs:documentation>
-                    If the search in search-path should be recursive.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="search-time-limit" type="xs:integer" use="optional" default="10000">
-            <xs:annotation>
-                <xs:documentation>
-                    The time limit for LDAP search in miliseconds.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias-attribute={0})">
-            <xs:annotation>
-                <xs:documentation>
-                    The LDAP filter, which will be used to obtain keystore item by alias.
-                    The string "{0}" will by replaced by searched alias.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate-attribute={0})">
-            <xs:annotation>
-                <xs:documentation>
-                    The LDAP filter, which will be used to obtain keystore item by certificate.
-                    The string "{0}" will by replaced by searched encoded certificate.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias-attribute=*)">
-            <xs:annotation>
-                <xs:documentation>
-                    The LDAP filter, which will be used to obtain keystore item by certificate.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

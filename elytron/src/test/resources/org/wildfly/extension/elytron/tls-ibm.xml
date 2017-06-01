@@ -23,21 +23,25 @@
     </credential-stores>
     <tls>
         <key-stores>
-            <key-store name="FireflyKeystore" type="JKS">
+            <key-store name="FireflyKeystore" >
+                <credential-reference store="test" alias="master-password-alias"/>
+                <implementation type="TLS" />
                 <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
-                <credential-reference store="test" alias="master-password-alias"/>
             </key-store>
-            <key-store name="LocalhostKeystore" type="JKS">
+            <key-store name="LocalhostKeystore" >
+                <credential-reference store="test" alias="master-password-alias"/>
+                <implementation type="TLS" />
                 <file path="localhost.keystore" relative-to="jboss.server.config.dir" required="true"/>
-                <credential-reference store="test" alias="master-password-alias"/>
             </key-store>
-            <key-store name="ElytronCaTruststore" type="JKS">
+            <key-store name="ElytronCaTruststore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation type="TLS" />
                 <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
-                <credential-reference clear-text="Elytron"/>
             </key-store>
-            <key-store name="NewKeyStore" type="JKS">
-                <file path="target/not-existing.keystore" required="false"/>
+            <key-store name="NewKeyStore" >
                 <credential-reference clear-text="Elytron"/>
+                <implementation type="TLS" />
+                <file path="target/not-existing.keystore" required="false"/>
             </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="FireflyKeystore" alias-filter="NONE:+firefly"/>
         </key-stores>

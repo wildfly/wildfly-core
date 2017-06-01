@@ -37,9 +37,10 @@
 
     <tls><!-- required by OAuth2Realm when HTTPS in introspection-url used -->
         <key-stores>
-            <key-store name="ElytronCaTruststore" type="JKS">
-                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+            <key-store name="ElytronCaTruststore" >
                 <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS" />
+                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
             </key-store>
         </key-stores>
         <trust-managers>

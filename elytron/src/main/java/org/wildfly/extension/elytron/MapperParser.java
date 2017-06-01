@@ -114,6 +114,7 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.ListAttributeDefinition;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
@@ -125,7 +126,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class MapperParser {
 
-    void readMappers(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
+    void readMappers(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
@@ -136,87 +137,87 @@ class MapperParser {
                     readCustomComponent(CUSTOM_PERMISSION_MAPPER, parentAddress, reader, operations);
                     break;
                 case LOGICAL_PERMISSION_MAPPER:
-                    readLogicalPermissionMapper(parentAddress, reader, operations);
+                    readLogicalPermissionMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 case SIMPLE_PERMISSION_MAPPER:
-                    readSimplePermissionMapper(parentAddress, reader, operations);
+                    readSimplePermissionMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CONSTANT_PERMISSION_MAPPER:
-                    readConstantPermissionMapper(parentAddress, reader, operations);
+                    readConstantPermissionMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 // Principal Decoders
                 case AGGREGATE_PRINCIPAL_DECODER:
-                    readAggregatePrincipalDecoderElement(parentAddress, reader, operations);
+                    readAggregatePrincipalDecoderElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CONCATENATING_PRINCIPAL_DECODER:
-                    readConcatenatingPrincipalDecoderElement(parentAddress, reader, operations);
+                    readConcatenatingPrincipalDecoderElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CONSTANT_PRINCIPAL_DECODER:
-                    readConstantPrincipalDecoderElement(parentAddress, reader, operations);
+                    readConstantPrincipalDecoderElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CUSTOM_PRINCIPAL_DECODER:
                     readCustomComponent(CUSTOM_PRINCIPAL_DECODER, parentAddress, reader, operations);
                     break;
                 case X500_ATTRIBUTE_PRINCIPAL_DECODER:
-                    readX500AttributePrincipalDecoderElement(parentAddress, reader, operations);
+                    readX500AttributePrincipalDecoderElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 // Principal Transformers
                 case AGGREGATE_PRINCIPAL_TRANSFORMER:
-                    readAggregatePrincipalTransformerElement(parentAddress, reader, operations);
+                    readAggregatePrincipalTransformerElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CHAINED_PRINCIPAL_TRANSFORMER:
-                    readChainedPrincipalTransformersElement(parentAddress, reader, operations);
+                    readChainedPrincipalTransformersElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CONSTANT_PRINCIPAL_TRANSFORMER:
-                    readConstantPrincipalTransformerElement(parentAddress, reader, operations);
+                    readConstantPrincipalTransformerElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CUSTOM_PRINCIPAL_TRANSFORMER:
                     readCustomComponent(CUSTOM_PRINCIPAL_TRANSFORMER, parentAddress, reader, operations);
                     break;
                 case REGEX_PRINCIPAL_TRANSFORMER:
-                    readRegexPrincipalTransformerElement(parentAddress, reader, operations);
+                    readRegexPrincipalTransformerElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case REGEX_VALIDATING_PRINCIPAL_TRANSFORMER:
-                    readRegexValidatingPrincipalTransformerElement(parentAddress, reader, operations);
+                    readRegexValidatingPrincipalTransformerElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 // Realm Mappers
                 case CONSTANT_REALM_MAPPER:
-                    readConstantRealmMapperElement(parentAddress, reader, operations);
+                    readConstantRealmMapperElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CUSTOM_REALM_MAPPER:
                     readCustomComponent(CUSTOM_REALM_MAPPER, parentAddress, reader, operations);
                     break;
                 case SIMPLE_REGEX_REALM_MAPPER:
-                    readSimpleRegexRealmMapperElement(parentAddress, reader, operations);
+                    readSimpleRegexRealmMapperElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case MAPPED_REGEX_REALM_MAPPER:
-                    readMappedRegexRealmMapperElement(parentAddress, reader, operations);
+                    readMappedRegexRealmMapperElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 // Role Decoders
                 case CUSTOM_ROLE_DECODER:
                     readCustomComponent(CUSTOM_ROLE_DECODER, parentAddress, reader, operations);
                     break;
                 case SIMPLE_ROLE_DECODER:
-                    readSimpleRoleDecoder(parentAddress, reader, operations);
+                    readSimpleRoleDecoder(parentAddress.toModelNode(), reader, operations);
                     break;
                 // Role Mappers
                 case ADD_PREFIX_ROLE_MAPPER:
-                    readAddPrefixRoleMapper(parentAddress, reader, operations);
+                    readAddPrefixRoleMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 case ADD_SUFFIX_ROLE_MAPPER:
-                    readAddSuffixRoleMapper(parentAddress, reader, operations);
+                    readAddSuffixRoleMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 case AGGREGATE_ROLE_MAPPER:
-                    readAggregateRoleMapperElement(parentAddress, reader, operations);
+                    readAggregateRoleMapperElement(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CONSTANT_ROLE_MAPPER:
-                    readConstantRoleMapper(parentAddress, reader, operations);
+                    readConstantRoleMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 case CUSTOM_ROLE_MAPPER:
                     readCustomComponent(CUSTOM_ROLE_MAPPER, parentAddress, reader, operations);
                     break;
                 case LOGICAL_ROLE_MAPPER:
-                    readLogicalRoleMapper(parentAddress, reader, operations);
+                    readLogicalRoleMapper(parentAddress.toModelNode(), reader, operations);
                     break;
                 default:
                     throw unexpectedElement(reader);
@@ -1370,8 +1371,8 @@ class MapperParser {
                 if (permissionMapper.hasDefined(PERMISSION_MAPPINGS)) {
                     for (ModelNode permissionMapping : permissionMapper.get(PERMISSION_MAPPINGS).asList()) {
                         writer.writeStartElement(PERMISSION_MAPPING);
-                        PermissionMapperDefinitions.PRINCIPALS.getAttributeMarshaller().marshallAsAttribute(PermissionMapperDefinitions.PRINCIPALS, permissionMapping, false, writer);
-                        PermissionMapperDefinitions.ROLES.getAttributeMarshaller().marshallAsAttribute(PermissionMapperDefinitions.ROLES, permissionMapping, false, writer);
+                        PermissionMapperDefinitions.PRINCIPALS.getMarshaller().marshallAsAttribute(PermissionMapperDefinitions.PRINCIPALS, permissionMapping, false, writer);
+                        PermissionMapperDefinitions.ROLES.getMarshaller().marshallAsAttribute(PermissionMapperDefinitions.ROLES, permissionMapping, false, writer);
                         if (permissionMapping.hasDefined(PERMISSIONS)) {
                             for (ModelNode permission : permissionMapping.get(PERMISSIONS).asList()) {
                                 writer.writeStartElement(PERMISSION);
@@ -1521,8 +1522,8 @@ class MapperParser {
                 PrincipalDecoderDefinitions.START_SEGMENT.marshallAsAttribute(principalDecoder, writer);
                 PrincipalDecoderDefinitions.MAXIMUM_SEGMENTS.marshallAsAttribute(principalDecoder, writer);
                 PrincipalDecoderDefinitions.REVERSE.marshallAsAttribute(principalDecoder, writer);
-                PrincipalDecoderDefinitions.REQUIRED_OIDS.getAttributeMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_OIDS, principalDecoder, false, writer);
-                PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES.getAttributeMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES, principalDecoder, false, writer);
+                PrincipalDecoderDefinitions.REQUIRED_OIDS.getMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_OIDS, principalDecoder, false, writer);
+                PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES.getMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES, principalDecoder, false, writer);
                 writer.writeEndElement();
             }
 

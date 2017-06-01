@@ -206,16 +206,18 @@ public interface AttributeParsers {
             } else {
                 throw ParseUtils.unexpectedElement(reader, Collections.singleton(attribute.getXmlName()));
             }
-            ParseUtils.requireNoContent(reader);
+            if (!reader.isEndElement()) {
+                ParseUtils.requireNoContent(reader);
+            }
         }
 
         static void parseEmbeddedElement(ObjectTypeAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode op, String... additionalExpectedAttributes) throws XMLStreamException {
             AttributeDefinition[] valueTypes = attribute.getValueTypes();
 
-            Map<String, AttributeDefinition> attributes = Arrays.asList(valueTypes).stream()
+            Map<String, AttributeDefinition> attributes = Arrays.stream(valueTypes)
                     .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
 
-            Map<String, AttributeDefinition> attributeElements = Arrays.asList(valueTypes).stream()
+            Map<String, AttributeDefinition> attributeElements = Arrays.stream(valueTypes)
                                    .filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement())
                     .collect(Collectors.toMap(a -> a.getParser().getXmlName(a) , Function.identity()));
 

@@ -97,15 +97,13 @@ public class ModelTestUtils {
         URL configURL = clazz.getResource(name);
         Assert.assertNotNull(name + " url is null", configURL);
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream(), StandardCharsets.UTF_8));
         StringWriter writer = new StringWriter();
-        try {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(configURL.openStream(), StandardCharsets.UTF_8))){
             String line;
             while ((line = reader.readLine()) != null) {
                 writer.write(line);
+                writer.write("\n");
             }
-        } finally {
-            reader.close();
         }
         return writer.toString();
     }

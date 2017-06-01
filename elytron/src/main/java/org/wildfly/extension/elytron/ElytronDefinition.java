@@ -34,6 +34,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Provider;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -43,6 +44,7 @@ import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -114,6 +116,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .setElementValidator(new StringLengthValidator(1))
             .setAllowExpression(true)
             .build();
+    static final PropertiesAttributeDefinition SECURITY_PROPERTIES = new PropertiesAttributeDefinition.Builder("security-properties", true)
+            .setXmlName("security-property")
+            .build();
 
     public static final ElytronDefinition INSTANCE = new ElytronDefinition();
 
@@ -128,9 +133,6 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        // Security Properties
-        resourceRegistration.registerSubModel(new SecurityPropertyResourceDefinition());
-
         // Provider Loader
         resourceRegistration.registerSubModel(ProviderDefinitions.getAggregateProvidersDefinition());
         resourceRegistration.registerSubModel(ProviderDefinitions.getProviderLoaderDefinition());
@@ -267,7 +269,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
 
         });
+        resourceRegistration.registerReadWriteAttribute(SECURITY_PROPERTIES, null, new SecurityPropertiesWriteHandler(SECURITY_PROPERTIES));
     }
+
 
     static <T> ServiceBuilder<T>  commonDependencies(ServiceBuilder<T> serviceBuilder) {
         return commonDependencies(serviceBuilder, true, true);
@@ -303,7 +307,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
     private static class ElytronAdd extends AbstractBoottimeAddStepHandler implements ElytronOperationStepHandler {
 
         private ElytronAdd() {
-            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS);
+            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, SECURITY_PROPERTIES);
         }
 
         @Override
@@ -317,9 +321,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
             ModelNode model = resource.getModel();
             ModelNode defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model);
             AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(defaultAuthenticationContext.isDefined() ? defaultAuthenticationContext.asString() : null);
-
+            Map<String,String> securityProperties = SECURITY_PROPERTIES.unwrap(context, model);
             ServiceTarget target = context.getServiceTarget();
-            installService(SecurityPropertyService.SERVICE_NAME, new SecurityPropertyService(), target);
+            installService(SecurityPropertyService.SERVICE_NAME, new SecurityPropertyService(securityProperties), target);
 
             List<String> providers = DISALLOWED_PROVIDERS.unwrap(context, operation);
 
