@@ -97,7 +97,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         final OutboundSocketBinding binding = destinationOutboundSocketBindingInjectedValue.getValue();
         final String hostName = NetworkUtils.formatPossibleIpv6Address(binding.getUnresolvedDestinationAddress());
         final int port = binding.getDestinationPort();
-        final URI uri;
+        URI uri;
         final String username = this.username;
         final SSLContext sslContext;
         try {
@@ -112,6 +112,13 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
                 sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(uri, injectedContext);
             } catch (GeneralSecurityException e) {
                 throw RemotingLogger.ROOT_LOGGER.failedToObtainSSLContext(e);
+            }
+            // if the protocol is specified in the authentication configuration, use it in the destination URI
+            final String realProtocol = AUTH_CONFIGURATION_CLIENT.getRealProtocol(configuration);
+            try {
+                uri = new URI(realProtocol == null ? Protocol.HTTP_REMOTING.toString() : realProtocol, username, hostName, port, null, null, null);
+            } catch (URISyntaxException e) {
+                throw new StartException(e);
             }
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
