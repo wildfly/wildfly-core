@@ -251,7 +251,6 @@ interface ElytronDescriptionConstants {
     String MATCH_PATH = "match-path";
     String MATCH_PORT = "match-port";
     String MATCH_PROTOCOL = "match-protocol";
-    String MATCH_PURPOSE = "match-purpose";
     String MATCH_RULE = "match-rule";
     String MATCH_RULES = "match-rules";
     String MATCH_URN = "match-urn";

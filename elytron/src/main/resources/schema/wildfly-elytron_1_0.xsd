@@ -333,13 +333,6 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="match-purpose" type="xs:string">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Match based on purpose.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
                     <xs:attribute name="match-urn" type="xs:string">
                         <xs:annotation>
                             <xs:documentation>

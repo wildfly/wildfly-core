@@ -204,11 +204,6 @@ class AuthenticationClientDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition MATCH_PURPOSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_PURPOSE, ModelType.STRING, true)
-            .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .build();
-
     static final SimpleAttributeDefinition MATCH_PROTOCOL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_PROTOCOL, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -255,7 +250,7 @@ class AuthenticationClientDefinitions {
             .build();
 
     static final ObjectTypeAttributeDefinition MATCH_RULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULE,
-            MATCH_ABSTRACT_TYPE, MATCH_ABSTRACT_TYPE_AUTHORITY, MATCH_HOST, MATCH_LOCAL_SECURITY_DOMAIN, MATCH_NO_USER, MATCH_PATH, MATCH_PORT, MATCH_PROTOCOL, MATCH_PURPOSE, MATCH_URN, MATCH_USER,
+            MATCH_ABSTRACT_TYPE, MATCH_ABSTRACT_TYPE_AUTHORITY, MATCH_HOST, MATCH_LOCAL_SECURITY_DOMAIN, MATCH_NO_USER, MATCH_PATH, MATCH_PORT, MATCH_PROTOCOL, MATCH_URN, MATCH_USER,
             AUTHENTICATION_CONFIGURATION, SSL_CONTEXT).build();
 
     static final ObjectListAttributeDefinition MATCH_RULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MATCH_RULES, MATCH_RULE)
@@ -429,9 +424,6 @@ class AuthenticationClientDefinitions {
 
                         ModelNode protocol = MATCH_PROTOCOL.resolveModelAttribute(context, current);
                         matchRule = protocol.isDefined() ? matchRule.andThen(m -> m.matchProtocol(protocol.asString())) : matchRule;
-
-                        ModelNode purpose = MATCH_PURPOSE.resolveModelAttribute(context, current);
-                        matchRule = purpose.isDefined() ? matchRule.andThen(m -> m.matchPurpose(purpose.asString())) : matchRule;
 
                         ModelNode urn = MATCH_URN.resolveModelAttribute(context, current);
                         matchRule = urn.isDefined() ? matchRule.andThen(m -> m.matchUrnName(urn.asString())) : matchRule;

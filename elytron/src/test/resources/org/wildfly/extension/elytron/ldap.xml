@@ -5,8 +5,8 @@
          <credential-reference clear-text="serverPassword"/>
       </authentication-configuration>
       <authentication-context name="ldapAuthContext">
-         <match-rule match-host="localhost" match-purpose="dir-context-connect" match-protocol="ldaps" authentication-configuration="ldapAuthConfig" ssl-context="LdapSslContext"/>
-         <match-rule match-host="localhost" match-purpose="dir-context-connect" match-protocol="ldap" authentication-configuration="ldapAuthConfig"/>
+         <match-rule match-host="localhost" match-protocol="ldaps" authentication-configuration="ldapAuthConfig" ssl-context="LdapSslContext"/>
+         <match-rule match-host="localhost" match-protocol="ldap" authentication-configuration="ldapAuthConfig"/>
       </authentication-context>
    </authentication-client>
    <providers>
