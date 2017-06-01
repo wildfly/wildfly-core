@@ -22,11 +22,15 @@ package org.jboss.as.server.deploymentoverlay;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_CONTENTS;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.deployment.ModelContentReference;
 import org.jboss.dmr.ModelNode;
@@ -46,6 +50,12 @@ public class DeploymentOverlayContentRemove implements OperationStepHandler {
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        Set<PathAddress> removed = TransformerOperationAttachment.getOrCreate(context).getAttachment(REMOVED_CONTENTS);
+        if (removed == null) {
+            removed = new HashSet<>();
+            TransformerOperationAttachment.getOrCreate(context).attach(REMOVED_CONTENTS, removed);
+        }
+        removed.add(context.getCurrentAddress());
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         ModelNode model = context.readResourceFromRoot(address, false).getModel();
         final byte[] hash;

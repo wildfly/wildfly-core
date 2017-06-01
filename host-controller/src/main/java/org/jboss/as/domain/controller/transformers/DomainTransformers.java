@@ -104,6 +104,7 @@ public class DomainTransformers {
         registerProfileTransformers(registry, CURRENT);
         registerSocketBindingGroupTransformers(registry, CURRENT);
         registerDeploymentTransformers(registry, CURRENT);
+        registerDeploymentOverlayTransformers(registry, CURRENT);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -177,6 +178,11 @@ public class DomainTransformers {
     private static void registerDeploymentTransformers(TransformerRegistry registry, ModelVersion CURRENT) {
         ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain(CURRENT);
         registerChainedTransformer(registry, builder, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
+    }
+
+    private static void registerDeploymentOverlayTransformers(TransformerRegistry registry, ModelVersion CURRENT) {
+        ChainedTransformationDescriptionBuilder builder = DeploymentOverlayTransformers.buildTransformerChain(CURRENT);
+        registerChainedTransformer(registry, builder, VERSION_1_6, VERSION_1_5);
     }
 
     private static class ProfileCloneOperationTransformer implements OperationTransformer {
