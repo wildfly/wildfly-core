@@ -19,12 +19,21 @@ package org.jboss.as.test.integration.domain.cacheddc;
 
 import static org.jboss.as.controller.client.helpers.ClientConstants.OUTCOME;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOGGER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,9 +42,12 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.impl.DomainClientImpl;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
@@ -55,6 +67,7 @@ import org.junit.Test;
  * @author <a href="ochaloup@redhat.com">Ondra Chaloupka</a>
  */
 public class CachedDcDomainTestCase {
+
     private static Logger log = Logger.getLogger(CachedDcDomainTestCase.class);
 
     private static final long TIMEOUT_S = TimeoutUtil.adjust(30);
@@ -195,6 +208,7 @@ public class CachedDcDomainTestCase {
         domainConfig.getSlaveConfiguration().setCachedDC(true);
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.start();
+
         stopSlaveAndWaitForUnregistration();
 
         assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
@@ -330,8 +344,8 @@ public class CachedDcDomainTestCase {
         DomainLifecycleUtil masterHost = domainManager.getDomainMasterLifecycleUtil();
         DomainLifecycleUtil slaveHost = domainManager.getDomainSlaveLifecycleUtil();
 
-        Assert.assertTrue("Master should be started", masterHost.areServersStarted());
-        Assert.assertTrue("Slave should be started", slaveHost.areServersStarted());
+        assertTrue("Master should be started", masterHost.areServersStarted());
+        assertTrue("Slave should be started", slaveHost.areServersStarted());
 
         domainManager.stop();
 
@@ -433,10 +447,10 @@ public class CachedDcDomainTestCase {
 
     private void checkHostControllerLogFile(WildFlyManagedConfiguration appConfiguration, String containString) {
         final File logFile = new File(appConfiguration.getDomainDirectory(), "log" + File.separator + "host-controller.log");
-        Assert.assertTrue("Log file '" + logFile + "' does not exist", logFile.exists());
+        assertTrue("Log file '" + logFile + "' does not exist", logFile.exists());
         try {
             final String content = com.google.common.io.Files.toString(logFile, Charset.forName("UTF-8"));
-            Assert.assertTrue("Expecting log file '" + logFile + " contains string '" + containString + "'",
+            assertTrue("Expecting log file '" + logFile + " contains string '" + containString + "'",
                 content.contains(containString));
         } catch (IOException ioe) {
             throw new RuntimeException("Can't read content of file " + logFile, ioe);
@@ -523,15 +537,15 @@ public class CachedDcDomainTestCase {
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
     }
 
-    private void stopSlaveAndWaitForUnregistration() throws InterruptedException  {
+    private void stopSlaveAndWaitForUnregistration() throws InterruptedException, IOException  {
         domainManager.getDomainSlaveLifecycleUtil().stop();
         // WFCORE-2836
-        // this is a bit flaky in CI. It seems that the logger add below begins
-        // occasionally before the slave host unregisters completely, then when the
-        // slave unregisters the op is rolled back.
+        // this is a bit flaky in CI. It seems that that operation (example adding a logger)
+        // occasionally executre before the slave host unregisters completely, triggering rollback
+        // when the slave shuts down.
         final long deadline = System.currentTimeMillis() + 1000;
         while (true) {
-            if (!domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted()) {
+            if (! isHostPresentInModel(domainManager.getDomainSlaveConfiguration().getHostName(), null)) {
                 break;
             }
             if (System.currentTimeMillis() > deadline) {
@@ -540,4 +554,39 @@ public class CachedDcDomainTestCase {
             Thread.sleep(TIMEOUT_SLEEP_MILLIS);
         }
     }
+
+    /**
+     * @param hostname the hostname to query
+     * @param requiredState the {@link ControlledProcessState.State} expected, or null for any state}
+     * @return true if the host is present in the queried hosts's model (in the requiredState, if present), false otherwise.
+     */
+    private boolean isHostPresentInModel(final String hostname, final ControlledProcessState.State requiredState) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        operation.get(OP_ADDR).add(HOST, hostname);
+        operation.get(NAME).set(HOST_STATE);
+
+        ModelNode result;
+
+        try (DomainClient client = getDomainClient(domainConfig.getMasterConfiguration())) {
+            result = client.execute(operation);
+            if (result.get(ModelDescriptionConstants.OUTCOME).asString().equals(ModelDescriptionConstants.SUCCESS)) {
+                final ModelNode model = result.require(RESULT);
+                if (requiredState == null) {
+                    return true;
+                }
+                return model.asString().equalsIgnoreCase(requiredState.toString());
+            } else if (result.get(ModelDescriptionConstants.OUTCOME).asString().equals(FAILED)) {
+                // make sure we get WFLYCTL0030: No resource definition is registered for address so we don't mistakenly hide other problems.
+                if (result.require(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0030")) {
+                    return false;
+                }
+                // otherwise we got a failure, but the host is present (perhaps still shutting down?), so return true
+                return true;
+            }
+            // otherwise, something bad happened
+            throw new RuntimeException(result != null ? result.toJSONString(false) : "Unknown error in determining host state.");
+        }
+    }
+
 }
