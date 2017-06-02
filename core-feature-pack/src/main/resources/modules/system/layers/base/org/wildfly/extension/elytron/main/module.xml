@@ -50,5 +50,6 @@
         <module name="org.wildfly.security.elytron-private"/>
         <!-- Temporary due to backward compatibility with the configuration of JACC and related services -->
         <module name="org.picketbox" optional="true"/>
+        <module name="sun.jdk" />
     </dependencies>
 </module>
