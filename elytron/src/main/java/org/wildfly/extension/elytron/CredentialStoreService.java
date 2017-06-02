@@ -27,6 +27,7 @@ import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
@@ -60,7 +61,7 @@ class CredentialStoreService implements Service<CredentialStore> {
     // KeyStore backed credential store supported attributes
     private static final String CS_KEY_STORE_TYPE_ATTRIBUTE = "keyStoreType";
 
-    private CredentialStore credentialStore;
+    private final AtomicReference<CredentialStore> credentialStore = new AtomicReference<>();
     private final String type;
     private final String provider;
     private final String providerLoaderName;
@@ -112,8 +113,12 @@ class CredentialStoreService implements Service<CredentialStore> {
         Path loc = resolveLocation();
         try {
             credentialStoreAttributes.put(CS_LOCATION_ATTRIBUTE, loc.toAbsolutePath().toString());
-            credentialStore = getCredentialStoreInstance();
-            credentialStore.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProviders.getOptionalValue());
+            CredentialStore cs = getCredentialStoreInstance();
+            cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProviders.getOptionalValue());
+            if ( credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && !loc.toFile().exists() ){
+                cs.flush();
+            }
+            credentialStore.set(cs);
         } catch (Exception e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.unableToStartService(e);
         }
@@ -124,11 +129,12 @@ class CredentialStoreService implements Service<CredentialStore> {
         if (callbackHandle != null) {
             callbackHandle.remove();
         }
+        credentialStore.set(null);
     }
 
     @Override
     public CredentialStore getValue() {
-        return credentialStore;
+        return credentialStore.get();
     }
 
     private Path resolveLocation() {

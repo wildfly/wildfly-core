@@ -185,8 +185,6 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 .build();
     }
 
-    static final StandardResourceDescriptionResolver RESOURCE_DESCRIPTION_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE, ElytronDescriptionConstants.ALIAS);
-
     static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, true)
             .setStorageRuntime()
             .setMinSize(0)
@@ -389,7 +387,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                         credentialStoreService.stop(null);
                         credentialStoreService.start(null);
                     } catch (StartException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
 
@@ -409,7 +407,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                             throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
                         }
                     } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
 
@@ -428,7 +426,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                             throw e;
                         }
                     } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
 
@@ -449,7 +447,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                             throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
                         }
                     } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
 
@@ -471,7 +469,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             try {
                 result.set(credentialStoreService.getValue().getAliases().stream().map(ModelNode::new).collect(Collectors.toList()));
             } catch (CredentialStoreException e) {
-                throw ROOT_LOGGER.unableToCompleteOperation(e, e.getLocalizedMessage());
+                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
             }
         }
     }
@@ -520,5 +518,16 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             credentialStore.remove(alias, PasswordCredential.class);
             throw e;
         }
+    }
+
+    private static String dumpCause(Throwable e) {
+        StringBuffer sb = new StringBuffer().append(e.getLocalizedMessage());
+        Throwable c = e.getCause();
+        int depth = 0;
+        while(c != null && depth++ < 10) {
+            sb.append("->").append(c.getLocalizedMessage());
+            c = c.getCause() == c ? null : c.getCause();
+        }
+        return sb.toString();
     }
 }
