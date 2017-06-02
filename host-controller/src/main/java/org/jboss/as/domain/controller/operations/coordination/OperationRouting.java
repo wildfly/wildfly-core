@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
@@ -109,6 +110,7 @@ class OperationRouting {
 
         Set<String> targetHost = null;
         boolean compositeOp = false;
+        boolean profileChildOp = false;
         if (address.size() > 0) {
             PathElement first = address.getElement(0);
             if (HOST.equals(first.getKey())) {
@@ -124,6 +126,8 @@ class OperationRouting {
                 } else {
                     targetHost = Collections.singleton(first.getValue());
                 }
+            } else if (PROFILE.equals(first.getKey())) {
+                profileChildOp = address.size() > 1;
             }
         } else {
             compositeOp = COMPOSITE.equals(operationName);
@@ -164,7 +168,7 @@ class OperationRouting {
                 boolean twoStep = false;
                 for (ModelNode step : operation.get(STEPS).asList()) {
                     OperationRouting stepRouting = determineRouting(step, localHostControllerInfo, rootRegistration, hostNames);
-                    if (stepRouting.isTwoStep()) {
+                    if (stepRouting.isMultiphase()) {
                         twoStep = true;
                         // Make sure we don't loose the information that we have to execute the operation on all hosts
                         fwdToAllHosts = fwdToAllHosts || stepRouting.getHosts().isEmpty();
@@ -187,8 +191,15 @@ class OperationRouting {
             }
         } else {
             // Domain level operation
-            if (operationFlags.contains(OperationEntry.Flag.READ_ONLY) && !operationFlags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)) {
-                // Direct read of domain model
+            // Reads execute locally, except those specifically configured for multiphase (DOMAIN_PUSH_TO_SERVERS)
+            // or runtime-only ops against profile subsystems (where locally there should be no runtime to read).
+            // The HOST_CONTROLLER_ONLY flag forces the read to stay local, primarily as a way to retain legacy
+            // behavior for runtime-only ops that were registered against profile subsystems and should not have been
+            if (operationFlags.contains(OperationEntry.Flag.READ_ONLY)
+                    && ((!operationFlags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)
+                    && (!profileChildOp || !operationFlags.contains(OperationEntry.Flag.RUNTIME_ONLY)))
+                    || operationFlags.contains(OperationEntry.Flag.HOST_CONTROLLER_ONLY))) {
+                // Execute locally
                 routing = new OperationRouting(localHostControllerInfo);
             } else if (!localHostControllerInfo.isMasterDomainController()) {
                 // Route to master
@@ -196,7 +207,7 @@ class OperationRouting {
             } else if (operationFlags.contains(OperationEntry.Flag.MASTER_HOST_CONTROLLER_ONLY)) {
                 // Deployment ops should be executed on the master DC only
                 routing = new OperationRouting(localHostControllerInfo);
-            }
+            } // else fall through to multiphase routing
         }
 
         if (routing == null) {
@@ -209,56 +220,56 @@ class OperationRouting {
     }
 
     private final Set<String> hosts = new HashSet<String>();
-    private final boolean twoStep;
+    private final boolean multiphase;
 
     /** Constructor for domain-level requests where we are not master */
     private OperationRouting() {
-        twoStep = false;
+        multiphase = false;
     }
 
-    /** Constructor for multi-host ops */
-    private OperationRouting(final boolean twoStep) {
-        this.twoStep = twoStep;
+    /** Constructor for multi-process ops */
+    private OperationRouting(final boolean multiphase) {
+        this.multiphase = multiphase;
     }
 
     /**
-     * Constructor for a non-two-step request routed to this host
+     * Constructor for a non-multiphase request routed to this host
      *
      * @param localHostControllerInfo information describing this host
      */
     private OperationRouting(LocalHostControllerInfo localHostControllerInfo) {
         this.hosts.add(localHostControllerInfo.getLocalHostName());
-        this.twoStep = false;
+        this.multiphase = false;
     }
 
     /**
      * Constructor for a request routed to a single host
      *
      * @param hosts the name of the hosts
-     * @param twoStep true if a two-step execution is needed
+     * @param multiphase true if a multiphase execution is needed
      */
-    private OperationRouting(Set<String> hosts, boolean twoStep) {
+    private OperationRouting(Set<String> hosts, boolean multiphase) {
         this.hosts.addAll(hosts);
-        this.twoStep = twoStep;
+        this.multiphase = multiphase;
     }
 
-    public Set<String> getHosts() {
+    Set<String> getHosts() {
         return hosts;
     }
 
-    public String getSingleHost() {
+    String getSingleHost() {
         return hosts.size() == 1 ? hosts.iterator().next() : null;
     }
 
-    public boolean isTwoStep() {
-        return twoStep;
+    boolean isMultiphase() {
+        return multiphase;
     }
 
-    public boolean isLocalOnly(final String localHostName) {
+    boolean isLocalOnly(final String localHostName) {
         return hosts.size() == 1 && hosts.contains(localHostName);
     }
 
-    public boolean isLocalCallNeeded(final String localHostName) {
+    boolean isLocalCallNeeded(final String localHostName) {
         return hosts.size() == 0 || hosts.contains(localHostName);
     }
 
@@ -266,7 +277,7 @@ class OperationRouting {
     public String toString() {
         return "OperationRouting{" +
                 "hosts=" + hosts +
-                ", twoStep=" + twoStep +
+                ", multiphase=" + multiphase +
                 '}';
     }
 }

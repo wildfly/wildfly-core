@@ -94,6 +94,7 @@ public class ErrorExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
+        subsystem.setHostCapable();
         subsystem.registerSubsystemModel(new BlockerSubsystemResourceDefinition(context.getProcessType() == ProcessType.HOST_CONTROLLER));
         subsystem.registerXMLElementWriter(PARSER);
     }

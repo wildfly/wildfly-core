@@ -66,7 +66,6 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(NAME, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.PROPERTY)
             .build();
@@ -79,7 +78,6 @@ public class ReadAttributeGroupHandler extends AbstractMultiTargetHandler {
     public static final OperationDefinition RESOLVE_DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_GROUP_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(NAME, RESOLVE, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, INCLUDE_ALIASES)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.PROPERTY)
             .build();

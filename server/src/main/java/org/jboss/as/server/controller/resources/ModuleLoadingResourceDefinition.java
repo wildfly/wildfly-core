@@ -115,6 +115,11 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
     private static class ListModuleRootsHandler extends AbstractRuntimeOnlyHandler {
 
         @Override
+        protected boolean requiresRuntime(OperationContext context) {
+            return true;
+        }
+
+        @Override
         protected boolean resourceMustExist(OperationContext context, ModelNode operation) {
             return false;
         }

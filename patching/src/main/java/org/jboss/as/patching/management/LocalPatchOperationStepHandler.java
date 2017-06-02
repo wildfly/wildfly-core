@@ -47,7 +47,14 @@ public final class LocalPatchOperationStepHandler implements OperationStepHandle
 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        if (context.getCurrentStage() == OperationContext.Stage.MODEL) {
+            context.addStep(this::executeRuntime, OperationContext.Stage.RUNTIME);
+        } else {
+            executeRuntime(context, operation);
+        }
+    }
 
+    private void executeRuntime(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         // Acquire the lock and check the write permissions for this operation
         final ServiceRegistry registry = context.getServiceRegistry(true);
         final InstallationManager installationManager = (InstallationManager) registry.getRequiredService(InstallationManagerService.NAME).getValue();

@@ -64,7 +64,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.OBJECT)
             .build();
 
@@ -78,7 +77,6 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
     public static final OperationDefinition RESOLVE_DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(RESOLVE, GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.OBJECT)
             .build();
 

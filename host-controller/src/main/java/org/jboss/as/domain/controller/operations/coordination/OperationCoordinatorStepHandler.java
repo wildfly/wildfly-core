@@ -97,7 +97,7 @@ public class OperationCoordinatorStepHandler {
                 executeDirect(context, operation, false); // don't need to check private as we are just going to forward this
             }
         }
-        else if (!routing.isTwoStep()) {
+        else if (!routing.isMultiphase()) {
             // It's a domain or host level op (probably a read) that does not require bringing in other hosts or servers
             executeDirect(context, operation, true);
         }

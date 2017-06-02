@@ -110,6 +110,11 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
         this.pathManager = pathManager;
     }
 
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return true;
+    }
+
     /**
      * Compute the file usage metric which contains the total size of a folder and the usable space (as in Java nio).
      * @throws org.jboss.as.controller.OperationFailedException

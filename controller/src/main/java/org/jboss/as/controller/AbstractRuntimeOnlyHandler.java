@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -33,6 +36,8 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractRuntimeOnlyHandler implements OperationStepHandler {
 
+    protected AbstractRuntimeOnlyHandler() {}
+
     /**
      * Simply adds a {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} step that calls
      * {@link #executeRuntimeStep(OperationContext, ModelNode)}.
@@ -41,18 +46,42 @@ public abstract class AbstractRuntimeOnlyHandler implements OperationStepHandler
      */
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                // make sure the resource exists before executing a runtime operation.
-                // if that's not the case, the operation will report an error with a comprehensive failure
-                // description instead of a subsequent exception (such as a NPE).
-                if (resourceMustExist(context, operation)) {
-                    context.readResource(PathAddress.EMPTY_ADDRESS, false);
+        if (requiresRuntime(context) && !isProfile(context)) {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    // make sure the resource exists before executing a runtime operation.
+                    // if that's not the case, the operation will report an error with a comprehensive failure
+                    // description instead of a subsequent exception (such as a NPE).
+                    if (resourceMustExist(context, operation)) {
+                        context.readResource(PathAddress.EMPTY_ADDRESS, false);
+                    }
+                    executeRuntimeStep(context, operation);
                 }
-                executeRuntimeStep(context, operation);
-            }
-        }, OperationContext.Stage.RUNTIME);
+            }, OperationContext.Stage.RUNTIME);
+        }
+    }
+
+    /**
+     * Gets whether the {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} step should be added to call
+     * {@link #executeRuntimeStep(OperationContext, ModelNode)}.
+     * This default implementation will return {@code true} for a normal server running in normal (non admin-only) mode.
+     * If running on a host controller, it will return {@code true} if it is the active copy of the host controller subsystem.
+     * Subclasses that perform no runtime update could override and return {@code false}. This method is
+     * invoked during {@link org.jboss.as.controller.OperationContext.Stage#MODEL}.
+     *
+     * @param context operation context
+     * @return {@code true} if a step to invoke{@code executeRuntimeStep} should be added; {@code false} otherwise.
+     *
+     * @see OperationContext#isDefaultRequiresRuntime()
+     */
+    protected boolean requiresRuntime(OperationContext context) {
+        // TODO this check of 'subsystem' on a server is solely a workaround until a couple subclasses in full
+        // can be modified to override the default behavior
+        if (context.getProcessType().isServer() && context.getCurrentAddress().size() > 0 && SUBSYSTEM.equals(context.getCurrentAddress().getElement(0).getKey())) {
+            return true;
+        }
+        return context.isDefaultRequiresRuntime();
     }
 
     /**
@@ -85,4 +114,12 @@ public abstract class AbstractRuntimeOnlyHandler implements OperationStepHandler
      */
     protected abstract void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException;
 
+    /**
+     * Guard against poorly written subsystems that try and execute in /profile=*.
+     * Can be removed if WFCORE-2815 relaxed.
+     */
+    private boolean isProfile(OperationContext context) {
+        PathAddress pa = context.getCurrentAddress();
+        return pa.size() > 1 && PROFILE.equals(pa.getElement(0).getKey());
+    }
 }

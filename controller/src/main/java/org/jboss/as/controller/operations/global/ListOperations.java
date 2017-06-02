@@ -46,20 +46,16 @@ public class ListOperations {
 
     public static final OperationDefinition LIST_ADD_DEFINITION = new SimpleOperationDefinitionBuilder("list-add", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, AbstractListHandler.INDEX)
-            .setRuntimeOnly()
             .build();
     public static final OperationDefinition LIST_GET_DEFINITION = new SimpleOperationDefinitionBuilder("list-get", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME, AbstractListHandler.INDEX)
-            .setRuntimeOnly()
             .setReadOnly()
             .build();
     public static final OperationDefinition LIST_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("list-remove", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, AbstractListHandler.INDEX)
-            .setRuntimeOnly()
             .build();
     public static final OperationDefinition LIST_CLEAR_DEFINITION = new SimpleOperationDefinitionBuilder("list-clear", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME)
-            .setRuntimeOnly()
             .build();
     public static final OperationStepHandler LIST_ADD_HANDLER = new ListAddHandler();
     public static final OperationStepHandler LIST_REMOVE_HANDLER = new ListRemoveHandler();

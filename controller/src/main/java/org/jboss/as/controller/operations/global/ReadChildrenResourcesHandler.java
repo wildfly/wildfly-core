@@ -66,7 +66,6 @@ public class ReadChildrenResourcesHandler implements OperationStepHandler {
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_CHILDREN_RESOURCES_OPERATION, ControllerResolver.getResolver("global"))
             .setParameters(CHILD_TYPE, RECURSIVE, RECURSIVE_DEPTH, PROXIES, INCLUDE_RUNTIME, INCLUDE_DEFAULTS)
             .setReadOnly()
-            .setRuntimeOnly()
             .setReplyType(ModelType.LIST)
             .setReplyValueType(ModelType.OBJECT)
             .build();

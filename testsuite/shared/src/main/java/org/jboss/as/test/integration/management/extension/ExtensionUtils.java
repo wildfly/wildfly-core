@@ -71,11 +71,11 @@ public class ExtensionUtils {
     public static void createExtensionModule(File extensionModuleRoot, Class<? extends Extension> extension, Package... additionalPackages) throws IOException {
         deleteRecursively(extensionModuleRoot.toPath());
 
-        if (extensionModuleRoot.exists()) {
-            throw new IllegalArgumentException(extensionModuleRoot + " already exists");
+        if (extensionModuleRoot.exists() && !extensionModuleRoot.isDirectory()) {
+            throw new IllegalArgumentException(extensionModuleRoot + " already exists and is not a directory");
         }
         File file = new File(extensionModuleRoot, "main");
-        if (!file.mkdirs()) {
+        if (!file.mkdirs() && !file.exists()) {
             throw new IllegalArgumentException("Could not create " + file);
         }
         final InputStream is = createResourceRoot(extension, additionalPackages).exportAsInputStream();

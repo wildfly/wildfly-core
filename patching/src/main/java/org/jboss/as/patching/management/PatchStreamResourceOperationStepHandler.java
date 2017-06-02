@@ -43,6 +43,14 @@ abstract class PatchStreamResourceOperationStepHandler implements OperationStepH
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        if (context.getCurrentStage() == OperationContext.Stage.MODEL) {
+            context.addStep(this::executeRuntime, OperationContext.Stage.RUNTIME);
+        } else {
+            executeRuntime(context, operation);
+        }
+    }
+
+    private void executeRuntime(OperationContext context, ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
         execute(context, operation, getInstallationManager(context), getPatchStreamName(context));
     }

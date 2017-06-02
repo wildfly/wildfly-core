@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_REQUIRES_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
@@ -327,6 +328,10 @@ abstract class AbstractOperationContext implements OperationContext {
         if (stage == Stage.DONE) {
             throw ControllerLogger.ROOT_LOGGER.invalidStepStage();
         }
+        final PathAddress stepAddress = address != null ? address : PathAddress.pathAddress(operation.get(OP_ADDR));
+        if (stage == Stage.RUNTIME && !processType.isServer() && stepAddress.size() > 1 && PROFILE.equals(stepAddress.getElement(0).getKey())) {
+            throw ControllerLogger.ROOT_LOGGER.invalidStage(stage, processType);
+        }
 
         if (!booting && activeStep != null) {
             // Added steps inherit the caller type of their parent
@@ -343,9 +348,9 @@ abstract class AbstractOperationContext implements OperationContext {
 
         final Deque<Step> deque = steps.get(stage);
         if (addFirst) {
-            deque.addFirst(new Step(stepDefinition, step, response, operation, address));
+            deque.addFirst(new Step(stepDefinition, step, response, operation, stepAddress));
         } else {
-            deque.addLast(new Step(stepDefinition, step, response, operation, address));
+            deque.addLast(new Step(stepDefinition, step, response, operation, stepAddress));
         }
 
         if (!executing && stage == Stage.MODEL) {
@@ -1301,7 +1306,7 @@ abstract class AbstractOperationContext implements OperationContext {
             this.handler = handler;
             this.response = response;
             this.operation = operation;
-            this.address = address == null ? PathAddress.pathAddress(operation.get(OP_ADDR)) : address;
+            this.address = address;
             String opName = operation.hasDefined(OP) ? operation.require(OP).asString() : null;
             this.operationId = new OperationId(this.address, opName);
             // Create the outcome node early so it appears at the top of the

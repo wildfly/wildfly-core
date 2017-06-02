@@ -219,7 +219,7 @@ public class OperationTimeoutTestCase {
     @Test
     public void testPrePrepareHangOnSlaveHC() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", null, BlockerExtension.BlockPoint.RUNTIME);
+        Future<ModelNode> blockFuture = block("slave", null, BlockerExtension.BlockPoint.MODEL);
         String id = findActiveOperation(masterClient, "slave", null, "block", null, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());

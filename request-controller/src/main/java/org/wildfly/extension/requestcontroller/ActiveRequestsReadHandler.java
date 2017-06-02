@@ -36,6 +36,11 @@ import org.jboss.msc.service.ServiceController;
 class ActiveRequestsReadHandler extends AbstractRuntimeOnlyHandler {
 
     @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return true; // in WildFly 10 this worked in admin-only and there's no particular reason it shouldn't now
+    }
+
+    @Override
     protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
         ServiceController<?> service = context.getServiceRegistry(false).getService(RequestController.SERVICE_NAME);
         if(service != null) {
