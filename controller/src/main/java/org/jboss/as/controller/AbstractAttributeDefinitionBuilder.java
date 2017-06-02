@@ -23,6 +23,7 @@
 package org.jboss.as.controller;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,8 +146,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         }
         this.attributeGroup = basis.getAttributeGroup();
         if(!basis.getArbitraryDescriptors().isEmpty()) {
-            this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors().size());
-            this.arbitraryDescriptors.putAll(basis.getArbitraryDescriptors());
+            this.arbitraryDescriptors = new HashMap<>(basis.getArbitraryDescriptors());
         }
         this.referenceRecorder = basis.getReferenceRecorder();
     }
@@ -341,9 +341,13 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      */
     public BUILDER addArbitraryDescriptor(String arbitraryDescriptor, ModelNode value) {
         if (this.arbitraryDescriptors == null) {
-            this.arbitraryDescriptors = new HashMap<>();
+            this.arbitraryDescriptors = Collections.singletonMap(arbitraryDescriptor, value);
+        } else {
+            if (this.arbitraryDescriptors.size() == 1) {
+                this.arbitraryDescriptors = new HashMap<>(this.arbitraryDescriptors);
+            }
+            arbitraryDescriptors.put(arbitraryDescriptor, value);
         }
-        arbitraryDescriptors.put(arbitraryDescriptor, value);
         return (BUILDER) this;
     }
 

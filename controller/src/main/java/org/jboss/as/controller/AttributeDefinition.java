@@ -90,7 +90,7 @@ public abstract class AttributeDefinition {
     private final String attributeGroup;
     private final ModelNode undefinedMetricValue;
     protected final CapabilityReferenceRecorder referenceRecorder;
-    private final Map<String, ModelNode> arbitraryDescriptors = new HashMap<>();
+    private final Map<String, ModelNode> arbitraryDescriptors;
 
     // NOTE: Standards for creating a constructor variant are:
     // 1) Don't.
@@ -153,11 +153,7 @@ public abstract class AttributeDefinition {
         this.valueCorrector = valueCorrector;
         this.validator = validator;
         this.flags = flags;
-        if (attributeMarshaller != null) {
-            this.attributeMarshaller = attributeMarshaller;
-        } else {
-            this.attributeMarshaller = new DefaultAttributeMarshaller();
-        }
+        this.attributeMarshaller = attributeMarshaller != null ? attributeMarshaller : AttributeMarshaller.SIMPLE;
         this.resourceOnly = resourceOnly;
         this.accessConstraints = accessConstraints;
         this.deprecationData = deprecationData;
@@ -172,7 +168,14 @@ public abstract class AttributeDefinition {
         }
         this.referenceRecorder = referenceRecorder;
         if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
-            this.arbitraryDescriptors.putAll(arbitraryDescriptors);
+            if (arbitraryDescriptors.size() == 1) {
+                Map.Entry<String, ModelNode> entry = arbitraryDescriptors.entrySet().iterator().next();
+                this.arbitraryDescriptors = Collections.singletonMap(entry.getKey(), entry.getValue());
+            } else {
+                this.arbitraryDescriptors = Collections.unmodifiableMap(new HashMap<>(arbitraryDescriptors));
+            }
+        } else {
+            this.arbitraryDescriptors = Collections.emptyMap();
         }
     }
 
@@ -448,7 +451,7 @@ public abstract class AttributeDefinition {
     }
 
     public Map<String, ModelNode> getArbitraryDescriptors() {
-        return Collections.unmodifiableMap(arbitraryDescriptors);
+        return arbitraryDescriptors;
     }
 
     /**
