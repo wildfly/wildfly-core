@@ -40,6 +40,8 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -56,6 +58,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.KeyManager;
@@ -121,6 +124,8 @@ import org.wildfly.security.ssl.X509CRLExtendedTrustManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class SSLDefinitions {
+
+    private static final BooleanSupplier IS_FIPS = getFipsSupplier();
 
     static final ServiceUtil<SSLContext> SERVER_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SERVER_SSL_CONTEXT, SSLContext.class);
     static final ServiceUtil<SSLContext> CLIENT_SERVICE_UTIL = ServiceUtil.newInstance(SSL_CONTEXT_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, SSLContext.class);
@@ -957,7 +962,14 @@ class SSLDefinitions {
             return null;
         }
         if (keyManager instanceof X509ExtendedKeyManager) {
-            return (X509ExtendedKeyManager) keyManager;
+            X509ExtendedKeyManager x509KeyManager = (X509ExtendedKeyManager) keyManager;
+            if (x509KeyManager instanceof DelegatingKeyManager && IS_FIPS.getAsBoolean()) {
+                ROOT_LOGGER.trace("FIPS enabled on JVM, unwrapping KeyManager");
+                // If FIPS is enabled unwrap the KeyManager
+                x509KeyManager = ((DelegatingKeyManager)x509KeyManager).delegating.get();
+            }
+
+            return x509KeyManager;
         }
         throw ROOT_LOGGER.invalidTypeInjected(X509ExtendedKeyManager.class.getSimpleName());
     }
@@ -989,6 +1001,30 @@ class SSLDefinitions {
         protected abstract void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException;
 
         protected abstract ServiceUtil<SSLContext> getSSLContextServiceUtil();
+    }
+
+    private static BooleanSupplier getFipsSupplier() {
+        try {
+            final Class<?> providerClazz = SSLDefinitions.class.getClassLoader().loadClass("com.sun.net.ssl.internal.ssl.Provider");
+            final Method isFipsMethod = providerClazz.getMethod("isFIPS", new Class[0]);
+
+            return () -> {
+                Object isFips;
+                try {
+                    isFips = isFipsMethod.invoke(null, new Object[0]);
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                    ROOT_LOGGER.trace("Unable to invoke com.sun.net.ssl.internal.ssl.Provider.isFIPS() method.", e);
+                    return false;
+                }
+
+                return isFips != null && isFips instanceof Boolean ? ((Boolean)isFips).booleanValue() : false;
+            };
+
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+            ROOT_LOGGER.trace("Unable to find com.sun.net.ssl.internal.ssl.Provider.isFIPS() method.", e);
+        }
+
+        return Boolean.FALSE::booleanValue;
     }
 
 }
