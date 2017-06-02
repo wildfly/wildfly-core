@@ -397,7 +397,7 @@ public final class PersistentResourceXMLDescription {
         }
 
         for (AttributeDefinition ad : sortedAds) {
-            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getXmlName(), ad.getAttributeMarshaller());
+            AttributeMarshaller marshaller = attributeMarshallers.getOrDefault(ad.getXmlName(), ad.getMarshaller());
             if (marshaller.isMarshallable(ad, model, marshallDefaultValues)) {
                 if (!started && group != null) {
                     if (elementAds != null) {

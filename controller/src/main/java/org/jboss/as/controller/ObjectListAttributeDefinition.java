@@ -112,7 +112,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         if (resourceModel.hasDefined(getName())) {
             writer.writeStartElement(getXmlName());
             for (ModelNode handler : resourceModel.get(getName()).asList()) {
-                valueType.marshallAsElement(handler, writer);
+                valueType.getMarshaller().marshallAsElement(this, handler, true, writer);
             }
             writer.writeEndElement();
         }

@@ -25,17 +25,14 @@ package org.jboss.as.controller;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.NillableOrExpressionParameterValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.common.Assert;
@@ -49,35 +46,6 @@ import org.wildfly.common.Assert;
 public abstract class ListAttributeDefinition extends AttributeDefinition {
 
     private final ParameterValidator elementValidator;
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null,
-                null, null, null, true, (AttributeAccess.Flag[]) null);
-    }
-
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public ListAttributeDefinition(final String name, final boolean allowNull, final ParameterValidator elementValidator,
-                                   final AttributeAccess.Flag... flags) {
-        this(name, name, allowNull, false, 0, Integer.MAX_VALUE, elementValidator, null, null, null, false, null, null, null, null, true, flags);
-    }
-
-    private ListAttributeDefinition(final String name, final String xmlName, final boolean allowNull, final boolean allowExpressions,
-                                      final int minSize, final int maxSize, final ParameterValidator elementValidator,
-                                      final String[] alternatives, final String[] requires, final AttributeMarshaller attributeMarshaller,
-                                      final boolean resourceOnly,  final DeprecationData deprecated,
-                                      final AccessConstraintDefinition[] accessConstraints,
-                                      final Boolean niSignificant,
-                                      final AttributeParser parser,
-                                      final boolean allowDuplicates,
-                                      final AttributeAccess.Flag... flags) {
-        super(name, xmlName, null, ModelType.LIST, allowNull, allowExpressions, null, null,
-                new ListValidator(elementValidator, allowNull, minSize, maxSize, allowDuplicates), allowNull, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecated, accessConstraints, niSignificant, parser, flags);
-        this.elementValidator = elementValidator;
-    }
 
     protected ListAttributeDefinition(ListAttributeDefinition.Builder<?, ?> builder) {
         super(builder);
@@ -109,7 +77,9 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      * @throws javax.xml.stream.XMLStreamException if {@code value} is not valid
      *
      * @see #parseAndAddParameterElement(String, ModelNode, XMLStreamReader)
+     * @deprecated use {@link #getParser()}
      */
+    @Deprecated
     public ModelNode parse(final String value, final XMLStreamReader reader) throws XMLStreamException {
 
         try {
@@ -139,7 +109,9 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      *               the attribute value was read can be obtained and used in any {@code XMLStreamException}, in case
      *               the given value is invalid.
      * @throws XMLStreamException if {@code value} is not valid
+     * @deprecated use {@link #getParser()}
      */
+    @Deprecated
     public void parseAndAddParameterElement(final String value, final ModelNode operation, final XMLStreamReader reader) throws XMLStreamException {
         ModelNode paramVal = parse(value, reader);
         operation.get(getName()).add(paramVal);
@@ -266,7 +238,12 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      */
     @Deprecated
     public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
-        getParser().parseAndSetParameter(this, value, operation, reader);
+        //we use manual parsing here, and not #getParser().. to preserve backward compatibility.
+        if (value != null) {
+            for (String element : value.split(",")) {
+                parseAndAddParameterElement(element.trim(), operation, reader);
+            }
+        }
     }
 
     public abstract static class Builder<BUILDER extends Builder, ATTRIBUTE extends ListAttributeDefinition>
@@ -278,18 +255,18 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
 
         protected Builder(String attributeName) {
             super(attributeName, ModelType.LIST);
-            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
+            this.setAttributeParser(AttributeParser.STRING_LIST);
         }
 
         protected Builder(String attributeName, boolean optional) {
             super(attributeName, ModelType.LIST, optional);
-            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
+            this.setAttributeParser(AttributeParser.STRING_LIST);
         }
 
         public Builder(ListAttributeDefinition basis) {
             super(basis);
             this.elementValidator = basis.getElementValidator();
-            this.setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST);
+            this.setAttributeParser(AttributeParser.STRING_LIST);
         }
 
         /**

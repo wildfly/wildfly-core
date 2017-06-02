@@ -117,6 +117,7 @@ public abstract class AttributeParser {
     public static final AttributeParser SIMPLE = new AttributeParser() {
     };
 
+    @Deprecated
     public static final AttributeParser LIST = new AttributeParser() {
         @Override
         public void parseAndSetParameter(AttributeDefinition attribute, String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {

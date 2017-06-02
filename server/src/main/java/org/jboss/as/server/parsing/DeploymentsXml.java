@@ -228,7 +228,7 @@ class DeploymentsXml {
         if (contentItem.has(HASH)) {
             WriteUtils.writeElement(writer, Element.CONTENT);
             WriteUtils.writeAttribute(writer, Attribute.SHA1, HashUtil.bytesToHexString(contentItem.require(HASH).asBytes()));
-            DeploymentAttributes.CONTENT_ARCHIVE.getAttributeMarshaller().marshallAsAttribute(DeploymentAttributes.CONTENT_ARCHIVE, contentItem, true, writer);
+            DeploymentAttributes.CONTENT_ARCHIVE.getMarshaller().marshallAsAttribute(DeploymentAttributes.CONTENT_ARCHIVE, contentItem, true, writer);
             writer.writeEndElement();
         } else {
             if (contentItem.require(ARCHIVE).asBoolean()) {

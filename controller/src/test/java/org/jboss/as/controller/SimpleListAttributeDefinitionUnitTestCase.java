@@ -152,7 +152,7 @@ public class SimpleListAttributeDefinitionUnitTestCase {
 
         // marshall the XML attribute
         writer.writeStartElement("resource");
-        attributeDefinition.getAttributeMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
+        attributeDefinition.getMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
         writer.writeEndElement();
         writer.close();
 
@@ -169,7 +169,7 @@ public class SimpleListAttributeDefinitionUnitTestCase {
 
         // marshall the XML attribute
         writer.writeStartElement("resource");
-        attributeDefinition.getAttributeMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
+        attributeDefinition.getMarshaller().marshallAsAttribute(attributeDefinition, model, true, writer);
         writer.writeEndElement();
         writer.close();
 

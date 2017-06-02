@@ -240,7 +240,7 @@ public interface AttributeParsers {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                         ad.getParser().parseElement(ad, reader, op);
                     } else {
-                        throw ParseUtils.unexpectedElement(reader);
+                        throw ParseUtils.unexpectedElement(reader, attributeElements.keySet());
                     }
                 }
             }

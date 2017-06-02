@@ -2078,7 +2078,7 @@ class ManagementXml_5 extends ManagementXml {
                     writer.writeAttribute(Attribute.PRINCIPAL.getLocalName(), current);
                     KeytabResourceDefinition.PATH.marshallAsAttribute(currentNode, writer);
                     KeytabResourceDefinition.RELATIVE_TO.marshallAsAttribute(currentNode, writer);
-                    KeytabResourceDefinition.FOR_HOSTS.getAttributeMarshaller()
+                    KeytabResourceDefinition.FOR_HOSTS.getMarshaller()
                             .marshallAsAttribute(KeytabResourceDefinition.FOR_HOSTS, currentNode, true, writer);
                     KeytabResourceDefinition.DEBUG.marshallAsAttribute(currentNode, writer);
                 }
@@ -2407,7 +2407,7 @@ class ManagementXml_5 extends ManagementXml {
             LdapConnectionResourceDefinition.SECURITY_REALM.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.INITIAL_CONTEXT_FACTORY.marshallAsAttribute(connection, writer);
             LdapConnectionResourceDefinition.REFERRALS.marshallAsAttribute(connection, writer);
-            LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.getAttributeMarshaller()
+            LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR.getMarshaller()
                     .marshallAsAttribute(LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR, connection, true, writer);
             LdapConnectionResourceDefinition.ALWAYS_SEND_CLIENT_CERT.marshallAsAttribute(connection, writer);
             if(connection.hasDefined(LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE.getName())) {

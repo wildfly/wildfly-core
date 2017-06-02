@@ -42,6 +42,7 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
@@ -164,8 +165,8 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
         registration.registerAlias(PathElement.pathElement(ALIASED, ALIAS), new TestAliasEntry(mainReg));
     }
 
-    private static SimpleAttributeDefinition READ_WRITE = new SimpleAttributeDefinition("rw", ModelType.STRING, true);
-    private static SimpleAttributeDefinition TYPE = new SimpleAttributeDefinition("type", ModelType.STRING, false);
+    private static SimpleAttributeDefinition READ_WRITE = new SimpleAttributeDefinitionBuilder("rw", ModelType.STRING, true).build();
+    private static SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder("type", ModelType.STRING, false).build();
 
     private class MainResourceDefinition extends SimpleResourceDefinition {
 
