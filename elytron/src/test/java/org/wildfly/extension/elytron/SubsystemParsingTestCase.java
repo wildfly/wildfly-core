@@ -20,9 +20,13 @@ package org.wildfly.extension.elytron;
 
 
 import java.io.IOException;
+import java.util.List;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -69,6 +73,14 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testParseAndMarshalModel_ProviderLoader() throws Exception {
         standardSubsystemTest("providers.xml");
+    }
+
+    @Test
+    public void testDisallowedProviders() throws Exception {
+        KernelServices services = standardSubsystemTest("providers.xml", true);
+        List<ModelNode> disallowedProviders = services.readWholeModel().get("subsystem", "elytron", "disallowed-providers").asList();
+        Assert.assertNotNull(disallowedProviders);
+        Assert.assertEquals(3, disallowedProviders.size());
     }
 
     @Test
