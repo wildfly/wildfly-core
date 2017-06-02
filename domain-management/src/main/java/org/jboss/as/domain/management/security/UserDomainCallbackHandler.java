@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.security.auth.callback.Callback;
@@ -251,8 +252,11 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
             return new RealmIdentityImpl(principal, user);
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            return getCredentialAcquireSupport(credentialType, algorithmName, null);
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
             Assert.checkNotNullParam("credentialType", credentialType);
             return PasswordCredential.class.isAssignableFrom(credentialType) && (algorithmName == null || algorithmName.equals(ALGORITHM_CLEAR) ||
                     algorithmName.equals(ALGORITHM_DIGEST_MD5)) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
@@ -279,9 +283,12 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
                 return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override
@@ -289,8 +296,11 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                 return getCredential(credentialType, null);
             }
 
-            @Override
             public <C extends Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
+                return getCredential(credentialType, algorithmName, null);
+            }
+
+            public <C extends Credential> C getCredential(Class<C> credentialType, final String algorithmName, final AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
                 if (user == null || (PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
                     return null;
                 }
@@ -300,6 +310,15 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                     clear = true;
                 } else if (ALGORITHM_DIGEST_MD5.equals(algorithmName)) {
                     clear = false;
+                    if (parameterSpec != null) {
+                        if (! (parameterSpec instanceof DigestPasswordAlgorithmSpec)) {
+                            return null;
+                        }
+                        final DigestPasswordAlgorithmSpec digestSpec = (DigestPasswordAlgorithmSpec) parameterSpec;
+                        if (! Objects.equals(digestSpec.getRealm(), realm) || ! Objects.equals(digestSpec.getUsername(), principal.getName())) {
+                            return null;
+                        }
+                    }
                 } else {
                     return null;
                 }

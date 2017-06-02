@@ -32,12 +32,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.security.auth.callback.Callback;
@@ -70,6 +72,7 @@ import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.DigestPasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
@@ -321,8 +324,12 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                return new RealmIdentityImpl(principal);
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            Assert.checkNotNullParam("credentialType", credentialType);
+            return SupportLevel.POSSIBLY_SUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
             Assert.checkNotNullParam("credentialType", credentialType);
             return SupportLevel.POSSIBLY_SUPPORTED;
         }
@@ -367,9 +374,12 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName) throws RealmUnavailableException {
                 return getCredential(credentialType, algorithmName) != null ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends org.wildfly.security.credential.Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
+                return getCredential(credentialType, algorithmName, parameterSpec) != null ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
             }
 
             @Override
@@ -379,16 +389,32 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
 
             @Override
             public <C extends org.wildfly.security.credential.Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
+                return getCredential(credentialType, algorithmName, null);
+            }
+
+            public <C extends org.wildfly.security.credential.Credential> C getCredential(Class<C> credentialType, final String algorithmName, final AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
                 if (credential == null || (org.wildfly.security.credential.PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
                     return null;
                 }
 
                 final PasswordFactory passwordFactory;
                 final PasswordSpec passwordSpec;
+                final String realmName = getRealmName();
+                final String userName = principal.getName();
                 if (credential instanceof DigestCredential && (algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName))) {
+                    if (parameterSpec != null) {
+                        if (! (parameterSpec instanceof DigestPasswordAlgorithmSpec)) {
+                            // unknown parameters
+                            return null;
+                        }
+                        final DigestPasswordAlgorithmSpec digestSpec = (DigestPasswordAlgorithmSpec) parameterSpec;
+                        if (! Objects.equals(digestSpec.getRealm(), realmName) || ! Objects.equals(digestSpec.getUsername(), userName)) {
+                            return null;
+                        }
+                    }
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
                     byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
-                    passwordSpec = new DigestPasswordSpec(principal.getName(), getRealmName(), hashed);
+                    passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
                 } else if (credential instanceof PasswordCredential) {
                     if (algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) {
                         passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
@@ -398,9 +424,9 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         UsernamePasswordHashUtil hashUtil = getHashUtil();
                         synchronized (hashUtil) {
                             byte[] hashed = hashUtil
-                                    .generateHashedHexURP(principal.getName(), getRealmName(),
+                                    .generateHashedHexURP(userName, realmName,
                                             ((PasswordCredential) credential).getPassword()).getBytes(StandardCharsets.UTF_8);
-                            passwordSpec = new DigestPasswordSpec(principal.getName(), getRealmName(), hashed);
+                            passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
                         }
                     } else {
                         return null;

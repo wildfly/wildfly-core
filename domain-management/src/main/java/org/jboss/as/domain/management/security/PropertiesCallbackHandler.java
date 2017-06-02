@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -308,11 +309,14 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
             }
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            return getCredentialAcquireSupport(credentialType, algorithmName, null);
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
             Assert.checkNotNullParam("credentialType", credentialType);
             return PasswordCredential.class.isAssignableFrom(credentialType) && (algorithmName == null || algorithmName.equals(ALGORITHM_CLEAR) && plainText ||
-                    algorithmName.equals(ALGORITHM_DIGEST_MD5)) ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+                    algorithmName.equals(ALGORITHM_DIGEST_MD5)) && parameterSpec == null ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
         }
 
         @Override
@@ -336,9 +340,12 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
                 return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override
@@ -348,6 +355,10 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
 
             @Override
             public <C extends Credential> C getCredential(Class<C> credentialType, final String algorithmName) throws RealmUnavailableException {
+                return getCredential(credentialType, algorithmName, null);
+            }
+
+            public <C extends Credential> C getCredential(Class<C> credentialType, final String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
                 if (password == null || (PasswordCredential.class.isAssignableFrom(credentialType) == false)) {
                     return null;
                 }
@@ -359,6 +370,15 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                     clear = true;
                 } else if (ALGORITHM_DIGEST_MD5.equals(algorithmName)) {
                     clear = false;
+                    if (parameterSpec != null) {
+                        if (! (parameterSpec instanceof DigestPasswordAlgorithmSpec)) {
+                            return null;
+                        }
+                        final DigestPasswordAlgorithmSpec digestSpec = (DigestPasswordAlgorithmSpec) parameterSpec;
+                        if (! Objects.equals(digestSpec.getRealm(), realm) || ! Objects.equals(digestSpec.getUsername(), principal.getName())) {
+                            return null;
+                        }
+                    }
                 } else {
                     return null;
                 }

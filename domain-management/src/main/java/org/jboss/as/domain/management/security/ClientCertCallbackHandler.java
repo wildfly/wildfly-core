@@ -26,6 +26,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -132,8 +133,12 @@ public class ClientCertCallbackHandler implements Service<CallbackHandlerService
             return new ClientCertRealmIdentity(principal);
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                 throws RealmUnavailableException {
             return SupportLevel.UNSUPPORTED;
         }
@@ -158,10 +163,14 @@ public class ClientCertCallbackHandler implements Service<CallbackHandlerService
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
                     throws RealmUnavailableException {
                 return ClientCertSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
+                    throws RealmUnavailableException {
+                return ClientCertSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override

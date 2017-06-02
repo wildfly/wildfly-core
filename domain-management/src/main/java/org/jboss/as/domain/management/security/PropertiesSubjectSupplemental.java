@@ -26,6 +26,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -151,8 +152,12 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
             }
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                 throws RealmUnavailableException {
             return SupportLevel.UNSUPPORTED;
         }
@@ -178,8 +183,12 @@ public class PropertiesSubjectSupplemental extends PropertiesFileLoader implemen
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                     throws RealmUnavailableException {
                 return SupportLevel.UNSUPPORTED;
             }

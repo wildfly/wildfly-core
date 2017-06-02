@@ -35,6 +35,7 @@ import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -614,9 +615,15 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             }
         }
 
-        @Override
+        // TODO: before deleting this method, see below
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
                 throws RealmUnavailableException {
+            return wrapped.getCredentialAcquireSupport(credentialType, algorithmName);
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
+                throws RealmUnavailableException {
+            // TODO: after the Elytron upgrade, the following call should be changed to accept parameterSpec as well
             return wrapped.getCredentialAcquireSupport(credentialType, algorithmName);
         }
 
