@@ -23,8 +23,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RED
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REDEPLOY_LINKS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_LINKS;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -37,6 +39,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -61,6 +64,12 @@ public class DeploymentOverlayDeploymentRemoveHandler extends AbstractRemoveStep
     @Override
     protected void performRemove(OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
             final String runtimeName = context.getCurrentAddressValue();
+            Set<PathAddress> removed = TransformerOperationAttachment.getOrCreate(context).getAttachment(REMOVED_LINKS);
+            if (removed == null) {
+                removed = new HashSet<>();
+                TransformerOperationAttachment.getOrCreate(context).attach(REMOVED_LINKS, removed);
+            }
+            removed.add(context.getCurrentAddress());
             if (REDEPLOY_AFFECTED_DEFINITION.resolveModelAttribute(context, operation).asBoolean()) {
                 if (SERVER_GROUP.equals(context.getCurrentAddress().getElement(0).getKey())) {
                     PathAddress overlayAddress = context.getCurrentAddress().getParent();

@@ -50,6 +50,7 @@ class ServerGroupTransformers {
                 .end();
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
         JvmTransformers.registerTransformers2_1_AndBelow(builder);
+        DeploymentOverlayTransformers.registerServerGroupTransformers1_6_AndBelow(builder);
 
         return chainedBuilder;
     }
