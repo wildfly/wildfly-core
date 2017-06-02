@@ -80,7 +80,6 @@ class RealmParser {
             .build();
     private final PersistentResourceXMLDescription propertiesRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM), null)
             .addAttributes(PropertiesRealmDefinition.GROUPS_ATTRIBUTE)
-            .addAttribute(RealmDefinitions.CASE_SENSITIVE)
             .addAttribute(PropertiesRealmDefinition.USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .addAttribute(PropertiesRealmDefinition.GROUPS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .build();
