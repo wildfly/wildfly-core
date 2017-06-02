@@ -77,6 +77,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REDEPLOY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLACE_DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
@@ -1003,55 +1004,50 @@ public class ServerOperationResolver {
     }
 
     private Map<Set<ServerIdentity>, ModelNode> resolveCoreServiceOperations(ModelNode operation, PathAddress address, ModelNode domain, ModelNode host) {
-        if (address.getElement(0).getValue().equals(MANAGEMENT)){
-            if (address.size() >= 2 && address.getElement(1).getKey().equals(ACCESS) && address.getElement(1).getValue().equals(AUDIT)) {
-                ModelNode op = operation.clone();
-                op.get(OP_ADDR).set(address.toModelNode());
-                if (address.size() >= 3) {
-                    PathAddress newAddr = PathAddress.EMPTY_ADDRESS;
-                    for (PathElement element : address) {
-                        if (element.getKey().equals(LOGGER)) {
-                            //logger=>audit-log is only for the HC
-                            return Collections.emptyMap();
-                        } else {
-                            PathElement myElement = element;
-                            if (myElement.getKey().equals(SERVER_LOGGER)) {
-                                //server-logger=audit-log gets sent to the servers as logger=>audit-log
-                                myElement = PathElement.pathElement(LOGGER, element.getValue());
+        if (MANAGEMENT.equals(address.getElement(0).getValue()) && address.size() >= 2) {
+            ModelNode op = operation.clone();
+            switch (address.getElement(1).getKey()) {
+                case ACCESS:
+                    if (AUDIT.equals(address.getElement(1).getValue())) {
+                        op.get(OP_ADDR).set(address.toModelNode());
+                        if (address.size() >= 3) {
+                            PathAddress newAddr = PathAddress.EMPTY_ADDRESS;
+                            for (PathElement element : address) {
+                                if (LOGGER.equals(element.getKey())) {
+                                    //logger=>audit-log is only for the HC
+                                    return Collections.emptyMap();
+                                } else {
+                                    PathElement myElement = element;
+                                    if (SERVER_LOGGER.equals(myElement.getKey())) {
+                                        //server-logger=audit-log gets sent to the servers as logger=>audit-log
+                                        myElement = PathElement.pathElement(LOGGER, element.getValue());
+                                    }
+                                    newAddr = newAddr.append(myElement);
+                                }
                             }
-                            newAddr = newAddr.append(myElement);
+                            op.get(OP_ADDR).set(newAddr.toModelNode());
                         }
+                        return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
                     }
-                    op.get(OP_ADDR).set(newAddr.toModelNode());
-                }
-//                    String key = address.getElement(2).getKey();
-//                    if (key.equals(LOGGER)) {
-//                        //logger=>audit-log is only for the HC
-//                        return Collections.emptyMap();
-//                    } else if (key.equals(SERVER_LOGGER)) {
-//                        //server-logger=audit-log gets sent to the servers as logger=>audit-log
-//                        PathAddress newAddr = address.subAddress(0, 2);
-//                        newAddr = newAddr.append(PathElement.pathElement(LOGGER, address.getElement(2).getValue()));
-//                        op.get(OP_ADDR).set(newAddr.toModelNode());
-//                    }
-//                }
-                return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
-            } else if (address.size() >= 2 && SERVICE.equals(address.getElement(1).getKey()) && CONFIGURATION_CHANGES.equals(address.getElement(1).getValue())) {
-                if("list-changes".equals(operation.get(OP).asString())) {
+                    break;
+                case SERVICE:
+                    if (CONFIGURATION_CHANGES.equals(address.getElement(1).getValue())) {
+                        if ("list-changes".equals(operation.get(OP).asString())) {
+                            return Collections.emptyMap();
+                        }
+                        op.get(OP_ADDR).set(address.toModelNode());
+                        return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
+                    }
+                    break;
+                case SECURITY_REALM:
+                    op.get(OP_ADDR).set(address.toModelNode());
+                    return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
+                default:
                     return Collections.emptyMap();
-                }
-                ModelNode op = operation.clone();
-                op.get(OP_ADDR).set(address.toModelNode());
-                return Collections.singletonMap(getAllRunningServers(host, localHostName, serverProxies), op);
             }
-            // TODO does server need to know about other changes?
         }
         return Collections.emptyMap();
     }
-
-
-
-
 
     private ServerIdentity getServerIdentity(String serverName, ModelNode host) {
         ModelNode serverNode = host.get(SERVER_CONFIG, serverName);
