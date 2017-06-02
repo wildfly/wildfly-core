@@ -27,6 +27,7 @@ import static org.jboss.as.domain.management.security.SecurityRealmService.LOADE
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -162,8 +163,12 @@ public class KerberosCallbackHandler implements Service<CallbackHandlerService>,
             return new KerberosRealmIdentity(principal);
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                 throws RealmUnavailableException {
             return SupportLevel.UNSUPPORTED;
         }
@@ -187,10 +192,14 @@ public class KerberosCallbackHandler implements Service<CallbackHandlerService>,
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
                     throws RealmUnavailableException {
                 return KerberosSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
+                    throws RealmUnavailableException {
+                return KerberosSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override

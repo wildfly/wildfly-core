@@ -29,6 +29,7 @@ import static org.wildfly.common.Assert.checkNotNullParam;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -346,8 +347,11 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             }
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName) throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
             return SupportLevel.UNSUPPORTED;
         }
 
@@ -376,9 +380,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)throws RealmUnavailableException {
                 return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
+                return SecurityRealmImpl.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override

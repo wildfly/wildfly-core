@@ -28,6 +28,7 @@ import static org.jboss.as.domain.management.security.SecurityRealmService.SKIP_
 
 import java.io.IOException;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -126,8 +127,12 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
             return RealmIdentity.NON_EXISTENT;
         }
 
-        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                throws RealmUnavailableException {
+            return SupportLevel.UNSUPPORTED;
+        }
+
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                 throws RealmUnavailableException {
             return SupportLevel.UNSUPPORTED;
         }
@@ -152,10 +157,14 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
                 return principal;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
                     throws RealmUnavailableException {
                 return LocalSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName);
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
+                    throws RealmUnavailableException {
+                return LocalSecurityRealm.this.getCredentialAcquireSupport(credentialType, algorithmName, parameterSpec);
             }
 
             @Override

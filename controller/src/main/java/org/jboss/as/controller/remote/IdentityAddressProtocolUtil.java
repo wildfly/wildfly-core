@@ -26,6 +26,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -265,9 +266,13 @@ class IdentityAddressProtocolUtil {
                         return SupportLevel.UNSUPPORTED;
                     }
 
-                    @Override
                     public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType,
                             String algorithmName) throws RealmUnavailableException {
+                        return SupportLevel.UNSUPPORTED;
+                    }
+
+                    public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType,
+                            String algorithmName, AlgorithmParameterSpec parameterSpec) throws RealmUnavailableException {
                         return SupportLevel.UNSUPPORTED;
                     }
 
@@ -297,8 +302,12 @@ class IdentityAddressProtocolUtil {
                 return SupportLevel.UNSUPPORTED;
             }
 
-            @Override
             public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
+                    throws RealmUnavailableException {
+                return SupportLevel.UNSUPPORTED;
+            }
+
+            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                     throws RealmUnavailableException {
                 return SupportLevel.UNSUPPORTED;
             }
