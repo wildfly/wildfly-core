@@ -53,7 +53,7 @@ public class SecretServerIdentityResourceDefinition extends SimpleResourceDefini
             .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE)
             .build();
 
-    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, false)
+    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(false, false)
             .setAlternatives(ModelDescriptionConstants.VALUE)
             .build();
 
