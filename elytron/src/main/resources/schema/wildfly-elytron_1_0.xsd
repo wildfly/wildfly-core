@@ -226,31 +226,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="allow-all-mechanisms" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Allow all SASL mechanisms to be used unless specifically forbidden.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allow-sasl-mechanisms" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of SASL mechanisms to be used unless specifically forbidden.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="forbid-sasl-mechanisms" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of SASL mechanisms to be disabled.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name = "sasl-mechanism-selector" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The SASL mechanism selector string.
+                    The SASL mechanism selector string. Allows to specify allowed/forbidden SASL mechanisms.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

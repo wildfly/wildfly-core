@@ -47,6 +47,7 @@ import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.wildfly.security.sasl.localuser.LocalUserClient;
 import org.xnio.IoFuture;
 import org.xnio.Option;
@@ -152,7 +153,7 @@ public class ProtocolConnectionUtils {
         if (handler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(handler);
 
         Map<String, String> saslOptions = configuration.getSaslOptions();
-        mergedConfiguration = configureSaslMechnisms(saslOptions, isLocal(uri), mergedConfiguration);
+        mergedConfiguration = configureSaslMechanisms(saslOptions, isLocal(uri), mergedConfiguration);
 
         // Pass through any other SASL options from the ProtocolConnectionConfiguration
         // When we merge these, any pre-existing options already associated with the
@@ -197,7 +198,7 @@ public class ProtocolConnectionUtils {
         }
     }
 
-    private static AuthenticationConfiguration configureSaslMechnisms(Map<String, String> saslOptions, boolean isLocal, AuthenticationConfiguration authenticationConfiguration) {
+    private static AuthenticationConfiguration configureSaslMechanisms(Map<String, String> saslOptions, boolean isLocal, AuthenticationConfiguration authenticationConfiguration) {
         String[] mechanisms = null;
         String listed;
         if (saslOptions != null && (listed = saslOptions.get(Options.SASL_DISALLOWED_MECHANISMS.getName())) != null) {
@@ -214,7 +215,7 @@ public class ProtocolConnectionUtils {
             mechanisms = new String[]{ JBOSS_LOCAL_USER };
         }
 
-        return (mechanisms != null && mechanisms.length > 0) ? authenticationConfiguration.forbidSaslMechanisms(mechanisms) : authenticationConfiguration;
+        return (mechanisms != null && mechanisms.length > 0) ? authenticationConfiguration.setSaslMechanismSelector(SaslMechanismSelector.DEFAULT.forbidMechanisms(mechanisms)) : authenticationConfiguration;
     }
 
     private static boolean isLocal(final URI uri) {

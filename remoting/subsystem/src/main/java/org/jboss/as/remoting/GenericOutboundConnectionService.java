@@ -68,7 +68,7 @@ public class GenericOutboundConnectionService extends AbstractOutboundConnection
     }
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
-        return AuthenticationConfiguration.EMPTY;
+        return AuthenticationConfiguration.empty();
     }
 
     public SSLContext getSSLContext() {

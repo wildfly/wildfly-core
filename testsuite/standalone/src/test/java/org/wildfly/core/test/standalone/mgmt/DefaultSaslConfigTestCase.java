@@ -37,6 +37,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.sasl.SaslMechanismSelector;
 
 /**
  * Tests default SASL configuration for management interface.
@@ -55,8 +56,8 @@ public class DefaultSaslConfigTestCase {
     @Test
     public void testJBossLocalInDefault() throws Exception {
         AuthenticationContext.empty()
-                .with(MatchRule.ALL,
-                        AuthenticationConfiguration.EMPTY.useDefaultProviders().allowSaslMechanisms("JBOSS-LOCAL-USER"))
+                .with(MatchRule.ALL, AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("JBOSS-LOCAL-USER")))
                 .run(() -> assertWhoAmI("$local"));
     }
 
@@ -65,9 +66,10 @@ public class DefaultSaslConfigTestCase {
      */
     @Test
     public void testDigestAuthn() throws Exception {
-        AuthenticationContext
-                .empty().with(MatchRule.ALL, AuthenticationConfiguration.EMPTY.useDefaultProviders()
-                        .allowSaslMechanisms("DIGEST-MD5").useName("testSuite").usePassword("testSuitePassword"))
+        AuthenticationContext.empty()
+                .with(MatchRule.ALL, AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("DIGEST-MD5"))
+                        .useName("testSuite").usePassword("testSuitePassword"))
                 .run(() -> assertWhoAmI("testSuite"));
     }
 
@@ -76,9 +78,10 @@ public class DefaultSaslConfigTestCase {
      */
     @Test
     public void testDigestWrongPass() throws Exception {
-        AuthenticationContext
-                .empty().with(MatchRule.ALL, AuthenticationConfiguration.EMPTY.useDefaultProviders()
-                        .allowSaslMechanisms("DIGEST-MD5").useName("testSuite").usePassword("testSuite"))
+        AuthenticationContext.empty()
+                .with(MatchRule.ALL, AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("DIGEST-MD5"))
+                        .useName("testSuite").usePassword("testSuite"))
                 .run(() -> assertAuthenticationFails());
     }
 
@@ -87,9 +90,10 @@ public class DefaultSaslConfigTestCase {
      */
     @Test
     public void testPlainAuthn() throws Exception {
-        AuthenticationContext
-                .empty().with(MatchRule.ALL, AuthenticationConfiguration.EMPTY.useDefaultProviders()
-                        .allowSaslMechanisms("PLAIN").useName("testSuite").usePassword("testSuitePassword"))
+        AuthenticationContext.empty()
+                .with(MatchRule.ALL, AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("PLAIN"))
+                        .useName("testSuite").usePassword("testSuitePassword"))
                 .run(() -> assertAuthenticationFails());
     }
 
@@ -99,8 +103,9 @@ public class DefaultSaslConfigTestCase {
     @Test
     public void testAnonymousFailsInDefault() throws Exception {
         AuthenticationContext.empty()
-                .with(MatchRule.ALL,
-                        AuthenticationConfiguration.EMPTY.useDefaultProviders().allowSaslMechanisms("ANONYMOUS").useAnonymous())
+                .with(MatchRule.ALL, AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("ANONYMOUS"))
+                        .useAnonymous())
                 .run(() -> assertAuthenticationFails());
     }
 

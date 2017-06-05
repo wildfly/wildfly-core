@@ -63,7 +63,7 @@ public class LocalOutboundConnectionService extends AbstractOutboundConnectionSe
     }
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
-        return AuthenticationConfiguration.EMPTY;
+        return AuthenticationConfiguration.empty();
     }
 
     public SSLContext getSSLContext() {

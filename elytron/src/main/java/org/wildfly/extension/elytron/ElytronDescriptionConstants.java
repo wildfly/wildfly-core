@@ -46,9 +46,7 @@ interface ElytronDescriptionConstants {
     String ALIAS_FILTER = "alias-filter";
     String ALGORITHM = "algorithm";
     String ALGORITHM_FROM = "algorithm-from";
-    String ALLOW_ALL_MECHANISMS = "allow-all-mechanisms";
     String ALLOW_BLANK_PASSWORD = "allow-blank-password";
-    String ALLOW_SASL_MECHANISMS = "allow-sasl-mechanisms";
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
@@ -167,10 +165,7 @@ interface ElytronDescriptionConstants {
     String FILTERS = "filters";
     String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     String FINAL_PROVIDERS = "final-providers";
-    String FINGER_PRINT = "finger-print";
-    String FINGER_PRINTS = "finger-prints";
     String FIRST = "first";
-    String FORBID_SASL_MECHANISMS = "forbid-sasl-mechanisms";
     String FORMAT = "format";
     String FROM = "from";
 

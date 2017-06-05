@@ -1,6 +1,6 @@
 <subsystem xmlns="urn:wildfly:elytron:1.0" default-authentication-context="child">
     <authentication-client>
-        <authentication-configuration name="base" anonymous="true" allow-all-mechanisms="true" />
+        <authentication-configuration name="base" anonymous="true" />
         <authentication-configuration name="most"
             extends="base"
             authentication-name="auth-name"
@@ -8,14 +8,12 @@
             host="myHost"
             protocol="myProtocol"
             port="8080"
-            realm="myRealm"
-            allow-sasl-mechanisms="PLAIN DIGEST" >
-            <credential-reference clear-text="password"/>
+            realm="myRealm">
+            <credential-reference clear-text="password" />
         </authentication-configuration>
         <authentication-configuration name="forward"
             extends="base"
-            security-domain="TestDomain"
-            forbid-sasl-mechanisms="EXTERNAL">
+            security-domain="TestDomain">
             <mechanism-properties>
                 <property name="a" value="b" />
                 <property name="c" value="d" />
