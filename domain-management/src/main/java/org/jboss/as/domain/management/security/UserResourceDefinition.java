@@ -50,8 +50,8 @@ public class UserResourceDefinition extends SimpleResourceDefinition {
             .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE)
             .build();
 
-    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(true, false)
-            .setAlternatives(org.jboss.as.domain.management.ModelDescriptionConstants.VALUE)
+    public static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(false, false)
+            .setAlternatives(ModelDescriptionConstants.PASSWORD)
             .build();
 
     public UserResourceDefinition() {
