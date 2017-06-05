@@ -20,6 +20,10 @@ package org.wildfly.core.test.standalone.mgmt;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTPS_PORT;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTP_PORT;
@@ -32,7 +36,6 @@ import static org.junit.Assert.fail;
 import static org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase.reloadServer;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URISyntaxException;
@@ -54,6 +57,7 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SSLTruststoreUtil;
 import org.jboss.as.test.integration.security.common.SecurityTestConstants;
 import org.jboss.as.test.integration.security.common.config.realm.Authentication;
+import org.jboss.as.test.integration.security.common.config.realm.CredentialReference;
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
@@ -99,6 +103,7 @@ public class HTTPSManagementInterfaceTestCase {
 
     private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
+    private static final String MANAGEMENT_WEB_REALM_CR = "ManagementWebRealmCr";
     private static final String MGMT_CTX = "/management";
 
     @Inject
@@ -109,12 +114,12 @@ public class HTTPSManagementInterfaceTestCase {
     public static void startAndSetupContainer() throws Exception {
         controller.startInAdminMode();
 
-        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
-        ManagementClient managementClient = controller.getClient();
+        try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()){
+            ManagementClient managementClient = controller.getClient();
 
-        serverSetup(managementClient);
-        managementNativeRealmSetup.setup(client);
-
+            serverSetup(managementClient);
+            managementNativeRealmSetup.setup(client);
+        }
         // To apply new security realm settings for http interface reload of
         // server is required
         reloadServer();
@@ -132,7 +137,8 @@ public class HTTPSManagementInterfaceTestCase {
      * @test.expectedResult Management web console page is successfully reached, and test finishes without exception.
      */
     @Test
-    public void testHTTP() throws IOException, URISyntaxException {
+    public void testHTTP() throws Exception, URISyntaxException {
+        changeSecurityRealmForHttpMngmntInterface(MANAGEMENT_WEB_REALM);
 
         HttpClient httpClient = HttpClients.createDefault();
         URL mgmtURL = new URL("http", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_HTTP_PORT, MGMT_CTX);
@@ -163,6 +169,40 @@ public class HTTPSManagementInterfaceTestCase {
      */
     @Test
     public void testHTTPS() throws Exception {
+        changeSecurityRealmForHttpMngmntInterface(MANAGEMENT_WEB_REALM);
+
+        final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
+        final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
+
+        URL mgmtURL = new URL("https", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_HTTPS_PORT, MGMT_CTX);
+        try {
+            String responseBody = makeCallWithHttpClient(mgmtURL, httpClientUntrusted, 401);
+            assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
+        } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
+            //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
+            //in particular the SocketException gets thrown on Windows
+            // OK
+        }
+
+        String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
+        assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
+
+    }
+
+    /**
+     * @throws org.apache.http.client.ClientProtocolException, IOException, URISyntaxException
+     * @test.tsfi tsfi.port.management.https
+     * @test.tsfi tsfi.app.web.admin.console
+     * @test.tsfi tsfi.keystore.file
+     * @test.tsfi tsfi.truststore.file
+     * @test.objective Testing authentication over management-https port configured with credential reference.
+     * Test with user who has right/wrong certificate to login into management web interface. Also provides check for
+     * web administration console authentication, which goes through /management context.
+     * @test.expectedResult Management web console page is successfully reached, and test finishes without exception.
+     */
+    @Test
+    public void testHTTPSWithCredentialReference() throws Exception {
+        changeSecurityRealmForHttpMngmntInterface(MANAGEMENT_WEB_REALM_CR);
 
         final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
         final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
@@ -184,15 +224,16 @@ public class HTTPSManagementInterfaceTestCase {
 
     @AfterClass
     public static void stopContainer() throws Exception {
-        ModelControllerClient client = getNativeModelControllerClient();
 
-        resetHttpInterfaceConfiguration(client);
+        try (ModelControllerClient client = getNativeModelControllerClient()) {
+            resetHttpInterfaceConfiguration(client);
 
-        // reload to apply changes
-        reloadServer();
+            // reload to apply changes
+            reloadServer();
 
-        serverTearDown(client);
-        managementNativeRealmSetup.tearDown(client);
+            serverTearDown(client);
+            managementNativeRealmSetup.tearDown(client);
+        }
 
         controller.stop();
     }
@@ -224,7 +265,20 @@ public class HTTPSManagementInterfaceTestCase {
                             .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
             final SecurityRealm realm = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM).serverIdentity(serverIdentity)
                     .authentication(authentication).build();
-            return new SecurityRealm[]{realm};
+            // Same using credential reference
+            final CredentialReference credentialReference = new CredentialReference.Builder().clearText(SecurityTestConstants.KEYSTORE_PASSWORD).build();
+            final ServerIdentity serverIdentityCR = new ServerIdentity.Builder().ssl(
+                    new RealmKeystore.Builder()
+                            .keystorePasswordCredentialReference(credentialReference)
+                            .keyPasswordCredentialReference(credentialReference)
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+            final Authentication authenticationCR = new Authentication.Builder().truststore(
+                    new RealmKeystore.Builder().keystorePasswordCredentialReference(credentialReference)
+                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
+            final SecurityRealm realmCR = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR).serverIdentity(serverIdentityCR)
+                    .authentication(authenticationCR).build();
+
+            return new SecurityRealm[]{realm, realmCR};
         }
     }
 
@@ -263,6 +317,37 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get("security-realm").set("ManagementRealm");
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
+    }
+
+    /**
+     * Change security realm and reload server if different security realm is requested.
+     *
+     * In case desired realm is already set do nothing.
+     *
+     * @param securityRealmName
+     * @throws Exception
+     */
+    private static void changeSecurityRealmForHttpMngmntInterface(String securityRealmName) throws Exception {
+        try (ModelControllerClient client = getNativeModelControllerClient()) {
+
+            String originSecurityRealm = "";
+            ModelNode operation = createOpNode("core-service=management/management-interface=http-interface", READ_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("security-realm");
+            final ModelNode result = client.execute(operation);
+            if (SUCCESS.equals(result.get(OUTCOME).asString())) {
+                originSecurityRealm = result.get(RESULT).asString();
+            }
+
+            if (!originSecurityRealm.equals(securityRealmName)) {
+                operation = createOpNode("core-service=management/management-interface=http-interface",
+                        ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
+                operation.get(NAME).set("security-realm");
+                operation.get(VALUE).set(securityRealmName);
+                CoreUtils.applyUpdate(operation, client);
+
+                reloadServer();
+            }
+        }
     }
 
     private static void serverTearDown(final ModelControllerClient client) throws Exception {

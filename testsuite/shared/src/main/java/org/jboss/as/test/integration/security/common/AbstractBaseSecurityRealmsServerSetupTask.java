@@ -50,8 +50,6 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.SEARCH_CR
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SEARCH_DN;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
 
-
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +62,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.security.common.config.realm.Authentication;
 import org.jboss.as.test.integration.security.common.config.realm.Authorization;
+import org.jboss.as.test.integration.security.common.config.realm.CredentialReference;
 import org.jboss.as.test.integration.security.common.config.realm.LdapAuthentication;
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
@@ -145,7 +144,18 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                 if (ssl != null) {
                     final ModelNode sslModuleNode = Util.createAddOperation(realmAddr.append(SERVER_IDENTITY, SSL));
                     sslModuleNode.get(KEYSTORE_PATH).set(ssl.getKeystorePath());
-                    sslModuleNode.get(Constants.KEYSTORE_PASSWORD).set(ssl.getKeystorePassword());
+                    if (StringUtils.isNotEmpty(ssl.getKeystorePassword())) {
+                        sslModuleNode.get(Constants.KEYSTORE_PASSWORD).set(ssl.getKeystorePassword());
+                    } else {
+                        sslModuleNode.get(Constants.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE).set(getCredentialReferenceModelNode(ssl.getKeystorePasswordCredentialReference()));
+                    }
+
+                    if (StringUtils.isNotEmpty(ssl.getKeyPassword())) {
+                        sslModuleNode.get(Constants.KEY_PASSWORD).set(ssl.getKeyPassword());
+                    } else if (ssl.getKeyPasswordCredentialReference() != null) {
+                        sslModuleNode.get(Constants.KEY_PASSWORD_CREDENTIAL_REFERENCE).set(getCredentialReferenceModelNode(ssl.getKeyPasswordCredentialReference()));
+                    }
+
                     sslModuleNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
                     steps.add(sslModuleNode);
                 }
@@ -156,7 +166,11 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                 if (truststore != null) {
                     final ModelNode sslModuleNode = Util.createAddOperation(realmAddr.append(AUTHENTICATION, TRUSTSTORE));
                     sslModuleNode.get(KEYSTORE_PATH).set(truststore.getKeystorePath());
-                    sslModuleNode.get(Constants.KEYSTORE_PASSWORD).set(truststore.getKeystorePassword());
+                    if (StringUtils.isNotEmpty(truststore.getKeystorePassword())) {
+                        sslModuleNode.get(Constants.KEYSTORE_PASSWORD).set(truststore.getKeystorePassword());
+                    } else {
+                        sslModuleNode.get(Constants.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE).set(getCredentialReferenceModelNode(truststore.getKeystorePasswordCredentialReference()));
+                    }
                     sslModuleNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
                     steps.add(sslModuleNode);
                 }
@@ -262,5 +276,23 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
             node.get(attribute).set(value);
         }
     }
+
+    private ModelNode getCredentialReferenceModelNode(final CredentialReference credentialReference) {
+        ModelNode credentialRefModelNode = new ModelNode();
+        if (StringUtils.isNotEmpty(credentialReference.getClearText())) {
+            credentialRefModelNode.get(Constants.CLEAR_TEXT).set(credentialReference.getClearText());
+        }
+        if (StringUtils.isNotEmpty(credentialReference.getType())) {
+            credentialRefModelNode.get(Constants.TYPE).set(credentialReference.getType());
+        }
+        if (StringUtils.isNotEmpty(credentialReference.getAlias())) {
+            credentialRefModelNode.get(Constants.ALIAS).set(credentialReference.getAlias());
+        }
+        if (StringUtils.isNotEmpty(credentialReference.getStore())) {
+            credentialRefModelNode.get(Constants.STORE).set(credentialReference.getStore());
+        }
+        return credentialRefModelNode;
+    }
+
 }
 
