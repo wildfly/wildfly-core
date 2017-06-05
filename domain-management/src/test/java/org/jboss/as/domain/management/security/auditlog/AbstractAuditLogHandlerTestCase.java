@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.management.security.auditlog;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLEAR_TEXT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_LENGTH;
@@ -118,6 +119,7 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
         return super.executeForResult(operation.clone());
     }
 
+    @Override
     protected ManagedAuditLogger getAuditLogger(){
         if (auditLogger == null){
             auditLogger = new ManagedAuditLoggerImpl("8.0.0", true);
@@ -321,6 +323,11 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
 
     protected ModelNode createAddSyslogHandlerTlsOperation(String handlerName, String formatterName, InetAddress addr, int port, SyslogHandler.SyslogType syslogFormat,
             SyslogAuditLogHandler.MessageTransfer transfer, File truststorePath, String trustPwd, File clientCertPath, String clientCertPwd){
+        return createAddSyslogHandlerTlsOperation(handlerName, formatterName, addr, port, syslogFormat, transfer, truststorePath, trustPwd, clientCertPath, clientCertPwd, false);
+    }
+
+    protected ModelNode createAddSyslogHandlerTlsOperation(String handlerName, String formatterName, InetAddress addr, int port, SyslogHandler.SyslogType syslogFormat,
+            SyslogAuditLogHandler.MessageTransfer transfer, File truststorePath, String trustPwd, File clientCertPath, String clientCertPwd, boolean useCredentialReference){
         ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
         composite.get(OP_ADDR).setEmptyList();
@@ -352,7 +359,14 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
             ModelNode clientCert = Util.createAddOperation(createSyslogHandlerProtocolAddress("syslog-test", Transport.TLS).append(
                     PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.CLIENT_CERT_STORE)));
             clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PATH.getName()).set(clientCertPath.getAbsolutePath());
-            clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PASSWORD.getName()).set(clientCertPwd);
+            if (useCredentialReference) {
+                ModelNode clearTextModelNode = new ModelNode();
+                clearTextModelNode.get(CLEAR_TEXT).set(clientCertPwd);
+                clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE.getName()).set(clearTextModelNode);
+                clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEY_PASSWORD_CREDENTIAL_REFERENCE.getName()).set(clearTextModelNode);
+            } else {
+                clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PASSWORD.getName()).set(clientCertPwd);
+            }
             composite.get(STEPS).add(clientCert);
         }
         return composite;

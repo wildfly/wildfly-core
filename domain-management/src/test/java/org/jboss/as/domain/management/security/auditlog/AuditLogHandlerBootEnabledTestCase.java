@@ -46,6 +46,7 @@ import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinit
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -278,6 +279,17 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
                 null, MessageTransfer.NON_TRANSPARENT_FRAMING, clientTrustStore, "changeit", clientCertStore, "changeit"));
     }
 
+    @Test
+    @Ignore("WFCORE-2923")
+    public void testSyslogTlsNonTransparentFramingClientAuthCR() throws Exception {
+        File serverCertStore = new File(getClass().getResource("server-cert-store.jks").toURI());
+        File clientTrustStore = new File(getClass().getResource("client-trust-store.jks").toURI());
+        File clientCertStore = new File(getClass().getResource("client-cert-store.jks").toURI());
+        File serverTrustStore = new File(getClass().getResource("server-trust-store.jks").toURI());
+        SimpleSyslogServer server = SimpleSyslogServer.createTls(6666, false, serverCertStore, "changeit", serverTrustStore, "changeit");
+        runSyslogTest(server, 6666, createAddSyslogHandlerTlsOperation("syslog-test", "test-formatter", InetAddress.getByName("localhost"), 6666,
+                null, MessageTransfer.NON_TRANSPARENT_FRAMING, clientTrustStore, "changeit", clientCertStore, "changeit", true));
+    }
 
     private void runSyslogTest(SimpleSyslogServer server, int port, ModelNode handlerAddOperation) throws Exception {
         try {
