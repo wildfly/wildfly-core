@@ -27,7 +27,7 @@
         </authentication-rules>
         <authentication-configurations>
             <configuration name="test-login">
-                <allow-sasl-mechanisms names="DIGEST-MD5" />
+                <sasl-mechanism-selector selector="DIGEST-MD5" />
                 <set-user-name name="test-admin" />
                 <credentials>
                     <clear-password password="admin.12345" />
