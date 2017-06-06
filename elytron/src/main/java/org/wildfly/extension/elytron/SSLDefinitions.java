@@ -23,7 +23,9 @@ import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIM
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY;
@@ -106,6 +108,10 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
+import org.wildfly.security.auth.server.MechanismConfiguration;
+import org.wildfly.security.auth.server.MechanismConfigurationSelector;
+import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
@@ -164,6 +170,30 @@ class SSLDefinitions {
             .setMinSize(1)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
             .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition PRE_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition FINAL_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FINAL_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_MAPPER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(REALM_MAPPER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition CIPHER_SUITE_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CIPHER_SUITE_FILTER, ModelType.STRING, true)
@@ -797,13 +827,16 @@ class SSLDefinitions {
                 .setRestartAllServices()
                 .build();
 
-        final SimpleAttributeDefinition keyManagersDefinition = new SimpleAttributeDefinitionBuilder(KEY_MANAGER)
+        final SimpleAttributeDefinition keyManagerDefinition = new SimpleAttributeDefinitionBuilder(KEY_MANAGER)
                 .setRequired(true)
                 .setRestartAllServices()
                 .build();
 
-        AttributeDefinition[] attributes = new AttributeDefinition[] { SECURITY_DOMAIN, CIPHER_SUITE_FILTER, PROTOCOLS, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
-                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagersDefinition, TRUST_MANAGER, providersDefinition, PROVIDER_NAME };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { CIPHER_SUITE_FILTER, PROTOCOLS,
+                SECURITY_DOMAIN, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
+                USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagerDefinition, TRUST_MANAGER,
+                PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
+                providersDefinition, PROVIDER_NAME };
 
         return new SSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
@@ -812,6 +845,10 @@ class SSLDefinitions {
                 final InjectedValue<SecurityDomain> securityDomainInjector = addDependency(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN, SecurityDomain.class, serviceBuilder, context, model);
                 final InjectedValue<KeyManager> keyManagerInjector = addDependency(KEY_MANAGER_CAPABILITY, KEY_MANAGER, KeyManager.class, serviceBuilder, context, model);
                 final InjectedValue<TrustManager> trustManagerInjector = addDependency(TRUST_MANAGER_CAPABILITY, TRUST_MANAGER, TrustManager.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> preRealmPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, PRE_REALM_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> postRealmPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, POST_REALM_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<PrincipalTransformer> finalPrincipalTransformerInjector = addDependency(PRINCIPAL_TRANSFORMER_CAPABILITY, FINAL_PRINCIPAL_TRANSFORMER, PrincipalTransformer.class, serviceBuilder, context, model);
+                final InjectedValue<RealmMapper> realmMapperInjector = addDependency(REALM_MAPPER_CAPABILITY, REALM_MAPPER, RealmMapper.class, serviceBuilder, context, model);
                 final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
 
                 final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
@@ -829,6 +866,10 @@ class SSLDefinitions {
                     SecurityDomain securityDomain = securityDomainInjector.getOptionalValue();
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
+                    PrincipalTransformer preRealmRewriter = preRealmPrincipalTransformerInjector.getOptionalValue();
+                    PrincipalTransformer postRealmRewriter = postRealmPrincipalTransformerInjector.getOptionalValue();
+                    PrincipalTransformer finalRewriter = finalPrincipalTransformerInjector.getOptionalValue();
+                    RealmMapper realmMapper = realmMapperInjector.getOptionalValue();
                     Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
 
                     SSLContextBuilder builder = new SSLContextBuilder();
@@ -840,6 +881,14 @@ class SSLDefinitions {
                     if ( ! protocols.isEmpty()) builder.setProtocolSelector(ProtocolSelector.empty().add(
                             EnumSet.copyOf(protocols.stream().map(Protocol::forName).collect(Collectors.toList()))
                     ));
+                    if (preRealmRewriter != null || postRealmRewriter != null || finalRewriter != null || realmMapper != null) {
+                        MechanismConfiguration.Builder mechBuilder = MechanismConfiguration.builder();
+                        if (preRealmRewriter != null) mechBuilder.setPreRealmRewriter(preRealmRewriter);
+                        if (postRealmRewriter != null) mechBuilder.setPostRealmRewriter(postRealmRewriter);
+                        if (finalRewriter != null) mechBuilder.setFinalRewriter(finalRewriter);
+                        if (realmMapper != null) mechBuilder.setRealmMapper(realmMapper);
+                        builder.setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(mechBuilder.build()));
+                    }
                     builder.setWantClientAuth(wantClientAuth)
                            .setNeedClientAuth(needClientAuth)
                            .setAuthenticationOptional(authenticationOptional)

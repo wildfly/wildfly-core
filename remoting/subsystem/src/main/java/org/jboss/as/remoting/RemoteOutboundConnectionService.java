@@ -42,6 +42,7 @@ import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.xnio.OptionMap;
 
 import static java.security.AccessController.doPrivileged;
@@ -124,16 +125,16 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
             if (securityRealm != null && username != null) {
                 // legacy remote-outbound-connection configuration
-                configuration = AuthenticationConfiguration.EMPTY
+                configuration = AuthenticationConfiguration.empty()
                     .useName(username)
-                    .forbidSaslMechanisms(JBOSS_LOCAL_USER);
+                    .setSaslMechanismSelector(SaslMechanismSelector.DEFAULT.forbidMechanism(JBOSS_LOCAL_USER));
                 final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
                 if (callbackHandlerFactory != null) {
                     configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
                 }
                 sslContext = securityRealm.getSSLContext();
             } else {
-                configuration = AuthenticationConfiguration.EMPTY;
+                configuration = AuthenticationConfiguration.empty();
                 sslContext = null;
             }
         }
