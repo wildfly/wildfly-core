@@ -55,8 +55,10 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.domain.management.audit.SyslogAuditLogProtocolResourceDefinition.TlsKeyStore;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -240,6 +242,8 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                     handler.setTlsClientCertStoreKeyPassword(
                             resolveUndefinableAttribute(context,
                                     SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEY_PASSWORD, storeModel));
+                     handler.setTlsClientCertStoreSupplier(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, null));
+                     handler.setTlsClientCertStoreKeySupplier(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEY_PASSWORD_CREDENTIAL_REFERENCE, storeModel, null));
                 } else if (type.equals(TRUSTSTORE)) {
                     handler.setTlsTruststorePassword(
                             resolveUndefinableAttribute(context,
@@ -249,6 +253,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                     handler.setTlsTrustStoreRelativeTo(
                             resolveUndefinableAttribute(context,
                                     SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_RELATIVE_TO, storeModel));
+                     handler.setTlsTrustStoreSupplier(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, null));
                 }
             }
         }

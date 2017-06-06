@@ -279,6 +279,17 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
     }
 
 
+    @Test
+    public void testSyslogTlsNonTransparentFramingClientAuthCredentialReference() throws Exception {
+        File serverCertStore = new File(getClass().getResource("server-cert-store.jks").toURI());
+        File clientTrustStore = new File(getClass().getResource("client-trust-store.jks").toURI());
+        File clientCertStore = new File(getClass().getResource("client-cert-store.jks").toURI());
+        File serverTrustStore = new File(getClass().getResource("server-trust-store.jks").toURI());
+        SimpleSyslogServer server = SimpleSyslogServer.createTls(6666, false, serverCertStore, "changeit", serverTrustStore, "changeit");
+        runSyslogTest(server, 6666, createAddSyslogHandlerCredentialReferenceTlsOperation("syslog-test", "test-formatter", InetAddress.getByName("localhost"), 6666,
+                null, MessageTransfer.NON_TRANSPARENT_FRAMING, clientTrustStore, "changeit", clientCertStore, "changeit"));
+    }
+
     private void runSyslogTest(SimpleSyslogServer server, int port, ModelNode handlerAddOperation) throws Exception {
         try {
             File file = new File(logDir, "test-file.log");

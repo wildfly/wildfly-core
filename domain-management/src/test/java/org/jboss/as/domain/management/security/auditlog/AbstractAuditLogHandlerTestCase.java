@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_FORMAT;
+import static org.jboss.as.controller.security.CredentialReference.CLEAR_TEXT;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -357,6 +358,50 @@ public class AbstractAuditLogHandlerTestCase extends ManagementControllerTestBas
         }
         return composite;
     }
+
+    protected ModelNode createAddSyslogHandlerCredentialReferenceTlsOperation(String handlerName, String formatterName, InetAddress addr, int port, SyslogHandler.SyslogType syslogFormat,
+            SyslogAuditLogHandler.MessageTransfer transfer, File truststorePath, String trustPwd, File clientCertPath, String clientCertPwd){
+        ModelNode composite = new ModelNode();
+        composite.get(OP).set(COMPOSITE);
+        composite.get(OP_ADDR).setEmptyList();
+        composite.get(STEPS).setEmptyList();
+
+        ModelNode handler = Util.createAddOperation(createSyslogHandlerAddress(handlerName));
+        if (syslogFormat != null){
+            handler.get(SYSLOG_FORMAT).set(syslogFormat.toString());
+        }
+        handler.get(ModelDescriptionConstants.FORMATTER).set(formatterName);
+        composite.get(STEPS).add(handler);
+
+        ModelNode protocol = Util.createAddOperation(createSyslogHandlerProtocolAddress(handlerName, SyslogAuditLogHandler.Transport.TLS));
+        protocol.get(HOST).set(InetAddressUtil.canonize(addr.getHostName()));
+        protocol.get(PORT).set(port);
+        if (transfer != null) {
+            protocol.get(MESSAGE_TRANSFER).set(transfer.name());
+        }
+        composite.get(STEPS).add(protocol);
+
+        ModelNode truststore = Util.createAddOperation(
+                createSyslogHandlerProtocolAddress("syslog-test", Transport.TLS).append(
+                        PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.TRUSTSTORE)));
+        truststore.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PATH.getName()).set(truststorePath.getAbsolutePath());
+        ModelNode trustStoreCredentialRef = new ModelNode();
+        trustStoreCredentialRef.get(CLEAR_TEXT).set(trustPwd);
+        truststore.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE.getName()).set(trustStoreCredentialRef);
+        composite.get(STEPS).add(truststore);
+
+        if (clientCertPath != null) {
+            ModelNode clientCert = Util.createAddOperation(createSyslogHandlerProtocolAddress("syslog-test", Transport.TLS).append(
+                    PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.CLIENT_CERT_STORE)));
+            clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PATH.getName()).set(clientCertPath.getAbsolutePath());
+            ModelNode clientCertCredentialRef = new ModelNode();
+            clientCertCredentialRef.get(CLEAR_TEXT).set(clientCertPwd);
+            clientCert.get(SyslogAuditLogProtocolResourceDefinition.TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE.getName()).set(clientCertCredentialRef);
+            composite.get(STEPS).add(clientCert);
+        }
+        return composite;
+    }
+
 
     protected PathAddress createSyslogHandlerAddress(String handlerName){
         return AUDIT_ADDR.append(PathElement.pathElement(ModelDescriptionConstants.SYSLOG_HANDLER, handlerName));

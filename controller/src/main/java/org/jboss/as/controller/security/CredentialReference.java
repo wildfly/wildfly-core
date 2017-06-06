@@ -319,7 +319,9 @@ public final class CredentialReference {
             // use credential store service
             String credentialStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(CREDENTIAL_STORE_CAPABILITY, credentialStoreName);
             credentialStoreServiceName = context.getCapabilityServiceName(credentialStoreCapabilityName, CredentialStore.class);
-            serviceBuilder.addDependency(ServiceBuilder.DependencyType.REQUIRED, credentialStoreServiceName);
+            if(serviceBuilder != null) {
+                serviceBuilder.addDependency(ServiceBuilder.DependencyType.REQUIRED, credentialStoreServiceName);
+            }
             serviceRegistry = context.getServiceRegistry(false);
         } else {
             credentialStoreServiceName = null;
