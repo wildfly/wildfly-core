@@ -30,20 +30,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.ResultHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -162,7 +168,10 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
         final OperationStepHandler streamHandler = new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final Path path = Paths.get(pathManager.resolveRelativePathEntry(LoggingOperations.getAddressName(operation), ServerEnvironment.SERVER_LOG_DIR));
+                final String name = LoggingOperations.getAddressName(operation);
+                final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+                validateFile(context, logDir, name);
+                final Path path = Paths.get(logDir, name);
                 try {
                     String uuid = context.attachResultStream("text/plain", Files.newInputStream(path));
                     context.getResult().set(uuid);
@@ -181,6 +190,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             final ModelNode model = context.getResult();
             final String name = LoggingOperations.getAddressName(operation);
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+            validateFile(context, logDir, name);
             final Path path = Paths.get(logDir, name);
             if (Files.notExists(path)) {
                 throw LoggingLogger.ROOT_LOGGER.logFileNotFound(name, logDir);
@@ -213,6 +223,9 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            final String fileName = LoggingOperations.getAddressName(operation);
+            final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
+            validateFile(context, logDir, fileName);
             // Validate the operation
             for (AttributeDefinition attribute : READ_LOG_FILE.getParameters()) {
                 attribute.validateOperation(operation);
@@ -222,7 +235,6 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             final boolean tail = TAIL.resolveModelAttribute(context, operation).asBoolean();
             final ModelNode encodingModel = ENCODING.resolveModelAttribute(context, operation);
             final String encoding = (encodingModel.isDefined() ? encodingModel.asString() : null);
-            final String fileName = LoggingOperations.getAddressName(operation);
             final File path = new File(pathManager.resolveRelativePathEntry(fileName, ServerEnvironment.SERVER_LOG_DIR));
 
             // The file must exist
@@ -340,6 +352,33 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
         @Override
         public void close() throws IOException {
             raf.close();
+        }
+    }
+
+    private static void validateFile(final OperationContext context, final String logDir, final String fileName) throws OperationFailedException {
+        // Ensure the resource exists
+        context.readResource(PathAddress.EMPTY_ADDRESS);
+        final Path dir = Paths.get(logDir);
+        final AtomicBoolean found = new AtomicBoolean();
+        try {
+            // Walk the log directory and only allow files within the log directory to be read
+            Files.walkFileTree(dir, Collections.singleton(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    final Path relativeFile = dir.relativize(file);
+                    if (fileName.equals(relativeFile.toString())) {
+                        found.set(true);
+                        return FileVisitResult.TERMINATE;
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            throw LoggingLogger.ROOT_LOGGER.failedToReadLogFile(e, fileName);
+        }
+        if (!found.get()) {
+            throw LoggingLogger.ROOT_LOGGER.readNotAllowed(fileName);
         }
     }
 }
