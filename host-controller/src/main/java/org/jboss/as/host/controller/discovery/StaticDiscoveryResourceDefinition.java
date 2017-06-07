@@ -29,7 +29,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.descriptions.HostResolver;
@@ -52,13 +51,8 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
     public static final SimpleAttributeDefinition PROTOCOL = DomainControllerWriteAttributeHandler.PROTOCOL; // protocol should allow null it appears
 
     private static SimpleAttributeDefinition getRequiredCopy(SimpleAttributeDefinition attr) {
-        return new SimpleAttributeDefinitionBuilder(attr.getName(), attr.getType())
+        return new SimpleAttributeDefinitionBuilder(attr)
         .setRequired(true)
-        .setAllowExpression(attr.isAllowExpression())
-        .setValidator(attr.getValidator())
-        .setFlags(attr.getFlags().toArray(new AttributeAccess.Flag[0]))
-        .setRequires(attr.getRequires())
-        .setDefaultValue(attr.getDefaultValue())
         .build();
     }
 

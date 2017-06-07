@@ -26,8 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FIL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 
-import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -109,7 +109,7 @@ public class ReadOperationNamesHandler implements OperationStepHandler {
     }
 
     static boolean isVisible(OperationEntry operationEntry, OperationContext context) {
-        EnumSet<OperationEntry.Flag> flags = operationEntry.getFlags();
+        Set<OperationEntry.Flag> flags = operationEntry.getFlags();
         return operationEntry.getType() == OperationEntry.EntryType.PUBLIC
                 && !flags.contains(OperationEntry.Flag.HIDDEN)
                 && (context.getProcessType() != ProcessType.DOMAIN_SERVER || flags.contains(OperationEntry.Flag.RUNTIME_ONLY)
