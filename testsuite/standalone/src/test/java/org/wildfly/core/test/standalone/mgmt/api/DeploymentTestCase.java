@@ -46,6 +46,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -116,18 +119,21 @@ public class DeploymentTestCase {
 
     @Before
     public void before() {
-        cleanUp();
+        cleanUp("test-deployment.jar");
+        cleanUp("test-auto-deployment.jar");
     }
 
     @After
     public void after() {
-        cleanUp();
+        cleanUp("test-deployment.jar");
+        cleanUp("test-auto-deployment.jar");
     }
 
     @Test
     public void testDeploymentStreamApi() throws Exception {
-        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
-        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
+        final String deploymentName = "test-deployment.jar";
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties2);
         archive2.addAsManifestResource(DeploymentTestCase.class.getPackage(), "marker.txt", "marker.txt");
 
         final ModelControllerClient client = managementClient.getControllerClient();
@@ -138,7 +144,7 @@ public class DeploymentTestCase {
             public void initialDeploy() {
                 final InputStream is = archive.as(ZipExporter.class).exportAsInputStream();
                 try {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan().add("test-deployment.jar", is).deploy("test-deployment.jar").build());
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().add(deploymentName, is).deploy(deploymentName).build());
                     awaitDeploymentExecution(future);
                 } finally {
                     if (is != null) {
@@ -155,7 +161,7 @@ public class DeploymentTestCase {
             public void fullReplace() {
                 final InputStream is = archive2.as(ZipExporter.class).exportAsInputStream();
                 try {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan().replace("test-deployment.jar", is).build());
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().replace(deploymentName, is).build());
                     awaitDeploymentExecution(future);
                 } finally {
                     if (is != null) {
@@ -170,18 +176,18 @@ public class DeploymentTestCase {
 
             @Override
             public void readContent(String path, String expectedValue) throws IOException {
-                readContentManaged(path, expectedValue, client);
+                readContentManaged(deploymentName, path, expectedValue, client);
             }
 
             @Override
             public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
-                browseContentManaged(path, expectedContents, depth, archive, client);
+                browseContentManaged(deploymentName, path, expectedContents, depth, archive, client);
             }
 
             @Override
             public void undeploy() {
-                Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy("test-deployment.jar")
-                        .remove("test-deployment.jar").build());
+                Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy(deploymentName)
+                        .remove(deploymentName).build());
                 awaitDeploymentExecution(future);
             }
         });
@@ -189,8 +195,9 @@ public class DeploymentTestCase {
 
     @Test
     public void testDeploymentFileApi() throws Exception {
-        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
-        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
+        final String deploymentName = "test-deployment.jar";
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties2);
         archive2.addAsManifestResource(DeploymentTestCase.class.getPackage(), "marker.txt", "marker.txt");
         final File dir = new File("target/archives");
 
@@ -201,36 +208,36 @@ public class DeploymentTestCase {
 
                 @Override
                 public void initialDeploy() throws IOException {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan().add("test-deployment.jar", exportArchive(archive))
-                            .deploy("test-deployment.jar").build());
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().add(deploymentName, exportArchive(archive))
+                            .deploy(deploymentName).build());
                     awaitDeploymentExecution(future);
                 }
 
                 @Override
                 public void fullReplace() throws IOException {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan().replace("test-deployment.jar", exportArchive(archive2)).build());
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().replace(deploymentName, exportArchive(archive2)).build());
                     awaitDeploymentExecution(future);
                 }
 
                 @Override
                 public void readContent(String path, String expectedValue) throws IOException {
-                    readContentManaged(path, expectedValue, client);
+                    readContentManaged(deploymentName, path, expectedValue, client);
                 }
 
                 @Override
                 public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
-                    browseContentManaged(path, expectedContents, depth, archive, client);
+                    browseContentManaged(deploymentName, path, expectedContents, depth, archive, client);
                 }
 
                 @Override
                 public void undeploy() {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy("test-deployment.jar").remove("test-deployment.jar").build());
+                    Future<?> future = manager.execute(manager.newDeploymentPlan().undeploy(deploymentName).remove(deploymentName).build());
                     awaitDeploymentExecution(future);
                 }
 
                 private File exportArchive(JavaArchive archive) {
                     dir.mkdirs();
-                    final File file = new File(dir, "test-deployment.jar");
+                    final File file = new File(dir, deploymentName);
                     if (file.exists()) {
                         file.delete();
                     }
@@ -295,11 +302,12 @@ public class DeploymentTestCase {
 
     @Test
     public void testFilesystemDeployment_Marker() throws Exception {
-        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
-        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
+        final String deploymentName = "test-deployment.jar";
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties2);
         final File dir = new File("target/archives");
         dir.mkdirs();
-        final File file = new File(dir, "test-deployment.jar");
+        final File file = new File(dir, deploymentName);
         archive.as(ZipExporter.class).exportTo(file, true);
 
         final File deployDir = createDeploymentDir("marker-deployments");
@@ -318,10 +326,10 @@ public class DeploymentTestCase {
                     // Copy file to deploy directory
                     Files.copy(file.toPath(), target.toPath());
                     // Create the .dodeploy file
-                    final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    final File dodeploy = new File(deployDir, deploymentName + ".dodeploy");
+                    final File isdeploying = new File(deployDir, deploymentName + ".isdeploying");
                     try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(dodeploy))){
-                        out.write("test-deployment.jar".getBytes());
+                        out.write(deploymentName.getBytes());
                     }
                     Assert.assertTrue(dodeploy.exists());
                     long timeout = System.currentTimeMillis() + TIMEOUT;
@@ -343,9 +351,9 @@ public class DeploymentTestCase {
                 @Override
                 public void fullReplace() throws IOException {
                     // Copy same deployment with changed property to deploy directory
-                    File target = new File(deployDir, "test-deployment.jar");
-                    final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+                    File target = new File(deployDir, deploymentName);
+                    final File dodeploy = new File(deployDir, deploymentName + ".dodeploy");
+                    final File isdeploying = new File(deployDir, deploymentName + ".jar.isdeploying");
                     archive2.as(ZipExporter.class).exportTo(target, true);
                     dodeploy.createNewFile();
                     Assert.assertTrue(dodeploy.exists());
@@ -368,19 +376,19 @@ public class DeploymentTestCase {
 
                 @Override
                 public void readContent(String path, String expectedValue) throws IOException {
-                    readContentManaged(path, expectedValue, client);
+                    readContentManaged(deploymentName, path, expectedValue, client);
                 }
 
                 @Override
                 public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
-                    browseContentManaged(path, expectedContents, depth, archive, client);
+                    browseContentManaged(deploymentName, path, expectedContents, depth, archive, client);
                 }
 
                 @Override
                 public void undeploy() {
-                    final File dodeploy = new File(deployDir, "test-deployment.jar.dodeploy");
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
-                    final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
+                    final File dodeploy = new File(deployDir, deploymentName + ".dodeploy");
+                    final File isdeploying = new File(deployDir, deploymentName +".isdeploying");
+                    final File undeployed = new File(deployDir, deploymentName+ ".undeployed");
                     long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!dodeploy.exists() && !isdeploying.exists() && deployed.exists()) {
@@ -427,10 +435,11 @@ public class DeploymentTestCase {
 
     @Test
     public void testFilesystemDeployment_Auto() throws Exception {
-        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
+        final String deploymentName = "test-auto-deployment.jar";
+        final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties);
         final File dir = new File("target/archives");
         dir.mkdirs();
-        final File file = new File(dir, "test-deployment.jar");
+        final File file = new File(dir, deploymentName);
         archive.as(ZipExporter.class).exportTo(file, true);
 
         final File deployDir = createDeploymentDir("auto-deployments");
@@ -439,9 +448,9 @@ public class DeploymentTestCase {
         final String scannerName = "autoZips";
         addDeploymentScanner(deployDir, client, scannerName, true);
         try {
-            final File target = new File(deployDir, "test-deployment.jar");
-            final File deployed = new File(deployDir, "test-deployment.jar.deployed");
-            final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
+            final File target = new File(deployDir, deploymentName);
+            final File deployed = new File(deployDir, deploymentName + ".deployed");
+            final File isdeploying = new File(deployDir, deploymentName + ".isdeploying");
             Assert.assertFalse(target.exists());
 
             testDeployments(true, new DeploymentExecutor() {
@@ -471,21 +480,15 @@ public class DeploymentTestCase {
                     // Copy same deployment with changed property to deploy directory
                     FileTime deployedlastModified = Files.getLastModifiedTime(deployed.toPath());
                     Assert.assertTrue(deployed.exists());
-                    final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties2);
-                    File target = new File(deployDir, "test-deployment.jar");
-                    FileTime deploymentLastModified = Files.getLastModifiedTime(target.toPath());
-                    archive2.as(ZipExporter.class).exportTo(target, true);
-                    //Some filesystems truncate the lastModified time to seconds instead of millisecond so we sleep 1 second to make sure the file update is detectable.
-                    if(Files.getLastModifiedTime(target.toPath()).toMillis() % 1000 == 0 && deployedlastModified.toMillis() % 1000 == 0) {
-                        try {
-                            Thread.sleep(1000L);
-                            System.out.println("***********************************************************************************************************");
-                        } catch (InterruptedException ex) {
-                        }
-                        archive2.as(ZipExporter.class).exportTo(target, true);
-                    }
-                    Assert.assertTrue("Deployment file has not been updated " + deploymentLastModified.toMillis() + " should be before "
-                            +  Files.getLastModifiedTime(target.toPath()).toMillis() , Files.getLastModifiedTime(target.toPath()).toInstant().isAfter(deploymentLastModified.toInstant()));
+                    final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(deploymentName, properties2);
+                    Path target = new File(deployDir, deploymentName).toPath();
+                    archive2.as(ZipExporter.class).exportTo(target.toFile(), true);
+                    final Instant deploymentLastModified = Files.getLastModifiedTime(target).toInstant();
+                    //Some filesystems truncate the lastModified time to seconds instead of millisecond so we touch the file sure the file update is detectable.
+                    Instant touch = Instant.now().plus(1, ChronoUnit.SECONDS).with(ChronoField.NANO_OF_SECOND, 0L);
+                    Files.setLastModifiedTime(target, FileTime.from(touch));
+                    Assert.assertTrue("Deployment file has not been updated " + deploymentLastModified + " should be before "
+                            +  Files.getLastModifiedTime(target).toInstant(), Files.getLastModifiedTime(target).toInstant().isAfter(deploymentLastModified));
                     // Wait until filesystem action gets picked up by scanner
                     boolean wasUndeployed = false;
                     long timeout = System.currentTimeMillis() + TIMEOUT + TIMEOUT;
@@ -501,7 +504,7 @@ public class DeploymentTestCase {
                             throw new RuntimeException(e);
                         }
                     }
-                    Assert.assertTrue("fullReplace step did not complete in a reasonably timely fashion", wasUndeployed);
+                    Assert.assertTrue("fullReplace step did not complete in a reasonably timely fashion " + Files.getLastModifiedTime(deployed.toPath()), wasUndeployed);
                     // Wait for redeploy to finish
                     timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
@@ -521,18 +524,18 @@ public class DeploymentTestCase {
 
                 @Override
                 public void readContent(String path, String expectedValue) throws IOException {
-                    readContentManaged(path, expectedValue, client);
+                    readContentManaged(deploymentName, path, expectedValue, client);
                 }
 
                 @Override
                 public void browseContent(String path, List<String> expectedContents, int depth, boolean archive) throws IOException {
-                    browseContentManaged(path, expectedContents, depth, archive, client);
+                    browseContentManaged(deploymentName, path, expectedContents, depth, archive, client);
                 }
 
                 @Override
                 public void undeploy() {
-                    final File isdeploying = new File(deployDir, "test-deployment.jar.isdeploying");
-                    final File undeployed = new File(deployDir, "test-deployment.jar.undeployed");
+                    final File isdeploying = new File(deployDir, deploymentName + ".isdeploying");
+                    final File undeployed = new File(deployDir, deploymentName + ".undeployed");
                     long timeout = System.currentTimeMillis() + TIMEOUT;
                     while(System.currentTimeMillis() <= timeout) {
                         if (!isdeploying.exists() && deployed.exists()) {
@@ -943,10 +946,10 @@ public class DeploymentTestCase {
         toClean.delete();
     }
 
-    private void readContentManaged(String path, String expectedValue, ModelControllerClient client) throws IOException {
+    private void readContentManaged(String deploymentName, String path, String expectedValue, ModelControllerClient client) throws IOException {
         ModelNode op = new ModelNode();
         op.get(ClientConstants.OP).set(ClientConstants.READ_CONTENT_OPERATION);
-        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, deploymentName);
         if (!path.isEmpty()) {
             op.get(PATH).set(path);
         }
@@ -986,10 +989,10 @@ public class DeploymentTestCase {
         }
     }
 
-    private void browseContentManaged(String path, List<String> expectedContents, int depth, boolean archive, ModelControllerClient client) throws IOException {
+    private void browseContentManaged(String deploymentName, String path, List<String> expectedContents, int depth, boolean archive, ModelControllerClient client) throws IOException {
         ModelNode op = new ModelNode();
         op.get(ClientConstants.OP).set(ClientConstants.DEPLOYMENT_BROWSE_CONTENT_OPERATION);
-        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, "test-deployment.jar");
+        op.get(ClientConstants.OP_ADDR).add(DEPLOYMENT, deploymentName);
         if (path != null && !path.isEmpty()) {
             op.get(PATH).set(path);
         }
@@ -1025,10 +1028,10 @@ public class DeploymentTestCase {
                     expectedContents.remove(contentPath);
                 }
             }
-            Assert.assertTrue("Unexpected files listed by /deployment=test-deployment.jar:browse-content(depth="
+            Assert.assertTrue("Unexpected files listed by /deployment=" + deploymentName + ":browse-content(depth="
                     + depth + ", archive=" + archive + ") : " + unexpectedContents.toString(),
                     unexpectedContents.isEmpty());
-            Assert.assertTrue("Expected files not listed by /deployment=test-deployment.jar:browse-content(depth="
+            Assert.assertTrue("Expected files not listed by /deployment=" + deploymentName + ":browse-content(depth="
                     + depth + ", archive=" + archive + ") : " + expectedContents.toString(),
                     expectedContents.isEmpty());
         } catch (InterruptedException e) {
@@ -1041,10 +1044,10 @@ public class DeploymentTestCase {
         }
     }
 
-    private void cleanUp() {
+    private void cleanUp(String deployment) {
         ModelNode op = new ModelNode();
         op.get(OP).set(READ_RESOURCE_OPERATION);
-        op.get(OP_ADDR).set(ModelDescriptionConstants.DEPLOYMENT, "test-deployment.jar");
+        op.get(OP_ADDR).set(ModelDescriptionConstants.DEPLOYMENT, deployment);
         ModelControllerClient client = managementClient.getControllerClient();
         ModelNode result;
         try {
@@ -1055,8 +1058,8 @@ public class DeploymentTestCase {
         if (result != null && Operations.isSuccessfulOutcome(result)) {
             ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
             Future<?> future = manager.execute(manager.newDeploymentPlan()
-                    .undeploy("test-deployment.jar")
-                    .remove("test-deployment.jar")
+                    .undeploy(deployment)
+                    .remove(deployment)
                     .build());
 
             awaitDeploymentExecution(future);
