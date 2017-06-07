@@ -138,7 +138,7 @@
         </subsystem>
         <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
             <authentication-client>
-                <authentication-configuration name="slaveHostSSLConfiguration" authentication-name="slave" realm="ManagementRealm" allow-sasl-mechanisms="DIGEST-MD5">
+                <authentication-configuration name="slaveHostSSLConfiguration" authentication-name="slave" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
                     <credential-reference clear-text="slave_us3r_password"/>
                 </authentication-configuration>
                 <authentication-context name="slaveHostSSLContext">

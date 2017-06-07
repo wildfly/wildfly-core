@@ -47,7 +47,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
-import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.security.CredentialReference;
@@ -126,33 +125,9 @@ class AuthenticationClientDefinitions {
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
-    static final SimpleAttributeDefinition ALLOW_ALL_MECHANISMS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ModelType.BOOLEAN, true)
-            .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
-            .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
-            .build();
-
-    static final StringListAttributeDefinition ALLOW_SASL_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
-            .setMinSize(0)
-            .setRequired(false)
-            .setAllowExpression(true)
-            .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
-            .build();
-
-    static final StringListAttributeDefinition FORBID_SASL_MECHANISMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.FORBID_SASL_MECHANISMS)
-            .setMinSize(0)
-            .setRequired(false)
-            .setAllowExpression(true)
-            .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS, ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR)
-            .build();
-
     static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setAlternatives(ElytronDescriptionConstants.ALLOW_ALL_MECHANISMS, ElytronDescriptionConstants.FORBID_SASL_MECHANISMS, ElytronDescriptionConstants.ALLOW_SASL_MECHANISMS)
             .build();
 
     static final SimpleMapAttributeDefinition MECHANISM_PROPERTIES = new SimpleMapAttributeDefinition.Builder(CommonAttributes.PROPERTIES)
@@ -172,10 +147,10 @@ class AuthenticationClientDefinitions {
             .build();
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
+            PORT, REALM, SECURITY_DOMAIN, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, ALLOW_ALL_MECHANISMS, ALLOW_SASL_MECHANISMS, FORBID_SASL_MECHANISMS, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
+            PORT, REALM, SECURITY_DOMAIN, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
 
     /* *************************************** */
     /* Authentication Context Attributes */
@@ -310,15 +285,6 @@ class AuthenticationClientDefinitions {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_DOMAIN_CAPABILITY, securityDomain, SecurityDomain.class), SecurityDomain.class, securityDomainInjector);
                     configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
                 }
-
-                boolean allowAllMechanisms = ALLOW_ALL_MECHANISMS.resolveModelAttribute(context, model).asBoolean();
-                configuration = allowAllMechanisms ? configuration.andThen(c -> c.allowAllSaslMechanisms()) : configuration;
-
-                List<String> allowedMechanisms = ALLOW_SASL_MECHANISMS.unwrap(context, model);
-                configuration = allowedMechanisms.size() > 0 ? configuration.andThen(c -> c.allowSaslMechanisms(allowedMechanisms.toArray(new String[allowedMechanisms.size()]))) : configuration;
-
-                List<String> forbiddenMechanisms = FORBID_SASL_MECHANISMS.unwrap(context, model);
-                configuration = forbiddenMechanisms.size() > 0 ? configuration.andThen(c -> c.forbidSaslMechanisms(forbiddenMechanisms.toArray(new String[forbiddenMechanisms.size()]))) : configuration;
 
                 String saslMechanismSelector = asStringIfDefined(context, SASL_MECHANISM_SELECTOR, model);
                 if (saslMechanismSelector != null) {

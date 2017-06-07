@@ -47,6 +47,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERIN
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER_ALIAS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER_CERTIFICATE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER_ITERATE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FINAL_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_ATTRIBUTE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_MANAGER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_MANAGERS;
@@ -65,9 +66,12 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NEW_ITEM
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NEW_ITEM_TEMPLATE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PASSWORD;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PATH;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POST_REALM_PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRE_REALM_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROTOCOLS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_NAME;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.RELATIVE_TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REQUIRED;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SEARCH_PATH;
@@ -376,6 +380,18 @@ class TlsParser {
                         break;
                     case TRUST_MANAGER:
                         SSLDefinitions.TRUST_MANAGER.parseAndSetParameter(value, addServerSSLContext, reader);
+                        break;
+                    case PRE_REALM_PRINCIPAL_TRANSFORMER:
+                        SSLDefinitions.PRE_REALM_PRINCIPAL_TRANSFORMER.parseAndSetParameter(value, addServerSSLContext, reader);
+                        break;
+                    case POST_REALM_PRINCIPAL_TRANSFORMER:
+                        SSLDefinitions.POST_REALM_PRINCIPAL_TRANSFORMER.parseAndSetParameter(value, addServerSSLContext, reader);
+                        break;
+                    case FINAL_PRINCIPAL_TRANSFORMER:
+                        SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER.parseAndSetParameter(value, addServerSSLContext, reader);
+                        break;
+                    case REALM_MAPPER:
+                        SSLDefinitions.REALM_MAPPER.parseAndSetParameter(value, addServerSSLContext, reader);
                         break;
                     case PROVIDERS:
                         SSLDefinitions.PROVIDERS.parseAndSetParameter(value, addServerSSLContext, reader);
@@ -893,6 +909,10 @@ class TlsParser {
                 SSLDefinitions.WRAP.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.KEY_MANAGER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.TRUST_MANAGER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.PRE_REALM_PRINCIPAL_TRANSFORMER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.POST_REALM_PRINCIPAL_TRANSFORMER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER.marshallAsAttribute(serverSSLContext, writer);
+                SSLDefinitions.REALM_MAPPER.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDERS.marshallAsAttribute(serverSSLContext, writer);
                 SSLDefinitions.PROVIDER_NAME.marshallAsAttribute(serverSSLContext, writer);
 

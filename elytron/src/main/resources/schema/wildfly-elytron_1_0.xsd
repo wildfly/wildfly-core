@@ -226,31 +226,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="allow-all-mechanisms" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Allow all SASL mechanisms to be used unless specifically forbidden.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allow-sasl-mechanisms" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of SASL mechanisms to be used unless specifically forbidden.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="forbid-sasl-mechanisms" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    List of SASL mechanisms to be disabled.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name = "sasl-mechanism-selector" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The SASL mechanism selector string.
+                    The SASL mechanism selector string. Allows to specify allowed/forbidden SASL mechanisms.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3319,7 +3298,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="pre-realm-principal-transformer" type="xs:string" >
+        <xs:attribute name="pre-realm-principal-transformer" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
                     A principal transformer to apply before the realm is selected.
@@ -4273,6 +4252,34 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to the TrustManager to be used by this SSLContext.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="pre-realm-principal-transformer" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A principal transformer to apply before the realm is selected.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="post-realm-principal-transformer" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A principal transformer to apply after the realm is selected.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="final-principal-transformer" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A final principal transformer to apply for this mechanism realm.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="realm-mapper" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to a RealmMapper to be used by this mechanism.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
