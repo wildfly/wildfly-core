@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.principal.NamePrincipal;
-import org.wildfly.security.auth.server.CloseableIterator;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -32,6 +31,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -138,11 +138,11 @@ public class LdapTestCase extends AbstractSubsystemTest {
         Assert.assertNotNull(securityRealm);
 
         Set<String> dns = new HashSet<>();
-        CloseableIterator<ModifiableRealmIdentity> it = securityRealm.getRealmIdentityIterator();
+        Iterator<ModifiableRealmIdentity> it = securityRealm.getRealmIdentityIterator();
         while (it.hasNext()) {
             dns.add(it.next().getAuthorizationIdentity().getAttributes().getFirst("userDn"));
         }
-        it.close();
+        ((AutoCloseable) it).close();
         System.out.println(dns);
         Assert.assertTrue(dns.contains("uid=plainUser,dc=users,dc=elytron,dc=wildfly,dc=org"));
         Assert.assertTrue(dns.contains("uid=refUser,dc=referredUsers,dc=elytron,dc=wildfly,dc=org"));
