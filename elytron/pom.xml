@@ -231,6 +231,26 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin><!-- to obtain jmockit jar path -->
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>getClasspathFilenames</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-javaagent:${org.jmockit:jmockit:jar}</argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
