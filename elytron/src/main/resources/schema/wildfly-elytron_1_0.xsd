@@ -3996,7 +3996,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="key-store" type="xs:string" use="optional">
+        <xs:attribute name="key-store" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
                     Reference to the KeyStore to use with the KeyManager.
@@ -4069,7 +4069,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="key-store" type="xs:string" use="optional">
+        <xs:attribute name="key-store" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
                     Reference to the KeyStore to use with the TrustManager.
