@@ -108,7 +108,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
         final AuthenticationContext injectedContext = this.authenticationContext.getOptionalValue();
         if (injectedContext != null) {
-            configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null, "connect");
+            configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null);
             try {
                 sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(uri, injectedContext);
             } catch (GeneralSecurityException e) {
