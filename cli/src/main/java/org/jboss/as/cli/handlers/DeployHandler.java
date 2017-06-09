@@ -75,6 +75,7 @@ public class DeployHandler extends DeploymentHandler {
     private final ArgumentWithListValue serverGroups;
     private final ArgumentWithoutValue allServerGroups;
     private final ArgumentWithoutValue disabled;
+    private final ArgumentWithoutValue enabled;
     private final ArgumentWithoutValue unmanaged;
     private final ArgumentWithValue script;
 
@@ -221,6 +222,18 @@ public class DeployHandler extends DeploymentHandler {
         }
         disabled.setAccessRequirement(mainAddPermission);
 
+        enabled = new ArgumentWithoutValue(this, "--enabled");
+        enabled.addRequiredPreceding(path);
+        enabled.addCantAppearAfter(serverGroups);
+        enabled.addCantAppearAfter(allServerGroups);
+        if (ctx.isDomainMode()) {
+            enabled.addCantAppearAfter(force);
+            enabled.addCantAppearAfter(disabled);
+            disabled.addCantAppearAfter(enabled);
+            force.addCantAppearAfter(enabled);
+        }
+        enabled.setAccessRequirement(mainAddPermission);
+
         unmanaged = new ArgumentWithoutValue(this, "--unmanaged");
         unmanaged.addRequiredPreceding(path);
         unmanaged.setAccessRequirement(mainAddPermission);
@@ -345,12 +358,21 @@ public class DeployHandler extends DeploymentHandler {
 
         final boolean force = this.force.isPresent(args);
         final boolean disabled = this.disabled.isPresent(args);
+        final boolean enabled = this.enabled.isPresent(args);
         final String serverGroups = this.serverGroups.getValue(args);
         final boolean allServerGroups = this.allServerGroups.isPresent(args);
-
+        if (enabled && disabled) {
+            throw new CommandFormatException("enabled and disabled can't be used at the same time");
+        }
+        Boolean disable = null;
+        if(disabled) {
+            disable = true;
+        } else if (enabled) {
+            disable = false;
+        }
         if (name.equals(ALL)) {
-            if (force || disabled) {
-                throw new CommandFormatException("force and disabled can't be used when deploying all disabled deployments");
+            if (force || disable != null) {
+                throw new CommandFormatException("force, enabled and disabled can't be used when deploying all deployments");
             }
             List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
             try {
@@ -362,14 +384,14 @@ public class DeployHandler extends DeploymentHandler {
         }
 
         if(force) {
-            if((disabled && ctx.isDomainMode()) || serverGroups != null || allServerGroups) {
+            if(((disabled || enabled) && ctx.isDomainMode()) || serverGroups != null || allServerGroups) {
                 throw new CommandFormatException(this.force.getFullName() +
                         " only replaces the content in the deployment repository and can't be used in combination with any of " +
-                        this.disabled.getFullName() + ", " + this.serverGroups.getFullName() + " or " + this.allServerGroups.getFullName() + '.');
+                        this.disabled.getFullName() + ", " + this.enabled.getFullName() + ", " + this.serverGroups.getFullName() + " or " + this.allServerGroups.getFullName() + '.');
             }
 
             if(Util.isDeploymentInRepository(name, client)) {
-                replaceDeployment(ctx, f, deploymentUrl, name, runtimeName, disabled, unmanaged);
+                replaceDeployment(ctx, f, deploymentUrl, name, runtimeName, disable, unmanaged);
                 return;
             } else if(ctx.isDomainMode()) {
                 // add deployment to the repository (disabled in domain (i.e. not associated with any sg))
@@ -380,10 +402,10 @@ public class DeployHandler extends DeploymentHandler {
             // standalone mode will add and deploy
         }
 
-        if(disabled) {
+        if(disable != null && disable) {
             if(serverGroups != null || allServerGroups) {
                 throw new CommandFormatException(this.serverGroups.getFullName() + " and " + this.allServerGroups.getFullName() +
-                        " can't be used in combination with " + this.disabled.getFullName() + '.');
+                        " can't be used in combination with " + this.disabled.getFullName() +  " or " + this.enabled.getFullName() + '.');
             }
 
             if(Util.isDeploymentInRepository(name, client)) {
@@ -505,6 +527,7 @@ public class DeployHandler extends DeploymentHandler {
                 buf.append("One of ");
                 if (f != null) {
                     buf.append(this.disabled.getFullName()).append(", ");
+                    buf.append(this.enabled.getFullName()).append(", ");
                 }
                 buf.append(this.allServerGroups.getFullName()).append(" or ").
                         append(this.serverGroups.getFullName()).append(" is missing.");
@@ -563,14 +586,27 @@ public class DeployHandler extends DeploymentHandler {
 
         final boolean force = this.force.isPresent(args);
         final boolean disabled = this.disabled.isPresent(args);
+        final boolean enabled = this.enabled.isPresent(args);
         final String serverGroups = this.serverGroups.getValue(args);
         final boolean allServerGroups = this.allServerGroups.isPresent(args);
         final boolean archive = isCliArchive(f);
 
+        if (enabled && disabled) {
+            throw new CommandFormatException("enabled and disabled can't be used at the same time");
+        }
+
+        Boolean disable = null;
+        if(disabled) {
+            disable = true;
+        } else if (enabled) {
+            disable = false;
+        }
+
         if (name.equals(ALL)) {
-            if (force || disabled) {
-                throw new CommandFormatException("force and disabled can't be used when deploying all disabled deployments");
+            if (force || disable != null) {
+                throw new CommandFormatException("force, enabled and disabled can't be used when deploying all disabled deployments");
             }
+
             List<String> sgList = getServerGroups(ctx, client, allServerGroups, serverGroups, f);
             try {
                 return buildDeployAllRequest(client, sgList);
@@ -583,10 +619,10 @@ public class DeployHandler extends DeploymentHandler {
             if(f == null) {
                 throw new OperationFormatException(this.force.getFullName() + " requires a filesystem path of the deployment to be added to the deployment repository.");
             }
-            if((disabled && ctx.isDomainMode()) || serverGroups != null || allServerGroups) {
+            if((disable != null && ctx.isDomainMode()) || serverGroups != null || allServerGroups) {
                 throw new OperationFormatException(this.force.getFullName() +
                         " only replaces the content in the deployment repository and can't be used in combination with any of " +
-                        this.disabled.getFullName() + ", " + this.serverGroups.getFullName() + " or " + this.allServerGroups.getFullName() + '.');
+                        this.disabled.getFullName() + ", " + this.enabled.getFullName() + ", " + this.serverGroups.getFullName() + " or " + this.allServerGroups.getFullName() + '.');
             }
             if (archive) {
                 throw new OperationFormatException(this.force.getFullName() + " can't be used in combination with a CLI archive.");
@@ -595,26 +631,32 @@ public class DeployHandler extends DeploymentHandler {
             if(Util.isDeploymentInRepository(name, client)) {
                 // in batch mode these kind of checks might be inaccurate
                 // because the previous commands and operations are not taken into account
-                return buildDeploymentReplace(f, name, runtimeName, disabled);
+                return buildDeploymentReplace(f, name, runtimeName, disable);
             } else {
                 // add deployment to the repository (enabled in standalone, disabled in domain (i.e. not associated with any sg))
-                return buildDeploymentAdd(f, name, runtimeName, unmanaged, ctx.isDomainMode() ? null : disabled);
+                return buildDeploymentAdd(f, name, runtimeName, unmanaged, ctx.isDomainMode() ? null : disable);
             }
         }
 
-        if(disabled) {
-            if(f == null) {
-                throw new OperationFormatException(this.disabled.getFullName() +
-                        " requires a filesystem path of the deployment to be added to the deployment repository.");
+        if(disable != null) {
+            final String flag;
+            if (disabled) {
+                flag = this.disabled.getFullName();
+            } else {
+                flag = this.enabled.getFullName();
+            }
+            if (f == null) {
+                throw new OperationFormatException(flag
+                        + " requires a filesystem path of the deployment to be added to the deployment repository.");
             }
 
-            if(serverGroups != null || allServerGroups) {
-                throw new OperationFormatException(this.serverGroups.getFullName() + " and " + this.allServerGroups.getFullName() +
-                        " can't be used in combination with " + this.disabled.getFullName() + '.');
+            if (serverGroups != null || allServerGroups) {
+                throw new OperationFormatException(this.serverGroups.getFullName() + " and " + this.allServerGroups.getFullName()
+                        + " can't be used in combination with " + flag + '.');
             }
 
             if (archive) {
-                throw new OperationFormatException(this.disabled.getFullName() + " can't be used in combination with a CLI archive.");
+                throw new OperationFormatException(flag + " can't be used in combination with a CLI archive.");
             }
 
             if(!ctx.isBatchMode() && Util.isDeploymentInRepository(name, client)) {
@@ -623,7 +665,7 @@ public class DeployHandler extends DeploymentHandler {
             }
 
             // add deployment to the repository disabled.
-            return buildDeploymentAdd(f, name, runtimeName, unmanaged, ctx.isDomainMode() ? null : Boolean.TRUE);
+            return buildDeploymentAdd(f, name, runtimeName, unmanaged, ctx.isDomainMode() ? null : disable);
         }
 
         if (archive) {
@@ -730,7 +772,7 @@ public class DeployHandler extends DeploymentHandler {
         return deployRequest;
     }
 
-    protected ModelNode buildDeploymentReplace(final File f, String name, String runtimeName, boolean disabled) throws OperationFormatException {
+    protected ModelNode buildDeploymentReplace(final File f, String name, String runtimeName, Boolean disable) throws OperationFormatException {
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(Util.FULL_REPLACE_DEPLOYMENT);
         request.get(Util.ADDRESS).setEmptyList();
@@ -738,14 +780,16 @@ public class DeployHandler extends DeploymentHandler {
         if(runtimeName != null) {
             request.get(Util.RUNTIME_NAME).set(runtimeName);
         }
-        request.get(Util.ENABLED).set(!disabled);
+        if(disable != null) {
+            request.get(Util.ENABLED).set(!disable);
+        }
 
         byte[] bytes = Util.readBytes(f);
         request.get(Util.CONTENT).get(0).get(Util.BYTES).set(bytes);
         return request;
     }
 
-    protected ModelNode buildDeploymentAdd(final File f, String name, String runtimeName, boolean unmanaged, Boolean disabled) throws OperationFormatException {
+    protected ModelNode buildDeploymentAdd(final File f, String name, String runtimeName, boolean unmanaged, Boolean disable) throws OperationFormatException {
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(Util.ADD);
         request.get(Util.ADDRESS, Util.DEPLOYMENT).set(name);
@@ -760,8 +804,8 @@ public class DeployHandler extends DeploymentHandler {
             byte[] bytes = Util.readBytes(f);
             request.get(Util.CONTENT).get(0).get(Util.BYTES).set(bytes);
         }
-        if (disabled != null) {
-            request.get(Util.ENABLED).set(!disabled);
+        if (disable != null) {
+            request.get(Util.ENABLED).set(!disable);
         }
         return request;
     }
@@ -814,7 +858,7 @@ public class DeployHandler extends DeploymentHandler {
         return request;
     }
 
-    protected void replaceDeployment(CommandContext ctx, final File f, final URL url, String name, final String runtimeName, boolean disabled, boolean unmanaged) throws CommandFormatException {
+    protected void replaceDeployment(CommandContext ctx, final File f, final URL url, String name, final String runtimeName, Boolean disable, boolean unmanaged) throws CommandFormatException {
         // replace
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(Util.FULL_REPLACE_DEPLOYMENT);
@@ -822,7 +866,9 @@ public class DeployHandler extends DeploymentHandler {
         if(runtimeName != null) {
             request.get(Util.RUNTIME_NAME).set(runtimeName);
         }
-        request.get(Util.ENABLED).set(!disabled);
+        if(disable != null) {
+            request.get(Util.ENABLED).set(!disable);
+        }
         final ModelNode content = request.get(Util.CONTENT).get(0);
         if(f == null) {
             if(url == null) {
