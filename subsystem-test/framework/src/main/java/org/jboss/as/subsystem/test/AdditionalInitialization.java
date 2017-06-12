@@ -40,7 +40,7 @@ public class AdditionalInitialization extends AdditionalParsers {
     public static class HostControllerAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
-         @Override
+        @Override
         protected ProcessType getProcessType() {
             return ProcessType.HOST_CONTROLLER;
         }

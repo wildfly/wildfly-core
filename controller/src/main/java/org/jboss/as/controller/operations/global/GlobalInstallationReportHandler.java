@@ -152,6 +152,7 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
         if (null != context.getProcessType()) {
             switch (context.getProcessType()) {
                 case HOST_CONTROLLER:
+                case EMBEDDED_HOST_CONTROLLER:
                     context.addStep(new OperationStepHandler() {
                         @Override
                         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

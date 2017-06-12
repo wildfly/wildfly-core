@@ -22,7 +22,6 @@
 package org.jboss.as.host.controller.operations;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 
 /**
@@ -38,6 +37,6 @@ public class HostSpecifiedInterfaceAddHandler extends SpecifiedInterfaceAddHandl
 
     @Override
     protected boolean requiresRuntime(OperationContext context) {
-        return context.getProcessType() == ProcessType.HOST_CONTROLLER;
+        return context.getProcessType().isHostController();
     }
 }

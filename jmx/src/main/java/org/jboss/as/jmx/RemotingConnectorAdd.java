@@ -28,6 +28,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -44,6 +45,11 @@ class RemotingConnectorAdd extends AbstractAddStepHandler {
 
     private RemotingConnectorAdd() {
         super(RemotingConnectorResource.REMOTE_JMX_CAPABILITY, RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT);
+    }
+
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+       return super.requiresRuntime(context) && (context.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER);
     }
 
     @Override

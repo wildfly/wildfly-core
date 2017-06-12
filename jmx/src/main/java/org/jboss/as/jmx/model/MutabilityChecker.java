@@ -37,7 +37,7 @@ abstract class MutabilityChecker {
     static MutabilityChecker create(ProcessType processType, boolean isMasterHc) {
         if (processType == ProcessType.STANDALONE_SERVER) {
             return new StandaloneServerChecker();
-        } else if (processType == ProcessType.HOST_CONTROLLER) {
+        } else if (processType.isHostController()) {
             return new HostControllerChecker(isMasterHc);
         }
         return new NonMutableChecker();

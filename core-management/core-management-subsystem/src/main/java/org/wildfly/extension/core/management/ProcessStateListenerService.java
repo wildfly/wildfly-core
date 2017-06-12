@@ -100,7 +100,7 @@ public class ProcessStateListenerService implements Service<Void> {
                 transition(oldState, newState);
             }
         };
-        if (processType != ProcessType.HOST_CONTROLLER && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+        if (!processType.isHostController()) {
             this.operationListener = new OperationListener() {
                 @Override
                 public void suspendStarted() {
@@ -232,7 +232,7 @@ public class ProcessStateListenerService implements Service<Void> {
         ProcessStateListenerService service = new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout);
         ServiceBuilder<Void> builder = serviceTarget.addService(SERVICE_NAME.append(listenerName), service)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateService);
-        if (processType != ProcessType.HOST_CONTROLLER && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
+        if (!processType.isHostController()) {
             builder.addDependency(SuspendController.SERVICE_NAME, SuspendController.class, service.suspendControllerInjectedValue);
         }
         Services.addServerExecutorDependency(builder, service.executorServiceValue);

@@ -145,11 +145,11 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         product.get(HOSTNAME).set(installation.getHostName());
         product.get(INSTANCE_ID).set(environment.getInstanceUuid().toString());
         PathAddress organizationAddress = PathAddress.EMPTY_ADDRESS;
-        if (context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+        if (context.getProcessType().isHostController()) {
             organizationAddress = PathAddress.pathAddress(HOST, environment.getHostControllerName());
         }
         ModelNode root = context.readResourceFromRoot(organizationAddress, false).getModel();
-        if (!root.hasDefined(ORGANIZATION) && context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+        if (!root.hasDefined(ORGANIZATION) && context.getProcessType().isHostController()) {
             root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false).getModel();
         }
         if (root.hasDefined(ORGANIZATION)) {
