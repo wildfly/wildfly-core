@@ -26,7 +26,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +49,10 @@ import org.aesh.readline.history.FileHistory;
 import org.aesh.readline.terminal.Key;
 import org.aesh.terminal.Terminal;
 import org.aesh.readline.terminal.TerminalBuilder;
+import org.aesh.readline.cursor.CursorListener;
+import org.aesh.readline.cursor.Line;
+import org.aesh.readline.cursor.Line.CursorTransactionBuilder;
+import org.aesh.readline.terminal.formatting.Color;
 import org.aesh.terminal.tty.Signal;
 import org.aesh.readline.tty.terminal.TerminalConnection;
 import org.aesh.terminal.Attributes;
@@ -82,6 +88,95 @@ import org.jboss.logmanager.Logger;
  * @author jdenise@redhat.com
  */
 public class ReadlineConsole implements Console {
+
+    private static final class CharacterMatcher {
+
+        private static final List<Character> endSeparators = new ArrayList<>();
+        private static final Map<Character, Character> endStartSeparators = new HashMap<>();
+
+        static {
+            endSeparators.add('}');
+            endSeparators.add(']');
+            endSeparators.add(')');
+            endStartSeparators.put('}', '{');
+            endStartSeparators.put(']', '[');
+            endStartSeparators.put(')', '(');
+        }
+
+        private TerminalConnection connection;
+
+        private int lastIndex = -1;
+
+        private Line lastLine;
+
+        private CharacterMatcher(TerminalConnection connection) {
+            this.connection = connection;
+        }
+
+        void clear() {
+            if (lastLine != null) {
+                if (lastIndex >= 0) {
+                    CursorTransactionBuilder builder = lastLine.newCursorTransactionBuilder();
+                    builder.colorize(lastIndex, Color.DEFAULT, Color.DEFAULT, false);
+                    builder.build().run();
+                }
+            }
+        }
+
+        void match(Line line) {
+            lastLine = line;
+            // Clear last colorized character.
+            clear();
+
+            char endChar = (char) line.getCharacterAtCursor();
+            if (endSeparators.contains(endChar)) {
+                String l = line.getLineToCursor();
+                char startChar = endStartSeparators.get(endChar);
+                int index = findStart(l, startChar, endChar);
+                if (index == -1) {
+                    // This one is a mismatch, colorize in red.
+                    lastIndex = colorizeWrongEnd(line);
+                    return;
+                }
+                lastIndex = colorize(line, index);
+            } else {
+                lastIndex = -1;
+            }
+        }
+
+        private int findStart(String l, char start, char end) {
+            int endCount = 0;
+            char[] chars = l.toCharArray();
+            for (int i = chars.length - 1; i >= 0; i--) {
+                char c = chars[i];
+                if (c == start) {
+                    if (endCount == 0) {
+                        return i;
+                    } else {
+                        endCount--;
+                    }
+                }
+                if (c == end) {
+                    endCount += 1;
+                }
+            }
+            return -1;
+        }
+
+        private int colorize(Line line, int startIndex) {
+            CursorTransactionBuilder builder = line.newCursorTransactionBuilder();
+            builder.colorize(startIndex, Color.DEFAULT, Color.GREEN, true);
+            builder.build().run();
+            return startIndex;
+        }
+
+        private int colorizeWrongEnd(Line line) {
+            CursorTransactionBuilder builder = line.newCursorTransactionBuilder();
+            builder.colorize(line.getCurrentCharacterIndex(), Color.RED, Color.DEFAULT, true);
+            builder.build().run();
+            return line.getCurrentCharacterIndex();
+        }
+    }
 
     private static final Logger LOG = Logger.getLogger(ReadlineConsole.class.getName());
 
@@ -405,6 +500,14 @@ public class ReadlineConsole implements Console {
 
     private final Consumer<Signal> interruptHandler;
 
+    private final CharacterMatcher matcher;
+    private final CursorListener cursorListener = new CursorListener() {
+        @Override
+        public void moved(Line line) {
+            matcher.match(line);
+        }
+    };
+
     ReadlineConsole(CommandContext cmdCtx, Settings settings) throws IOException {
         this.cmdCtx = cmdCtx;
         this.settings = settings;
@@ -440,6 +543,7 @@ public class ReadlineConsole implements Console {
         preProcessors.add(aliasPreProcessor);
         completions.add(new AliasCompletion(aliasManager));
         readline = new Readline();
+        matcher = new CharacterMatcher(connection);
     }
 
     @Override
@@ -863,7 +967,7 @@ public class ReadlineConsole implements Console {
                         loop();
                     }
                 });
-            }, completions, preProcessors, readlineHistory, null, READLINE_FLAGS);
+            }, completions, preProcessors, readlineHistory, cursorListener, READLINE_FLAGS);
         }
     }
 
