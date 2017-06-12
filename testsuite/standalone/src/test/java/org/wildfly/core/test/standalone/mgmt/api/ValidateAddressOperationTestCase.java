@@ -23,8 +23,6 @@ package org.wildfly.core.test.standalone.mgmt.api;
 
 import java.io.IOException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.as.test.integration.management.util.ModelUtil;
@@ -84,6 +82,6 @@ public class ValidateAddressOperationTestCase extends ContainerResourceMgmtTestB
         assertFalse(value.asBoolean());
         assertTrue(result.hasDefined(PROBLEM));
         final ModelNode problem = result.get(PROBLEM);
-        assertTrue(problem.asString().contains(ControllerLogger.ROOT_LOGGER.childResourceNotFound(PathElement.pathElement("wrong", "illegal"))));
+        assertTrue(problem.asString().matches("WFLYCTL0217.+\"wrong\".+\"illegal\".*"));
     }
 }
