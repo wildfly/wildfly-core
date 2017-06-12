@@ -22,15 +22,17 @@
 
 package org.jboss.as.controller.client.helpers.domain.impl;
 
+import java.io.BufferedInputStream;
 import java.io.DataOutput;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.domain.AddDeploymentPlanBuilder;
@@ -85,11 +87,8 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
 
     @Override
     public AddDeploymentPlanBuilder add(String name, File file) throws IOException, DuplicateDeploymentNameException {
-        final InputStream is = new FileStreamEntry(file);
-        try {
+        try (final InputStream is = new FileStreamEntry(file)) {
             return add(name, name, is);
-        } finally {
-            try { is.close(); } catch (Exception ignored) {}
         }
     }
 
@@ -181,11 +180,8 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
 
     @Override
     public RemoveDeploymentPlanBuilder replace(String name, File file) throws IOException {
-        final InputStream is = new FileStreamEntry(file);
-        try {
+        try (final InputStream is = new FileStreamEntry(file)) {
             return replace(name, name, is);
-        } finally {
-            try { is.close(); } catch (Exception ignored) {}
         }
     }
 
@@ -287,25 +283,26 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
     // Wrap the FIS in a streamEntry so that the controller-client has access to the underlying File
     private static class FileStreamEntry extends FilterInputStream implements InputStreamEntry {
 
-        private final File file;
+        private final Path file;
+
         private FileStreamEntry(final File file) throws IOException {
-            super(new FileInputStream(file)); // This stream will get closed regardless of autoClose
+            this(file.toPath());
+        }
+
+        private FileStreamEntry(final Path file) throws IOException {
+            super(Files.newInputStream(file)); // This stream will get closed regardless of autoClose
             this.file = file;
         }
 
         @Override
         public int initialize() throws IOException {
-            return (int) file.length();
+            return (int) Files.size(file);
         }
 
         @Override
         public void copyStream(final DataOutput output) throws IOException {
-            final FileInputStream is = new FileInputStream(file);
-            try {
-                StreamUtils.copyStream(is, output);
-                is.close();
-            } finally {
-                StreamUtils.safeClose(is);
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(file))) {
+                StreamUtils.copyStream(in, output);
             }
         }
 

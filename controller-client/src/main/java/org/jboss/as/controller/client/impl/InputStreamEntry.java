@@ -30,9 +30,9 @@ import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 /**
  * @author Emanuel Muckenhuber
@@ -113,16 +113,13 @@ public interface InputStreamEntry extends Closeable {
             this.autoClose = autoClose;
         }
 
+        @Override
         public synchronized int initialize() throws IOException {
             if(temp == null) {
                 temp = File.createTempFile("client", "stream");
-                final FileOutputStream os = new FileOutputStream(temp);
                 try {
-                    StreamUtils.copyStream(original, os);
-                    os.flush();
-                    os.close();
+                    return (int) Files.copy(original, temp.toPath());
                 } finally {
-                    StreamUtils.safeClose(os);
                     if(autoClose) {
                         StreamUtils.safeClose(original);
                     }

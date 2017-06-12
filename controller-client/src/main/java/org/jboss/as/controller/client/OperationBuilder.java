@@ -21,19 +21,21 @@
  */
 package org.jboss.as.controller.client;
 
-import org.jboss.as.controller.client.impl.InputStreamEntry;
-import org.jboss.as.protocol.StreamUtils;
+import java.io.BufferedInputStream;
+import java.io.DataOutput;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
-import java.io.DataOutput;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import org.jboss.as.controller.client.impl.InputStreamEntry;
+import org.jboss.as.protocol.StreamUtils;
 
 /**
  * Builder for a {@link Operation}.
@@ -65,6 +67,27 @@ public class OperationBuilder {
      * @return the operation builder
      */
     public OperationBuilder addFileAsAttachment(final File file) {
+        Assert.checkNotNullParam("file", file);
+        try {
+            FileStreamEntry entry = new FileStreamEntry(file);
+            if (inputStreams == null) {
+                inputStreams = new ArrayList<InputStream>();
+            }
+            inputStreams.add(entry);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
+    /**
+     * Associate a file with the operation. This will create a {@code FileInputStream}
+     * and add it as attachment.
+     *
+     * @param file the file
+     * @return the operation builder
+     */
+    public OperationBuilder addFileAsAttachment(final Path file) {
         Assert.checkNotNullParam("file", file);
         try {
             FileStreamEntry entry = new FileStreamEntry(file);
@@ -146,25 +169,25 @@ public class OperationBuilder {
     // Wrap the FIS in a streamEntry so that the controller-client has access to the underlying File
     private static class FileStreamEntry extends FilterInputStream implements InputStreamEntry {
 
-        private final File file;
+        private final Path file;
         private FileStreamEntry(final File file) throws IOException {
-            super(new FileInputStream(file)); // This stream will get closed regardless of autoClose
+            this(file.toPath());
+        }
+
+        private FileStreamEntry(final Path file) throws IOException {
+            super(Files.newInputStream(file)); // This stream will get closed regardless of autoClose
             this.file = file;
         }
 
         @Override
         public int initialize() throws IOException {
-            return (int) file.length();
+            return (int) Files.size(file);
         }
 
         @Override
         public void copyStream(final DataOutput output) throws IOException {
-            final FileInputStream is = new FileInputStream(file);
-            try {
-                StreamUtils.copyStream(is, output);
-                is.close();
-            } finally {
-                StreamUtils.safeClose(is);
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(file))) {
+                StreamUtils.copyStream(in, output);
             }
         }
 

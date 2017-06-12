@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -360,18 +361,15 @@ public class ExplodedDeploymentTestCase {
 
             @Override
             public void replaceContent() throws IOException {
-                String content = "";
-                try (StringWriter writer = new StringWriter()) {
-                    properties3.store(writer, "Replace Content");
-                    content = writer.toString();
+                Path tempFile = Files.createTempFile("test", ".properties");
+                try(OutputStream out = Files.newOutputStream(tempFile)) {
+                    properties3.store(out, "Replace Content");
                 }
-                try (InputStream is = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
-                    Future<?> future = manager.execute(manager.newDeploymentPlan()
-                            .addContentToDeployment("test-deployment.jar", Collections.singletonMap("service-activator-deployment.properties", is))
-                            .redeploy("test-deployment.jar")
-                            .build());
-                    awaitDeploymentExecution(future);
-                }
+                Future<?> future = manager.execute(manager.newDeploymentPlan()
+                        .addContentFileToDeployment("test-deployment.jar", Collections.singletonMap("service-activator-deployment.properties", tempFile))
+                        .redeploy("test-deployment.jar")
+                        .build());
+                awaitDeploymentExecution(future);
             }
 
             @Override

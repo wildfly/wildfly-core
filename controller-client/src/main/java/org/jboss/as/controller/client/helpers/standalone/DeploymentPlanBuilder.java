@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -249,12 +250,27 @@ public interface DeploymentPlanBuilder {
      * be deployed into the runtime. See {@link AddDeploymentPlanBuilder#andDeploy()}.
      *
      * @param deploymentName name by which the deployment is known in the model.
-     * @param contents tyhe content relative path and bytes.
+     * @param contents a map consisting of the content relative target path as key and the bytes as value.
      *
      * @return a builder that can continue building the overall deployment plan
      * @throws java.io.IOException
      */
     DeploymentPlanBuilder addContentToDeployment(String deploymentName, Map<String, InputStream> contents) throws IOException;
+
+    /**
+     * Indicates the content readable from the specified <code>Path</code>
+     * should be added to the content repository.
+     * <p>
+     * Note that this operation does not indicate the content should
+     * be deployed into the runtime. See {@link AddDeploymentPlanBuilder#andDeploy()}.
+     *
+     * @param deploymentName name by which the deployment is known in the model.
+     * @param files a map consisting of the content relative target path as key and the file as value.
+     *
+     * @return a builder that can continue building the overall deployment plan
+     * @throws java.io.IOException
+     */
+    DeploymentPlanBuilder addContentFileToDeployment(String deploymentName, Map<String, Path> files) throws IOException;
 
     /**
      * Indicates the content readable from the specified targetPath should be removed from the deployment with the
