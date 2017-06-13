@@ -36,10 +36,12 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -52,9 +54,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testBasic() throws Exception {
 
-        if (allCandidates.size() < 1) {
-            return;
-        }
+        Assume.assumeFalse(allCandidates.size() < 1);
 
         Map.Entry<NetworkInterface, Set<InetAddress>> correct = allCandidates.entrySet().iterator().next();
 
@@ -74,9 +74,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testMultipleCriteria() throws Exception {
 
-        if (nonLoopBackInterfaces.size() < 1 || loopbackInterfaces.size() < 1) {
-            return;
-        }
+        Assume.assumeFalse(nonLoopBackInterfaces.size() < 1 || loopbackInterfaces.size() < 1);
 
         Map<NetworkInterface, Set<InetAddress>> correct = new HashMap<NetworkInterface, Set<InetAddress>>();
         for (NetworkInterface ni : loopbackInterfaces) {
@@ -85,9 +83,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
             }
         }
 
-        if (correct.size() == 0) {
-            return;
-        }
+        Assume.assumeFalse(correct.size() == 0);
 
         Set<InterfaceCriteria> criterias = new HashSet<InterfaceCriteria>();
         criterias.add(UpInterfaceCriteria.INSTANCE);
@@ -107,9 +103,7 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testMultipleMatches() throws Exception {
 
-        if (allCandidates.size() < 1) {
-            return;
-        }
+        Assume.assumeFalse(allCandidates.size() < 1);
 
         Map<NetworkInterface, Set<InetAddress>> correct = new HashMap<NetworkInterface, Set<InetAddress>>();
         for (NetworkInterface ni : allInterfaces) {
@@ -118,11 +112,9 @@ public class OverallInterfaceCriteriaUnitTestCase {
             }
         }
 
-        if (correct.size() < 2) {
-            return;
-        }
+        Assume.assumeFalse(correct.size() < 2);
 
-        OverallInterfaceCriteria testee = new OverallInterfaceCriteria("test", Collections.singleton((InterfaceCriteria) UpInterfaceCriteria.INSTANCE));
+        OverallInterfaceCriteria testee = new OverallInterfaceCriteria("test", Collections.singleton(UpInterfaceCriteria.INSTANCE));
         Map<NetworkInterface, Set<InetAddress>> result = testee.getAcceptableAddresses(allCandidates);
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -137,13 +129,10 @@ public class OverallInterfaceCriteriaUnitTestCase {
     @Test
     public void testNoMatch() throws Exception {
 
-        if (loopbackInterfaces.size() < 1) {
-            return;
-        }
+        Assume.assumeFalse(loopbackInterfaces.size() < 1);
 
-        if (allCandidates.containsKey("bogus")) {
-            // LOL  Oh well; we won't run this test on this machine :-D
-            return;
+        for (NetworkInterface nic : allCandidates.keySet()) {
+            Assume.assumeFalse("bogus".equals(nic.getName()));
         }
 
 
@@ -154,5 +143,63 @@ public class OverallInterfaceCriteriaUnitTestCase {
         Map<NetworkInterface, Set<InetAddress>> result = testee.getAcceptableAddresses(allCandidates);
         assertNotNull(result);
         assertEquals(0, result.size());
+    }
+
+    /** WFCORE-2626 */
+    @Test
+    public void testInetAddressDuplicates() throws Exception {
+        Assume.assumeFalse(loopbackInterfaces.size() < 1);
+        Assume.assumeFalse(nonLoopBackInterfaces.size() < 1);
+
+        // Build up a fake candidate set where the same addresses appear associated with 2 NICs, one up, one down
+        // This simulates an environment with multiple NICs with the same address configured
+
+        NetworkInterface down = null;
+        NetworkInterface up = null;
+        Set<InetAddress> addresses = null;
+        Iterator<NetworkInterface> iter = allCandidates.keySet().iterator();
+        while ((down == null || up == null) && iter.hasNext()) {
+            NetworkInterface nic = iter.next();
+            if (down == null && !nic.isUp()) {
+                down = nic;
+            } else if (addresses == null && nic.isUp()) {
+                Set<InetAddress> nicAddresses = allCandidates.get(nic);
+                if (nicAddresses.size() > 0) {
+                    addresses = nicAddresses;
+                    up = nic;
+                }
+            }
+        }
+
+        Assume.assumeNotNull(down, up); // this will often fail, and this test is ignored
+        assert addresses != null;
+
+        Map<NetworkInterface, Set<InetAddress>> map = new HashMap<>();
+        map.put(up, addresses);
+        map.put(down, addresses);
+
+        // Validate that the 'up' requirement prevents InetAddressMatchInterfaceCriteria rejecting the 'duplicate' InetAddress
+        InetAddress toMatch = addresses.iterator().next();
+
+        Set<InterfaceCriteria> criterias = new LinkedHashSet<InterfaceCriteria>();
+        criterias.add(UpInterfaceCriteria.INSTANCE);
+        criterias.add(new InetAddressMatchInterfaceCriteria(toMatch));
+        OverallInterfaceCriteria testee = new OverallInterfaceCriteria("test", criterias);
+        Map<NetworkInterface, Set<InetAddress>> result = testee.getAcceptableAddresses(map);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey(up));
+        assertEquals(Collections.singleton(toMatch), result.get(up));
+
+        // Now reverse the order to show it doesn't matter
+        criterias = new LinkedHashSet<InterfaceCriteria>();
+        criterias.add(new InetAddressMatchInterfaceCriteria(toMatch));
+        criterias.add(UpInterfaceCriteria.INSTANCE);
+        testee = new OverallInterfaceCriteria("test", criterias);
+        result = testee.getAcceptableAddresses(map);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey(up));
+        assertEquals(Collections.singleton(toMatch), result.get(up));
     }
 }
