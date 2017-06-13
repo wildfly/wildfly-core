@@ -80,7 +80,10 @@ public class CLI {
      */
     public void connect() {
         doConnect(() -> {
-            return CommandContextFactory.getInstance().newCommandContext();
+            return CommandContextFactory.getInstance().
+                    newCommandContext(new CommandContextConfiguration.Builder()
+                    .setErrorOnInteract(false)
+                    .build());
         });
     }
 
@@ -93,7 +96,11 @@ public class CLI {
     public void connect(String username, char[] password) {
         doConnect(() -> {
             return CommandContextFactory.getInstance().
-                    newCommandContext(username, password);
+                    newCommandContext(new CommandContextConfiguration.Builder()
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setErrorOnInteract(false)
+                    .build());
         });
     }
 
@@ -125,6 +132,7 @@ public class CLI {
                             .setController(controller)
                     .setUsername(username)
                     .setPassword(password)
+                    .setErrorOnInteract(false)
                     .setClientBindAddress(clientBindAddress)
                     .build());
         });
@@ -190,6 +198,7 @@ public class CLI {
                             controllerPort))
                     .setUsername(username)
                     .setPassword(password)
+                    .setErrorOnInteract(false)
                     .setClientBindAddress(clientBindAddress)
                     .build());
         });
