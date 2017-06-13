@@ -22,17 +22,12 @@
 
 package org.jboss.as.controller.client.helpers.domain.impl;
 
-import java.io.BufferedInputStream;
-import java.io.DataOutput;
 import java.io.File;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.controller.client.helpers.domain.AddDeploymentPlanBuilder;
@@ -44,8 +39,7 @@ import org.jboss.as.controller.client.helpers.domain.ReplaceDeploymentPlanBuilde
 import org.jboss.as.controller.client.helpers.domain.ServerGroupDeploymentPlan;
 import org.jboss.as.controller.client.helpers.domain.ServerGroupDeploymentPlanBuilder;
 import org.jboss.as.controller.client.helpers.domain.UndeployDeploymentPlanBuilder;
-import org.jboss.as.controller.client.impl.InputStreamEntry;
-import org.jboss.as.protocol.StreamUtils;
+import org.jboss.as.controller.client.impl.InputStreamEntry.FileStreamEntry;
 import org.wildfly.common.Assert;
 
 /**
@@ -278,33 +272,5 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
         }
 
         return path.substring(idx + 1);
-    }
-
-    // Wrap the FIS in a streamEntry so that the controller-client has access to the underlying File
-    private static class FileStreamEntry extends FilterInputStream implements InputStreamEntry {
-
-        private final Path file;
-
-        private FileStreamEntry(final File file) throws IOException {
-            this(file.toPath());
-        }
-
-        private FileStreamEntry(final Path file) throws IOException {
-            super(Files.newInputStream(file)); // This stream will get closed regardless of autoClose
-            this.file = file;
-        }
-
-        @Override
-        public int initialize() throws IOException {
-            return (int) Files.size(file);
-        }
-
-        @Override
-        public void copyStream(final DataOutput output) throws IOException {
-            try (InputStream in = new BufferedInputStream(Files.newInputStream(file))) {
-                StreamUtils.copyStream(in, output);
-            }
-        }
-
     }
 }

@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.client.impl;
 
+import java.io.BufferedInputStream;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
 
@@ -30,9 +31,11 @@ import java.io.Closeable;
 import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * @author Emanuel Muckenhuber
@@ -43,6 +46,7 @@ public interface InputStreamEntry extends Closeable {
      * Initialize the input stream entry.
      *
      * @return the size of the underlying stream
+     * @throws java.io.IOException
      */
     int initialize() throws IOException;
 
@@ -165,4 +169,31 @@ public interface InputStreamEntry extends Closeable {
         }
     };
 
+    // Wrap the FIS in a streamEntry so that the controller-client has access to the underlying File
+    class FileStreamEntry extends FilterInputStream implements InputStreamEntry {
+
+        private final Path file;
+
+        public FileStreamEntry(final File file) throws IOException {
+            this(file.toPath());
+        }
+
+        public FileStreamEntry(final Path file) throws IOException {
+            super(Files.newInputStream(file)); // This stream will get closed regardless of autoClose
+            this.file = file;
+        }
+
+        @Override
+        public int initialize() throws IOException {
+            return (int) Files.size(file);
+        }
+
+        @Override
+        public void copyStream(final DataOutput output) throws IOException {
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(file))) {
+                StreamUtils.copyStream(in, output);
+            }
+        }
+
+    }
 }
