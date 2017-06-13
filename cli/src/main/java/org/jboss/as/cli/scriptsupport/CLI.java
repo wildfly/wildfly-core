@@ -77,7 +77,10 @@ public class CLI {
     public void connect() {
         checkAlreadyConnected();
         try {
-            ctx = CommandContextFactory.getInstance().newCommandContext();
+            ctx = CommandContextFactory.getInstance().newCommandContext(
+                new CommandContextConfiguration.Builder()
+                    .setErrorOnInteract(false)
+                    .build());
             ctx.connectController();
         } catch (CliInitializationException e) {
             throw new IllegalStateException("Unable to initialize command context.", e);
@@ -95,7 +98,12 @@ public class CLI {
     public void connect(String username, char[] password) {
         checkAlreadyConnected();
         try {
-            ctx = CommandContextFactory.getInstance().newCommandContext(username, password);
+            ctx = CommandContextFactory.getInstance().
+                newCommandContext(new CommandContextConfiguration.Builder()
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setErrorOnInteract(false)
+                    .build());
             ctx.connectController();
         } catch (CliInitializationException e) {
             throw new IllegalStateException("Unable to initialize command context.", e);
@@ -131,6 +139,7 @@ public class CLI {
                     .setController(controller)
                     .setUsername(username)
                     .setPassword(password)
+                    .setErrorOnInteract(false)
                     .setClientBindAddress(clientBindAddress)
                     .build());
             ctx.connectController();
@@ -193,6 +202,7 @@ public class CLI {
                     new CommandContextConfiguration.Builder().setController(constructUri(protocol, controllerHost, controllerPort))
                     .setUsername(username)
                     .setPassword(password)
+                    .setErrorOnInteract(false)
                     .setClientBindAddress(clientBindAddress)
                     .build());
             ctx.connectController();
