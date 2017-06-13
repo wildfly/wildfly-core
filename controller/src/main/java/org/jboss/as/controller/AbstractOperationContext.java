@@ -1372,7 +1372,7 @@ abstract class AbstractOperationContext implements OperationContext {
                 }
             } catch (Exception e) {
                 final String failedRollbackMessage =
-                        MGMT_OP_LOGGER.stepHandlerFailedRollback(handler, operation.asString(), address, e);
+                        MGMT_OP_LOGGER.stepHandlerFailedRollback(handler, operation.get(OP).asString(), address, e);
                 MGMT_OP_LOGGER.errorf(e, failedRollbackMessage);
                 report(MessageSeverity.ERROR, failedRollbackMessage);
             }
