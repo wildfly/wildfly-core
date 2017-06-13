@@ -31,10 +31,17 @@ import java.util.List;
  */
 public final class Attachments {
 
+    public interface ConsumeListener {
+
+        void consumed(Attachments attachments);
+    }
+
     public static final Attachments IMMUTABLE_ATTACHMENTS = new Attachments(true);
 
     private final boolean immutable;
     private final List<String> paths = new ArrayList<>();
+
+    private final List<ConsumeListener> listeners = new ArrayList<>();
 
     private Attachments(boolean immutable) {
         this.immutable = immutable;
@@ -42,6 +49,16 @@ public final class Attachments {
 
     public Attachments() {
         this(false);
+    }
+
+    public void addConsumer(ConsumeListener listener) {
+        listeners.add(listener);
+    }
+
+    public void done() {
+        for (ConsumeListener l : listeners) {
+            l.consumed(this);
+        }
     }
 
     public int addFileAttachment(String path) {

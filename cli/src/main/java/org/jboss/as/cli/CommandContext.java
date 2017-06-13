@@ -84,6 +84,27 @@ public interface CommandContext {
     void printLine(String message);
 
     /**
+     * Prints a string to the CLI's output.
+     *
+     * @param message the message to print
+     */
+    default void print(String message) {
+        printLine(message);
+    }
+
+    default void println(String message) {
+        printLine(message);
+    }
+
+    default String readLine(String prompt, boolean password) throws CommandLineException {
+        return null;
+    }
+
+    default int[] read() throws CommandLineException {
+        return null;
+    }
+
+    /**
      * Prints a collection of strings as columns to the CLI's output.
      * @param col  the collection of strings to print as columns.
      */
@@ -209,6 +230,20 @@ public interface CommandContext {
      * @throws CommandLineException in case the attempt to connect failed
      */
     void connectController(String controller) throws CommandLineException;
+
+    /**
+     * Connects to the controller specified.
+     *
+     * If the controller is null then the default specified on starting the CLI
+     * will be used, if no controller was specified on start up then the default
+     * defined in the CLI configuration will be used, if no default is defined
+     * then a connection to remote+http://localhost:9990 will be used instead.
+     *
+     * @param controller the controller to connect to
+     * @param clientAddress the address the client will bind to
+     * @throws CommandLineException in case the attempt to connect failed
+     */
+    void connectController(String controller, String clientAddress) throws CommandLineException;
 
     /**
      * Connects the controller client using the host and the port.
@@ -610,4 +645,13 @@ public interface CommandContext {
      */
     ModelNode execute(Operation op, String description)
             throws CommandLineException, IOException;
+
+    /**
+     * XXX JFDENISE, bind to proper configuration item.
+     *
+     * @return
+     */
+    default boolean isLegacyMode() {
+        return false;
+    }
 }

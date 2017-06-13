@@ -22,18 +22,19 @@
 package org.jboss.as.cli.handlers.batch;
 
 import java.util.List;
+import org.aesh.command.CommandException;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.batch.Batch;
-import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.aesh.commands.batch.BatchMvLineCommand;
 
 /**
  *
  * @author Alexey Loubyansky
  */
+@Deprecated
 public class BatchMoveLineHandler extends CommandHandlerWithHelp {
 
     public BatchMoveLineHandler() {
@@ -57,17 +58,6 @@ public class BatchMoveLineHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
 
-        BatchManager batchManager = ctx.getBatchManager();
-        if(!batchManager.isBatchActive()) {
-            throw new CommandFormatException("No active batch.");
-        }
-
-        Batch batch = batchManager.getActiveBatch();
-        final int batchSize = batch.size();
-        if(batchSize == 0) {
-            throw new CommandFormatException("The batch is empty.");
-        }
-
         List<String> arguments = ctx.getParsedCommandLine().getOtherProperties();
         if(arguments.isEmpty()) {
             throw new CommandFormatException("Missing line number.");
@@ -78,30 +68,29 @@ public class BatchMoveLineHandler extends CommandHandlerWithHelp {
         }
 
         String intStr = arguments.get(0);
-        final int lineNumber;
+        final Integer lineNumber;
         try {
             lineNumber = Integer.parseInt(intStr);
         } catch(NumberFormatException e) {
             throw new CommandFormatException("Failed to parse line number '" + intStr + "': " + e.getLocalizedMessage());
         }
 
-        if(lineNumber < 1 || lineNumber > batchSize) {
-            throw new CommandFormatException(lineNumber + " isn't in range [1.." + batchSize + "].");
-        }
-
         intStr = arguments.get(1);
-        final int toLineNumber;
+        final Integer toLineNumber;
         try {
             toLineNumber = Integer.parseInt(intStr);
         } catch(NumberFormatException e) {
             throw new CommandFormatException("Failed to parse line number '" + intStr + "': " + e.getLocalizedMessage());
         }
 
-        if(toLineNumber < 1 || toLineNumber > batchSize) {
-            throw new CommandFormatException(toLineNumber + " isn't in range [1.." + batchSize + "].");
+        try {
+            BatchMvLineCommand cmd = new BatchMvLineCommand();
+            cmd.currentLine = lineNumber;
+            cmd.newLine = toLineNumber;
+            cmd.execute(ctx);
+        } catch (CommandException ex) {
+            throw new CommandFormatException(ex.getLocalizedMessage());
         }
-
-        batch.move(lineNumber - 1, toLineNumber - 1);
     }
 
     @Override

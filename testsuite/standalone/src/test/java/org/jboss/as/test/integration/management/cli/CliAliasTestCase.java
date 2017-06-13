@@ -17,6 +17,7 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -204,6 +205,13 @@ public class CliAliasTestCase {
             cli.destroyProcess();
         }
         assertAliasSaved(aliasFile);
+    }
+
+    @Test
+    public void testNonInteractive() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
+        cli.sendLine("alias qecho=echo-dmr", false);
+        cli.sendLine("qecho :read-resource", false);
     }
 
     private void assertAliasSaved(File aliasFile) throws IOException {

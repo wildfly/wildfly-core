@@ -36,15 +36,27 @@ import org.jboss.as.cli.parsing.ParsingContext;
 public class HeaderListState extends DefaultParsingState {
 
     public static final HeaderListState INSTANCE = new HeaderListState();
+
+    private static final CharacterHandler LEAVE_PARSING_STATE_HANDLER = new CharacterHandler() {
+
+        @Override
+        public void handle(ParsingContext ctx)
+                throws CommandFormatException {
+            ctx.leaveState();
+            ctx.terminateParsing();
+        }
+    };
+
+    public static final HeaderListState INSTANCE_LEAVE_PARSING = new HeaderListState(HeaderState.INSTANCE, LEAVE_PARSING_STATE_HANDLER);
     public static final String ID = "HEADER_LIST";
 
     HeaderListState() {
-        this(HeaderState.INSTANCE);
+        this(HeaderState.INSTANCE, GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
     }
 
-    HeaderListState(final HeaderState headerState) {
+    HeaderListState(final HeaderState headerState, CharacterHandler leaveState) {
         super(ID);
-        putHandler('}', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
+        putHandler('}', leaveState);
         setDefaultHandler(new LineBreakHandler(false, false){
             protected void doHandle(ParsingContext ctx) throws CommandFormatException {
                 ctx.enterState(headerState);
@@ -54,7 +66,7 @@ public class HeaderListState extends DefaultParsingState {
             @Override
             public void handle(ParsingContext ctx) throws CommandFormatException {
                 if(ctx.getCharacter() == '}') {
-                    GlobalCharacterHandlers.LEAVE_STATE_HANDLER.handle(ctx);
+                    leaveState.handle(ctx);
                 }
             }});
         setIgnoreWhitespaces(true);

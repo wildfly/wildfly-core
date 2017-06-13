@@ -34,4 +34,7 @@ public interface ParsingStateCallbackHandler {
     void leavingState(ParsingContext ctx) throws CommandFormatException;
 
     void character(ParsingContext ctx) throws CommandFormatException;
+
+    default void endOfParsing(int location) {
+    }
 }

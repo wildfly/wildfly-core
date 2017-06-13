@@ -53,7 +53,7 @@ public class CliExtCommandHandler extends CommandHandlerWithHelp {
     }
 
     @Override
-    protected void printHelp(CommandContext ctx) throws CommandLineException {
+    public void printHelp(CommandContext ctx) throws CommandLineException {
         String filename = "help/" + NAME + ".txt";
         ClassLoader cl = WildFlySecurityManager.getClassLoaderPrivileged(CliExtCommandHandler.class);
         InputStream helpInput = cl.getResourceAsStream(filename);

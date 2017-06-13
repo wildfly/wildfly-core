@@ -68,7 +68,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     private int lastSeparatorIndex = -1;
     private int lastNotOperatorIndex = -1;
     private int lastChunkIndex = 0;
-
+    private int endOfParsing = -1;
     private boolean operationComplete;
     private String operationName;
     private OperationRequestAddress address;
@@ -161,6 +161,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         lastPropValue = null;
         separator = SEPARATOR_NONE;
         lastSeparatorIndex = -1;
+        endOfParsing = -1;
         lastChunkIndex = 0;
         format = null;
         originalLine = null;
@@ -682,5 +683,15 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
             otherArgs = new ArrayList<String>();
         }
         otherArgs.add(value);
+    }
+
+    @Override
+    public void endOfParsing(int location) {
+        endOfParsing = location;
+    }
+
+    @Override
+    public int getEndOfParsing() {
+        return endOfParsing;
     }
 }

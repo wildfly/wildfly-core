@@ -65,14 +65,24 @@ public class BatchFileTestCase {
     }
 
     @Test
-    public void testBatchFile() throws Exception {
+    @Deprecated
+    public void testBatchFile1() throws Exception {
+        testBatchFile("batch --file=", "run-batch", "discard-batch");
+    }
+
+    @Test
+    public void testBatchFile2() throws Exception {
+        testBatchFile("batch load-file ", "batch run", "batch discard");
+    }
+
+    public void testBatchFile(String batch, String run, String discard) throws Exception {
         createFile(new String[]{"/system-property=batchfiletest:add(value=true)"});
 
         final CommandContext ctx = CLITestUtil.getCommandContext();
         try {
             ctx.connectController();
-            ctx.handle("batch --file=" + TMP_FILE.getAbsolutePath());
-            final ModelNode batchRequest = ctx.buildRequest("run-batch");
+            ctx.handle(batch + TMP_FILE.getAbsolutePath());
+            final ModelNode batchRequest = ctx.buildRequest(run);
             assertTrue(batchRequest.hasDefined("operation"));
             assertEquals("composite", batchRequest.get("operation").asString());
             assertTrue(batchRequest.hasDefined("address"));
@@ -90,14 +100,24 @@ public class BatchFileTestCase {
             assertTrue(op.hasDefined("operation"));
             assertEquals("add", op.get("operation").asString());
             assertEquals("true", op.get("value").asString());
-            ctx.handle("discard-batch");
+            ctx.handle(discard);
         } finally {
             ctx.terminateSession();
         }
     }
 
     @Test
-    public void testRunBatchFile() throws Exception {
+    @Deprecated
+    public void testRunBatchFile1() throws Exception {
+        testRunBatchFile("run-batch --file=");
+    }
+
+    @Test
+    public void testRunBatchFile2() throws Exception {
+        testRunBatchFile("batch run-file ");
+    }
+
+    public void testRunBatchFile(String run) throws Exception {
         createFile(new String[]{"/system-property=batchfiletest:add(value=true)",
                 "",
                 "# comments",
@@ -106,7 +126,7 @@ public class BatchFileTestCase {
         final CommandContext ctx = CLITestUtil.getCommandContext();
         try {
             ctx.connectController();
-            final ModelNode batchRequest = ctx.buildRequest("run-batch --file=" + TMP_FILE.getAbsolutePath() + " --headers={allow-resource-service-restart=true}");
+            final ModelNode batchRequest = ctx.buildRequest(run + TMP_FILE.getAbsolutePath() + " --headers={allow-resource-service-restart=true}");
             assertTrue(batchRequest.hasDefined("operation"));
             assertEquals("composite", batchRequest.get("operation").asString());
             assertTrue(batchRequest.hasDefined("address"));

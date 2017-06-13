@@ -45,8 +45,9 @@ import org.jboss.as.cli.impl.FileSystemPathArgument;
 
 /**
  *
- * @author Alexey Loubyansky
+ * @author Alexey Loubyansky Dead code, no more in use.
  */
+@Deprecated
 public class BatchHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithoutValue l;

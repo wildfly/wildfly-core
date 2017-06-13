@@ -113,6 +113,7 @@ public class StateParser {
         String input;
         String originalInput;
         int location;
+        int endOfParsing = -1;
         char ch;
         ParsingStateCallbackHandler callbackHandler;
         ParsingState initialState;
@@ -148,6 +149,7 @@ public class StateParser {
             }
             initialState.getEndContentHandler().handle(this);
             initialState.getLeaveHandler().handle(this);
+            callbackHandler.endOfParsing(endOfParsing == -1 ? location - 1 : endOfParsing);
             return input;
         }
 
@@ -410,6 +412,12 @@ public class StateParser {
         @Override
         public boolean isDeactivated(char c) {
             return deactivated == c;
+        }
+
+        @Override
+        public void terminateParsing() {
+            endOfParsing = location;
+            location = input.length();
         }
     }
 }

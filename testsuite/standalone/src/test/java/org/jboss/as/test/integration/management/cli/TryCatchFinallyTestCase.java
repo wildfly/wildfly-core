@@ -70,18 +70,18 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.connectController();
             ctx.handle("try");
             ctx.handle("echo try block");
-            ctx.handle("fail try");
+            ctx.handle("fail_try");
             ctx.handle("catch");
             ctx.handle("echo catch block");
-            ctx.handle("fail catch");
+            ctx.handle("fail_catch");
             ctx.handle("finally");
             ctx.handle("echo finally block");
-            ctx.handle("fail finally");
+            ctx.handle("fail_finally");
             ctx.handleSafe("end-try");
             String out = cliOut.toString();
-            assertFalse(out.contains("fail try"));
-            assertTrue(out.contains("fail catch"));
-            assertTrue(out.contains("fail finally"));
+            assertFalse(out.contains("fail_try"));
+            assertTrue(out.contains("fail_catch"));
+            assertTrue(out.contains("fail_finally"));
         } finally {
             ctx.handleSafe(getRemovePropertyReq());
             ctx.terminateSession();
@@ -97,14 +97,14 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.connectController();
             ctx.handle("try");
             ctx.handle("echo try block");
-            ctx.handle("fail try");
+            ctx.handle("fail_try");
             ctx.handle("finally");
             ctx.handle("echo finally block");
-            ctx.handle("fail finally");
+            ctx.handle("fail_finally");
             ctx.handleSafe("end-try");
             String out = cliOut.toString();
-            assertTrue(out.contains("fail try"));
-            assertTrue(out.contains("fail finally"));
+            assertTrue(out.contains("fail_try"));
+            assertTrue(out.contains("fail_finally"));
         } finally {
             ctx.handleSafe(getRemovePropertyReq());
             ctx.terminateSession();

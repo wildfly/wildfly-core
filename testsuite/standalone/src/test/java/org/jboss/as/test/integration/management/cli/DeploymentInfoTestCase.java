@@ -75,12 +75,26 @@ public class DeploymentInfoTestCase extends AbstractCliTestBase {
         } catch (CommandFormatException cfe) {
 
         }
+
+        try {
+            ctx.buildRequest("deployment info --headers");
+            Assert.fail();
+        } catch (CommandFormatException cfe) {
+
+        }
     }
 
     @Test
     public void testBasicPathArgumentRecognitionAndParsing2() throws Exception {
         try {
             ctx.buildRequest("deployment-info --headers=false");
+            Assert.fail();
+        } catch (CommandFormatException cfe) {
+
+        }
+
+        try {
+            ctx.buildRequest("deployment info --headers=false");
             Assert.fail();
         } catch (CommandFormatException cfe) {
 
@@ -95,13 +109,28 @@ public class DeploymentInfoTestCase extends AbstractCliTestBase {
         } catch (CommandFormatException cfe) {
 
         }
+
+        try {
+            ctx.buildRequest("deployment info --headers=damn");
+            Assert.fail();
+        } catch (CommandFormatException cfe) {
+
+        }
     }
 
     @Test
     public void testBasicPathArgumentRecognitionAndParsing4() throws Exception {
-        ModelNode request = ctx.buildRequest("deployment-info --headers={}");
-        Assert.assertTrue(request.hasDefined(Util.OPERATION_HEADERS));
-        ModelNode opHeaders = request.get(Util.OPERATION_HEADERS);
-        Assert.assertTrue(opHeaders.asList().size() == 0);
+        {
+            ModelNode request = ctx.buildRequest("deployment-info --headers={}");
+            Assert.assertTrue(request.hasDefined(Util.OPERATION_HEADERS));
+            ModelNode opHeaders = request.get(Util.OPERATION_HEADERS);
+            Assert.assertTrue(opHeaders.asList().size() == 0);
+        }
+        {
+            ModelNode request = ctx.buildRequest("deployment info --headers={}");
+            Assert.assertTrue(request.hasDefined(Util.OPERATION_HEADERS));
+            ModelNode opHeaders = request.get(Util.OPERATION_HEADERS);
+            Assert.assertTrue(opHeaders.asList().size() == 0);
+        }
     }
 }

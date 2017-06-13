@@ -21,17 +21,19 @@
  */
 package org.jboss.as.cli.handlers.batch;
 
+import org.aesh.command.CommandException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.batch.BatchManager;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.aesh.commands.batch.BatchHoldbackCommand;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 
 /**
  *
  * @author Alexey Loubyansky
  */
+@Deprecated
 public class BatchHoldbackHandler extends CommandHandlerWithHelp {
 
     public BatchHoldbackHandler() {
@@ -42,7 +44,7 @@ public class BatchHoldbackHandler extends CommandHandlerWithHelp {
 
     @Override
     public boolean isAvailable(CommandContext ctx) {
-        if(!super.isAvailable(ctx)) {
+        if (!super.isAvailable(ctx)) {
             return false;
         }
         return ctx.isBatchMode();
@@ -53,24 +55,17 @@ public class BatchHoldbackHandler extends CommandHandlerWithHelp {
      */
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
-
-        BatchManager batchManager = ctx.getBatchManager();
-        if(!batchManager.isBatchActive()) {
-            throw new CommandFormatException("No active batch to holdback.");
-        }
-
         String name = null;
         ParsedCommandLine args = ctx.getParsedCommandLine();
-        if(args.hasProperties()) {
+        if (args.hasProperties()) {
             name = args.getOtherProperties().get(0);
         }
-
-        if(batchManager.isHeldback(name)) {
-            throw new CommandFormatException("There already is " + (name == null ? "unnamed" : "'" + name + "'") + " batch held back.");
-        }
-
-        if(!batchManager.holdbackActiveBatch(name)) {
-            throw new CommandFormatException("Failed to holdback the batch.");
+        try {
+            BatchHoldbackCommand cmd = new BatchHoldbackCommand();
+            cmd.batchName = name;
+            cmd.execute(ctx);
+        } catch (CommandException ex) {
+            throw new CommandFormatException(ex.getLocalizedMessage());
         }
     }
 }

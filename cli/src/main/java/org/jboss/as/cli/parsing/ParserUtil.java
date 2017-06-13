@@ -333,6 +333,11 @@ public class ParserUtil {
 //                System.out.println(ctx.getState().getId() + " '" + ctx.getCharacter() + "'");
                 buffer.append(ctx.getCharacter());
             }
+
+            @Override
+            public void endOfParsing(int location) {
+                handler.endOfParsing(location);
+            }
         };
     }
 }

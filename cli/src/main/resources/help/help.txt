@@ -96,9 +96,9 @@ Usage:
  --command-timeout  - The maximum amount of seconds the CLI will wait for a 
                       command to complete.
 
-For a list of available commands execute
+For a list of available commands, once the CLI is started, execute:
 
-  help --commands
+  commands list-available
 
 The resulting listing may depend on the current context. E.g. some of the
 commands require an established connection to the controller (standalone or
@@ -111,17 +111,17 @@ Here are some of the most basic supported commands:
 
  cn (or cd)             - change the current node path to the argument;
  connect                - connect to the server or domain controller;
- deploy                 - deploy an application;
+ deployment             - deploy/undeploy an application;
  help (or h)            - print this message;
  history                - print or disable/enable/clear the history expansion;
  ls                     - list the contents of the node path;
  pwn (or pwd)           - prints the current working node;
  quit (or q)            - quit the command line interface;
- undeploy               - undeploy an application;
  version                - prints the version and environment information.
 
-For a more detailed description of a specific command, execute the command with
-'--help' as the argument.
+For a more detailed description of a specific command execute:
+
+help <command name>
 
 Tab-completion is supported for the commands, just press the tab key to start.
 

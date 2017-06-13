@@ -21,14 +21,17 @@
  */
 package org.jboss.as.cli.handlers.batch;
 
+import org.aesh.command.CommandException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
+import org.jboss.as.cli.impl.aesh.commands.batch.BatchDiscardCommand;
 
 /**
  *
  * @author Alexey Loubyansky
  */
+@Deprecated
 public class BatchDiscardHandler extends CommandHandlerWithHelp {
 
     public BatchDiscardHandler() {
@@ -49,9 +52,10 @@ public class BatchDiscardHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
 
-        boolean result = ctx.getBatchManager().discardActiveBatch();
-        if(!result) {
-            throw new CommandFormatException("There is no active batch to discard.");
+        try {
+            new BatchDiscardCommand().execute(ctx);
+        } catch (CommandException ex) {
+            throw new CommandFormatException(ex.getLocalizedMessage());
         }
     }
 

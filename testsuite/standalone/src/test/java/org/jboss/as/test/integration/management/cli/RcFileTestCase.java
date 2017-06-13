@@ -114,7 +114,7 @@ public class RcFileTestCase {
         cli.executeNonInteractive();
 
         assertEquals("CLI Errors: '" + cli.getOutput() + "'", 0, cli.getProcessExitValue());
-        assertTrue(cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
+        assertTrue(cli.getOutput(), cli.getOutput().endsWith(VAR_VALUE + Util.LINE_SEPARATOR));
     }
 
     protected static void ensureRemoved(File f) {

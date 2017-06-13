@@ -78,6 +78,7 @@ import org.wildfly.security.manager.action.ReadPropertyAction;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012 Red Hat Inc.
  */
+@Deprecated
 public class PatchHandler extends CommandHandlerWithHelp {
 
     static final String PATCH = "patch";
