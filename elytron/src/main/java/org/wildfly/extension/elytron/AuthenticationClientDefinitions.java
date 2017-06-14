@@ -317,7 +317,15 @@ class AuthenticationClientDefinitions {
                         try {
                             CredentialSource cs = sourceSupplier.get();
                             if (cs != null) {
-                                return c.usePassword(cs.getCredential(PasswordCredential.class).getPassword());
+                                PasswordCredential passCredential = cs.getCredential(PasswordCredential.class);
+                                String alias = credentialReference.hasDefined(CredentialReference.ALIAS) ? credentialReference.get(CredentialReference.ALIAS).asString() : null;
+                                if (passCredential == null) {
+                                    if (alias != null && alias.length() > 0) {
+                                        throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
+                                    }
+                                    throw ROOT_LOGGER.credentialCannotBeResolved();
+                                }
+                                return c.usePassword(passCredential.getPassword());
                             } else {
                                 throw ROOT_LOGGER.credentialCannotBeResolved();
                             }
@@ -328,7 +336,16 @@ class AuthenticationClientDefinitions {
                 }
 
                 final Function<AuthenticationConfiguration, AuthenticationConfiguration> finalConfiguration = configuration;
-                return () -> finalConfiguration.apply(null);
+                return () -> {
+                    try {
+                        return finalConfiguration.apply(null);
+                    } catch (IllegalStateException e) {
+                        if (e.getCause() != null) {
+                            throw ROOT_LOGGER.unableToStartService((Exception)e.getCause());
+                        }
+                        throw ROOT_LOGGER.unableToStartService(e);
+                    }
+                };
             }
         };
         return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, add, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY);
