@@ -47,7 +47,7 @@ class ProviderAttributeDefinition {
 
     static final ObjectTypeAttributeDefinition LOADED_PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.LOADED_PROVIDER, NAME, INFO, VERSION)
         .setStorageRuntime()
-        .setRequired(true)
+        .setRequired(false)
         .build();
 
     /*
@@ -71,12 +71,12 @@ class ProviderAttributeDefinition {
         .build();
 
     private static final ObjectTypeAttributeDefinition FULL_PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDER, NAME, INFO, VERSION, SERVICES)
-        .setRequired(true)
+        .setRequired(false)
         .build();
 
     static final ObjectListAttributeDefinition LOADED_PROVIDERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.LOADED_PROVIDERS, FULL_PROVIDER)
         .setStorageRuntime()
-        .setRequired(true)
+        .setRequired(false)
         .build();
 
     /*
