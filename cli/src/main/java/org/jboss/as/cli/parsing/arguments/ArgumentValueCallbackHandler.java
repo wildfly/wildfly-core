@@ -125,6 +125,7 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             }
         } else if(QuotesState.ID.equals(stateId)) {
             flag ^= QUOTES;
+            currentState.quoted();
         } else if(EscapeCharacterState.ID.equals(stateId)) {
             flag ^= ESCAPE;
         }
@@ -169,6 +170,9 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
         boolean isOnSeparator();
 
         void enteredValue();
+
+        default void quoted() {
+        }
     }
 
     class BytesState implements ValueState {
@@ -259,6 +263,7 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
         protected boolean onSeparator;
 
         protected ModelNode child;
+        private boolean quoted;
 
         @Override
         public boolean isOnSeparator() {
@@ -348,6 +353,9 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             final ModelNode value = new ModelNode();
             if(buf != null) {
                 value.set(getTrimmedString());
+            } else if (quoted) {
+                // An empty String, just composed of 2 quotes.
+                value.set("");
             }
             return value;
         }
@@ -363,6 +371,11 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                 trimToSize = -1;
             }
             return buf.toString();
+        }
+
+        @Override
+        public void quoted() {
+            quoted = true;
         }
     }
 

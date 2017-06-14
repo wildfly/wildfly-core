@@ -256,6 +256,16 @@ public class ArgumentValueConverterTestCase {
         assertEquals("text", value.asString());
     }
 
+    @Test
+    public void testObject_TextEmptyValue() throws Exception {
+        final ModelNode obj = parseObject("{x=\"\"}");
+        assertNotNull(obj);
+        assertEquals(ModelType.OBJECT, obj.getType());
+        ModelNode val = obj.get("x");
+        assertEquals(ModelType.STRING, val.getType());
+        assertEquals("", val.asString());
+    }
+
     protected ModelNode parseObject(String value) throws CommandFormatException {
         return ArgumentValueConverter.DEFAULT.fromString(ctx, value);
     }
