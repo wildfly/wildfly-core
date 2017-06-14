@@ -43,7 +43,7 @@
             </key-store>
         </key-stores>
         <trust-managers>
-            <trust-manager name="CaTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore"/>
+            <trust-manager name="CaTrustManager" key-store="ElytronCaTruststore"/>
         </trust-managers>
         <client-ssl-contexts>
             <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
