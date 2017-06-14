@@ -97,6 +97,7 @@ public class ModelDescriptionConstants {
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
     public static final String CLASSIFICATION = "classification";
+    public static final String CLEAR_TEXT = "clear-text";
     public static final String CLIENT_CERT_STORE = "client-certificate-store";
     public static final String CLIENT_MAPPINGS = "client-mappings";
     public static final String CLONE = "clone";
