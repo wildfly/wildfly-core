@@ -372,12 +372,12 @@
              </xs:documentation>
          </xs:annotation>
          <xs:choice maxOccurs="unbounded">
-             <xs:element name="aggregate-providers" type="aggregateProivdersType" />
+             <xs:element name="aggregate-providers" type="aggregateProvidersType" />
              <xs:element name="provider-loader" type="providerLoaderType" />
          </xs:choice>
      </xs:complexType>
 
-    <xs:complexType name="aggregateProivdersType">
+    <xs:complexType name="aggregateProvidersType">
         <xs:annotation>
             <xs:documentation>
                 A PrincipalDecoder definition that is actually an aggregation of other PrincipalDecoders.
