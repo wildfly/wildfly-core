@@ -56,7 +56,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
  */
 public abstract class AbstractDeploymentUnitTestCase {
 
-    protected void addDeploymentScanner(int scanInterval) throws Exception {
+    protected void addDeploymentScanner(int scanInterval, boolean rollback) throws Exception {
         ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(EXTENSION, "org.jboss.as.deployment-scanner")));
         ModelNode result = executeOperation(addOp);
         assertEquals("Unexpected outcome of adding the test deployment scanner extension: " + addOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
@@ -64,7 +64,7 @@ public abstract class AbstractDeploymentUnitTestCase {
         result = executeOperation(addOp);
         assertEquals("Unexpected outcome of adding the test deployment scanner subsystem: " + addOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
         // add deployment scanner
-        final ModelNode op = getAddDeploymentScannerOp(scanInterval);
+        final ModelNode op = getAddDeploymentScannerOp(scanInterval, rollback);
         result = executeOperation(op);
         assertEquals("Unexpected outcome of adding the test deployment scanner: " + op, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
     }
@@ -101,9 +101,10 @@ public abstract class AbstractDeploymentUnitTestCase {
 
     protected abstract File getDeployDir();
 
-    protected ModelNode getAddDeploymentScannerOp(int scanInterval) {
+    protected ModelNode getAddDeploymentScannerOp(int scanInterval, boolean rollback) {
         final ModelNode op = Util.createAddOperation(getTestDeploymentScannerResourcePath());
         op.get("scan-interval").set(scanInterval);
+        op.get("runtime-failure-causes-rollback").set(rollback);
         op.get("path").set(getDeployDir().getAbsolutePath());
         return op;
     }

@@ -112,6 +112,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
             final boolean autoDeployXml = AUTO_DEPLOY_XML.resolveModelAttribute(context, operation).asBoolean();
             final long deploymentTimeout = DEPLOYMENT_TIMEOUT.resolveModelAttribute(context, operation).asLong();
             final int scanInterval = SCAN_INTERVAL.resolveModelAttribute(context, operation).asInt();
+            final boolean rollback = RUNTIME_FAILURE_CAUSES_ROLLBACK.resolveModelAttribute(context, operation).asBoolean();
 
             final ScheduledExecutorService scheduledExecutorService = createScannerExecutorService();
 
@@ -130,6 +131,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
                 bootTimeScanner.setAutoDeployXMLContent(autoDeployXml);
                 bootTimeScanner.setDeploymentTimeout(deploymentTimeout);
                 bootTimeScanner.setScanInterval(scanInterval);
+                bootTimeScanner.setRuntimeFailureCausesRollback(rollback);
             } else {
                 bootTimeScanner = null;
             }

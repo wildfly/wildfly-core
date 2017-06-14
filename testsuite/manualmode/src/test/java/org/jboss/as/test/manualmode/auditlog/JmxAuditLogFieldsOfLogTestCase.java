@@ -88,10 +88,10 @@ public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCa
     public void beforeTest() throws Exception {
         Files.deleteIfExists(FILE);
         // Start the server
-        container.start();
+        container.startInAdminMode();
         final ModelControllerClient client = container.getClient().getControllerClient();
 
-        final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
+        CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
 
         configureUser(client, compositeOp);
 

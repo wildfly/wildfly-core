@@ -767,7 +767,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
         @Override
         public void run() {
-            forcedUndeployScan();
+            if(rollbackOnRuntimeFailure) {
+                forcedUndeployScan();
+            }
             processStateService.removePropertyChangeListener(propertyChangeListener);
         }
     }

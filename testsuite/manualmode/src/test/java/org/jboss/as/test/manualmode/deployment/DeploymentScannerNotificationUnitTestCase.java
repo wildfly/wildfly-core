@@ -93,7 +93,7 @@ public class DeploymentScannerNotificationUnitTestCase extends AbstractDeploymen
                 createDeployment(deploymentOne, "org.jboss.modules");
 
                 // Add a new de
-                addDeploymentScanner(1000);
+                addDeploymentScanner(1000, false);
                 try {
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
