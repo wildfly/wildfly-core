@@ -123,14 +123,17 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
             }
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
-            if (securityRealm != null && username != null) {
+            if (securityRealm != null) {
                 // legacy remote-outbound-connection configuration
-                configuration = AuthenticationConfiguration.empty()
-                    .useName(username)
-                    .setSaslMechanismSelector(SaslMechanismSelector.DEFAULT.forbidMechanism(JBOSS_LOCAL_USER));
-                final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
-                if (callbackHandlerFactory != null) {
-                    configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
+                configuration = AuthenticationConfiguration.empty();
+                if (username != null) {
+                    configuration = configuration
+                            .useName(username)
+                            .setSaslMechanismSelector(SaslMechanismSelector.DEFAULT.forbidMechanism(JBOSS_LOCAL_USER));
+                    final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
+                    if (callbackHandlerFactory != null) {
+                        configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
+                    }
                 }
                 sslContext = securityRealm.getSSLContext();
             } else {
