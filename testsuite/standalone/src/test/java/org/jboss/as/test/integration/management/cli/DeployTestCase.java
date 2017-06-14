@@ -36,8 +36,10 @@ import static org.junit.Assert.assertEquals;
 import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.GenericArchive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
@@ -171,6 +173,27 @@ public class DeployTestCase {
         }
     }
 
+    @Test
+    public void testArchive() throws Exception {
+        File cliFile = createCliArchive();
+        try {
+            ctx.handle("deploy " + cliFile.getAbsolutePath());
+        } finally {
+            cliFile.delete();
+        }
+    }
+
+    @Test
+    public void testArchiveWithTimeout() throws Exception {
+        File cliFile = createCliArchive();
+        try {
+            ctx.handle("command-timeout set 2000");
+            ctx.handle("deploy " + cliFile.getAbsolutePath());
+        } finally {
+            cliFile.delete();
+        }
+    }
+
     private void checkDeployment(String name, boolean enabled) throws CommandFormatException, IOException {
         if (readDeploymentStatus(name) != enabled) {
             throw new CommandFormatException(name + " not in right state");
@@ -189,4 +212,14 @@ public class DeployTestCase {
         throw new CommandFormatException("No result for " + name);
     }
 
+    private static File createCliArchive() {
+
+        final GenericArchive cliArchive = ShrinkWrap.create(GenericArchive.class, "deploymentarchive.cli");
+        cliArchive.add(new StringAsset("ls -l"), "deploy.scr");
+
+        final String tempDir = TestSuiteEnvironment.getTmpDir();
+        final File file = new File(tempDir, "deploymentarchive.cli");
+        cliArchive.as(ZipExporter.class).exportTo(file, true);
+        return file;
+    }
 }

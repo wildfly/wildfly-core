@@ -633,7 +633,7 @@ public class CommandExecutor {
     }
 
     private final CommandContext ctx;
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private Future<?> handlerTask;
 
