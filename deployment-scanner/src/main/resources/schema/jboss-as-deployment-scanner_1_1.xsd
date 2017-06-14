@@ -20,7 +20,7 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<xs:schema xmlns="urn:jboss:domain:deployment-scanner:1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="urn:jboss:domain:deployment-scanner:1.1" version="1.0">
+<xs:schema xmlns="urn:jboss:domain:deployment-scanner:1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="urn:jboss:domain:deployment-scanner:1.1" version="1.1">
 
     <!-- The threads subsystem root element -->
     <xs:element name="subsystem" type="subsystem"/>
