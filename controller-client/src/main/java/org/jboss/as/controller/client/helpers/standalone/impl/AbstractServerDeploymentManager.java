@@ -50,6 +50,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.TARGET_PATH
 import static org.jboss.as.controller.client.helpers.ClientConstants.TO_REPLACE;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Map.Entry;
 import java.util.concurrent.Future;
 
@@ -110,15 +111,23 @@ public abstract class AbstractServerDeploymentManager implements ServerDeploymen
             switch (action.getType()) {
                 case ADD: {
                     configureDeploymentOperation(step, ADD, uniqueName);
-                    if(action.getNewContentFileName() != null && action.getContentStream() != null) {
+                    if (action.getNewContentFileName() != null && action.getContentStream() != null) {
                         step.get(RUNTIME_NAME).set(action.getNewContentFileName());
                         builder.addInputStream(action.getContentStream());
                         step.get(CONTENT).get(0).get(INPUT_STREAM_INDEX).set(stream++);
-                    } else if(action.getContents() != null && !action.getContents().isEmpty()) {
+                    } else if (action.getContents() != null && !action.getContents().isEmpty()) {
                         int index = 0;
-                        for(Entry<String, InputStream> content : action.getContents().entrySet()) {
+                        for (Entry<String, InputStream> content : action.getContents().entrySet()) {
                             step.get(RUNTIME_NAME).set(content.getKey());
                             builder.addInputStream(content.getValue());
+                            step.get(CONTENT).get(index).get(INPUT_STREAM_INDEX).set(stream++);
+                            index++;
+                        }
+                    } else if (action.getFiles() != null && !action.getFiles().isEmpty()) {
+                        int index = 0;
+                        for (Entry<String, Path> fileEntry : action.getFiles().entrySet()) {
+                            step.get(RUNTIME_NAME).set(fileEntry.getKey());
+                            builder.addFileAsAttachment(fileEntry.getValue());
                             step.get(CONTENT).get(index).get(INPUT_STREAM_INDEX).set(stream++);
                             index++;
                         }
@@ -166,6 +175,12 @@ public abstract class AbstractServerDeploymentManager implements ServerDeploymen
                         builder.addInputStream(content.getValue());
                         step.get(CONTENT).get(i).get(INPUT_STREAM_INDEX).set(stream++);
                         step.get(CONTENT).get(i).get(TARGET_PATH).set(content.getKey());
+                        i++;
+                    }
+                    for (Entry<String, Path> fileEntry : action.getFiles().entrySet()) {
+                        builder.addFileAsAttachment(fileEntry.getValue());
+                        step.get(CONTENT).get(i).get(INPUT_STREAM_INDEX).set(stream++);
+                        step.get(CONTENT).get(i).get(TARGET_PATH).set(fileEntry.getKey());
                         i++;
                     }
                     break;
