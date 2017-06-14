@@ -1481,7 +1481,7 @@
                 <xs:attribute name="levels" type="xs:int" default="2">
                     <xs:annotation>
                         <xs:documentation>
-                            The number of levels of directory to apply
+                            The number of levels of directory hashing to apply
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
