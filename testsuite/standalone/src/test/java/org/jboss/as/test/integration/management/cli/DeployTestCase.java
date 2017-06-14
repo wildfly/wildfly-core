@@ -29,7 +29,10 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
+
 import static org.jboss.as.cli.Util.RESULT;
+import static org.junit.Assert.assertEquals;
+
 import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -38,7 +41,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
+
 import static org.junit.Assert.assertTrue;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -137,17 +142,51 @@ public class DeployTestCase {
 
     }
 
+    @Test
+    public void testRedeploy() throws Exception {
+        boolean enabled = readDeploymentStatus(cliTestApp1War.getName());
+        WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
+        war.addAsWebResource(new StringAsset("Version0.1"), "page.html");
+        cliTestApp1War.delete();
+        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
+        {
+            ctx.handle("deploy --force " + cliTestApp1War.getAbsolutePath());
+            checkDeployment(cliTestApp1War.getName(), enabled);
+        }
+        String op;
+        if(enabled) {
+            op = "undeploy";
+        } else {
+            op = "deploy";
+        }
+        ctx.handle("/deployment=" + cliTestApp1War.getName() + ':'+op+"()");
+        assertEquals(!enabled, readDeploymentStatus(cliTestApp1War.getName()));
+         war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
+        war.addAsWebResource(new StringAsset("Version0.2"), "page.html");
+        cliTestApp1War.delete();
+        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
+        {
+            ctx.handle("deploy --force " + cliTestApp1War.getAbsolutePath());
+            checkDeployment(cliTestApp1War.getName(), !enabled);
+        }
+    }
+
     private void checkDeployment(String name, boolean enabled) throws CommandFormatException, IOException {
+        if (readDeploymentStatus(name) != enabled) {
+            throw new CommandFormatException(name + " not in right state");
+        }
+    }
+
+     private boolean readDeploymentStatus(String name) throws CommandFormatException, IOException {
         ModelNode mn = ctx.buildRequest("/deployment=" + name + ":read-attribute(name=enabled)");
         ModelNode response = ctx.getModelControllerClient().execute(mn);
         if (response.hasDefined(Util.OUTCOME) && response.get(Util.OUTCOME).asString().equals(Util.SUCCESS)) {
             if (!response.hasDefined(RESULT)) {
                 throw new CommandFormatException("No result for " + name);
             }
-            if (!response.get(RESULT).asBoolean() == enabled) {
-                throw new CommandFormatException(name + " not in right state");
-            }
+            return response.get(RESULT).asBoolean() ;
         }
+        throw new CommandFormatException("No result for " + name);
     }
 
 }

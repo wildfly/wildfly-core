@@ -66,11 +66,17 @@ ARGUMENTS
                      replacement of the existing deployment with the one
                      specified in the command arguments.
 
- --disabled       - indicates that the deployment has to be added to the
-                    repository disabled. Not supported in a managed domain.
+ --disabled        - indicates that the deployment has to be added to the
+                     repository disabled. Not supported in a managed domain.
+                     If used in combination with the '--force' or '-f' argument
+                     and the existing deployment is not disabled, the existing
+                     deployment will be undeployed.
+
+ --enabled        - indicates that the deployment has to be added to the
+                    repository enabled. Not supported in a managed domain.
                     If used in combination with the '--force' or '-f' argument
-                    and the existing deployment is not disabled, the existing
-                    deployment will be undeployed.
+                    and the existing deployment is not enabled, the existing
+                    deployment will be deployed.
 
  --unmanaged      - if this argument is not specified, the deployment content
                     will be copied (i.e. uploaded) to the server's deployment
