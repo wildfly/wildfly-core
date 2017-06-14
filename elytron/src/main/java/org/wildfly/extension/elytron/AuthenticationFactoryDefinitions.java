@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -206,7 +206,7 @@ class AuthenticationFactoryDefinitions {
         if ( ! mechanismConfiguration.isDefined()) {
             return Collections.emptySet();
         }
-        Set<String> mechanismNames = new HashSet<>();
+        Set<String> mechanismNames = new LinkedHashSet<>();
         for (ModelNode current : mechanismConfiguration.asList()) {
             final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, current);
             if (mechanismName == null) {
@@ -462,8 +462,13 @@ class AuthenticationFactoryDefinitions {
                         serverFactory = new FilterMechanismSaslServerFactory(serverFactory, true, supportedMechanisms);
                     }
 
-                    // sort mechanisms by strength
-                    serverFactory = new SortedMechanismSaslServerFactory(serverFactory, AuthenticationFactoryDefinitions::compare);
+                    if (! supportedMechanisms.isEmpty()) {
+                        // sort mechanisms using the configured order
+                        serverFactory = new SortedMechanismSaslServerFactory(serverFactory, supportedMechanisms.toArray(new String[supportedMechanisms.size()]));
+                    } else {
+                        // no mechanisms were configured, sort mechanisms by strength
+                        serverFactory = new SortedMechanismSaslServerFactory(serverFactory, AuthenticationFactoryDefinitions::compare);
+                    }
 
                     SaslAuthenticationFactory.Builder builder = SaslAuthenticationFactory.builder()
                             .setSecurityDomain(securityDomainInjector.getValue())
