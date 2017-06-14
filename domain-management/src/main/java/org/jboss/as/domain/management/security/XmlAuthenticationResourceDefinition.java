@@ -38,14 +38,14 @@ import org.jboss.as.controller.registry.OperationEntry;
 public class XmlAuthenticationResourceDefinition extends SimpleResourceDefinition {
 
     public XmlAuthenticationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.USERS),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.USERS),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authentication.xml"),
-                new SecurityRealmChildAddHandler(true, false),
-                new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authentication.xml"))
+                .setAddHandler(new SecurityRealmChildAddHandler(true, false))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

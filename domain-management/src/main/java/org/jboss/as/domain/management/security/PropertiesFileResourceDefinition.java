@@ -60,7 +60,15 @@ public abstract class PropertiesFileResourceDefinition extends SimpleResourceDef
             final ResourceDescriptionResolver descriptionResolver, final OperationStepHandler addHandler,
             final OperationStepHandler removeHandler, final OperationEntry.Flag addRestartLevel,
             final OperationEntry.Flag removeRestartLevel) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel);
+        this(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(addHandler)
+                .setAddRestartLevel(addRestartLevel)
+                .setRemoveHandler(removeHandler)
+                .setRemoveRestartLevel(removeRestartLevel));
+    }
+
+    public PropertiesFileResourceDefinition(final Parameters parameters) {
+        super(parameters);
     }
 
     @Override

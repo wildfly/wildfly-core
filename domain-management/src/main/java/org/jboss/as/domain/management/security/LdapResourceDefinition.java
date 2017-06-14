@@ -49,7 +49,14 @@ public abstract class LdapResourceDefinition extends SimpleResourceDefinition {
 
     public LdapResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver,
             OperationStepHandler addHandler, OperationStepHandler removeHandler, Flag addRestartLevel, Flag removeRestartLevel) {
-        super(pathElement, descriptionResolver, addHandler, removeHandler, addRestartLevel, removeRestartLevel);
+        this(new Parameters(pathElement, descriptionResolver)
+                .setAddHandler(addHandler)
+                .setAddRestartLevel(addRestartLevel)
+                .setRemoveHandler(removeHandler)
+                .setRemoveRestartLevel(removeRestartLevel));
     }
 
+    public LdapResourceDefinition(final Parameters parameters) {
+        super(parameters);
+    }
 }

@@ -57,12 +57,14 @@ public class LdapAuthorizationResourceDefinition extends LdapResourceDefinition 
     static final LdapAuthorizationChildRemoveHandler REMOVE_INSTANCE = new LdapAuthorizationChildRemoveHandler();
 
     public LdapAuthorizationResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.AUTHORIZATION, ModelDescriptionConstants.LDAP),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.AUTHORIZATION, ModelDescriptionConstants.LDAP),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.authorization.ldap"),
-                new LdapAuthorizationChildAddHandler(true, ATTRIBUTE_DEFINITIONS), new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.authorization.ldap"))
+                .setAddHandler(new LdapAuthorizationChildAddHandler(true, ATTRIBUTE_DEFINITIONS))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
 

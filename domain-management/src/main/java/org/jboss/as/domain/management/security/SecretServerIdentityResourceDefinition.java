@@ -60,12 +60,14 @@ public class SecretServerIdentityResourceDefinition extends SimpleResourceDefini
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {VALUE, CREDENTIAL_REFERENCE};
 
     public SecretServerIdentityResourceDefinition() {
-        super(PathElement.pathElement(SERVER_IDENTITY, SECRET),
+        super(new Parameters(PathElement.pathElement(SERVER_IDENTITY, SECRET),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core", "management", "security-realm", "server-identity", "secret"),
-                new SecurityRealmChildAddHandler(false, false, ATTRIBUTE_DEFINITIONS), new SecurityRealmChildRemoveHandler(false),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES, OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core", "management", "security-realm", "server-identity", "secret"))
+                .setAddHandler(new SecurityRealmChildAddHandler(false, false, ATTRIBUTE_DEFINITIONS))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(false))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override

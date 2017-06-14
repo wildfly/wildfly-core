@@ -75,14 +75,14 @@ public class KeytabResourceDefinition extends SimpleResourceDefinition {
     private static AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PATH, RELATIVE_TO, FOR_HOSTS, DEBUG };
 
     KeytabResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.KEYTAB),
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.KEYTAB),
                 ControllerResolver.getDeprecatedResolver(SecurityRealmResourceDefinition.DEPRECATED_PARENT_CATEGORY,
-                        "core.management.security-realm.server-identity.kerberos.keytab"),
-                new SecurityRealmChildAddHandler(false, false, ATTRIBUTES),
-                new SecurityRealmChildRemoveHandler(true),
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES,
-                OperationEntry.Flag.RESTART_RESOURCE_SERVICES);
-        setDeprecated(ModelVersion.create(1, 7));
+                        "core.management.security-realm.server-identity.kerberos.keytab"))
+                .setAddHandler(new SecurityRealmChildAddHandler(false, false, ATTRIBUTES))
+                .setRemoveHandler(new SecurityRealmChildRemoveHandler(true))
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .setDeprecatedSince(ModelVersion.create(1, 7)));
     }
 
     @Override
