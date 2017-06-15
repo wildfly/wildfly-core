@@ -33,7 +33,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -1379,5 +1378,27 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 203, value = "The domain configuration was successfully applied, but restart is required before changes become active.")
     void domainModelAppliedButRestartIsRequired();
+
+    /**
+     * Logs a warning message indicating no logging configuration file could be found. Logging may not be configured
+     * until the logging subsystem is activated on the server.
+     *
+     * @param serverName the name of the server the configuration file could not be found for
+     */
+    @LogMessage(level = Level.WARN)
+    @Message(id = 204, value = "No logging configuration file could be found for the servers initial boot. Logging will " +
+            "not be configured until the logging subsystem is activated for the server %s")
+    void serverLoggingConfigurationFileNotFound(String serverName);
+
+    /**
+     * Logs an error message indicating the {@code -Dlogging.configuration} system property could not be set.
+     *
+     * @param cause      the cause of the error
+     * @param serverName the name of the server setting the property failed on
+     * @param path       the path to the configuration file
+     */
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 205, value = "An error occurred setting the -Dlogging.configuration property for server %s. Configuration path %s")
+    void failedToSetLoggingConfiguration(@Cause Throwable cause, String serverName, File path);
 
 }

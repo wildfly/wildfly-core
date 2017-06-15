@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,7 +65,6 @@ import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService.SSLContextSupplier;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Combines the relevant parts of the domain-level and host-level models to
@@ -293,31 +293,37 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 directoryGrouping, environment.getDomainDataDir(), serverDir);
 
         final File loggingConfig = new File(dataDir, "logging.properties");
-        final String path;
+        final File path;
         if (loggingConfig.exists()) {
-            path = "file:" + loggingConfig.getAbsolutePath();
+            path = loggingConfig;
         } else {
             // Sets the initial log file to use
             command.add("-Dorg.jboss.boot.log.file=" + getAbsolutePath(new File(logDir), "server.log"));
 
-            // The default host controller and process controller configuration file
-            final String domainConfigFile = "file:" + getAbsolutePath(environment.getDomainConfigurationDir(), "logging.properties");
-            // The configuration file from the system property, could the default domain/configuration/logging.properties file
-            final String systemPropConfigFile = WildFlySecurityManager.getPropertyPrivileged("logging.configuration", null);
+            // Used as a fall back in case the default-server-logging.properties has been deleted
+            final File domainConfigFile = getAbsoluteFile(environment.getDomainConfigurationDir(), "logging.properties");
             // The default configuration file to use if nothing is set
             final File defaultConfigFile = getAbsoluteFile(environment.getDomainConfigurationDir(), "default-server-logging.properties");
 
-            // Ignore the system property value if domain/configuration/logging.properties is used
-            if (domainConfigFile.equals(systemPropConfigFile) && defaultConfigFile.exists()) {
-                path = "file:" + defaultConfigFile.getAbsolutePath();
-            } else if (systemPropConfigFile != null) {
-                path = systemPropConfigFile;
+            // If the default file exists, it should but we should be safe in case it was deleted by a user
+            if (defaultConfigFile.exists()) {
+                path = defaultConfigFile;
             } else {
-                // Default to the domain/configuration/logging.properties if nothing else found
+                // Default to the domain/configuration/logging.properties if the default wasn't found to get initial
+                // boot logging
                 path = domainConfigFile;
             }
         }
-        command.add(String.format("-Dlogging.configuration=%s", path));
+
+        if (path.exists()) {
+            try {
+                command.add(String.format("-Dlogging.configuration=%s", path.toURI().toURL().toExternalForm()));
+            } catch (MalformedURLException e) {
+                ROOT_LOGGER.failedToSetLoggingConfiguration(e, serverName, path);
+            }
+        } else {
+            ROOT_LOGGER.serverLoggingConfigurationFileNotFound(serverName);
+        }
 
         command.add("-jar");
         command.add(getAbsolutePath(environment.getHomeDir(), "jboss-modules.jar"));

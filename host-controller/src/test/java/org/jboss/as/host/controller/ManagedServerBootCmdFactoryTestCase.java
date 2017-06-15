@@ -121,7 +121,7 @@ public class ManagedServerBootCmdFactoryTestCase {
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
         List<String> result = instance.getServerLaunchCommand();
         Assert.assertThat(result.size(), is(notNullValue()));
-        Assert.assertThat(result.size(), is(16));
+        Assert.assertThat(result.size(), is(15));
         for (String arg : result) {
             if (arg.startsWith("-Djboss.server.log.dir")) {
                 Assert.assertThat(arg, is(not("-Djboss.server.log.dir=/tmp/")));
