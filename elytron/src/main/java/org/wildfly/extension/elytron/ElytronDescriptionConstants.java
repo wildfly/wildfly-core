@@ -308,6 +308,7 @@ interface ElytronDescriptionConstants {
     String PEER_HOST = "peer-host";
     String PEER_PORT = "peer-port";
     String PEER_PRINCIPAL = "peer-principal";
+    String PERIODIC_ROTATING_FILE_AUDIT_LOG = "periodic-rotating-file-audit-log";
     String PERMISSION = "permission";
     String PERMISSIONS = "permissions";
     String PERMISSION_MAPPER = "permission-mapper";
@@ -379,7 +380,6 @@ interface ElytronDescriptionConstants {
     String ROLES = "roles";
     String ROTATE_SIZE = "rotate-size";
     String ROTATE_ON_BOOT = "rotate-on-boot";
-    String ROTATING_FILE_AUDIT_LOG = "rotating-file-audit-log";
 
     String SALT = "salt";
     String SALT_INDEX = "salt-index";
@@ -433,6 +433,7 @@ interface ElytronDescriptionConstants {
     String SIMPLE_REGEX_REALM_MAPPER = "simple-regex-realm-mapper";
     String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     String SIZE = "size";
+    String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_SESSION = "ssl-session";

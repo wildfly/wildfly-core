@@ -405,4 +405,13 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1017, value = "Invalid value for cipher-suite-filter. %s")
     OperationFailedException invalidCipherSuiteFilter(@Cause Throwable cause, String causeMessage);
+
+    @Message(id = 1018, value = "Invalid size %s")
+    OperationFailedException invalidSize(String size);
+
+    @Message(id = 1019, value = "The suffix (%s) can not contain seconds or milliseconds.")
+    OperationFailedException suffixContainsMillis(String suffix);
+
+    @Message(id = 1020, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
+    OperationFailedException invalidSuffix(String suffix);
 }
