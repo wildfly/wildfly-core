@@ -339,12 +339,6 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 917, value = "Password cannot be resolved for dir-context")
     StartException dirContextPasswordCannotBeResolved(@Cause Exception cause);
 
-    @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case user names")
-    OperationFailedException invalidUsername(String username, String realmName);
-
-    @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
-    OperationFailedException invalidAliasName(String alias, String credntialStore);
-
     @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
     OperationFailedException credentialDoesNotExist(String alias, String credentialType);
 
