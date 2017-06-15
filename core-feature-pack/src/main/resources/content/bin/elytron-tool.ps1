@@ -6,7 +6,11 @@
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
 
+$SCRIPT_NAME = $MyInvocation.MyCommand | select -ExpandProperty Name
+$SCRIPT_NAME = "{" + $SCRIPT_NAME + "}"
+
 $ELYTRON_TOOL_OPTS = Process-Script-Parameters -Params $ARGS
+$ELYTRON_TOOL_OPTS = $SCRIPT_NAME + $ELYTRON_TOOL_OPTS 
 
 $JAVA_OPTS = @()
 

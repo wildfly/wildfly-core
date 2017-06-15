@@ -79,4 +79,4 @@ fi
 
 eval \"$JAVA\" $JAVA_OPTS -cp \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar$SEP$ELYTRON_TOOL_ADDONS\" \
          org.wildfly.security.tool.ElytronTool \
-         '"$@"'
+         '{"$0"}"$@"'
