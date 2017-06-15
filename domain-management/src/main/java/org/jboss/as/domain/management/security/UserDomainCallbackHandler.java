@@ -87,6 +87,7 @@ import org.wildfly.security.password.spec.PasswordSpec;
 public class UserDomainCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService, CallbackHandler {
 
     private static final String SERVICE_SUFFIX = "users";
+    private static final char[] EMPTY_PASSWORD = new char[0];
 
     private final String realm;
 
@@ -179,9 +180,7 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                 if (userMap.get(USER).hasDefined(userName)) {
                     user = userMap.get(USER, userName);
                 }
-                if(credentialSourceSupplier.getOptionalValue() != null && credentialSourceSupplier.getValue().containsKey(userName)) {
-                    userCredentialSourceSupplier = credentialSourceSupplier.getValue().get(userName);
-                }
+                userCredentialSourceSupplier = getUserCredentialSourceSupplier(userName);
             } else if (current instanceof PasswordCallback) {
                 toRespondTo.add(current);
             } else if (current instanceof RealmCallback) {
@@ -211,7 +210,7 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                     SECURITY_LOGGER.tracef("User '%s' not found.", userName);
                     throw new UserNotFoundException(userName);
                 }
-                char[] password = new char[0];
+                char[] password =EMPTY_PASSWORD;
                 if (user.hasDefined(PASSWORD)) {
                     password = user.require(PASSWORD).asString().toCharArray();
                 }
@@ -239,6 +238,14 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
             return password;
         }
         return password;
+    }
+
+    private ExceptionSupplier<CredentialSource, Exception> getUserCredentialSourceSupplier(String userName) {
+        ExceptionSupplier<CredentialSource, Exception> userCredentialSourceSupplier = null;
+        if (credentialSourceSupplier.getOptionalValue() != null && credentialSourceSupplier.getValue().containsKey(userName)) {
+            userCredentialSourceSupplier = credentialSourceSupplier.getValue().get(userName);
+        }
+        return userCredentialSourceSupplier;
     }
 
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
@@ -326,14 +333,14 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
                 final PasswordFactory passwordFactory;
                 final PasswordSpec passwordSpec;
 
-                String password = user.require(PASSWORD).asString();
+                char[] password = resolvePassword(getUserCredentialSourceSupplier(principal.getName()), user.hasDefined(PASSWORD) ? user.require(PASSWORD).asString().toCharArray() : EMPTY_PASSWORD);
                 if (clear) {
                     passwordFactory = getPasswordFactory(ALGORITHM_CLEAR);
-                    passwordSpec = new ClearPasswordSpec(password.toCharArray());
+                    passwordSpec = new ClearPasswordSpec(password);
                 } else {
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
                     AlgorithmParameterSpec algorithmParameterSpec = new DigestPasswordAlgorithmSpec(principal.getName(), realm);
-                    passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), algorithmParameterSpec);
+                    passwordSpec = new EncryptablePasswordSpec(password, algorithmParameterSpec);
                 }
 
                 try {
