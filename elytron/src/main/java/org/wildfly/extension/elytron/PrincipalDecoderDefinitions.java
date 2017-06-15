@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
@@ -131,6 +133,9 @@ class PrincipalDecoderDefinitions {
         .setMinSize(2)
         .setRequired(true)
         .setCapabilityReference(PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), true)
+            .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
+            .setXmlName(ElytronDescriptionConstants.PRINCIPAL_DECODER)
         .setRestartAllServices()
         .build();
 

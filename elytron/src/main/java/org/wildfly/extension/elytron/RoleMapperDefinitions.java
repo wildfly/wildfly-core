@@ -30,6 +30,8 @@ import java.util.function.BinaryOperator;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
@@ -39,6 +41,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -93,10 +96,13 @@ class RoleMapperDefinitions {
         .build();
 
     static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
-        .setAllowExpression(true)
-        .setMinSize(1)
-        .setRestartAllServices()
-        .build();
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .setXmlName(ModelDescriptionConstants.ROLE)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
+            .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
+            .build();
 
     private static final AggregateComponentDefinition<RoleMapper> AGGREGATE_ROLE_MAPPER = AggregateComponentDefinition.create(RoleMapper.class,
             ElytronDescriptionConstants.AGGREGATE_ROLE_MAPPER, ElytronDescriptionConstants.ROLE_MAPPERS, ROLE_MAPPER_RUNTIME_CAPABILITY,
@@ -254,7 +260,7 @@ class RoleMapperDefinitions {
 
         protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
             return () -> null;
-        };
+        }
 
     }
 

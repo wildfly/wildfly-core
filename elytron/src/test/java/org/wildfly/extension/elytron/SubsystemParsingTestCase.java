@@ -33,7 +33,7 @@ import org.junit.Test;
 /**
  * Tests all management expects for subsystem, parsing, marshaling, model definition and other
  * Here is an example that allows you a fine grained controller over what is tested and how. So it can give you ideas what can be done and tested.
- * If you have no need for advanced testing of subsystem you look at {@link SubsystemBaseParsingTestCase} that tests same stuff but most of the code
+ * If you have no need for advanced testing of subsystem you look at {@link ElytronSubsystem20TestCase} that tests same stuff but most of the code
  * is hidden inside of test harness
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -138,4 +138,6 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     protected AdditionalInitialization createAdditionalInitialization() {
         return AdditionalInitialization.MANAGEMENT;
     }
+
+
 }

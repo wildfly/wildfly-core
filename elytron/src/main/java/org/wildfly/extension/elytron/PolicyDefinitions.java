@@ -102,7 +102,6 @@ class PolicyDefinitions {
             .setMinSize(1)
             .build();
 
-    // TODO make private once PolicyParser is deleted
     static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING)
             .setRequired(false)
             .setCorrector(new ParameterCorrector() {

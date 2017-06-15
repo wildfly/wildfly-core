@@ -56,11 +56,10 @@ public class ElytronExtension implements Extension {
     /**
      * The name spaces used for the {@code subsystem} element
      */
-    public static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
-    public static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
-    public static final String NAMESPACE_1_2 = "urn:wildfly:elytron:1.2";
-    public static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
-    public static final String CURRENT_NAMESPACE = NAMESPACE_2_0;
+    static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
+    static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
+    static final String NAMESPACE_1_2 = "urn:wildfly:elytron:1.2";
+    static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
 
     /**
      * The name of our subsystem within the model.
@@ -75,7 +74,7 @@ public class ElytronExtension implements Extension {
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
     static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
     static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
-    static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
+    private static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
 
     private static final ModelVersion ELYTRON_CURRENT = ELYTRON_2_0_0;
 
@@ -107,10 +106,10 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, new ElytronSubsystemParser(NAMESPACE_1_0));
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, new ElytronSubsystemParser(NAMESPACE_1_1));
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, new ElytronSubsystemParser(NAMESPACE_1_2));
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, new ElytronSubsystemParser(NAMESPACE_2_0));
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, ElytronSubsystemParser1_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, ElytronSubsystemParser1_1::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, ElytronSubsystemParser1_2::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, ElytronSubsystemParser2_0::new);
     }
 
     @Override
@@ -123,7 +122,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(new ElytronSubsystemParser(CURRENT_NAMESPACE));
+        subsystemRegistration.registerXMLElementWriter(ElytronSubsystemParser2_0::new);
     }
 
     @SuppressWarnings("unchecked")

@@ -49,7 +49,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemTest {
     @Test
     public void testRejectingTransformersWFCore300() throws Exception {
         ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.WF_11_0_0_CR1;
-        ModelVersion elytronVersion = ElytronExtension.ELYTRON_1_0_0;
+        ModelVersion elytronVersion = ElytronSubsystemTransformers.ELYTRON_1_0_0;
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
         KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);

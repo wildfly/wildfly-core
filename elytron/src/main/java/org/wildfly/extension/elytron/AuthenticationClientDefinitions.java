@@ -42,10 +42,10 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -139,7 +139,7 @@ class AuthenticationClientDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleMapAttributeDefinition MECHANISM_PROPERTIES = new SimpleMapAttributeDefinition.Builder(CommonAttributes.PROPERTIES)
+    static final PropertiesAttributeDefinition MECHANISM_PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
             .setName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
             .setXmlName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
             .setRestartAllServices()

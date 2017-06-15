@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import java.security.Permissions;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +34,10 @@ import java.util.Set;
 import java.util.function.BinaryOperator;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -91,7 +96,7 @@ class PermissionMapperDefinitions {
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(ElytronDescriptionConstants.FIRST))
             .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR, ElytronDescriptionConstants.UNLESS, ElytronDescriptionConstants.FIRST)
-            .setValidator(EnumValidator.create(MappingMode.class, true, true))
+            .setValidator(EnumValidator.create(MappingMode.class, EnumSet.allOf(MappingMode.class)))
             .setRestartAllServices()
             .build();
 
@@ -109,11 +114,15 @@ class PermissionMapperDefinitions {
             .setRestartAllServices()
             .build();
 
+
     static final StringListAttributeDefinition PRINCIPALS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPALS)
             .setAllowExpression(true)
             .setRequired(false)
             .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
+            .setXmlName(ElytronDescriptionConstants.PRINCIPAL)
+            .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
             .build();
 
     static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
@@ -121,6 +130,9 @@ class PermissionMapperDefinitions {
             .setRequired(false)
             .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
+            .setXmlName("role")
+            .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
             .build();
 
     static final SimpleAttributeDefinition TARGET_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TARGET_NAME, ModelType.STRING, true)
@@ -139,47 +151,78 @@ class PermissionMapperDefinitions {
     static final ObjectListAttributeDefinition PERMISSIONS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSIONS, PERMISSION)
             .setRequired(false)
             .setRestartAllServices()
+            .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+            .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .build();
+
+    static class MatchAllCorrector implements ParameterCorrector {
+        @Override
+        // HACK until corrections chain into nested attribute
+
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            String name = MATCH_ALL.getName();
+            if (!newValue.isDefined() || !newValue.hasDefined(name)) {
+                return newValue;
+            }
+
+            ModelNode updated = newValue.get(name);
+            MATCH_ALL.getCorrector().correct(updated, new ModelNode());
+            if (!updated.isDefined()) {
+                newValue.remove(name);
+            }
+            return newValue;
+        }
+    }
+
+    static class PermissionMappingCorrector implements ParameterCorrector {
+        // HACK until corrections chain into nested attributes
+
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            if (!newValue.isDefined() || newValue.getType() != ModelType.LIST) {
+                return newValue;
+            }
+            for (ModelNode newNode : newValue.asList()) {
+                PERMISSION_MAPPING.getCorrector().correct(newNode, new ModelNode());
+            }
+
+            return newValue;
+        }
+    }
+
 
     static final ObjectTypeAttributeDefinition PERMISSION_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS)
-            .setCorrector(new ParameterCorrector() {
-                // HACK until corrections chain into nested attribute
-
-                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
-                    String name = MATCH_ALL.getName();
-                    if (!newValue.isDefined() || !newValue.hasDefined(name)) {
-                        return newValue;
-                    }
-
-                    ModelNode updated = newValue.get(name);
-                    MATCH_ALL.getCorrector().correct(updated, new ModelNode());
-                    if (! updated.isDefined()) {
-                        newValue.remove(name);
-                    }
-
-                    return newValue;
-                }
-            })
+            .setCorrector(new MatchAllCorrector())
             .build();
-
 
     static final ObjectListAttributeDefinition PERMISSION_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPINGS, PERMISSION_MAPPING)
             .setRequired(false)
-            .setCorrector(new ParameterCorrector() {
-                // HACK until corrections chain into nested attributes
-
-                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
-                    if (!newValue.isDefined() || newValue.getType() != ModelType.LIST) {
-                        return newValue;
-                    }
-                    for (ModelNode newNode: newValue.asList()) {
-                        PERMISSION_MAPPING.getCorrector().correct(newNode, new ModelNode());
-                    }
-
-                    return newValue;
-                }
-            })
+            .setCorrector(new PermissionMappingCorrector())
             .setRestartAllServices()
+            .setAttributeMarshaller(AttributeMarshallers.OBJECT_LIST_UNWRAPPED)
+            .setAttributeParser(AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER)
+            .build()
+            ;
+
+    //the _1_0 versions only exist to support legacy format of persistence
+    static final StringListAttributeDefinition ROLES_1_0 = new StringListAttributeDefinition.Builder(ROLES)
+            .setXmlName(ElytronDescriptionConstants.ROLES)
+            .setAttributeParser(AttributeParsers.STRING_LIST)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST)
+            .build();
+
+    static final StringListAttributeDefinition PRINCIPALS_1_0 = new StringListAttributeDefinition.Builder(PRINCIPALS)
+            .setXmlName(ElytronDescriptionConstants.PRINCIPALS)
+            .setAttributeParser(AttributeParsers.STRING_LIST)
+            .setAttributeMarshaller(AttributeMarshallers.STRING_LIST)
+            .build();
+
+
+    private static final ObjectTypeAttributeDefinition PERMISSION_MAPPING_1_0 = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS_1_0, ROLES_1_0, PERMISSIONS)
+            .setCorrector(new MatchAllCorrector())
+            .build();
+
+    static final ObjectListAttributeDefinition PERMISSION_MAPPINGS_1_0 = new ObjectListAttributeDefinition.Builder(PERMISSION_MAPPINGS)
+            .setValueType(PERMISSION_MAPPING_1_0)
             .build();
 
     static ResourceDefinition getLogicalPermissionMapper() {

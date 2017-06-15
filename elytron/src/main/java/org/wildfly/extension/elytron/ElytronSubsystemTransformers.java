@@ -40,6 +40,9 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry
  */
 public final class ElytronSubsystemTransformers implements ExtensionTransformerRegistration {
+    static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
+    private static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
+
     @Override
     public String getSubsystemName() {
         return ElytronExtension.SUBSYSTEM_NAME;
@@ -49,11 +52,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current 2.0.0 to 1.1.0 aka WildFly Core 3.0.2
-        buildTransformers_1_1(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ElytronExtension.ELYTRON_1_1_0));
         // 1.1.0 to 1.0.0, aka WildFly Core 3.0.0/3.0.1
-        buildTransformers_1_0(chainedBuilder.createBuilder(ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0));
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0});
+        buildTransformers_1_0(chainedBuilder.createBuilder(ELYTRON_1_1_0, ELYTRON_1_0_0));
+        // Current 2.0.0 to 1.1.0 aka WildFly Core 3.0.2
+        buildTransformers_1_1(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ELYTRON_1_1_0));
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ELYTRON_1_1_0, ELYTRON_1_0_0});
     }
 
     private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
@@ -77,7 +80,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // Reject new "match-all" field if it is defined with any other value than 'false'. If it is is present
         // but undefined or false, remove it as ObjectTypeAttributeDefinition will reject unknown fields
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_PERMISSION_MAPPER))
-            .getAttributeBuilder()
+                .getAttributeBuilder()
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
                     @Override
                     protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
@@ -91,16 +94,16 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                             }
                         }
                     }
-                },PermissionMapperDefinitions.PERMISSION_MAPPINGS)
+                }, PermissionMapperDefinitions.PERMISSION_MAPPINGS)
                 .addRejectCheck(
                         new RejectAttributeChecker.ListRejectAttributeChecker(
-                            new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(
-                                Collections.singletonMap(PermissionMapperDefinitions.MATCH_ALL.getName(), RejectAttributeChecker.DEFINED))),
+                                new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(
+                                        Collections.singletonMap(PermissionMapperDefinitions.MATCH_ALL.getName(), RejectAttributeChecker.DEFINED))),
                         PermissionMapperDefinitions.PERMISSION_MAPPINGS);
 
         // Discard new "forwarding-mode" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION))
-            .getAttributeBuilder()
+                .getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(ElytronDescriptionConstants.AUTHENTICATION)), AuthenticationClientDefinitions.FORWARDING_MODE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, AuthenticationClientDefinitions.FORWARDING_MODE);
 
