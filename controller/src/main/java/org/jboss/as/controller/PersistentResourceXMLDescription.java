@@ -3,6 +3,7 @@ package org.jboss.as.controller;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,17 +34,20 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Tomaz Cerar
  * @author Stuart Douglas
  */
-public final class PersistentResourceXMLDescription {
+public final class PersistentResourceXMLDescription implements ResourceParser, ResourceMarshaller {
 
     protected final PathElement pathElement;
     private final String xmlElementName;
     private final String xmlWrapperElement;
     private final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
-    protected final List<PersistentResourceXMLDescription> children;
+    private final List<PersistentResourceXMLDescription> children;
+    private final List<ResourceMarshaller> marshallers;
     private final Map<String, AttributeDefinition> attributeElements = new HashMap<>();
     private final boolean useValueAsElementName;
     private final boolean noAddOperation;
     private final AdditionalOperationsGenerator additionalOperationsGenerator;
+    private final LinkedHashMap<String, ResourceParser> customChildParsers;
+    private final String decoratorElement;
     private boolean flushRequired = true;
     private boolean childAlreadyRead = false;
     private final Map<String, AttributeParser> attributeParsers;
@@ -57,7 +61,7 @@ public final class PersistentResourceXMLDescription {
     private final String nameAttributeName;
 
 
-    private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder) {
+    private PersistentResourceXMLDescription(PersistentResourceXMLBuilder builder)  {
         this.pathElement = builder.pathElement;
         this.xmlElementName = builder.xmlElementName;
         this.xmlWrapperElement = builder.xmlWrapperElement;
@@ -97,8 +101,11 @@ public final class PersistentResourceXMLDescription {
             this.attributesByGroup.put(null, attrs);
         }
         this.children = new ArrayList<>();
+        this.marshallers = builder.marshallers;
         for (PersistentResourceXMLBuilder b : builder.childrenBuilders) {
-            this.children.add(b.build());
+            PersistentResourceXMLDescription child = b.build();
+            this.children.add(child);
+            this.marshallers.add(child);
         }
         this.children.addAll(builder.children);
         this.useValueAsElementName = builder.useValueAsElementName;
@@ -109,13 +116,51 @@ public final class PersistentResourceXMLDescription {
         this.forcedName = builder.forcedName;
         this.marshallDefaultValues = builder.marshallDefaultValues;
         this.nameAttributeName = builder.nameAttributeName;
+        this.customChildParsers = builder.customChildParsers;
+        this.decoratorElement = builder.decoratorElement;
     }
 
     public PathElement getPathElement() {
         return this.pathElement;
     }
 
+    /**
+     * Parse xml from provided <code>reader</code> and add resulting operations to passed list
+     * @param reader xml reader to parse from
+     * @param parentAddress address of the parent, used as base for all child elements
+     * @param list list of operations where result will be put to.
+     * @throws XMLStreamException if any error occurs while parsing
+     */
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        if (decoratorElement != null) {
+            parseDecorator(reader, parentAddress, list);
+            return;
+        }
+        if (xmlWrapperElement != null) {
+            if (reader.getLocalName().equals(xmlWrapperElement)) {
+                if (reader.hasNext() && reader.nextTag() == END_ELEMENT) { return; }
+            } else {
+                throw ParseUtils.unexpectedElement(reader);
+            }
+            parseInternal(reader, parentAddress, list);
+            while (reader.nextTag() != END_ELEMENT && !reader.getLocalName().equals(xmlWrapperElement)) {
+                parseInternal(reader, parentAddress, list);
+            }
+        } else {
+            parseInternal(reader, parentAddress, list);
+        }
+    }
+
+    private void parseDecorator(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        if (!reader.getLocalName().equals(decoratorElement)) {
+            throw unexpectedElement(reader, Collections.singleton(decoratorElement));
+        }
+        if (!reader.isEndElement()) { //only parse children if we are not on end of tag already
+            parseChildren(reader, parentAddress, list, new ModelNode());
+        }
+    }
+
+    private void parseInternal(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         ModelNode op = Util.createAddOperation();
         boolean wildcard = getPathElement().isWildcard();
         String name = parseAttributeGroups(reader, op, wildcard);
@@ -139,6 +184,7 @@ public final class PersistentResourceXMLDescription {
             parseChildren(reader, address, list, op);
         }
     }
+
 
     private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
         String name = parseAttributes(reader, op, attributesByGroup.get(null), wildcard); //parse attributes not belonging to a group
@@ -219,6 +265,7 @@ public final class PersistentResourceXMLDescription {
                         AttributeParser parser = attributeParsers.getOrDefault(ad.getXmlName(), ad.getParser());
                         parser.parseElement(ad, reader, op);
                     } else {
+                        childAlreadyRead = true;
                         return name;  //this means we only have children left, return so child handling logic can take over
                     }
                     childAlreadyRead = true;
@@ -252,27 +299,23 @@ public final class PersistentResourceXMLDescription {
             }
         } else {
             Map<String, PersistentResourceXMLDescription> children = getChildrenMap();
+            if (childAlreadyRead) {
+                PersistentResourceXMLDescription decoratorChild = children.get(reader.getLocalName());
+                if (decoratorChild != null && decoratorChild.decoratorElement != null) {
+                    decoratorChild.parseDecorator(reader, parentAddress, list);
+                }
+            }
             if (childAlreadyRead || (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
                 do {
                     PersistentResourceXMLDescription child = children.get(reader.getLocalName());
                     if (child != null) {
-                        if (child.xmlWrapperElement != null) {
-                            if (reader.getLocalName().equals(child.xmlWrapperElement)) {
-                                if (reader.hasNext() && reader.nextTag() == END_ELEMENT) { return; }
-                            } else {
-                                throw ParseUtils.unexpectedElement(reader);
-                            }
-                            child.parse(reader, parentAddress, list);
-                            while (reader.nextTag() != END_ELEMENT && !reader.getLocalName().equals(child.xmlWrapperElement)) {
-                                child.parse(reader, parentAddress, list);
-                            }
-                        } else {
-                            child.parse(reader, parentAddress, list);
-                        }
+                        child.parse(reader, parentAddress, list);
 
                     } else if (attributeElements.containsKey(reader.getLocalName())) {
                         AttributeDefinition ad = attributeElements.get(reader.getLocalName());
                         ad.getParser().parseElement(ad, reader, op);
+                    } else if (customChildParsers.containsKey(reader.getLocalName())) {
+                        customChildParsers.get(reader.getLocalName()).parse(reader, parentAddress, list);
                     } else {
                         throw ParseUtils.unexpectedElement(reader, children.keySet());
                     }
@@ -314,7 +357,52 @@ public final class PersistentResourceXMLDescription {
 
     }
 
+    /**
+     * persist decorator and than continue to children without touching the model
+     */
+    private void persistDecorator(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
+       if (shouldWriteDecoratorAndElements(model)) {
+           writer.writeStartElement(decoratorElement);
+           persistChildren(writer, model);
+           writer.writeEndElement();
+       }
+    }
+
+    /**
+     * @return true if any of children are defined in the model
+     */
+    private boolean shouldWriteDecoratorAndElements(ModelNode model) {
+        for (PersistentResourceXMLDescription child : children) {
+            //if we have child decorator, than we check its children, we only handle one level of nesting
+            if (child.decoratorElement != null) {
+                for (PersistentResourceXMLDescription decoratedChild : child.children) {
+                    if (definedInModel(model, decoratedChild)) {
+                        return true;
+                    }
+                }
+            } else if (definedInModel(model, child)) {
+                return true;
+            }
+
+        }
+        //we always write if there is custom writer defined
+        return !customChildParsers.isEmpty();
+    }
+
+    private boolean definedInModel(ModelNode model, PersistentResourceXMLDescription child) {
+        PathElement pe = child.getPathElement();
+        boolean wildcard = getPathElement().isWildcard();
+        if (wildcard ? model.hasDefined(pe.getKey()) : model.hasDefined(pe.getKeyValuePair())){
+            return true;
+        }
+        return false;
+    }
+
     public void persist(XMLExtendedStreamWriter writer, ModelNode model, String namespaceURI) throws XMLStreamException {
+        if (decoratorElement!=null){
+            persistDecorator(writer, model);
+            return;
+        }
         boolean wildcard = getPathElement().isWildcard();
         model = wildcard ? model.get(getPathElement().getKey()) : model.get(getPathElement().getKeyValuePair());
         boolean isSubsystem = getPathElement().getKey().equals(ModelDescriptionConstants.SUBSYSTEM);
@@ -417,7 +505,7 @@ public final class PersistentResourceXMLDescription {
     }
 
     public void persistChildren(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
-        for (PersistentResourceXMLDescription child : children) {
+        for (ResourceMarshaller child : marshallers) {
             child.persist(writer, model);
         }
     }
@@ -477,6 +565,19 @@ public final class PersistentResourceXMLDescription {
         return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
     }
 
+    /**
+     * Creates builder for passed path element
+     *
+     * @param elementName name of xml element that is used as decorator
+     * @return PersistentResourceXMLBuilder
+     * @deprecated decorator element support is currently considered as preview
+     * @since 4.0
+     */
+    @Deprecated
+    public static PersistentResourceXMLBuilder decorator(final String elementName) {
+        return new PersistentResourceXMLBuilder(PathElement.pathElement(elementName), null).setDecoratorGroup(elementName);
+    }
+
     public static final class PersistentResourceXMLBuilder {
         protected final PathElement pathElement;
         private final String namespaceURI;
@@ -490,10 +591,13 @@ public final class PersistentResourceXMLDescription {
         private final List<PersistentResourceXMLDescription> children = new ArrayList<>();
         private final LinkedHashMap<String, AttributeParser> attributeParsers = new LinkedHashMap<>();
         private final LinkedHashMap<String, AttributeMarshaller> attributeMarshallers = new LinkedHashMap<>();
+        private final LinkedHashMap<String, ResourceParser> customChildParsers = new LinkedHashMap<>();
+        private final LinkedList<ResourceMarshaller> marshallers = new LinkedList<>();
         private boolean useElementsForGroups = true;
         private String forcedName;
         private boolean marshallDefaultValues = true;
         private String nameAttributeName = NAME;
+        private String decoratorElement = null;
 
         private PersistentResourceXMLBuilder(final PathElement pathElement) {
             this.pathElement = pathElement;
@@ -512,10 +616,24 @@ public final class PersistentResourceXMLDescription {
             return this;
         }
 
-        public PersistentResourceXMLBuilder addChild(PersistentResourceXMLDescription builder) {
-            this.children.add(builder);
+        public PersistentResourceXMLBuilder addChild(PersistentResourceXMLDescription description) {
+            this.children.add(description);
+            this.marshallers.add(description);
             return this;
         }
+
+        /*
+         * Adds custom parser for child element
+         * @param xmlElementName name of xml element that will be hand off to custom parser
+         * @param parser custom parser
+         * @return this builder
+         * @since 4.0
+         *//*
+        public PersistentResourceXMLBuilder addChild(final String xmlElementName, ResourceParser parser, ResourceMarshaller marshaller) {
+            this.customChildParsers.put(xmlElementName, parser);
+            this.marshallers.add(marshaller);
+            return this;
+        }*/
 
         public PersistentResourceXMLBuilder addAttribute(AttributeDefinition attribute) {
             this.attributeList.add(attribute);
@@ -617,6 +735,11 @@ public final class PersistentResourceXMLDescription {
             return this;
         }
 
+        private PersistentResourceXMLBuilder setDecoratorGroup(String elementName){
+            this.decoratorElement = elementName;
+            return this;
+        }
+
         public PersistentResourceXMLDescription build() {
 
             return new PersistentResourceXMLDescription(this);
@@ -626,6 +749,7 @@ public final class PersistentResourceXMLDescription {
     /**
      * Some resources require more operations that just a simple add. This interface provides a hook for these to be plugged in.
      */
+    @FunctionalInterface
     public interface AdditionalOperationsGenerator {
 
         /**
@@ -636,6 +760,6 @@ public final class PersistentResourceXMLDescription {
          * @param operations   The operation list
          */
         void additionalOperations(final PathAddress address, final ModelNode addOperation, final List<ModelNode> operations);
-
     }
+
 }

@@ -96,7 +96,7 @@ public abstract class AttributeMarshaller {
         }
     }
 
-    private static class ListMarshaller extends DefaultAttributeMarshaller {
+    static class ListMarshaller extends DefaultAttributeMarshaller {
         private final char delimiter;
 
         ListMarshaller(char delimiter) {
@@ -116,31 +116,35 @@ public abstract class AttributeMarshaller {
             return builder.toString();
         }
     }
+    /*
+    Sorts attributes so that xsd:attribute ones come first
+     */
+    private static Set<AttributeDefinition> sortAttributes(AttributeDefinition[] attributes) {
+        Set<AttributeDefinition> sortedAttrs = new LinkedHashSet<>(attributes.length);
+        List<AttributeDefinition> elementAds = null;
+        for (AttributeDefinition ad : attributes) {
+            if (ad.getParser().isParseAsElement()) {
+                if (elementAds == null) {
+                    elementAds = new ArrayList<>();
+                }
+                elementAds.add(ad);
+            } else {
+                sortedAttrs.add(ad);
+            }
+        }
+        if (elementAds != null) {
+            sortedAttrs.addAll(elementAds);
+        }
+        return sortedAttrs;
+    }
 
-    private static class ObjectMarshaller extends DefaultAttributeMarshaller {
+
+
+    static class ObjectMarshaller extends DefaultAttributeMarshaller {
         private final boolean marshallSimpleTypeAsElement;
 
-        private ObjectMarshaller(boolean marshallSimpleTypeAsAttribute) {
+        ObjectMarshaller(boolean marshallSimpleTypeAsAttribute) {
             this.marshallSimpleTypeAsElement = marshallSimpleTypeAsAttribute;
-        }
-
-        private static Set<AttributeDefinition> sortAttributes(AttributeDefinition[] attributes) {
-            Set<AttributeDefinition> sortedAttrs = new LinkedHashSet<>(attributes.length);
-            List<AttributeDefinition> elementAds = null;
-            for (AttributeDefinition ad : attributes) {
-                if (ad.getParser().isParseAsElement()) {
-                    if (elementAds == null) {
-                        elementAds = new ArrayList<>();
-                    }
-                    elementAds.add(ad);
-                } else {
-                    sortedAttrs.add(ad);
-                }
-            }
-            if (elementAds != null) {
-                sortedAttrs.addAll(elementAds);
-            }
-            return sortedAttrs;
         }
 
         @Override
@@ -171,8 +175,8 @@ public abstract class AttributeMarshaller {
     }
 
 
-    private static class ObjectListMarshaller extends AttributeMarshaller {
-        private ObjectListMarshaller() {
+    static class ObjectListMarshaller extends AttributeMarshaller {
+        ObjectListMarshaller() {
         }
 
         @Override
@@ -199,7 +203,8 @@ public abstract class AttributeMarshaller {
             for (ModelNode element : elements) {
                 if (isMarshallable(valueTypes, element)) {
                     writer.writeStartElement(objectType.getXmlName());
-                    for (AttributeDefinition valueType : valueTypes) {
+                    Set<AttributeDefinition> sortedAttrs = sortAttributes(valueTypes);
+                    for (AttributeDefinition valueType : sortedAttrs) {
                         valueType.getMarshaller().marshall(valueType, element, false, writer);
                     }
                     writer.writeEndElement();
@@ -224,8 +229,8 @@ public abstract class AttributeMarshaller {
         }
     }
 
-    private static class UnwrappedObjectListMarshaller extends ObjectListMarshaller {
-        private UnwrappedObjectListMarshaller() {
+    static class UnwrappedObjectListMarshaller extends ObjectListMarshaller {
+        UnwrappedObjectListMarshaller() {
         }
 
         @Override
@@ -239,6 +244,34 @@ public abstract class AttributeMarshaller {
         }
 
     }
+
+    /**
+     * Version of marshaller that by default marshalls to element
+     */
+    public abstract static class AttributeElementMarshaller extends AttributeMarshaller{
+        public abstract void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException;
+
+        @Override
+        public boolean isMarshallableAsElement() {
+            return true;
+        }
+
+        @Override
+        public boolean isMarshallable(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault) {
+            return resourceModel.hasDefined(attribute.getName());
+        }
+    }
+
+    static class WrappedSimpleAttributeMarshaller extends AttributeElementMarshaller {
+
+          @Override
+          public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+              writer.writeStartElement(attribute.getXmlName());
+              writer.writeCharacters(resourceModel.get(attribute.getName()).asString());
+              writer.writeEndElement();
+          }
+      }
+
 
     /**
      * simple marshaller
