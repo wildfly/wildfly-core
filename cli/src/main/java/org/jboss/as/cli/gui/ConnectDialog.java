@@ -118,7 +118,7 @@ public class ConnectDialog extends JInternalFrame {
             public void run() {
                 inner_start();
             }
-        }).start();
+        }, "CLI GUI Connect Dialog").start();
     }
 
     private void inner_start(){

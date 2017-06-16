@@ -53,7 +53,7 @@ public class CliShutdownHook {
                     }
                 }
             }
-        }));
+        }, "CLI Shutdown Hook"));
 
     }
 

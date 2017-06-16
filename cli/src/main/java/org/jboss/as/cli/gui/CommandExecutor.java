@@ -50,7 +50,7 @@ public class CommandExecutor {
         this.cliGuiCtx = cliGuiCtx;
         this.cmdCtx = cliGuiCtx.getCommmandContext();
         this.client = client == null ? () -> cliGuiCtx.getCommmandContext().getModelControllerClient() : client;
-        Runtime.getRuntime().addShutdownHook(new Thread(new ClientCloserShutdownHook()));
+        Runtime.getRuntime().addShutdownHook(new Thread(new ClientCloserShutdownHook(), "CLI GUI Shutdown Hook"));
     }
 
     private class ClientCloserShutdownHook implements Runnable {

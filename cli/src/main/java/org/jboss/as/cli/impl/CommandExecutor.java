@@ -633,7 +633,8 @@ public class CommandExecutor {
     }
 
     private final CommandContext ctx;
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final ExecutorService executorService = Executors.newCachedThreadPool(
+            (r) -> new Thread(r, "CLI command executor"));
 
     private Future<?> handlerTask;
 
