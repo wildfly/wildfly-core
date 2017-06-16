@@ -86,6 +86,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     private static final String APPNAME_FILTER = "[\\P{Print}\\ ]";
     private static final String APPNAME_REPLACE_VALUE = "_";
+    private static final char[] EMPTY_PASSWORD = new char[0];
 
     public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager) {
         super(name, formatterName, maxFailureCount);
@@ -208,9 +209,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                 }
             }
         } catch (Exception ex) {
-            return pwd == null ? new char[0] : pwd.toCharArray();
+            return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();
         }
-        return pwd == null ? new char[0] : pwd.toCharArray();
+        return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();
     }
 
     @Override
