@@ -646,7 +646,7 @@ final class HandlerOperations {
                 configuration.setFormatterName(resolvedValue);
                 // Check the current formatter name, if it's the same name as the handler, remove the old formatter
                 if (!formatterName.equals(resolvedValue) && logContextConfiguration.getFormatterNames().contains(formatterName)) {
-                    logContextConfiguration.removeFormatterConfiguration(formatterName);
+                    addAfterCommitRuntimeStep(context, (ctx, operation) -> logContextConfiguration.removeFormatterConfiguration(formatterName));
                 }
             } else {
                 // Use a formatter only if a named-formatter is not defined or the named-formatter was explicitly undefined
@@ -669,7 +669,7 @@ final class HandlerOperations {
                 configuration.setFormatterName(resolvedValue);
                 // Check the current formatter name, if it's the same name as the handler, remove the old formatter
                 if (!formatterName.equals(resolvedValue) && logContextConfiguration.getFormatterNames().contains(formatterName)) {
-                    logContextConfiguration.removeFormatterConfiguration(formatterName);
+                    addAfterCommitRuntimeStep(context, (ctx, operation) -> logContextConfiguration.removeFormatterConfiguration(formatterName));
                 }
             } else {
                 // If the current formatter name already equals the name defined in the configuration, there is no need to process
@@ -945,5 +945,17 @@ final class HandlerOperations {
                 }
             }, Stage.RUNTIME);
         }
+    }
+
+    private static void addAfterCommitRuntimeStep(final OperationContext context, final OperationStepHandler step) {
+        Collection<OperationStepHandler> steps = context.getAttachment(LoggingOperations.AFTER_COMMIT_STEPS);
+        if (steps == null) {
+            steps = new ArrayList<>();
+            final Collection<OperationStepHandler> appearing = context.attachIfAbsent(LoggingOperations.AFTER_COMMIT_STEPS, steps);
+            if (appearing != null) {
+                steps = appearing;
+            }
+        }
+        steps.add(step);
     }
 }
