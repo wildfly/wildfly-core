@@ -29,9 +29,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.PathElement;
-
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
@@ -98,7 +95,7 @@ public class ValidateAddressOperationTestCase  {
         assertFalse(value.asBoolean());
         assertTrue(result.hasDefined(PROBLEM));
         final ModelNode problem = result.get(PROBLEM);
-        assertTrue(problem.asString().contains(ControllerLogger.ROOT_LOGGER.childResourceNotFound(PathElement.pathElement("wrong", "illegal"))));
+        assertTrue(problem.asString().matches("WFLYCTL0217.+\"wrong\".+\"illegal\".*"));
     }
 
     @Test
