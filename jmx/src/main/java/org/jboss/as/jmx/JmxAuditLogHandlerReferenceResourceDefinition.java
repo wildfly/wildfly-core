@@ -35,7 +35,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -69,7 +68,7 @@ public class JmxAuditLogHandlerReferenceResourceDefinition extends SimpleResourc
     }
 
     private static boolean isNotAdminOnlyServer(OperationContext context) {
-        return !(context.getProcessType() != ProcessType.HOST_CONTROLLER && context.getRunningMode() == RunningMode.ADMIN_ONLY);
+        return !(!context.getProcessType().isHostController() && context.getRunningMode() == RunningMode.ADMIN_ONLY);
     }
 
     private static class AuditLogHandlerReferenceAddHandler extends AbstractAddStepHandler {

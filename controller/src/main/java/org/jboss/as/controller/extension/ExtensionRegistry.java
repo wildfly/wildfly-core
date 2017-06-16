@@ -314,7 +314,7 @@ public class ExtensionRegistry {
             synchronized (extension) {
                 Set<String> subsystemNames = extension.subsystems.keySet();
 
-                final boolean dcExtension = processType == ProcessType.HOST_CONTROLLER ?
+                final boolean dcExtension = processType.isHostController() ?
                     rootRegistration.getPathAddress().size() == 0 : false;
 
                 for (String subsystem : subsystemNames) {
@@ -556,7 +556,7 @@ public class ExtensionRegistry {
             if (processType.isServer()) {
                 return true;
             }
-            if (processType == ProcessType.HOST_CONTROLLER && extensionRegistryType == ExtensionRegistryType.HOST) {
+            if (processType.isHostController() && extensionRegistryType == ExtensionRegistryType.HOST) {
                 return true;
             }
             return false;

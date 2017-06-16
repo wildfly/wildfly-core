@@ -75,7 +75,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
         }
         boolean coreMBeanSensitivity = JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.resolveModelAttribute(context, model).asBoolean();
         final boolean isMasterHc;
-        if (context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+        if (context.getProcessType().isHostController()) {
             isMasterHc = hostInfoAccessor.getHostControllerInfo(context).isMasterHc();
         } else {
             isMasterHc = false;

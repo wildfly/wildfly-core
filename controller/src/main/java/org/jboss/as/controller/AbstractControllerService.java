@@ -711,9 +711,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     final ServiceLoader<ModelControllerServiceInitialization> sl = initParams.serviceLoader;
 
                     final String hostName = initParams.getHostName();
-                    assert processType != ProcessType.HOST_CONTROLLER || hostName != null;
+                    assert !processType.isHostController() || hostName != null;
                     for (ModelControllerServiceInitialization init : sl) {
-                        if (processType == ProcessType.HOST_CONTROLLER) {
+                        if (processType.isHostController()) {
                             init.initializeHost(context.getServiceTarget(), managementModel, hostName);
                             init.initializeDomain(context.getServiceTarget(), managementModel);
                         } else {

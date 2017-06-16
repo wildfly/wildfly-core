@@ -107,7 +107,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
                                                   final ServiceListener<? super PluggableMBeanServer>... listeners) {
         final MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
                 coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, processType, isMasterHc);
-        final ServiceName modelControllerName = processType == ProcessType.HOST_CONTROLLER ?
+        final ServiceName modelControllerName = processType.isHostController() ?
                 DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
         return context.getServiceTarget().addService(MBeanServerService.SERVICE_NAME, service)
             .addListener(listeners)

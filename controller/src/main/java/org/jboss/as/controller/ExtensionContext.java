@@ -167,7 +167,7 @@ public interface ExtensionContext {
     PathManager getPathManager();
 
     /**
-     * Returns true if subsystems should register transformers. This is true if {@link #getProcessType()} equals {@link ProcessType#HOST_CONTROLLER} and the
+     * Returns true if subsystems should register transformers. This is true if {@link #getProcessType().isHostController()} is true and the
      * process controller is the master domain controller.
      *
      * @return {@code true} if transformers should be registered

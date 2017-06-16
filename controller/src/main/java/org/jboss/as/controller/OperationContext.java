@@ -1067,7 +1067,7 @@ public interface OperationContext extends ExpressionResolver {
         VERIFY,
         /**
          * The step performs any actions needed to cause the operation to take effect on the relevant servers
-         * in the domain. Adding a step in this stage is only allowed when the process type is {@link ProcessType#HOST_CONTROLLER}.
+         * in the domain. Adding a step in this stage is only allowed when {@link ProcessType#isHostController()} is true.
          */
         DOMAIN,
         /**
