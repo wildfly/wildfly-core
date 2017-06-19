@@ -73,6 +73,10 @@ if $cygwin; then
     JBOSS_HOME=`cygpath --path --windows "$JBOSS_HOME"`
 fi
 
-eval \"$JAVA\" $JAVA_OPTS \
-         -jar \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar\" \
+if [ "x$ELYTRON_TOOL_ADDONS" != "x" ]; then
+    SEP=:
+fi    
+
+eval \"$JAVA\" $JAVA_OPTS -cp \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar$SEP$ELYTRON_TOOL_ADDONS\" \
+         org.wildfly.security.tool.ElytronTool \
          '"$@"'
