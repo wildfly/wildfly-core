@@ -124,13 +124,15 @@
     </mappers>
     <tls>
         <key-stores>
-            <key-store name="KeyStoreOne" type="jks">
-                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+            <key-store name="KeyStoreOne" >
                 <credential-reference clear-text="password"/>
+                <implementation type="JKS" />
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
             </key-store>
-            <key-store name="KeyStoreTwo" type="jks">
-                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+            <key-store name="KeyStoreTwo" >
                 <credential-reference clear-text="password"/>
+                <implementation type="JKS" />
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
             </key-store>
         </key-stores>
     </tls>

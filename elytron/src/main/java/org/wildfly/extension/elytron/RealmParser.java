@@ -98,36 +98,28 @@ class RealmParser {
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)
             .build();
 
-    /*final PersistentResourceXMLDescription realmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_REALMS, "ignored"), null)
+   /* final PersistentResourceXMLDescription realmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_REALMS, "ignored"), null)
             .setNoAddOperation(true)
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_REALM), null)
-                    .addAttributes(AggregateRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_REALM), null)
-                    .addAttributes(CustomComponentDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_MODIFIABLE_REALM), null)
-                    .addAttributes(CustomComponentDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), null)
-                    .addAttributes(JdbcRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE_REALM), null)
-                    .addAttributes(JdbcRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM), null)
-                    .addAttributes(PropertiesRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM), null)
-                    .addAttributes(LdapRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM), null)
-                    .addAttributes(FileSystemRealmDefinition.ATTRIBUTES))
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM), null)
-                    .addAttributes(TokenRealmDefinition.ATTRIBUTES))
+            .addChild(aggregateRealmParser)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(jdbcRealmParser)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser)
+            .addChild(ldapRealmParser)
+            .addChild(fileSystemRealmDescription)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
             .build();*/
 
 
-    void readRealms(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    void readRealms(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {
+        //realmParser.parse(reader, parentAddress, operations);
         requireNoAttributes(reader);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
             String localName = reader.getLocalName();
-            PathAddress parentAddress = PathAddress.pathAddress(parentAddressNode);
             switch (localName) {
                 case AGGREGATE_REALM:
                     aggregateRealmParser.parse(reader, parentAddress, operations);

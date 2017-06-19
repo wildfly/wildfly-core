@@ -46,17 +46,22 @@
    </security-realms>
    <tls>
       <key-stores>
-         <key-store name="ElytronCaTruststore" type="JKS">
-            <file path="ca.truststore" relative-to="jboss.server.config.dir"/>
+         <key-store name="ElytronCaTruststore" >
             <credential-reference clear-text="Elytron"/>
+            <implementation type="JKS" />
+            <file path="ca.truststore" relative-to="jboss.server.config.dir"/>
          </key-store>
-         <ldap-key-store dir-context="DirContextSsl" name="LdapKeyStoreMinimal" search-path="ou=keystore,dc=elytron,dc=wildfly,dc=org"/>
-         <ldap-key-store dir-context="DirContextSsl" filter-alias="(&amp;(objectClass=inetOrgPerson)(sn={0}))" filter-certificate="(&amp;(objectClass=inetOrgPerson)(usercertificate={0}))" filter-iterate="(sn=serenity*)" name="LdapKeyStoreMaximal" search-path="dc=elytron,dc=wildfly,dc=org" search-recursive="true" search-time-limit="1000">
+         <ldap-key-store dir-context="DirContextSsl" name="LdapKeyStoreMinimal">
+            <search path="ou=keystore,dc=elytron,dc=wildfly,dc=org"/>
+         </ldap-key-store>
+         <ldap-key-store dir-context="DirContextSsl" name="LdapKeyStoreMaximal">
             <new-item-template new-item-path="ou=keystore,dc=elytron,dc=wildfly,dc=org" new-item-rdn="cn">
                <attribute name="objectClass" value="top inetOrgPerson"/>
                <attribute name="sn" value="NewKeyStoreItem"/>
             </new-item-template>
-            <ldap-mapping alias-attribute="sn" certificate-attribute="usercertificate" certificate-chain-attribute="userSMIMECertificate" certificate-chain-encoding="PKCS7" certificate-type="X.509"/>
+            <search path="dc=elytron,dc=wildfly,dc=org" recursive="true" time-limit="1000" filter-alias="(&amp;(objectClass=inetOrgPerson)(sn={0}))"
+                    filter-certificate="(&amp;(objectClass=inetOrgPerson)(usercertificate={0}))" filter-iterate="(sn=serenity*)"/>
+            <attribute-mapping alias-attribute="sn" certificate-attribute="usercertificate" certificate-chain-attribute="userSMIMECertificate" certificate-chain-encoding="PKCS7" certificate-type="X.509"/>
          </ldap-key-store>
       </key-stores>
       <trust-managers>

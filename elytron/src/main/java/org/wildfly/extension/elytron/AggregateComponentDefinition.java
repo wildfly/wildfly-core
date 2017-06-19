@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import java.util.List;
 import java.util.function.Function;
 
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -85,7 +86,7 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
         StringListAttributeDefinition aggregateReferences = new StringListAttributeDefinition.Builder(referencesName)
             .setMinSize(2)
             .setRequired(true)
-            .setCapabilityReference(capabilityName, capabilityName, true)
+            .setCapabilityReference(capabilityName, capabilityName, true)//todo this is ultra fishy
             .setRestartAllServices()
             .build();
 

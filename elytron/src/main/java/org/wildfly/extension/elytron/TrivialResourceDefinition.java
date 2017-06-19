@@ -67,4 +67,7 @@ class TrivialResourceDefinition extends SimpleResourceDefinition {
          }
     }
 
+    public AttributeDefinition[] getAttributes() {
+        return attributes;
+    }
 }

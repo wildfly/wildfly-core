@@ -4,19 +4,23 @@
     </providers>
     <tls>
         <key-stores>
-            <key-store name="PKCS_11" type="PKCS#11" provider-name="SunPKCS#11">
+            <key-store name="PKCS_11" >
                 <credential-reference clear-text="password"/>
+                <implementation type="PKCS#11" provider-name="SunPKCS#11"/>
             </key-store>
-            <key-store name="jks_store" type="jks" alias-filter="one,two,three">
+            <key-store name="jks_store" alias-filter="one,two,three">
+                <credential-reference clear-text="password"/>
+                <implementation type="jks" />
                 <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true" />
-                <credential-reference clear-text="password"/>
             </key-store>
-            <key-store name="jceks_store" type="jceks">
+            <key-store name="jceks_store" >
+                <credential-reference clear-text="password"/>
+                <implementation type="jceks" />
                 <file relative-to="jboss.server.config.dir" path="keystore.jceks" />
-                <credential-reference clear-text="password"/>
             </key-store>
-            <key-store name="Custom_PKCS_11" type="PKCS#11" provider-name="SunPKCS#11" providers="custom-loader">
+            <key-store name="Custom_PKCS_11" >
                 <credential-reference clear-text="password"/>
+                <implementation type="PKCS#11" provider-name="SunPKCS#11" providers="custom-loader" />
             </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="Custom_PKCS_11" alias-filter="NONE:+firefly"/>
         </key-stores>

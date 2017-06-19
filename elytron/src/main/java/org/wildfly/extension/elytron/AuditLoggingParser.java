@@ -72,13 +72,12 @@ class AuditLoggingParser {
             .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT)
             .build();
 
-    void readAuditLogging(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    void readAuditLogging(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {
         requireNoAttributes(reader);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
             String localName = reader.getLocalName();
-            PathAddress parentAddress = PathAddress.pathAddress(parentAddressNode);
             switch (localName) {
                 case AGGREGATE_SECURITY_EVENT_LISTENER:
                     readAggregateSecurityEventListener(parentAddress.toModelNode(), reader, operations);
