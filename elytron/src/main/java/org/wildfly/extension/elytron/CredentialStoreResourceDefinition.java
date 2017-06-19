@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -55,7 +56,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -92,27 +92,27 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition MODIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIABLE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setDefaultValue(new ModelNode(true))
             .setAllowExpression(false)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREATE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
             .setDefaultValue(new ModelNode(false))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleMapAttributeDefinition IMPLEMENTATION_PROPERTIES = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.IMPLEMENTATION_PROPERTIES, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeDefinition(true);
@@ -121,21 +121,21 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PROVIDER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDER_NAME, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY, true)
             .build();
 
@@ -143,7 +143,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY, true)
             .build();
 
@@ -151,14 +151,14 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setMinSize(1)
             .setAttributeGroup(ElytronDescriptionConstants.FILE)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition CASE_SENSITIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CASE_SENSITIVE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
             .setDefaultValue(new ModelNode(false))
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     // Resource Resolver
@@ -218,7 +218,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     private static final CredentialStoreAddHandler ADD = new CredentialStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, CREDENTIAL_STORE_RUNTIME_CAPABILITY);
-    private static final WriteAttributeHandler WRITE = new WriteAttributeHandler();
+
 
     CredentialStoreResourceDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE), RESOURCE_RESOLVER)
@@ -232,8 +232,9 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(CONFIG_ATTRIBUTES);
         for (AttributeDefinition current : CONFIG_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
+            resourceRegistration.registerReadWriteAttribute(current, null, write);
         }
 
         resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
