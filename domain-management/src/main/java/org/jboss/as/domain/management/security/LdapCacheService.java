@@ -268,11 +268,104 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
         protected final int maxSize;
 
         protected final LinkedHashMap<K, CacheEntry> theCache = new LinkedHashMap<K, CacheEntry>();
+        //the list of all current executions, there shouldn't be any size limitations,because it cotains only entries, which are currently in memory (are being executed)
+        private final LinkedHashMap<K, CacheEntry> executions = new LinkedHashMap<K, CacheEntry>();
 
         private BaseSearchCache(final int evictionTime, final boolean cacheFailures, final int maxSize) {
             this.evictionTime = evictionTime;
             this.cacheFailures = cacheFailures;
             this.maxSize = maxSize;
+        }
+
+        /**
+         * Each type of cache has different way how to read from cache.
+         *
+         * @param key Key of entry in cache.
+         * @return Returns founded entry or null.
+         * @throws IOException In case of search fails.
+         * @throws NamingException In case of search fails.
+         */
+        protected abstract CacheEntry readFromCache(final K key) throws IOException, NamingException;
+
+        @Override
+        public final SearchResult<R> search(LdapConnectionHandler connectionHandler, final K key) throws IOException, NamingException {
+            boolean currentlyExecuted = false;
+            CacheEntry entry = null;
+            synchronized (theCache) {
+                entry = readFromCache(key);
+                if (entry == null) {
+                    entry = executions.get(key);
+
+                    if(entry == null) {
+                        entry = new CacheEntry();
+                        executions.put(key, entry);
+                        SECURITY_LOGGER.tracef("Entry for '%s' not found in cache.", key);
+                    } else {
+                        SECURITY_LOGGER.tracef("Cached entry for '%s' is being retrieved into cache.", key);
+                    }
+
+                    currentlyExecuted = true;
+
+                } else {
+                    SECURITY_LOGGER.tracef("Cached entry for '%s' found in cache.", key);
+                }
+
+            }
+
+            SearchResult<R> res = null;
+            try {
+                // The individual entry will handle it's own synchronization now.
+                res = entry.getSearchResult(connectionHandler, key);
+            } finally {
+                if (currentlyExecuted) {
+                    synchronized (theCache) {
+                        boolean removed = executions.remove(key, entry);
+
+                        if(!removed) {
+                            //probably removed/updated by other thread, which transferred entry into cache (or is about to do,
+                            // (If this thread was sleeping so long, that another threads emptied executions and inserted different entry with the same key)
+                            return res;
+                        }
+
+                        if (res != null || (entry.failure != null && cacheFailures)) {
+                            if (maxSize > 0 && theCache.size() + 1 > maxSize) {
+                                boolean trace = SECURITY_LOGGER.isTraceEnabled();
+                                Iterator<Entry<K, CacheEntry>> it = theCache.entrySet().iterator();
+                                while (theCache.size() + 1 > maxSize) {
+                                    Entry<K, CacheEntry> current = it.next();
+                                    current.getValue().cancelFuture();
+                                    it.remove();
+                                    if (trace) {
+                                        SECURITY_LOGGER.tracef(
+                                                "Entry with key '%s' evicted from cache due to cache being above maximum size.",
+                                                current.getKey());
+                                    }
+                                }
+                            }
+                            theCache.put(key, entry);
+                            if (evictionTime > 0) {
+                                entry.setFuture(executorService.schedule(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        synchronized (theCache) {
+                                            CacheEntry entry = theCache.remove(key);
+                                            if (entry == null) {
+                                                SECURITY_LOGGER.tracef("Entry with key '%s' not in cache at time of timeout.", key);
+                                            } else {
+                                                SECURITY_LOGGER.tracef("Evicted entry with key '%s' due to eviction timeout.", key);
+                                            }
+                                        }
+
+                                    }
+                                }, evictionTime, TimeUnit.SECONDS));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return res;
         }
 
         @Override
@@ -422,53 +515,10 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
         }
 
         @Override
-        public SearchResult<R> search(LdapConnectionHandler connectionHandler, final K key) throws IOException, NamingException {
-            CacheEntry entry = null;
-            synchronized (theCache) {
-                entry = theCache.get(key);
-                if (entry == null) {
-                    SECURITY_LOGGER.tracef("Entry for '%s' not found in cache.", key);
-                    entry = new CacheEntry();
-                    theCache.put(key, entry);
-                    if (maxSize > 0 && theCache.size() > maxSize) {
-                        boolean trace = SECURITY_LOGGER.isTraceEnabled();
-                        Iterator<Entry<K, CacheEntry>> it = theCache.entrySet().iterator();
-                        while (theCache.size() > maxSize) {
-                            Entry<K, CacheEntry> current = it.next();
-                            current.getValue().cancelFuture();
-                            it.remove();
-                            if (trace) {
-                                SECURITY_LOGGER.tracef(
-                                        "Entry with key '%s' evicted from cache due to cache being above maximum size.",
-                                        current.getKey());
-                            }
-                        }
-                    }
-                    if (evictionTime > 0) {
-                        entry.setFuture(executorService.schedule(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                synchronized (theCache) {
-                                    CacheEntry entry = theCache.remove(key);
-                                    if (entry == null) {
-                                        SECURITY_LOGGER.tracef("Entry with key '%s' not in cache at time of timeout.", key);
-                                    } else {
-                                        SECURITY_LOGGER.tracef("Evicted entry with key '%s' due to eviction timeout.", key);
-                                    }
-                                }
-
-                            }
-                        }, evictionTime, TimeUnit.SECONDS));
-                    }
-                } else {
-                    SECURITY_LOGGER.tracef("Cached entry for '%s' found in cache.", key);
-                }
-
-            }
-            // The individual entry will handle it's own synchronization now.
-            return entry.getSearchResult(connectionHandler, key);
+        protected CacheEntry readFromCache(final K key) throws IOException, NamingException {
+            return theCache.get(key);
         }
+
 
     }
 
@@ -479,53 +529,12 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
         }
 
         @Override
-        public SearchResult<R> search(LdapConnectionHandler connectionHandler, final K key) throws IOException, NamingException {
-            CacheEntry entry = null;
-            synchronized (theCache) {
-                // Always remove the cached entry so it can be re-added and moved to the end of the list.
-                entry = theCache.remove(key);
-                if (entry == null) {
-                    SECURITY_LOGGER.tracef("Entry for '%s' not found in cache.", key);
-                    entry = new CacheEntry();
-                    if (maxSize > 0 && theCache.size() + 1 > maxSize) {
-                        boolean trace = SECURITY_LOGGER.isTraceEnabled();
-                        Iterator<Entry<K, CacheEntry>> it = theCache.entrySet().iterator();
-                        while (theCache.size() + 1 > maxSize) {
-                            Entry<K, CacheEntry> current = it.next();
-                            current.getValue().cancelFuture();
-                            it.remove();
-                            if (trace) {
-                                SECURITY_LOGGER.tracef(
-                                        "Entry with key '%s' evicted from cache due to cache being above maximum size.",
-                                        current.getKey());
-                            }
-                        }
-                    }
-                } else {
-                    SECURITY_LOGGER.tracef("Cached entry for '%s' found in cache.", key);
-                }
+        protected CacheEntry readFromCache(final K key) throws IOException, NamingException {
+            CacheEntry entry = theCache.remove(key);
+            if(entry != null) {
                 theCache.put(key, entry);
-                if (evictionTime > 0) {
-                    entry.cancelFuture();
-                    entry.setFuture(executorService.schedule(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            synchronized (theCache) {
-                                CacheEntry entry = theCache.remove(key);
-                                if (entry == null) {
-                                    SECURITY_LOGGER.tracef("Entry with key '%s' not in cache at time of timeout.", key);
-                                } else {
-                                    SECURITY_LOGGER.tracef("Evicted entry with key '%s' due to eviction timeout.", key);
-                                }
-                            }
-
-                        }
-                    }, evictionTime, TimeUnit.SECONDS));
-                }
             }
-            // The individual entry will handle it's own synchronization now.
-            return entry.getSearchResult(connectionHandler, key);
+            return entry;
         }
 
     }
