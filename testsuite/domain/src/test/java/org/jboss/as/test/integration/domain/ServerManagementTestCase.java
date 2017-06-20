@@ -102,6 +102,9 @@ public class ServerManagementTestCase {
     private static final PathAddress newServerConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "new-server");
     // (host=slave),(server=new-server)
     private static final PathAddress newRunningServerAddress = PathAddress.pathAddress("host", "slave").append("server", "new-server");
+    private static final String EXCLUDED_FROM_HOST_PROP = "WFCORE-2526.from.host";
+    private static final String EXCLUDED_FROM_CONFIG_PROP = "WFCORE-2526.from.config";
+    private static final String INCLUDED_FROM_HOST_PROP = "WFCORE-2526.ok.from.host";
 
     static {
         // (host=slave)
@@ -113,8 +116,13 @@ public class ServerManagementTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml"));
+        DomainTestSupport.Configuration config =  DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
+                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml");
+        // Props for WFCORE-2526 testing
+        config.getSlaveConfiguration().addHostCommandLineProperty("-Djboss.host.server-excluded-properties="+EXCLUDED_FROM_HOST_PROP+"," +EXCLUDED_FROM_CONFIG_PROP);
+        config.getSlaveConfiguration().addHostCommandLineProperty("-D" + EXCLUDED_FROM_HOST_PROP + "=host");
+        config.getSlaveConfiguration().addHostCommandLineProperty("-D" + INCLUDED_FROM_HOST_PROP + "=ok");
+        testSupport = DomainTestSupport.createAndStartSupport(config);
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
@@ -193,6 +201,9 @@ public class ServerManagementTestCase {
     public void testAddAndRemoveServer() throws Exception {
         final DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
 
+        Assert.assertFalse(exists(client, newServerConfigAddress));
+        Assert.assertFalse(exists(client, newRunningServerAddress));
+
         final ModelNode addServer = new ModelNode();
         addServer.get(OP).set(ADD);
         addServer.get(OP_ADDR).set(newServerConfigAddress.toModelNode());
@@ -201,13 +212,18 @@ public class ServerManagementTestCase {
         addServer.get(SOCKET_BINDING_PORT_OFFSET).set(650);
         addServer.get(AUTO_START).set(false);
 
-        Assert.assertFalse(exists(client, newServerConfigAddress));
-        Assert.assertFalse(exists(client, newRunningServerAddress));
-
         ModelNode result = client.execute(addServer);
         client.execute(Util.createAddOperation(newServerConfigAddress.append("jvm", "default")));
 
         DomainTestSupport.validateResponse(result, false);
+
+        // Stick a WFCORE-2526 test in here since we are starting a server
+        // Setup bits ---
+        ModelNode sysPropAdd = Util.createAddOperation(newServerConfigAddress.append("system-property", EXCLUDED_FROM_CONFIG_PROP));
+        sysPropAdd.get("value").set("config");
+        result = client.execute(sysPropAdd);
+        DomainTestSupport.validateResponse(result, false);
+        // -- end setup bits
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
@@ -217,6 +233,21 @@ public class ServerManagementTestCase {
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
+
+        // Stick a WFCORE-2526 test in here since we have started a server
+        // test bits ---
+        // The HC VM has IN/EXCLUDED_FROM_HOST_PROP since we passed them in setupDomain but it doesn't have EXCLUDED_FROM_CONFIG_PROP
+        // The server sees EXCLUDED_FROM_CONFIG_PROP because it's in its server-config and WFCORE-2526 doesn't override that
+        // The server sees INCLUDED_FROM_HOST_PROP because setupDomain didn't configure it as excluded
+        ModelNode hostProperties = readSystemProperties(client, newRunningServerAddress.getParent());
+        ModelNode serverProperties = readSystemProperties(client, newRunningServerAddress);
+        checkProcessSystemProperty(hostProperties, EXCLUDED_FROM_HOST_PROP, "host");
+        checkProcessSystemProperty(hostProperties, INCLUDED_FROM_HOST_PROP, "ok");
+        checkProcessSystemProperty(hostProperties, EXCLUDED_FROM_CONFIG_PROP, null);
+        checkProcessSystemProperty(serverProperties, EXCLUDED_FROM_HOST_PROP, null);
+        checkProcessSystemProperty(serverProperties, INCLUDED_FROM_HOST_PROP, "ok");
+        checkProcessSystemProperty(serverProperties, EXCLUDED_FROM_CONFIG_PROP, "config");
+        // -- end test bits
 
         final ModelNode stopServer = new ModelNode();
         stopServer.get(OP).set("stop");
@@ -238,6 +269,24 @@ public class ServerManagementTestCase {
 
         Assert.assertFalse(exists(client, newServerConfigAddress));
         Assert.assertFalse(exists(client, newRunningServerAddress));
+    }
+
+    private ModelNode readSystemProperties(DomainClient client, PathAddress parent) throws IOException {
+        PathAddress addr = parent.append("core-service", "platform-mbean").append("type", "runtime");
+        ModelNode op = Util.getReadAttributeOperation(addr, "system-properties");
+        ModelNode response = client.execute(op);
+        ModelNode result = DomainTestSupport.validateResponse(response, true);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(response.toString(), ModelType.OBJECT, result.getType());
+        return result;
+    }
+
+    private void checkProcessSystemProperty(ModelNode properties, String prop, String expectedValue) {
+        if (expectedValue == null) {
+            Assert.assertFalse(prop + " should not be defined", properties.hasDefined(prop));
+        } else {
+            Assert.assertEquals("Wrong value for " + prop, expectedValue, properties.get(prop).asString());
+        }
     }
 
     @Test

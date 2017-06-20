@@ -38,6 +38,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +96,14 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     static {
         EMPTY.setEmptyList();
         EMPTY.protect();
+    }
+    private static final String EXCLUDED_PROPERTIES_PROP = "jboss.host.server-excluded-properties";
+    private static Set<String> getExcludedHostProperties() {
+        String excluded = System.getProperty(EXCLUDED_PROPERTIES_PROP);
+        if (excluded == null || excluded.length() == 0) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(Arrays.asList(excluded.split(",")));
     }
 
     private final String serverName;
@@ -262,10 +271,13 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
+        Set<String> excludedHostProperties = getExcludedHostProperties();
         for (Map.Entry<String, String> hostProp : environment.getHostSystemProperties().entrySet()) {
-            if (!bootTimeProperties.containsKey(hostProp.getKey())
-                    && ! SERVER_CONFIGURATION_PROPERTIES.contains(hostProp.getKey())) {
-                bootTimeProperties.put(hostProp.getKey(), hostProp.getValue());
+            String propName = hostProp.getKey();
+            if (!bootTimeProperties.containsKey(propName)
+                    && ! SERVER_CONFIGURATION_PROPERTIES.contains(propName)
+                    && !excludedHostProperties.contains(propName)) {
+                bootTimeProperties.put(propName, hostProp.getValue());
             }
         }
         for (Entry<String, String> entry : bootTimeProperties.entrySet()) {
