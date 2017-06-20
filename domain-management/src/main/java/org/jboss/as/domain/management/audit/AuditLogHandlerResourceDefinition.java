@@ -99,6 +99,12 @@ public class AuditLogHandlerResourceDefinition extends SimpleResourceDefinition 
         this.pathManager = pathManager;
     }
 
+    AuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager, Parameters parameters) {
+        super(parameters);
+        this.auditLogger = auditLogger;
+        this.pathManager = pathManager;
+    }
+
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         for (AttributeDefinition def : RUNTIME_ATTRIBUTES) {

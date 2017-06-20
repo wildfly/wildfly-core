@@ -25,7 +25,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_CERT_STORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
+import static org.jboss.as.domain.management.security.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
+import static org.jboss.as.domain.management.security.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
 
 import java.util.List;
 import java.util.Locale;
@@ -46,12 +49,14 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.SyslogAuditLogHandler;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
@@ -210,15 +215,31 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
     }
 
     public static class TlsKeyStore extends SimpleResourceDefinition {
+
+        public static final RuntimeCapability SYSLOG_AUDIT_TLS_HANDLER = RuntimeCapability.Builder.of("org.wildfly.management.audit.handler", true, Void.class)
+                .setDynamicNameMapper((PathAddress opAddress) -> {
+                    int lastElement = opAddress.size() - 1;
+                    for (int i = lastElement; i > -0; i--) {
+                        PathElement element = opAddress.getElement(i);
+                        if (element.getKey().equals(SYSLOG_HANDLER)) {
+                            return i == lastElement ? opAddress.getLastElement().getKeyValuePair() : new String[]{opAddress.subAddress(0, i + 1).getLastElement().getKey(), opAddress.subAddress(0, i + 1).getLastElement().getValue(), opAddress.getLastElement().getKey(), opAddress.getLastElement().getValue()};
+                        }
+                    }
+                    return opAddress.getLastElement().getKeyValuePair();
+                }).build();
         public static final PathElement TRUSTSTORE_ELEMENT = PathElement.pathElement(AUTHENTICATION, TRUSTSTORE);
         public static final PathElement CLIENT_CERT_ELEMENT = PathElement.pathElement(AUTHENTICATION, CLIENT_CERT_STORE);
 
         public static final SimpleAttributeDefinition KEYSTORE_PASSWORD = KeystoreAttributes.KEYSTORE_PASSWORD;
-        public static final ObjectTypeAttributeDefinition KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE;
+        public static final ObjectTypeAttributeDefinition KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, false, true)
+                    .setAlternatives(ModelDescriptionConstants.KEYSTORE_PASSWORD)
+                    .build();
         public static final SimpleAttributeDefinition KEYSTORE_PATH = KeystoreAttributes.KEYSTORE_PATH;
         public static final SimpleAttributeDefinition KEYSTORE_RELATIVE_TO = KeystoreAttributes.KEYSTORE_RELATIVE_TO;
         public static final SimpleAttributeDefinition KEY_PASSWORD = KeystoreAttributes.KEY_PASSWORD;
-        public static final ObjectTypeAttributeDefinition KEY_PASSWORD_CREDENTIAL_REFERENCE = KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE;
+        public static final ObjectTypeAttributeDefinition KEY_PASSWORD_CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME, KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME, true, true)
+                    .setAlternatives(org.jboss.as.domain.management.ModelDescriptionConstants.KEY_PASSWORD)
+                    .build();
 
         private static final AttributeDefinition[] CLIENT_CERT_ATTRIBUTES = new AttributeDefinition[]{
                 KEYSTORE_PASSWORD, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, KEYSTORE_PATH, KEYSTORE_RELATIVE_TO, KEY_PASSWORD, KEY_PASSWORD_CREDENTIAL_REFERENCE};
@@ -233,7 +254,10 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
 
         private TlsKeyStore(ManagedAuditLogger auditLogger, PathManagerService pathManager, PathElement pathElement,
                            ResourceDescriptionResolver resolver, AttributeDefinition[] attributes, EnvironmentNameReader environmentReader) {
-            super(pathElement, resolver, new TlsKeyStoreAddHandler(auditLogger, pathManager, attributes, environmentReader), new ProtocolConfigRemoveHandler(auditLogger, pathManager, environmentReader));
+            super(new Parameters(pathElement, resolver)
+                    .setAddHandler( new TlsKeyStoreAddHandler(auditLogger, pathManager, attributes, environmentReader))
+                    .setRemoveHandler(new ProtocolConfigRemoveHandler(auditLogger, pathManager, environmentReader))
+                    .setCapabilities(SYSLOG_AUDIT_TLS_HANDLER));
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
             this.attributes = attributes;
@@ -297,28 +321,25 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             auditLogger.getUpdater().rollbackChanges();
         }
+
     }
 
     private static class ProtocolConfigAddHandler extends AbstractAddStepHandler {
         private final ManagedAuditLogger auditLogger;
         private final PathManagerService pathManager;
-        private final AttributeDefinition[] attributes;
         private final EnvironmentNameReader environmentReader;
 
         ProtocolConfigAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes, EnvironmentNameReader environmentReader){
+            super(attributes);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
-            this.attributes = attributes;
             this.environmentReader = environmentReader;
         }
 
         @Override
         protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             checkNoOtherProtocol(context, operation);
-            ModelNode model = resource.getModel();
-            for (AttributeDefinition def: attributes){
-                def.validateAndSet(operation, model);
-            }
+            super.populateModel(context, operation, resource);
         }
 
         private void checkNoOtherProtocol(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -356,20 +377,13 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
     private static class TlsKeyStoreAddHandler extends AbstractAddStepHandler {
         private final ManagedAuditLogger auditLogger;
         private final PathManagerService pathManager;
-        private final AttributeDefinition[] attributes;
         private final EnvironmentNameReader environmentReader;
 
         TlsKeyStoreAddHandler(ManagedAuditLogger auditLogger, PathManagerService pathManager, AttributeDefinition[] attributes, EnvironmentNameReader environmentReader) {
+            super(attributes);
             this.auditLogger = auditLogger;
             this.pathManager = pathManager;
-            this.attributes = attributes;
             this.environmentReader = environmentReader;
-        }
-        @Override
-        protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition def : attributes){
-                def.validateAndSet(operation, model);
-            }
         }
 
         @Override
@@ -387,5 +401,6 @@ public abstract class SyslogAuditLogProtocolResourceDefinition extends SimpleRes
         protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             auditLogger.getUpdater().rollbackChanges();
         }
+
     }
 }
