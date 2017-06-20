@@ -24,7 +24,9 @@ package org.jboss.as.logging;
 import static org.jboss.as.controller.client.helpers.Operations.createAddOperation;
 import static org.jboss.as.controller.client.helpers.Operations.createRemoveOperation;
 import static org.jboss.as.subsystem.test.SubsystemOperations.OperationBuilder;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +39,8 @@ import java.util.logging.Level;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -273,6 +277,39 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
                 .build().getOperation();
         executeOperation(kernelServices, op);
 
+    }
+
+    /**
+     * Tests a composite operation of undefining a {@code formatter} attribute and defining a {@code named-formatter}
+     * attribute in a composite operation. These two specific attributes have strange behavior. If the
+     * {@code named-formatter} is defined it removes the formatter, named the same as the handler, which was created
+     * as part of the {@code undefine-attribute} operation of the {@code formatter} attribute.
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testCompositeOperations() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        final ModelNode address = createFileHandlerAddress("FILE").toModelNode();
+        final String filename = "test-file.log";
+
+        // Add the handler
+        ModelNode addOp = OperationBuilder.createAddOperation(address)
+                .addAttribute(CommonAttributes.FILE, createFileValue("jboss.server.log.dir", filename))
+                .build();
+        executeOperation(kernelServices, addOp);
+        final ModelNode patternFormatterAddress = createPatternFormatterAddress("PATTERN").toModelNode();
+        addOp = SubsystemOperations.createAddOperation(patternFormatterAddress);
+        addOp.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("%d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
+        executeOperation(kernelServices, addOp);
+
+        // Create a composite operation to undefine
+        final Operation op = CompositeOperationBuilder.create()
+                .addStep(Operations.createUndefineAttributeOperation(address, "formatter"))
+                .addStep(Operations.createWriteAttributeOperation(address, "named-formatter", "PATTERN"))
+                .build();
+        executeOperation(kernelServices, op.getOperation());
     }
 
     private void testAsyncHandler(final KernelServices kernelServices, final String profileName) throws Exception {

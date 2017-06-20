@@ -24,6 +24,8 @@ package org.jboss.as.logging;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import java.util.Collection;
+
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -47,6 +49,11 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 final class LoggingOperations {
+
+    /**
+     * Used to add runtime steps to be executed after a {@linkplain LogContextConfiguration#commit() commit}.
+     */
+    static final AttachmentKey<Collection<OperationStepHandler>> AFTER_COMMIT_STEPS = AttachmentKey.create(Collection.class);
 
     /**
      * Get the address name from the operation.
@@ -79,6 +86,13 @@ final class LoggingOperations {
      */
     static void addCommitStep(final OperationContext context, final ConfigurationPersistence configurationPersistence) {
         context.addStep(new CommitOperationStepHandler(configurationPersistence), Stage.RUNTIME);
+        final Collection<OperationStepHandler> afterCommitSteps = context.detach(AFTER_COMMIT_STEPS);
+        if (afterCommitSteps != null && !afterCommitSteps.isEmpty()) {
+            for (OperationStepHandler step : afterCommitSteps) {
+                context.addStep(step, Stage.RUNTIME);
+            }
+            context.addStep(new CommitOperationStepHandler(configurationPersistence), Stage.RUNTIME);
+        }
     }
 
     private static final class CommitOperationStepHandler implements OperationStepHandler {
