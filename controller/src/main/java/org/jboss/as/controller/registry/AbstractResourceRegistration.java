@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.registry;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -446,21 +445,17 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     abstract Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator);
 
     private RootInvocation getRootInvocation() {
-        RootInvocation result = null;
-        if (parent != null) {
+        RootInvocation result = rootInvocation;
+        if (result == null && parent != null) {
             synchronized (this) {
                 if (rootInvocation == null) {
                     NodeSubregistry ancestorSubregistry = parent;
                     AbstractResourceRegistration ancestorReg = this;
-                    final List<PathElement> path = new ArrayList<PathElement>();
                     while (ancestorSubregistry != null) {
-                        PathElement pe = PathElement.pathElement(ancestorSubregistry.getKeyName(), ancestorReg.valueString);
-                        path.add(0, pe);
                         ancestorReg = ancestorSubregistry.getParent();
                         ancestorSubregistry = ancestorReg.parent;
                     }
-                    PathAddress pa = PathAddress.pathAddress(path);
-                    rootInvocation = new RootInvocation(ancestorReg, pa);
+                    rootInvocation = new RootInvocation(ancestorReg, pathAddress);
                 }
                 result = rootInvocation;
             }
