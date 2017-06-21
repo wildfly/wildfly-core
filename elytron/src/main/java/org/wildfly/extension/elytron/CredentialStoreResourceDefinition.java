@@ -417,6 +417,9 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
                         CredentialStore credentialStore = credentialStoreService.getValue();
                         PasswordCredential retrieved = credentialStore.retrieve(alias, PasswordCredential.class);
+                        if (retrieved == null) {
+                            throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
+                        }
                         credentialStore.remove(alias, PasswordCredential.class);
                         try {
                             credentialStore.flush();
