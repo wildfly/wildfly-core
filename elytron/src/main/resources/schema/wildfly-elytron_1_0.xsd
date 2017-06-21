@@ -1733,14 +1733,14 @@
         <xs:attribute name="connection-timeout" type="xs:integer" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The timeout for connecting to the LDAP server in miliseconds.
+                    The timeout for connecting to the LDAP server in milliseconds.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="read-timeout" type="xs:integer" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The read timeout for an LDAP operation in miliseconds.
+                    The read timeout for an LDAP operation in milliseconds.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4514,7 +4514,7 @@
                     <xs:attribute name="time-limit" type="xs:integer" use="optional" default="10000">
                         <xs:annotation>
                             <xs:documentation>
-                                The time limit for LDAP search in miliseconds.
+                                The time limit for LDAP search in milliseconds.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
