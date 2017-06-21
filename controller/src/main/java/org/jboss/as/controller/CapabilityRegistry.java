@@ -730,6 +730,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         if (!forServer) {
             target.knownContexts.addAll(source.knownContexts);
         }
+        target.resolutionContext.copy(source.resolutionContext);
     }
 
     /**
@@ -954,6 +955,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
         private boolean resolutionComplete;
         private Resource rootResource;
+
+        private void copy(ResolutionContextImpl source) {
+            super.copy(source);
+            rootResource = source.rootResource;
+            resolutionComplete = source.resolutionComplete;
+        }
 
         @Override
         public Resource getResourceRoot() {
