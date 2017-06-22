@@ -140,7 +140,8 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
         message = DATE_STAMP_PATTERN.matcher(message).replaceFirst("{");
         ModelNode syslogNode = ModelNode.fromJSONString(message);
         checkLog("Syslog", syslogNode);
-        List<ModelNode> logs = readFile(1);
+        //Since JMX audit logging is not enabled for this test, we should not need to trim the records for WFCORE-2997
+        List<ModelNode> logs = readFile(1, false);
         ModelNode log = logs.get(0);
         checkLog("File", log);
     }
