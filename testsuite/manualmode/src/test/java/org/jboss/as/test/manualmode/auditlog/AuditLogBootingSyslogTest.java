@@ -20,8 +20,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRU
 import static org.jboss.as.test.manualmode.auditlog.AbstractLogFieldsOfLogTestCase.executeForSuccess;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import javax.inject.Inject;
 import org.jboss.as.controller.PathAddress;
@@ -32,6 +30,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.as.test.syslogserver.BlockedSyslogServerEventHandler;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -116,22 +115,23 @@ public class AuditLogBootingSyslogTest {
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
         queue.clear();
         container.start();
-        Assert.assertEquals(18, queue.size());
+        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        waitForExpectedQueueSize(18, queue);
         queue.clear();
         makeOneLog();
-        //Temp code to get more information
-        //Assert.assertEquals(queue.size(), 1, queue.size());
-        int size = queue.size();
-        Assert.assertNotEquals(0, size); //If this is the cause of the errors, perhaps we need to loop and wait
-        if (queue.size() > 1) {
-            List<String> list = new ArrayList<>();
-            for (int i = 0 ; i < size ; i++) {
-                SyslogServerEventIF event = queue.take();
-                list.add(event.getMessage());
-            }
-            Assert.assertEquals(list.toString(), 1, size);
-        }
+        waitForExpectedQueueSize(1, queue);
         queue.clear();
+    }
+
+    private void waitForExpectedQueueSize(int expectedSize, BlockingQueue<SyslogServerEventIF> queue) throws InterruptedException {
+        long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
+        do {
+            if (queue.size() == expectedSize) {
+                break;
+            }
+            Thread.sleep(100);
+        } while (System.currentTimeMillis() < endTime);
+        Assert.assertEquals(expectedSize, queue.size());
     }
 
     private boolean makeOneLog() throws IOException {
