@@ -248,7 +248,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
     void save() throws OperationFailedException {
         if (resolvedPath == null) {
-            throw ROOT_LOGGER.cantSaveWithoutFile();
+            throw ROOT_LOGGER.cantSaveWithoutFile(path);
         }
         ROOT_LOGGER.tracef("saving KeyStore to the file [%s]", resolvedPath);
         try (FileOutputStream fos = new FileOutputStream(resolvedPath)) {

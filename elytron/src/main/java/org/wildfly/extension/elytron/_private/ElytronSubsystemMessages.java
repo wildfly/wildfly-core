@@ -133,8 +133,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      *
      * @return The {@link OperationFailedException} for the error.
      */
-    @Message(id = 10, value = "Unable to save KeyStore - path is not defined.")
-    OperationFailedException cantSaveWithoutFile();
+    @Message(id = 10, value = "Unable to save KeyStore - KeyStore file '%s' does not exist.")
+    OperationFailedException cantSaveWithoutFile(final String file);
 
     /**
      * A {@link StartException} for when provider registration fails due to an existing registration.
@@ -241,11 +241,11 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 21, value = "Exception while creating the permission object for the permission mapping. Please check [class-name], [target-name] (name of permission) and [action] of [%s].")
     StartException exceptionWhileCreatingPermission(String permissionClassName, @Cause Throwable cause);
 
-    @Message(id = 22, value = "KeyStore file '%s' does not exists and required.")
+    @Message(id = 22, value = "KeyStore file '%s' does not exist and required.")
     StartException keyStoreFileNotExists(final String file);
 
     @LogMessage(level = WARN)
-    @Message(id = 23, value = "KeyStore file '%s' does not exists. Used blank.")
+    @Message(id = 23, value = "KeyStore file '%s' does not exist. Used blank.")
     void keyStoreFileNotExistsButIgnored(final String file);
 
     @LogMessage(level = WARN)
