@@ -40,9 +40,7 @@
                 <property name="c" value="d" />
             </properties>
             <filters>
-                <filter enabling="false">
-                    <pattern-filter value="x" />
-                </filter>
+                <filter enabling="false" pattern="x" />
             </filters>
         </configurable-http-server-mechanism-factory>
         <provider-http-server-mechanism-factory name="ProviderHttpFactory" providers="TestProviderLoader" />

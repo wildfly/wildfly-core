@@ -39,6 +39,8 @@ import javax.naming.ldap.LdapName;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -83,18 +85,21 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition SEARCH_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_PATH, ModelType.STRING, false)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
+            .setXmlName("path")
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SEARCH_RECURSIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
+            .setXmlName("recursive")
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SEARCH_TIME_LIMIT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_TIME_LIMIT, ModelType.INT, true)
             .setAttributeGroup(ElytronDescriptionConstants.SEARCH)
+            .setXmlName("time-limit")
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
@@ -135,6 +140,8 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
                 .setRequired(true)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
+                .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+                .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
                 .setRequires(ElytronDescriptionConstants.NEW_ITEM_PATH, ElytronDescriptionConstants.NEW_ITEM_RDN)
                 .build();
 
@@ -337,6 +344,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
 
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE, ATTRIBUTES)
                 .setRequired(false)
+                .setXmlName("attribute")
                 .build();
     }
 

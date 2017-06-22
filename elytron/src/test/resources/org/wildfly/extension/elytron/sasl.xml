@@ -40,12 +40,8 @@
                 <property name="c" value="d" />
             </properties>
             <filters>
-                <filter enabling="false">
-                    <predefined-filter value="HASH_MD5" />
-                </filter>
-                <filter>
-                    <pattern-filter value="x" />
-                </filter>
+                <filter enabling="false" pattern="x" />
+                <filter enabling="false" predefined="HASH_MD5" />
             </filters>
         </configurable-sasl-server-factory>
         <mechanism-provider-filtering-sasl-server-factory name="MechFiltering" sasl-server-factory="AggregateSaslFactory" enabling="false">

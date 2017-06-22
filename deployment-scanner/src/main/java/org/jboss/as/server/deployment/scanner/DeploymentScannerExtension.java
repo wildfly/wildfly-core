@@ -28,7 +28,6 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -65,7 +64,7 @@ public class DeploymentScannerExtension implements Extension {
     public void initialize(ExtensionContext context) {
         ROOT_LOGGER.debug("Initializing Deployment Scanner Extension");
 
-        if (context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+        if (context.getProcessType().isHostController()) {
             throw DeploymentScannerLogger.ROOT_LOGGER.deploymentScannerNotForDomainMode();
         }
 

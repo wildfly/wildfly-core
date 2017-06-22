@@ -22,7 +22,6 @@
 package org.jboss.as.test.integration.domain;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_FAILURE_DESCRIPTIONS;
@@ -187,7 +186,7 @@ public class SlaveSynchronizationTestCase {
        Assert.assertTrue(DomainTestUtils.checkState(masterClient, mainOneAddress, "STARTED"));
        ModelNode result = masterClient.execute(Util.createRemoveOperation(mainOneAddress));
        ModelNode failure = DomainTestSupport.validateFailedResponse(result);
-       Assert.assertThat("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString(), is(HostControllerLogger.ROOT_LOGGER.serverStillRunning("server-one")));
+       Assert.assertTrue("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString().matches("WFLYHC0078.+server-one.*"));
     }
 
     private ModelNode removeServer(final ModelControllerClient client, final PathAddress address) throws IOException, MgmtOperationException {

@@ -28,7 +28,6 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -39,15 +38,14 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
@@ -67,7 +65,7 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleMapAttributeDefinition CONFIGURATION = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, ModelType.STRING, true)
+    static final PropertiesAttributeDefinition CONFIGURATION = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.CONFIGURATION, true)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
@@ -131,13 +129,7 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
             final String className = CLASS_NAME.resolveModelAttribute(context, model).asString();
 
             final Map<String, String> configurationMap;
-            ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
-            if (configuration.isDefined()) {
-                configurationMap = new HashMap<String, String>();
-                configuration.keys().forEach((String s) -> configurationMap.put(s, configuration.require(s).asString()));
-            } else {
-                configurationMap = null;
-            }
+            configurationMap = CONFIGURATION.unwrap(context, model);
 
             TrivialService<T> customComponentService = new TrivialService<T>(() -> createValue(module, className, configurationMap));
 
@@ -164,7 +156,7 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
 
                 T component = typeClazz.newInstance();
 
-                if (configuration != null) {
+                if (configuration != null && !configuration.isEmpty()) {
                     if (component instanceof Configurable == false) {
                         throw ROOT_LOGGER.componentNotConfigurable(component.getClass().getName());
                     }

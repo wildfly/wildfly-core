@@ -97,14 +97,14 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
 
     /**
      * Gets whether this operation needs to update the runtime. The default implementation returns {@code true}
-     * if {@link OperationContext#getProcessType() the process type} is not {@link ProcessType#HOST_CONTROLLER}.
+     * if {@link OperationContext#getProcessType()#isHostController()} is false.
      *
      * @param context the operation context
      * @return {@code true} if the operation should update the runtime; {@code false} if it only updates the configuration
      *         model
      */
     protected boolean requiresRuntime(OperationContext context) {
-        return context.getProcessType() != ProcessType.HOST_CONTROLLER;
+        return !context.getProcessType().isHostController();
     }
 
     /**

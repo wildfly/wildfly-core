@@ -71,13 +71,11 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
     private volatile String tlsTrustStorePath;
     private volatile String tlsTrustStoreRelativeTo;
     private volatile String tlsTrustStorePassword;
-    private volatile ExceptionSupplier<CredentialSource, Exception> tlsTrustStoreSupplier;
+    private volatile SyslogCredentialReferenceSupplier syslogAuditLogHandlerService;
     private volatile String tlsClientCertStorePath;
     private volatile String tlsClientCertStoreRelativeTo;
     private volatile String tlsClientCertStorePassword;
-    private volatile ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreSupplier;
     private volatile String tlsClientCertStoreKeyPassword;
-    private volatile ExceptionSupplier<CredentialSource, Exception>tlsClientCertStoreKeySupplier;
     private volatile TransportErrorManager errorManager;
     private volatile int reconnectTimeout = -1;
     private volatile long lastErrorTime = -1;
@@ -86,10 +84,12 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
 
     private static final String APPNAME_FILTER = "[\\P{Print}\\ ]";
     private static final String APPNAME_REPLACE_VALUE = "_";
+    private static final char[] EMPTY_PASSWORD = new char[0];
 
-    public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager) {
+    public SyslogAuditLogHandler(String name, String formatterName, int maxFailureCount, PathManagerService pathManager, SyslogCredentialReferenceSupplier syslogAuditLogHandlerService) {
         super(name, formatterName, maxFailureCount);
         this.pathManager = pathManager;
+        this.syslogAuditLogHandlerService = syslogAuditLogHandlerService;
         connected = false;
     }
 
@@ -177,18 +177,6 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
         this.tlsClientCertStoreKeyPassword = tlsClientCertStoreKeyPassword;
     }
 
-    public void setTlsTrustStoreSupplier(ExceptionSupplier<CredentialSource, Exception> tlsTrustStoreSupplier) {
-        this.tlsTrustStoreSupplier = tlsTrustStoreSupplier;
-    }
-
-    public void setTlsClientCertStoreSupplier(ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreSupplier) {
-        this.tlsClientCertStoreSupplier = tlsClientCertStoreSupplier;
-    }
-
-    public void setTlsClientCertStoreKeySupplier(ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreKeySupplier) {
-        this.tlsClientCertStoreKeySupplier = tlsClientCertStoreKeySupplier;
-    }
-
     public void setReconnectTimeout(int reconnectTimeout) {
         this.reconnectTimeout = reconnectTimeout;
     }
@@ -208,9 +196,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                 }
             }
         } catch (Exception ex) {
-            return pwd == null ? new char[0] : pwd.toCharArray();
+            return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();
         }
-        return pwd == null ? new char[0] : pwd.toCharArray();
+        return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();
     }
 
     @Override
@@ -286,9 +274,9 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                         final FileInputStream in = new FileInputStream(pathManager.resolveRelativePathEntry(tlsClientCertStorePath, tlsClientCertStoreRelativeTo));
                         try {
                             final KeyStore ks = KeyStore.getInstance("JKS");
-                            char[] tlsClientCertStorePwd = resolvePassword(tlsClientCertStoreSupplier, tlsClientCertStorePassword);
+                            char[] tlsClientCertStorePwd = resolvePassword(syslogAuditLogHandlerService.getTlsClientCertStoreSupplier(), tlsClientCertStorePassword);
                             ks.load(in, tlsClientCertStorePwd);
-                            kmf.init(ks, resolvePassword(tlsClientCertStoreKeySupplier,tlsClientCertStoreKeyPassword != null ? tlsClientCertStoreKeyPassword : String.valueOf(tlsClientCertStorePwd)));
+                            kmf.init(ks, resolvePassword(syslogAuditLogHandlerService.getTlsClientCertStoreKeySupplier(),tlsClientCertStoreKeyPassword != null ? tlsClientCertStoreKeyPassword : String.valueOf(tlsClientCertStorePwd)));
                             keyManagers = kmf.getKeyManagers();
                         } finally {
                             IoUtils.safeClose(in);
@@ -300,7 +288,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                         final FileInputStream in = new FileInputStream(pathManager.resolveRelativePathEntry(tlsTrustStorePath, tlsTrustStoreRelativeTo));
                         try {
                             final KeyStore ks = KeyStore.getInstance("JKS");
-                            ks.load(in, resolvePassword(tlsTrustStoreSupplier, tlsTrustStorePassword));
+                            ks.load(in, resolvePassword(syslogAuditLogHandlerService.getTlsTrustStoreSupplier(), tlsTrustStorePassword));
                             tmf.init(ks);
                             trustManagers = tmf.getTrustManagers();
                         } finally {

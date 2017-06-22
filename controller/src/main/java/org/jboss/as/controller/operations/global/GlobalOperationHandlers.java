@@ -87,7 +87,7 @@ public class GlobalOperationHandlers {
 
 
     public static void registerGlobalOperations(ManagementResourceRegistration root, ProcessType processType) {
-        if( processType == ProcessType.HOST_CONTROLLER) {
+        if( processType.isHostController()) {
             root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.DEFINITION,
                     org.jboss.as.controller.operations.global.ReadResourceHandler.INSTANCE, true);
             root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.DEFINITION,

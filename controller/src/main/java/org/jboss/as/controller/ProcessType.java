@@ -54,6 +54,15 @@ public enum ProcessType {
     }
 
     /**
+     * Returns true if the process is a host controller,
+     *
+     * @return Returns <tt>true</tt> if the process is a hostcontroller. Returns <tt>false</tt> otherwise.
+     */
+    public boolean isHostController() {
+        return !isServer();
+    }
+
+    /**
      * Returns true if the process is a managed domain process.
      *
      * @return Returns <tt>true</tt> if the process is a managed domain process. Returns <tt>false</tt> otherwise.

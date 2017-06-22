@@ -19,8 +19,6 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OPTION;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -38,13 +36,14 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.Oid;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.services.path.PathManager;
@@ -60,9 +59,6 @@ import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.auth.util.GSSCredentialSecurityFactory;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 /**
  * Factory class for the Kerberos security factory resource.
@@ -147,23 +143,9 @@ class KerberosSecurityFactoryDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleMapAttributeDefinition OPTIONS = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.OPTIONS, ModelType.STRING, true)
-            .setAttributeMarshaller(new AttributeMarshaller() {
-
-                @Override
-                public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault,
-                                              XMLStreamWriter writer) throws XMLStreamException {
-                    resourceModel = resourceModel.get(attribute.getName());
-                    if (resourceModel.isDefined()) {
-                        for (ModelNode property : resourceModel.asList()) {
-                            writer.writeEmptyElement(OPTION);
-                            writer.writeAttribute(KEY, property.asProperty().getName());
-                            writer.writeAttribute(VALUE, property.asProperty().getValue().asString());
-                        }
-                    }
-                }
-
-            })
+    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.OPTIONS, true)
+            .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(null, OPTION, false))
+            .setAttributeParser(new AttributeParsers.PropertiesParser(null, OPTION, false))
             .setRestartAllServices()
             .build();
 

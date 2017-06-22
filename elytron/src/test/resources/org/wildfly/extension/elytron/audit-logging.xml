@@ -15,9 +15,10 @@
     </audit-logging>
     <tls>
         <key-stores>
-            <key-store name="truststore" type="JKS">
-                <file path="ca.truststore" relative-to="jboss.server.config.dir"/>
+            <key-store name="truststore" >
                 <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS" />
+                <file path="ca.truststore" relative-to="jboss.server.config.dir"/>
             </key-store>
         </key-stores>
         <trust-managers>

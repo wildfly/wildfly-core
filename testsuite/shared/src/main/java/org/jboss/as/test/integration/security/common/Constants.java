@@ -33,6 +33,7 @@ public interface Constants {
     String ACL_MODULES = "acl-modules";
     String ADDITIONAL_PROPERTIES = "additional-properties";
     String ALGORITHM = "algorithm";
+    String ALIAS = "alias";
     String AUDIT = "audit";
     String AUDIT_MANAGER_CLASS_NAME = "audit-manager-class-name";
     String AUTH_MODULE = "auth-module";
@@ -45,6 +46,7 @@ public interface Constants {
     String CACHE_TYPE = "cache-type";
     String CIPHER_SUITES = "cipher-suites";
     String CLASSIC = "classic";
+    String CLEAR_TEXT = "clear-text";
     String CLIENT_ALIAS = "client-alias";
     String CLIENT_AUTH = "client-auth";
     String CODE = "code";
@@ -59,8 +61,11 @@ public interface Constants {
     String KEY_MANAGER = "key-manager";
     String KEY_MANAGER_FACTORY_ALGORITHM = "key-manager-factory-algorithm";
     String KEY_MANAGER_FACTORY_PROVIDER = "key-manager-factory-provider";
+    String KEY_PASSWORD = "key-password";
+    String KEY_PASSWORD_CREDENTIAL_REFERENCE = "key-password-credential-reference";
     String KEYSTORE = "keystore";
     String KEYSTORE_PASSWORD = "keystore-password";
+    String KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = "keystore-password-credential-reference";
     String KEYSTORE_PROVIDER = "keystore-provider";
     String KEYSTORE_PROVIDER_ARGUMENT = "keystore-provider-argument";
     String KEYSTORE_TYPE = "keystore-type";
@@ -93,6 +98,7 @@ public interface Constants {
     String SECURITY_PROPERTIES = "security-properties";
     String SERVER_ALIAS = "server-alias";
     String SERVICE_AUTH_TOKEN = "service-auth-token";
+    String STORE = "store";
     String SUBJECT_FACTORY = "subject-factory";
     String SUBJECT_FACTORY_CLASS_NAME = "subject-factory-class-name";
     String SUFFICIENT = "sufficient";

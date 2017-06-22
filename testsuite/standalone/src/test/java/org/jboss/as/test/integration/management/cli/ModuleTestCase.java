@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -241,7 +242,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
         String fileName = System.currentTimeMillis() + "file.txt";
         File f = new File(dirFile, fileName);
         f.createNewFile();
-        Files.write(content.getBytes(), f);
+        Files.write(content.getBytes(StandardCharsets.UTF_8), f);
         try {
             cli.sendLine("module add --name=" + MODULE_NAME
                     + " --resources=" + dirFile.getAbsolutePath());
@@ -275,7 +276,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
             String fileName = System.currentTimeMillis() + "file.txt";
             File f = new File(dirFile, fileName);
             f.createNewFile();
-            Files.write(content.getBytes(), f);
+            Files.write(content.getBytes(StandardCharsets.UTF_8), f);
             f.setReadable(false);
             boolean ret = cli.sendLine("module add --name=" + MODULE_NAME
                     + " --resources=" + dirFile.getAbsolutePath(), true);
@@ -306,7 +307,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
         dirFile2.mkdir();
         File f2 = new File(dirFile2, fileName);
         f2.createNewFile();
-        Files.write(content.getBytes(), f2);
+        Files.write(content.getBytes(StandardCharsets.UTF_8), f2);
 
         File subDir = new File(dirFile, "subDirectory");
         subDir.mkdir();

@@ -26,7 +26,6 @@ import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asIntIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -273,7 +272,7 @@ class AuthenticationClientDefinitions {
                 String protocol = asStringIfDefined(context, PROTOCOL, model);
                 configuration = protocol != null ? configuration.andThen(c -> c.useProtocol(protocol)) : configuration;
 
-                int port = asIntIfDefined(context, PORT, model);
+                int port = PORT.resolveModelAttribute(context, model).asInt(-1);
                 configuration = port > 0 ? configuration.andThen(c -> c.usePort(port)) : configuration;
 
                 String realm = asStringIfDefined(context, REALM, model);

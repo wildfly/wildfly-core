@@ -52,6 +52,8 @@ import javax.security.sasl.SaslServerFactory;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -165,7 +167,7 @@ class AuthenticationFactoryDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    private static AttributeDefinition getMechanismConfiguration(String forCapability) {
+    static AttributeDefinition getMechanismConfiguration(String forCapability) {
         SimpleAttributeDefinition preRealmPrincipalTransformerAttribute = new SimpleAttributeDefinitionBuilder(BASE_PRE_REALM_PRINCIPAL_TRANSFORMER)
                 .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability, true)
                 .build();
@@ -181,12 +183,16 @@ class AuthenticationFactoryDefinitions {
 
         ObjectTypeAttributeDefinition mechanismRealmConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATION, REALM_NAME, preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setXmlName(ElytronDescriptionConstants.MECHANISM_REALM)
                 .build();
 
         ObjectListAttributeDefinition mechanismRealmConfigurations = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATIONS, mechanismRealmConfiguration)
                 .setRequired(false)
                 .setAllowExpression(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+                .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+                //.setXmlName(ElytronDescriptionConstants.MECHANISM_REALM)
                 .build();
 
         SimpleAttributeDefinition credentialSecurityFactoryAttribute = new SimpleAttributeDefinitionBuilder(BASE_CREDENTIAL_SECURITY_FACTORY)
@@ -196,11 +202,13 @@ class AuthenticationFactoryDefinitions {
         ObjectTypeAttributeDefinition mechanismConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATION, MECHANISM_NAME, HOST_NAME, PROTOCOL,
                 preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute, mechanismRealmConfigurations, credentialSecurityFactoryAttribute)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .setXmlName(ElytronDescriptionConstants.MECHANISM)
                 .build();
 
         return new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATIONS, mechanismConfiguration)
                 .setRequired(false)
                 .setRestartAllServices()
+                .setXmlName(ElytronDescriptionConstants.MECHANISM_CONFIGURATION)
                 .build();
     }
 

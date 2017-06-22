@@ -27,7 +27,8 @@ import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MOD
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronExtension.asDoubleIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
@@ -45,7 +46,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-
 import javax.security.sasl.SaslServerFactory;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -156,17 +156,19 @@ class SaslServerDefinitions {
 
     static final ObjectTypeAttributeDefinition MECH_PROVIDER_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, MECHANISM_NAME, PROVIDER_NAME, PROVIDER_VERSION, VERSION_COMPARISON)
         .setRequired(false)
+        .setXmlName(FILTER)
         .build();
 
     static final ObjectListAttributeDefinition MECH_PROVIDER_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, MECH_PROVIDER_FILTER)
         .setMinSize(1)
         .setRequired(false)
         .setRestartAllServices()
+        .setXmlName(FILTERS)
         .build();
 
     static final SimpleAttributeDefinition PREDEFINED_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREDEFINED_FILTER, ModelType.STRING, false)
         .setAllowExpression(true)
-        .setXmlName(VALUE)
+        .setXmlName("predefined")
         .setAllowedValues(NamePredicate.names())
         .setValidator(EnumValidator.create(NamePredicate.class, true, true))
         .setMinSize(1)
@@ -175,13 +177,14 @@ class SaslServerDefinitions {
         .build();
 
     static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)
-        .setXmlName(VALUE)
         .setName(ElytronDescriptionConstants.PATTERN_FILTER)
         .setAlternatives(ElytronDescriptionConstants.PREDEFINED_FILTER)
+        .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();
 
     static final ObjectTypeAttributeDefinition CONFIGURED_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, PREDEFINED_FILTER, PATTERN_FILTER, ENABLING)
-        .build();
+            .setXmlName(FILTER)
+            .build();
 
     static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, CONFIGURED_FILTER)
         .setRequired(false)
@@ -208,7 +211,7 @@ class SaslServerDefinitions {
 
     private static final AggregateComponentDefinition<SaslServerFactory> AGGREGATE_SASL_SERVER_FACTORY = AggregateComponentDefinition.create(SaslServerFactory.class,
             ElytronDescriptionConstants.AGGREGATE_SASL_SERVER_FACTORY, ElytronDescriptionConstants.SASL_SERVER_FACTORIES, SASL_SERVER_FACTORY_RUNTIME_CAPABILITY,
-            (SaslServerFactory[] n) -> new AggregateSaslServerFactory(n));
+            AggregateSaslServerFactory::new);
 
 
 

@@ -30,7 +30,7 @@ import org.jboss.as.controller.OperationFailedException;
  */
 public interface RuntimeHostControllerInfoAccessor {
     /**
-     * If the {@link OperationContext#getProcessType()} is {@link org.jboss.as.controller.ProcessType#HOST_CONTROLLER} return an instance of
+     * If the {@link OperationContext#getProcessType()#isHostController()} is true return an instance of
      * LocalHostControllerInfoImpl
      *
      * @param context the operation context

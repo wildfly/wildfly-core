@@ -72,26 +72,24 @@ public class BasicOpsTestCase {
     public void testReadAttribute() throws Exception {
         CLIWrapper cli = new CLIWrapper(true);
         {
-            cli.sendLine("read-attribute namespaces");
-            String output = cli.readOutput();
-            assertFalse(output.contains("Unknown attribute 'namespaces'"));
+            assertTrue("Failed to read attribute: " + cli.readOutput(),
+                    cli.sendLine("read-attribute namespaces", true));
         }
         {
-            cli.sendLine("read-attribute --node=subsystem=request-controller namespaces", true);
+            assertFalse("Expected command to fail on invalid node",
+                    cli.sendLine("read-attribute --node=subsystem=request-controller namespaces", true));
             String output = cli.readOutput();
-            assertTrue(output.contains("Unknown attribute 'namespaces'"));
-        }
-
-        {
-            cli.sendLine("read-attribute active-requests --node=subsystem=request-controller");
-            String output = cli.readOutput();
-            assertFalse(output.contains("Unknown attribute 'active-requests'"));
+            assertTrue(output.matches("WFLYCTL0201.*namespaces.*"));
         }
 
         {
-            cli.sendLine("read-attribute --node=subsystem=request-controller active-requests");
-            String output = cli.readOutput();
-            assertFalse(output.contains("Unknown attribute 'active-requests'"));
+            assertTrue("Failed to read attribute: " + cli.readOutput(),
+                    cli.sendLine("read-attribute active-requests --node=subsystem=request-controller", true));
+        }
+
+        {
+            assertTrue("Failed to read attribute: " + cli.readOutput(),
+                    cli.sendLine("read-attribute --node=subsystem=request-controller active-requests", true));
         }
         cli.quit();
     }

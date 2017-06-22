@@ -25,7 +25,8 @@ import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.VALUE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ProviderUtil.isServiceTypeProvided;
@@ -36,7 +37,6 @@ import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -92,8 +92,8 @@ class HttpServerDefinitions {
         .build();
 
     static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)
-        .setXmlName(VALUE)
         .setName(ElytronDescriptionConstants.PATTERN_FILTER)
+        .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();
 
     static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLING, ModelType.BOOLEAN)
@@ -103,17 +103,19 @@ class HttpServerDefinitions {
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
 
-    static final ObjectTypeAttributeDefinition CONFIGURED_FILTER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.FILTER, PATTERN_FILTER, ENABLING)
-        .build();
+    static final ObjectTypeAttributeDefinition CONFIGURED_FILTER = new ObjectTypeAttributeDefinition.Builder(FILTER, PATTERN_FILTER, ENABLING)
+            .setXmlName(FILTER)
+            .build();
 
     static final ObjectListAttributeDefinition CONFIGURED_FILTERS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.FILTERS, CONFIGURED_FILTER)
-        .setRequired(false)
-        .setRestartAllServices()
-        .build();
+            .setRequired(false)
+            .setRestartAllServices()
+            .setXmlName(FILTERS)
+            .build();
 
     private static final AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> AGGREGATE_HTTP_SERVER_FACTORY = AggregateComponentDefinition.create(HttpServerAuthenticationMechanismFactory.class,
             ElytronDescriptionConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY, ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORIES, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY,
-            (HttpServerAuthenticationMechanismFactory[] n) -> new AggregateServerMechanismFactory(n));
+            AggregateServerMechanismFactory::new);
 
     static AggregateComponentDefinition<HttpServerAuthenticationMechanismFactory> getRawAggregateHttpServerFactoryDefinition() {
         return AGGREGATE_HTTP_SERVER_FACTORY;
@@ -159,15 +161,7 @@ class HttpServerDefinitions {
                     finalFilter = null;
                 }
 
-                final Map<String, String> propertiesMap;
-                final ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
-                if (properties.isDefined()) {
-                    propertiesMap = new HashMap<String, String>();
-                    properties.keys().forEach((String s) -> propertiesMap.put(s, properties.require(s).asString()));
-                } else {
-                    propertiesMap = null;
-                }
-
+                final Map<String, String> propertiesMap = PROPERTIES.unwrap(context, model);
                 return () -> {
                     HttpServerAuthenticationMechanismFactory factory = factoryInjector.getValue();
                     factory = new SetMechanismInformationMechanismFactory(factory);

@@ -59,6 +59,10 @@ class SecurityPropertyService implements Service<Void> {
      */
     private final Map<String, String> toSet = new HashMap<String, String>();
 
+    SecurityPropertyService(Map<String,String> propertiesToBeSet) {
+        toSet.putAll(propertiesToBeSet);
+    }
+
     @Override
     public synchronized void start(StartContext context) throws StartException {
         doPrivileged((PrivilegedAction<Void>) () -> {

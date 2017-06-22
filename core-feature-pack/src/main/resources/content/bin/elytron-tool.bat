@@ -44,16 +44,20 @@ if "x%JAVA_HOME%" == "x" (
 )
 
 rem Find wildfly-elytron-tool.jar, or we can't continue
-set "JBOSS_RUNJAR=%JBOSS_HOME%\bin\wildfly-elytron-tool.jar"
-if not exist "%JBOSS_RUNJAR%" (
-  echo Could not locate "%JBOSS_RUNJAR%".
+set "ELYTRON_TOOL_RUNJAR=%JBOSS_HOME%\bin\wildfly-elytron-tool.jar"
+if not exist "%ELYTRON_TOOL_RUNJAR%" (
+  echo Could not locate "%ELYTRON_TOOL_RUNJAR%".
   echo Please check that you are in the bin directory when running this script.
   goto END
 )
 
+if not "x%ELYTRON_TOOL_ADDONS%" == "x" (
+   set SEP=;
+)
+
 
 "%JAVA%" %JAVA_OPTS% ^
-    -jar "%JBOSS_RUNJAR%" ^
+    -cp "%ELYTRON_TOOL_RUNJAR%%SEP%%ELYTRON_TOOL_ADDONS%" org.wildfly.security.tool.ElytronTool ^
      %*
 
 :END

@@ -677,7 +677,8 @@ public class DeployHandler extends DeploymentHandler {
             TempFileProvider tempFileProvider;
             MountHandle root;
             try {
-                tempFileProvider = TempFileProvider.create("cli", Executors.newSingleThreadScheduledExecutor(), true);
+                tempFileProvider = TempFileProvider.create("cli", Executors.newSingleThreadScheduledExecutor(
+                        (r) -> new Thread(r, "CLI deploy tempFile")), true);
                 root = extractArchive(f, tempFileProvider);
             } catch (IOException e) {
                 throw new OperationFormatException("Unable to extract archive '" + f.getAbsolutePath() + "' to temporary location");

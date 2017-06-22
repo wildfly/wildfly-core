@@ -95,7 +95,7 @@ public class ErrorExtension implements Extension {
     public void initialize(ExtensionContext context) {
         SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         subsystem.setHostCapable();
-        subsystem.registerSubsystemModel(new BlockerSubsystemResourceDefinition(context.getProcessType() == ProcessType.HOST_CONTROLLER));
+        subsystem.registerSubsystemModel(new BlockerSubsystemResourceDefinition(context.getProcessType().isHostController()));
         subsystem.registerXMLElementWriter(PARSER);
     }
 
@@ -168,7 +168,7 @@ public class ErrorExtension implements Extension {
                         String name = System.getProperty(ServerEnvironment.SERVER_NAME);
                         forMe = targetServer.asString().equals(name);
                     }
-                } else if (context.getProcessType() == ProcessType.HOST_CONTROLLER) {
+                } else if (context.getProcessType().isHostController()) {
                     Set<String> hosts = rootResource.getChildrenNames(HOST);
                     String name;
                     if (hosts.size() > 1) {
