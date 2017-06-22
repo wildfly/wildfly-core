@@ -3320,7 +3320,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @LogMessage(level = Level.INFO)
     @Message(id = 395, value = "Operation %s against the resource at address %s is deprecated, and it might be removed in " +
-            "future version. See the the output of the read-operation-description operation" +
+            "future version. See the the output of the read-operation-description operation " +
             "to learn more about the deprecation.")
     void operationDeprecated(String name, String address);
 
