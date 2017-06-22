@@ -32,12 +32,14 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDEN
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
+import org.wildfly.security.http.HttpConstants;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -83,6 +85,7 @@ import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
+import org.wildfly.security.http.util.SortedServerMechanismFactory;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.SaslMechanismInformation;
 import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
@@ -214,7 +217,7 @@ class AuthenticationFactoryDefinitions {
         if ( ! mechanismConfiguration.isDefined()) {
             return Collections.emptySet();
         }
-        Set<String> mechanismNames = new HashSet<>();
+        Set<String> mechanismNames = new LinkedHashSet<>();
         for (ModelNode current : mechanismConfiguration.asList()) {
             final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, current);
             if (mechanismName == null) {
@@ -398,6 +401,22 @@ class AuthenticationFactoryDefinitions {
                     // filter non-configured mechanisms out (when we are sure they are not configured)
                     if ( ! supportedMechanisms.isEmpty()) {
                         serverFactory = new FilterServerMechanismFactory(serverFactory, true, supportedMechanisms);
+
+                        final String[] mechanisms = supportedMechanisms.toArray(new String[supportedMechanisms.size()]);
+                        serverFactory = new SortedServerMechanismFactory(serverFactory, (a, b) -> {
+                            for (String definedMech : mechanisms) {
+                                if (a.equals(definedMech)) {
+                                    return -1;
+                                } else if (b.equals(definedMech)) {
+                                    return 1;
+                                }
+                            }
+
+                            // The filter should have ensured only mechanism names we know are compared.
+                            return 0;
+                        });
+                    } else {
+                        serverFactory = new SortedServerMechanismFactory(serverFactory, AuthenticationFactoryDefinitions::compareHttp);
                     }
 
                     HttpAuthenticationFactory.Builder builder = HttpAuthenticationFactory.builder()
@@ -465,13 +484,16 @@ class AuthenticationFactoryDefinitions {
                 return () -> {
                     SaslServerFactory serverFactory = saslServerFactoryInjector.getValue();
 
-                    // filter non-configured mechanisms out (when we are sure they are not configured)
-                    if ( ! supportedMechanisms.isEmpty()) {
+                    if (! supportedMechanisms.isEmpty()) {
+                        // filter non-configured mechanisms out (when we are sure they are not configured)
                         serverFactory = new FilterMechanismSaslServerFactory(serverFactory, true, supportedMechanisms);
+                        // sort mechanisms using the configured order
+                        serverFactory = new SortedMechanismSaslServerFactory(serverFactory, supportedMechanisms.toArray(new String[supportedMechanisms.size()]));
+                    } else {
+                        // no mechanisms were configured, sort mechanisms by strength
+                        serverFactory = new SortedMechanismSaslServerFactory(serverFactory, AuthenticationFactoryDefinitions::compareSasl);
                     }
 
-                    // sort mechanisms by strength
-                    serverFactory = new SortedMechanismSaslServerFactory(serverFactory, AuthenticationFactoryDefinitions::compare);
 
                     SaslAuthenticationFactory.Builder builder = SaslAuthenticationFactory.builder()
                             .setSecurityDomain(securityDomainInjector.getValue())
@@ -501,11 +523,11 @@ class AuthenticationFactoryDefinitions {
         return  mechanismNames.toArray(new String[mechanismNames.size()]);
     }
 
-    private static int compare(String nameOne, String nameTwo) {
-        return toPriority(nameTwo) - toPriority(nameOne);
+    private static int compareSasl(String nameOne, String nameTwo) {
+        return toPrioritySasl(nameTwo) - toPrioritySasl(nameOne);
     }
 
-    private static int toPriority(String name) {
+    private static int toPrioritySasl(String name) {
         switch (name) {
             case SaslMechanismInformation.Names.EXTERNAL:
                 return 30;
@@ -517,6 +539,26 @@ class AuthenticationFactoryDefinitions {
                 return -10;
             case SaslMechanismInformation.Names.ANONYMOUS:
                 return -20;
+            default:
+                return 0;
+        }
+    }
+
+    private static int compareHttp(String nameOne, String nameTwo) {
+        return toPriorityHttp(nameTwo) - toPriorityHttp(nameOne);
+    }
+
+    private static int toPriorityHttp(String name) {
+        switch (name) {
+            case HttpConstants.CLIENT_CERT_NAME:
+                return 30;
+            case HttpConstants.SPNEGO_NAME:
+                return 20;
+            case HttpConstants.BEARER_TOKEN:
+                return 10;
+            case HttpConstants.BASIC_NAME:
+                // i.e. Any hashed username / password mechs are preferred.
+                return -10;
             default:
                 return 0;
         }
