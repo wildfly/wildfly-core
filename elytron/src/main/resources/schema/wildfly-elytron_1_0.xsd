@@ -483,7 +483,8 @@
         <xs:sequence>
             <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListener" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="file-audit-log" type="fileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="rotating-file-audit-log" type="rotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="periodic-rotating-file-audit-log" type="periodicRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="size-rotating-file-audit-log" type="sizeRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="syslog-audit-log" type="syslogAuditLogType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
@@ -578,7 +579,7 @@
                 <xs:attribute name="synchronized" type="xs:boolean" default="true">
                     <xs:annotation>
                         <xs:documentation>
-                            Should all audit events be immediately synchronised to disk?
+                            Whether every event should be immediately synchronised to disk.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -593,68 +594,62 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="rotatingFileAuditLogType">
+    <xs:complexType name="periodicRotatingFileAuditLogType">
         <xs:annotation>
             <xs:documentation>
-                An audit log definition for persisting an audit log to a local files with log rotation.
+                An audit log definition for persisting an audit log to a local file rotating the log after a time period
+                derived from the given suffix string, which should be in a format understood by java.time.format.DateTimeFormatter.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="auditLogType">
-                <xs:attribute name="path" type="xs:string" use="required">
+            <xs:extension base="fileAuditLogType">
+                <xs:attribute name="suffix" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The path to write the audit log to.
+                            The suffix string in a format which can be understood by java.time.format.DateTimeFormatter.
+                            The period of the rotation is automatically calculated based on the suffix.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="relative-to" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>
-                            A reference to a previously defined path that the path of the audit log is
-                            relative to.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="synchronized" type="xs:boolean" default="true">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Should all audit events be immediately synchronised to disk?
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="format" default="SIMPLE" type="formatType">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The format to use to log the event.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="max-backup-index" default="0" type="xs:long">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="sizeRotatingFileAuditLogType">
+        <xs:annotation>
+            <xs:documentation>
+                An audit log definition for persisting an audit log to a local file rotating the log after the
+                size of the file grows beyond a certain point and keeping a fixed number of backups.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="fileAuditLogType">
+                <xs:attribute name="max-backup-index" default="1" type="xs:long" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             The maximum number of files to backup when rotating.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="rotate-on-boot" type="xs:boolean" default="false">
+                <xs:attribute name="rotate-on-boot" type="xs:boolean" default="false" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             Whether the file should be rotated before the a new file is set.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="rotate-size" default="0" type="xs:long">
+                <xs:attribute name="rotate-size" default="10m" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             The log file size the file should rotate at.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="suffix" type="xs:string">
+                <xs:attribute name="suffix" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
-                            Format of date used as suffix of log file names in java.text.SimpleDateFormat format.
+                            Format of date used as suffix of log file names in java.time.format.DateTimeFormatter.
+                            The suffix does not play a role in determining when the file should be rotated.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1045,13 +1040,6 @@
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
                 </xs:sequence>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1340,13 +1328,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1404,13 +1385,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1446,13 +1420,6 @@
                     <xs:annotation>
                         <xs:documentation>
                             Should direct verification in this realm to allow login attempt with blank password?
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1492,13 +1459,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1520,13 +1480,6 @@
                     <xs:annotation>
                         <xs:documentation>
                             The name of the claim that should be used to obtain the principal's name. Defaults to 'username'.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1575,13 +1528,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -1622,13 +1568,6 @@
             <xs:annotation>
                 <xs:documentation>
                     A policy that defines how host names should be verified when using HTTPS. Allowed values: "ANY".
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4730,13 +4669,6 @@
                 <xs:documentation>
                     A reference to a previously defined path that the file name is
                     relative to.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Case sensitivity of the credential store. If case insensitive only lower case names are allowed for aliases.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

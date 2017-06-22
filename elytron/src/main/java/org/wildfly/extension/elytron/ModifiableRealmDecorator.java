@@ -38,7 +38,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
@@ -69,11 +68,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
@@ -140,17 +137,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     identity.dispose();
                 }
             }
-        }
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            if (!CASE_SENSITIVE.resolveModelAttribute(context, context.readResourceFromRoot(context.getCurrentAddress(), false).getModel()).asBoolean(false)) {
-                String principalName = IDENTITY.resolveModelAttribute(context, operation).asString();
-                if (!principalName.equals(principalName.toLowerCase(Locale.ROOT))) {
-                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidUsername(principalName, context.getCurrentAddress().getLastElement().getValue());
-                }
-            }
-            super.execute(context, operation);
         }
     }
 
