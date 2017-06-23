@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -372,6 +375,30 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(expectedCaps(0), capabilityRegistry.getPossibleCapabilities().size());
     }
 
+
+    @Test
+    public void testCapabilityPossibleProviders() throws OperationFailedException {
+        Set<PathAddress> result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY2.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS2, result.iterator().next());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId("org.wildfly.test.capability", CapabilityScope.GLOBAL));
+        Assert.assertEquals(0, result.size());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId("org.wildfly.test.capability2.test.magic", CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS2, result.iterator().next());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY1.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(0, result.size());
+        //Add resource 1
+        ModelNode addOp1 = createOperation(ADD, TEST_ADDRESS1);
+        addOp1.get("test").set("some test value");
+        addOp1.get("other").set("other value");
+        executeCheckNoFailure(addOp1);
+        executeCheckNoFailure(createOperation("add-cap", TEST_ADDRESS1));
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY1.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS1, result.iterator().next());
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
+    }
 
     @Test
     public void testCapabilityRegistration() throws OperationFailedException {

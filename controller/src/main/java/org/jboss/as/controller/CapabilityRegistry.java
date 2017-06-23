@@ -22,9 +22,11 @@
 
 package org.jboss.as.controller;
 
+
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
@@ -636,10 +638,21 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         Set<PathAddress> result = new LinkedHashSet<>();
         readLock.lock();
         try {
-            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
-            CapabilityRegistration<?> reg =  possibleCapabilities.get(capabilityId);
+            final CapabilityId capId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
+            CapabilityRegistration<?> reg =  possibleCapabilities.get(capId);
             if (reg != null) {
                 result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
+            } else {
+                result.addAll(possibleCapabilities.values().stream()
+                        .filter((registration) -> {
+                            return registration.getCapability().isDynamicallyNamed()
+                                    && registration.getCapabilityScope().equals(capId.getScope())
+                                    && capId.getName().startsWith(registration.getCapabilityName());
+                        })
+                        .map(CapabilityRegistration::getRegistrationPoints)
+                        .flatMap(Set::stream)
+                        .map(RegistrationPoint::getAddress)
+                        .collect(Collectors.toList()));
             }
 
         } finally {

@@ -265,7 +265,7 @@ abstract class AbstractCapabilityResolutionTestCase {
     }
 
     private static RuntimeCapabilityRegistration getCapabilityRegistration(PathElement pe) {
-        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(pe.getKey() + "." + pe.getValue()).build();
+        RuntimeCapability<Void> capability = RuntimeCapability.Builder.of(pe.getKey() + "." + pe.getValue(), SOCKET_BINDING_GROUP.equals(pe.getKey())).build();
         PathAddress pa = PathAddress.pathAddress(pe);
         CapabilityScope scope = CapabilityScope.Factory.create(ProcessType.EMBEDDED_HOST_CONTROLLER, pa);
         RegistrationPoint rp = new RegistrationPoint(pa, null);
