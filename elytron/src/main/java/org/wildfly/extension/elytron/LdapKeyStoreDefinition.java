@@ -95,6 +95,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setXmlName("recursive")
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode(true))
             .build();
 
     static final SimpleAttributeDefinition SEARCH_TIME_LIMIT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_TIME_LIMIT, ModelType.INT, true)
@@ -102,6 +103,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setXmlName("time-limit")
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode(10000))
             .build();
 
     static final SimpleAttributeDefinition FILTER_ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_ALIAS, ModelType.STRING, true)
@@ -156,42 +158,49 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("cn"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("usercertificate"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("X.509"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("userSMIMECertificate"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ENCODING, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("PKCS7"))
             .build();
 
     static final SimpleAttributeDefinition KEY_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("userPKCS12"))
             .build();
 
     static final SimpleAttributeDefinition KEY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("PKCS12"))
             .build();
 
     static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_KEY_STORE);
@@ -276,6 +285,10 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             LdapName createPathLdapName = null;
             String createRdn = null;
             Attributes createAttributes = null;
+
+            if (filterAlias == null) filterAlias = "(" + aliasAttribute + "={0})";
+            if (filterCertificate == null) filterCertificate = "(" + certificateAttribute + "={0})";
+            if (filterIterate == null) filterIterate = "(" + aliasAttribute + "=*)";
 
             ModelNode newNode = NewItemTemplateObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(context, model);
             if (newNode.isDefined()) {

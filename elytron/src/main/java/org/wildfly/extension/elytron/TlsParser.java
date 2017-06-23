@@ -94,7 +94,7 @@ class TlsParser {
             .addAttribute(LdapKeyStoreDefinition.CERTIFICATE_CHAIN_ENCODING)
             .addAttribute(LdapKeyStoreDefinition.KEY_ATTRIBUTE)
             .addAttribute(LdapKeyStoreDefinition.KEY_TYPE)
-
+            .setMarshallDefaultValues(true)
             .build();
 
     private PersistentResourceXMLDescription trustManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
