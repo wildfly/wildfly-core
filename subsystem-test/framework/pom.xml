@@ -99,6 +99,5 @@
             <artifactId>xalan</artifactId>
             <version>2.7.1.jbossorg-2</version>
         </dependency>
-
     </dependencies>
 </project>

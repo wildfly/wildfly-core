@@ -80,7 +80,10 @@ public class RemotingEndpointResource extends PersistentResourceDefinition {
     public static final OptionAttributeDefinition MAX_INBOUND_MESSAGE_SIZE = OptionAttributeDefinition.builder("max-inbound-message-size", RemotingOptions.MAX_INBOUND_MESSAGE_SIZE).setDefaultValue(new ModelNode(RemotingOptions.DEFAULT_MAX_INBOUND_MESSAGE_SIZE)).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
     public static final OptionAttributeDefinition MAX_OUTBOUND_MESSAGE_SIZE = OptionAttributeDefinition.builder("max-outbound-message-size", RemotingOptions.MAX_OUTBOUND_MESSAGE_SIZE).setDefaultValue(new ModelNode(RemotingOptions.DEFAULT_MAX_OUTBOUND_MESSAGE_SIZE)).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
     public static final OptionAttributeDefinition SERVER_NAME = OptionAttributeDefinition.builder("server-name", RemotingOptions.SERVER_NAME).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
-    public static final OptionAttributeDefinition SASL_PROTOCOL = OptionAttributeDefinition.builder("sasl-protocol", RemotingOptions.SASL_PROTOCOL).setDefaultValue(new ModelNode(RemotingOptions.DEFAULT_SASL_PROTOCOL)).setAllowExpression(true).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+    public static final OptionAttributeDefinition SASL_PROTOCOL = OptionAttributeDefinition.builder("sasl-protocol", RemotingOptions.SASL_PROTOCOL)
+            .setDefaultValue(new ModelNode(RemotingOptions.DEFAULT_SASL_PROTOCOL))
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
 
     protected static final PathElement ENDPOINT_PATH = PathElement.pathElement("configuration", "endpoint");

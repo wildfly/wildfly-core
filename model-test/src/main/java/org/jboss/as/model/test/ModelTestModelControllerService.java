@@ -36,8 +36,6 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -140,38 +138,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         this.runningModeControl = runningModeControl;
     }
 
-    /**
-     * This is the constructor to use for 8.0.x core model tests
-     */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
-            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
-            ExpressionResolver expressionResolver, Controller80x version) {
-        super(processType, runningModeControl, persister,
-                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
-                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
-        this.persister = persister;
-        this.transformerRegistry = transformerRegistry;
-        this.validateOpsFilter = validateOpsFilter;
-        this.runningModeControl = runningModeControl;
-    }
-
-    /**
-     * This is the constructor to use for 8.0.x subsystem tests
-     */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
-            final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-            final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller80x version) {
-        // Fails in core-model-test transformation testing if ExpressionResolver.TEST_RESOLVER is used because not present in 7.1.x
-        super(processType, runningModeControl, persister,
-         processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
-        this.persister = persister;
-        this.transformerRegistry = transformerRegistry;
-        this.validateOpsFilter = validateOpsFilter;
-        this.runningModeControl = runningModeControl;
-    }
-
-    /**
+       /**
      * This is the constructor to use for 9.0.x core model tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
@@ -383,12 +350,9 @@ public abstract class ModelTestModelControllerService extends AbstractController
         final AtomicReference<Resource> resourceRef = new AtomicReference<Resource>();
         ModelNode fakeOP = new ModelNode();
         fakeOP.get(OP).set("fake");
-        ((ModelTestKernelServicesImpl<?>)kernelServices).internalExecute(fakeOP, new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                resourceRef.set(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
-                context.getResult().setEmptyObject();
-            }
+        ((ModelTestKernelServicesImpl<?>)kernelServices).internalExecute(fakeOP, (context, operation) -> {
+            resourceRef.set(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+            context.getResult().setEmptyObject();
         });
         Resource rootResource = resourceRef.get();
         Assert.assertNotNull(rootResource);
@@ -478,12 +442,6 @@ public abstract class ModelTestModelControllerService extends AbstractController
     public static class Controller74x {
         public static Controller74x INSTANCE = new Controller74x();
         private Controller74x() {
-        }
-    }
-
-    public static class Controller80x {
-        public static Controller80x INSTANCE = new Controller80x();
-        private Controller80x() {
         }
     }
 
