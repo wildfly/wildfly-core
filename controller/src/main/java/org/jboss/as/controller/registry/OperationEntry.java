@@ -25,6 +25,9 @@ package org.jboss.as.controller.registry;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -74,7 +77,27 @@ public final class OperationEntry {
          *  This can also be used for ops that are invoked internally on one domain process by another domain process
          *  but where it's not possible for the caller to suppress the caller-type=user header from the op, making
          *  use of {@link EntryType#PRIVATE} not workable. */
-        HIDDEN
+        HIDDEN;
+
+        private static final EnumSet<Flag> NONE = EnumSet.noneOf(Flag.class);
+        private static final Map<EnumSet<Flag>, Set<Flag>> flagSets = new ConcurrentHashMap<>(16);
+        public static Set<OperationEntry.Flag> immutableSetOf(EnumSet<OperationEntry.Flag> flags) {
+            EnumSet<Flag> baseSet;
+            if (flags == null) {
+                baseSet = NONE;
+            } else {
+                baseSet = flags;
+            }
+            Set<Flag> result = flagSets.get(baseSet);
+            if (result == null) {
+                Set<Flag> immutable = Collections.unmodifiableSet(baseSet);
+                Set<Flag> existing = flagSets.putIfAbsent(baseSet, immutable);
+                result = existing == null ? immutable : existing;
+            }
+
+            return result;
+        }
+
     }
 
     private final OperationDefinition operationDefinition;
@@ -107,9 +130,8 @@ public final class OperationEntry {
         return operationDefinition.getEntryType();
     }
 
-    public EnumSet<Flag> getFlags() {
-        EnumSet<Flag> flags = operationDefinition.getFlags();
-        return flags == null ? EnumSet.noneOf(Flag.class) : flags.clone();
+    public Set<Flag> getFlags() {
+        return operationDefinition.getFlags();
     }
 
     public List<AccessConstraintDefinition> getAccessConstraints() {

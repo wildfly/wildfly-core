@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.immutableSetOf;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -80,7 +83,7 @@ public abstract class AttributeDefinition {
     private final ModelNode[] allowedValues;
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
-    private final EnumSet<AttributeAccess.Flag> flags;
+    private final Set<AttributeAccess.Flag> flags;
     protected final AttributeMarshaller attributeMarshaller;
     private final boolean resourceOnly;
     private final DeprecationData deprecationData;
@@ -107,7 +110,7 @@ public abstract class AttributeDefinition {
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
                 toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
-                toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
+                toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
     }
 
     /**
@@ -124,7 +127,7 @@ public abstract class AttributeDefinition {
         this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
                 wrapValidator(validator, allowNull, alternatives, allowExpression, type, null, null), validateNull, alternatives, requires,
                 attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, null, null, wrapFlags(flags));
+                nilSignificant, parser, null, null, null, null, null, immutableSetOf(flags));
     }
 
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -133,7 +136,7 @@ public abstract class AttributeDefinition {
                                 final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
+                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final Set<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -430,13 +433,28 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * Gets any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used to indicate special
-     * characteristics of the attribute
+     * Gets a set of any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used
+     * to indicate special characteristics of the attribute
      *
      * @return the flags. Will not be {@code null} but may be empty.
+     *
+     * @deprecated In the next release, the return type of this method will become simply {@code Set} and the returned object will be immutable, so any callers should update their code to reflect that
      */
+    @Deprecated
     public EnumSet<AttributeAccess.Flag> getFlags() {
-        return EnumSet.copyOf(flags);
+        if (flags.isEmpty()) {
+            return EnumSet.noneOf(AttributeAccess.Flag.class);
+        }
+        AttributeAccess.Flag[] array = flags.toArray(new AttributeAccess.Flag[flags.size()]);
+        return array.length == 1 ? EnumSet.of(array[0]) : EnumSet.of(array[0], array);
+    }
+
+    /**
+     * Provides an immutable variant of the set returned by {@link #getFlags()}.
+     * @deprecated for internal use only; will be dropped when the semantic of {@link #getFlags()} is changed to return an immutable {@code Set}*/
+    @Deprecated
+    public Set<AttributeAccess.Flag> getImmutableFlags() {
+        return flags;
     }
 
     /**

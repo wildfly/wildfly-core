@@ -24,10 +24,13 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.registry.OperationEntry.Flag.immutableSetOf;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -46,7 +49,7 @@ public abstract class OperationDefinition {
 
     protected final String name;
     protected final OperationEntry.EntryType entryType;
-    protected final EnumSet<OperationEntry.Flag> flags;
+    protected final Set<OperationEntry.Flag> flags;
     protected final AttributeDefinition[] parameters;
     protected final ModelType replyType;
     protected final ModelType replyValueType;
@@ -59,7 +62,7 @@ public abstract class OperationDefinition {
     protected OperationDefinition(SimpleOperationDefinitionBuilder builder) {
         this.name = builder.name;
         this.entryType = builder.entryType;
-        this.flags = builder.flags;
+        this.flags = immutableSetOf(builder.flags);
         this.parameters = builder.parameters;
         this.replyType = builder.replyType;
         this.replyValueType = builder.replyValueType;
@@ -90,7 +93,7 @@ public abstract class OperationDefinition {
     ) {
         this.name = name;
         this.entryType = entryType;
-        this.flags = flags;
+        this.flags = immutableSetOf(flags);
         this.parameters = parameters;
         this.replyType = replyType;
         this.replyValueType = replyValueType;
@@ -113,7 +116,11 @@ public abstract class OperationDefinition {
         return entryType;
     }
 
-    public EnumSet<OperationEntry.Flag> getFlags() {
+    /**
+     * Gets an immutable set of any {@link OperationEntry.Flag flags} associated with the operation.
+     * @return the flags. Will not return {@code null} be may be empty
+     */
+    public Set<OperationEntry.Flag> getFlags() {
         return flags;
     }
 
