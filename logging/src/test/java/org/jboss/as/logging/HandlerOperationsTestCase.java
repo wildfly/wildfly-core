@@ -24,7 +24,10 @@ package org.jboss.as.logging;
 import static org.jboss.as.controller.client.helpers.Operations.createAddOperation;
 import static org.jboss.as.controller.client.helpers.Operations.createRemoveOperation;
 import static org.jboss.as.subsystem.test.SubsystemOperations.OperationBuilder;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,13 +40,17 @@ import java.util.logging.Level;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.config.HandlerConfiguration;
+import org.jboss.logmanager.config.LogContextConfiguration;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -238,6 +245,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         op.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("[changed-pattern] %s%n");
         executeOperation(kernelServices, op);
 
+        // The formatter will need to be undefined before the named-formatter can be written
+        executeOperation(kernelServices, SubsystemOperations.createUndefineAttributeOperation(handlerAddress, FileHandlerResourceDefinition.FORMATTER));
         // Assign the pattern to the handler
         executeOperation(kernelServices, SubsystemOperations.createWriteAttributeOperation(handlerAddress, FileHandlerResourceDefinition.NAMED_FORMATTER, "PATTERN"));
 
@@ -273,6 +282,56 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
                 .build().getOperation();
         executeOperation(kernelServices, op);
 
+    }
+
+    /**
+     * Tests a composite operation of undefining a {@code formatter} attribute and defining a {@code named-formatter}
+     * attribute in a composite operation. These two specific attributes have strange behavior. If the
+     * {@code named-formatter} is defined it removes the formatter, named the same as the handler, which was created
+     * as part of the {@code undefine-attribute} operation of the {@code formatter} attribute.
+     *
+     * @throws Exception if an error occurs
+     */
+    @Test
+    public void testCompositeOperations() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        final ModelNode address = createFileHandlerAddress("FILE").toModelNode();
+        final String filename = "test-file.log";
+
+        // Add the handler
+        ModelNode addOp = OperationBuilder.createAddOperation(address)
+                .addAttribute(CommonAttributes.FILE, createFileValue("jboss.server.log.dir", filename))
+                .build();
+        executeOperation(kernelServices, addOp);
+        final ModelNode patternFormatterAddress = createPatternFormatterAddress("PATTERN").toModelNode();
+        addOp = SubsystemOperations.createAddOperation(patternFormatterAddress);
+        addOp.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("%d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
+        executeOperation(kernelServices, addOp);
+
+        // Create a composite operation to undefine
+        final Operation op = CompositeOperationBuilder.create()
+                .addStep(SubsystemOperations.createUndefineAttributeOperation(address, "formatter"))
+                .addStep(SubsystemOperations.createWriteAttributeOperation(address, "named-formatter", "PATTERN"))
+                .build();
+        executeOperation(kernelServices, op.getOperation());
+
+        // Get the log context configuration to validate what has been configured
+        final LogContextConfiguration configuration = ConfigurationPersistence.getConfigurationPersistence(LogContext.getLogContext());
+        assertNotNull("Expected to find the configuration", configuration);
+        assertFalse("Expected the default formatter named FILE to be removed for the handler FILE",
+                configuration.getFormatterNames().contains("FILE"));
+        final HandlerConfiguration handlerConfiguration = configuration.getHandlerConfiguration("FILE");
+        assertNotNull("Expected to find the configuration for the FILE handler", configuration);
+        assertEquals("Expected the handler named FILE to use the PATTERN formatter", "PATTERN",
+                handlerConfiguration.getFormatterName());
+
+        // Undefine the named-formatter to ensure a formatter is created
+        executeOperation(kernelServices, SubsystemOperations.createUndefineAttributeOperation(address, "named-formatter"));
+        assertTrue("Expected the default formatter named FILE to be added",
+                configuration.getFormatterNames().contains("FILE"));
+        assertEquals("Expected the handler named FILE to use the FILE formatter", "FILE",
+                handlerConfiguration.getFormatterName());
     }
 
     private void testAsyncHandler(final KernelServices kernelServices, final String profileName) throws Exception {
@@ -546,6 +605,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         // Add a pattern-formatter
         addPatternFormatter(kernelServices, LoggingProfileOperations.getLoggingProfileName(PathAddress.pathAddress(address)), "PATTERN");
+        // The formatter will need to be undefined before the named-formatter can be written
+        testUndefine(kernelServices, address, AbstractHandlerDefinition.FORMATTER);
         testWrite(kernelServices, address, AbstractHandlerDefinition.NAMED_FORMATTER, "PATTERN");
     }
 
