@@ -152,14 +152,13 @@ public class JvmOptionsBuilderUnitTestCase {
         element.getJvmOptions().addOption("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
         element.getJvmOptions().addOption("--add-opens=java.base/sun.nio.ch=ALL-UNNAMED");
         element.getJvmOptions().addOption("--add-reads=java.base/sun.nio.ch=ALL-UNNAMED");
-        element.getJvmOptions().addOption("--permit-illegal-access"); //this one is going away
-        element.getJvmOptions().addOption("--illegal-access");
+        element.getJvmOptions().addOption("--illegal-access=warn");
         List<String> command = new ArrayList<String>();
         JvmOptionsBuilderFactory.getInstance().addOptions(element, command);
         if (JvmElement.getJVMMajorVersion() < 9) {
             Assert.assertEquals(0, command.size());
         } else {
-            Assert.assertEquals(5, command.size());
+            Assert.assertEquals(4, command.size());
         }
     }
 
