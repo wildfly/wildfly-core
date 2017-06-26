@@ -83,7 +83,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -484,7 +483,10 @@ class SSLDefinitions {
             @Override
             public void registerOperations(ManagementResourceRegistration registration) {
                 super.registerOperations(registration);
-                registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER).build(), init);
+                registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
+                            .setRuntimeOnly()
+                            .build()
+                        , init);
             }
         };
 
@@ -704,7 +706,10 @@ class SSLDefinitions {
             @Override
             public void registerOperations(ManagementResourceRegistration resourceRegistration) {
                 super.registerOperations(resourceRegistration);
-                resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, getResourceDescriptionResolver()), new ReloadCertificateRevocationList());
+                resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, getResourceDescriptionResolver())
+                            .setRuntimeOnly()
+                            .build()
+                        , new ReloadCertificateRevocationList());
             }
 
             class ReloadCertificateRevocationList implements OperationStepHandler {
