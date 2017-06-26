@@ -58,6 +58,6 @@ if not "x%ELYTRON_TOOL_ADDONS%" == "x" (
 
 "%JAVA%" %JAVA_OPTS% ^
     -cp "%ELYTRON_TOOL_RUNJAR%%SEP%%ELYTRON_TOOL_ADDONS%" org.wildfly.security.tool.ElytronTool ^
-     %*
+     {%~nx0}%*
 
 :END
