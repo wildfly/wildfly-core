@@ -26,6 +26,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -85,7 +86,10 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
     static class ReadAliasesHandler extends ElytronRuntimeOnlyHandler {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver), new ReadAliasesHandler());
+            SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver)
+                    .setReadOnly()
+                    .build();
+            resourceRegistration.registerOperationHandler(READ_ALIASES, new ReadAliasesHandler());
         }
 
         @Override
@@ -111,7 +115,11 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver, ALIAS), new ReadAliasHandler());
+            SimpleOperationDefinition READ_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver)
+                    .setParameters(ALIAS)
+                    .setReadOnly()
+                    .build();
+            resourceRegistration.registerOperationHandler(READ_ALIAS, new ReadAliasHandler());
         }
 
         @Override

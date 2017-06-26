@@ -189,6 +189,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(IDENTITY)
                             .setRuntimeOnly()
+                            .setReadOnly()
                             .build(),
                     new ReadIdentityHandler());
         }
