@@ -571,6 +571,7 @@ class DomainDefinition extends SimpleResourceDefinition {
                     new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(NAME)
                             .setRuntimeOnly()
+                            .setReadOnly()
                             .build(),
                     new ReadSecurityDomainIdentityHandler());
         }

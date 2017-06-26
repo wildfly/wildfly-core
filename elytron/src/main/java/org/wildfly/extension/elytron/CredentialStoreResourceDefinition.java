@@ -190,6 +190,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
             .setRuntimeOnly()
+            .setReadOnly()
             .build();
 
     static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
