@@ -63,7 +63,6 @@ class ProviderAttributeDefinition {
         .build();
 
     private static final ObjectTypeAttributeDefinition SERVICE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVICE, TYPE, ALGORITHM, CLASS_NAME)
-        .setStorageRuntime()
         .setRequired(true)
         .build();
 

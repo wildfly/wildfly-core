@@ -24,6 +24,7 @@ import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPAB
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -238,26 +239,28 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
         }
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName keyStoreName = LDAP_KEY_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName keyStoreName = LDAP_KEY_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
 
-                populateResponse(context.getResult(), serviceController);
-            }
-        });
-
-        resourceRegistration.registerReadOnlyAttribute(SIZE, new LdapKeyStoreRuntimeOnlyHandler(false) {
-            @Override
-            protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, LdapKeyStoreService keyStoreService) throws OperationFailedException {
-                try {
-                    result.set(keyStoreService.getValue().size());
-                } catch (KeyStoreException e) {
-                    throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    populateResponse(context.getResult(), serviceController);
                 }
-            }
-        });
+            });
+
+            resourceRegistration.registerReadOnlyAttribute(SIZE, new LdapKeyStoreRuntimeOnlyHandler(false) {
+                @Override
+                protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, LdapKeyStoreService keyStoreService) throws OperationFailedException {
+                    try {
+                        result.set(keyStoreService.getValue().size());
+                    } catch (KeyStoreException e) {
+                        throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    }
+                }
+            });
+        }
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {

@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -243,14 +244,16 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
 
-        resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
 
-            @Override
-            void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
-                SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
-                context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
-            }
-        });
+                @Override
+                void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
+                    SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
+                    context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
+                }
+            });
+        }
     }
 
     @Override

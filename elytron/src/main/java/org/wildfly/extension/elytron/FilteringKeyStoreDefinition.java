@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
 
@@ -95,17 +96,19 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
         }
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
 
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName keyStoreName = FILTERING_KEY_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName keyStoreName = FILTERING_KEY_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
 
-                populateResponse(context.getResult(), serviceController);
-            }
+                    populateResponse(context.getResult(), serviceController);
+                }
 
-        });
+            });
+        }
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {

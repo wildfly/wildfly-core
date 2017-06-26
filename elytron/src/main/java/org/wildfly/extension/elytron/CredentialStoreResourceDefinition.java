@@ -23,6 +23,7 @@ import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIM
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
@@ -159,7 +160,6 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     // Operations parameters
     static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
-            .setStorageRuntime()
             .setMinSize(1)
             .build();
 
@@ -173,13 +173,11 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         List<String> entryTypes = Stream.of(SUPPORTED_CREDENTIAL_TYPES).map(Class::getCanonicalName)
                 .collect(Collectors.toList());
         ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
-                .setStorageRuntime()
                 .setAllowedValues(entryTypes.toArray(new String[entryTypes.size()]))
                 .build();
     }
 
     static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, true)
-            .setStorageRuntime()
             .setMinSize(0)
             .build();
 
@@ -230,18 +228,19 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition current : CONFIG_ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, write);
         }
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName credentialStoreClientServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(credentialStoreClientServiceName);
 
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName credentialStoreClientServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(credentialStoreClientServiceName);
+                    populateResponse(context.getResult(), serviceController);
+                }
 
-                populateResponse(context.getResult(), serviceController);
-            }
-
-        });
+            });
+        }
 
     }
 
