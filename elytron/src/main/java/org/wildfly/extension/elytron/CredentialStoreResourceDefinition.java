@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -156,7 +155,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     // Resource Resolver
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
 
     // Operations parameters
     static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
@@ -182,26 +181,26 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     // Operations
-    static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .setReadOnly()
             .build();
 
-    static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
             .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
             .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
             .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
@@ -314,14 +313,6 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
             commonDependencies(credentialStoreServiceBuilder).install();
         }
-    }
-
-    private static class WriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(CONFIG_ATTRIBUTES);
-        }
-
     }
 
     /*

@@ -87,13 +87,13 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
             .setRequired(true)
             .build();
 
-    static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
+    private static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -114,7 +114,7 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
+    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
         .setStorageRuntime()
         .build();
 
@@ -122,7 +122,7 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     // Resource Resolver
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
 
     // Operations
 

@@ -204,7 +204,7 @@ class SSLDefinitions {
             .setDefaultValue(new ModelNode("DEFAULT"))
             .build();
 
-    static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
+    private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
             .setAllowExpression(true)
@@ -277,7 +277,7 @@ class SSLDefinitions {
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition MAXIMUM_CERT_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
+    private static final SimpleAttributeDefinition MAXIMUM_CERT_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(5))
             .setValidator(new IntRangeValidator(1))
@@ -331,7 +331,7 @@ class SSLDefinitions {
 
     static class CipherSuiteFilterValidator extends ModelTypeValidator{
 
-        public CipherSuiteFilterValidator() {
+        CipherSuiteFilterValidator() {
             super(ModelType.STRING, true, true, false);
         }
 

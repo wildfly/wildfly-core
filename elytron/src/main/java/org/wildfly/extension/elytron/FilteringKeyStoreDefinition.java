@@ -73,7 +73,7 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILTERING_KEY_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.FILTERING_KEY_STORE);
 
     private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] { KEY_STORE, ALIAS_FILTER };
 
