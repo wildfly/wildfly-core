@@ -712,16 +712,14 @@ class SSLDefinitions {
                         , new ReloadCertificateRevocationList());
             }
 
-            class ReloadCertificateRevocationList implements OperationStepHandler {
+            class ReloadCertificateRevocationList extends ElytronRuntimeOnlyHandler {
 
                 private ReloadCertificateRevocationList() {
                 }
 
                 @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    context.addStep(operation, (parentContext, parentOperation) -> {
-                        reloadCrl.compareAndSet(false, true);
-                    }, OperationContext.Stage.RUNTIME);
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    reloadCrl.compareAndSet(false, true);
                 }
             }
         };
