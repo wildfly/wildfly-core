@@ -226,7 +226,9 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(LOAD, PersistanceHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(STORE, PersistanceHandler.INSTANCE);
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerOperationHandler(STORE, PersistanceHandler.INSTANCE);
+        }
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {

@@ -248,9 +248,11 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(RELOAD, CredentialStoreHandler.INSTANCE);
         resourceRegistration.registerOperationHandler(READ_ALIASES, CredentialStoreReadAliasesHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(ADD_ALIAS, CredentialStoreHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(REMOVE_ALIAS, CredentialStoreHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(SET_SECRET, CredentialStoreHandler.INSTANCE);
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerOperationHandler(ADD_ALIAS, CredentialStoreHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(REMOVE_ALIAS, CredentialStoreHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(SET_SECRET, CredentialStoreHandler.INSTANCE);
+        }
     }
 
     private static class CredentialStoreAddHandler extends BaseAddHandler {
