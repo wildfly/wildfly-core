@@ -159,7 +159,7 @@ abstract class AbstractLogFieldsOfLogTestCase {
         final String type = record.get("type").asString();
         if (type.equals("jmx") && record.get("method").asString().equals("unregisterMBean")) {
             List<ModelNode> params = record.get("params").asList();
-            if (params.size() == 1 && params.get(0).asString().startsWith("\"jboss.modules:type=ModuleLoader,name=ServiceModuleLoader-")) {
+            if (params.size() == 1 && params.get(0).asString().contains("jboss.modules:type=ModuleLoader,name=ServiceModuleLoader-")) {
                 return true;
             }
         }
