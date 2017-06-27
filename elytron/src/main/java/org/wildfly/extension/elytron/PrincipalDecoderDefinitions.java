@@ -175,7 +175,7 @@ class PrincipalDecoderDefinitions {
                 final List<String> requiredOids = REQUIRED_OIDS.unwrap(context, model);
                 requiredOids.addAll(REQUIRED_ATTRIBUTES.unwrap(context, model).stream().map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.RDN, name)).collect(Collectors.toList()));
 
-                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, requiredOids.toArray(new String[requiredOids.size()]));
+                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, false, requiredOids.toArray(new String[requiredOids.size()]));
             }
 
         };
