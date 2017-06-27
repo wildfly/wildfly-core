@@ -88,6 +88,7 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver)
                     .setReadOnly()
+                    .setRuntimeOnly()
                     .build();
             resourceRegistration.registerOperationHandler(READ_ALIASES, new ReadAliasesHandler());
         }
@@ -118,6 +119,7 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
             SimpleOperationDefinition READ_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver)
                     .setParameters(ALIAS)
                     .setReadOnly()
+                    .setRuntimeOnly()
                     .build();
             resourceRegistration.registerOperationHandler(READ_ALIAS, new ReadAliasHandler());
         }
@@ -179,7 +181,11 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.REMOVE_ALIAS, descriptionResolver, ALIAS), new RemoveAliasHandler());
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, descriptionResolver)
+                        .setParameters(ALIAS)
+                        .setRuntimeOnly()
+                        .build()
+                    , new RemoveAliasHandler());
         }
 
         @Override

@@ -125,7 +125,8 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     // Operations
 
-    static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.LOAD, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.LOAD, RESOURCE_RESOLVER)
+            .setRuntimeOnly()
             .build();
 
     private static final AbstractAddStepHandler ADD = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
