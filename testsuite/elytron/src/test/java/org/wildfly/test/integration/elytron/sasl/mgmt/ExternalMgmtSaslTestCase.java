@@ -239,7 +239,7 @@ public class ExternalMgmtSaslTestCase {
             elements.add(KeyStoreRealm.builder().withName(NAME).withKeyStore("server-truststore").build());
 
             // Mappers
-            elements.add(X500AttributePrincipalDecoder.builder().withName(NAME).withAttributeName("CN")
+            elements.add(X500AttributePrincipalDecoder.builder().withName(NAME + "Decoder").withAttributeName("CN")
                     .withMaximumSegments(1).build());
 
             // Transformer
@@ -247,7 +247,7 @@ public class ExternalMgmtSaslTestCase {
 
             // Domain
             elements.add(SimpleSecurityDomain.builder().withName(NAME).withDefaultRealm(NAME).withPermissionMapper(NAME)
-                    .withPrincipalDecoder(NAME)
+                    .withPrincipalDecoder(NAME + "Decoder")
                     .withRealms(SecurityDomainRealm.builder().withRealm(NAME).withPrincipalTransformer(NAME).build()).build());
             elements.add(new ConfigurableElement() {
                 @Override

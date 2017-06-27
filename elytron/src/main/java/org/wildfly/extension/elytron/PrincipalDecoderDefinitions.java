@@ -18,10 +18,13 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -47,6 +50,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
@@ -136,7 +140,7 @@ class PrincipalDecoderDefinitions {
         AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
 
             @Override
-            protected ValueSupplier<PrincipalDecoder> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 final String constant = CONSTANT.resolveModelAttribute(context, model).asString();
                 return () -> PrincipalDecoder.constant(constant);
             }
@@ -151,7 +155,7 @@ class PrincipalDecoderDefinitions {
         AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
 
             @Override
-            protected ValueSupplier<PrincipalDecoder> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 ModelNode oidNode = OID.resolveModelAttribute(context, model);
                 ModelNode attributeNode = ATTRIBUTE_NAME.resolveModelAttribute(context, model);
 
@@ -185,11 +189,11 @@ class PrincipalDecoderDefinitions {
 
     static ResourceDefinition getConcatenatingPrincipalDecoder() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { JOINER, PRINCIPAL_DECODERS };
-        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalDecoder>(PrincipalDecoder.class, Mode.LAZY, attributes, PRINCIPAL_DECODER_RUNTIME_CAPABILITY) {
+
+        AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
 
             @Override
-            protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<PrincipalDecoder> serviceBuilder,
-                                                                       OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 final String joiner = JOINER.resolveModelAttribute(context, model).asString();
                 final List<String> decoders = PRINCIPAL_DECODERS.unwrap(context, model);
 
@@ -225,10 +229,10 @@ class PrincipalDecoderDefinitions {
             super(new Parameters(PathElement.pathElement(pathKey),
                     ElytronExtension.getResourceDescriptionResolver(pathKey))
                 .setAddHandler(add)
-                .setRemoveHandler(new TrivialCapabilityServiceRemoveHandler(add, PRINCIPAL_DECODER_RUNTIME_CAPABILITY))
+                .setRemoveHandler(new TrivialCapabilityServiceRemoveHandler(add, PRINCIPAL_DECODER_RUNTIME_CAPABILITY, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY))
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
-                .setCapabilities(PRINCIPAL_DECODER_RUNTIME_CAPABILITY));
+                .setCapabilities(PRINCIPAL_DECODER_RUNTIME_CAPABILITY, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
             this.pathKey = pathKey;
             this.attributes = attributes;
         }
@@ -247,30 +251,48 @@ class PrincipalDecoderDefinitions {
 
     private static class PrincipalDecoderAddHandler extends BaseAddHandler {
 
+        private static final Set<RuntimeCapability> CAPABILITIES;
+
+        static {
+            Set<RuntimeCapability> capabilities = new HashSet<>(2);
+            capabilities.add(PRINCIPAL_DECODER_RUNTIME_CAPABILITY);
+            capabilities.add(PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+            CAPABILITIES = capabilities;
+        }
 
         private PrincipalDecoderAddHandler(AttributeDefinition ... attributes) {
-            super(PRINCIPAL_DECODER_RUNTIME_CAPABILITY, attributes);
+            super(CAPABILITIES, attributes);
         }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
-            RuntimeCapability<Void> runtimeCapability = PRINCIPAL_DECODER_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
-            ServiceName roleMapperName = runtimeCapability.getCapabilityServiceName(PrincipalDecoder.class);
+            RuntimeCapability<Void> decoderRuntimeCapability = PRINCIPAL_DECODER_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            ServiceName decoderName = decoderRuntimeCapability.getCapabilityServiceName(PrincipalDecoder.class);
 
-            commonDependencies(installService(context, roleMapperName, model))
+            ServiceTarget serviceTarget = context.getServiceTarget();
+
+            TrivialService<PrincipalDecoder> principalDecoderService = new TrivialService<PrincipalDecoder>();
+            ServiceBuilder<PrincipalDecoder> decoderBuilder = serviceTarget.addService(decoderName, principalDecoderService);
+            principalDecoderService.setValueSupplier(getValueSupplier(decoderBuilder, context, model));
+
+            commonDependencies(decoderBuilder)
+                .setInitialMode(Mode.LAZY)
+                .install();
+
+            final InjectedValue<PrincipalDecoder> injectedDecoder = new InjectedValue<>();
+            TrivialService<PrincipalTransformer> transformerService = new TrivialService<>(() -> PrincipalTransformer.from(injectedDecoder.getValue().asPrincipalRewriter()));
+
+            RuntimeCapability<Void> transformerRuntimeCapability = PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            ServiceName transformerName = transformerRuntimeCapability.getCapabilityServiceName(PrincipalTransformer.class);
+
+            serviceTarget.addService(transformerName, transformerService)
+                .addDependency(decoderName, PrincipalDecoder.class, injectedDecoder)
                 .setInitialMode(Mode.LAZY)
                 .install();
         }
 
-        protected ServiceBuilder<PrincipalDecoder> installService(OperationContext context, ServiceName principalDecoderName, ModelNode model) throws OperationFailedException {
-            ServiceTarget serviceTarget = context.getServiceTarget();
-            TrivialService<PrincipalDecoder> roleMapperService = new TrivialService<PrincipalDecoder>(getValueSupplier(context, model));
-
-            return serviceTarget.addService(principalDecoderName, roleMapperService);
-        }
-
-        protected ValueSupplier<PrincipalDecoder> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+        protected ValueSupplier<PrincipalDecoder> getValueSupplier(ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
             return () -> null;
         }
 
