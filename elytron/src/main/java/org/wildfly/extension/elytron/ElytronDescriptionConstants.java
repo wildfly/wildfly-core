@@ -108,6 +108,7 @@ interface ElytronDescriptionConstants {
     String CONSTANT_PRINCIPAL_TRANSFORMER = "constant-principal-transformer";
     String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
     String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
+    String CONVERT = "convert";
     String CREATE = "create";
     String CREATION_DATE = "creation-date";
     String CREATION_TIME = "creation-time";

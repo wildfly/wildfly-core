@@ -2604,6 +2604,13 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="convert" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If the Principal is not already an X500Principal should conversion be attempted?
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="required-oids" type="stringListType">
                     <xs:annotation>
                         <xs:documentation>

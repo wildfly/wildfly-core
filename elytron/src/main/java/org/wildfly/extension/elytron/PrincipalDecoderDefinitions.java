@@ -102,6 +102,12 @@ class PrincipalDecoderDefinitions {
         .setRestartAllServices()
         .build();
 
+    static final SimpleAttributeDefinition CONVERT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONVERT, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
     static final StringListAttributeDefinition REQUIRED_OIDS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.REQUIRED_OIDS)
         .setRequired(false)
         .setAllowExpression(true)
@@ -151,7 +157,7 @@ class PrincipalDecoderDefinitions {
     }
 
     static ResourceDefinition getX500AttributePrincipalDecoder() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] { OID, ATTRIBUTE_NAME, JOINER, START_SEGMENT, MAXIMUM_SEGMENTS, REVERSE, REQUIRED_OIDS, REQUIRED_ATTRIBUTES };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { OID, ATTRIBUTE_NAME, JOINER, START_SEGMENT, MAXIMUM_SEGMENTS, REVERSE, CONVERT, REQUIRED_OIDS, REQUIRED_ATTRIBUTES };
         AbstractAddStepHandler add = new PrincipalDecoderAddHandler(attributes) {
 
             @Override
@@ -175,11 +181,12 @@ class PrincipalDecoderDefinitions {
                 final int startSegment = START_SEGMENT.resolveModelAttribute(context, model).asInt();
                 final int maximumSegments = MAXIMUM_SEGMENTS.resolveModelAttribute(context, model).asInt();
                 final boolean reverse = REVERSE.resolveModelAttribute(context, model).asBoolean();
+                final boolean convert = CONVERT.resolveModelAttribute(context, model).asBoolean();
 
                 final List<String> requiredOids = REQUIRED_OIDS.unwrap(context, model);
                 requiredOids.addAll(REQUIRED_ATTRIBUTES.unwrap(context, model).stream().map(name -> OidsUtil.attributeNameToOid(OidsUtil.Category.RDN, name)).collect(Collectors.toList()));
 
-                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, false, requiredOids.toArray(new String[requiredOids.size()]));
+                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, convert, requiredOids.toArray(new String[requiredOids.size()]));
             }
 
         };
