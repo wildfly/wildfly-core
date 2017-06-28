@@ -85,7 +85,7 @@ public class LoggingExtension implements Extension {
 
     static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 4;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -317,7 +317,7 @@ public class LoggingExtension implements Extension {
         registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
         // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_5_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_5_0, KnownModelVersion.VERSION_1_4_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
 
@@ -327,6 +327,7 @@ public class LoggingExtension implements Extension {
                 KnownModelVersion.VERSION_1_3_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_4_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
+                KnownModelVersion.VERSION_3_0_0.getModelVersion(),
         });
     }
 
