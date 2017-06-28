@@ -52,6 +52,7 @@ import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions
 import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions.writeCertificates;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
@@ -76,11 +77,14 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_KEY_STORE);
         ReadAliasesHandler.register(resourceRegistration, resolver);
         ReadAliasHandler.register(resourceRegistration, resolver);
-        RemoveAliasHandler.register(resourceRegistration, resolver);
 
-        // Create Key Pair / Certificate
-        // Create CSR
-        // Import certificate
+        if (isServerOrHostController(resourceRegistration)) { // server-only operations
+            RemoveAliasHandler.register(resourceRegistration, resolver);
+
+            // Create Key Pair / Certificate
+            // Create CSR
+            // Import certificate
+        }
     }
 
     static class ReadAliasesHandler extends ElytronRuntimeOnlyHandler {

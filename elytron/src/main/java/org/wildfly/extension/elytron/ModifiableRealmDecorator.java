@@ -71,6 +71,7 @@ import java.util.List;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
@@ -94,12 +95,14 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_SECURITY_REALM);
-        AddIdentityHandler.register(resourceRegistration, resolver);
-        RemoveIdentityHandler.register(resourceRegistration, resolver);
         ReadIdentityHandler.register(resourceRegistration, resolver);
-        AddIdentityAttributeHandler.register(resourceRegistration, resolver);
-        RemoveIdentityAttributeHandler.register(resourceRegistration, resolver);
-        SetPasswordHandler.register(resourceRegistration, resolver);
+        if (isServerOrHostController(resourceRegistration)) {
+            AddIdentityHandler.register(resourceRegistration, resolver);
+            RemoveIdentityHandler.register(resourceRegistration, resolver);
+            AddIdentityAttributeHandler.register(resourceRegistration, resolver);
+            RemoveIdentityAttributeHandler.register(resourceRegistration, resolver);
+            SetPasswordHandler.register(resourceRegistration, resolver);
+        }
     }
 
     static class AddIdentityHandler extends ElytronRuntimeOnlyHandler {
