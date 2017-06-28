@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -121,19 +122,19 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
     // Resource Resolver
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_STORE);
 
     // Runtime Attributes
 
-    static final SimpleAttributeDefinition SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SIZE, ModelType.INT)
+    private static final SimpleAttributeDefinition SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SIZE, ModelType.INT)
         .setStorageRuntime()
         .build();
 
-    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
+    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
         .setStorageRuntime()
         .build();
 
-    static final SimpleAttributeDefinition MODIFIED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIED, ModelType.BOOLEAN)
+    private static final SimpleAttributeDefinition MODIFIED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIED, ModelType.BOOLEAN)
         .setStorageRuntime()
         .build();
 
@@ -168,55 +169,57 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
         }
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
 
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName keyStoreName = KEY_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName keyStoreName = KEY_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
 
-                populateResponse(context.getResult(), serviceController);
-            }
-
-        });
-
-        resourceRegistration.registerReadOnlyAttribute(SIZE, new KeyStoreRuntimeOnlyHandler(false) {
-
-            @Override
-            protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
-                try {
-                    result.set(keyStoreService.getValue().size());
-                } catch (KeyStoreException e) {
-                    throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    populateResponse(context.getResult(), serviceController);
                 }
-            }
-        });
 
-        resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new KeyStoreRuntimeOnlyHandler(false) {
+            });
 
-            @Override
-            protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
-                SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
-                result.set(sdf.format(new Date(keyStoreService.timeSynched())));
-            }
-        });
+            resourceRegistration.registerReadOnlyAttribute(SIZE, new KeyStoreRuntimeOnlyHandler(false) {
 
-        resourceRegistration.registerReadOnlyAttribute(MODIFIED, new KeyStoreRuntimeOnlyHandler(false) {
+                @Override
+                protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
+                    try {
+                        result.set(keyStoreService.getValue().size());
+                    } catch (KeyStoreException e) {
+                        throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    }
+                }
+            });
 
-            @Override
-            protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
-                result.set(keyStoreService.isModified());
-            }
-        });
+            resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new KeyStoreRuntimeOnlyHandler(false) {
 
-        resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDER, new KeyStoreRuntimeOnlyHandler(false) {
+                @Override
+                protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
+                    SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
+                    result.set(sdf.format(new Date(keyStoreService.timeSynched())));
+                }
+            });
 
-            @Override
-            protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService)
-                    throws OperationFailedException {
-                populateProvider(result, keyStoreService.getValue().getProvider(), false);
-            }
-        });
+            resourceRegistration.registerReadOnlyAttribute(MODIFIED, new KeyStoreRuntimeOnlyHandler(false) {
+
+                @Override
+                protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService) throws OperationFailedException {
+                    result.set(keyStoreService.isModified());
+                }
+            });
+
+            resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDER, new KeyStoreRuntimeOnlyHandler(false) {
+
+                @Override
+                protected void performRuntime(ModelNode result, ModelNode operation, KeyStoreService keyStoreService)
+                        throws OperationFailedException {
+                    populateProvider(result, keyStoreService.getValue().getProvider(), false);
+                }
+            });
+        }
     }
 
     @Override

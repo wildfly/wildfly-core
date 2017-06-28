@@ -23,6 +23,7 @@ import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIM
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
@@ -39,7 +40,6 @@ import java.util.stream.Stream;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -155,11 +155,10 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     // Resource Resolver
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
 
     // Operations parameters
     static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
-            .setStorageRuntime()
             .setMinSize(1)
             .build();
 
@@ -173,37 +172,35 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         List<String> entryTypes = Stream.of(SUPPORTED_CREDENTIAL_TYPES).map(Class::getCanonicalName)
                 .collect(Collectors.toList());
         ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
-                .setStorageRuntime()
                 .setAllowedValues(entryTypes.toArray(new String[entryTypes.size()]))
                 .build();
     }
 
     static final SimpleAttributeDefinition SECRET_VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_VALUE, ModelType.STRING, true)
-            .setStorageRuntime()
             .setMinSize(0)
             .build();
 
     // Operations
-    static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .setReadOnly()
             .build();
 
-    static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
             .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
             .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
             .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
@@ -230,18 +227,19 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         for (AttributeDefinition current : CONFIG_ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, write);
         }
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName credentialStoreClientServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(credentialStoreClientServiceName);
 
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName credentialStoreClientServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(credentialStoreClientServiceName);
+                    populateResponse(context.getResult(), serviceController);
+                }
 
-                populateResponse(context.getResult(), serviceController);
-            }
-
-        });
+            });
+        }
 
     }
 
@@ -315,14 +313,6 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
             commonDependencies(credentialStoreServiceBuilder).install();
         }
-    }
-
-    private static class WriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
-
-        WriteAttributeHandler() {
-            super(CONFIG_ATTRIBUTES);
-        }
-
     }
 
     /*

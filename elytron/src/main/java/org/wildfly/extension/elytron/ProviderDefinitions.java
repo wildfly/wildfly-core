@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.res
 import static org.wildfly.extension.elytron.ElytronExtension.asStringArrayIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.LOADED_PROVIDERS;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.populateProviders;
@@ -262,7 +263,9 @@ class ProviderDefinitions {
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 super.registerAttributes(resourceRegistration);
 
-                resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
+                if (isServerOrHostController(resourceRegistration)) {
+                    resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
+                }
             }
         };
     }

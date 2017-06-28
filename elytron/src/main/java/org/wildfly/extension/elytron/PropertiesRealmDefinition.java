@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -86,13 +87,13 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
             .setRequired(true)
             .build();
 
-    static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
+    private static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -113,7 +114,7 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
+    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
         .setStorageRuntime()
         .build();
 
@@ -121,7 +122,7 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     // Resource Resolver
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
 
     // Operations
 
@@ -243,14 +244,16 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
 
-        resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
 
-            @Override
-            void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
-                SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
-                context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
-            }
-        });
+                @Override
+                void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
+                    SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
+                    context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
+                }
+            });
+        }
     }
 
     @Override

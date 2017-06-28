@@ -32,9 +32,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.dmr.ModelNode;
@@ -90,6 +92,14 @@ public class ElytronExtension implements Extension {
         }
 
         return new StandardResourceDescriptionResolver(sb.toString(), RESOURCE_NAME, ElytronExtension.class.getClassLoader(), true, false);
+    }
+
+    /**
+     * Gets whether the given {@code resourceRegistration} is for a server, or if not,
+     * is not for a resource in the {@code profile} resource tree.
+     */
+    static boolean isServerOrHostController(ImmutableManagementResourceRegistration resourceRegistration) {
+        return resourceRegistration.getProcessType().isServer() || !ModelDescriptionConstants.PROFILE.equals(resourceRegistration.getPathAddress().getElement(0).getKey());
     }
 
     @Override

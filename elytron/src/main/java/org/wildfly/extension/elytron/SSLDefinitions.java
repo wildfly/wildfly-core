@@ -34,6 +34,7 @@ import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_RUNTIME_C
 import static org.wildfly.extension.elytron.ElytronExtension.asIntIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -203,7 +204,7 @@ class SSLDefinitions {
             .setDefaultValue(new ModelNode("DEFAULT"))
             .build();
 
-    static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
+    private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
             .setAllowExpression(true)
@@ -276,7 +277,7 @@ class SSLDefinitions {
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition MAXIMUM_CERT_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
+    private static final SimpleAttributeDefinition MAXIMUM_CERT_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(5))
             .setValidator(new IntRangeValidator(1))
@@ -330,7 +331,7 @@ class SSLDefinitions {
 
     static class CipherSuiteFilterValidator extends ModelTypeValidator{
 
-        public CipherSuiteFilterValidator() {
+        CipherSuiteFilterValidator() {
             super(ModelType.STRING, true, true, false);
         }
 
@@ -786,25 +787,29 @@ class SSLDefinitions {
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             super.registerAttributes(resourceRegistration);
 
-            resourceRegistration.registerReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
-                @Override
-                protected void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException {
-                    SSLSessionContext sessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
-                    result.set(Collections.list(sessionContext.getIds()).stream().mapToInt( (byte[] b)-> 1).sum());
-                }
+            if (isServerOrHostController(resourceRegistration)) {
+                resourceRegistration.registerReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
+                    @Override
+                    protected void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException {
+                        SSLSessionContext sessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
+                        result.set(Collections.list(sessionContext.getIds()).stream().mapToInt((byte[] b) -> 1).sum());
+                    }
 
-                @Override
-                protected ServiceUtil<SSLContext> getSSLContextServiceUtil() {
-                    return server ? SERVER_SERVICE_UTIL : CLIENT_SERVICE_UTIL;
-                }
-            });
+                    @Override
+                    protected ServiceUtil<SSLContext> getSSLContextServiceUtil() {
+                        return server ? SERVER_SERVICE_UTIL : CLIENT_SERVICE_UTIL;
+                    }
+                });
+            }
         }
 
         @Override
         public void registerChildren(ManagementResourceRegistration resourceRegistration) {
             super.registerChildren(resourceRegistration);
 
-            resourceRegistration.registerSubModel(new SSLSessionDefinition(server));
+            if (isServerOrHostController(resourceRegistration)) {
+                resourceRegistration.registerSubModel(new SSLSessionDefinition(server));
+            }
         }
     }
 
