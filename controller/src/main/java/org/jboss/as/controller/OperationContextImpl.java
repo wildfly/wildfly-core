@@ -1655,7 +1655,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         } catch (IllegalStateException ignored) {
             // not registered. just do it directly
         }
-        return ServiceName.parse(capabilityName);
+        ControllerLogger.ROOT_LOGGER.debugf("OperationContext: Parsing ServiceName for %s", capabilityName);
+        return ServiceNameFactory.parseServiceName(capabilityName);
     }
 
     private void rejectUserDomainServerUpdates() {
@@ -2664,7 +2665,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public ServiceName getCapabilityServiceName(String capabilityName) {
-            return ServiceName.parse(capabilityName);
+            try {
+                return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, CapabilityScope.GLOBAL, null);
+            } catch (IllegalStateException | IllegalArgumentException ignore) {
+                // ignore
+            }
+            ControllerLogger.ROOT_LOGGER.debugf("CapabilityServiceSupport: Parsing ServiceName for %s", capabilityName);
+            return ServiceNameFactory.parseServiceName(capabilityName);
         }
 
         @Override

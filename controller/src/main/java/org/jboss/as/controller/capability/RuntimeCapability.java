@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ServiceNameFactory;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
@@ -154,17 +155,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements, builder.dynamicNameMapper);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
-        this.serviceName = this.serviceValueType == null ? null : toServiceName(builder.baseName);
+        this.serviceName = this.serviceValueType == null ? null : ServiceNameFactory.parseServiceName(builder.baseName);
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
-    }
-
-    private static ServiceName toServiceName(String capabilityName) {
-        if (capabilityName.startsWith("org.wildfly.")) {
-            ServiceName toAppend = ServiceName.parse(capabilityName.substring("org.wildfly.".length()));
-            return ORG_WILDFLY.append(toAppend);
-        } else {
-            return ServiceName.parse(capabilityName);
-        }
     }
 
     /**
