@@ -47,6 +47,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT_REALM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT_ROLE_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONVERT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER;
@@ -617,6 +618,9 @@ class MapperParser {
                         break;
                     case REVERSE:
                         PrincipalDecoderDefinitions.REVERSE.parseAndSetParameter(value, addPrincipalDecoder, reader);
+                        break;
+                    case CONVERT:
+                        PrincipalDecoderDefinitions.CONVERT.parseAndSetParameter(value, addPrincipalDecoder, reader);
                         break;
                     case REQUIRED_OIDS:
                         for (String requiredOid : reader.getListAttributeValue(i)) {
@@ -1522,6 +1526,7 @@ class MapperParser {
                 PrincipalDecoderDefinitions.START_SEGMENT.marshallAsAttribute(principalDecoder, writer);
                 PrincipalDecoderDefinitions.MAXIMUM_SEGMENTS.marshallAsAttribute(principalDecoder, writer);
                 PrincipalDecoderDefinitions.REVERSE.marshallAsAttribute(principalDecoder, writer);
+                PrincipalDecoderDefinitions.CONVERT.marshallAsAttribute(principalDecoder, writer);
                 PrincipalDecoderDefinitions.REQUIRED_OIDS.getMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_OIDS, principalDecoder, false, writer);
                 PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES.getMarshaller().marshallAsAttribute(PrincipalDecoderDefinitions.REQUIRED_ATTRIBUTES, principalDecoder, false, writer);
                 writer.writeEndElement();
