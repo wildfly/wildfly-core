@@ -58,6 +58,7 @@ import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
@@ -127,7 +128,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     private final AtomicInteger state = new AtomicInteger(CLOSED);
 
     CLIModelControllerClient(final ControllerAddress address, CallbackHandler handler, int connectionTimeout,
-            final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SSLContext sslContext,
+            final ConnectionCloseHandler closeHandler, Map<String, String> saslOptions, SecurityFactory<SSLContext> sslContextFactory,
             boolean fallbackSslContext, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
         this.handler = handler;
         this.closeHandler = closeHandler;
@@ -150,21 +151,22 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             throw new IOException("Failed to create URI" , e);
         }
 
-        if (sslContext != null && fallbackSslContext == false) {
-            // If the SSLContext was defined in the CLI configuration it should take priority.
-            this.sslContext = sslContext;
-        } else {
-            AuthenticationContext authenticationContext = AuthenticationContext.captureCurrent();
-            if (sslContext != null) {
-                // If not we add the default SSLContext created by the CLI to the end of the list.
-                // This will match if a suitable match is not already available on the AC.
-                authenticationContext = authenticationContext.withSsl(MatchRule.ALL, () -> sslContext);
-            }
-            try {
+        try {
+            if (sslContextFactory != null && fallbackSslContext == false) {
+                // If the SSLContext was defined in the CLI configuration it should take priority.
+                this.sslContext = sslContextFactory.create();
+            } else {
+                AuthenticationContext authenticationContext = AuthenticationContext.captureCurrent();
+                if (sslContextFactory != null) {
+                    // If not we add the default SSLContext created by the CLI to the end of the list.
+                    // This will match if a suitable match is not already available on the AC.
+                    authenticationContext = authenticationContext.withSsl(MatchRule.ALL, sslContextFactory);
+                }
+
                 this.sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(connURI, authenticationContext);
-            } catch (GeneralSecurityException e) {
-                throw new IOException("Failed to obtain SSLContext" , e);
             }
+        } catch (GeneralSecurityException e) {
+            throw new IOException("Failed to obtain SSLContext", e);
         }
 
         channelConfig = ProtocolConnectionConfiguration.create(endpoint, connURI, DEFAULT_OPTIONS);

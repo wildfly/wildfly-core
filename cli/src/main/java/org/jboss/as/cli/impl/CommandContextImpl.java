@@ -187,6 +187,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.security.OneTimeSecurityFactory;
+import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.auth.callback.CallbackUtil;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.OptionalNameCallback;
@@ -262,9 +264,9 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
     /** Flag to indicate that the SSLContext was the default context and not configured */
     private boolean defaultSslContext;
     /** The SSLContext when managed by the CLI */
-    private SSLContext sslContext;
+    private SecurityFactory<SSLContext> sslContextFactory;
     /** The TrustManager in use by the SSLContext, a reference is kept to rejected certificates can be captured. */
-    private LazyDelagatingTrustManager trustManager;
+    private volatile LazyDelagatingTrustManager trustManager;
     /** various key/value pairs */
     private Map<Scope, Map<String, Object>> map = new HashMap<>();
     /** operation request address prefix */
@@ -658,6 +660,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             return;
         }
 
+        this.defaultSslContext = config.getSslConfig() == null;
+        sslContextFactory = new OneTimeSecurityFactory<>(this::createSslContext);
+    }
+
+    private SSLContext createSslContext() throws GeneralSecurityException {
         KeyManager[] keyManagers = null;
         TrustManager[] trustManagers = null;
 
@@ -695,13 +702,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     keyManagerFactory.init(theKeyStore, keyPassword);
                     keyManagers = keyManagerFactory.getKeyManagers();
                 } catch (IOException e) {
-                    throw new CliInitializationException(e);
-                } catch (GeneralSecurityException e) {
-                    throw new CliInitializationException(e);
+                    throw new GeneralSecurityException(e);
                 } finally {
                     StreamUtils.safeClose(fis);
                 }
-
             }
 
             trustStore = sslConfig.getTrustStore();
@@ -719,15 +723,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         trustManager = new LazyDelagatingTrustManager(trustStore, trustStorePassword, modifyTrustStore);
         trustManagers = new TrustManager[] { trustManager };
 
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers, trustManagers, null);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagers, trustManagers, null);
 
-            this.defaultSslContext = sslConfig == null;
-            this.sslContext = sslContext;
-        } catch (GeneralSecurityException e) {
-            throw new CliInitializationException(e);
-        }
+        return sslContext;
     }
 
     /**
@@ -1148,7 +1147,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                     log.debug("connecting to " + connectionAddress.getHost() + ':' + connectionAddress.getPort() + " as " + username);
                 }
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(connectionAddress, cbh,
-                        disableLocalAuth, sslContext, defaultSslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);
+                        disableLocalAuth, sslContextFactory, defaultSslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);
                 retry = false;
                 connInfoBean = new ConnectionInfoBean();
                 tryConnection(tempClient, connectionAddress);
@@ -1269,6 +1268,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                 }
                 printLine("");
             }
+        }
+
+        if (trustManager == null) {
+            return;
         }
 
         for (;;) {

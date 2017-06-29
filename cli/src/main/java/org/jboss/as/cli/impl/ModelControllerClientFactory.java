@@ -32,6 +32,7 @@ import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.protocol.ProtocolTimeoutHandler;
+import org.wildfly.security.SecurityFactory;
 
 /**
  * @author Alexey Loubyansky
@@ -50,13 +51,13 @@ public interface ModelControllerClientFactory {
     }
 
     ModelControllerClient getClient(ControllerAddress address, CallbackHandler handler,
-            boolean disableLocalAuth, SSLContext sslContext, boolean fallbackSslContext, int connectionTimeout,
+            boolean disableLocalAuth, SecurityFactory<SSLContext> sslContextFactory, boolean fallbackSslContext, int connectionTimeout,
             ConnectionCloseHandler closeHandler, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException;
 
     ModelControllerClientFactory DEFAULT = new ModelControllerClientFactory() {
         @Override
         public ModelControllerClient getClient(ControllerAddress address, CallbackHandler handler,
-                boolean disableLocalAuth, SSLContext sslContext, boolean fallbackSslContext, int connectionTimeout,
+                boolean disableLocalAuth, SecurityFactory<SSLContext> sslContextFactory, boolean fallbackSslContext, int connectionTimeout,
                 ConnectionCloseHandler closeHandler, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
             // TODO - Make use of the ProtocolTimeoutHandler
             Map<String, String> saslOptions = disableLocalAuth ? DISABLED_LOCAL_AUTH : ENABLED_LOCAL_AUTH;
@@ -65,7 +66,7 @@ public interface ModelControllerClientFactory {
                     .setHostName(address.getHost())
                     .setPort(address.getPort())
                     .setHandler(handler)
-                    .setSslContext(sslContext)
+                    .setSslContextFactory(sslContextFactory)
                     .setConnectionTimeout(connectionTimeout)
                     .setSaslOptions(saslOptions)
                     .setClientBindAddress(clientBindAddress)
@@ -78,10 +79,10 @@ public interface ModelControllerClientFactory {
 
         @Override
         public ModelControllerClient getClient(ControllerAddress address,
-                final CallbackHandler handler, boolean disableLocalAuth, final SSLContext sslContext, final boolean fallbackSslContext,
+                final CallbackHandler handler, boolean disableLocalAuth, final SecurityFactory<SSLContext> sslContextFactory, final boolean fallbackSslContext,
                 final int connectionTimeout, final ConnectionCloseHandler closeHandler, ProtocolTimeoutHandler timeoutHandler, String clientBindAddress) throws IOException {
             Map<String, String> saslOptions = disableLocalAuth ? DISABLED_LOCAL_AUTH : ENABLED_LOCAL_AUTH;
-            return new CLIModelControllerClient(address, handler, connectionTimeout, closeHandler, saslOptions, sslContext, fallbackSslContext, timeoutHandler, clientBindAddress);
+            return new CLIModelControllerClient(address, handler, connectionTimeout, closeHandler, saslOptions, sslContextFactory, fallbackSslContext, timeoutHandler, clientBindAddress);
         }};
 
 }
