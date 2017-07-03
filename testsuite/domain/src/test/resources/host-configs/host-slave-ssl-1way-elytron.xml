@@ -229,7 +229,7 @@
                     </key-store>
                 </key-stores>
                 <trust-managers>
-                    <trust-manager name="oneWayTM" algorithm="SunX509" key-store="oneWayTS"/>
+                    <trust-manager name="oneWayTM" key-store="oneWayTS"/>
                 </trust-managers>
                 <client-ssl-contexts>
                     <client-ssl-context name="oneWayCSC" protocols="TLSv1.2" trust-manager="oneWayTM"/>
