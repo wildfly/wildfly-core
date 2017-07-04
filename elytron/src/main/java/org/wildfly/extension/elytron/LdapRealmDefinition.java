@@ -283,7 +283,9 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             if (serialNumberFrom.isDefined()) b.addSerialNumberCertificateVerifier(serialNumberFrom.asString());
 
             ModelNode subjectDnFrom = SUBJECT_DN_FROM.resolveModelAttribute(context, model);
-            b.addSubjectDnCertificateVerifier(subjectDnFrom.asString());
+            if (subjectDnFrom.isDefined()) {
+                b.addSubjectDnCertificateVerifier(subjectDnFrom.asString());
+            }
 
             b.build();
         }
