@@ -268,7 +268,7 @@ class PolicyDefinitions {
         });
 
         if (policies.isEmpty()) {
-            throw new OperationFailedException("Could find policy provider with name [" + defaultPolicy + "]");
+            throw new OperationFailedException("Could not find policy provider with name [" + defaultPolicy + "]");
         }
 
         return policies.get(defaultPolicy);
