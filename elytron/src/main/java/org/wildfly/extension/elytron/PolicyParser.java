@@ -74,6 +74,7 @@ class PolicyParser {
                 String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case DEFAULT_POLICY:
+                        PolicyDefinitions.DEFAULT_POLICY.parseAndSetParameter(value, addPolicy, reader);
                         defaultPolicy = value;
                         break;
                     default:
