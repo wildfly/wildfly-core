@@ -65,6 +65,7 @@ import org.wildfly.test.security.common.elytron.SimpleSecurityDomain;
 import org.wildfly.test.security.common.elytron.SimpleSecurityDomain.SecurityDomainRealm;
 import org.wildfly.test.security.common.other.SimpleMgmtNativeInterface;
 import org.wildfly.test.security.common.other.SimpleSocketBinding;
+import org.wildfly.test.security.common.other.TrustedDomainsConfigurator;
 
 /**
  * Parent class for management interface SASL tests.
@@ -308,6 +309,8 @@ public abstract class AbstractMgmtSaslTestBase {
                 .withRealms(SecurityDomainRealm.builder().withRealm(NAME).build(),
                         SecurityDomainRealm.builder().withRealm("JWT").build())
                 .withRoleMapper(NAME).build());
+        elements.add(
+                TrustedDomainsConfigurator.builder().withName("ManagementDomain").withTrustedSecurityDomains(NAME).build());
 
         elements.add(new ConfigurableElement() {
 
@@ -321,10 +324,6 @@ public abstract class AbstractMgmtSaslTestBase {
 
             @Override
             public void create(ModelControllerClient client, CLIWrapper cli) throws Exception {
-                cli.sendLine(String.format(
-                        "/subsystem=elytron/security-domain=ManagementDomain:write-attribute(name=trusted-security-domains, value=[%s])",
-                        NAME));
-
                 // identities with digested PWD
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_MD5);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA);
@@ -334,14 +333,12 @@ public abstract class AbstractMgmtSaslTestBase {
 
             @Override
             public void remove(ModelControllerClient client, CLIWrapper cli) throws Exception {
-                cli.sendLine(
-                        "/subsystem=elytron/security-domain=ManagementDomain:undefine-attribute(name=trusted-security-domains)");
                 // no need to remove identities, they'll be resolved with removing the FS realm
             }
 
             @Override
             public String getName() {
-                return "domain-trust-and-identities";
+                return "identities-with-digest-passwords";
             }
         });
 
