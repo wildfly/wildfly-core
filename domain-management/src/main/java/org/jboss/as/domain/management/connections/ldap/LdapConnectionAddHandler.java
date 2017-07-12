@@ -53,7 +53,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Handler for adding ldap management connections.
@@ -130,16 +129,7 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
             handlesReferralsForSet = Collections.emptySet();
         }
 
-        final boolean alwaysSendClientCert;
-        if (model.hasDefined(ALWAYS_SEND_CLIENT_CERT.getName())) {
-            /* If always-send-client-cert is defined in the management model, take it */
-            alwaysSendClientCert = ALWAYS_SEND_CLIENT_CERT.resolveModelAttribute(context, model).asBoolean();
-        } else {
-            /* Otherwise, use the system property if set, or false as default */
-            alwaysSendClientCert = Boolean.valueOf(WildFlySecurityManager
-                    .getPropertyPrivileged("jboss.as.management.outbound.ldap.alwaysSendClientCert", "false"));
-        }
-
+        final boolean alwaysSendClientCert = ALWAYS_SEND_CLIENT_CERT.resolveModelAttribute(context, model).asBoolean();
         return connectionManagerService.setConfiguration(initialContextFactory, url, searchDn, searchCredential, referralHandling, handlesReferralsForSet, alwaysSendClientCert);
     }
 
