@@ -42,7 +42,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.junit.Assume;
 import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
@@ -125,7 +124,6 @@ public abstract class AbstractMgmtSaslTestBase {
             LOGGER.info("We don't test ANONYMOUS mechanism with wrong user credentials.");
             return;
         }
-        Assume.assumeFalse("ELY-1203 - Skipping PLAIN mechanism.", "PLAIN".equals(mechanismName));
 
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
                 .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName))
