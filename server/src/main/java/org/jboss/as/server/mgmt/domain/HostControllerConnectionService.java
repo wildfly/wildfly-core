@@ -58,6 +58,8 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
+import org.xnio.Options;
+import org.xnio.Sequence;
 
 /**
  * Service setting up the connection to the local host controller.
@@ -110,11 +112,11 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = endpointInjector.getValue();
         try {
-            // TODO Elytron - Don't disable local authentication for now.
-            //final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
+            // for servers, local auth is always disabled.
+            final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
-            final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
-            //configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
+            final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, options);
+            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorInjector.getValue());
