@@ -166,7 +166,7 @@ class HttpServerDefinitions {
                     HttpServerAuthenticationMechanismFactory factory = factoryInjector.getValue();
                     factory = new SetMechanismInformationMechanismFactory(factory);
                     factory = finalFilter != null ? new FilterServerMechanismFactory(factory, finalFilter) : factory;
-                    factory = propertiesMap != null ? new PropertiesServerMechanismFactory(factoryInjector.getValue(), propertiesMap) : factory;
+                    factory = propertiesMap != null ? new PropertiesServerMechanismFactory(factory, propertiesMap) : factory;
 
                     return factory;
                 };
