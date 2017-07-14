@@ -88,6 +88,9 @@
                 <option value="-XX:MetaspaceSize=96m"/>
                 <option value="-XX:MaxMetaspaceSize=256m"/>
             </jvm-options>
+            <environment-variables>
+                <variable name="MALLOC_ARENA_MAX" value="1"/>
+            </environment-variables>
         </jvm>
     </jvms>
 
