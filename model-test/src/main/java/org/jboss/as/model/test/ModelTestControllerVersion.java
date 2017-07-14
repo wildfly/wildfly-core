@@ -21,20 +21,25 @@
  */
 package org.jboss.as.model.test;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
+
+import org.jboss.as.controller.ModelVersion;
+import org.wildfly.legacy.version.LegacyVersions;
 
 
 public enum ModelTestControllerVersion {
     //AS releases
-    MASTER (CurrentVersion.VERSION, false, null),
+    MASTER (CurrentVersion.VERSION, false, null, "master" ),
 
     //EAP releases
 
-    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0"), //EAP 6.2 is the earliest version we support for transformers
-    EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0"),
-    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0"),
-    EAP_6_4_7 ("7.5.7.Final-redhat-3", true, "7.5.0"),
-    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", true, "2.1.0.Final")
+    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, "7.3.0", "6.2.0"), //EAP 6.2 is the earliest version we support for transformers
+    EAP_6_3_0 ("7.4.0.Final-redhat-19", true, "7.4.0", "6.3.0"),
+    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0", "6.4.0"),
+    EAP_6_4_7 ("7.5.7.Final-redhat-3", true, "7.5.0", "6.4.7"), //this one is special as it has model change in micro release
+    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", true, "2.1.0.Final", "7.0.0")
     ;
 
     private final String mavenGavVersion;
@@ -46,31 +51,34 @@ public enum ModelTestControllerVersion {
     private final String coreMavenGroupId;
     private final String serverMavenArtifactId;
     private final String hostControllerMavenArtifactId;
+    private final String realVersionName;
+    private final String artifactIdPrefix;
+    private final Map<String, ModelVersion> subsystemModelVersions = new LinkedHashMap<>();
 
-    private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion) {
-        this(mavenGavVersion, eap, testControllerVersion, true, null);
+    ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion,String realVersionName) {
+        this(mavenGavVersion, eap, testControllerVersion, true, null, realVersionName);
     }
 
-    private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, boolean validLegacyController) {
-        this(mavenGavVersion, eap, testControllerVersion, validLegacyController, null);
-    }
-    private ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, boolean validLegacyController, String coreVersion) {
+    ModelTestControllerVersion(String mavenGavVersion, boolean eap, String testControllerVersion, boolean validLegacyController, String coreVersion, String realVersionName) {
         this.mavenGavVersion = mavenGavVersion;
         this.testControllerVersion = testControllerVersion;
         this.eap = eap;
         this.validLegacyController = validLegacyController;
         this.coreVersion = coreVersion == null? mavenGavVersion : coreVersion; //full == core
+        this.realVersionName = realVersionName;
         if (eap) {
             if (coreVersion != null) { //eap 7+ has core version defined
                 this.coreMavenGroupId = "org.wildfly.core";
                 this.mavenGroupId = "org.jboss.eap";
                 this.serverMavenArtifactId = "wildfly-server";
                 this.hostControllerMavenArtifactId = "wildfly-host-controller";
+                this.artifactIdPrefix = "wildfly-";
             } else { //we have EAP6
                 this.mavenGroupId = "org.jboss.as";
                 this.coreMavenGroupId = "org.jboss.as"; //full == core
                 this.serverMavenArtifactId = "jboss-as-server";
                 this.hostControllerMavenArtifactId = "jboss-as-host-controller";
+                this.artifactIdPrefix = "jboss-as-";
             }
 
         } else { //we only handle WildFly 9+ as legacy version, we don't care about AS7.x.x community releases.
@@ -78,6 +86,7 @@ public enum ModelTestControllerVersion {
             this.mavenGroupId = "org.wildfly";
             this.serverMavenArtifactId = "wildfly-server";
             this.hostControllerMavenArtifactId = "wildfly-host-controller";
+            this.artifactIdPrefix = "wildfly-";
         }
     }
 
@@ -117,6 +126,14 @@ public enum ModelTestControllerVersion {
         return hostControllerMavenArtifactId;
     }
 
+    public String getRealVersionName() {
+        return realVersionName;
+    }
+
+    public String getArtifactIdPrefix(){
+        return artifactIdPrefix;
+    }
+
     public interface CurrentVersion {
         String VERSION = VersionLocator.VERSION;
     }
@@ -138,6 +155,27 @@ public enum ModelTestControllerVersion {
         static String getCurrentVersion() {
             return VERSION;
         }
+    }
+
+    public ModelVersion getSubsystemModelVersion(String subsystemName){
+        return getSubsystemModelVersions().get(subsystemName);
+    }
+
+    public Map<String,ModelVersion> getSubsystemModelVersions(){
+        if (subsystemModelVersions.isEmpty()){
+            synchronized (subsystemModelVersions){
+                subsystemModelVersions.putAll(LegacyVersions.getModelVersions(realVersionName));
+            }
+        }
+        return this.subsystemModelVersions;
+    }
+
+    public String getMavenGav(String artifactIdPart, boolean coreArtifact) {
+        return String.format("%s:%s%s:%s",
+                coreArtifact ? getCoreMavenGroupId() : getMavenGroupId(),
+                getArtifactIdPrefix(), artifactIdPart,
+                getMavenGavVersion());
+
     }
 
 }

@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.AbstractControllerService;
+import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
@@ -86,6 +87,8 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         controllerExtensionRegistry.setWriterRegistry(persister);
         controllerExtensionRegistry.setPathManager(pathManager);
 
+
+        CapabilityRegistry capabilityRegistry = new CapabilityRegistry(true);
         //Use the default implementation of test controller for the main controller, and for tests that don't have another one set up on the classpath
         TestModelControllerFactory testModelControllerFactory = new TestModelControllerFactory() {
             @Override
@@ -95,7 +98,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                                                            StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
                                                            boolean registerTransformers){
                 return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry,
-                        persister, validateOpsFilter, registerTransformers);
+                        persister, validateOpsFilter, registerTransformers, capabilityRegistry);
             }
         };
         if (legacyModelVersion != null) {

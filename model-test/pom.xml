@@ -108,5 +108,9 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-     </dependencies>
+        <dependency>
+            <groupId>org.wildfly.legacy.test</groupId>
+            <artifactId>wildfly-legacy-versions</artifactId>
+        </dependency>
+    </dependencies>
 </project>
