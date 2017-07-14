@@ -122,8 +122,9 @@ class LdapUserSearcherFactory {
                 Attributes attributes = null;
 
                 LdapConnectionHandler currentConnectionHandler = connectionHandler;
-                searchEnumeration = currentConnectionHandler.getConnection().search(baseDn, filter, filterArguments, searchControls);
+                final DirContext connection = currentConnectionHandler.getConnection();
                 try {
+                    searchEnumeration = connection.search(baseDn, filter, filterArguments, searchControls);
                     if (searchEnumeration.hasMore() == false) {
                         SECURITY_LOGGER.tracef("User '%s' not found in directory.", suppliedName);
                         throw SECURITY_LOGGER.userNotFoundInDirectory(suppliedName);
@@ -154,7 +155,7 @@ class LdapUserSearcherFactory {
                 }
 
                 SearchResult result = null;
-                if (attributes == null) {
+                if (attributes == null && searchEnumeration != null) {
                     /*
                      * If a referral has already been handled due to a LdapReferralException then the attributes would have been
                      * loaded after following the referral.
