@@ -48,8 +48,61 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
  * <p>Utility class with some convenience methods to create and remove modules.</p>
  *
  * @author Pedro Igor
+ * @author <a href="https://github.com/ppalaga">Peter Palaga</a>
  */
 public class TestModule {
+
+    /**
+     * A general purpose {@link TestModule} builder.
+     */
+    public static class Builder {
+        private final String name;
+        private final List<String> dependencies = new ArrayList<>();
+        private final List<JavaArchive> javaArchives = new ArrayList<>();
+
+
+        private Builder(String name) {
+            super();
+            this.name = name;
+        }
+
+        public Builder javaArchive(File archive) {
+            javaArchives.add(ShrinkWrap.createFromZipFile(JavaArchive.class, archive));
+            return this;
+        }
+
+        public Builder javaArchive(JavaArchive javaArchive) {
+            javaArchives.add(javaArchive);
+            return this;
+        }
+
+        public Builder javaArchives(File... archives) {
+            for (File archive : archives) {
+                javaArchive(archive);
+            }
+            return this;
+        }
+
+        public Builder javaArchives(JavaArchive... javaArchives) {
+            for (JavaArchive javaArchive : javaArchives) {
+                this.javaArchives.add(javaArchive);
+            }
+            return this;
+        }
+
+        public Builder dependency(String dependency) {
+            dependencies.add(dependency);
+            return this;
+        }
+
+        public TestModule build() {
+            TestModule result = new TestModule(name, dependencies.toArray(new String[0]));
+            for (JavaArchive javaArchive : javaArchives) {
+                result.addJavaArchive(javaArchive);
+            }
+            return result;
+        }
+    }
 
     private static final Logger log  = Logger.getLogger(TestModule.class);
 
@@ -59,6 +112,13 @@ public class TestModule {
     private final List<ClassCallback> classCallbacks = new ArrayList<TestModule.ClassCallback>();
     private final List<JavaArchive> resources = new ArrayList<JavaArchive>();
 
+    /**
+     * @param name the name of the JBoss module to build
+     * @return a new {@link Builder}
+     */
+    public static Builder builder(String name) {
+        return new Builder(name);
+    }
 
     /**
      * <p>Creates a new module with the given name and module definition.</p>
@@ -242,6 +302,10 @@ public class TestModule {
 
     public void addJavaArchive(File archive) {
         resources.add(ShrinkWrap.createFromZipFile(JavaArchive.class, archive));
+    }
+
+    public void addJavaArchive(JavaArchive archive) {
+        resources.add(archive);
     }
 
     private void remove(File file) {
