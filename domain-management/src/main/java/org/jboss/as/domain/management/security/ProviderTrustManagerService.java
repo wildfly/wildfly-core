@@ -54,7 +54,9 @@ public class ProviderTrustManagerService extends AbstractTrustManagerService {
 
         try {
             KeyStore theKeyStore = KeyStore.getInstance(provider);
-            theKeyStore.load(null, resolvePassword());
+            synchronized (SecurityRealmAddHandler.INSTANCE) {
+                theKeyStore.load(null, resolvePassword());
+            }
             this.theKeyStore = theKeyStore;
         } catch (KeyStoreException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);

@@ -55,7 +55,9 @@ class ProviderKeyManagerService extends AbstractKeyManagerService {
 
         try {
             KeyStore theKeyStore = KeyStore.getInstance(provider);
-            theKeyStore.load(null, storePassword);
+            synchronized (SecurityRealmAddHandler.INSTANCE) {
+                theKeyStore.load(null, storePassword);
+            }
 
             this.theKeyStore = theKeyStore;
         } catch (KeyStoreException e) {
