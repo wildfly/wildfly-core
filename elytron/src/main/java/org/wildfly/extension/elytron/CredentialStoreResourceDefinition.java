@@ -35,6 +35,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -343,9 +345,20 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             State serviceState;
             if ((serviceState = credentialStoreServiceController.getState()) != State.UP) {
                 if (serviceMustBeUp) {
-                    throw ROOT_LOGGER.requiredServiceNotUp(credentialStoreServiceName, serviceState);
+                    try {
+                        // give it another chance to wait at most 500 mill-seconds
+                        credentialStoreServiceController.awaitValue(500, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException | IllegalStateException | TimeoutException e) {
+                        throw ROOT_LOGGER.requiredServiceNotUp(credentialStoreServiceName, credentialStoreServiceController.getState());
+                    }
                 }
-                return;
+                serviceState = credentialStoreServiceController.getState();
+                if (serviceState != State.UP) {
+                    if (serviceMustBeUp) {
+                        throw ROOT_LOGGER.requiredServiceNotUp(credentialStoreServiceName, serviceState);
+                    }
+                    return;
+                }
             }
             CredentialStoreService service = (CredentialStoreService) credentialStoreServiceController.getService();
             performRuntime(context.getResult(), context, operation, service);
