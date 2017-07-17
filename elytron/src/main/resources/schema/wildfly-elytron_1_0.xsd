@@ -1068,7 +1068,7 @@
         <xs:attribute name="data-source" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The name of the datasource used to connecto to the database.
+                    The name of the datasource used to connect to the database.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1466,7 +1466,7 @@
     <xs:complexType name="tokenRealmType">
         <xs:annotation>
             <xs:documentation>
-                Realm definition for a token realm where authenticaton and authorization are handled by
+                Realm definition for a token realm where authentication and authorization are handled by
                 a given token validator.
             </xs:documentation>
         </xs:annotation>
@@ -1865,7 +1865,7 @@
     <xs:complexType name="userPasswordMapperType">
         <xs:annotation>
             <xs:documentation>
-                The configuration used to map a specific LDAP attribute (userPassword usualy) as an identity password credential.
+                The configuration used to map a specific LDAP attribute (userPassword usually) as an identity password credential.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="from" type="xs:string" use="required">
@@ -1907,7 +1907,7 @@
         <xs:attribute name="hash-from" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The name of the LDAP attribute to map to an OTP credential hash function.
+                    The name of the LDAP attribute to map to a Base64 encoded OTP credential hash.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2593,7 +2593,7 @@
                 <xs:attribute name="maximum-segments" type="xs:int" default="2147483647">
                     <xs:annotation>
                         <xs:documentation>
-                            The maximum number of occurences of the attribute to map.
+                            The maximum number of occurrences of the attribute to map.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2671,7 +2671,7 @@
                 <xs:attribute name="replace-all" type="xs:boolean" default="false">
                     <xs:annotation>
                         <xs:documentation>
-                            Should all occurences be replaced or just the first?
+                            Should all occurrences be replaced or just the first?
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3231,7 +3231,7 @@
                 <xs:documentation>
                     This configuration will only apply when the host name specified is provided by the mechanism.
 
-                    If this attribute is omited then this will match any host name.
+                    If this attribute is omitted then this will match any host name.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3240,7 +3240,7 @@
                 <xs:documentation>
                     This configuration will only apply when the protocol specified is provided by the mechanism.
 
-                    If this attributed is omited then this will match any protocol.
+                    If this attributed is omitted then this will match any protocol.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3665,7 +3665,7 @@
                 <xs:attribute name="protocol" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
-                            Override the protocol specifed when creating a SASL mechanism.
+                            Override the protocol specified when creating a SASL mechanism.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3778,7 +3778,7 @@
 
                             When set to false all provider loaded mechanisms are enabled unless matched.
 
-                            Any mechansims from a factory not loaded by a Provider are unaffected.
+                            Any mechanisms from a factory not loaded by a Provider are unaffected.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3801,7 +3801,7 @@
     <xs:complexType name="providerSaslServerFactoryType">
         <xs:annotation>
             <xs:documentation>
-                A SaslServerFactory definition that searches an array of Provider instances for all availabel SaslServerFactories.
+                A SaslServerFactory definition that searches an array of Provider instances for all available SaslServerFactories.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
