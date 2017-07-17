@@ -63,7 +63,6 @@ import org.wildfly.security.password.spec.OneTimePasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.password.spec.SaltedPasswordAlgorithmSpec;
 
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -562,7 +561,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             } else if (passwordType.equals(ElytronDescriptionConstants.OTP)) {
                 algorithm = OTPassword.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 byte[] hash = OTPassword.HASH.resolveModelAttribute(parentContext, passwordNode).asBytes();
-                byte[] seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString().getBytes(StandardCharsets.US_ASCII);
+                String seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString();
                 int sequenceNumber = OTPassword.SEQUENCE.resolveModelAttribute(parentContext, passwordNode).asInt();
                 passwordSpec = new OneTimePasswordSpec(hash, seed, sequenceNumber);
 
