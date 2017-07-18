@@ -34,7 +34,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,7 +42,6 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
@@ -206,23 +204,15 @@ public class HostControllerConnectionService implements Service<HostControllerCl
          * to be established.
          */
         try {
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load( null, null);
+            trustManagerFactory.init(keyStore);
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            TrustManager[] trustManagers = new TrustManager[] { new X509TrustManager() {
-                public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                }
-
-                public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-                }
-
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-            } };
-
+            TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
             sslContext.init(null, trustManagers, null);
-
             return sslContext;
-        } catch (GeneralSecurityException e) {
+        } catch (IOException | GeneralSecurityException e) {
             throw ServerLogger.ROOT_LOGGER.unableToInitialiseSSLContext(e.getMessage());
         }
     }
