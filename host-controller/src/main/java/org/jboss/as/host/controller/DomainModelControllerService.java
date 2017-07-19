@@ -145,6 +145,7 @@ import org.jboss.as.domain.controller.operations.DomainModelIncludesValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.RemoteDomainConnectionService.RemoteFileRepository;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DomainControllerManagementInterface;
@@ -181,6 +182,7 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -821,6 +823,22 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         .addDependency(ServiceBuilder.DependencyType.OPTIONAL, UndertowHttpManagementService.SERVICE_NAME)
                         .setInitialMode(ServiceController.Mode.ACTIVE)
                         .install();
+
+                // link the domain server security realm to the server inventory via callback
+                // this is a bit hacky ...
+                final ModelNode ska = new ModelNode();
+                ska.get(OP).set("validate");
+                ska.get(OP_ADDR).setEmptyList();
+                final ModelNode result = internalExecute(OperationBuilder.create(ska).build(), OperationMessageHandler.DISCARD, OperationTransactionControl.COMMIT, new OperationStepHandler() {
+                    @Override
+                    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                         final ServiceName serviceName = DomainManagedServerCallbackHandler.ServiceUtil.createServiceName();
+                         final ServiceRegistry registry = context.getServiceRegistry(false);
+                         final ServiceController controller = registry.getService(serviceName);
+                         final DomainManagedServerCallbackHandler cbh = (DomainManagedServerCallbackHandler)controller.getService();
+                         cbh.setServerCallbackHandler(serverInventory.getServerCallbackHandler());
+                    }
+                }).getResponseNode();
 
                 reachedServers = true;
                 if (currentRunningMode == RunningMode.NORMAL) {

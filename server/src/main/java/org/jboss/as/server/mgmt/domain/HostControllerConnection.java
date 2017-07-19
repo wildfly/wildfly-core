@@ -42,6 +42,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolConnectionManager;
 import org.jboss.as.protocol.ProtocolConnectionUtils;
@@ -394,12 +395,13 @@ class HostControllerConnection extends FutureManagementChannel {
             this.authKey = authKey;
         }
 
+        @Override
         public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
             for (Callback current : callbacks) {
                 if (current instanceof RealmCallback) {
                     RealmCallback rcb = (RealmCallback) current;
-                    String defaultText = rcb.getDefaultText();
-                    rcb.setText(defaultText); // For now just use the realm suggested.
+                    // use the internal server-only auth realm
+                    rcb.setText(DomainManagedServerCallbackHandler.REALM_NAME);
                 } else if (current instanceof RealmChoiceCallback) {
                     throw new UnsupportedCallbackException(current, "Realm choice not currently supported.");
                 } else if (current instanceof NameCallback) {

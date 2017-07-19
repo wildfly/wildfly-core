@@ -70,6 +70,7 @@ import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.domain.controller.DomainController;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.ProcessControllerClient;
@@ -802,6 +803,9 @@ public class ServerInventoryImpl implements ServerInventory {
                         toRespondTo.add(current);
                     } else if (current instanceof RealmCallback) {
                         realm = ((RealmCallback)current).getDefaultText();
+                        if (!DomainManagedServerCallbackHandler.REALM_NAME.equals(realm)) {
+                            throw new UnsupportedCallbackException(current);
+                        }
                     } else {
                         throw new UnsupportedCallbackException(current);
                     }

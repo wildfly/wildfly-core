@@ -160,6 +160,11 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             addPlugInLoaderService(realmName, plugIns, serviceTarget);
         }
         InjectedSetValue<CallbackHandlerService> injectorSet = securityRealmService.getCallbackHandlerService();
+
+        // install the managed server realm callback handle for domain server authkeys
+        DomainManagedServerCallbackHandler dmc = new DomainManagedServerCallbackHandler();
+        dmc.installServerSecurityRealm(context, securityRealmService, serviceTarget, realmBuilder, injectorSet.injector());
+
         if (authentication != null) {
             // Authentication can have a truststore defined at the same time as a username/password based mechanism.
             //
