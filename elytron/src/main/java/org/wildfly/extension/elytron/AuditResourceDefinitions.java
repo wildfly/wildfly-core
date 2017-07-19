@@ -55,6 +55,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
@@ -170,6 +171,20 @@ class AuditResourceDefinitions {
 
     static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
+    private abstract static class EndpointClosingEventListenerSupplier implements ValueSupplier<SecurityEventListener> {
+        AuditEndpoint endpoint;
+
+        @Override
+        public void dispose() {
+            if (endpoint == null) return;
+            try {
+                endpoint.close();
+            } catch (IOException e) {
+                ROOT_LOGGER.trace("Unable to close audit endpoint", e);
+            }
+        }
+    }
+
     static ResourceDefinition getFileAuditLogResourceDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
@@ -192,30 +207,32 @@ class AuditResourceDefinitions {
                     serviceBuilder.addDependency(pathName(relativeTo));
                 }
 
-                return () -> {
-                    PathResolver pathResolver = pathResolver();
-                    pathResolver.path(path);
-                    if (relativeTo != null) {
-                        pathResolver.relativeTo(relativeTo, pathManager.getValue());
-                    }
-                    File resolvedPath = pathResolver.resolve();
+                return new EndpointClosingEventListenerSupplier() {
+                    @Override
+                    public SecurityEventListener get() throws StartException {
+                        PathResolver pathResolver = pathResolver();
+                        pathResolver.path(path);
+                        if (relativeTo != null) {
+                            pathResolver.relativeTo(relativeTo, pathManager.getValue());
+                        }
+                        File resolvedPath = pathResolver.resolve();
 
-                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
-                    AuditEndpoint endpoint;
-                    try {
-                        endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath())
-                                .setSyncOnAccept(synv)
-                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
-                    } catch (IOException e) {
-                        throw ROOT_LOGGER.unableToStartService(e);
-                    }
+                        final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                        final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                        try {
+                            endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath())
+                                    .setSyncOnAccept(synv)
+                                    .setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                        } catch (IOException e) {
+                            throw ROOT_LOGGER.unableToStartService(e);
+                        }
 
-                    return SecurityEventListener.from(AuditLogger.builder()
-                            .setPriorityMapper(m -> EventPriority.WARNING)
-                            .setMessageFormatter(m -> m.accept(formatter, null))
-                            .setAuditEndpoint(endpoint)
-                            .build());
+                        return SecurityEventListener.from(AuditLogger.builder()
+                                .setPriorityMapper(m -> EventPriority.WARNING)
+                                .setMessageFormatter(m -> m.accept(formatter, null))
+                                .setAuditEndpoint(endpoint)
+                                .build());
+                    }
                 };
             }
         };
@@ -246,34 +263,36 @@ class AuditResourceDefinitions {
                     serviceBuilder.addDependency(pathName(relativeTo));
                 }
 
-                return () -> {
-                    PathResolver pathResolver = pathResolver();
-                    pathResolver.path(path);
-                    if (relativeTo != null) {
-                        pathResolver.relativeTo(relativeTo, pathManager.getValue());
+                return new EndpointClosingEventListenerSupplier() {
+                    @Override
+                    public SecurityEventListener get() throws StartException {
+                        PathResolver pathResolver = pathResolver();
+                        pathResolver.path(path);
+                        if (relativeTo != null) {
+                            pathResolver.relativeTo(relativeTo, pathManager.getValue());
+                        }
+                        File resolvedPath = pathResolver.resolve();
+
+                        final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                        final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                        try {
+                            FileAuditEndpoint.Builder builder = PeriodicRotatingFileAuditEndpoint.builder()
+                                    .setSuffix(suffix)
+                                    .setLocation(resolvedPath.toPath())
+                                    .setSyncOnAccept(synv)
+                                    .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
+
+                            endpoint = builder.build();
+                        } catch (IOException e) {
+                            throw ROOT_LOGGER.unableToStartService(e);
+                        }
+
+                        return SecurityEventListener.from(AuditLogger.builder()
+                                .setPriorityMapper(m -> EventPriority.WARNING)
+                                .setMessageFormatter(m -> m.accept(formatter, null))
+                                .setAuditEndpoint(endpoint)
+                                .build());
                     }
-                    File resolvedPath = pathResolver.resolve();
-
-                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
-                    AuditEndpoint endpoint;
-                    try {
-                        FileAuditEndpoint.Builder builder =  PeriodicRotatingFileAuditEndpoint.builder()
-                                .setSuffix(suffix)
-                                .setLocation(resolvedPath.toPath())
-                                .setSyncOnAccept(synv)
-                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
-
-                        endpoint = builder.build();
-                    } catch (IOException e) {
-                        throw ROOT_LOGGER.unableToStartService(e);
-                    }
-
-                    return SecurityEventListener.from(AuditLogger.builder()
-                            .setPriorityMapper(m -> EventPriority.WARNING)
-                            .setMessageFormatter(m -> m.accept(formatter, null))
-                            .setAuditEndpoint(endpoint)
-                            .build());
                 };
             }
         };
@@ -307,39 +326,41 @@ class AuditResourceDefinitions {
                     serviceBuilder.addDependency(pathName(relativeTo));
                 }
 
-                return () -> {
-                    PathResolver pathResolver = pathResolver();
-                    pathResolver.path(path);
-                    if (relativeTo != null) {
-                        pathResolver.relativeTo(relativeTo, pathManager.getValue());
-                    }
-                    File resolvedPath = pathResolver.resolve();
-
-                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
-                    AuditEndpoint endpoint;
-                    try {
-                        SizeRotatingFileAuditEndpoint.Builder builder =  SizeRotatingFileAuditEndpoint.builder()
-                                .setMaxBackupIndex(maxBackupIndex)
-                                .setRotateOnBoot(rotateOnBoot)
-                                .setRotateSize(rotateSize);
-                        if ( suffix.isDefined() ){
-                            builder.setSuffix(suffix.asString());
+                return new EndpointClosingEventListenerSupplier() {
+                    @Override
+                    public SecurityEventListener get() throws StartException {
+                        PathResolver pathResolver = pathResolver();
+                        pathResolver.path(path);
+                        if (relativeTo != null) {
+                            pathResolver.relativeTo(relativeTo, pathManager.getValue());
                         }
-                        builder.setLocation(resolvedPath.toPath())
-                                .setSyncOnAccept(synv)
-                                .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
+                        File resolvedPath = pathResolver.resolve();
 
-                        endpoint = builder.build();
-                    } catch (IOException e) {
-                        throw ROOT_LOGGER.unableToStartService(e);
+                        final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                        final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                        try {
+                            SizeRotatingFileAuditEndpoint.Builder builder = SizeRotatingFileAuditEndpoint.builder()
+                                    .setMaxBackupIndex(maxBackupIndex)
+                                    .setRotateOnBoot(rotateOnBoot)
+                                    .setRotateSize(rotateSize);
+                            if (suffix.isDefined()) {
+                                builder.setSuffix(suffix.asString());
+                            }
+                            builder.setLocation(resolvedPath.toPath())
+                                    .setSyncOnAccept(synv)
+                                    .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
+
+                            endpoint = builder.build();
+                        } catch (IOException e) {
+                            throw ROOT_LOGGER.unableToStartService(e);
+                        }
+
+                        return SecurityEventListener.from(AuditLogger.builder()
+                                .setPriorityMapper(m -> EventPriority.WARNING)
+                                .setMessageFormatter(m -> m.accept(formatter, null))
+                                .setAuditEndpoint(endpoint)
+                                .build());
                     }
-
-                    return SecurityEventListener.from(AuditLogger.builder()
-                            .setPriorityMapper(m -> EventPriority.WARNING)
-                            .setMessageFormatter(m -> m.accept(formatter, null))
-                            .setAuditEndpoint(endpoint)
-                            .build());
                 };
             }
         };
@@ -376,28 +397,30 @@ class AuditResourceDefinitions {
                     serviceBuilder.addDependency(sslServiceName, SSLContext.class, sslContextInjector);
                 }
 
-                return () -> {
-                    final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
-                    final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
-                    final AuditEndpoint endpoint;
-                    final SSLContext sslContext = sslContextInjector.getOptionalValue();
-                    try {
-                        endpoint = SyslogAuditEndpoint.builder()
-                                .setServerAddress(serverAddress)
-                                .setPort(port)
-                                .setSsl(transport == Transport.SSL_TCP)
-                                .setTcp(transport == Transport.TCP || transport == Transport.SSL_TCP)
-                                .setHostName(hostName)
-                                .setSocketFactory(transport == Transport.SSL_TCP && sslContext != null ? sslContext.getSocketFactory() : null)
-                                .build();
-                    } catch (IOException e) {
-                        throw ROOT_LOGGER.unableToStartService(e);
+                return new EndpointClosingEventListenerSupplier() {
+                    @Override
+                    public SecurityEventListener get() throws StartException {
+                        final Supplier<DateTimeFormatter> dateTimeFormatterSupplier = () -> DateTimeFormatter.ofPattern(DATE_FORMAT).withZone(ZoneId.systemDefault());
+                        final SecurityEventVisitor<?, String> formatter = Format.JSON == format ? JsonSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build() : SimpleSecurityEventFormatter.builder().setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
+                        final SSLContext sslContext = sslContextInjector.getOptionalValue();
+                        try {
+                            endpoint = SyslogAuditEndpoint.builder()
+                                    .setServerAddress(serverAddress)
+                                    .setPort(port)
+                                    .setSsl(transport == Transport.SSL_TCP)
+                                    .setTcp(transport == Transport.TCP || transport == Transport.SSL_TCP)
+                                    .setHostName(hostName)
+                                    .setSocketFactory(transport == Transport.SSL_TCP && sslContext != null ? sslContext.getSocketFactory() : null)
+                                    .build();
+                        } catch (IOException e) {
+                            throw ROOT_LOGGER.unableToStartService(e);
+                        }
+                        return SecurityEventListener.from(AuditLogger.builder()
+                                .setPriorityMapper(m -> EventPriority.WARNING)
+                                .setMessageFormatter(m -> m.accept(formatter, null))
+                                .setAuditEndpoint(endpoint)
+                                .build());
                     }
-                    return SecurityEventListener.from(AuditLogger.builder()
-                            .setPriorityMapper(m -> EventPriority.WARNING)
-                            .setMessageFormatter(m -> m.accept(formatter, null))
-                            .setAuditEndpoint(endpoint)
-                            .build());
                 };
             }
         };
