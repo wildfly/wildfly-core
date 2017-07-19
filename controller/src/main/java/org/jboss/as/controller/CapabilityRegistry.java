@@ -941,7 +941,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 CapabilityScope.GLOBAL);
         List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
                 map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
-                        + possiblePoint.toPathStyleString())).collect(Collectors.toList());
+                        + escapePath(possiblePoint.toPathStyleString()))).collect(Collectors.toList());
         // Any dynamic capability registered to the root address matches (e.g. hardcoded path capabilities)
         matchers.add(FileSystems.getDefault().getPathMatcher("glob:/"));
 
@@ -949,7 +949,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         return getCapabilities().stream().
                 // Keep capability that matches at least one of the registration point
                 filter((registration) -> registration.getRegistrationPoints().stream().
-                        map((rp) -> Paths.get(rp.getAddress().toPathStyleString())).
+                        map((rp) -> Paths.get(escapePath(rp.getAddress().toPathStyleString()))).
                         filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
                         count() > 0).
                 // Keep capability that can be reached from the provided scope
@@ -963,6 +963,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                         substring(registration.getCapabilityName().lastIndexOf(".") + 1) //WFCORE-2690 we need something better for multiple dynamic parts
                 ).
                 collect(Collectors.toSet());
+    }
+
+    private static String escapePath(String path) {
+        // On Windows, ':' breaks the Paths.getPath().
+        return path.replaceAll(":", "_");
     }
 
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
