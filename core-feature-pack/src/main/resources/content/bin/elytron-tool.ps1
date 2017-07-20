@@ -9,8 +9,11 @@ $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 $SCRIPT_NAME = $MyInvocation.MyCommand | select -ExpandProperty Name
 $SCRIPT_NAME = "{" + $SCRIPT_NAME + "}"
 
-$ELYTRON_TOOL_OPTS = Process-Script-Parameters -Params $ARGS
-$ELYTRON_TOOL_OPTS = $SCRIPT_NAME + $ELYTRON_TOOL_OPTS 
+$ELYTRON_TOOL_OPTS=@()
+if ($ARGS.Count -gt 0){
+  $ELYTRON_TOOL_OPTS+=$SCRIPT_NAME + $ARGS[0]
+  $ELYTRON_TOOL_OPTS+=$ARGS[1..$ARGS.Count]
+}
 
 $JAVA_OPTS = @()
 
