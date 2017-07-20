@@ -186,7 +186,7 @@ class ProviderDefinitions {
                                         // Try and find a constructor that takes an input stream and use it - or use default constructor and enable deferred initialisation.
                                         try {
                                             Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(InputStream.class));
-                                            constructor.newInstance(new Object[] { configSupplier.get() });
+                                            loadedProviders.add(constructor.newInstance(new Object[] { configSupplier.get() }));
                                         } catch (NoSuchMethodException ignored) {
                                             Provider provider = providerClazz.newInstance();
                                             loadedProviders.add(provider);
