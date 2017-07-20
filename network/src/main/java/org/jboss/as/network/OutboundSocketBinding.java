@@ -233,7 +233,7 @@ public class OutboundSocketBinding {
      * if the outbound socket binding is marked for "fixed source port". Else, it is the sum of {@link #getSourcePort()}
      * and the port offset configured on the {@link SocketBindingManager}.
      *
-     * @return the absolute source port accounting for port offset/fixation
+     * @return the absolute source port accounting for port offset/fixation; {@code null} if an ephemeral port should be used
      */
     public Integer getAbsoluteSourcePort() {
         if (this.getSourcePort() == null) {
