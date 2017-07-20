@@ -143,7 +143,7 @@ public class SuggestCapabilitiesTestCase {
         globals = registerMultipleCapabilities(reg, GLOBAL_CAPABILITY_STATIC_NAME,
                 (i) -> PathAddress.pathAddress(GLOBAL, "somewhere" + i));
         sgs = registerMultipleCapabilities(reg, SG_CAPABILITY_STATIC_NAME,
-                (i) -> PathAddress.pathAddress(SERVER_GROUP, "server" + i));
+                (i) -> PathAddress.pathAddress(SERVER_GROUP, "ser:ver" + i));
         scs = registerMultipleCapabilities(reg, SC_CAPABILITY_STATIC_NAME,
                 (i) -> PathAddress.pathAddress(MASTER_HOST,
                         PathElement.pathElement(SERVER_CONFIG, "conf" + i)));
@@ -159,7 +159,7 @@ public class SuggestCapabilitiesTestCase {
                 (i) -> PathAddress.pathAddress(PROFILE, "profile" + i));
         profilesChild = registerMultipleCapabilities(reg, PROFILE_CHILD_CAPABILITY_STATIC_NAME,
                 (i) -> PathAddress.pathAddress(PathAddress.pathAddress(PROFILE, "profile" + i),
-                        PathElement.pathElement("somewhere", "child" + i)));
+                        PathElement.pathElement("somewhere", "ch:ild" + i)));
 
         reg.resolveCapabilities(Resource.Factory.create(), false);
 
