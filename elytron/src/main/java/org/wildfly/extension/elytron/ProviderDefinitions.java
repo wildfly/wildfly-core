@@ -44,6 +44,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -132,7 +133,7 @@ class ProviderDefinitions {
             }
 
             @Override
-            protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder,OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
                 final String module = asStringIfDefined(context, MODULE, model);
                 final String[] classNames = asStringArrayIfDefined(context, CLASS_NAMES, model);
                 final String argument = asStringIfDefined(context, ARGUMENT, model);
@@ -212,7 +213,11 @@ class ProviderDefinitions {
                                 current.accept(configSupplier.get());
                             }
 
-                            return loadedProviders.toArray(new Provider[loadedProviders.size()]);
+                            Provider[] providers = loadedProviders.toArray(new Provider[loadedProviders.size()]);
+                            if (ROOT_LOGGER.isTraceEnabled()) {
+                                ROOT_LOGGER.tracef("Loaded providers %s", Arrays.toString(providers));
+                            }
+                            return providers;
                         } catch (PrivilegedActionException e) {
                             throw new StartException(e.getCause());
                         } catch (Exception e) {
