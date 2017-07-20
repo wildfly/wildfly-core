@@ -960,7 +960,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 filter((registration) -> registration.getCapabilityName().startsWith(referencedCapability)).
                 // Finally convert remaining capabilities onto capability dynamic name.
                 map((registration) -> registration.getCapabilityName().
-                        substring(registration.getCapabilityName().lastIndexOf(".") + 1) //WFCORE-2690 we need something better for multiple dynamic parts
+                        substring(referencedCapability.length() + 1) //WFCORE-2690 we need something better for multiple dynamic parts
                 ).
                 collect(Collectors.toSet());
     }
