@@ -19,7 +19,10 @@
 package org.wildfly.extension.elytron;
 
 import java.security.Provider;
+import java.util.Arrays;
 import java.util.Set;
+
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
  * A simple utility to search an array of {@link Provider} instances to identify the one to use.
@@ -44,11 +47,19 @@ class ProviderUtil {
         for (Provider current : candidates) {
             if (name == null || name.equals(current.getName())) {
                 if (current.getService(typeName, algorithm) != null) {
+                    if (ROOT_LOGGER.isTraceEnabled()) {
+                        ROOT_LOGGER.tracef("Identified provider [%s] for name [%s] and algorithm [%s] between %s",
+                                current, name, algorithm, Arrays.toString(candidates));
+                    }
                     return current;
                 }
             }
         }
 
+        if (ROOT_LOGGER.isTraceEnabled()) {
+            ROOT_LOGGER.tracef("No provider identified for name [%s] and algorithm [%s] between %s",
+                    name, algorithm, Arrays.toString(candidates));
+        }
         return null;
     }
 
@@ -59,12 +70,20 @@ class ProviderUtil {
             if (services != null) {
                 for (Provider.Service currentService : services) {
                     if (serviceType.equals(currentService.getType())) {
+                        if (ROOT_LOGGER.isTraceEnabled()) {
+                            ROOT_LOGGER.tracef("Service [%s] provided for type [%s] between %s",
+                                    currentService, serviceType, Arrays.toString(candidates));
+                        }
                         return true;
                     }
                 }
             }
         }
 
+        if (ROOT_LOGGER.isTraceEnabled()) {
+            ROOT_LOGGER.tracef("No service provided for type [%s] between %s",
+                    serviceType, Arrays.toString(candidates));
+        }
         return false;
     }
 
