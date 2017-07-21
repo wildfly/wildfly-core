@@ -177,7 +177,6 @@ interface ElytronDescriptionConstants {
     String HOST = "host";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
-    String HASH = "hash";
     String HASH_FROM = "hash-from";
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
