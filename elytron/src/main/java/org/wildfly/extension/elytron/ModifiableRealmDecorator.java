@@ -435,7 +435,10 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .setDefaultValue(new ModelNode(OneTimePassword.ALGORITHM_OTP_SHA1))
                     .setValidator(new StringAllowedValuesValidator(
                             OneTimePassword.ALGORITHM_OTP_MD5,
-                            OneTimePassword.ALGORITHM_OTP_SHA1
+                            OneTimePassword.ALGORITHM_OTP_SHA1,
+                            OneTimePassword.ALGORITHM_OTP_SHA_256,
+                            OneTimePassword.ALGORITHM_OTP_SHA_384,
+                            OneTimePassword.ALGORITHM_OTP_SHA_512
                     ))
                     .setAllowExpression(false)
                     .build();
