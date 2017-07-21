@@ -23,7 +23,6 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.dmr.ModelNode;
 
@@ -76,11 +75,6 @@ public abstract class AbstractRuntimeOnlyHandler implements OperationStepHandler
      * @see OperationContext#isDefaultRequiresRuntime()
      */
     protected boolean requiresRuntime(OperationContext context) {
-        // TODO this check of 'subsystem' on a server is solely a workaround until a couple subclasses in full
-        // can be modified to override the default behavior
-        if (context.getProcessType().isServer() && context.getCurrentAddress().size() > 0 && SUBSYSTEM.equals(context.getCurrentAddress().getElement(0).getKey())) {
-            return true;
-        }
         return context.isDefaultRequiresRuntime();
     }
 
