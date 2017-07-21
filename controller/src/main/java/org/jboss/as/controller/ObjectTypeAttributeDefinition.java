@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.controller.access.management.AccessConstraintDescriptionProviderUtil;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
@@ -124,6 +125,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
     public ModelNode addResourceAttributeDescription(ResourceBundle bundle, String prefix, ModelNode resourceDescription) {
         final ModelNode result = super.addResourceAttributeDescription(bundle, prefix, resourceDescription);
         addValueTypeDescription(result, prefix, bundle, false, null, null);
+        addValueTypeAccessConstraints(result, bundle.getLocale());
         return result;
     }
 
@@ -150,6 +152,7 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
                                                      final Locale locale, final ResourceBundle bundle) {
         final ModelNode result = super.addResourceAttributeDescription(resourceDescription, resolver, locale, bundle);
         addValueTypeDescription(result, getName(), bundle, false, resolver, locale);
+        addValueTypeAccessConstraints(result, locale);
         return result;
     }
 
@@ -322,4 +325,10 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         }
     }
 
+    protected void addValueTypeAccessConstraints(ModelNode result, Locale locale) {
+        for (AttributeDefinition valueType : valueTypes) {
+            final ModelNode valueTypeDesc = result.get(ModelDescriptionConstants.VALUE_TYPE, valueType.getName());
+            AccessConstraintDescriptionProviderUtil.addAccessConstraints(valueTypeDesc, valueType.getAccessConstraints(), locale);
+        }
+    }
 }
