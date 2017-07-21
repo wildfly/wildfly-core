@@ -3496,4 +3496,8 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 442, value = "Error stopping server")
     void errorStoppingServer(@Cause Exception cause);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 443, value = "Error getting the password from the supplier %s")
+    void errorObtainingPassword(@Cause Exception cause, String message);
 }
