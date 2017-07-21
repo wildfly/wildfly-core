@@ -212,7 +212,6 @@ echo.
     %*
 
 if %errorlevel% equ 10 (
-	echo Restarting application server...
 	goto RESTART
 )
 
