@@ -277,7 +277,10 @@ echo.
       "-Djboss.home.dir=%JBOSS_HOME%" ^
       %SERVER_OPTS%
 
-if ERRORLEVEL 10 goto RESTART
+if %errorlevel% equ 10 (
+	echo Restarting application server...
+	goto RESTART
+)
 
 :END
 if "x%NOPAUSE%" == "x" pause
