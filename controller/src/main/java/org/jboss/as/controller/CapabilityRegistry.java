@@ -23,13 +23,12 @@
 package org.jboss.as.controller;
 
 
-import java.nio.file.FileSystems;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,6 +71,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
+    private final Map<CapabilityId, RuntimeCapabilityRegistration> pendingRemoveCapabilities = new HashMap<>();
     private final boolean forServer;
     private final Set<CapabilityScope> knownContexts;
     private final ResolutionContextImpl resolutionContext = new ResolutionContextImpl();
@@ -270,6 +270,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             if (candidate != null) {
                 RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
                 if (candidate.removeRegistrationPoint(rp)) {
+
                     if (candidate.getRegistrationPointCount() == 0) {
                         removed = capabilities.remove(capabilityId);
                         requirements.remove(capabilityId);
@@ -292,6 +293,16 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                             }
                         }
                     }
+
+                    // Remember this removed cap for use by getRuntimeStatus until we are published or rolled back
+                    RuntimeCapabilityRegistration removeReg = pendingRemoveCapabilities.get(capabilityId);
+                    if (removeReg == null) {
+                        removeReg = new RuntimeCapabilityRegistration(candidate.getCapability(), candidate.getCapabilityScope(), rp);
+                        pendingRemoveCapabilities.put(capabilityId, removeReg);
+                    } else {
+                        removeReg.addRegistrationPoint(rp);
+                    }
+
                 }
             }
 
@@ -442,29 +453,32 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
             // TODO this is inefficient. But it's only called for post-boot write ops
             // when the process is already reload-required
-            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : capabilities.entrySet()) {
-                boolean checkIncorporating = false;
-                if (incorporatingFull != null) {
-                    checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
-                }
-                if (!checkIncorporating && incorporatingDynamic != null) {
-                    String name = entry.getKey().getName();
-                    int lastDot = name.lastIndexOf('.');
-                    if (lastDot > 0) {
-                        String baseName = name.substring(0, lastDot);
-                        checkIncorporating = incorporatingDynamic.contains(baseName);
+            for (Map<CapabilityId, RuntimeCapabilityRegistration> map : Arrays.asList(capabilities, pendingRemoveCapabilities)) {
+
+                for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : map.entrySet()) {
+                    boolean checkIncorporating = false;
+                    if (incorporatingFull != null) {
+                        checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
                     }
-                }
-                for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
-                    PathAddress pointAddress = point.getAddress();
-                    if (curAddress.equals(pointAddress)
-                            || (checkIncorporating && curAddress.size() > pointAddress.size()
-                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
-                        if (result == null) {
-                            result = new HashSet<>();
+                    if (!checkIncorporating && incorporatingDynamic != null) {
+                        String name = entry.getKey().getName();
+                        int lastDot = name.lastIndexOf('.');
+                        if (lastDot > 0) {
+                            String baseName = name.substring(0, lastDot);
+                            checkIncorporating = incorporatingDynamic.contains(baseName);
                         }
-                        result.add(entry.getKey());
-                        break;
+                    }
+                    for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
+                        PathAddress pointAddress = point.getAddress();
+                        if (curAddress.equals(pointAddress)
+                                || (checkIncorporating && curAddress.size() > pointAddress.size()
+                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
+                            if (result == null) {
+                                result = new HashSet<>();
+                            }
+                            result.add(entry.getKey());
+                            break;
+                        }
                     }
                 }
             }
@@ -690,6 +704,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             try {
                 publishedFullRegistry.clear(true);
                 copy(this, publishedFullRegistry);
+                pendingRemoveCapabilities.clear();
                 modified = false;
             } finally {
                 publishedFullRegistry.writeLock.unlock();
@@ -757,6 +772,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         writeLock.lock();
         try {
             capabilities.clear();
+            pendingRemoveCapabilities.clear();
             possibleCapabilities.clear();
             requirements.clear();
             runtimeOnlyRequirements.clear();

@@ -124,7 +124,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
             .setAddOperation(new AbstractAddStepHandler(new HashSet<>(Arrays.asList(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY)), ad, other))
-            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY))
+            .setRemoveOperation(new AbstractRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY) {})
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addOperation(new SimpleOperationDefinition("add-cap",
