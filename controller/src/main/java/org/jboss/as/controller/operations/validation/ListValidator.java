@@ -33,7 +33,7 @@ import org.wildfly.common.Assert;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  *
  */
-public class ListValidator extends ModelTypeValidator implements ParameterValidator {
+public class ListValidator extends ModelTypeValidator implements ParameterValidator, MinMaxValidator {
 
     private final int min;
     private final int max;
@@ -119,4 +119,13 @@ public class ListValidator extends ModelTypeValidator implements ParameterValida
         }
     }
 
+    @Override
+    public Long getMin() {
+        return (long) min;
+    }
+
+    @Override
+    public Long getMax() {
+        return (long) max;
+    }
 }
