@@ -34,7 +34,7 @@ import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
@@ -392,8 +392,8 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
         GlobalOperationHandlers.registerGlobalOperations(root, processType);
         root.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        root.registerOperationHandler(new SimpleOperationDefinition("setup",
-                new NonResolvingResourceDescriptionResolver()), NoopOperationStepHandler.WITHOUT_RESULT);
+        root.registerOperationHandler(SimpleOperationDefinitionBuilder.of("setup",
+                new NonResolvingResourceDescriptionResolver()).build(), NoopOperationStepHandler.WITHOUT_RESULT);
 
         GlobalNotifications.registerGlobalNotifications(root, processType);
 

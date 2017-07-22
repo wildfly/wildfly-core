@@ -33,7 +33,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLES;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -509,7 +509,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     }
 
     private ModelNode createReadSecurityDomainIdentityOperation(PathAddress parentAddress, String principalName) {
-        return SubsystemOperations.OperationBuilder.create(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)),
+        return SubsystemOperations.OperationBuilder.create(SimpleOperationDefinitionBuilder.of(ElytronDescriptionConstants.READ_IDENTITY, ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.SECURITY_DOMAIN)).build(),
                 parentAddress.toModelNode())
                 .addAttribute(DomainDefinition.ReadSecurityDomainIdentityHandler.NAME, principalName)
                 .build();

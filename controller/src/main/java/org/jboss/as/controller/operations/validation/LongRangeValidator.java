@@ -36,6 +36,10 @@ public class LongRangeValidator extends ModelTypeValidator implements MinMaxVali
         this(min, Long.MAX_VALUE, false, false);
     }
 
+    public LongRangeValidator(final long min, final Long max) {
+        this(min, max, false, false);
+    }
+
     public LongRangeValidator(final long min, final boolean nullable) {
         this(min, Integer.MAX_VALUE, nullable, false);
     }

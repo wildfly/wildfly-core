@@ -40,7 +40,13 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
 public class SimpleOperationDefinitionBuilder {
+
     private static AttributeDefinition[] NO_ATTRIBUTES = new AttributeDefinition[0];
+
+    public static SimpleOperationDefinitionBuilder of(String name, ResourceDescriptionResolver resolver) {
+        return new SimpleOperationDefinitionBuilder(name, resolver);
+    }
+
     ResourceDescriptionResolver resolver;
     ResourceDescriptionResolver attributeResolver;
     protected String name;

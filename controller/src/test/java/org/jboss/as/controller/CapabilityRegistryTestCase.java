@@ -127,8 +127,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .setRemoveOperation(new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY))
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
-            .addOperation(new SimpleOperationDefinition("add-cap",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("add-cap",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerCapability(TEST_CAPABILITY1);
@@ -154,15 +154,15 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addCapability(TEST_CAPABILITY2)
-            .addOperation(new SimpleOperationDefinition("add-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("add-sub-resource",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerSubModel(SUB_RESOURCE);
                     })
 
-            .addOperation(new SimpleOperationDefinition("remove-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("remove-sub-resource",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.unregisterSubModel(SUB_RESOURCE.getPathElement());
@@ -198,7 +198,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             context.completeStep(OperationContext.RollbackHandler.REVERT_RELOAD_REQUIRED_ROLLBACK_HANDLER);
         }
     };
-    private static final OperationDefinition RELOAD_DEFINITION = new SimpleOperationDefinition("reload", NonResolvingResourceDescriptionResolver.INSTANCE);
+    private static final OperationDefinition RELOAD_DEFINITION = SimpleOperationDefinitionBuilder.of("reload", NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
     private static final OperationStepHandler RUNTIME_MOD_HANDLER = new OperationStepHandler() {
         @Override
@@ -213,8 +213,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         }
     };
 
-    private static final OperationDefinition RUNTIME_MOD_DEFINITION = new SimpleOperationDefinition("runtime-mod", NonResolvingResourceDescriptionResolver.INSTANCE);
-    private static final OperationDefinition RUNTIME_ONLY_DEFINITION = new SimpleOperationDefinitionBuilder("runtime-only", NonResolvingResourceDescriptionResolver.INSTANCE)
+    private static final OperationDefinition RUNTIME_MOD_DEFINITION = SimpleOperationDefinitionBuilder.of("runtime-mod", NonResolvingResourceDescriptionResolver.INSTANCE).build();
+    private static final OperationDefinition RUNTIME_ONLY_DEFINITION = SimpleOperationDefinitionBuilder.of("runtime-only", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setRuntimeOnly()
             .build();
 
@@ -298,7 +298,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 }
             })
             .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY3))
-            .addOperation(new SimpleOperationDefinition("read", NonResolvingResourceDescriptionResolver.INSTANCE),
+            .addOperation(SimpleOperationDefinitionBuilder.of("read", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     ((context, operation) -> context.getResult().set(true)))
             .build();
 
@@ -315,7 +315,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         // register the global notifications so there is no warning that emitted notifications are not described by the resource.
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("clean", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("clean", NonResolvingResourceDescriptionResolver.INSTANCE).build(), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.unregisterSubModel(TEST_RESOURCE1.getPathElement());
             mrr.unregisterSubModel(TEST_RESOURCE2.getPathElement());
@@ -328,7 +328,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.unregisterSubModel(DEP_CAP_RESOURCE.getPathElement());
         });
 
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("create", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("create", NonResolvingResourceDescriptionResolver.INSTANCE).build(), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.registerSubModel(TEST_RESOURCE1);
             mrr.registerSubModel(TEST_RESOURCE2);
@@ -340,14 +340,14 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.registerSubModel(NO_CAP_RESOURCE);
             mrr.registerSubModel(DEP_CAP_RESOURCE);
         });
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("root-cap", NonResolvingResourceDescriptionResolver.INSTANCE),
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("root-cap", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.registerCapability(ROOT_CAPABILITY);
                     }
                 });
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("no-root-cap", NonResolvingResourceDescriptionResolver.INSTANCE),
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("no-root-cap", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

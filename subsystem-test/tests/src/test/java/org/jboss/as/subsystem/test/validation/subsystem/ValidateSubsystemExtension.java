@@ -11,14 +11,14 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -47,10 +47,10 @@ public class ValidateSubsystemExtension implements Extension {
     /** The parser used for parsing our subsystem */
     private final SubsystemParser parser = new SubsystemParser();
 
-    private volatile DescriptionProvider addDescriptionProvider;
+    private volatile AttributeDefinition[] addAttributes = new AttributeDefinition[0];
 
-    public void setAddDescriptionProvider(DescriptionProvider addDescriptionProvider) {
-        this.addDescriptionProvider = addDescriptionProvider;
+    public void setAddAttributes(AttributeDefinition... attributes) {
+        this.addAttributes = attributes;
     }
 
     @Override
@@ -68,13 +68,11 @@ public class ValidateSubsystemExtension implements Extension {
         );
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(subsystemResource);
         //We always need to add an 'add' operation
-        registration.registerOperationHandler(new SimpleOperationDefinition(ADD, NonResolvingResourceDescriptionResolver.INSTANCE){
-                    @Override
-                    public DescriptionProvider getDescriptionProvider() {
-                        return addDescriptionProvider;
-                    }
-                },
-                new AbstractAddStepHandler());
+        registration.registerOperationHandler(
+                SimpleOperationDefinitionBuilder.of(ADD, NonResolvingResourceDescriptionResolver.INSTANCE)
+                    .setParameters(addAttributes)
+                    .build(),
+                new AbstractAddStepHandler(addAttributes));
 
         //We always need to add a 'describe' operation
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
