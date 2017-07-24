@@ -86,6 +86,7 @@ import org.wildfly.security.auth.server.MechanismConfiguration.Builder;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
 import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -147,6 +148,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private SaslAuthenticationFactory saslAuthenticationFactory = null;
     private HttpAuthenticationFactory httpAuthenticationFactory = null;
 
+    private DomainManagedServerCallbackHandler domainManagedServersCallback;
 
     public SecurityRealmService(String name, boolean mapGroupsToRoles) {
         this.name = name;
@@ -160,6 +162,11 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     public void start(StartContext context) throws StartException {
         ROOT_LOGGER.debugf("Starting '%s' Security Realm Service", name);
         for (CallbackHandlerService current : callbackHandlerServices.getValue()) {
+            // accept this, but don't actually install it in the map
+            if (current instanceof DomainManagedServerCallbackHandler) {
+                domainManagedServersCallback = (DomainManagedServerCallbackHandler) current;
+                continue;
+            }
             AuthMechanism mechanism = current.getPreferredMechanism();
             if (registeredServices.containsKey(mechanism)) {
                 registeredServices.clear();
@@ -194,10 +201,18 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 // If additional configuration is added it needs to be added to the duplication for Kerberos authentication for both HTTP and SASL below.
                 configurationMap.put(mechanism,
                         MechanismConfiguration.builder()
-                            .setPreRealmRewriter(preRealmRewriter)
-                            .setRealmMapper((p, e) -> mechanism.toString())
-                            .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
-                            .build());
+                                .setPreRealmRewriter(preRealmRewriter)
+                                .setRealmMapper(new RealmMapper() {
+                                    @Override
+                                    public String getRealmMapping(Principal principal, Evidence evidence) {
+                                        if (domainManagedServersCallback != null && principal.getName().startsWith(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX)) {
+                                            return DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_REALM;
+                                        }
+                                        return mechanism.toString();
+                                    }
+                                })
+                                .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
+                                .build());
                 for (Entry<String, String> currentOption : currentRegistration.getValue().getConfigurationOptions().entrySet()) {
                     switch (currentOption.getKey()) {
                         case LOCAL_DEFAULT_USER:
@@ -207,11 +222,38 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 }
             }
         }
+
         mechanismConfiguration.put(LocalUserServer.LEGACY_LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
         mechanismConfiguration.put(WildFlySasl.ALTERNATIVE_PROTOCOLS, "remoting");
 
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
         domainBuilder.setDefaultRealmName("EMPTY");
+
+        if (domainManagedServersCallback != null) {
+            // install the domain servers auth realm
+            domainBuilder.addRealm(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_REALM, new org.wildfly.security.auth.server.SecurityRealm() {
+                @Override
+                public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> aClass, String s, AlgorithmParameterSpec algorithmParameterSpec) throws RealmUnavailableException {
+                    return SupportLevel.SUPPORTED;
+                }
+
+                @Override
+                public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> aClass, String s) throws RealmUnavailableException {
+                    return SupportLevel.UNSUPPORTED;
+                }
+
+                @Override
+                public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
+                    return domainManagedServersCallback.getElytronSecurityRealm().getRealmIdentity(principal);
+                }
+
+                @Override
+                public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
+                    return domainManagedServersCallback.getElytronSecurityRealm().getRealmIdentity(evidence);
+                }
+            }).build();
+        }
+
         final PermissionVerifier permissionVerifier = createPermissionVerifier();
         domainBuilder.setPermissionMapper((permissionMappable, roles) -> permissionVerifier);
 

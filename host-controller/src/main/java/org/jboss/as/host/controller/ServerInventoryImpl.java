@@ -70,6 +70,7 @@ import org.jboss.as.controller.transform.TransformationTarget;
 import org.jboss.as.controller.transform.TransformationTargetImpl;
 import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.domain.controller.DomainController;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.process.ProcessControllerClient;
@@ -791,7 +792,7 @@ public class ServerInventoryImpl implements ServerInventory {
                     } else if (current instanceof NameCallback) {
                         NameCallback nameCallback = (NameCallback) current;
                         userName = nameCallback.getDefaultName();
-                        if (userName.startsWith("=")) {
+                        if (userName.startsWith(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX)) {
                             server = servers.get(userName.substring(1));
                         }
                     } else if (current instanceof PasswordCallback) {
