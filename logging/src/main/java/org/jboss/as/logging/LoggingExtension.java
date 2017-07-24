@@ -224,7 +224,7 @@ public class LoggingExtension implements Extension {
             configurationResource.registerSubModel(LoggingDeploymentResources.ERROR_MANAGER);
         }
 
-        subsystem.registerXMLElementWriter(LoggingSubsystemWriter.INSTANCE);
+        subsystem.registerXMLElementWriter(LoggingSubsystemWriter::new);
     }
 
 

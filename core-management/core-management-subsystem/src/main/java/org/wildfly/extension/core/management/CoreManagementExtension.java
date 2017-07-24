@@ -61,7 +61,7 @@ public class CoreManagementExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
-        subsystem.registerXMLElementWriter(new CoreManagementSubsystemParser_1_0());
+        subsystem.registerXMLElementWriter(CoreManagementSubsystemParser_1_0::new);
         //This subsystem should be runnable on a host
         subsystem.setHostCapable();
         ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new CoreManagementRootResourceDefinition());

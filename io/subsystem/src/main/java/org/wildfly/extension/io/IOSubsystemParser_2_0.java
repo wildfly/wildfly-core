@@ -32,10 +32,9 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 class IOSubsystemParser_2_0 extends PersistentResourceXMLParser {
 
-    private static final PersistentResourceXMLDescription xmlDescription;
-
-    static {
-        xmlDescription = builder(IORootDefinition.INSTANCE.getPathElement(), Namespace.CURRENT.getUriString())
+    @Override
+    public PersistentResourceXMLDescription getParserDescription() {
+        return builder(IORootDefinition.INSTANCE.getPathElement(), Namespace.CURRENT.getUriString())
                 .addChild(
                         builder(WorkerResourceDefinition.INSTANCE.getPathElement())
                                 .addAttributes(
@@ -44,12 +43,12 @@ class IOSubsystemParser_2_0 extends PersistentResourceXMLParser {
                                         WorkerResourceDefinition.WORKER_TASK_MAX_THREADS,
                                         WorkerResourceDefinition.STACK_SIZE)
                                 .addChild(
-                                    builder(OutboundBindAddressResourceDefinition.getInstance().getPathElement())
-                                        .addAttributes(
-                                            OutboundBindAddressResourceDefinition.MATCH,
-                                            OutboundBindAddressResourceDefinition.BIND_ADDRESS,
-                                            OutboundBindAddressResourceDefinition.BIND_PORT
-                                        )
+                                        builder(OutboundBindAddressResourceDefinition.getInstance().getPathElement())
+                                                .addAttributes(
+                                                        OutboundBindAddressResourceDefinition.MATCH,
+                                                        OutboundBindAddressResourceDefinition.BIND_ADDRESS,
+                                                        OutboundBindAddressResourceDefinition.BIND_PORT
+                                                )
                                 )
                 )
                 .addChild(
@@ -59,11 +58,6 @@ class IOSubsystemParser_2_0 extends PersistentResourceXMLParser {
                                         BufferPoolResourceDefinition.DIRECT_BUFFERS)
                 )
                 .build();
-    }
-
-    @Override
-    public PersistentResourceXMLDescription getParserDescription() {
-        return xmlDescription;
     }
 }
 

@@ -43,8 +43,6 @@ import static org.jboss.as.remoting.CommonAttributes.*;
  */
 class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWriter<SubsystemMarshallingContext> {
 
-    static final RemotingSubsystemXMLPersister INSTANCE = new RemotingSubsystemXMLPersister();
-
     /**
      * {@inheritDoc}
      */

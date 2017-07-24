@@ -60,7 +60,7 @@ public class SecurityManagerExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(Constants.SUBSYSTEM_NAME, CURRENT_MODEL_VERSION);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(SecurityManagerRootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(new SecurityManagerSubsystemParser_3_0());
+        subsystem.registerXMLElementWriter(SecurityManagerSubsystemParser_3_0::new);
     }
 
     @Override

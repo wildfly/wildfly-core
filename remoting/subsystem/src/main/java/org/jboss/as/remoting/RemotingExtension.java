@@ -90,7 +90,7 @@ public class RemotingExtension implements Extension {
 
         // Register the remoting subsystem
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
-        registration.registerXMLElementWriter(RemotingSubsystemXMLPersister.INSTANCE);
+        registration.registerXMLElementWriter(RemotingSubsystemXMLPersister::new);
 
         final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource());
         subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, new DescribeHandler());
