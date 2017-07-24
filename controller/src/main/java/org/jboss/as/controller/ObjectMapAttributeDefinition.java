@@ -18,9 +18,14 @@
 
 package org.jboss.as.controller;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -163,6 +168,16 @@ public class ObjectMapAttributeDefinition extends MapAttributeDefinition {
         }
 
         public ObjectMapAttributeDefinition build() {
+            List<AccessConstraintDefinition> valueConstraints = valueType.getAccessConstraints();
+            if (!valueConstraints.isEmpty()) {
+                Set<AccessConstraintDefinition> acdSet = new LinkedHashSet<>();
+                AccessConstraintDefinition[] curAcds = getAccessConstraints();
+                if (curAcds != null && curAcds.length > 0) {
+                    Collections.addAll(acdSet, curAcds);
+                }
+                acdSet.addAll(valueConstraints);
+                setAccessConstraints(acdSet.toArray(new AccessConstraintDefinition[acdSet.size()]));
+            }
             return new ObjectMapAttributeDefinition(this);
         }
     }

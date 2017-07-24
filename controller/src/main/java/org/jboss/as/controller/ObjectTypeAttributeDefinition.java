@@ -24,11 +24,17 @@ package org.jboss.as.controller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
@@ -54,11 +60,37 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         this(builder, builder.suffix, builder.valueTypes);
     }
 
-    protected ObjectTypeAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends  ObjectTypeAttributeDefinition> builder,
+    protected ObjectTypeAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends ObjectTypeAttributeDefinition> builder,
             final String suffix, final AttributeDefinition[] valueTypes) {
-        super(builder);
+        super(addValueTypeConstraints(builder, valueTypes));
         this.valueTypes = valueTypes;
         this.suffix = suffix == null ? "" : suffix;
+    }
+
+    private static AbstractAttributeDefinitionBuilder<?, ? extends ObjectTypeAttributeDefinition> addValueTypeConstraints(AbstractAttributeDefinitionBuilder<?, ? extends  ObjectTypeAttributeDefinition> builder,
+                                                                                                                          AttributeDefinition[] valueTypes) {
+        if (valueTypes != null && valueTypes.length > 0) {
+            Set<AccessConstraintDefinition> fromValues = null;
+            for (AttributeDefinition valueType : valueTypes) {
+                List<AccessConstraintDefinition> valueTypeConstraints = valueType.getAccessConstraints();
+                if (valueTypeConstraints != null && !valueTypeConstraints.isEmpty()) {
+                    if (fromValues == null) {
+                        fromValues = new LinkedHashSet<>();
+                    }
+                    fromValues.addAll(valueTypeConstraints);
+                }
+            }
+            if (fromValues != null) {
+                AccessConstraintDefinition[] existing = builder.getAccessConstraints();
+                Set<AccessConstraintDefinition> newValues = new LinkedHashSet<>();
+                if (existing != null && existing.length > 0) {
+                    Collections.addAll(newValues, existing);
+                }
+                newValues.addAll(fromValues);
+                builder.setAccessConstraints(newValues.toArray(new AccessConstraintDefinition[newValues.size()]));
+            }
+        }
+        return builder;
     }
 
     @Override
