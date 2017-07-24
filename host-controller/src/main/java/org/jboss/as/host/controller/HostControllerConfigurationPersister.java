@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -213,6 +214,11 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
 
     @Override
     public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer) {
+        domainPersister.registerSubsystemWriter(name, writer);
+    }
+
+    @Override
+    public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
         domainPersister.registerSubsystemWriter(name, writer);
     }
 
