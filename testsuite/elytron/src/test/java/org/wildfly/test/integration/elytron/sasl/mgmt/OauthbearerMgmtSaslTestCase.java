@@ -75,7 +75,7 @@ public class OauthbearerMgmtSaslTestCase extends AbstractMgmtSaslTestBase {
      *
      * <pre>
      * {
-     *   "alg": "HS256",
+     *   "alg": "none",
      *   "typ": "JWT"
      * }
      * {
@@ -86,7 +86,7 @@ public class OauthbearerMgmtSaslTestCase extends AbstractMgmtSaslTestBase {
      * }
      * </pre>
      */
-    protected static final String TOKEN_WITHOUT_SIGNATURE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpc3N1ZXIud2lsZGZseS5vcmciLCJzdWIiOiJlbHl0cm9uQHdpbGRmbHkub3JnIiwiZXhwIjoyMDUxMjIyMzk5LCJhdWQiOiJqd3QifQ.jOcMdBLdI7HMuW_VsoGD_7LqeX6M14_wV5ebP2S4tOM";
+    protected static final String TOKEN_WITHOUT_SIGNATURE = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJpc3N1ZXIud2lsZGZseS5vcmciLCJzdWIiOiJlbHl0cm9uQHdpbGRmbHkub3JnIiwiZXhwIjoyMDUxMjIyMzk5LCJhdWQiOiJqd3QifQ.";
 
     @Override
     protected String getMechanism() {
