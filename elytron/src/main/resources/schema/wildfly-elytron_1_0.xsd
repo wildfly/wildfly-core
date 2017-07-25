@@ -4464,26 +4464,27 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias-attribute={0})">
+                    <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias_attribute={0})">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by alias.
-                                The string "{0}" will by replaced by searched alias.
+                                The string "{0}" will be replaced by the searched alias and the "alias_attribute" value will be the value of the attribute "alias-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate-attribute={0})">
+                    <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate_attribute={0})">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by certificate.
-                                The string "{0}" will by replaced by searched encoded certificate.
+                                The string "{0}" will be replaced by searched encoded certificate and the "certificate_attribute" will be the value of the attribute "certificate-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias-attribute=*)">
+                    <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias_attribute=*)">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by certificate.
+                                The "alias_attribute" will be the value of the attribute "alias-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
