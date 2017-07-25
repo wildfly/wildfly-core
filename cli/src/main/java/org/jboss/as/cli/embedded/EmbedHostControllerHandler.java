@@ -168,6 +168,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         final EnvironmentRestorer restorer = new EnvironmentRestorer();
         boolean ok = false;
         ThreadLocalContextSelector contextSelector = null;
+        AutoCloseable closeableLoader = null;
         try {
 
             Contexts defaultContexts = restorer.getDefaultContexts();
@@ -211,13 +212,18 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
             EmbeddedManagedProcess hostController;
             if (this.jbossHome == null) {
-                // Modular environment
+                // Modular environment. We use our own module loader and therefore we don't close it when the embedded process is done.
                 hostController = EmbeddedProcessFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+                // Track the module loader we create for cleanup when the embedded process is done
+                ModuleLoader managedLoader = EmbeddedProcessFactory.createModuleLoader(jbossHome, null, null);
+                if (managedLoader instanceof AutoCloseable) {
+                    closeableLoader = (AutoCloseable) managedLoader;
+                }
+                hostController = EmbeddedProcessFactory.createHostController(managedLoader, jbossHome, cmds);
             }
             hostController.start();
-            hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
+            hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true, closeableLoader));
 
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
@@ -289,6 +295,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         } finally {
             if (!ok) {
                 ctx.disconnectController();
+                Util.safeClose(closeableLoader);
                 restorer.restoreEnvironment();
             } else if (contextSelector != null) {
                 contextSelector.restore(null);

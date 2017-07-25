@@ -63,11 +63,7 @@ class StopEmbeddedServerHandler extends CommandHandlerWithHelp {
             try {
                 serverLaunch.stop();
             } finally {
-                try {
-                    serverLaunch.getEnvironmentRestorer().restoreEnvironment();
-                } finally {
-                    serverReference.compareAndSet(serverLaunch, null);
-                }
+                serverReference.compareAndSet(serverLaunch, null);
             }
         }
     }

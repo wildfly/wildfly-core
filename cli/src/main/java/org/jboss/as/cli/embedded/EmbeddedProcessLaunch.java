@@ -22,6 +22,7 @@
 
 package org.jboss.as.cli.embedded;
 
+import org.jboss.as.cli.Util;
 import org.wildfly.core.embedded.EmbeddedManagedProcess;
 
 /**
@@ -35,11 +36,14 @@ public class EmbeddedProcessLaunch {
     private final EmbeddedManagedProcess process;
     private final EnvironmentRestorer restorer;
     private final boolean hostController;
+    private final AutoCloseable closeableModuleLoader;
 
-    EmbeddedProcessLaunch(EmbeddedManagedProcess process, EnvironmentRestorer restorer, boolean hostController) {
+    EmbeddedProcessLaunch(EmbeddedManagedProcess process, EnvironmentRestorer restorer, boolean hostController,
+                          AutoCloseable closeableModuleLoader) {
         this.process = process;
         this.restorer = restorer;
         this.hostController = hostController;
+        this.closeableModuleLoader = closeableModuleLoader;
     }
 
     EnvironmentRestorer getEnvironmentRestorer() {
@@ -47,9 +51,17 @@ public class EmbeddedProcessLaunch {
     }
 
     public void stop() {
-        if (process == null)
-            return;
-        process.stop();
+        try {
+            if (process == null)
+                return;
+            process.stop();
+        } finally {
+            try {
+                Util.safeClose(closeableModuleLoader);
+            } finally {
+                restorer.restoreEnvironment();
+            }
+        }
     }
 
     public boolean isHostController() {

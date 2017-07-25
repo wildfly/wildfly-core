@@ -63,11 +63,7 @@ class StopEmbeddedHostControllerHandler extends CommandHandlerWithHelp {
             try {
                 hostControllerLaunch.stop();
             } finally {
-                try {
-                    hostControllerLaunch.getEnvironmentRestorer().restoreEnvironment();
-                } finally {
-                    hostControllerReference.compareAndSet(hostControllerLaunch, null);
-                }
+                hostControllerReference.compareAndSet(hostControllerLaunch, null);
             }
         }
     }
