@@ -91,6 +91,10 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
 
+        public static final Builder of(final String name) {
+            return new Builder(name);
+        }
+
         public Builder(final String name) {
             super(name);
             parser = AttributeParser.STRING_LIST;

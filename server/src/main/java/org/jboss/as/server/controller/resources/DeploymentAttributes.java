@@ -52,7 +52,6 @@ import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
@@ -353,12 +352,13 @@ public class DeploymentAttributes {
     @SuppressWarnings("unchecked")
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
-    public static final OperationDefinition DEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.DEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition UNDEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.UNDEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition REDEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.REDEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition EXPLODE_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.EXPLODE, DEPLOYMENT_RESOLVER)
+    public static final OperationDefinition DEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.DEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition UNDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.UNDEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition REDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.REDEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition EXPLODE_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.EXPLODE, DEPLOYMENT_RESOLVER)
             .addParameter(DEPLOYMENT_CONTENT_PATH)
-            .withFlag(Flag.DOMAIN_PUSH_TO_SERVERS).build();
+            .withFlag(Flag.DOMAIN_PUSH_TO_SERVERS)
+            .build();
 
     /** Server add deployment definition */
     public static final OperationDefinition SERVER_DEPLOYMENT_ADD_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, DEPLOYMENT_RESOLVER)
