@@ -107,7 +107,10 @@ public class EmbeddedProcessFactory {
      *                       visible to the caller's classloader visible to server-side classes loaded from
      *                       the server's modular classloader
      * @return the server. Will not be {@code null}
+     *
+     * @deprecated use {@link #createModuleLoader(File, String, String[])} and then {@link #createStandaloneServer(ModuleLoader, File, String...)}
      */
+    @Deprecated
     public static StandaloneServer createStandaloneServer(String jbossHomePath, String modulePath, String... systemPackages) {
         return createStandaloneServer(jbossHomePath, modulePath, systemPackages, null);
     }
@@ -123,20 +126,17 @@ public class EmbeddedProcessFactory {
      *                       the server's modular classloader
      * @param cmdargs any additional arguments to pass to the embedded server (e.g. -b=192.168.100.10)
      * @return the server. Will not be {@code null}
+     *
+     * @deprecated use {@link #createModuleLoader(File, String, String[])} and then {@link #createStandaloneServer(ModuleLoader, File, String...)}
      */
+    @Deprecated
     public static StandaloneServer createStandaloneServer(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
         if (jbossHomePath == null || jbossHomePath.isEmpty()) {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
         File jbossHomeDir = new File(jbossHomePath);
-        if (!jbossHomeDir.isDirectory()) {
-            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
-        }
-
-        if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
-
-        return createStandaloneServer(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+        ModuleLoader moduleLoader = createModuleLoader(jbossHomeDir, modulePath, systemPackages);
+        return createStandaloneServer(moduleLoader, jbossHomeDir, cmdargs);
     }
 
     /**
@@ -198,20 +198,17 @@ public class EmbeddedProcessFactory {
      *                       the server's modular classloader
      * @param cmdargs any additional arguments to pass to the embedded host controller (e.g. -b=192.168.100.10)
      * @return the server. Will not be {@code null}
+     *
+     * @deprecated use {@link #createModuleLoader(File, String, String[])} and then {@link #createHostController(ModuleLoader, File, String[])}
      */
+    @Deprecated
     public static HostController createHostController(String jbossHomePath, String modulePath, String[] systemPackages, String[] cmdargs) {
         if (jbossHomePath == null || jbossHomePath.isEmpty()) {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
         File jbossHomeDir = new File(jbossHomePath);
-        if (!jbossHomeDir.isDirectory()) {
-            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
-        }
-
-        if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
-
-        return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+        ModuleLoader moduleLoader = createModuleLoader(jbossHomeDir, modulePath, systemPackages);
+        return createHostController(moduleLoader, jbossHomeDir, cmdargs);
     }
 
     /**
@@ -260,6 +257,17 @@ public class EmbeddedProcessFactory {
         // Create the server
         Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, moduleLoader, jbossHomeDir, cmdargs);
         return new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl);
+    }
+
+    public static ModuleLoader createModuleLoader(File jbossHomeDir, String modulePath, String[] systemPackages) {
+        if (!jbossHomeDir.isDirectory()) {
+            throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomeDir.getAbsolutePath());
+        }
+
+        if (modulePath == null) {
+            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
+        }
+        return setupModuleLoader(modulePath, systemPackages);
     }
 
     private static String trimPathToModulesDir(String modulePath) {

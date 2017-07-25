@@ -1484,4 +1484,16 @@ public class Util {
                 && mn.has(ATTACHED_STREAMS)
                 && mn.get(ATTACHED_STREAMS).asBoolean();
     }
+
+    /**
+     * Invokes {@link AutoCloseable#close()} on {@code closeable}, ignoring any exceptions
+     * @param closeable the {@link AutoCloseable}. May be {@code null}.
+     */
+    public static void safeClose(AutoCloseable closeable) {
+        try {
+            closeable.close();
+        } catch (Exception ignored) {
+            // ignore
+        }
+    }
 }

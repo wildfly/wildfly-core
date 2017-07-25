@@ -44,7 +44,7 @@ class EnvironmentRestorer {
         return defaultContexts;
     }
 
-    synchronized void restoreLogContextSelector() {
+    private synchronized void restoreLogContextSelector() {
         if (!logContextSelectorRestored) {
             final LogContext logContext = defaultContexts.getLogContext();
             if (logContext == LogContext.getSystemLogContext()) {
