@@ -589,6 +589,7 @@
                                     <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                                     <licensesOutputDirectory>${license.directory}</licensesOutputDirectory>
                                     <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
+                                    <excludedScopes>system,provided</excludedScopes>
                                 </configuration>
                             </execution>
                         </executions>
