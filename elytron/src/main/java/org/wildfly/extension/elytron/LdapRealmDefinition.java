@@ -342,6 +342,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final SimpleAttributeDefinition FILTER_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_NAME, ModelType.STRING, true)
                 .setAllowExpression(true)
+                .setDefaultValue(new ModelNode("(rdn-identifier={0})"))
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 

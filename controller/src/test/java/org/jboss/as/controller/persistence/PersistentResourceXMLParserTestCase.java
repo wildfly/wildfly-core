@@ -1365,6 +1365,7 @@ public class PersistentResourceXMLParserTestCase {
 
             static final SimpleAttributeDefinition FILTER_NAME = new SimpleAttributeDefinitionBuilder("filter-name", ModelType.STRING, true)
                     .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode("(rdn-identifier={0})"))
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
