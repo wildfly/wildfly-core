@@ -793,7 +793,7 @@ public class ServerInventoryImpl implements ServerInventory {
                         NameCallback nameCallback = (NameCallback) current;
                         userName = nameCallback.getDefaultName();
                         if (userName.startsWith(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX)) {
-                            server = servers.get(userName.substring(1));
+                            server = servers.get(userName.substring(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX.length()));
                         }
                     } else if (current instanceof PasswordCallback) {
                         toRespondTo.add(current);
