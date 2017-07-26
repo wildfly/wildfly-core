@@ -29,10 +29,12 @@ import java.security.Policy;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.acl.Group;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -75,6 +77,7 @@ import org.jboss.security.SecurityConstants;
 import org.jboss.security.auth.callback.CallbackHandlerPolicyContextHandler;
 import org.jboss.security.jacc.SubjectPolicyContextHandler;
 import org.wildfly.common.Assert;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -97,6 +100,9 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 class PolicyDefinitions {
 
     private static final String DEFAULT_POLICY_NAME = "policy";
+    private static final SimpleAttributeDefinition NAME_ATTRIBUTE_DEFINITION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+            .setMinSize(1)
+            .build();
 
     // providers
     static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING, true)
@@ -107,9 +113,7 @@ class PolicyDefinitions {
             .build();
 
     static class JaccPolicyDefinition {
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
-                .setMinSize(1)
-                .build();
+        static final SimpleAttributeDefinition NAME = NAME_ATTRIBUTE_DEFINITION;
         static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POLICY, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode(JaccDelegatingPolicy.class.getName()))
                 .setMinSize(1)
@@ -127,9 +131,7 @@ class PolicyDefinitions {
     }
 
     static class CustomPolicyDefinition {
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
-                .setMinSize(1)
-                .build();
+        static final SimpleAttributeDefinition NAME = NAME_ATTRIBUTE_DEFINITION;
         static final SimpleAttributeDefinition CLASS_NAME = ClassLoadingAttributeDefinitions.CLASS_NAME;
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
         static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, NAME, CLASS_NAME, MODULE).build();
@@ -174,7 +176,7 @@ class PolicyDefinitions {
                             policy.refresh();
                         } catch (Exception cause) {
                             setPolicy((Policy) delegated);
-                            throw new RuntimeException("Failed to set policy [" + policy + "]", cause);
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, cause);
                         }
                     }
 
@@ -229,15 +231,29 @@ class PolicyDefinitions {
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
                     @Override
-                    protected void validateUpdatedModel(OperationContext context, Resource resource) throws OperationFailedException {
-                        ModelNode model = resource.getModel();
-                        String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
+                    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue, ModelNode oldValue, Resource resource) throws OperationFailedException {
 
-                        if (model.hasDefined(ElytronDescriptionConstants.DEFAULT_POLICY)) {
-                            defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
-                        }
+                        context.addStep(new OperationStepHandler() {
+                            @Override
+                            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                ModelNode model = resource.getModel();
+                                String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
 
-                        getPolicyProvider(context, model, defaultPolicy, null);
+                                if (model.hasDefined(ElytronDescriptionConstants.DEFAULT_POLICY)) {
+                                    defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
+                                }
+
+                                if (attributeName.equals(JACC_POLICY) || attributeName.equals(CUSTOM_POLICY)) {
+                                    if (checkPolicyProviderRemoved(context, defaultPolicy, newValue, oldValue)) {
+                                        throw ElytronSubsystemMessages.ROOT_LOGGER.cannotRemoveDefaultPolicy(defaultPolicy);
+                                    }
+                                }
+
+                                getPolicyProvider(context, model, defaultPolicy, null);
+                            }
+                        }, OperationContext.Stage.MODEL);
+
+
                     }
                 };
                 for (AttributeDefinition current : attributes) {
@@ -246,6 +262,25 @@ class PolicyDefinitions {
             }
         };
 
+    }
+
+    private static boolean checkPolicyProviderRemoved(OperationContext context, String defaultPolicy, ModelNode newValue, ModelNode oldValue) throws OperationFailedException {
+        if (getPoliciesNames(context, oldValue).contains(defaultPolicy)) {
+            return !getPoliciesNames(context, newValue).contains(defaultPolicy);
+        }
+        return false;
+    }
+
+    private static List<String> getPoliciesNames(OperationContext context, ModelNode modelNode) throws OperationFailedException {
+        List<String> policies = new ArrayList<>();
+
+        if (modelNode.isDefined()) {
+            for (ModelNode policy : modelNode.asList()) {
+                policies.add(ElytronExtension.asStringIfDefined(context, NAME_ATTRIBUTE_DEFINITION, policy));
+            }
+        }
+
+        return policies;
     }
 
     private static Supplier<Policy> getPolicyProvider(OperationContext context, ModelNode model, String defaultPolicy, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
@@ -268,7 +303,7 @@ class PolicyDefinitions {
         });
 
         if (policies.isEmpty()) {
-            throw new OperationFailedException("Could not find policy provider with name [" + defaultPolicy + "]");
+            throw ElytronSubsystemMessages.ROOT_LOGGER.cannotFindPolicyProvider(defaultPolicy);
         }
 
         return policies.get(defaultPolicy);
@@ -332,7 +367,7 @@ class PolicyDefinitions {
                             PolicyContext.registerHandler(SecurityConstants.CALLBACK_HANDLER_KEY, createCallbackHandlerContextHandler(), true);
                             PolicyContext.registerHandler(SecurityIdentity.class.getName(), createSecurityIdentityContextHandler(), true);
                         } catch (PolicyContextException cause) {
-                            throw new RuntimeException("Failed to register policy context handlers.", cause);
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
                         }
 
                         return policy;
@@ -450,7 +485,7 @@ class PolicyDefinitions {
             Object policy = classLoader.loadClass(className).newInstance();
             return Policy.class.cast(policy);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create policy [" + className + "]", e);
+            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
         }
     }
 
