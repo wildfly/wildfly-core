@@ -61,6 +61,7 @@ public class DeletionCollisionTest {
         }
         tmpRootDir.mkdirs();
         repository = ContentRepository.Factory.create(rootDir, tmpRootDir, 0L, 1000L);
+        repository.readWrite();
     }
 
     @After

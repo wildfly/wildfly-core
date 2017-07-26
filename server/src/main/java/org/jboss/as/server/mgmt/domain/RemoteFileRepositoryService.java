@@ -52,7 +52,7 @@ import org.jboss.vfs.VirtualFile;
 /**
  * @author Emanuel Muckenhuber
  */
-public class RemoteFileRepositoryService implements CompositeContentRepository, Service<CompositeContentRepository> {
+public class RemoteFileRepositoryService implements CompositeContentRepository, Service<ContentRepository> {
 
     private final InjectedValue<HostControllerClient> clientInjectedValue = new InjectedValue<HostControllerClient>();
 
@@ -79,15 +79,17 @@ public class RemoteFileRepositoryService implements CompositeContentRepository, 
     public void start(final StartContext context) throws StartException {
         final HostControllerClient client = clientInjectedValue.getValue();
         this.remoteFileRepositoryExecutor = client.getRemoteFileRepository();
+        contentRepository.readWrite();
     }
 
     @Override
     public void stop(StopContext context) {
         remoteFileRepositoryExecutor = null;
+        contentRepository.readOnly();
     }
 
     @Override
-    public CompositeContentRepository getValue() throws IllegalStateException, IllegalArgumentException {
+    public ContentRepository getValue() throws IllegalStateException, IllegalArgumentException {
         final RemoteFileRepositoryExecutor executor = this.remoteFileRepositoryExecutor;
         if (executor == null) {
             throw ServerLogger.ROOT_LOGGER.couldNotFindHcFileRepositoryConnection();
