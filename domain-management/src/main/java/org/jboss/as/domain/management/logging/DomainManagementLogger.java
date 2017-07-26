@@ -1570,5 +1570,11 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Users properties file '%s' contains multiple realm name declarations")
     IOException multipleRealmDeclarations(final String usersFile);
 
+    @Message(id = Message.NONE, value = "The callback handler is not initialized for domain server %s.")
+    IllegalStateException callbackHandlerNotInitialized(final String serverName);
+
+    @Message(id = Message.NONE, value = "Unable to obtain credential for server %s")
+    IllegalStateException unableToObtainCredential(final String serverName);
+
     //PUT YOUR NUMBERED MESSAGES ABOVE THE id=NONE ones!
 }
