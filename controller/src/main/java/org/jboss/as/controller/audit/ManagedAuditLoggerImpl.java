@@ -226,8 +226,8 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                     } catch (Exception e) {
                         handleLoggingException(e);
                     }
-                    queuedItems.clear();
                 }
+                queuedItems.clear();
             } else if (newStatus == Status.DISABLED){
                 queuedItems.clear();
             }
