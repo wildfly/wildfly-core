@@ -40,7 +40,9 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -62,6 +64,7 @@ import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 
 import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
+import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
 import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
 
@@ -83,6 +86,14 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
     private final InjectedValue<CallbackHandler> serverCallbackHandler = new InjectedValue<>();
 
     public DomainManagedServerCallbackHandler() {
+    }
+
+    public static void install(final ServiceTarget serviceTarget) {
+        DomainManagedServerCallbackHandler domainServersCallBackHandler = new DomainManagedServerCallbackHandler();
+        ServiceBuilder<CallbackHandlerService> builder = serviceTarget.addService(DomainManagedServerCallbackHandler.SERVICE_NAME, domainServersCallBackHandler)
+                .setInitialMode(ON_DEMAND);
+        builder.install();
+
     }
 
     // the callback handler passed through from ServerInventory, containing the server authkeys.

@@ -145,6 +145,7 @@ import org.jboss.as.domain.controller.operations.DomainModelIncludesValidator;
 import org.jboss.as.domain.controller.operations.coordination.PrepareStepHandler;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.host.controller.RemoteDomainConnectionService.RemoteFileRepository;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.discovery.DomainControllerManagementInterface;
@@ -637,6 +638,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
             // Install server inventory callback
             ServerInventoryCallbackService.install(serviceTarget);
 
+            // handler for domain server auth.
+            DomainManagedServerCallbackHandler.install(serviceTarget);
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
 
