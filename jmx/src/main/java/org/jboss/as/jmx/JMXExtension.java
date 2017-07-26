@@ -81,7 +81,6 @@ public class JMXExtension implements Extension {
             new SensitivityClassification(SUBSYSTEM_NAME, "jmx", false, false, true);
 
     static final SensitiveTargetAccessConstraintDefinition JMX_SENSITIVITY_DEF = new SensitiveTargetAccessConstraintDefinition(JMX_SENSITIVITY);
-    static final JMXSubsystemWriter writer = new JMXSubsystemWriter();
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 1;
     private static final int MANAGEMENT_API_MINOR_VERSION = 2;
@@ -113,7 +112,7 @@ public class JMXExtension implements Extension {
         RuntimeHostControllerInfoAccessor hostInfoAccessor = ((ExtensionContextSupplement)context).getHostControllerInfoAccessor();
 
         registration.registerSubsystemModel(JMXSubsystemRootResource.create(auditLogger, authorizer, securityIdentitySupplier, hostInfoAccessor));
-        registration.registerXMLElementWriter(writer);
+        registration.registerXMLElementWriter(JMXSubsystemWriter::new);
     }
 
     /**

@@ -85,8 +85,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWriter<SubsystemMarshallingContext> {
 
-    static final LoggingSubsystemWriter INSTANCE = new LoggingSubsystemWriter();
-
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final SubsystemMarshallingContext context) throws XMLStreamException {
         context.startSubsystemElement(Namespace.CURRENT.getUriString(), false);

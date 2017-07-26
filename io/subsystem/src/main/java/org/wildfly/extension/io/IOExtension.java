@@ -72,7 +72,7 @@ public class IOExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(3));
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(IORootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(new IOSubsystemParser_2_0());
+        subsystem.registerXMLElementWriter(IOSubsystemParser_2_0::new);
     }
 
 

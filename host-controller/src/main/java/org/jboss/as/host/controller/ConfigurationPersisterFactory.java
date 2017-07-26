@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import javax.xml.namespace.QName;
 
@@ -144,6 +145,12 @@ public class ConfigurationPersisterFactory {
         public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
             bootWriter.registerSubsystemWriter(name, deparser);
             super.registerSubsystemWriter(name, deparser);
+        }
+
+        @Override
+        public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
+            bootWriter.registerSubsystemWriter(name, writer);
+            super.registerSubsystemWriter(name, writer);
         }
 
         @Override

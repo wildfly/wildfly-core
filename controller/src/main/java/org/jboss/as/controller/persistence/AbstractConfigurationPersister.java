@@ -22,10 +22,12 @@
 
 package org.jboss.as.controller.persistence;
 
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
+import java.io.OutputStream;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -33,8 +35,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
-
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 /**
  * Abstract superclass for {@link ExtensibleConfigurationPersister} implementations.
@@ -44,7 +44,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 public abstract class AbstractConfigurationPersister implements ExtensibleConfigurationPersister {
 
     private final XMLElementWriter<ModelMarshallingContext> rootDeparser;
-    private final Map<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new HashMap<String, XMLElementWriter<SubsystemMarshallingContext>>();
+    private final ConcurrentHashMap<String, Supplier<XMLElementWriter<SubsystemMarshallingContext>>> subsystemWriterSuppliers = new ConcurrentHashMap<>();
 
     /**
      * Construct a new instance.
@@ -57,27 +57,29 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
 
     @Override
     public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
-        synchronized (subsystemWriters) {
-            subsystemWriters.put(name, deparser);
-        }
+        registerSubsystemWriter(name, () -> deparser);
+    }
+
+    @Override
+    public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
+        subsystemWriterSuppliers.putIfAbsent(name, writer);
     }
 
     @Override
     public void unregisterSubsystemWriter(String name) {
-        synchronized (subsystemWriters) {
-            subsystemWriters.remove(name);
-        }
+        subsystemWriterSuppliers.remove(name);
     }
 
     /** {@inheritDoc} */
     @Override
     public void marshallAsXml(final ModelNode model, final OutputStream output) throws ConfigurationPersistenceException {
         final XMLMapper mapper = XMLMapper.Factory.create();
+        final Map<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new ConcurrentHashMap<>();
         try {
             XMLStreamWriter streamWriter = null;
             try {
                 streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(output);
-                ModelMarshallingContext extensibleModel = new ModelMarshallingContext() {
+                final ModelMarshallingContext extensibleModel = new ModelMarshallingContext() {
 
                     @Override
                     public ModelNode getModelNode() {
@@ -86,9 +88,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
 
                     @Override
                     public XMLElementWriter<SubsystemMarshallingContext> getSubsystemWriter(String extensionName) {
-                        synchronized (subsystemWriters) {
-                            return subsystemWriters.get(extensionName);
-                        }
+                        return subsystemWriters.computeIfAbsent(extensionName, name -> subsystemWriterSuppliers.getOrDefault(name, () -> null).get());//lazy create writer, but only once per config serialization
                     }
                 };
                 mapper.deparseDocument(rootDeparser, extensibleModel, streamWriter);

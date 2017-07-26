@@ -718,6 +718,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public void registerXMLElementWriter(Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
+            writerRegistry.registerSubsystemWriter(name, writer);
+        }
+
+        @Override
         public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
             modelsRegistered = true;
             checkHostCapable();

@@ -39,22 +39,16 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 final class DiscoverySubsystemParser extends PersistentResourceXMLParser {
 
-    private static final PersistentResourceXMLDescription xmlDescription;
-
-    static {
-        xmlDescription = builder(PathElement.pathElement(SUBSYSTEM, DISCOVERY), DiscoveryExtension.NAMESPACE)
-            .addChild(
-                builder(PathElement.pathElement(STATIC_PROVIDER))
-                    .addAttribute(StaticProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
-            )
-            .addChild(
-                builder(PathElement.pathElement(AGGREGATE_PROVIDER))
-                    .addAttribute(AggregateProviderDefinition.PROVIDER_NAMES)
-            )
-            .build();
-    }
-
     public PersistentResourceXMLDescription getParserDescription() {
-        return xmlDescription;
+        return builder(PathElement.pathElement(SUBSYSTEM, DISCOVERY), DiscoveryExtension.NAMESPACE)
+                .addChild(
+                        builder(PathElement.pathElement(STATIC_PROVIDER))
+                                .addAttribute(StaticProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+                )
+                .addChild(
+                        builder(PathElement.pathElement(AGGREGATE_PROVIDER))
+                                .addAttribute(AggregateProviderDefinition.PROVIDER_NAMES)
+                )
+                .build();
     }
 }

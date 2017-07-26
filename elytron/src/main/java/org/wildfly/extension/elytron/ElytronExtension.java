@@ -74,10 +74,6 @@ public class ElytronExtension implements Extension {
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
-    /**
-     * The parser used for parsing our subsystem
-     */
-    private final ElytronSubsystemParser parser = new ElytronSubsystemParser();
 
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = ElytronExtension.class.getPackage().getName() + ".LocalDescriptions";
@@ -104,7 +100,7 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, parser);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, ElytronSubsystemParser::new);
     }
 
     @Override
@@ -117,7 +113,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(parser);
+        subsystemRegistration.registerXMLElementWriter(ElytronSubsystemParser::new);
     }
 
     @SuppressWarnings("unchecked")

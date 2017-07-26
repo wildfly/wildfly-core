@@ -66,7 +66,7 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
         // Register the threads subsystem
         final SubsystemRegistration registration = context.registerSubsystem(THREADS, CURRENT_VERSION);
-        registration.registerXMLElementWriter(ThreadsParser2_0.INSTANCE);
+        registration.registerXMLElementWriter(ThreadsParser2_0::new);
 
         // Remoting threads description and operation handlers
         @SuppressWarnings("deprecation")
@@ -77,8 +77,8 @@ public class ThreadsExtension extends AbstractLegacyExtension {
 
     @Override
     protected void initializeLegacyParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser2_0.INSTANCE);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_1.getUriString(), ThreadsParser.INSTANCE);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser.INSTANCE);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.CURRENT.getUriString(), ThreadsParser2_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_1.getUriString(), ThreadsParser::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.THREADS_1_0.getUriString(), ThreadsParser::new);
     }
 }

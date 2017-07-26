@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.CombinedTransformer;
@@ -69,9 +71,20 @@ public interface SubsystemRegistration {
      * the subsystem's configuration to XML.
      *
      * @param writer the writer
+     * @deprecated use the {@link #registerXMLElementWriter(Supplier)} variant
      */
+    @Deprecated
     void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer);
 
+    /**
+     * Registers the {@link XMLElementWriter} that can handle marshalling
+     * the subsystem's configuration to XML.
+     *
+     * @param writer the writer
+     */
+    default void registerXMLElementWriter(Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
+        registerXMLElementWriter(writer.get());
+    }
     /**
      * Register transformers for a specific model versions.
      *
