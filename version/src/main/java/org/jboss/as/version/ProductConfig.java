@@ -72,15 +72,16 @@ public class ProductConfig implements Serializable {
         String productVersion = null;
         String consoleSlot = null;
 
+        InputStream manifestStream = null;
         try {
 
             if (productConfProps.productModuleId != null) {
                 Module module = loader.loadModule(productConfProps.productModuleId);
 
-                InputStream stream = module.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
+                manifestStream = module.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
                 Manifest manifest = null;
-                if (stream != null) {
-                    manifest = new Manifest(stream);
+                if (manifestStream != null) {
+                    manifest = new Manifest(manifestStream);
                 }
 
                 if (manifest != null) {
@@ -94,6 +95,8 @@ public class ProductConfig implements Serializable {
             setSystemProperties(productConfProps.miscProperties, providedProperties);
         } catch (Exception e) {
             // Don't care
+        } finally {
+            safeClose(manifestStream);
         }
         isProduct = productName != null && !productName.isEmpty() && projectName == null;
         name = isProduct ? productName : projectName;
