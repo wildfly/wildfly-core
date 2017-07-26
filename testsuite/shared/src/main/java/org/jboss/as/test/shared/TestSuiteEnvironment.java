@@ -33,9 +33,24 @@ public class TestSuiteEnvironment {
      * @return the client
      */
     public static ModelControllerClient getModelControllerClient(final URI authConfigUri) {
+        return getModelControllerClient(authConfigUri, getServerAddress(), getServerPort());
+    }
+
+    /**
+     * Creates a client based on the {@linkplain #getServerAddress() server address} and
+     * {@linkplain #getServerPort() port}. If the {@code authConfigUri} is not {@code null} the it will be used to
+     * authenticate the client.
+     *
+     * @param authConfigUri the path too the authentication configuration or {@code null}
+     * @param address of the server
+     * @param port the management port of the server
+     *
+     * @return the client
+     */
+    public static ModelControllerClient getModelControllerClient(final URI authConfigUri, String address, int port) {
         final ModelControllerClientConfiguration.Builder builder = new ModelControllerClientConfiguration.Builder()
-                .setHostName(getServerAddress())
-                .setPort(getServerPort());
+                .setHostName(address)
+                .setPort(port);
         if (authConfigUri == null) {
             builder.setHandler(Authentication.getCallbackHandler());
         } else {
@@ -111,6 +126,20 @@ public class TestSuiteEnvironment {
         if (address==null){
             address = System.getProperty("node0");
         }
+        if (address!=null){
+            return formatPossibleIpv6Address(address);
+        }
+        return "localhost";
+    }
+
+    /**
+     * @param nodeName of the server
+     *
+     * @return The server address of nodeName
+     */
+    public static String getServerAddress(String nodeName) {
+        String address = System.getProperty(nodeName);
+
         if (address!=null){
             return formatPossibleIpv6Address(address);
         }
