@@ -117,16 +117,12 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
         Pattern p = Pattern.compile(objectName.getDomain().replace("*", ".*"));
         
         String legacyDomain = configuredDomains.getLegacyDomain();
-        if (legacyDomain != null) {
-            if (p.matcher(legacyDomain).matches()) {
-                return true;
-            }
+        if (legacyDomain != null && p.matcher(legacyDomain).matches()) {
+            return true;
         }
         String exprDomain = configuredDomains.getExprDomain();
-        if (exprDomain != null) {
-            if (p.matcher(exprDomain).matches()) {
-                return true;
-            }
+        if (exprDomain != null && p.matcher(exprDomain).matches()) {
+            return true;
         }
         return false;
     }
