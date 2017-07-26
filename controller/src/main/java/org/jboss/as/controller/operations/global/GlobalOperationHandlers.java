@@ -893,7 +893,9 @@ public class GlobalOperationHandlers {
                 if (childType != null && !childType.equals(path.getKey())) {
                     continue;
                 }
-                if (path.getKey().equals(RUNNING_SERVER) && path.isWildcard() && newRemaining.size() > 0) {
+                // matches /host=xxx/server=*/... address
+                final boolean isHostWildcardServerAddress = base.size() > 0 && base.getLastElement().getKey().equals(HOST) && path.getKey().equals(RUNNING_SERVER) && path.isWildcard();
+                if (isHostWildcardServerAddress && newRemaining.size() > 0) {
                     //Trying to get e.g. /host=xxx/server=*/interface=public will fail, so make sure if there are remaining elements for
                     //a /host=master/server=* that we don't attempt to get those
                     continue;
