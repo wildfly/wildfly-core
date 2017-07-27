@@ -121,8 +121,8 @@ public class CoreManagementResourceDefinition extends SimpleResourceDefinition {
 
         if (environment != Environment.DOMAIN) {
             resourceRegistration.registerSubModel(new AccessAuditResourceDefinition(auditLogger, pathManager, environmentReader));
+            resourceRegistration.registerSubModel(AccessIdentityResourceDefinition.newInstance(securityIdentitySupplier));
         }
-        resourceRegistration.registerSubModel(AccessIdentityResourceDefinition.newInstance(securityIdentitySupplier));
     }
 
     @Override
