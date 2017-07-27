@@ -36,8 +36,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -49,6 +52,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
@@ -59,9 +63,8 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
-import org.wildfly.extension.elytron.validators.SizeValidator;
-import org.wildfly.extension.elytron.validators.SuffixValidator;
 import org.wildfly.security.audit.AuditEndpoint;
 import org.wildfly.security.audit.AuditLogger;
 import org.wildfly.security.audit.EventPriority;
@@ -72,8 +75,6 @@ import org.wildfly.security.audit.SimpleSecurityEventFormatter;
 import org.wildfly.security.audit.SizeRotatingFileAuditEndpoint;
 import org.wildfly.security.audit.SyslogAuditEndpoint;
 import org.wildfly.security.auth.server.event.SecurityEventVisitor;
-
-import javax.net.ssl.SSLContext;
 
 /**
  * Resources definitions for the audit logging resources.
@@ -137,7 +138,7 @@ class AuditResourceDefinitions {
 
     static final SimpleAttributeDefinition ROTATE_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_SIZE, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setValidator(new org.wildfly.extension.elytron.validators.SizeValidator())
+            .setValidator(new SizeValidator())
             .setDefaultValue(new ModelNode("10m"))
             .setRestartAllServices()
             .build();
@@ -436,8 +437,89 @@ class AuditResourceDefinitions {
         TCP, UDP, SSL_TCP
     }
 
-    private static <T, R> Supplier<R> bind(Function<T,R> fn, T val) {
-        return () -> fn.apply(val);
+    static class SizeValidator extends ModelTypeValidator {
+        private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)([kKmMgGbBtT])?");
+
+        public SizeValidator() {
+            this(false);
+        }
+
+        public SizeValidator(final boolean nullable) {
+            super(ModelType.STRING, nullable);
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+            if (value.isDefined()) {
+                parseSize(value);
+            }
+        }
+
+        public static long parseSize(final ModelNode value) throws OperationFailedException {
+            final Matcher matcher = SIZE_PATTERN.matcher(value.asString());
+            if (!matcher.matches()) {
+                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSize(value.asString());
+            }
+            long qty = Long.parseLong(matcher.group(1), 10);
+            final String chr = matcher.group(2);
+            if (chr != null) {
+                switch (chr.charAt(0)) {
+                    case 'b':
+                    case 'B':
+                        break;
+                    case 'k':
+                    case 'K':
+                        qty <<= 10L;
+                        break;
+                    case 'm':
+                    case 'M':
+                        qty <<= 20L;
+                        break;
+                    case 'g':
+                    case 'G':
+                        qty <<= 30L;
+                        break;
+                    case 't':
+                    case 'T':
+                        qty <<= 40L;
+                        break;
+                    default:
+                        throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSize(value.asString());
+                }
+            }
+            return qty;
+        }
     }
+
+    static class SuffixValidator extends ModelTypeValidator {
+        private final boolean denySeconds;
+
+        public SuffixValidator() {
+            this(false, true);
+        }
+
+        public SuffixValidator(final boolean nullable, final boolean denySeconds) {
+            super(ModelType.STRING, nullable);
+            this.denySeconds = denySeconds;
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+            if (value.isDefined()) {
+                final String suffix = value.asString();
+                try {
+                    if (denySeconds && (suffix.contains("s") || suffix.contains("S"))) {
+                        throw ElytronSubsystemMessages.ROOT_LOGGER.suffixContainsMillis(suffix);
+                    }
+                    DateTimeFormatter.ofPattern(suffix);
+                } catch (IllegalArgumentException e) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSuffix(suffix);
+                }
+            }
+        }
+    }
+
 }
 
