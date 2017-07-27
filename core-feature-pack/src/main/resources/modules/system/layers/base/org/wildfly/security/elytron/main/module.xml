@@ -56,5 +56,7 @@
                 </include-set>
             </exports>
         </module>
+        <module name="org.wildfly.common" export="true" />
+        <module name="org.wildfly.client.config" export="true"/>
     </dependencies>
 </module>
