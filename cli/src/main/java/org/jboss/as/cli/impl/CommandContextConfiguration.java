@@ -39,6 +39,7 @@ public class CommandContextConfiguration {
     private final int connectionTimeout;
     private boolean silent;
     private Boolean errorOnInteract;
+    private Boolean validateOperationRequests;
     private final boolean echoCommand;
     private final Integer commandTimeout;
 
@@ -108,6 +109,10 @@ public class CommandContextConfiguration {
         return errorOnInteract;
     }
 
+    public Boolean isValidateOperationRequests() {
+        return validateOperationRequests;
+    }
+
     public boolean isEchoCommand() {
         return echoCommand;
     }
@@ -125,6 +130,7 @@ public class CommandContextConfiguration {
         private boolean disableLocalAuthUnset = true;
         private boolean silent;
         private Boolean errorOnInteract;
+        private Boolean validateOperationRequests;
         private boolean echoCommand;
         private Integer commandTimeout;
         public Builder() {
@@ -138,6 +144,7 @@ public class CommandContextConfiguration {
                     initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand, commandTimeout);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
+            config.validateOperationRequests = validateOperationRequests;
             return config;
         }
 
@@ -208,6 +215,11 @@ public class CommandContextConfiguration {
 
         public Builder setErrorOnInteract(boolean errorOnInteract) {
             this.errorOnInteract = errorOnInteract;
+            return this;
+        }
+
+        public Builder setValidateOperationRequests(boolean validateOperationRequests) {
+            this.validateOperationRequests = validateOperationRequests;
             return this;
         }
     }
