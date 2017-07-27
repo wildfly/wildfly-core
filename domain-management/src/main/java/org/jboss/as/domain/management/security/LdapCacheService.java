@@ -279,6 +279,7 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
 
         /**
          * Each type of cache has different way how to read from cache.
+         * Method is called in synchronized block for theCache
          *
          * @param key Key of entry in cache.
          * @return Returns founded entry or null.
@@ -343,29 +344,34 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
                                 }
                             }
                             theCache.put(key, entry);
-                            if (evictionTime > 0) {
-                                entry.setFuture(executorService.schedule(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        synchronized (theCache) {
-                                            CacheEntry entry = theCache.remove(key);
-                                            if (entry == null) {
-                                                SECURITY_LOGGER.tracef("Entry with key '%s' not in cache at time of timeout.", key);
-                                            } else {
-                                                SECURITY_LOGGER.tracef("Evicted entry with key '%s' due to eviction timeout.", key);
-                                            }
-                                        }
-
-                                    }
-                                }, evictionTime, TimeUnit.SECONDS));
-                            }
+                            prepareEviction(key, entry);
                         }
                     }
                 }
             }
 
             return res;
+        }
+
+        final void prepareEviction(final K key, CacheEntry entry) {
+            if (evictionTime > 0) {
+                entry.cancelFuture();
+                entry.setFuture(executorService.schedule(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        synchronized (theCache) {
+                            CacheEntry entry = theCache.remove(key);
+                            if (entry == null) {
+                                SECURITY_LOGGER.tracef("Entry with key '%s' not in cache at time of timeout.", key);
+                            } else {
+                                SECURITY_LOGGER.tracef("Evicted entry with key '%s' due to eviction timeout.", key);
+                            }
+                        }
+
+                    }
+                }, evictionTime, TimeUnit.SECONDS));
+            }
         }
 
         @Override
@@ -518,10 +524,11 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
         protected CacheEntry readFromCache(final K key) throws IOException, NamingException {
             return theCache.get(key);
         }
-
-
     }
 
+    /**
+     * Cache byAccessTime. Always remove the cached entry and re-add and move it to the end of the list.
+     */
     private class ByAccessCache extends BaseSearchCache {
 
         private ByAccessCache(final int evictionTime, final boolean cacheFailures, final int maxSize) {
@@ -533,6 +540,7 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
             CacheEntry entry = theCache.remove(key);
             if(entry != null) {
                 theCache.put(key, entry);
+                prepareEviction(key,entry);
             }
             return entry;
         }
