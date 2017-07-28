@@ -194,7 +194,9 @@ public class ProcessStateListenerTestCase {
 
             RunningStateChanges runningStateChanges = new RunningStateChanges(runningStateChangeFile);
             // reload to admin only
-            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.STOPPING);
             // reload to normal
             runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.STARTING, Process.RunningState.SUSPENDED);
             runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
@@ -211,7 +213,9 @@ public class ProcessStateListenerTestCase {
             // resume servers
             runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.NORMAL);
             // stop
-            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.STOPPING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.NORMAL, Process.RunningState.SUSPENDING);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDING, Process.RunningState.SUSPENDED);
+            runningStateChanges.add(DOMAIN_SERVER, NORMAL, Process.RunningState.SUSPENDED, Process.RunningState.STOPPING);
 
             runningStateChanges.verify();
         } finally {
