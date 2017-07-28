@@ -76,6 +76,11 @@ public class DefaultRealmDigestMgmtSaslTestCase {
     }
 
     @Test
+    public void testDigestSha384() throws Exception {
+        assertDefaultRealmWorks("DIGEST-SHA-384");
+    }
+
+    @Test
     public void testDigestSha512() throws Exception {
         assertDefaultRealmWorks("DIGEST-SHA-512");
     }

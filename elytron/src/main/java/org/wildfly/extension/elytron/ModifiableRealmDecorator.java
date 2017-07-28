@@ -418,6 +418,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                             DigestPassword.ALGORITHM_DIGEST_MD5,
                             DigestPassword.ALGORITHM_DIGEST_SHA,
                             DigestPassword.ALGORITHM_DIGEST_SHA_256,
+                            DigestPassword.ALGORITHM_DIGEST_SHA_384,
                             DigestPassword.ALGORITHM_DIGEST_SHA_512
                     ))
                     .build();
