@@ -110,7 +110,9 @@ class ServerInventoryService implements Service<ServerInventory> {
             serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry);
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
-            domainServerCallback.getValue().getServerCallbackHandlerInjector().inject(serverInventory.getServerCallbackHandler());
+            if (domainServerCallback != null && domainServerCallback.getValue() != null) {
+                domainServerCallback.getValue().getServerCallbackHandlerInjector().inject(serverInventory.getServerCallbackHandler());
+            }
             futureInventory.setInventory(serverInventory);
         } catch (Exception e) {
             futureInventory.setFailure(e);

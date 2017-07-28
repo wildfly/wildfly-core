@@ -385,15 +385,11 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addDomainManagedServersService(OperationContext context, String realmName, ServiceTarget serviceTarget,
                                  ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        // only installed once.
         final ServiceRegistry registry = context.getServiceRegistry(false);
-        if (registry.getService(DomainManagedServerCallbackHandler.SERVICE_NAME) == null) {
-            DomainManagedServerCallbackHandler domainServersCallBackHandler = new DomainManagedServerCallbackHandler();
-            ServiceBuilder<CallbackHandlerService> builder = serviceTarget.addService(DomainManagedServerCallbackHandler.SERVICE_NAME, domainServersCallBackHandler)
-                    .setInitialMode(ON_DEMAND);
-            builder.install();
+        ServiceController serviceController = registry.getService(DomainManagedServerCallbackHandler.SERVICE_NAME);
+        if (serviceController != null) {
+            CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, DomainManagedServerCallbackHandler.SERVICE_NAME);
         }
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, DomainManagedServerCallbackHandler.SERVICE_NAME);
     }
 
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
