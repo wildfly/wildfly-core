@@ -24,12 +24,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -42,22 +39,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.Authentication;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -88,10 +76,8 @@ public class ServerAuthenticationTestCase {
         DomainTestSupport.Configuration config =  DomainTestSupport.Configuration.create(ServerAuthenticationTestCase.class.getSimpleName(),
                 "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml");
         testSupport = DomainTestSupport.createAndStartSupport(config);
-        ExtensionSetup.initialiseProfileIncludesExtension(testSupport);
         master = testSupport.getDomainMasterLifecycleUtil();
         slave = testSupport.getDomainSlaveLifecycleUtil();
-        // Initialize the extension
     }
 
     @AfterClass
@@ -141,48 +127,22 @@ public class ServerAuthenticationTestCase {
                         .getBytes(StandardCharsets.UTF_8));
     }
 
-    private CallbackHandler createCallbackHandler(final String username, final String password) {
-        return new CallbackHandler() {
-            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-                for (Callback current : callbacks) {
-                    if (current instanceof NameCallback) {
-                        NameCallback ncb = (NameCallback) current;
-                        ncb.setName(username);
-                    } else if (current instanceof PasswordCallback) {
-                        PasswordCallback pcb = (PasswordCallback) current;
-                        pcb.setPassword(password.toCharArray());
-                    } else if (current instanceof RealmCallback) {
-                        RealmCallback rcb = (RealmCallback) current;
-                        rcb.setText(rcb.getDefaultText());
-                    } else {
-                        throw new UnsupportedCallbackException(current);
-                    }
-                }
-            }
-        };
-    }
-
-    private static ModelNode getLocalAuthPath(final String host) {
-        PathAddress path = PathAddress.pathAddress(HOST, host)
+    private static PathAddress getLocalAuthPath(final String host) {
+        return PathAddress.pathAddress(HOST, host)
                 .append(CORE_SERVICE, MANAGEMENT)
                 .append(SECURITY_REALM, "ManagementRealm")
                 .append(AUTHENTICATION, LOCAL);
-        return path.toModelNode();
     }
 
     private static void removeLocalAuth(final DomainClient client, final String host) throws Exception {
         // remove local auth, requires restart
-        final ModelNode op = new ModelNode();
-        op.get(OP).set(REMOVE);
-        op.get(OP_ADDR).set(getLocalAuthPath(host));
+        final ModelNode op = Util.createEmptyOperation(REMOVE, getLocalAuthPath(host));
         final ModelNode result = client.execute(op);
         assertEquals(result.toJSONString(true), SUCCESS, result.get(OUTCOME).asString());
     }
 
     private static void reloadHostController(final DomainClient client, final String host, final boolean restartServers) throws Exception {
-        ModelNode op = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, host));
-        op.get(OP).set(RELOAD);
-        op.get(OP_ADDR).set(HOST, host);
+        final ModelNode op = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, host));
         op.get(RESTART_SERVERS).set(restartServers);
         final ModelNode result = client.execute(op);
         assertEquals(result.toJSONString(true), SUCCESS, result.get(OUTCOME).asString());
@@ -190,9 +150,7 @@ public class ServerAuthenticationTestCase {
 
     private static void addLocalAuth(final DomainClient client, final String host) throws Exception {
         // remove local auth, requires restart
-        final ModelNode op = new ModelNode();
-        op.get(OP).set(ADD);
-        op.get(OP_ADDR).set(getLocalAuthPath(host));
+        final ModelNode op = Util.createEmptyOperation(ADD, getLocalAuthPath(host));
         op.get("default-user").set("$local");
         op.get("skip-group-loading").set("true");
         final ModelNode result = client.execute(op);
@@ -200,22 +158,16 @@ public class ServerAuthenticationTestCase {
     }
 
     private static ModelNode getLocalAuthValue(final ModelControllerClient client, final String host) throws Exception {
-        final ModelNode op = new ModelNode();
-        op.get(OP).set(READ_RESOURCE_OPERATION);
-        op.get(OP_ADDR).set(getLocalAuthPath(host));
+        final ModelNode op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, getLocalAuthPath(host));
         return client.execute(op);
     }
 
     private void verifyServerStarted(final ModelControllerClient client, final String host, final String serverName) throws Exception {
         // verify server connected and running
-        final ModelNode servers = new ModelNode();
-        servers.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        final PathAddress serverPath = PathAddress.pathAddress(HOST, host)
-                .append(SERVER, serverName);
-        servers.get(OP_ADDR).set(serverPath.toModelNode());
-        servers.get(NAME).set(RUNTIME_CONFIGURATION_STATE);
-        final ModelNode serverResult = client.execute(servers);
-        assertEquals(SUCCESS, serverResult.get(OUTCOME).asString());
-        assertEquals("ok", serverResult.get(RESULT).asString());
+        final ModelNode op = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.pathAddress(HOST, host).append(SERVER, serverName));
+        op.get(NAME).set(RUNTIME_CONFIGURATION_STATE);
+        final ModelNode result = client.execute(op);
+        assertEquals(SUCCESS, result.get(OUTCOME).asString());
+        assertEquals("ok", result.get(RESULT).asString());
     }
 }
