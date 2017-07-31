@@ -56,7 +56,6 @@ public class ValidateAddressOperationTestCase  {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        DomainTestSuite.stopSupport();
     }
 
     @Test

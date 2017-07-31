@@ -66,7 +66,8 @@ import org.junit.runners.Suite;
         ServerRestartRequiredTestCase.class,
         ValidateAddressOperationTestCase.class,
         ValidateOperationOperationTestCase.class,
-        WildcardOperationsTestCase.class
+        WildcardOperationsTestCase.class,
+        ServerAuthenticationTestCase.class
 })
 public class DomainTestSuite {
 
