@@ -751,12 +751,6 @@ class ManagementXml_5 extends ManagementXml {
                 }
             }
         }
-        /*
-         * The only mandatory attribute now is the KEYSTORE_PASSWORD.
-         */
-        if (keystorePasswordSet == false) {
-            throw missingRequired(reader, EnumSet.of(Attribute.KEYSTORE_PASSWORD));
-        }
     }
 
     private void parseKerberosIdentity(final XMLExtendedStreamReader reader,

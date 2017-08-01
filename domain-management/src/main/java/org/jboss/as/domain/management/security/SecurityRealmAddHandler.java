@@ -726,8 +726,9 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                                         ServiceTarget serviceTarget) throws OperationFailedException {
 
         final ServiceBuilder<TrustManager[]> serviceBuilder;
-        char[] keystorePassword = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl).asString()
-                .toCharArray();
+
+        ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
+        char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
         final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
 
         if (!JKS.equalsIgnoreCase(provider)) {
