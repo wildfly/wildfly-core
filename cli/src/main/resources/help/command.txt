@@ -29,7 +29,7 @@ DESCRIPTION
   Here is an example of invoking operation 'flush-all-connection-in-pool' on
   datasource with jndi-name 'myds'.
 
-  data-source flush-all-connection-in-pool --jndi-name=myds
+  data-source flush-all-connection-in-pool --jndi-name=myds 
 
   where flush-all-connection-in-pool is an operation name exposed by data-source
   type and jndi-name is the property name that identifies the specific
@@ -46,7 +46,13 @@ DESCRIPTION
 
   data-source --jndi-name=my-new-ds --min-pool-size=11 --max-pool-size=22
 
-  Tab-completion will help completing operation and property names.
+  
+ARGUMENTS
+  
+  Arguments should be passed with the commands, in CLI mode command we are having arguments(--help, --help --commands and etc)
+
+  For example, command /subsystem=datasources/data-source.
+  Tab-completion will help completing operation, property names and arguments.
 
   Generic type commands support --help option. The content of the help will be
   generated from the description of the operations and properties provided by
@@ -63,13 +69,16 @@ DESCRIPTION
 
   data-source --help --properties
 
-  And this will describe the specific operation, in this case
+  This will describe the specific operation, in this case
   flush-all-connection-in-pool:
 
   data-source flush-all-connection-in-pool --help
 
+  This is describe the corresponds to a property of the resourse which is used to identify the resourse against which the command should be executed
+  
+  data-source --jndi-name
 
-ARGUMENTS
+MANAGING COMMANDS
 
   add     - adds a new generic type command. The following arguments are used to
             add a new command:
@@ -91,3 +100,18 @@ ARGUMENTS
             removed.
 			
   list    - lists existing generic type commands.
+ 
+
+  For example,Login to CLI mode and run the below commands,
+  
+  This will list all the commands,
+ 
+  command list
+ 
+  To add a new command, you need to identify the node type, choose the identifying property and the name for the command. E.g.
+
+  command add --node-type=subsystem=resource-adapters/resource-adapter --property-id=archive --command-name=resource-adapter
+
+  The command can be remove like this
+
+  command remove --command-name=resource-adapter   
