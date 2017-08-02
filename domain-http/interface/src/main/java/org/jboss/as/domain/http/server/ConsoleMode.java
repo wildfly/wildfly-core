@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import io.undertow.attribute.ExchangeAttributes;
 import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PredicateHandler;
@@ -182,7 +183,7 @@ public enum ConsoleMode {
                     .setCachable(Predicates.<HttpServerExchange>falsePredicate());
 
             //we also need to setup the default resource redirect
-            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + resource), handler);
+            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(ExchangeAttributes.constant(CONTEXT + resource)), handler);
             return new ResourceHandlerDefinition(CONTEXT, resource, predicateHandler);
         }
 
