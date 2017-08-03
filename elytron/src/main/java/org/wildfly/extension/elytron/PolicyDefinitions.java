@@ -99,14 +99,12 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 class PolicyDefinitions {
 
-    private static final String DEFAULT_POLICY_NAME = "policy";
     private static final SimpleAttributeDefinition NAME_ATTRIBUTE_DEFINITION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
             .setMinSize(1)
             .build();
 
     // providers
     static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING, true)
-            .setDefaultValue(new ModelNode(DEFAULT_POLICY_NAME))
             .setAllowExpression(false)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -145,7 +143,11 @@ class PolicyDefinitions {
         AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-                String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
+                String defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
+                if (defaultPolicy == null) {
+                    defaultPolicy = context.getCurrentAddressValue();
+                }
+
                 ServiceName serviceName = POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName(Policy.class);
                 InjectedValue<Supplier<Policy>> policyProviderInjector = new InjectedValue<>();
                 ServiceTarget serviceTarget = context.getServiceTarget();
@@ -237,10 +239,9 @@ class PolicyDefinitions {
                             @Override
                             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                                 ModelNode model = resource.getModel();
-                                String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
-
-                                if (model.hasDefined(ElytronDescriptionConstants.DEFAULT_POLICY)) {
-                                    defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
+                                String defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
+                                if (defaultPolicy == null) {
+                                    defaultPolicy = context.getCurrentAddressValue();
                                 }
 
                                 if (attributeName.equals(JACC_POLICY) || attributeName.equals(CUSTOM_POLICY)) {

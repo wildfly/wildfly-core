@@ -4854,7 +4854,7 @@
         <xs:attribute name="default-policy" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The name of a default policy provider.
+                    The name of a default policy provider. If this is not specified then the name of the resource will be used.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
