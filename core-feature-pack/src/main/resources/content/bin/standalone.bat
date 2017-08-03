@@ -238,7 +238,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
           if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
             mkdir "%JBOSS_LOG_DIR%"
           )
-		set JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+		set "JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:%JBOSS_LOG_DIR%\gc.log -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
         )
        )
     )
@@ -267,7 +267,7 @@ echo ===========================================================================
 echo.
 
 :RESTART
-  "%JAVA%" "%JAVA_OPTS%" ^
+  "%JAVA%" %JAVA_OPTS% ^
    "-Dorg.jboss.boot.log.file=%JBOSS_LOG_DIR%\server.log" ^
    "-Dlogging.configuration=file:%JBOSS_CONFIG_DIR%/logging.properties" ^
       -jar "%JBOSS_HOME%\jboss-modules.jar" ^
