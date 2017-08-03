@@ -55,12 +55,27 @@ public interface ConfigurationPersister {
     }
 
     /**
-     * Persist the given configuration model.
+     * Gets whether a call to {@link #store(ModelNode, Set)} will return a {@link PersistenceResource} that will actually
+     * persist to persistent storage. Some implementations may return {@code false} until {@link #successfulBoot()} is
+     * invoked. If this returns {@code false} the caller can safely omit any call to {@link #store(ModelNode, Set)}.
+     * <p>
+     * The default implementation always returns {@code true}
+     *
+     * @return {@code true} if a call to {@link #store(ModelNode, Set)} will return an object that actually writes
+     */
+    default boolean isPersisting() {
+        return true;
+    }
+
+    /**
+     * Persist the given configuration model if {@link #isPersisting()} would return {@code true}, otherwise
+     * return a no-op {@link PersistenceResource}.
      *
      * @param model the model to persist
-     * @param affectedAddresses
+     * @param affectedAddresses the addresses of the resources that were changed
      *
-     * @return callback to use to control whether the stored model should be flushed to persistent storage
+     * @return callback to use to control whether the stored model should be flushed to permanent storage. Will not be
+     *          {@code null}
      */
     PersistenceResource store(ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException;
 
@@ -69,7 +84,7 @@ public interface ConfigurationPersister {
      *
      * @param model  the model to persist
      * @param output the stream
-     * @throws ConfigurationPersistenceException
+     * @throws ConfigurationPersistenceException if a configuration persistence problem occurs
      */
     void marshallAsXml(final ModelNode model, final OutputStream output) throws ConfigurationPersistenceException;
 
@@ -81,14 +96,15 @@ public interface ConfigurationPersister {
 
     /**
      * Called once the xml has been successfully parsed, translated into updates, executed in the target controller
-     * and all services have started successfully
+     * and all services have started successfully.
+     *
+     * @see #isPersisting()
      */
     void successfulBoot() throws ConfigurationPersistenceException;
 
     /**
      * Take a snapshot of the current configuration
      *
-     * @return the location of the snapshot
      * @return the file location of the snapshot
      * @throws ConfigurationPersistenceException if a problem happened when creating the snapshot
      */
@@ -113,7 +129,7 @@ public interface ConfigurationPersister {
     /**
      * Contains the info about the configuration snapshots
      */
-    public interface SnapshotInfo {
+    interface SnapshotInfo {
         /**
          * Gets the snapshots directory
          *
