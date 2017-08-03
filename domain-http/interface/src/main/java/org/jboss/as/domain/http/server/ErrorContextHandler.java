@@ -23,6 +23,7 @@ package org.jboss.as.domain.http.server;
 
 import java.util.Locale;
 
+import io.undertow.attribute.ExchangeAttributes;
 import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -73,7 +74,7 @@ class ErrorContextHandler {
                 .setCachable(Predicates.<HttpServerExchange>falsePredicate());
 
         //we also need to setup the default resource redirect
-        return new PredicateHandler(path("/"), new RedirectHandler(ERROR_CONTEXT + DEFAULT_RESOURCE), handler);
+        return new PredicateHandler(path("/"), new RedirectHandler(ExchangeAttributes.constant(ERROR_CONTEXT + DEFAULT_RESOURCE)), handler);
     }
 
     private static ClassLoader getClassLoader(final ModuleLoader moduleLoader, final String module, final String slot) throws ModuleLoadException {
