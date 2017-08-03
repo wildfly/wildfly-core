@@ -5,9 +5,9 @@
 # A simple utility for adding new users to the properties file used
 # for domain management authentication out of the box.
 #
-
+#Just to avoid conflict with existing installed binaries 
+unset JBOSS_HOME
 DIRNAME=`dirname "$0"`
-
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
 if  [ `uname|grep -i CYGWIN` ]; then
