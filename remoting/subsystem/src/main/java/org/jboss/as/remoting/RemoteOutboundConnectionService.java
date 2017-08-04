@@ -118,7 +118,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
             // if the protocol is specified in the authentication configuration, use it in the destination URI
             final String realProtocol = AUTH_CONFIGURATION_CLIENT.getRealProtocol(configuration);
             try {
-                uri = new URI(realProtocol == null ? Protocol.HTTP_REMOTING.toString() : realProtocol, username, hostName, port, null, null, null);
+                uri = new URI(realProtocol == null ? Protocol.REMOTE_HTTP.toString() : realProtocol, username, hostName, port, null, null, null);
             } catch (URISyntaxException e) {
                 throw new StartException(e);
             }
