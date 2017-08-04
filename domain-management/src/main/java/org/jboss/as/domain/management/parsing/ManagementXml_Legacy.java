@@ -113,7 +113,6 @@ import org.jboss.as.domain.management.security.UserSearchResourceDefintion;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Bits of parsing and marshaling logic that are related to {@code <management>} elements in domain.xml, host.xml and
@@ -126,7 +125,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-class ManagementXml_Legacy extends ManagementXml {
+final class ManagementXml_Legacy implements ManagementXml {
 
     private final Namespace namespace;
     private final ManagementXmlDelegate delegate;
@@ -3292,12 +3291,6 @@ class ManagementXml_Legacy extends ManagementXml {
         }
 
         requireNoContent(reader);
-    }
-
-    @Override
-    public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
-            throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
 }

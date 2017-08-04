@@ -32,8 +32,8 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-public abstract class AuditLogXml {
-    public static AuditLogXml newInstance(Namespace namespace, boolean host) {
+public interface AuditLogXml {
+    static AuditLogXml newInstance(Namespace namespace, boolean host) {
         switch (namespace.getMajorVersion()) {
             case 1:
             case 2:
@@ -46,17 +46,16 @@ public abstract class AuditLogXml {
         }
     }
 
-    AuditLogXml() {
-    }
-
     // TODO - The problem is that it is version dependent but it would be nicer to not have processing instructions and find a
     // better way to decide if a native interface is required.
 
-    public abstract void parseAuditLog(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException;
+    void parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, Namespace expectedNs, List<ModelNode> list) throws XMLStreamException;
 
     // TODO - Writing should be based on what is actually in the model, the delegate should be the final check if interfaces are
     // really disallowed.
 
-    public abstract void writeAuditLog(final XMLExtendedStreamWriter writer, final ModelNode auditLog) throws XMLStreamException;
+    default void writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException  {
+        throw new UnsupportedOperationException();
+    }
 
 }
