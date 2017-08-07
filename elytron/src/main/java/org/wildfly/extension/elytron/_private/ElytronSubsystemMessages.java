@@ -318,6 +318,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 38, value = "Could not load permission class \"%s\"")
     void invalidPermissionClass(String className);
 
+    @Message(id = 39, value = "Unable to reload CRL file - TrustManager is not reloadable")
+    OperationFailedException unableToReloadCRLNotReloadable();
+
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
