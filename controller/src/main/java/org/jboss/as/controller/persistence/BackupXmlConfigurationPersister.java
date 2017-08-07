@@ -40,7 +40,7 @@ import org.jboss.staxmapper.XMLElementWriter;
  */
 public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
 
-    ConfigurationFile configurationFile;
+    private ConfigurationFile configurationFile;
     private final AtomicBoolean successfulBoot = new AtomicBoolean();
 
     /**
@@ -93,6 +93,16 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
         if(successfulBoot.compareAndSet(false, true)) {
             configurationFile.successfulBoot();
         }
+    }
+
+    /**
+     * Overrides the default behavior to return {@code false} until {@link #successfulBoot()} has been called.
+     *
+     * @return {@code true} if {@link #successfulBoot()} has been called; {@code false} otherwise
+     */
+    @Override
+    public boolean isPersisting() {
+        return successfulBoot.get();
     }
 
     @Override
