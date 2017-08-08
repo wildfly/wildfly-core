@@ -126,6 +126,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     }
 
     @Override
+    public Map<String, AttributeAccess> getAttributes(PathAddress address) {
+        return delegate.getAttributes(address);
+    }
+
+    @Override
     public Set<String> getChildNames(PathAddress address) {
         return delegate.getChildNames(address);
     }

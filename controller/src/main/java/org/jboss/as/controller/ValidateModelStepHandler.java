@@ -22,7 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -68,10 +68,11 @@ class ValidateModelStepHandler implements OperationStepHandler {
 
         final ModelNode model = resource.getModel();
         final ImmutableManagementResourceRegistration resourceRegistration = context.getResourceRegistration();
-        final Set<String> attributeNames = resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
-        for (final String attributeName : attributeNames) {
+        final Map<String, AttributeAccess> attributes = resourceRegistration.getAttributes(PathAddress.EMPTY_ADDRESS);
+        for (final Map.Entry<String, AttributeAccess> entry : attributes.entrySet()) {
+            String attributeName = entry.getKey();
             final boolean has = model.hasDefined(attributeName);
-            final AttributeAccess access = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+            final AttributeAccess access = entry.getValue();
             if (access.getStorageType() != AttributeAccess.Storage.CONFIGURATION){
                 continue;
             }
@@ -92,7 +93,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
                 for (final String required : requires) {
                     if (!model.hasDefined(required)) {
                         // Check for alternatives that are in the same set of 'requires'
-                        AttributeDefinition requiredAttr = getAttributeDefinition(required, resourceRegistration);
+                        AttributeDefinition requiredAttr = getAttributeDefinition(required, attributes);
                         if (requiredAttr == null) {
                             // Coding mistake in the attr AD. Don't mess up the user; just debug log
                             ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
@@ -136,8 +137,8 @@ class ValidateModelStepHandler implements OperationStepHandler {
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
-    private static AttributeDefinition getAttributeDefinition(String name, ImmutableManagementResourceRegistration resourceRegistration) {
-        AttributeAccess aa = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name);
+    private static AttributeDefinition getAttributeDefinition(String name, final Map<String, AttributeAccess> attributes) {
+        AttributeAccess aa = attributes.get(name);
         return aa == null ? null : aa.getAttributeDefinition();
     }
 

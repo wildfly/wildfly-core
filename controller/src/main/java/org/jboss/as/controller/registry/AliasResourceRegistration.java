@@ -250,6 +250,11 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator) {
+        return target.getAttributes(iterator);
+    }
+
+    @Override
     Set<String> getChildNames(final ListIterator<PathElement> iterator) {
         return target.getChildNames(iterator);
     }

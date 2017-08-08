@@ -889,6 +889,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public Map<String, AttributeAccess> getAttributes(PathAddress address) {
+            return deployments.getAttributes(address);
+        }
+
+        @Override
         public Map<String, NotificationEntry> getNotificationDescriptions(PathAddress address, boolean inherited) {
             return deployments.getNotificationDescriptions(address, inherited);
         }

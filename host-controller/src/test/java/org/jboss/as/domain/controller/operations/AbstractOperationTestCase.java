@@ -984,6 +984,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public Map<String, AttributeAccess> getAttributes(PathAddress address) {
+            return Collections.emptyMap();
+        }
+
+        @Override
         public Set<String> getChildNames(PathAddress address) {
             return null;
         }
