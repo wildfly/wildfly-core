@@ -310,6 +310,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 37, value = "Injected value is not of '%s' type.")
     StartException invalidTypeInjected(final String type);
 
+    @LogMessage(level = WARN)
+    @Message(id = 38, value = "Could not load permission class \"%s\"")
+    void invalidPermissionClass(String className);
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
