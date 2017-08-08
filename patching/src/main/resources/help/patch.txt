@@ -96,10 +96,15 @@ ACTION: history
 
     patch history
       [--patch-stream=<patch-stream-name>]
+      [--exclude-agedout]
       [--host=<host>]
       [--distribution=<target-distribution>]
       [--module-path=<modules-dir>]
       [--bundle-path=<bundles-dir>]
+
+      --exclude-agedout  - Optional argument, if present patches that have been
+                           aged out with the ageout-history operation will not
+                           be included into the result.
 
 ACTION: inspect
 

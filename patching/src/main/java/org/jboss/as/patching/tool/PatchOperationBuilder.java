@@ -104,10 +104,14 @@ public interface PatchOperationBuilder extends PatchTool.ContentPolicyBuilder {
         }
 
         public static PatchOperationBuilder history(final String patchStream) {
+            return history(patchStream, false);
+        }
+
+        public static PatchOperationBuilder history(final String patchStream, final boolean excludeAgedOut) {
             return new AbstractOperationBuilder() {
                 @Override
                 public ModelNode execute(PatchOperationTarget target) throws PatchingException {
-                    return target.history(patchStream);
+                    return target.history(patchStream, excludeAgedOut);
                 }
             };
         }
