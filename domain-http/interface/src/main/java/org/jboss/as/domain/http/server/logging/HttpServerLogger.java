@@ -76,11 +76,11 @@ public interface HttpServerLogger extends BasicLogger {
     @Message(id = 7, value = "No console module available with module name %s")
     ModuleNotFoundException consoleModuleNotFoundMsg(final String moduleName);
 
-    @Message(id = 8, value = "Failed to read %s")
-    RuntimeException failedReadingResource(@Cause Throwable cause, String resource);
+//    @Message(id = 8, value = "Failed to read %s")
+//    RuntimeException failedReadingResource(@Cause Throwable cause, String resource);
 
-    @Message(id = 9, value = "Invalid resource")
-    String invalidResource();
+//    @Message(id = 9, value = "Invalid resource")
+//    String invalidResource();
 
     @Message(id = 10, value = "Invalid Credential Type '%s'")
     IllegalArgumentException invalidCredentialType(String value);

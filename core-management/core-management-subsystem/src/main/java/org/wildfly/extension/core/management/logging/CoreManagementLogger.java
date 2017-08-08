@@ -44,8 +44,8 @@ public interface CoreManagementLogger extends BasicLogger {
      */
     CoreManagementLogger ROOT_LOGGER = Logger.getMessageLogger(CoreManagementLogger.class, "org.wildfly.extension.core.management");
 
-    @Message(id = 1, value = "The resource %s wasn't working properly and has been removed.")
-    String removedOutOfOrderResource(final String address);
+//    @Message(id = 1, value = "The resource %s wasn't working properly and has been removed.")
+//    String removedOutOfOrderResource(final String address);
 
     @Message(id = 2, value = "Error initializing the process state listener %s")
     String processStateInitError(@Cause Throwable t, final String name);

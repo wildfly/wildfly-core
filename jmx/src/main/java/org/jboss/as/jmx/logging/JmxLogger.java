@@ -39,7 +39,6 @@ import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
-import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 
 import org.jboss.as.controller.PathAddress;
@@ -56,6 +55,7 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings("DefaultAnnotationParam")
 @MessageLogger(projectCode = "WFLYJMX", length = 4)
 public interface JmxLogger extends BasicLogger {
 
@@ -64,32 +64,32 @@ public interface JmxLogger extends BasicLogger {
      */
     JmxLogger ROOT_LOGGER = Logger.getMessageLogger(JmxLogger.class, "org.jboss.as.jmx");
 
-    /**
-     * Creates an exception indicating the inability to shutdown the RMI registry.
-     *
-     * @param cause the cause of the error.
-     */
-    @LogMessage(level = ERROR)
-    @Message(id = 1, value = "Could not shutdown rmi registry")
-    void cannotShutdownRmiRegistry(@Cause Throwable cause);
+//    /**
+//     * Creates an exception indicating the inability to shutdown the RMI registry.
+//     *
+//     * @param cause the cause of the error.
+//     */
+//    @LogMessage(level = ERROR)
+//    @Message(id = 1, value = "Could not shutdown rmi registry")
+//    void cannotShutdownRmiRegistry(@Cause Throwable cause);
 
-    /**
-     * Creates an exception indicating the JMX connector could not unbind from the registry.
-     *
-     * @param cause the cause of the error.
-     */
-    @LogMessage(level = ERROR)
-    @Message(id = 2, value = "Could not stop connector server")
-    void cannotStopConnectorServer(@Cause Throwable cause);
+//    /**
+//     * Creates an exception indicating the JMX connector could not unbind from the registry.
+//     *
+//     * @param cause the cause of the error.
+//     */
+//    @LogMessage(level = ERROR)
+//    @Message(id = 2, value = "Could not stop connector server")
+//    void cannotStopConnectorServer(@Cause Throwable cause);
 
-    /**
-     * Creates an exception indicating the JMX connector could not unbind from the registry.
-     *
-     * @param cause the cause of the error.
-     */
-    @LogMessage(level = ERROR)
-    @Message(id = 3, value = "Could not unbind jmx connector from registry")
-    void cannotUnbindConnector(@Cause Throwable cause);
+//    /**
+//     * Creates an exception indicating the JMX connector could not unbind from the registry.
+//     *
+//     * @param cause the cause of the error.
+//     */
+//    @LogMessage(level = ERROR)
+//    @Message(id = 3, value = "Could not unbind jmx connector from registry")
+//    void cannotUnbindConnector(@Cause Throwable cause);
 
     /**
      * Logs a warning message indicating no {@link javax.management.ObjectName} is available to unregister.
@@ -159,11 +159,11 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = Message.NONE, value="This attribute does not support expressions")
     String descriptorAttributeExpressionsAllowedFalse();
 
-    @Message(id = Message.NONE, value="This parameter supports expressions")
-    String descriptorParameterExpressionsAllowedTrue();
+//    @Message(id = Message.NONE, value="This parameter supports expressions")
+//    String descriptorParameterExpressionsAllowedTrue();
 
-    @Message(id = Message.NONE, value="This parameter does not support expressions")
-    String descriptorParameterExpressionsAllowedFalse();
+//    @Message(id = Message.NONE, value="This parameter does not support expressions")
+//    String descriptorParameterExpressionsAllowedFalse();
 
     @Message(id = Message.NONE, value="A composite type representing a property")
     String propertyCompositeType();
@@ -202,7 +202,7 @@ public interface JmxLogger extends BasicLogger {
      * @param cause   the cause of the error.
      * @param address the address.
      *
-     * @param s
+     * @param s the string
      * @return a {@link RuntimeException} for the error.
      */
     @Message(id = 9, value = "Could not create ObjectName for address %s from string %s")
@@ -298,18 +298,18 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = Message.INHERIT, value = "Invalid ObjectName: %s,%s,%s; %s")
     Error invalidObjectName(String domain, String key, String value, String message);
 
-    /**
-     * Creates an exception indicating a request was received for the server socket, represented by the {@code name}
-     * parameter, on the {@code port}, but the service socket is configured for the {@code configuredPort}.
-     *
-     * @param name           the name of the server socket.
-     * @param port           the port.
-     * @param configuredPort the configured port
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 16, value = "Received request for server socket %s on port [%d] but the service socket configured for port [%d]")
-    IllegalStateException invalidServerSocketPort(String name, int port, int configuredPort);
+//    /**
+//     * Creates an exception indicating a request was received for the server socket, represented by the {@code name}
+//     * parameter, on the {@code port}, but the service socket is configured for the {@code configuredPort}.
+//     *
+//     * @param name           the name of the server socket.
+//     * @param port           the port.
+//     * @param configuredPort the configured port
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 16, value = "Received request for server socket %s on port [%d] but the service socket configured for port [%d]")
+//    IllegalStateException invalidServerSocketPort(String name, int port, int configuredPort);
 
     /**
      * Creates an exception indicating no MBean found with the name.
@@ -366,15 +366,15 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 22, value = "No registration found for path address %s")
     InstanceNotFoundException registrationNotFound(PathAddress address);
 
-    /**
-     * A message indicating you cannot create mbeans under the reserved domain.
-     *
-     * @param name the reserved name.
-     *
-     * @return the message.
-     */
-    @Message(id = 23, value = "You can't create mbeans under the reserved domain '%s'")
-    String reservedMBeanDomain(String name);
+//    /**
+//     * A message indicating you cannot create mbeans under the reserved domain.
+//     *
+//     * @param name the reserved name.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 23, value = "You can't create mbeans under the reserved domain '%s'")
+//    String reservedMBeanDomain(String name);
 
     /**
      * Creates an exception indicating the type is unknown.
@@ -404,11 +404,11 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 26, value = "Need the name parameter for wildcard add")
     IllegalStateException wildcardNameParameterRequired();
 
-    @Message(id = 27, value="An error happened creating a composite type for %s")
-    IllegalStateException errorCreatingCompositeType(@Cause OpenDataException e, OpenType<?> type);
+//    @Message(id = 27, value="An error happened creating a composite type for %s")
+//    IllegalStateException errorCreatingCompositeType(@Cause OpenDataException e, OpenType<?> type);
 
-    @Message(id = 28, value="An error happened creating a composite data for %s")
-    IllegalStateException errorCreatingCompositeData(@Cause OpenDataException e, OpenType<?> type);
+//    @Message(id = 28, value="An error happened creating a composite data for %s")
+//    IllegalStateException errorCreatingCompositeData(@Cause OpenDataException e, OpenType<?> type);
 
     @Message(id = 29, value="Unknown domain: %s")
     IllegalArgumentException unknownDomain(String domain);
@@ -422,14 +422,14 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 32, value = "ObjectName cannot be null")
     IllegalArgumentException objectNameCantBeNull();
 
-    @Message(id = 33, value = "'domain-name' can only be 'jboss.as'")
-    String domainNameMustBeJBossAs();
+//    @Message(id = 33, value = "'domain-name' can only be 'jboss.as'")
+//    String domainNameMustBeJBossAs();
 
-    @Message(id = 34, value = "'false' is the only acceptable value for 'proper-property-format'")
-    String properPropertyFormatMustBeFalse();
+//    @Message(id = 34, value = "'false' is the only acceptable value for 'proper-property-format'")
+//    String properPropertyFormatMustBeFalse();
 
-    @Message(id = 35, value = "The 'enabled' attribute of audit-log must be false")
-    String auditLogEnabledMustBeFalse();
+//    @Message(id = 35, value = "The 'enabled' attribute of audit-log must be false")
+//    String auditLogEnabledMustBeFalse();
 
     @Message(id = 36, value = "There is no handler called '%s'")
     IllegalStateException noHandlerCalled(String name);
@@ -480,9 +480,9 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 51, value = "Remove notification listener using ObjectName %s is not supported")
     UnsupportedOperationException removeNotificationListenerNotAllowed(ObjectName name);
 
-    @Message(id = 52, value = "Notification emitted when the process state changes")
-    String processStateChangeNotificationDescription();
+//    @Message(id = 52, value = "Notification emitted when the process state changes")
+//    String processStateChangeNotificationDescription();
 
-    @Message(id = Message.NONE, value = "The attribute '%s' has changed from '%s' to '%s'")
-    String jmxAttributeChange(String name, String oldState, String stateString);
+//    @Message(id = Message.NONE, value = "The attribute '%s' has changed from '%s' to '%s'")
+//    String jmxAttributeChange(String name, String oldState, String stateString);
 }

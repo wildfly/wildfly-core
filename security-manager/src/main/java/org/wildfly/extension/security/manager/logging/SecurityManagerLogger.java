@@ -22,8 +22,6 @@
 
 package org.wildfly.extension.security.manager.logging;
 
-import static org.jboss.logging.Logger.Level.INFO;
-
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -32,7 +30,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
@@ -46,9 +43,9 @@ public interface SecurityManagerLogger extends BasicLogger {
 
     SecurityManagerLogger ROOT_LOGGER = Logger.getMessageLogger(SecurityManagerLogger.class, "org.wildfly.extension.security.manager");
 
-    @LogMessage(level = INFO)
-    @Message(id = 1, value = "Installing the WildFly Security Manager")
-    void installingWildFlySecurityManager();
+//    @LogMessage(level = INFO)
+//    @Message(id = 1, value = "Installing the WildFly Security Manager")
+//    void installingWildFlySecurityManager();
 
     /**
      * Creates a {@link javax.xml.stream.XMLStreamException} to indicate an invalid version was found in the permissions element.

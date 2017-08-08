@@ -22,15 +22,9 @@
 
 package org.jboss.as.process.logging;
 
-import org.jboss.as.process.CommandLineConstants;
-import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
-import org.jboss.logging.annotations.Message;
-import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.Unmarshaller;
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -38,9 +32,15 @@ import java.io.UTFDataFormatException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.WARN;
+import org.jboss.as.process.CommandLineConstants;
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.Unmarshaller;
 
 /**
  * Date: 29.06.2011
@@ -489,13 +489,13 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 25, value = "Authentication key must be 24 bytes long")
     IllegalArgumentException invalidAuthKeyLen();
 
-    /**
-     * Creates an exception indicating the command must have at least one entry.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 26, value = "cmd must have at least one entry")
-    IllegalArgumentException invalidCommandLen();
+//    /**
+//     * Creates an exception indicating the command must have at least one entry.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 26, value = "cmd must have at least one entry")
+//    IllegalArgumentException invalidCommandLen();
 
     /**
      * Creates an exception indicating the Java home directory does not exist.

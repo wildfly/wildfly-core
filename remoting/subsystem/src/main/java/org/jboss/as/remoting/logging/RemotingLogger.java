@@ -26,10 +26,6 @@ import static org.jboss.logging.Logger.Level.INFO;
 
 import java.io.IOException;
 import java.net.BindException;
-import java.net.URISyntaxException;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -39,7 +35,6 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.logging.annotations.Param;
 import org.jboss.msc.service.StartException;
 
 /**
@@ -80,11 +75,11 @@ public interface RemotingLogger extends BasicLogger {
     // id = 9; redundant parameter null check message
     // id = 10; redundant parameter null check message
 
-    @Message(id = 11, value = "A security realm has been specified but no supported mechanism identified")
-    IllegalStateException noSupportingMechanismsForRealm();
+//    @Message(id = 11, value = "A security realm has been specified but no supported mechanism identified")
+//    IllegalStateException noSupportingMechanismsForRealm();
 
-    @Message(id = 12, value = "ANONYMOUS mechanism so not expecting a callback")
-    UnsupportedCallbackException anonymousMechanismNotExpected(@Param Callback current);
+//    @Message(id = 12, value = "ANONYMOUS mechanism so not expecting a callback")
+//    UnsupportedCallbackException anonymousMechanismNotExpected(@Param Callback current);
 
     //@Message(id = 13, value = "Unable to create tmp dir for auth tokens as file already exists.")
     //StartException unableToCreateTempDirForAuthTokensFileExists();
@@ -92,8 +87,8 @@ public interface RemotingLogger extends BasicLogger {
     //@Message(id = 14, value = "Unable to create auth dir %s.")
     //StartException unableToCreateAuthDir(String dir);
 
-    @Message(id = 15, value = "Could not connect")
-    RuntimeException couldNotConnect(@Cause URISyntaxException e);
+//    @Message(id = 15, value = "Could not connect")
+//    RuntimeException couldNotConnect(@Cause URISyntaxException e);
 
     @Message(id = 16, value = "Invalid QOP value: %s")
     IllegalStateException invalidQOPV(String qop);
@@ -104,8 +99,8 @@ public interface RemotingLogger extends BasicLogger {
     @Message(id = 18, value = "Cannot create a valid URI from %s -- %s")
     OperationFailedException couldNotCreateURI(String uri, String msg);
 
-    @Message(id = 19, value = "Unsupported Callback")
-    UnsupportedCallbackException unsupportedCallback(@Param Callback current);
+//    @Message(id = 19, value = "Unsupported Callback")
+//    UnsupportedCallbackException unsupportedCallback(@Param Callback current);
 
     @Message(id = 20, value = "Invalid Strength '%s' string given")
     IllegalArgumentException illegalStrength(String strength);
