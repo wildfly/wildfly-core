@@ -35,9 +35,7 @@ enum Namespace {
 
     UNKNOWN(null),
 
-    SECURITY_MANAGER_1_0("urn:jboss:domain:security-manager:1.0"),
-
-    SECURITY_MANAGER_3_0("urn:jboss:domain:security-manager:3.0");
+    SECURITY_MANAGER_1_0("urn:jboss:domain:security-manager:1.0");
 
     private final String name;
 

@@ -45,21 +45,21 @@ import org.junit.Test;
  *
  * @author <a href="sguilhen@jboss.com">Stefan Guilhen</a>
  */
-public class SecurityManagerSubsystem30TestCase extends AbstractSubsystemBaseTest {
+public class SecurityManagerSubsystemTestCase extends AbstractSubsystemBaseTest {
 
-    public SecurityManagerSubsystem30TestCase() {
+    public SecurityManagerSubsystemTestCase() {
         super(Constants.SUBSYSTEM_NAME, new SecurityManagerExtension());
     }
 
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("security-manager-3.0.xml");
+        return readResource("security-manager-1.0.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-security-manager_3_0.xsd";
+        return "schema/wildfly-security-manager_1_0.xsd";
     }
 
     @Override
@@ -89,9 +89,9 @@ public class SecurityManagerSubsystem30TestCase extends AbstractSubsystemBaseTes
 
         PathAddress subsystemAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, getMainSubsystemName()));
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, version,
-                builder.parseXmlResource("security-manager-3.0.xml"),
+                builder.parseXmlResource("security-manager-reject.xml"),
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(PathAddress.pathAddress(subsystemAddress, PathElement.pathElement(Constants.DEPLOYMENT_PERMISSIONS)),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
+                                new FailedOperationTransformationConfig.NewAttributesConfig(Constants.MAXIMUM_PERMISSIONS)));
     }
 }
