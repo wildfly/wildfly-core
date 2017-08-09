@@ -16,6 +16,7 @@
 
 package org.wildfly.test.integration.elytron.sasl.mgmt;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.test.integration.security.common.SecurityTestConstants.KEYSTORE_PASSWORD;
@@ -214,7 +215,7 @@ public class ExternalMgmtSaslTestCase {
             assertThat("ConnectionException was expected as a cause when certificate authentication fails", cause,
                     is(instanceOf(ConnectException.class)));
             assertThat("SSLException was expected as the second cause when certificate authentication fails", cause.getCause(),
-                    is(instanceOf(SSLException.class)));
+                    anyOf(is(instanceOf(SSLException.class)), is(instanceOf(IOException.class)))); // JDK-8172163: IOException: Broken pipe needs to be accepted too
         }
     }
 
