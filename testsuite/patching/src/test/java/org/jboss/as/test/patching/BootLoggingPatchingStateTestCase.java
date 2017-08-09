@@ -33,9 +33,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.patching.metadata.ContentModification;
@@ -100,8 +100,7 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
         applyPatch(oneOff3Id, true);
         assertLoggedState(PatchingTestUtil.PRODUCT, cpId, oneOff3Id, oneOff2Id);
 
-        // TODO (jrp) These two tests fail, see WFCORE-3175 for details
-        /*final String lp1OneOffId = randomString();
+        final String lp1OneOffId = randomString();
         applyPatch("lp1", "1.1", lp1OneOffId, true);
         assertLoggedState(new PatchingState(PatchingTestUtil.PRODUCT, cpId, oneOff3Id, oneOff2Id),
                 new PatchingState("lp1", null, lp1OneOffId));
@@ -110,7 +109,7 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
         applyPatch("lp2", "2.2", lp2CpId, false);
         assertLoggedState(new PatchingState(PatchingTestUtil.PRODUCT, cpId, oneOff3Id, oneOff2Id),
                 new PatchingState("lp1", null, lp1OneOffId),
-                new PatchingState("lp2", lp2CpId));*/
+                new PatchingState("lp2", lp2CpId));
     }
 
     protected void applyPatch(String patchId, boolean oneOff) throws Exception {
@@ -138,8 +137,8 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
     private void assertLoggedState(PatchingState... states) throws Exception {
         startController();
         try {
-            final List<String> messages = new ArrayList<>();
             final String patchingCode = "WFLYPAT0050";
+            final Set<String> messages = new HashSet<>();
             try (BufferedReader reader = getOutputReader()) {
                 String line;
                 while ((line = reader.readLine()) != null) {
