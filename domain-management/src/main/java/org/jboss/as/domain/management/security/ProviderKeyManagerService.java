@@ -31,6 +31,7 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.EmptyProvider;
 
 /**
  * Extension of {@link AbstractKeyManagerService} to load the KeyStore using a specified provider.
@@ -55,7 +56,7 @@ class ProviderKeyManagerService extends AbstractKeyManagerService {
 
         try {
             KeyStore theKeyStore = KeyStore.getInstance(provider);
-            synchronized (SecurityRealmAddHandler.INSTANCE) {
+            synchronized (EmptyProvider.getInstance()) {
                 theKeyStore.load(null, storePassword);
             }
 
