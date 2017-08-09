@@ -45,7 +45,7 @@ public class ConstantRealmMapper extends AbstractConfigurableElement {
     @Override
     public void create(ModelControllerClient client, CLIWrapper cli) throws Exception {
         ModelNode op = Util.createAddOperation(PATH_ELYTRON.append(CONSTANT_REALM_MAPPER, name));
-        ModelNode rolesNode = op.get("realm").set(realm);
+        op.get("realm").set(realm);
         CoreUtils.applyUpdate(op, client);
     }
 
