@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -420,6 +421,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                             throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
                         }
                         credentialStore.remove(alias, PasswordCredential.class);
+                        context.addResponseWarning(Level.WARNING, ROOT_LOGGER.updateDependantServices(alias));
                         try {
                             credentialStore.flush();
                         } catch (CredentialStoreException e) {
@@ -445,6 +447,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                                 throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
                             }
                             storeSecret(credentialStore, alias, secretValue);
+                            context.addResponseWarning(Level.WARNING, ROOT_LOGGER.reloadDependantServices());
                         } else {
                             String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
                             throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
