@@ -110,13 +110,12 @@
         <version.org.jboss.jboss-dmr>1.4.1.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
-        <!--<version.org.jboss.logging.jboss-logging-tools>2.0.1.Final</version.org.jboss.logging.jboss-logging-tools>-->
-        <version.org.jboss.logging.jboss-logging-tools>2.1.0.Alpha2</version.org.jboss.logging.jboss-logging-tools>
+        <version.org.jboss.logging.jboss-logging-tools>2.1.0.Final</version.org.jboss.logging.jboss-logging-tools>
         <version.org.jboss.logmanager.commons-logging-jboss-logmanager>1.0.2.Final</version.org.jboss.logmanager.commons-logging-jboss-logmanager>
         <version.org.jboss.logmanager.jboss-logmanager>2.0.7.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.4.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.0.CR1</version.org.jboss.marshalling.jboss-marshalling>
-        <version.org.jboss.modules.jboss-modules>1.6.0.CR2</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.marshalling.jboss-marshalling>2.0.0.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.modules.jboss-modules>1.6.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.7.SP1</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.0.CR5</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.CR1</version.org.jboss.remotingjmx.remoting-jmx>
@@ -134,7 +133,7 @@
         <version.org.jmockit>1.33</version.org.jmockit>
         <version.org.mockito>2.8.47</version.org.mockito>
         <version.org.picketbox>5.0.2.Final</version.org.picketbox>
-        <version.org.projectodd.vdx>1.1.5</version.org.projectodd.vdx>
+        <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.22</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
@@ -145,7 +144,7 @@
         <version.org.wildfly.discovery>1.0.0.CR1</version.org.wildfly.discovery>
         <version.org.wildfly.openssl>1.0.0.CR5</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.3.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.1.0.CR4</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.0.CR5</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.CR4</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.CR1</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
@@ -1712,7 +1711,6 @@
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true -Djdk.attach.allowAttachSelf=true</modular.jdk.props>
                 <version.org.jboss.byteman>4.0.0-BETA5</version.org.jboss.byteman>
-                <version.org.jboss.logging.jboss-logging-tools>2.1.0.Alpha2</version.org.jboss.logging.jboss-logging-tools>
             </properties>
         </profile>
         <!--

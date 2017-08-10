@@ -18,7 +18,6 @@
 
 package org.wildfly.extension.elytron._private;
 
-import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
@@ -91,14 +90,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 5, value = "Unable to access KeyStore to complete the requested operation.")
     OperationFailedException unableToAccessKeyStore(@Cause Exception cause);
 
-    /**
-     * An {@link OperationFailedException} for operations that are unable to populate the result.
-     *
-     * @param cause the underlying cause of the failure.
-     * @return The {@link OperationFailedException} for the error.
-     */
-    @Message(id = 6, value = "Unable to populate result.")
-    OperationFailedException unableToPopulateResult(@Cause Exception cause);
+//    /**
+//     * An {@link OperationFailedException} for operations that are unable to populate the result.
+//     *
+//     * @param cause the underlying cause of the failure.
+//     * @return The {@link OperationFailedException} for the error.
+//     */
+//    @Message(id = 6, value = "Unable to populate result.")
+//    OperationFailedException unableToPopulateResult(@Cause Exception cause);
 
     /**
      * An {@link OperationFailedException} where an operation can not proceed as it's required service is not UP.
@@ -137,14 +136,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 10, value = "Unable to save KeyStore - KeyStore file '%s' does not exist.")
     OperationFailedException cantSaveWithoutFile(final String file);
 
-    /**
-     * A {@link StartException} for when provider registration fails due to an existing registration.
-     *
-     * @param name the name of the provider registration failed for.
-     * @return The {@link StartException} for the error.
-     */
-    @Message(id = 11, value = "A Provider is already registered for '%s'")
-    StartException providerAlreadyRegistered(String name);
+//    /**
+//     * A {@link StartException} for when provider registration fails due to an existing registration.
+//     *
+//     * @param name the name of the provider registration failed for.
+//     * @return The {@link StartException} for the error.
+//     */
+//    @Message(id = 11, value = "A Provider is already registered for '%s'")
+//    StartException providerAlreadyRegistered(String name);
 
     /**
      * A {@link StartException} where a service can not identify a suitable {@link Provider}
@@ -278,10 +277,11 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     RuntimeException unableToReloadCRL(@Cause Exception cause);
 
     /**
-     * An {@link OperationFailedException} if it is not possible to access an entry from a {@link KeyStore} at RUNTIME.
+     * A {@link RuntimeException} if it is not possible to access an entry from a {@link KeyStore} at RUNTIME.
      *
-     * @param cause the underlying cause of the failure
-     * @return The {@link OperationFailedException} for the error.
+     * @param alias the entry that couldn't be accessed
+     * @param keyStore the keystore
+     * @return {@link RuntimeException} for the error.
      */
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
     RuntimeException unableToAccessEntryFromKeyStore(String alias, String keyStore);
@@ -321,9 +321,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 911, value = "Credential store \"%s\" protection parameter cannot be resolved")
     IOException credentialStoreProtectionParameterCannotBeResolved(String name);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 912, value = "Credential store issue encountered")
-    void credentialStoreIssueEncountered(@Cause Exception cause);
+//    @LogMessage(level = ERROR)
+//    @Message(id = 912, value = "Credential store issue encountered")
+//    void credentialStoreIssueEncountered(@Cause Exception cause);
 
     @Message(id = 913, value = "Credential alias \"%s\" of credential type \"%s\" already exists in the store")
     OperationFailedException credentialAlreadyExists(String alias, String credentialType);
@@ -331,8 +331,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 914, value = "Provider loader \"%s\" cannot supply Credential Store provider of type \"%s\"")
     NoSuchProviderException providerLoaderCannotSupplyProvider(String providerLoader, String type);
 
-    @Message(id = 915, value = "Name of the credential store has to be specified in this credential-reference")
-    IllegalStateException nameOfCredentialStoreHasToBeSpecified();
+//    @Message(id = 915, value = "Name of the credential store has to be specified in this credential-reference")
+//    IllegalStateException nameOfCredentialStoreHasToBeSpecified();
 
     @Message(id = 916, value = "Credential cannot be resolved")
     IllegalStateException credentialCannotBeResolved();
@@ -365,8 +365,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1005, value = "Could not read identity [%s] from security domain [%s].")
     RuntimeException couldNotReadIdentity(final String principalName, final ServiceName domainServiceName, @Cause Exception cause);
 
-    @Message(id = 1006, value = "Unsupported password type [%s].")
-    RuntimeException unsupportedPasswordType(final Class passwordType);
+//    @Message(id = 1006, value = "Unsupported password type [%s].")
+//    RuntimeException unsupportedPasswordType(final Class passwordType);
 
     @Message(id = 1007, value = "Could not read identity with name [%s].")
     RuntimeException couldNotReadIdentity(final String principalName, @Cause Exception cause);

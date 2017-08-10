@@ -28,7 +28,6 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.util.Collection;
-import java.util.Set;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.patching.ContentConflictsException;
@@ -99,27 +98,27 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = 5, value = "Failed to create directory (%s)")
     IOException cannotCreateDirectory(String path);
 
-    /**
-     * A message indicating the argument, represented by the {@code arg} parameter, expected an additional argument.
-     *
-     * @param arg the argument that expects an additional argument.
-     *
-     * @return the message.
-     */
-    @Message(id = 6, value = "Argument expected for option %s")
-    String argumentExpected(String arg);
+//    /**
+//     * A message indicating the argument, represented by the {@code arg} parameter, expected an additional argument.
+//     *
+//     * @param arg the argument that expects an additional argument.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 6, value = "Argument expected for option %s")
+//    String argumentExpected(String arg);
 
-    @Message(id = 7, value = "Missing required argument(s): %s")
-    String missingRequiredArgs(Set<String> missing);
+//    @Message(id = 7, value = "Missing required argument(s): %s")
+//    String missingRequiredArgs(Set<String> missing);
 
     @Message(id = 8, value = "File at path specified by argument %s does not exist")
     String fileDoesNotExist(String arg);
 
-    @Message(id = 9, value = "File at path specified by argument %s is not a directory")
-    String fileIsNotADirectory(String arg);
+//    @Message(id = 9, value = "File at path specified by argument %s is not a directory")
+//    String fileIsNotADirectory(String arg);
 
-    @Message(id = 10, value = "File at path specified by argument %s is a directory")
-    String fileIsADirectory(String arg);
+//    @Message(id = 10, value = "File at path specified by argument %s is a directory")
+//    String fileIsADirectory(String arg);
 
     @Message(id = 11, value = "Cannot rollback patch (%s)")
     PatchingException cannotRollbackPatch(String id);
@@ -154,8 +153,8 @@ public interface PatchLogger extends BasicLogger {
     @Message(id = 21, value = "Patch '%s' not found in history.")
     PatchingException patchNotFoundInHistory(String patchId);
 
-    @Message(id = 22, value = "Cannot complete operation. Patch '%s' is currently active")
-    OperationFailedException patchActive(String patchId);
+//    @Message(id = 22, value = "Cannot complete operation. Patch '%s' is currently active")
+//    OperationFailedException patchActive(String patchId);
 
     @Message(id = 23, value = "Failed to show history of patches")
     OperationFailedException failedToShowHistory(@Cause Throwable cause);

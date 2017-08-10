@@ -32,9 +32,9 @@ import java.net.ServerSocket;
 import java.net.URI;
 
 import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.remoting3.Channel;
@@ -52,10 +52,10 @@ public interface ProtocolLogger extends BasicLogger {
      */
     ProtocolLogger ROOT_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol");
 
-    /**
-     * A logger with the category {@code org.jboss.as.protocol.client}.
-     */
-    ProtocolLogger CLIENT_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol.client");
+//    /**
+//     * A logger with the category {@code org.jboss.as.protocol.client}.
+//     */
+//    ProtocolLogger CLIENT_LOGGER = Logger.getMessageLogger(ProtocolLogger.class, "org.jboss.as.protocol.client");
 
     /**
      * A logger with the category {@code org.jboss.as.protocol.connection}.
@@ -136,9 +136,9 @@ public interface ProtocolLogger extends BasicLogger {
     //    @Message(id = 14, value = "Received end for wrong channel!")
     //    void receivedWrongChannel();
 
-    @LogMessage(level = WARN)
-    @Message(id = 15, value = "Executor is not needed for client")
-    void executorNotNeeded();
+//    @LogMessage(level = WARN)
+//    @Message(id = 15, value = "Executor is not needed for client")
+//    void executorNotNeeded();
 
     //    @LogMessage(level = WARN)
     //    @Message(id = 16, value = "Connection timeout is no longer needed for client")

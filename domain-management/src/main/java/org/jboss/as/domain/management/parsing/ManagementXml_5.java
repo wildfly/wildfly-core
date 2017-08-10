@@ -146,7 +146,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-class ManagementXml_5 extends ManagementXml {
+final class ManagementXml_5 implements ManagementXml {
 
     private final Namespace namespace;
     private final ManagementXmlDelegate delegate;

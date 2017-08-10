@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+<subsystem xmlns="urn:jboss:domain:security-manager:1.0">
     <deployment-permissions>
         <minimum-set>
             <permission class="java.io.FilePermission" name="/tmp" actions="read,write"/>
