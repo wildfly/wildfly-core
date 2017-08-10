@@ -343,10 +343,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
     OperationFailedException credentialDoesNotExist(String alias, String credentialType);
 
-    @Message(id = Message.NONE, value = "Reload dependant services which might already have cached the secret value")
+    @Message(id = Message.NONE, value = "Reload dependent services which might already have cached the secret value")
     String reloadDependantServices();
 
-    @Message(id = Message.NONE, value = "Update dependant resources as alias \"%s\" does not exist anymore")
+    @Message(id = Message.NONE, value = "Update dependent resources as alias \"%s\" does not exist anymore")
     String updateDependantServices(String alias);
 
     /*
