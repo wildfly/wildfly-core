@@ -783,6 +783,23 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     }
 
     @Override
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptyMap();
+            }
+            return subregistry.getAttributes(iterator, next.getValue());
+        } else {
+            checkPermission();
+            synchronized (this) {
+                return new HashMap<>(attributes);
+            }
+        }
+    }
+
+    @Override
     Set<String> getChildNames(final ListIterator<PathElement> iterator) {
         if (iterator.hasNext()) {
             final PathElement next = iterator.next();

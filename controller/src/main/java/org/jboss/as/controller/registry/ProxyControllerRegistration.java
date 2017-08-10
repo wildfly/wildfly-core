@@ -293,6 +293,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator) {
+        checkPermission();
+        if (iterator.hasNext()) {
+            return Collections.emptyMap();
+        } else {
+            return attributesUpdater.get(this);
+        }
+    }
+
+    @Override
     Set<String> getChildNames(final ListIterator<PathElement> iterator) {
         checkPermission();
         return Collections.emptySet();

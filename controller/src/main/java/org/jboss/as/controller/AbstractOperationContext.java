@@ -122,8 +122,6 @@ abstract class AbstractOperationContext implements OperationContext {
 
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
 
-    private static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
-
     /** Thread that initiated execution of the overall operation for which this context is the whole or a part */
     final Thread initiatingThread;
     private final EnumMap<Stage, Deque<Step>> steps;
@@ -1270,10 +1268,9 @@ abstract class AbstractOperationContext implements OperationContext {
             if (modifiedResourcesForModelValidation.size() == 0) {
                 return false;
             }
-            for (PathAddress address : modifiedResourcesForModelValidation) {
-                ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
-                addStep(op, ValidateModelStepHandler.getInstance(extraValidationStepHandler), Stage.MODEL);
-            }
+            ModelNode op = Util.createOperation(ValidateModelStepHandler.INTERNAL_MODEL_VALIDATION_NAME, PathAddress.EMPTY_ADDRESS);
+            addStep(op, new ValidateModelStepHandler(getManagementModel(), modifiedResourcesForModelValidation,
+                    extraValidationStepHandler), Stage.MODEL);
             modifiedResourcesForModelValidation.clear();
         }
         return true;
