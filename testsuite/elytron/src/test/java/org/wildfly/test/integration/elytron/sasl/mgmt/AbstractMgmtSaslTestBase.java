@@ -127,8 +127,8 @@ public abstract class AbstractMgmtSaslTestBase {
         }
 
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
-                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName))
-                .useName(USERNAME).usePassword("wrongPassword").useProviders(() -> new Provider[] { PROVIDER_ELYTRON });
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName)).useName(USERNAME)
+                .usePassword("wrongPassword").useProviders(() -> new Provider[] { PROVIDER_ELYTRON });
         AuthenticationContext.empty().with(MatchRule.ALL, authnCfg).run(() -> assertAuthenticationFails());
     }
 
@@ -189,7 +189,17 @@ public abstract class AbstractMgmtSaslTestBase {
      * Asserts that execution of :whoami operation fail (custom message is used).
      */
     protected static void assertAuthenticationFails(String message) {
+        assertAuthenticationFails(message, null);
+    }
+
+    /**
+     * Asserts that execution of :whoami operation fail (custom message is used).
+     */
+    protected static void assertAuthenticationFails(String message, Class<? extends Exception> clazz) {
         final long startTime = System.currentTimeMillis();
+        if (clazz == null) {
+            clazz = SaslException.class;
+        }
         try {
             executeWhoAmI();
             fail(message);
@@ -199,8 +209,8 @@ public abstract class AbstractMgmtSaslTestBase {
             Throwable cause = e.getCause();
             assertThat("ConnectionException was expected as a cause when SASL authentication fails", cause,
                     is(instanceOf(ConnectException.class)));
-            assertThat("SaslException was expected as the second cause when SASL authentication fails", cause.getCause(),
-                    is(instanceOf(SaslException.class)));
+            assertThat("An unexpected second Exception cause came when authentication failed", cause.getCause(),
+                    is(instanceOf(clazz)));
         }
     }
 
@@ -237,8 +247,7 @@ public abstract class AbstractMgmtSaslTestBase {
 
     protected AuthenticationContext createValidConfigForMechanism(String mechanismName, String username) {
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
-                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName))
-                .useDefaultProviders();
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName));
         if ("ANONYMOUS".equals(mechanismName)) {
             authnCfg = authnCfg.useAnonymous();
         } else if ("OAUTHBEARER".equals(mechanismName)) {

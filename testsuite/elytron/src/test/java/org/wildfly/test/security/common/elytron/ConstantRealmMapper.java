@@ -26,35 +26,32 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Configuration for constant-role-mapper Elytron resource.
+ * Configuration for constant-realm-mapper Elytron resource.
  *
  * @author Josef Cacek
  */
-public class ConstantRoleMapper extends AbstractConfigurableElement {
+public class ConstantRealmMapper extends AbstractConfigurableElement {
 
-    private static final String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
+    private static final String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
     private static final PathAddress PATH_ELYTRON = PathAddress.pathAddress().append("subsystem", "elytron");
 
-    private final String[] roles;
+    private final String realm;
 
-    private ConstantRoleMapper(Builder builder) {
+    private ConstantRealmMapper(Builder builder) {
         super(builder);
-        this.roles = Objects.requireNonNull(builder.roles, "Roles must be provided");
+        this.realm = Objects.requireNonNull(builder.realm, "Realm name must be provided");
     }
 
     @Override
     public void create(ModelControllerClient client, CLIWrapper cli) throws Exception {
-        ModelNode op = Util.createAddOperation(PATH_ELYTRON.append(CONSTANT_ROLE_MAPPER, name));
-        ModelNode rolesNode = op.get("roles");
-        for (String role : roles) {
-            rolesNode.add(role);
-        }
+        ModelNode op = Util.createAddOperation(PATH_ELYTRON.append(CONSTANT_REALM_MAPPER, name));
+        ModelNode rolesNode = op.get("realm").set(realm);
         CoreUtils.applyUpdate(op, client);
     }
 
     @Override
     public void remove(ModelControllerClient client, CLIWrapper cli) throws Exception {
-        CoreUtils.applyUpdate(Util.createRemoveOperation(PATH_ELYTRON.append(CONSTANT_ROLE_MAPPER, name)), client);
+        CoreUtils.applyUpdate(Util.createRemoveOperation(PATH_ELYTRON.append(CONSTANT_REALM_MAPPER, name)), client);
     }
 
     public static Builder builder() {
@@ -64,9 +61,9 @@ public class ConstantRoleMapper extends AbstractConfigurableElement {
     /**
      * Builder for this class.
      */
-    public static final class Builder extends AbstractConfigurableElement.Builder<ConstantRoleMapper.Builder> {
+    public static final class Builder extends AbstractConfigurableElement.Builder<ConstantRealmMapper.Builder> {
 
-        private String[] roles;
+        private String realm;
 
         private Builder() {
         }
@@ -76,12 +73,12 @@ public class ConstantRoleMapper extends AbstractConfigurableElement {
             return this;
         }
 
-        public ConstantRoleMapper build() {
-            return new ConstantRoleMapper(this);
+        public ConstantRealmMapper build() {
+            return new ConstantRealmMapper(this);
         }
 
-        public Builder withRoles(String... roles) {
-            this.roles = roles;
+        public Builder withRealm(String realm) {
+            this.realm = realm;
             return this;
         }
     }
