@@ -108,7 +108,9 @@ public class ExtensionXml {
 
         final XMLMapper xmlMapper = reader.getXMLMapper();
 
-        int maxInitializationTasks = extensionRegistry.getMaxParallelBootTasks();
+        int exRegMax = extensionRegistry.getMaxParallelBootTasks();
+        // We do twice as many tasks as the subsystem mgmt ops can since mgmt ops use 2 threads per chunk
+        int maxInitializationTasks = exRegMax > 1 ? exRegMax * 2 : exRegMax;
         final GroupLoadTask[] loadTasks = bootExecutor != null && maxInitializationTasks > 1
                 ? new GroupLoadTask[maxInitializationTasks] : null;
 

@@ -59,7 +59,8 @@ public final class ParallelExtensionAddHandler implements OperationStepHandler {
                                        MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
         assert maxParallelBootTasks > 1; // else this handler should not be used
         this.executor = executorService;
-        this.maxParallelBootTasks = maxParallelBootTasks;
+        // We do twice as many tasks as the subsystem mgmt ops can since mgmt ops use 2 threads per chunk
+        this.maxParallelBootTasks = maxParallelBootTasks * 2;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
