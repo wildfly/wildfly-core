@@ -194,32 +194,26 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
-        WriteUtils.writeNewLine(writer);
-
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
         }
 
         if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
             writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), false);
-            WriteUtils.writeNewLine(writer);
         }
 
         boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
         if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
             writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-            WriteUtils.writeNewLine(writer);
         }
 
         if (hasCoreServices) {
             ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(DOMAIN_CONTROLLER)) {
@@ -235,12 +229,10 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                 discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, ModelDescriptionConstants.OPTIONS);
             }
             writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources, discoveryOptions);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(INTERFACE)) {
             writeInterfaces(writer, modelNode.get(INTERFACE));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(JVM)) {
             writer.writeStartElement(Element.JVMS.getLocalName());
@@ -249,7 +241,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                 JvmXml.writeJVMElement(writer, jvm, jvms.get(jvm));
             }
             writer.writeEndElement();
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(SERVER_CONFIG)) {
@@ -257,7 +248,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             // Write the directory grouping
             HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
             writeServers(writer, modelNode.get(SERVER_CONFIG));
-            WriteUtils.writeNewLine(writer);
             writer.writeEndElement();
         } else if (modelNode.hasDefined(DIRECTORY_GROUPING)) {
             // In case there are no servers defined, write an empty element, preserving the directory grouping
@@ -275,12 +265,10 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             for (String group : groups) {
                 writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
             }
-            WriteUtils.writeNewLine(writer);
         }
 
 
         writer.writeEndElement();
-        WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
     }
 
