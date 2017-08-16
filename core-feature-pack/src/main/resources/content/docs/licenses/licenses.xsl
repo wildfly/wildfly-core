@@ -65,9 +65,6 @@
             <xsl:when test="$name = 'GNU General Public License v2.0 only'">
                 <xsl:text>gnu general public license v2.0 only.html</xsl:text>
             </xsl:when>
-            <xsl:when test="$name = 'ICU License'">
-                <xsl:text>icu license.html</xsl:text>
-            </xsl:when>
             <xsl:when test="$name = 'Indiana University Extreme! Lab Software License 1.1.1'">
                 <xsl:text>indiana university extreme lab software license 1.1.1.html</xsl:text>
             </xsl:when>

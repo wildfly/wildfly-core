@@ -921,8 +921,8 @@
           <distribution>repo</distribution>
         </license>
         <license>
-          <name>ICU License</name>
-          <url>http://source.icu-project.org/repos/icu/icu/trunk/license.html</url>
+          <name>ICU License - ICU 1.8.1 to ICU 57.1</name>
+          <url>http://source.icu-project.org/repos/icu/tags/release-57-1/icu4j/main/shared/licenses/LICENSE</url>
           <distribution>repo</distribution>
         </license>
         <license>
