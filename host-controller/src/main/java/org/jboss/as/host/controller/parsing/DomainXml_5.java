@@ -162,25 +162,20 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
             DomainRootDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
         }
 
-        WriteUtils.writeNewLine(writer);
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
             writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), true);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
             ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(PROFILE)) {
@@ -190,11 +185,9 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                 writeProfile(writer, profile, profiles.get(profile), context);
             }
             writer.writeEndElement();
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(INTERFACE)) {
             writeInterfaces(writer, modelNode.get(INTERFACE));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
             writer.writeStartElement(Element.SOCKET_BINDING_GROUPS.getLocalName());
@@ -203,15 +196,12 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                 writeSocketBindingGroup(writer, sbgs.get(sbg), sbg);
             }
             writer.writeEndElement();
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(DEPLOYMENT)) {
             writeDomainDeployments(writer, modelNode.get(DEPLOYMENT));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(DEPLOYMENT_OVERLAY)) {
             writeDeploymentOverlays(writer, modelNode.get(DEPLOYMENT_OVERLAY));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(SERVER_GROUP)) {
             writer.writeStartElement(Element.SERVER_GROUPS.getLocalName());
@@ -220,19 +210,15 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
                 writeServerGroup(writer, sg, sgs.get(sg));
             }
             writer.writeEndElement();
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(HOST_EXCLUDE)) {
             writeHostExcludes(writer, modelNode.get(HOST_EXCLUDE));
-            WriteUtils.writeNewLine(writer);
         }
         if (modelNode.hasDefined(MANAGEMENT_CLIENT_CONTENT)) {
             writeManagementClientContent(writer, modelNode.get(MANAGEMENT_CLIENT_CONTENT));
-            WriteUtils.writeNewLine(writer);
         }
 
         writer.writeEndElement();
-        WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
     }
 
