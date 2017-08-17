@@ -69,6 +69,7 @@ public class AuditLogBootingSyslogTest {
         final ModelControllerClient client = container.getClient().getControllerClient();
 
         Operations.CompositeOperationBuilder compositeOp = Operations.CompositeOperationBuilder.create();
+        configureServerName(compositeOp);
         configureElytron(compositeOp);
         executeForSuccess(client, compositeOp.build());
 
@@ -97,6 +98,7 @@ public class AuditLogBootingSyslogTest {
                 AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
 
         resetElytron(compositeOp);
+        resetServerName(compositeOp);
 
         try {
             executeForSuccess(client, compositeOp.build());
@@ -110,6 +112,21 @@ public class AuditLogBootingSyslogTest {
         }
     }
 
+    /**
+     * Test the Syslog audit events emitted during a server boot.
+     *
+     * During the server boot there are two key audit events to be recorded.
+     * <ol>
+     * <li>Adding of extensions.
+     * <li>Composite operation of initial configuration.
+     * </ol>
+     *
+     * The event to add the extensions fits into a single syslog event. The composite operation is chopped to fit into multiple
+     * events, at the time of writing it is split across 17 events.
+     *
+     * Small differences between the expected count and actual count could be caused by configuration changes changing how many
+     * events it takes to hold the entire composite operation.
+     */
     @Test
     public void testSyslog() throws Exception {
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
@@ -152,6 +169,13 @@ public class AuditLogBootingSyslogTest {
         compositeOp.addStep(op.clone());
     }
 
+    void configureServerName(final CompositeOperationBuilder compositeOp) throws IOException {
+        ModelNode op = Operations.createOperation("write-attribute", PathAddress.EMPTY_ADDRESS.toModelNode());
+        op.get("name").set("name");
+        op.get("value").set("supercalifragilisticexpialidocious");
+        compositeOp.addStep(op);
+    }
+
     void configureElytron(final CompositeOperationBuilder compositeOp) throws IOException {
         ModelNode op = Operations.createOperation("map-remove", userAuthAddress);
         op.get("name").set("properties");
@@ -173,6 +197,12 @@ public class AuditLogBootingSyslogTest {
         op.get("credential-reference").set(credRef);
         compositeOp.addStep(op.clone());
 
+    }
+
+    void resetServerName(final CompositeOperationBuilder compositeOp) {
+        ModelNode op = Operations.createOperation("undefine-attribute", PathAddress.EMPTY_ADDRESS.toModelNode());
+        op.get("name").set("name");
+        compositeOp.addStep(op);
     }
 
     void resetElytron(final CompositeOperationBuilder compositeOp) {

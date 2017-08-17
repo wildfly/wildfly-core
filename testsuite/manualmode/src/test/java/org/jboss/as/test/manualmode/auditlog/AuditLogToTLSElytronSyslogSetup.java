@@ -21,8 +21,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KEY
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TLS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
-import static org.jboss.as.test.integration.auditlog.AuditLogToTLSSyslogSetup.CLIENT_KEYSTORE_FILE;
-import static org.jboss.as.test.integration.auditlog.AuditLogToTLSSyslogSetup.CLIENT_TRUSTSTORE_FILE;
 
 import java.util.ArrayList;
 import java.util.List;
