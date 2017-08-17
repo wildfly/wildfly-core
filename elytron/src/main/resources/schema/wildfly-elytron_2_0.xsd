@@ -1022,21 +1022,21 @@
                 <xs:attribute name="identity" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The name of the identity.
+                            The name of the identity available from the security realm.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="attribute-name" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
-                            The name of an attribute to associate with the identity.
+                            The name of the attribute associated with this identity.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="attribute-values" type="stringListType">
                     <xs:annotation>
                         <xs:documentation>
-                            The values to associate with the identities attribute.
+                            The values associated with the identity attributes.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
