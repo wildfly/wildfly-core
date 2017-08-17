@@ -128,7 +128,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
      *
      * @return the location to the authentication configuration file or {@code null} to use auto
      * discovery
+     * @deprecated this may be removed in a future release in favor of creating an
+     *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
+     *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
      */
+    @Deprecated
     default URI getAuthenticationConfigUri() {
         return null;
     }
@@ -248,7 +252,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
          * @param authConfigUri the location to the authentication configuration file or {@code null} to use auto
          *                      discovery
          * @return a builder to allow continued configuration
+         * @deprecated this may be removed in a future release in favor of creating an
+         *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
+         *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
          */
+        @Deprecated
         public Builder setAuthenticationConfigUri(final URI authConfigUri) {
             this.authConfigUri = authConfigUri;
             return this;
