@@ -37,6 +37,7 @@
     </resources>
 
     <dependencies>
+        <module name="org.aesh"/>
         <module name="org.wildfly.openssl" />
         <module name="org.wildfly.common" />
         <module name="org.wildfly.security.elytron-private" />
@@ -51,6 +52,6 @@
         <module name="org.picketbox" optional="true"/>
         <module name="org.wildfly.transaction.client" optional="true" />
         <module name="javax.api"/>
-        <module name="sun.jdk" export="true" />        
+        <module name="sun.jdk" export="true" />
     </dependencies>
 </module>

@@ -97,7 +97,10 @@
         <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
         <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.aesh-readline>1.0</version.org.aesh-readline>
+        <!--This has to be changed to 1.x when at least 1.1 version is released, since there are few bugs in 1.0,
+        which would cause failures of the tests. However for now there is no 1.1 released,
+        there is just snapshot available in the jboss nexus repository-->
+        <version.org.aesh-readline>1.1-SNAPSHOT</version.org.aesh-readline>
         <version.org.jboss.byteman>3.0.6</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.CR1</version.org.jboss.invocation>
