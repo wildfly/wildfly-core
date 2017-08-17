@@ -2393,7 +2393,7 @@
         <xs:complexContent>
             <xs:extension base="permissionMapperType">
                 <xs:sequence>
-                    <xs:element name="permission" maxOccurs="unbounded">
+                    <xs:element name="permission" minOccurs="0" maxOccurs="unbounded">
                         <xs:complexType>
                             <xs:attribute name="class-name" type="xs:string" use="required">
                                 <xs:annotation>
