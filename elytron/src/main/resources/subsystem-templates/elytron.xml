@@ -21,13 +21,12 @@
     <extension-module>org.wildfly.extension.elytron</extension-module>
     <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
         <providers>
-            <provider-loader name="elytron" module="org.wildfly.security.elytron" />
-            <provider-loader name="openssl" module="org.wildfly.openssl" />
-
             <aggregate-providers name="combined-providers">
                 <providers name="elytron" />
                 <providers name="openssl" />
             </aggregate-providers>
+            <provider-loader name="elytron" module="org.wildfly.security.elytron" />
+            <provider-loader name="openssl" module="org.wildfly.openssl" />
         </providers>
 
         <?AUDIT_DEFINITIONS?>
@@ -69,17 +68,17 @@
 
         <sasl>
             <?SASL_DEFINITIONS?>
-            <provider-sasl-server-factory name="global"/>
-            <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
-                <filters>
-                    <filter provider-name="WildFlyElytron" />
-                </filters>
-            </mechanism-provider-filtering-sasl-server-factory>
             <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
                 <properties>
                     <property name="wildfly.sasl.local-user.default-user" value="$local" />
                 </properties>
             </configurable-sasl-server-factory>
+            <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
+                <filters>
+                    <filter provider-name="WildFlyElytron" />
+                </filters>
+            </mechanism-provider-filtering-sasl-server-factory>
+            <provider-sasl-server-factory name="global"/>
         </sasl>
     </subsystem>
 
