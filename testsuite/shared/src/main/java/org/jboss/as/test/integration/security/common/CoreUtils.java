@@ -44,9 +44,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.security.auth.login.Configuration;
+
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -68,6 +71,7 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.network.NetworkUtils;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
@@ -86,6 +90,8 @@ public class CoreUtils {
     private static final Logger LOGGER = Logger.getLogger(CoreUtils.class);
 
     public static final String UTF_8 = "UTF-8";
+
+    public static final boolean IBM_JDK = StringUtils.startsWith(SystemUtils.JAVA_VENDOR, "IBM");
 
     /**
      * Return MD5 hash of the given string value, encoded with given {@link Coding}. If the value or coding is <code>null</code>
@@ -631,4 +637,32 @@ public class CoreUtils {
         }
         return response;
     }
+
+    /**
+     * Returns hostname - either read from the "node0" system property or the loopback address "127.0.0.1".
+     *
+     * @param canonical return hostname in canonical form
+     *
+     * @return
+     */
+    public static String getDefaultHost(boolean canonical) {
+        final String hostname = TestSuiteEnvironment.getHttpAddress();
+        return canonical ? getCannonicalHost(hostname) : hostname;
+    }
+
+    /**
+     * Returns installed login configuration.
+     *
+     * @return Configuration
+     */
+    public static Configuration getLoginConfiguration() {
+        Configuration configuration = null;
+        try {
+            configuration = Configuration.getConfiguration();
+        } catch (SecurityException e) {
+            LOGGER.debug("Unable to load default login configuration", e);
+        }
+        return configuration;
+    }
+
 }
