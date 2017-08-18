@@ -79,10 +79,11 @@ public class KerberosNativeMgmtSaslTestCase extends AbstractKerberosMgmtSaslTest
      */
     @Override
     protected AutoCloseable configureSaslMechanismOnServer(String mechanism, boolean withSsl) throws Exception {
+        String patternFilter = mechanism + "\\$";
         try (CLIWrapper cli = new CLIWrapper(true)) {
             cli.sendLine(String.format(
                     "/subsystem=elytron/configurable-sasl-server-factory=%s:write-attribute(name=filters, value=[{pattern-filter=%s}])",
-                    NAME, mechanism));
+                    NAME, patternFilter));
             String sslContextCli = withSsl ? String.format(
                     "/core-service=management/management-interface=native-interface:write-attribute(name=ssl-context, value=%s)",
                     NAME) : "/core-service=management/management-interface=native-interface:write-attribute(name=ssl-context)";

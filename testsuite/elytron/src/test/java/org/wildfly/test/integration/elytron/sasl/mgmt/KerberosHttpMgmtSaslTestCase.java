@@ -106,11 +106,12 @@ public class KerberosHttpMgmtSaslTestCase extends AbstractKerberosMgmtSaslTestBa
      * @throws Exception
      */
     private void configurePatternFilter(String mechanism) throws Exception {
+        String patternFilter = mechanism + "$";
         ModelNode op = Util.createEmptyOperation("write-attribute",
                 PathAddress.pathAddress().append("subsystem", "elytron").append("configurable-sasl-server-factory", NAME));
         op.get("name").set("filters");
         ModelNode newValue = new ModelNode();
-        newValue.get("pattern-filter").set(mechanism);
+        newValue.get("pattern-filter").set(patternFilter);
         op.get("value").add(newValue);
         CoreUtils.applyUpdate(op, client);
     }
