@@ -31,6 +31,7 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,7 @@ import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
+import org.wildfly.security.auth.client.CallbackKind;
 import org.wildfly.security.auth.client.MatchRule;
 import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.wildfly.security.sasl.localuser.LocalUserClient;
@@ -142,6 +144,12 @@ public class ProtocolConnectionUtils {
         return connectSync(config);
     }
 
+    private static final EnumSet<CallbackKind> DEFAULT_CALLBACK_KINDS = EnumSet.of(
+            CallbackKind.PRINCIPAL,
+            CallbackKind.CREDENTIAL,
+            CallbackKind.REALM
+    );
+
     private static IoFuture<Connection> connect(final CallbackHandler handler, final ProtocolConnectionConfiguration configuration) throws IOException {
         configuration.validate();
         final Endpoint endpoint = configuration.getEndpoint();
@@ -150,7 +158,9 @@ public class ProtocolConnectionUtils {
 
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
-        if (handler != null) mergedConfiguration = mergedConfiguration.useCallbackHandler(handler);
+        if (handler != null) {
+            mergedConfiguration = mergedConfiguration.useCallbackHandler(handler, DEFAULT_CALLBACK_KINDS);
+        }
 
         Map<String, String> saslOptions = configuration.getSaslOptions();
         mergedConfiguration = configureSaslMechanisms(saslOptions, isLocal(uri), mergedConfiguration);
