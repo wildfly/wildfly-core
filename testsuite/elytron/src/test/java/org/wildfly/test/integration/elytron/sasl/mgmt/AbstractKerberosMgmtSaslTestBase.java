@@ -90,7 +90,6 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
@@ -198,7 +197,6 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
      * Test GS2-KRB5 SASL mechanism configured on the server-side for management interface with using SSL.
      */
     @Test
-    @Ignore("ELY-1330")
     public void testGs2Krb5OverSsl() throws Exception {
         try (AutoCloseable ac = configureSaslMechanismOnServer("GS2-KRB5", true)) {
             assertKerberosSaslMechFails("GS2-KRB5", "hnelson", "secret", true);
@@ -224,7 +222,6 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
      * Test GS2-KRB5-PLUS SASL mechanism configured on the server-side for management interface with using SSL.
      */
     @Test
-    @Ignore("ELY-1328")
     public void testGs2Krb5PlusOverSsl() throws Exception {
         try (AutoCloseable ac = configureSaslMechanismOnServer("GS2-KRB5-PLUS", true)) {
             assertKerberosSaslMechPasses("GS2-KRB5-PLUS", "hnelson", "secret", true);
