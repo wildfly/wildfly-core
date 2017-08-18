@@ -674,40 +674,31 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
         writeNamespaces(writer, modelNode);
         writeSchemaLocation(writer, modelNode);
 
-        WriteUtils.writeNewLine(writer);
-
         if (modelNode.hasDefined(EXTENSION)) {
             extensionHandler.writeExtensions(writer, modelNode.get(EXTENSION));
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
             writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, true);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), false);
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
             writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(CORE_SERVICE)) {
             ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            WriteUtils.writeNewLine(writer);
         }
 
         writeServerProfile(writer, context);
-        WriteUtils.writeNewLine(writer);
 
         if (modelNode.hasDefined(INTERFACE)) {
             writeInterfaces(writer, modelNode.get(INTERFACE));
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
@@ -718,7 +709,6 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             for (String group : groups) {
                 writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
             }
-            WriteUtils.writeNewLine(writer);
         }
 
         if (modelNode.hasDefined(DEPLOYMENT)) {
@@ -731,7 +721,6 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             WriteUtils.writeNewLine(writer);
         }
         writer.writeEndElement();
-        WriteUtils.writeNewLine(writer);
         writer.writeEndDocument();
     }
 
@@ -843,26 +832,36 @@ class StandaloneXml_5 extends CommonXml implements ManagementXmlDelegate {
             }
 
             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            if (attribute == Attribute.PROVIDER) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.parse(value, reader);
-                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
-                        AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
-
-                operationsList.add(op);
-            } else if (attribute == Attribute.USE_IDENTITY_ROLES) {
-                ModelNode useIdentityRoles = AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.parse(value, reader);
-                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
-                        AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getName(), useIdentityRoles);
-
-                operationsList.add(op);
-            } else if (attribute == Attribute.PERMISSION_COMBINATION_POLICY) {
-                ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.parse(value, reader);
-                ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
-                        AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
-
-                operationsList.add(op);
-            } else {
+            if (null == attribute) {
                 throw unexpectedAttribute(reader, i);
+            }
+            switch (attribute) {
+                case PROVIDER:
+                    {
+                        ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.getParser().parse(AccessAuthorizationResourceDefinition.PROVIDER, value, reader);
+                        ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                                AccessAuthorizationResourceDefinition.PROVIDER.getName(), provider);
+                        operationsList.add(op);
+                        break;
+                    }
+                case USE_IDENTITY_ROLES:
+                    {
+                        ModelNode useIdentityRoles = AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getParser().parse(AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES, value, reader);
+                        ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                                AccessAuthorizationResourceDefinition.USE_IDENTITY_ROLES.getName(), useIdentityRoles);
+                        operationsList.add(op);
+                        break;
+                    }
+                case PERMISSION_COMBINATION_POLICY:
+                    {
+                        ModelNode provider = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getParser().parse(AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY, value, reader);
+                        ModelNode op = Util.getWriteAttributeOperation(accAuthzAddr,
+                                AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.getName(), provider);
+                        operationsList.add(op);
+                        break;
+                    }
+                default:
+                    throw unexpectedAttribute(reader, i);
             }
         }
 
