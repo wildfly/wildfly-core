@@ -63,9 +63,7 @@ public interface ExtensionParsingContext {
      *
      * @throws IllegalStateException if another {@link org.jboss.as.controller.Extension} has already registered a subsystem with the given
      *                               {@code subsystemName}
-     * @deprecated Use {@link ExtensionParsingContext#setSubsystemXmlMapping(java.lang.String, java.lang.String, java.util.function.Supplier)} instead.
      */
-    @Deprecated
     void setSubsystemXmlMapping(String subsystemName, String namespaceUri, XMLElementReader<List<ModelNode>> reader);
 
     /**
