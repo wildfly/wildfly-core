@@ -26,6 +26,7 @@ import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -49,6 +50,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.common.expression.ResolveContext;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -102,6 +104,16 @@ public final class Attachments {
      * A builder used to install a deployment phase
      */
     public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
+
+    /**
+     * A function which will be used to expand expressions within spec descriptors
+     */
+    public static final AttachmentKey<BiConsumer<ResolveContext<RuntimeException>, StringBuilder>> SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(BiConsumer.class);
+
+    /**
+     * A function which will be used to expand expressions within JBoss/WildFly (vendor specific) descriptors
+     */
+    public static final AttachmentKey<BiConsumer<ResolveContext<RuntimeException>, StringBuilder>> WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(BiConsumer.class);
 
     //
     // STRUCTURE
