@@ -46,8 +46,10 @@ import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
@@ -198,14 +200,22 @@ class ProviderDefinitions {
                                     }
                                 }
                             } else {
+                                //todo look into why we get also system / jdk providers here, it slows down boot
                                 loadedProviders = new ArrayList<>();
                                 ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
-                                loader.forEach(p -> {
-                                    if (configSupplier != null) {
-                                        deferred.add(p::load);
+                                Iterator<Provider> iterator = loader.iterator();
+                                for (; ; ) {
+                                    try {
+                                        if (!(iterator.hasNext())) { break; }
+                                        final Provider p = iterator.next();
+                                        if (configSupplier != null) {
+                                            deferred.add(p::load);
+                                        }
+                                        loadedProviders.add(p);
+                                    } catch (ServiceConfigurationError | RuntimeException e) {
+                                        ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
                                     }
-                                    loadedProviders.add(p);
-                                });
+                                }
                             }
 
                             for (ExceptionConsumer<InputStream, IOException> current : deferred) {
