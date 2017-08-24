@@ -85,69 +85,77 @@
             For example: <version.org.jboss.hal.release-stream>
          -->
 
-        <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
-        <version.commons-io>2.5</version.commons-io>
-        <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>1.4.18.Final</version.io.undertow>
-        <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
+        <version.com.io7m.xom>1.2.10.redhat-1</version.com.io7m.xom>
+        <version.commons-io>2.5.0.redhat-2</version.commons-io>
+        <version.commons-lang>2.6.0.redhat-6</version.commons-lang>
+        <version.io.undertow>1.4.18.Final-redhat-1</version.io.undertow>
+        <version.javax.inject.javax.inject>1.0.0.redhat-6</version.javax.inject.javax.inject>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds> <!-- TODO Elytron - Bump to M17 -->
-        <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpclient>4.5.2.redhat-1</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4.4.redhat-1</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven>3.3.9</version.org.apache.maven>
-        <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
+        <version.org.apache.xerces>2.11.0.SP5-redhat-1</version.org.apache.xerces>
         <version.org.codehaus.plexus.plexus-utils>3.0.24</version.org.codehaus.plexus.plexus-utils>
-        <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
-        <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
-        <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
-        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.jboss.aesh>0.66.19</version.org.jboss.aesh>
+        <version.org.codehaus.woodstox.stax2-api>3.1.4.redhat-1</version.org.codehaus.woodstox.stax2-api>
+        <version.org.codehaus.woodstox.woodstox-core>5.0.3.redhat-1</version.org.codehaus.woodstox.woodstox-core>
+        <version.org.fusesource.jansi>1.16.0.redhat-4</version.org.fusesource.jansi>
+        <version.org.glassfish.javax.json>1.0.4.redhat-1</version.org.glassfish.javax.json>
+        <version.org.jboss.aesh>0.66.19.redhat-1</version.org.jboss.aesh>
         <version.org.jboss.byteman>3.0.6</version.org.jboss.byteman>
-        <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
-        <version.org.jboss.invocation>1.5.0.Final</version.org.jboss.invocation>
-        <version.org.jboss.jandex>2.0.3.Final</version.org.jboss.jandex>
-        <version.org.jboss.jboss-dmr>1.4.1.Final</version.org.jboss.jboss-dmr>
-        <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs>
-        <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.classfilewriter>1.2.1.Final-redhat-1</version.org.jboss.classfilewriter>
+        <version.org.jboss.invocation>1.5.0.Final-redhat-1</version.org.jboss.invocation>
+        <version.org.jboss.jandex>2.0.3.Final-redhat-1</version.org.jboss.jandex>
+        <version.org.jboss.jboss-dmr>1.4.1.Final-redhat-1</version.org.jboss.jboss-dmr>
+        <version.org.jboss.jboss-vfs>3.2.12.Final-redhat-1</version.org.jboss.jboss-vfs>
+        <version.org.jboss.logging.jboss-logging>3.3.1.Final-redhat-1</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.logging.jboss-logging-tools>2.1.0.Final</version.org.jboss.logging.jboss-logging-tools>
-        <version.org.jboss.logmanager.commons-logging-jboss-logmanager>1.0.2.Final</version.org.jboss.logmanager.commons-logging-jboss-logmanager>
-        <version.org.jboss.logmanager.jboss-logmanager>2.0.7.Final</version.org.jboss.logmanager.jboss-logmanager>
-        <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.4.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.0.Final</version.org.jboss.marshalling.jboss-marshalling>
-        <version.org.jboss.modules.jboss-modules>1.6.0.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.2.7.SP1</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.0.Final</version.org.jboss.remoting>
-        <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.Final</version.org.jboss.remotingjmx.remoting-jmx>
+        <version.org.jboss.logmanager.commons-logging-jboss-logmanager>1.0.2.Final-redhat-1</version.org.jboss.logmanager.commons-logging-jboss-logmanager>
+        <version.org.jboss.logmanager.jboss-logmanager>2.0.7.Final-redhat-1</version.org.jboss.logmanager.jboss-logmanager>
+        <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.4.Final-redhat-1</version.org.jboss.logmanager.log4j-jboss-logmanager>
+        <version.org.jboss.marshalling.jboss-marshalling>2.0.0.Final-redhat-1</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.modules.jboss-modules>1.6.0.Final-redhat-1</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.msc.jboss-msc>1.2.7.SP1-redhat-1</version.org.jboss.msc.jboss-msc>
+        <version.org.jboss.remoting>5.0.0.Final-redhat-1</version.org.jboss.remoting>
+        <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.Final-redhat-1</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
-        <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
-        <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
-        <version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>1.0.0.Final</version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>
-        <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>1.0.1.Final</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
-        <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
-        <version.org.jboss.stdio>1.0.2.GA</version.org.jboss.stdio>
-        <version.org.jboss.threads>2.2.1.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.5.1.Final</version.org.jboss.xnio>
+        <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA-redhat-2</version.org.jboss.slf4j.slf4j-jboss-logmanager>
+        <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final-redhat-3</version.org.jboss.logging.jul-to-slf4j-stub>
+        <version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>1.0.0.Final-redhat-1</version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>
+        <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>1.0.1.Final-redhat-1</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
+        <version.org.jboss.staxmapper>1.3.0.Final-redhat-1</version.org.jboss.staxmapper>
+        <version.org.jboss.stdio>1.0.2.GA-redhat-2</version.org.jboss.stdio>
+        <version.org.jboss.threads>2.2.1.Final-redhat-1</version.org.jboss.threads>
+        <version.org.jboss.xnio>3.5.1.Final-redhat-1</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.33</version.org.jmockit>
         <version.org.mockito>2.8.47</version.org.mockito>
-        <version.org.picketbox>5.0.2.Final</version.org.picketbox>
-        <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.22</version.org.slf4j>
+        <version.org.picketbox>5.0.2.Final-redhat-1</version.org.picketbox>
+        <version.org.projectodd.vdx>1.1.6.redhat-1</version.org.projectodd.vdx>
+        <version.org.slf4j>1.7.22.redhat-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.2.2.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.client.config>1.0.0.Final</version.org.wildfly.client.config>
-        <version.org.wildfly.common>1.2.0.Final</version.org.wildfly.common>
-        <version.org.wildfly.discovery>1.0.0.Final</version.org.wildfly.discovery>
-        <version.org.wildfly.openssl>1.0.2.Final</version.org.wildfly.openssl>
+        <version.org.wildfly.client.config>1.0.0.Final-redhat-1</version.org.wildfly.client.config>
+        <version.org.wildfly.common>1.2.0.Final-redhat-1</version.org.wildfly.common>
+        <version.org.wildfly.discovery>1.0.0.Final-redhat-1</version.org.wildfly.discovery>
+        <version.org.wildfly.openssl>1.0.2.Final-redhat-1</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
+        <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
+        <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
+        <!--version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64-->
+        <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
+        <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
+        <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
+        <version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>
         <version.org.wildfly.legacy.test>2.0.3.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.1.0.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron.tool>1.0.0.Final</version.org.wildfly.security.elytron.tool>
-        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Final</version.org.wildfly.security.elytron-web.undertow-server>
-        <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
+        <version.org.wildfly.security.elytron>1.1.0.Final-redhat-1</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron.tool>1.0.0.Final-redhat-1</version.org.wildfly.security.elytron.tool>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Final-redhat-1</version.org.wildfly.security.elytron-web.undertow-server>
+        <version.xml-resolver>1.2.0.redhat-11</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.xml.plugin>1.0.1</version.xml.plugin>
@@ -1514,44 +1522,44 @@
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-linux-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-x86_64}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-linux-i386</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-i386}</version>
             </dependency>
 
 
-            <dependency>
+            <!--dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
-            </dependency>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64}</version>
+            </dependency-->
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-windows-i386</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-windows-i386}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-windows-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-windows-x86_64}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9}</version>
             </dependency>
 
             <dependency>

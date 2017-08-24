@@ -257,10 +257,10 @@
             <artifactId>wildfly-openssl-linux-i386</artifactId>
         </dependency>
 
-        <dependency>
+        <!--dependency>
             <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
-        </dependency>
+        </dependency-->
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
