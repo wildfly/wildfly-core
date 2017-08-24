@@ -263,7 +263,7 @@
       <artifactId>remoting-jmx</artifactId>
       <licenses>
         <license>
-          <name>GNU Lesser General Public License v2.1 only</name>
+          <name>GNU Lesser General Public License v2.1 or later</name>
           <url>http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</url>
           <distribution>repo</distribution>
         </license>
@@ -1045,11 +1045,6 @@
         <license>
           <name>Apache License 2.0</name>
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>BSD 3-clause "New" or "Revised" License</name>
-          <url>http://www.opensource.org/licenses/BSD-3-Clause</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
