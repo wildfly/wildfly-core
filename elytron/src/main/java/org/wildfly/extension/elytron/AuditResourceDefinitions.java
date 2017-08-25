@@ -510,10 +510,21 @@ class AuditResourceDefinitions {
             if (value.isDefined()) {
                 final String suffix = value.asString();
                 try {
-                    if (denySeconds && (suffix.contains("s") || suffix.contains("S"))) {
-                        throw ElytronSubsystemMessages.ROOT_LOGGER.suffixContainsMillis(suffix);
-                    }
                     DateTimeFormatter.ofPattern(suffix);
+                    if (denySeconds) {
+                        for (int i = 0; i < suffix.length(); i++) {
+                            char c = suffix.charAt(i);
+                            if (c == '\'') {
+                                c = suffix.charAt(++i);
+                                while (c != '\'') {
+                                    c = suffix.charAt(++i);
+                                }
+                            }
+                            if (c == 's' || c == 'S') {
+                                throw ElytronSubsystemMessages.ROOT_LOGGER.suffixContainsMillis(suffix);
+                            }
+                        }
+                    }
                 } catch (IllegalArgumentException e) {
                     throw ElytronSubsystemMessages.ROOT_LOGGER.invalidSuffix(suffix);
                 }
