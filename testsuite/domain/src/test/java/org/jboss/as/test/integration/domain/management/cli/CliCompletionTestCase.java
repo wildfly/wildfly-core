@@ -1313,8 +1313,8 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.size() == 3);
-                assertEquals(candidates.toString(), Arrays.asList("--file",
+                assertTrue(candidates.toString(), candidates.size() == 4);
+                assertEquals(candidates.toString(), Arrays.asList("--createDirs", "--file",
                         "--headers", "--overwrite"),
                         candidates);
             }
