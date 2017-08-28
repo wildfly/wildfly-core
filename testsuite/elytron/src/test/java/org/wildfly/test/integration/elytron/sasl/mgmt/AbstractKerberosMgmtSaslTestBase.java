@@ -253,7 +253,11 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
             if (withSsl) {
                 authnCtx = authnCtx.withSsl(MatchRule.ALL, sslFactory);
             }
-            authnCtx.run(() -> assertWhoAmI(user + "@JBOSS.ORG", withSsl));
+            final AuthenticationContext authnCtxFinal = authnCtx;
+            Subject.doAs(lc.getSubject(), (PrivilegedAction<Void>) () -> {
+                authnCtxFinal.run(() -> assertWhoAmI(user + "@JBOSS.ORG", withSsl));
+                return null;
+            });
         } finally {
             lc.logout();
         }
@@ -272,7 +276,11 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
             if (withSsl) {
                 authnCtx = authnCtx.withSsl(MatchRule.ALL, sslFactory);
             }
-            authnCtx.run(() -> assertAuthenticationFails(null, null, withSsl));
+            final AuthenticationContext authnCtxFinal = authnCtx;
+            Subject.doAs(lc.getSubject(), (PrivilegedAction<Void>) () -> {
+                authnCtxFinal.run(() -> assertAuthenticationFails(null, null, withSsl));
+                return null;
+            });
         } finally {
             lc.logout();
         }
