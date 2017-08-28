@@ -280,9 +280,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 // command. We need to keep a local reference to substitution
                 // to compute substitution index after completion occured.
                 SubstitutedLine substitutions = parsedCmd.getSubstitutions();
-                int valueResult = valueCompleter.complete(ctx,
-                        chunk == null ? "" : chunk,
-                        chunk == null ? 0 : chunk.length(), candidates);
+
+                final String normalizedChunk = chunk == null ? "" : chunk;
+                int valueResult = valueCompleter.complete(ctx, normalizedChunk, normalizedChunk.length(), candidates);
+
                 if (valueResult < 0) {
                     return valueResult;
                 } else {
@@ -304,7 +305,11 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         }
                     }
                     int correctedValueOffset = substitutions.getOriginalOffset(result + valueResult);
-                    return correctedValueOffset;
+
+                    //WFCORE-3190 ignore trailing spaces after the cursor position
+                    int trailOffset = substitutions.getSubstitued().substring(result).length() - normalizedChunk.length();
+
+                    return correctedValueOffset + trailOffset;
                 }
             }
 
