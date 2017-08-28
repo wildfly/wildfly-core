@@ -42,10 +42,25 @@ public class CtrlCTestCase {
         try {
             cli.executeInteractive();
 
-            boolean closed = cli.ctrlCAndWaitForClose();
+            boolean foundPrompt = cli.pushLineAndWaitForResults("\u0003", null);
+
+            assertTrue("Process terminated although it shouldn't have. Output: '" + cli.getOutput() + "'", foundPrompt);
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void ctrlDTestCase() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper();
+
+        try {
+            cli.executeInteractive();
+
+            boolean closed = cli.ctrlDAndWaitForClose();
 
             assertTrue("Process did not terminate correctly. Output: '" + cli.getOutput() + "'", closed);
-                    assertEquals("Cli process closed with unexpected exit value: " + cli.getProcessExitValue(), 0, cli.getProcessExitValue());
+            assertEquals("Cli process closed with unexpected exit value: " + cli.getProcessExitValue(), 0, cli.getProcessExitValue());
         }finally{
             cli.destroyProcess();
         }

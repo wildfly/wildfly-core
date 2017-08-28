@@ -196,7 +196,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public KeyAction input() throws InterruptedException {
         try {
-            return Key.findStartKey(ctx.read());
+            return Key.findStartKey(ctx.input());
         } catch (CommandLineException ex) {
             throw new RuntimeException(ex);
         }
@@ -210,7 +210,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public String inputLine(Prompt prompt) throws InterruptedException {
         try {
-            return ctx.readLine(Parser.stripAwayAnsiCodes(Parser.
+            return ctx.input(Parser.stripAwayAnsiCodes(Parser.
                     fromCodePoints(prompt.getPromptAsString())), prompt.isMasking());
         } catch (CommandLineException ex) {
             throw new RuntimeException(ex);

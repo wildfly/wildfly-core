@@ -77,7 +77,7 @@ public class ReadlineShell implements Shell {
     @Override
     public String readLine(Prompt prompt) throws InterruptedException {
         try {
-            return ctx.readLine(prompt);
+            return ctx.input(prompt);
         } catch (CommandLineException ex) {
             throw new RuntimeException(ex);
         }
@@ -86,7 +86,7 @@ public class ReadlineShell implements Shell {
     @Override
     public Key read() throws InterruptedException {
         try {
-            return Key.findStartKey(ctx.read());
+            return Key.findStartKey(ctx.input());
         } catch (CommandLineException ex) {
             throw new RuntimeException(ex);
         }

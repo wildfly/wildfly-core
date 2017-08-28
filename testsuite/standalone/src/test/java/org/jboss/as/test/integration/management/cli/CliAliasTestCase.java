@@ -119,7 +119,7 @@ public class CliAliasTestCase {
             //see: https://issues.jboss.org/browse/JBEAP-5009
             assertFalse(allAliases.contains(INVALID_ALIAS_NAME));
             assertFalse(allAliases.contains(INVALID_ALIAS_COMMAND));
-            cli.ctrlCAndWaitForClose();
+            cli.ctrlDAndWaitForClose();
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -190,7 +190,7 @@ public class CliAliasTestCase {
      * @throws Exception
      */
     @Test
-    public void testAliasPersistenceCtrlC() throws Exception {
+    public void testAliasPersistenceCtrlD() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -198,7 +198,7 @@ public class CliAliasTestCase {
         try {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("alias " + VALID_ALIAS_NAME + "=" + VALID_ALIAS_COMMAND);
-            cli.ctrlCAndWaitForClose(); //see: WFCORE-1853
+            cli.ctrlDAndWaitForClose(); //see: WFCORE-1853
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {

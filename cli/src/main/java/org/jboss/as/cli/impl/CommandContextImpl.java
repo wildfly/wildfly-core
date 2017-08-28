@@ -1117,19 +1117,19 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     @Override
-    public String readLine(String prompt, boolean password) throws CommandLineException {
+    public String input(String prompt, boolean password) throws CommandLineException, InterruptedException {
         Prompt pr;
         if (password) {
             pr = new Prompt(prompt, (char) 0x00);
         } else {
             pr = new Prompt(prompt);
         }
-        return readLine(pr);
+        return input(pr);
     }
 
-    public String readLine(Prompt prompt) throws CommandLineException {
+    public String input(Prompt prompt) throws CommandLineException, InterruptedException {
         // Only fail an interact if we're not in interactive.
-        if(!INTERACT && ERROR_ON_INTERACT){
+        if (!INTERACT && ERROR_ON_INTERACT) {
             interactionDisabled();
         }
 
@@ -1138,11 +1138,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         }
 
         return console.readLine(prompt);
-
     }
 
     @Override
-    public int[] read() throws CommandLineException {
+    public int[] input() throws CommandLineException, InterruptedException {
         // Only fail an interact if we're not in interactive.
         if (!INTERACT && ERROR_ON_INTERACT) {
             interactionDisabled();

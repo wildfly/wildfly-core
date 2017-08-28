@@ -493,13 +493,11 @@ public class ReadlineConsole {
     private final AliasManager aliasManager;
     private final List<Function<String, Optional<String>>> preProcessors = new ArrayList<>();
 
-    private static final EnumMap<ReadlineFlag, Integer> READLINE_FLAGS = new EnumMap<>(ReadlineFlag.class);
+    private static final EnumMap<ReadlineFlag, Integer> READING_READLINE_FLAGS = new EnumMap<>(ReadlineFlag.class);
 
     static {
-        READLINE_FLAGS.put(ReadlineFlag.NO_PROMPT_REDRAW_ON_INTR, Integer.MAX_VALUE);
+        READING_READLINE_FLAGS.put(ReadlineFlag.NO_PROMPT_REDRAW_ON_INTR, Integer.MAX_VALUE);
     }
-
-    private final Consumer<Signal> interruptHandler;
 
     private final CharacterMatcher matcher;
     private final CursorListener cursorListener = new CursorListener() {
@@ -508,6 +506,9 @@ public class ReadlineConsole {
             matcher.match(line);
         }
     };
+    private final Consumer<Signal> readingSignalPreStartHandler;
+    private final Consumer<Signal> readingSignalHandler;
+
     ReadlineConsole(Settings settings) throws IOException {
         this.settings = settings;
         readlineHistory = new FileHistory(settings.getHistoryFile(),
@@ -521,16 +522,35 @@ public class ReadlineConsole {
             LOG.log(Level.FINER, "History is enabled? {0}", !settings.isDisableHistory());
         }
         connection = newConnection();
-        interruptHandler = signal -> {
-            if (signal == Signal.INT) {
+        readingSignalPreStartHandler = (signal) -> {
+            if (signal == Signal.EOF || signal == Signal.INT) {
                 if (LOG.isLoggable(Level.FINER)) {
-                    LOG.finer("Calling InterruptHandler");
+                    LOG.finer("readingSignalPreStartHandler Calling exitHandler");
                 }
                 connection.write(Config.getLineSeparator());
+                // It will propagate interruption to reading thread.
+                if (readingThread != null) {
+                    readingThread.interrupt();
+                }
                 connection.close();
             }
         };
-        connection.setSignalHandler(interruptHandler);
+        readingSignalHandler = (signal) -> {
+            if (signal == Signal.INT) {
+                if (LOG.isLoggable(Level.FINER)) {
+                    LOG.finer("readingSignalHandler Calling interruptHandler");
+                }
+                connection.write(Config.getLineSeparator());
+                if (readingThread != null) {
+                    readingThread.interrupt();
+                }
+            } else if (signal == Signal.EOF) {
+                if (LOG.isLoggable(Level.FINER)) {
+                    LOG.finer("readingSignalHandler Calling exitHandler");
+                }
+                connection.close();
+            }
+        };
         // Do not display ^C
         Attributes attr = connection.getAttributes();
         attr.setLocalFlag(Attributes.LocalFlag.ECHOCTL, false);
@@ -631,7 +651,7 @@ public class ReadlineConsole {
     // handle "a la" 'more' scrolling
     // Doesn't take into account wrapped lines (lines that are longer than the
     // terminal width. This could make a page to skip some lines.
-    private void printCollectedOutput() {
+    private void printCollectedOutput() throws InterruptedException {
         if (outputCollector == null) {
             return;
         }
@@ -648,31 +668,26 @@ public class ReadlineConsole {
             int allLines = 0;
             while (allLines < lines.length) {
                 if (currentLines > max - 2) {
-                    try {
-                        connection.write(ANSI.CURSOR_SAVE);
-                        int percentage = (allLines * 100) / lines.length;
-                        connection.write("--More(" + percentage + "%)--");
-                        Key k = readKey();
-                        connection.write(ANSI.CURSOR_RESTORE);
-                        connection.stdoutHandler().accept(ANSI.ERASE_LINE_FROM_CURSOR);
-                        switch (k) {
-                            case SPACE: {
-                                currentLines = 0;
-                                break;
-                            }
-                            case ENTER:
-                            case CTRL_M: { // On Mac, CTRL_M...
-                                currentLines -= 1;
-                                break;
-                            }
-                            case q: {
-                                allLines = lines.length;
-                                break;
-                            }
+                    connection.write(ANSI.CURSOR_SAVE);
+                    int percentage = (allLines * 100) / lines.length;
+                    connection.write("--More(" + percentage + "%)--");
+                    Key k = readKey();
+                    connection.write(ANSI.CURSOR_RESTORE);
+                    connection.stdoutHandler().accept(ANSI.ERASE_LINE_FROM_CURSOR);
+                    switch (k) {
+                        case SPACE: {
+                            currentLines = 0;
+                            break;
                         }
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(ex);
+                        case ENTER:
+                        case CTRL_M: { // On Mac, CTRL_M...
+                            currentLines -= 1;
+                            break;
+                        }
+                        case q: {
+                            allLines = lines.length;
+                            break;
+                        }
                     }
                 } else {
                     String l = lines[allLines];
@@ -697,7 +712,7 @@ public class ReadlineConsole {
         return Key.findStartKey(read());
     }
 
-    public int[] read() {
+    public int[] read() throws InterruptedException {
         ActionDecoder decoder = new ActionDecoder();
         final int[][] key = {null};
         // Keep a reference on the caller thread in case Ctrl-C is pressed
@@ -705,7 +720,7 @@ public class ReadlineConsole {
         readingThread = Thread.currentThread();
         // We need to set the interrupt SignalHandler to interrupt the CLI.
         Consumer<Signal> prevHandler = connection.getSignalHandler();
-        connection.setSignalHandler(interruptHandler);
+        connection.setSignalHandler(readingSignalHandler);
         CountDownLatch latch = new CountDownLatch(1);
         Attributes attributes = connection.enterRawMode();
         connection.setStdinHandler(keys -> {
@@ -713,18 +728,15 @@ public class ReadlineConsole {
             if (decoder.hasNext()) {
                 key[0] = decoder.next().buffer().array();
                 latch.countDown();
-                connection.suspend();
             }
         });
-        connection.awake();
         try {
             // Wait until interrupted
             latch.await();
-        } catch (InterruptedException ex) {
-            interrupted(ex);
         } finally {
             connection.setStdinHandler(null);
             connection.setSignalHandler(prevHandler);
+            readingThread = null;
         }
         return key[0];
     }
@@ -733,7 +745,7 @@ public class ReadlineConsole {
         print(outputCollector == null ? Config.getLineSeparator() : "\n", collect);
     }
 
-    public String readLine(String prompt) throws IOException {
+    public String readLine(String prompt) throws IOException, InterruptedException {
         return readLine(prompt, null);
     }
 
@@ -755,7 +767,7 @@ public class ReadlineConsole {
      * @return
      * @throws IOException
      */
-    public String readLine(String prompt, Character mask) throws IOException {
+    public String readLine(String prompt, Character mask) throws IOException, InterruptedException {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "Prompt {0} mask {1}", new Object[]{prompt, mask});
         }
@@ -763,7 +775,7 @@ public class ReadlineConsole {
         return readLine(new Prompt(prompt, mask));
     }
 
-    public String readLine(Prompt prompt) {
+    public String readLine(Prompt prompt) throws InterruptedException {
         // If there are some output collected, flush it.
         printCollectedOutput();
         // New collector
@@ -787,7 +799,7 @@ public class ReadlineConsole {
         }
     }
 
-    private String promptFromNonStartedConsole(Prompt prompt) {
+    private String promptFromNonStartedConsole(Prompt prompt) throws InterruptedException {
         if (LOG.isLoggable(Level.FINER)) {
             LOG.finer("Not started");
         }
@@ -795,6 +807,7 @@ public class ReadlineConsole {
         if (connection.suspended()) {
             connection.awake();
         }
+        connection.setSignalHandler(readingSignalPreStartHandler);
         getReadLine().readline(connection, prompt, newLine -> {
             out[0] = newLine;
             if (LOG.isLoggable(Level.FINER)) {
@@ -803,19 +816,15 @@ public class ReadlineConsole {
             // We must call stopReading to stop reading from terminal
             // and release this thread.
             connection.stopReading();
-        }, null, null, null, null, READLINE_FLAGS);
-        try {
-            connection.openBlockingInterruptable();
-        } catch (InterruptedException ex) {
-            interrupted(ex);
-        }
+        }, null, null, null, null, READING_READLINE_FLAGS);
+        connection.openBlockingInterruptable();
         if (LOG.isLoggable(Level.FINER)) {
             LOG.finer("Done for prompt");
         }
         return out[0];
     }
 
-    private String promptFromStartedConsole(Prompt prompt) {
+    private String promptFromStartedConsole(Prompt prompt) throws InterruptedException {
         String[] out = new String[1];
         // We must be called from another Thread. connection is reading in Main thread.
         // calling readline will wakeup the Main thread that will execute
@@ -826,20 +835,19 @@ public class ReadlineConsole {
                     + "reading terminal input");
         }
         CountDownLatch latch = new CountDownLatch(1);
-        // We need to set the interrupt SignalHandler to interrupt the CLI.
+        // We need to set the interrupt SignalHandler to interrupt the current thread.
         Consumer<Signal> prevHandler = connection.getSignalHandler();
-        connection.setSignalHandler(interruptHandler);
-        getReadLine().readline(connection, prompt, newLine -> {
+        connection.setSignalHandler(readingSignalHandler);
+        // We can't reuse readline when prompting from a command.
+        new Readline().readline(connection, prompt, newLine -> {
             out[0] = newLine;
             if (LOG.isLoggable(Level.FINER)) {
                 LOG.finer("Got some input");
             }
             latch.countDown();
-        }, null, null, null, null, READLINE_FLAGS);
+        }, null, null, null, null, READING_READLINE_FLAGS);
         try {
             latch.await();
-        } catch (InterruptedException ex) {
-            interrupted(ex);
         } finally {
             connection.setSignalHandler(prevHandler);
         }
@@ -847,15 +855,6 @@ public class ReadlineConsole {
             LOG.finer("Done for prompt");
         }
         return out[0];
-    }
-
-    private void interrupted(InterruptedException ex) {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Thread interrupted");
-        }
-        // Ctrl-C, interrupt and throw exception to cancel prompting.
-        Thread.currentThread().interrupt();
-        throw new RuntimeException(ex);
     }
 
     public int getTerminalWidth() {
@@ -906,56 +905,73 @@ public class ReadlineConsole {
     }
 
     private void loop() {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Set a readline callback with prompt {0}", prompt);
-        }
-        // Console could have been closed during a command execution.
-        if (!closed) {
-            getReadLine().readline(connection, prompt, line -> {
-                // All commands can lead to prompting the user. So require
-                // to be executed in a dedicated thread.
-                // This can happen if a security configuration occurs
-                // on the remote server.
-                if (LOG.isLoggable(Level.FINER)) {
-                    LOG.log(Level.FINER,
-                            "Executing command {0} in a new thread.", line);
-                }
-                if (line == null || line.trim().length() == 0 || handleAlias(line)) {
-                    loop();
-                    return;
-                }
-                executor.submit(() -> {
-                    Consumer<Signal> handler = connection.getSignalHandler();
-                    Thread callingThread = Thread.currentThread();
-                    connection.setSignalHandler((signal) -> {
-                        // Interrupting the current command thread.
-                        switch (signal) {
-                            case INT: {
+        try {
+            if (LOG.isLoggable(Level.FINER)) {
+                LOG.log(Level.FINER, "Set a readline callback with prompt {0}", prompt);
+            }
+            // Console could have been closed during a command execution.
+            if (!closed) {
+                getReadLine().readline(connection, prompt, line -> {
+                    // All commands can lead to prompting the user. So require
+                    // to be executed in a dedicated thread.
+                    // This can happen if a security configuration occurs
+                    // on the remote server.
+                    if (LOG.isLoggable(Level.FINER)) {
+                        LOG.log(Level.FINER,
+                                "Executing command {0} in a new thread.", line);
+                    }
+                    if (line == null || line.trim().length() == 0 || handleAlias(line)) {
+                        loop();
+                        return;
+                    }
+                    executor.submit(() -> {
+                        Consumer<Signal> handler = connection.getSignalHandler();
+                        Thread callingThread = Thread.currentThread();
+                        // This signal Handler allows to interrupt command.
+                        // Interruption when reading from prompt is handled
+                        // by readingSignalHandler.
+                        connection.setSignalHandler((signal) -> {
+                            // Interrupting the current command thread.
+                            switch (signal) {
+                                case INT: {
+                                    if (LOG.isLoggable(Level.FINER)) {
+                                        LOG.log(Level.FINER, "Interrupting command: " + line,
+                                                line);
+                                    }
+                                    callingThread.interrupt();
+                                }
+                            }
+                        });
+                        try {
+                            outputCollector = new StringBuilder();
+                            callback.accept(line);
+                        } catch (Throwable thr) {
+                            connection.write("Unexpected exception");
+                            thr.printStackTrace();
+                        } finally {
+                            try {
+                                printCollectedOutput();
+                            } catch (InterruptedException ex) {
+                                // InterruptedException is cleared
+                                // For thread to be reusable.
+                            } finally {
+                                // The current thread could have been interrupted.
+                                // Clear the flag to safely reuse the Thread.
+                                Thread.interrupted();
+                                connection.setSignalHandler(handler);
                                 if (LOG.isLoggable(Level.FINER)) {
-                                    LOG.log(Level.FINER, "Interrupting command: " + line,
+                                    LOG.log(Level.FINER, "Done Executing command {0}",
                                             line);
                                 }
-                                callingThread.interrupt();
+                                loop();
                             }
                         }
                     });
-                    try {
-                        outputCollector = new StringBuilder();
-                        callback.accept(line);
-                    } finally {
-                        printCollectedOutput();
-                        // The current thread could have been interrupted.
-                        // Clear the flag to safely interact with aesh-readline
-                        Thread.interrupted();
-                        connection.setSignalHandler(handler);
-                        if (LOG.isLoggable(Level.FINER)) {
-                            LOG.log(Level.FINER, "Done Executing command {0}",
-                                    line);
-                        }
-                        loop();
-                    }
-                });
-            }, completions, preProcessors, readlineHistory, cursorListener, READLINE_FLAGS);
+                }, completions, preProcessors, readlineHistory, cursorListener);
+            }
+        } catch (Exception ex) {
+            connection.write("Unexpected exception");
+            ex.printStackTrace();
         }
     }
 

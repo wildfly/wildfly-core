@@ -97,10 +97,18 @@ public interface CommandContext {
     }
 
     default String readLine(String prompt, boolean password) throws CommandLineException {
+        try {
+            return input(prompt, password);
+        } catch (InterruptedException ex) {
+            throw new CommandLineException(ex);
+        }
+    }
+
+    default String input(String prompt, boolean password) throws CommandLineException, InterruptedException {
         return null;
     }
 
-    default int[] read() throws CommandLineException {
+    default int[] input() throws CommandLineException, InterruptedException {
         return null;
     }
 
