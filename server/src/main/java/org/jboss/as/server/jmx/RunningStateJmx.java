@@ -16,13 +16,11 @@
 package org.jboss.as.server.jmx;
 
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_OK;
-import static org.wildfly.extension.core.management.client.Process.Type.DOMAIN_SERVER;
-import static org.wildfly.extension.core.management.client.Process.Type.EMBEDDED_SERVER;
-import static org.wildfly.extension.core.management.client.Process.Type.STANDALONE_SERVER;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.management.AttributeChangeNotification;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
@@ -33,16 +31,16 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
+
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
+import org.wildfly.extension.core.management.client.Process.RunningMode;
 import org.wildfly.extension.core.management.client.Process.RunningState;
 import org.wildfly.extension.core.management.client.Process.RuntimeConfigurationState;
-import org.wildfly.extension.core.management.client.Process.RunningMode;
-import org.wildfly.extension.core.management.client.Process.Type;
 
 /**
  *
@@ -57,13 +55,13 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
     private volatile RunningModeControl runningModeControl = null;
     private final boolean isServer;
 
-    public static final String RUNTIME_CONFIGURATION_STATE = "RuntimeConfigurationState";
-    public static final String RUNNING_STATE = "RunningState";
+    private static final String RUNTIME_CONFIGURATION_STATE = "RuntimeConfigurationState";
+    private static final String RUNNING_STATE = "RunningState";
 
-    private RunningStateJmx(ObjectName objectName, RunningModeControl runningModeControl, Type type) {
+    private RunningStateJmx(ObjectName objectName, RunningModeControl runningModeControl, boolean isServer) {
         this.objectName = objectName;
         this.runningModeControl = runningModeControl;
-        this.isServer = type == DOMAIN_SERVER || type == EMBEDDED_SERVER || type == STANDALONE_SERVER;
+        this.isServer = isServer;
     }
 
     @Override
@@ -158,11 +156,11 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         sendNotification(notification);
     }
 
-    public static void registerMBean(ControlledProcessStateService processStateService, SuspendController suspendController, RunningModeControl runningModeControl, Type type) {
+    public static void registerMBean(ControlledProcessStateService processStateService, SuspendController suspendController, RunningModeControl runningModeControl, boolean isServer) {
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            final RunningStateJmxMBean mbean = new RunningStateJmx(name, runningModeControl, type);
+            final RunningStateJmxMBean mbean = new RunningStateJmx(name, runningModeControl, isServer);
             if (server.isRegistered(name)) {
                 server.unregisterMBean(name);
             }
