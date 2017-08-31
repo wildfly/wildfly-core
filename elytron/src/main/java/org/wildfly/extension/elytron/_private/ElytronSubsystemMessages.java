@@ -315,20 +315,20 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
-    @Message(id = 910, value = "Password cannot be resolved for key-store \"%s\"")
+    @Message(id = 910, value = "Password cannot be resolved for key-store '%s'")
     IOException keyStorePasswordCannotBeResolved(String path);
 
-    @Message(id = 911, value = "Credential store \"%s\" protection parameter cannot be resolved")
+    @Message(id = 911, value = "Credential store '%s' protection parameter cannot be resolved")
     IOException credentialStoreProtectionParameterCannotBeResolved(String name);
 
 //    @LogMessage(level = ERROR)
 //    @Message(id = 912, value = "Credential store issue encountered")
 //    void credentialStoreIssueEncountered(@Cause Exception cause);
 
-    @Message(id = 913, value = "Credential alias \"%s\" of credential type \"%s\" already exists in the store")
+    @Message(id = 913, value = "Credential alias '%s' of credential type '%s' already exists in the store")
     OperationFailedException credentialAlreadyExists(String alias, String credentialType);
 
-    @Message(id = 914, value = "Provider loader \"%s\" cannot supply Credential Store provider of type \"%s\"")
+    @Message(id = 914, value = "Provider loader '%s' cannot supply Credential Store provider of type '%s'")
     NoSuchProviderException providerLoaderCannotSupplyProvider(String providerLoader, String type);
 
 //    @Message(id = 915, value = "Name of the credential store has to be specified in this credential-reference")
@@ -340,7 +340,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 917, value = "Password cannot be resolved for dir-context")
     StartException dirContextPasswordCannotBeResolved(@Cause Exception cause);
 
-    @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
+    @Message(id = 920, value = "Credential alias '%s' of credential type '%s' does not exist in the store")
     OperationFailedException credentialDoesNotExist(String alias, String credentialType);
 
     @Message(id = Message.NONE, value = "Reload dependent services which might already have cached the secret value")
