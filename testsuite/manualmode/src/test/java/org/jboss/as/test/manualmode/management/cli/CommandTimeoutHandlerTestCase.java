@@ -393,6 +393,50 @@ public class CommandTimeoutHandlerTestCase {
     }
 
     @Test
+    public void testForTimeout() throws CommandLineException {
+        for (int i = 0; i < 10; i++) {
+            ctx.handle("/system-property=prop" + i + ":add(value=true)");
+        }
+        try {
+            // This timeout is for each command, not for the whole for block.
+            ctx.handle("command-timeout set 2");
+            ctx.handle("for propName in :read-children-names(child-type=system-property");
+            ctx.handle("take-your-time 1000");
+            ctx.handle("done");
+        } finally {
+            ctx.handle("for propName in :read-children-names(child-type=system-property");
+            ctx.handle("/system-property=$propName:remove");
+            ctx.handle("done");
+        }
+    }
+
+    @Test
+    public void testForTimeout2() throws CommandLineException {
+        for (int i = 0; i < 10; i++) {
+            ctx.handle("/system-property=prop" + i + ":add(value=true)");
+        }
+        try {
+            // This timeout is for each command, not for the whole for block.
+            ctx.handle("command-timeout set 2");
+            ctx.handle("for propName in :read-children-names(child-type=system-property");
+            ctx.handle("take-your-time 4000");
+            try {
+                ctx.handle("done");
+                throw new RuntimeException("Should have failed");
+            } catch (Exception ex) {
+                // XXX OK, expected.
+                if (!ex.getMessage().equals("Timeout exception for take-your-time 4000")) {
+                    throw new CommandLineException("Not expected exception ", ex);
+                }
+            }
+        } finally {
+            ctx.handle("for propName in :read-children-names(child-type=system-property");
+            ctx.handle("/system-property=$propName:remove");
+            ctx.handle("done");
+        }
+    }
+
+    @Test
     public void testComandExecutor() throws Exception {
         CommandExecutor executor = new CommandExecutor(ctx);
         CommandHandler ls = new LsHandler(ctx);

@@ -1513,4 +1513,40 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testFor() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        {
+            String cmd = "for var ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(candidates.toString(), Arrays.asList("in"), candidates);
+        }
+
+        {
+            String cmd = "for var in ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertFalse(candidates.toString(), candidates.isEmpty());
+            assertTrue(candidates.toString(), candidates.contains(":"));
+        }
+
+        {
+            String cmd = "done ";
+            ctx.handle("for var in :read-resource");
+            try {
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--discard"));
+            } finally {
+                ctx.handle("done --discard");
+            }
+        }
+    }
 }

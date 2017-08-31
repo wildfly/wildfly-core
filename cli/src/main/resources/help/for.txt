@@ -1,0 +1,25 @@
+SYNOPSIS
+
+    for <variable_name> in <command_line>
+
+DESCRIPTION
+
+    Starts for/done control flow.
+    The for statement includes command_line (which is a CLI command
+    or an operation) that is executed at the beginning of the for
+    control flow. The operation must returns a collection that is iterated.
+    The defined variable value is set to the current collection item. The variable
+    scope is the for block (terminated by done).
+
+    NB: for can't be used inside a batch, but batch can be used in for blocks.
+
+    Example of a loop that displays the manifest of all deployments:
+    
+
+ARGUMENTS
+
+    command_line  - CLI command or an operation whose response
+                    must contain a collection of items. During each iteration,
+                    each item string value is set as the variable value.
+
+    variable_name - A variable that stores the value of each collection item.

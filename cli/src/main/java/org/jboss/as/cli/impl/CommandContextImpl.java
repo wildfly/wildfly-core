@@ -149,6 +149,8 @@ import org.jboss.as.cli.handlers.jca.DataSourceAddCompositeHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverInfoHandler;
 import org.jboss.as.cli.handlers.jca.JDBCDriverNameProvider;
 import org.jboss.as.cli.handlers.jca.XADataSourceAddCompositeHandler;
+import org.jboss.as.cli.handlers.loop.DoneHandler;
+import org.jboss.as.cli.handlers.loop.ForHandler;
 import org.jboss.as.cli.handlers.module.ASModuleHandler;
 import org.jboss.as.cli.handlers.trycatch.CatchHandler;
 import org.jboss.as.cli.handlers.trycatch.EndTryHandler;
@@ -531,6 +533,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         cmdRegistry.registerHandler(new IfHandler(), "if");
         cmdRegistry.registerHandler(new ElseHandler(), "else");
         cmdRegistry.registerHandler(new EndIfHandler(), "end-if");
+
+        // for
+        cmdRegistry.registerHandler(new ForHandler(), "for");
+        cmdRegistry.registerHandler(new DoneHandler(), "done");
 
         // data-source
         final DefaultCompleter driverNameCompleter = new DefaultCompleter(JDBCDriverNameProvider.INSTANCE);
