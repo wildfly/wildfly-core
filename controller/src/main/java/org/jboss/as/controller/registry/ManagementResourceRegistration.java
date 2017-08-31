@@ -328,14 +328,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      */
     class Factory {
 
-        /**
-         * Creates a factory {@link #forProcessType(ProcessType) for ProcessType.EMBEDDED_SERVER}.
-         *
-         * @deprecated use {@link #forProcessType(ProcessType)}.
-         */
-        @Deprecated
-        public static final Factory DEFAULT = forProcessType(ProcessType.EMBEDDED_SERVER);
-
         private final ProcessType processType;
 
         private Factory(ProcessType processType) {
@@ -367,42 +359,6 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
          */
         public ManagementResourceRegistration createRegistration(final ResourceDefinition resourceDefinition) {
             return createRegistration(resourceDefinition, null, null);
-        }
-
-        /**
-         * Create a new root model node registration for ProcessType.EMBEDDED_SERVER}.
-         *
-         * @param resourceDefinition the facotry for the model description provider for the root model node
-         * @return the new root model node registration
-         *
-         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         *
-         * @deprecated use {@link #forProcessType(ProcessType)}.
-         */
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition) {
-            return DEFAULT.createRegistration(resourceDefinition, null, null);
-        }
-
-        /**
-         * Create a new root model node registration for ProcessType.EMBEDDED_SERVER}.
-         *
-         * @param resourceDefinition the factory for the model description provider for the root model node
-         * @param constraintUtilizationRegistry registry for recording access constraints. Can be {@code null} if
-         *                                      tracking access constraint usage is not supported
-         * @return the new root model node registration
-         *
-         * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
-         *
-         * @deprecated use {@link #forProcessType(ProcessType)}.
-         */
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public static ManagementResourceRegistration create(final ResourceDefinition resourceDefinition,
-                                                            AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
-                                                            CapabilityRegistry registry) {
-            return DEFAULT.createRegistration(resourceDefinition, constraintUtilizationRegistry, registry);
         }
 
         /**
