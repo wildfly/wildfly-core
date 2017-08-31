@@ -128,7 +128,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         final CountDownLatch preparedLatch = new CountDownLatch(opsBySubsystem.size());
         final CountDownLatch committedLatch = new CountDownLatch(1);
         final CountDownLatch completeLatch = new CountDownLatch(opsBySubsystem.size());
-        final Thread controllingThread = Thread.currentThread();
 
         // TODO Elytron - We probably need a way to stop repeating this.
         final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
@@ -289,7 +288,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 final CountDownLatch preparedLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
                 final CountDownLatch committedLatch = new CountDownLatch(1);
                 final CountDownLatch completeLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
-                final Thread controllingThread = Thread.currentThread();
 
                 for (Map.Entry<String, List<ParsedBootOp>> entry : runtimeOpsBySubsystem.entrySet()) {
                     String subsystemName = entry.getKey();
