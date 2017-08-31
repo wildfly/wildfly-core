@@ -327,8 +327,12 @@ abstract class AbstractOperationContext implements OperationContext {
             throw ControllerLogger.ROOT_LOGGER.invalidStepStage();
         }
         final PathAddress stepAddress = address != null ? address : PathAddress.pathAddress(operation.get(OP_ADDR));
+
+        // Ignore runtime ops against profile resources on an HC
         if (stage == Stage.RUNTIME && !processType.isServer() && stepAddress.size() > 1 && PROFILE.equals(stepAddress.getElement(0).getKey())) {
-            throw ControllerLogger.ROOT_LOGGER.invalidStage(stage, processType);
+            // Log this as it means we have an incorrect OSH
+            ControllerLogger.ROOT_LOGGER.invalidRuntimeStageForProfile(operation.get(OP).asString(), stepAddress.toCLIStyleString(), stage, processType);
+            return;
         }
 
         if (!booting && activeStep != null) {
