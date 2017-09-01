@@ -226,6 +226,21 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="forwarding-mode" default="authentication">
+            <xs:simpleType>
+                <xs:annotation>
+                    <xs:documentation>
+                        The type of identity forwarding to use when security-domain is specified. The value "authenticaiton" forwards
+                        the identity of the currently authenticated user, including credentials. The value "authorization" forwards
+                        the underlying authorization identity, which allows for a different identity to be used for authentication.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="authentication" />
+                    <xs:enumeration value="authorization" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name = "sasl-mechanism-selector" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
@@ -2344,7 +2359,7 @@
                                         <xs:attribute name="name" type="xs:string" use="required">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    The name of the principal. 
+                                                    The name of the role. 
                                                 </xs:documentation>
                                             </xs:annotation>
                                          </xs:attribute>
