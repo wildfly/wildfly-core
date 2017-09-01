@@ -13,11 +13,19 @@
         </authentication-configuration>
         <authentication-configuration name="forward"
             extends="base"
-            security-domain="TestDomain">
+            security-domain="TestDomain"
+            forwarding-mode="authentication">
             <mechanism-properties>
                 <property name="a" value="b" />
                 <property name="c" value="d" />
             </mechanism-properties>
+        </authentication-configuration>
+        <authentication-configuration name="forward-authz"
+            extends="base"
+            security-domain="TestDomain"
+            forwarding-mode="authorization"
+            authentication-name="my-server-login">
+            <credential-reference clear-text="supersecret!"/>
         </authentication-configuration>
         <authentication-configuration name="selector"
             extends = "base"
