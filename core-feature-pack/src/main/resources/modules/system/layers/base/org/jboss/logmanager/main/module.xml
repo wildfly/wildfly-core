@@ -30,5 +30,6 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.jboss.modules"/>
+        <module name="org.wildfly.common"/>
     </dependencies>
 </module>

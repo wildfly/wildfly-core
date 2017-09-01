@@ -23,7 +23,6 @@ package org.jboss.as.test.manualmode.logging;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LoggingPermission;
 
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -55,10 +54,7 @@ public class ReconnectSyslogServerTestCase extends AbstractSyslogReconnectionTes
     public void setupContainer() throws Exception {
         container.start();
         host = CoreUtils.stripSquareBrackets(TestSuiteEnvironment.getServerAddress());
-        // TODO (jrp) remove this once LOGMGR-149 is resolved
         final JavaArchive deployment = createDeployment();
-        // Add the logging permissions as a workaround for LOGMGR-149
-        addPermissions(deployment, new LoggingPermission("control", null));
         deploy(deployment);
         SyslogServer.shutdown();
         BlockedAllProtocolsSyslogServerEventHandler.initializeForProtocol(SyslogConstants.UDP);

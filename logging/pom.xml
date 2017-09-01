@@ -55,17 +55,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <useManifestOnlyJar>false</useManifestOnlyJar>
-                    <!-- the log manager needs to be setup before the agent this is only needed on windows!-->
-                    <argLine>-Xbootclasspath/a:"${org.jboss.logmanager:jboss-logmanager:jar}"
-                        -javaagent:"${org.jboss.byteman:byteman:jar}"=port:${byteman.port},address:${byteman.host},boot:"${org.jboss.byteman:byteman:jar}" ${surefire.system.args}
-                    </argLine>
                     <systemPropertyVariables>
                         <jboss.server.log.dir>${project.build.directory}${file.separator}logs</jboss.server.log.dir>
                         <jboss.server.config.dir>${project.build.directory}${file.separator}config</jboss.server.config.dir>
-                        <org.jboss.byteman.debug>true</org.jboss.byteman.debug>
-                        <org.jboss.byteman.contrib.bmunit.agent.host>${byteman.host}</org.jboss.byteman.contrib.bmunit.agent.host>
-                        <org.jboss.byteman.contrib.bmunit.agent.port>${byteman.port}</org.jboss.byteman.contrib.bmunit.agent.port>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
