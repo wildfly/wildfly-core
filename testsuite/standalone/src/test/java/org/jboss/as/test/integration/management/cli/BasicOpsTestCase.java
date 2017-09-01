@@ -50,6 +50,20 @@ public class BasicOpsTestCase {
     }
 
     @Test
+    public void testConnectBind() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
+
+        assertFalse(cli.isConnected());
+        // In test context, client address is always the same as the server address.
+        // So TestSuiteEnvironment.getServerAddress() can be used.
+        cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":"
+                + TestSuiteEnvironment.getServerPort() + " --bind=" + TestSuiteEnvironment.getServerAddress());
+        assertTrue(cli.isConnected());
+
+        cli.quit();
+    }
+
+    @Test
     public void testLs() throws Exception {
         CLIWrapper cli = new CLIWrapper(true);
         cli.sendLine("ls");

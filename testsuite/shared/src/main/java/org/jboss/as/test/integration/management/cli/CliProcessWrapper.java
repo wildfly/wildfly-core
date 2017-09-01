@@ -162,6 +162,24 @@ public class CliProcessWrapper extends CliProcessBuilder {
     }
 
     /**
+     * Push ctrl-d to CLI input and wait for process to end. Separate from
+     * normal 'push' because no newLine can be pushed after the ctrl-d
+     *
+     * @return Whether the process closed within the timeout or was forced.
+     */
+    public boolean ctrlDAndWaitForClose() throws IOException {
+        try {
+            if (cliProcess != null) {
+                bufferedWriter.write('\u0004');
+                bufferedWriter.flush();
+            }
+        } catch (IOException e) {
+            fail("Failed to push ctrl-d char, '\\u0004', to CLI input: " + e.getLocalizedMessage());
+        }
+        return waitForClose();
+    }
+
+    /**
      * Passthrough method to get the process exit value
      *
      * @return process exit value
@@ -239,10 +257,6 @@ public class CliProcessWrapper extends CliProcessBuilder {
     }
 
     private boolean waitForClose() throws IOException {
-        if( bufferedWriter != null ){
-            bufferedWriter.close();
-        }
-
         boolean closed = false;
         int waitingTime = 0;
         boolean wait = true;

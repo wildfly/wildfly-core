@@ -31,11 +31,11 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.impl.DefaultCompleter.CandidatesProvider;
+import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
@@ -55,11 +55,11 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue idProperty;
     private final ArgumentWithValue commandName;
 
-    private final CommandRegistry cmdRegistry;
+    private final CLICommandRegistry cmdRegistry;
 
     private DefaultCallbackHandler callback;
 
-    public CommandCommandHandler(CommandRegistry cmdRegistry) {
+    public CommandCommandHandler(CLICommandRegistry cmdRegistry) {
         super("command", true);
         this.cmdRegistry = cmdRegistry;
 

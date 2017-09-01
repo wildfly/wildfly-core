@@ -218,4 +218,6 @@ public interface ParsingContext {
      * otherwise - false
      */
     boolean isDeactivated(char c);
+
+    void terminateParsing();
 }

@@ -576,7 +576,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
     }
 
     @Override
-    protected void printHelp(CommandContext ctx) throws CommandLineException {
+    public void printHelp(CommandContext ctx) throws CommandLineException {
 
         ParsedCommandLine args = ctx.getParsedCommandLine();
         if(helpProperties.isPresent(args)) {
@@ -680,6 +680,10 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                 formatProperty(ctx, argName, optionalProps.get(argName));
             }
         }
+    }
+
+    public void printDescription(CommandContext ctx) throws CommandFormatException {
+        printNodeDescription(ctx);
     }
 
     protected void printNodeDescription(CommandContext ctx) throws CommandFormatException {

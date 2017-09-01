@@ -47,6 +47,16 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
     private ValueState currentState;
     private byte flag;
 
+    private int endOfValue;
+    private boolean leaveAtValueEnd;
+
+    public ArgumentValueCallbackHandler() {
+        this(false);
+    }
+
+    public ArgumentValueCallbackHandler(boolean leaveAtValueEnd) {
+        this.leaveAtValueEnd = leaveAtValueEnd;
+    }
     /* (non-Javadoc)
      * @see org.jboss.as.cli.parsing.ParsingStateCallbackHandler#enteredState(org.jboss.as.cli.parsing.ParsingContext)
      */
@@ -121,6 +131,8 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
                             currentState = stack.pop();
                         }
                     }
+                } else if (leaveAtValueEnd) {
+                    ctx.terminateParsing();
                 }
             }
         } else if(QuotesState.ID.equals(stateId)) {
@@ -140,6 +152,10 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
         currentState.character(ctx.getCharacter());
     }
 
+    public int getEndOfParsing() {
+        return endOfValue;
+    }
+
     public ModelNode getResult() {
         final ModelNode result;
         if(currentState.getName() != null) {
@@ -149,6 +165,11 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             result = currentState.getValue();
         }
         return result;
+    }
+
+    @Override
+    public void endOfParsing(int location) {
+        endOfValue = location;
     }
 
     interface ValueState {

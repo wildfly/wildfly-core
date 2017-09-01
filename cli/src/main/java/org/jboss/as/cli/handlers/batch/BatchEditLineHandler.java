@@ -22,21 +22,21 @@
 package org.jboss.as.cli.handlers.batch;
 
 import java.util.List;
+import org.aesh.command.CommandException;
 
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.batch.Batch;
-import org.jboss.as.cli.batch.BatchManager;
-import org.jboss.as.cli.batch.BatchedCommand;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.aesh.commands.batch.BatchEditLineCommand;
 
 
 /**
  *
  * @author Alexey Loubyansky
  */
+@Deprecated
 public class BatchEditLineHandler extends CommandHandlerWithHelp {
 
     private ArgumentWithValue ln;
@@ -130,23 +130,7 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
      */
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
-
-        BatchManager batchManager = ctx.getBatchManager();
-        if(!batchManager.isBatchActive()) {
-            throw new CommandFormatException("No active batch.");
-        }
-
-        Batch batch = batchManager.getActiveBatch();
-        final int batchSize = batch.size();
-        if(batchSize == 0) {
-            throw new CommandFormatException("The batch is empty.");
-        }
-
         String argsStr = ctx.getArgumentsString();
-        if(argsStr == null) {
-            throw new CommandFormatException("Missing line number.");
-        }
-
         int i = 0;
         while(i < argsStr.length()) {
             if(Character.isWhitespace(argsStr.charAt(i))) {
@@ -167,24 +151,13 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
             throw new CommandFormatException("Failed to parse line number '" + intStr + "': " + e.getLocalizedMessage());
         }
 
-        if(lineNumber < 1 || lineNumber > batchSize) {
-            throw new CommandFormatException(lineNumber + " isn't in range [1.." + batchSize + "].");
-        }
-
         String editedLine = argsStr.substring(i).trim();
-        if(editedLine.length() == 0) {
-            throw new CommandFormatException("Missing the new command line after the index.");
-        }
 
-        if(editedLine.charAt(0) == '"') {
-            if(editedLine.length() > 1 && editedLine.charAt(editedLine.length() - 1) == '"') {
-                editedLine = editedLine.substring(1, editedLine.length() - 1);
-            }
+        try {
+            BatchEditLineCommand.execute(ctx, lineNumber, editedLine);
+        } catch (CommandException ex) {
+            throw new CommandFormatException(ex.getLocalizedMessage());
         }
-
-        BatchedCommand newCmd = ctx.toBatchedCommand(editedLine);
-        batch.set(lineNumber - 1, newCmd);
-        ctx.printLine("#" + lineNumber + " " + newCmd.getCommand());
     }
 
     /**

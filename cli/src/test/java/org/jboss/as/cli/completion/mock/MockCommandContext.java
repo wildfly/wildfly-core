@@ -480,4 +480,9 @@ public class MockCommandContext implements CommandContext {
     public ModelNode execute(Operation op, String msg) throws CommandLineException, IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public void connectController(String controller, String clientAddress) throws CommandLineException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

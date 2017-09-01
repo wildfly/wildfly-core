@@ -38,7 +38,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -53,7 +52,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("WFCORE-2883 Un-ignore it when CLI relies on aesh-readline. Root cause is random failures due to aesh/CLI close sequence.")
 public class RemoveManagementRealmTestCase {
 
     private String removeLocalAuthCommand = "/core-service=management/security-realm=ManagementRealm/authentication=local:remove";
@@ -113,14 +111,14 @@ public class RemoveManagementRealmTestCase {
         cli.executeInteractive();
         cli.clearOutput();
         cli.pushLineAndWaitForResults(removeLocalAuthCommand);
-        cmdAndCtrlC("reload", cli);
+        cmdAndCtrlD("reload", cli);
     }
 
-    private void cmdAndCtrlC(String cmd, CliProcessWrapper cli) throws IOException {
+    private void cmdAndCtrlD(String cmd, CliProcessWrapper cli) throws IOException {
         cli.clearOutput();
         boolean prompt = cli.pushLineAndWaitForResults(cmd, "Username:");
         assertTrue("Expected prompt not seen in output: " + cli.getOutput(), prompt);
-        assertTrue("Process not terminated. Output is: " + cli.getOutput(), cli.ctrlCAndWaitForClose());
+        assertTrue("Process not terminated. Output is: " + cli.getOutput(), cli.ctrlDAndWaitForClose());
     }
 
     @Test
@@ -144,9 +142,9 @@ public class RemoveManagementRealmTestCase {
         cli2.clearOutput();
 
         cli1.pushLineAndWaitForResults(removeLocalAuthCommand);
-        cmdAndCtrlC("reload", cli1);
+        cmdAndCtrlD("reload", cli1);
 
         // Send ls from cli2.
-        cmdAndCtrlC("ls", cli2);
+        cmdAndCtrlD("ls", cli2);
     }
 }

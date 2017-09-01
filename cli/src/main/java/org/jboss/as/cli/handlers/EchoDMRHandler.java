@@ -35,46 +35,25 @@ import org.jboss.as.cli.impl.ArgumentWithValue;
  */
 public class EchoDMRHandler extends CommandHandlerWithHelp {
 
+    private static final String CMD = "echo-dmr";
     public EchoDMRHandler() {
-        super("echo-dmr");
+        super(CMD);
 
         new ArgumentWithValue(this, new CommandLineCompleter() {
                 @Override
                 public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
 
                     final String originalLine = ctx.getParsedCommandLine().getOriginalLine();
-                    boolean skipWS;
-                    int wordCount;
-                    if(Character.isWhitespace(originalLine.charAt(0))) {
-                        skipWS = true;
-                        wordCount = 0;
-                    } else {
-                        skipWS = false;
-                        wordCount = 1;
-                    }
-                    int cmdStart = 1;
-                    while(cmdStart < originalLine.length()) {
-                        if(skipWS) {
-                            if(!Character.isWhitespace(originalLine.charAt(cmdStart))) {
-                                skipWS = false;
-                                ++wordCount;
-                                if(wordCount == 2) {
-                                    break;
-                                }
+                    int i = originalLine.indexOf(CMD);
+                    i = originalLine.indexOf(" ", i);
+                    String cmd = "";
+                    if (i != -1) {
+                        for (; i < originalLine.length(); i++) {
+                            if (originalLine.charAt(i) != ' ') {
+                                break;
                             }
-                        } else if(Character.isWhitespace(originalLine.charAt(cmdStart))) {
-                            skipWS = true;
                         }
-                        ++cmdStart;
-                    }
-
-                    final String cmd;
-                    if(wordCount == 1) {
-                        cmd = "";
-                    } else if(wordCount != 2) {
-                        return -1;
-                    } else {
-                        cmd = originalLine.substring(cmdStart);
+                        cmd = originalLine.substring(i);
                     }
 
                     int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
@@ -91,6 +70,41 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                             break;
                         }
                         ++escapeCorrection;
+                    }
+
+                    /*
+                    The CLI completer parses the command (echo-dmr is still an handler).
+                    It calls echo-dmr completer with the last word and cursor at the end of this word.
+                        - Received buffer is the last word. eg:
+                            echo-dmr patch<TAB> ==> patch, cursor is 5
+                            echo-dmr patch <TAB> ==> "", cursor is 0
+                    The CLI completer will return the offset being the index of the start
+                    of the passed buffer + the offset inside the passed buffer (computed by echo-dmr). E,.g.:
+                            echo-dmr patch app<TAB> ==> 15 + 0. It means that the app is rewritten with the full value "apply"
+                            echo-dmr :read-resource(pro<TAB> ==> 9 + 15 (index of 'p')
+                     */
+                    /*
+                    * Sub command don't comply with the contract. Subcommands that are returned with the parent comment as prefix.
+                    * Must remove the parent prefix if the cmd already contains the parent fully.
+                    * For example echo-dmr d<TAB> ==> deployment XXX, echo-dmr deployment <TAB> ==> XXX
+                     */
+                    if (!cmd.isEmpty()) { // Empty command, means no sub command case
+                        String sc = cmd.split(" ")[0];
+                        boolean foundSubCommand = false;
+                        for (int index = 0; index < candidates.size(); index++) {
+                            String s = candidates.get(index);
+                            String[] split = s.split(" ");
+                            if (split.length > 1 && sc.equals(split[0])) {
+                                if (split.length > 1) {
+                                    s = split[split.length - 1];
+                                    candidates.set(index, s);
+                                    foundSubCommand = true;
+                                }
+                            }
+                        }
+                        if (foundSubCommand) {
+                            return 0;
+                        }
                     }
 
                     return buffer.length() + escapeCorrection - (cmd.length() - cmdResult);

@@ -74,6 +74,7 @@ public class Util {
     public static final String ADDRESS = "address";
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
+    public static final String ALTERNATIVES = "alternatives";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
@@ -163,6 +164,7 @@ public class Util {
     public static final String REPLY_PROPERTIES = "reply-properties";
     public static final String REQUEST_PROPERTIES = "request-properties";
     public static final String REQUIRED = "required";
+    public static final String REQUIRES = "requires";
     public static final String RESOLVE_EXPRESSIONS = "resolve-expressions";
     public static final String RESPONSE_HEADERS = "response-headers";
     public static final String RESTART = "restart";
@@ -379,6 +381,34 @@ public class Util {
             return outcome.get(RESULT).asBoolean();
         }
         return false;
+    }
+
+    public static ModelNode getAddressNode(CommandContext ctx,
+            OperationRequestAddress address, ModelNode op) throws CommandFormatException {
+        ModelNode addressNode = op.get(Util.ADDRESS);
+
+        if (address.isEmpty()) {
+            addressNode.setEmptyList();
+        } else {
+            Iterator<Node> iterator = address.iterator();
+            while (iterator.hasNext()) {
+                OperationRequestAddress.Node node = iterator.next();
+                if (node.getName() != null) {
+                    if (node.getName().equals("*")) {
+                        throw new CommandFormatException("* is not supported in node path argument");
+                    }
+                    addressNode.add(node.getType(), node.getName());
+                } else if (iterator.hasNext()) {
+                    throw new OperationFormatException(
+                            "Expected a node name for type '"
+                            + node.getType()
+                            + "' in path '"
+                            + ctx.getNodePathFormatter().format(
+                                    address) + "'");
+                }
+            }
+        }
+        return op;
     }
 
     public static List<String> getAllEnabledServerGroups(String deploymentName, ModelControllerClient client) {
@@ -673,6 +703,29 @@ public class Util {
         try {
             builder.setOperationName(Util.READ_CHILDREN_NAMES);
             builder.addProperty(Util.CHILD_TYPE, Util.SERVER_GROUP);
+            request = builder.buildRequest();
+        } catch (OperationFormatException e) {
+            throw new IllegalStateException("Failed to build operation", e);
+        }
+
+        try {
+            ModelNode outcome = client.execute(request);
+            if (isSuccess(outcome)) {
+                return getList(outcome);
+            }
+        } catch (Exception e) {
+        }
+
+        return Collections.emptyList();
+    }
+
+    public static List<String> getHosts(ModelControllerClient client) {
+
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        final ModelNode request;
+        try {
+            builder.setOperationName(Util.READ_CHILDREN_NAMES);
+            builder.addProperty(Util.CHILD_TYPE, Util.HOST);
             request = builder.buildRequest();
         } catch (OperationFormatException e) {
             throw new IllegalStateException("Failed to build operation", e);

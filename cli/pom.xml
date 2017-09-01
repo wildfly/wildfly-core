@@ -104,7 +104,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-readline</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
         </dependency>
 

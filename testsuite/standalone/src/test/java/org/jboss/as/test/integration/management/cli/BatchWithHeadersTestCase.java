@@ -43,13 +43,23 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class BatchWithHeadersTestCase {
 
     @Test
-    public void testSuccessfulTry() throws Exception {
+    @Deprecated
+    public void testSuccessfulTry1() throws Exception {
+        testSuccessfulTry("batch", "run-batch", "discard-batch");
+    }
+
+    @Test
+    public void testSuccessfulTry2() throws Exception {
+        testSuccessfulTry("batch new", "batch run", "batch discard");
+    }
+
+    public void testSuccessfulTry(String batch, String run, String discard) throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext();
         try {
             ctx.connectController();
-            ctx.handle("batch");
+            ctx.handle(batch);
             ctx.handle(":write-attribute(name=name,value=test");
-            final ModelNode batchRequest = ctx.buildRequest("run-batch --headers={allow-resource-service-restart=true}");
+            final ModelNode batchRequest = ctx.buildRequest(run + " --headers={allow-resource-service-restart=true}");
             assertTrue(batchRequest.hasDefined("operation"));
             assertEquals("composite", batchRequest.get("operation").asString());
             assertTrue(batchRequest.hasDefined("address"));
@@ -67,7 +77,7 @@ public class BatchWithHeadersTestCase {
             assertTrue(batchRequest.hasDefined("operation-headers"));
             final ModelNode headers = batchRequest.get("operation-headers");
             assertEquals("true", headers.get("allow-resource-service-restart").asString());
-            ctx.handle("discard-batch");
+            ctx.handle(discard);
         } finally {
             ctx.terminateSession();
         }

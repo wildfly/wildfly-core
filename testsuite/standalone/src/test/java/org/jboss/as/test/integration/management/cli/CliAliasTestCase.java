@@ -17,6 +17,7 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,7 +65,6 @@ public class CliAliasTestCase {
     @Test
     public void testValidAliasCommandInteractive() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -105,7 +105,6 @@ public class CliAliasTestCase {
         final String INVALID_ALIAS_NAME = "TMP-DEBUG123-INVALID456-ALIAS789"; //does not match [a-zA-Z0-9_]+ regex
         final String INVALID_ALIAS_COMMAND = "'/subsystem=notfound:invalid-command'";
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -120,7 +119,7 @@ public class CliAliasTestCase {
             //see: https://issues.jboss.org/browse/JBEAP-5009
             assertFalse(allAliases.contains(INVALID_ALIAS_NAME));
             assertFalse(allAliases.contains(INVALID_ALIAS_COMMAND));
-            cli.ctrlCAndWaitForClose();
+            cli.ctrlDAndWaitForClose();
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
@@ -144,7 +143,6 @@ public class CliAliasTestCase {
             fail(ex.getLocalizedMessage());
         }
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -171,7 +169,6 @@ public class CliAliasTestCase {
     public void testAliasPersistence() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -193,22 +190,28 @@ public class CliAliasTestCase {
      * @throws Exception
      */
     @Test
-    public void testAliasPersistenceCtrlC() throws Exception {
+    public void testAliasPersistenceCtrlD() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
             cli.executeInteractive();
             cli.pushLineAndWaitForResults("alias " + VALID_ALIAS_NAME + "=" + VALID_ALIAS_COMMAND);
-            cli.ctrlCAndWaitForClose(); //see: WFCORE-1853
+            cli.ctrlDAndWaitForClose(); //see: WFCORE-1853
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         } finally {
             cli.destroyProcess();
         }
         assertAliasSaved(aliasFile);
+    }
+
+    @Test
+    public void testNonInteractive() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
+        cli.sendLine("alias qecho=echo-dmr", false);
+        cli.sendLine("qecho :read-resource", false);
     }
 
     private void assertAliasSaved(File aliasFile) throws IOException {

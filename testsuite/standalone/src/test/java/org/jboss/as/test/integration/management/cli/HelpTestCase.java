@@ -38,7 +38,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class HelpTestCase extends AbstractCliTestBase {
 
     private static final String[] COMMANDS = {
-        "cn", "connect", "deploy", "help", "history", "ls", "pwn", "quit", "undeploy", "version"
+        "cn", "connect", "help", "history", "ls", "pwn", "quit", "deployment", "version"
     };
 
     @BeforeClass
@@ -93,7 +93,7 @@ public class HelpTestCase extends AbstractCliTestBase {
         String help = cli.readOutput();
         assertTrue("Command " + cmd + " help does not have synopsis section.", help.contains("SYNOPSIS"));
         assertTrue("Command " + cmd + " help does not have description section.", help.contains("DESCRIPTION"));
-        assertTrue("Command " + cmd + " help does not have arguments section.", help.contains("ARGUMENTS"));
+        assertTrue("Command " + cmd + " help does not have arguments section.", help.contains("ARGUMENTS") || help.contains("ARGUMENT"));
 
     }
 }

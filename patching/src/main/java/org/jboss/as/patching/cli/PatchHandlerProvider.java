@@ -29,6 +29,7 @@ import org.jboss.as.cli.CommandHandlerProvider;
 /**
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012 Red Hat Inc.
  */
+@Deprecated
 public class PatchHandlerProvider implements CommandHandlerProvider {
 
     @Override

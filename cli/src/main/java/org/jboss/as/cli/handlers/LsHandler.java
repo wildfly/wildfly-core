@@ -527,7 +527,7 @@ public class LsHandler extends BaseOperationCommand {
         return address;
     }
 
-    protected static String getNodePath(String nodePathString) {
+    public static String getNodePath(String nodePathString) {
         int i = 0;
         while(i < nodePathString.length()) {
             i = nodePathString.indexOf('-', i);

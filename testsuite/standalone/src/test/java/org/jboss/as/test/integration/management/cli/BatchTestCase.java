@@ -52,19 +52,29 @@ public class BatchTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testRunBatch() throws Exception {
+    @Deprecated
+    public void testRunBatch1() throws Exception {
+        testRunBatch("batch", "run-batch");
+    }
+
+    @Test
+    public void testRunBatch2() throws Exception {
+        testRunBatch("batch new", "batch run");
+    }
+
+    public void testRunBatch(String batch, String run) throws Exception {
 
         addProperty("prop1", "prop1_a");
         addProperty("prop2", "prop2_a");
 
-        cli.sendLine("batch");
+        cli.sendLine(batch);
         writeProperty("prop1", "prop1_b");
         writeProperty("prop2", "prop2_b");
 
         assertEquals("prop1_a", readProperty("prop1"));
         assertEquals("prop2_a", readProperty("prop2"));
 
-        cli.sendLine("run-batch");
+        cli.sendLine(run);
 
         String line = cli.readOutput();
         assertTrue(line.contains("The batch executed successfully"));
@@ -87,11 +97,21 @@ public class BatchTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testRollbackBatch() throws Exception {
+    @Deprecated
+    public void testRollbackBatch1() throws Exception {
+        testRollbackBatch("batch", "run-batch", "discard-batch");
+    }
+
+    @Test
+    public void testRollbackBatch2() throws Exception {
+        testRollbackBatch("batch new", "batch run", "batch discard");
+    }
+
+    public void testRollbackBatch(String batch, String run, String discard) throws Exception {
 
         addProperty("prop1", "prop1_a");
 
-        cli.sendLine("batch");
+        cli.sendLine(batch);
         addProperty("prop2", "prop2_a");
         addProperty("prop1", "prop1_b");
 
@@ -99,7 +119,7 @@ public class BatchTestCase extends AbstractCliTestBase {
         assertFalse(cli.isValidPath("system-property", "prop2"));
 
         // this should fail
-        cli.sendLine("run-batch", true);
+        cli.sendLine(run, true);
 
         String line = cli.readOutput();
         String expectedErrorCode = ControllerLogger.ROOT_LOGGER.compositeOperationFailed();
@@ -110,7 +130,7 @@ public class BatchTestCase extends AbstractCliTestBase {
         assertEquals("prop1_a", readProperty("prop1"));
         assertFalse(cli.isValidPath("system-property", "prop2"));
 
-        cli.sendLine("discard-batch");
+        cli.sendLine(discard);
 
         removeProperty("prop1");
         assertFalse(cli.isValidPath("system-property", "prop1"));

@@ -47,6 +47,7 @@ import org.junit.AfterClass;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -118,9 +119,22 @@ public class DeployTestCase {
         checkDeployment(cliTestApp1War.getName(), true);
         checkDeployment(cliTestAnotherWar.getName(), true);
         checkDeployment(cliTestApp2War.getName(), true);
+
+        // Undeploy them all.
+        ctx.handle("deployment disable-all");
+        checkDeployment(cliTestApp1War.getName(), false);
+        checkDeployment(cliTestAnotherWar.getName(), false);
+        checkDeployment(cliTestApp2War.getName(), false);
+
+        // Deploy them all.
+        ctx.handle("deployment enable-all");
+        checkDeployment(cliTestApp1War.getName(), true);
+        checkDeployment(cliTestAnotherWar.getName(), true);
+        checkDeployment(cliTestApp2War.getName(), true);
     }
 
     @Test
+    @Ignore // No more valid, completion not active for legacy commands.
     public void testDeployAllCompletion() throws Exception {
         {
             String cmd = "deploy --name=";
@@ -170,6 +184,12 @@ public class DeployTestCase {
         {
             ctx.handle("deploy --force " + cliTestApp1War.getAbsolutePath());
             checkDeployment(cliTestApp1War.getName(), !enabled);
+        }
+
+        {
+            ctx.handle("deployment deploy-file --replace " + cliTestApp1War.getAbsolutePath());
+            checkDeployment(cliTestApp1War.getName(), !enabled);
+            ctx.handle("deployment undeploy " + cliTestApp1War.getName());
         }
     }
 

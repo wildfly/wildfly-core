@@ -289,42 +289,42 @@ public class VariablesTestCase {
         ctx.setVariable("vota","v3");
         {
             List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo ", 0, candidates);
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo ", 5, candidates);
+            assertEquals(Arrays.asList("--help"), candidates);
+            assertEquals(5, index);
+        }
+
+        {
+            List<String> candidates = new ArrayList<>();
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo t", 7, candidates);
             assertTrue(candidates.isEmpty());
             assertEquals(-1, index);
         }
 
         {
             List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo t", 0, candidates);
-            assertTrue(candidates.isEmpty());
-            assertEquals(-1, index);
-        }
-
-        {
-            List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $", 0, candidates);
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $", 7, candidates);
             assertEquals(Arrays.asList("tata", "toto", "vota"), candidates);
             assertEquals(6, index);
         }
 
         {
             List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $t", 0, candidates);
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $t", 8, candidates);
             assertEquals(Arrays.asList("tata", "toto"), candidates);
             assertEquals(6, index);
         }
 
         {
             List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$", 0, candidates);
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$", 12, candidates);
             assertEquals(Arrays.asList("tata", "toto", "vota"), candidates);
             assertEquals(12, index);
         }
 
         {
             List<String> candidates = new ArrayList<>();
-            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$v", 0, candidates);
+            int index = ctx.getDefaultCommandCompleter().complete(ctx, "echo $tata/$v", 13, candidates);
             assertEquals(Arrays.asList("vota"), candidates);
             assertEquals(12, index);
         }
