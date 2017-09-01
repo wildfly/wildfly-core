@@ -239,9 +239,6 @@ public class CliProcessWrapper extends CliProcessBuilder {
     }
 
     private boolean waitForClose() throws IOException {
-        if( bufferedWriter != null ){
-            bufferedWriter.close();
-        }
 
         boolean closed = false;
         int waitingTime = 0;
