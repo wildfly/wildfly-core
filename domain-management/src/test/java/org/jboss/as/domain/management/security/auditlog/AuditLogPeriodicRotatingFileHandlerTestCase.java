@@ -31,7 +31,6 @@ import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerR
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -141,7 +140,6 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
     }
 
     @Test
-    @Ignore("time consuming test, it takes more than 1 minute")
     public void testRotation() throws Exception {
         final String handlerName1 = "test-periodic-rotating-file";
         final String handlerName2 = "test-periodic-rotating-file2";
