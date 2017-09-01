@@ -263,6 +263,7 @@ class PermissionMapperDefinitions {
             return PermissionUtil.createPermission(classLoader, permission.getClassName(), permission.getTargetName(), permission.getAction());
         } catch (InvalidPermissionClassException e) {
             // If we cannot load it, it can never be checked.
+            ElytronSubsystemMessages.ROOT_LOGGER.invalidPermissionClass(permission.getClassName());
             return null;
         } catch (Throwable e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.exceptionWhileCreatingPermission(permission.getClassName(), e);
