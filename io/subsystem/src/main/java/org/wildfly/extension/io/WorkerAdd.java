@@ -25,6 +25,7 @@
 package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
 import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
@@ -147,6 +148,10 @@ class WorkerAdd extends AbstractAddStepHandler {
 
     @Override
     protected Resource createResource(OperationContext context) {
+        if (PROFILE.equals(context.getCurrentAddress().getElement(0).getKey())) {
+            // Just do the standard thing
+            return super.createResource(context);
+        }
         Resource r = new WorkerResourceDefinition.WorkerResource(context);
         context.addResource(PathAddress.EMPTY_ADDRESS, r);
         return r;
