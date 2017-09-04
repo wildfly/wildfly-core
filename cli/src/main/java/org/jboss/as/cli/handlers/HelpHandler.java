@@ -29,8 +29,8 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
+import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 
 /**
  * Help command handler. Reads 'help/help.txt' and prints its content to the output stream.
@@ -39,14 +39,14 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
  */
 public class HelpHandler extends CommandHandlerWithHelp {
 
-    private final CommandRegistry cmdRegistry;
+    private final CLICommandRegistry cmdRegistry;
     private final ArgumentWithoutValue commands = new ArgumentWithoutValue(this, "--commands");
 
-    public HelpHandler(CommandRegistry cmdRegistry) {
+    public HelpHandler(CLICommandRegistry cmdRegistry) {
         this("help", cmdRegistry);
     }
 
-    public HelpHandler(String command, CommandRegistry cmdRegistry) {
+    public HelpHandler(String command, CLICommandRegistry cmdRegistry) {
         super(command);
         if(cmdRegistry == null) {
             throw new IllegalArgumentException("CommandRegistry is null");
@@ -78,6 +78,7 @@ public class HelpHandler extends CommandHandlerWithHelp {
                     commands.add(cmd);
                 }
             }
+            commands.addAll(cmdRegistry.getAvailableAeshCommands());
             Collections.sort(commands);
 
             ctx.printLine("Commands available in the current context:");
