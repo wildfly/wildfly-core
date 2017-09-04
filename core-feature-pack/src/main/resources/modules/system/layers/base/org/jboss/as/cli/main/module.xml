@@ -49,7 +49,7 @@
         <module name="org.codehaus.woodstox" services="import"/>
         <!-- END JAXP default dependencies -->
 
-        <module name="org.aesh"/>
+        <module name="org.aesh" export="true"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.as.controller-client"/>
         <module name="org.jboss.as.protocol"/>

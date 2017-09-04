@@ -78,10 +78,21 @@ public interface CommandContext {
     ParsedCommandLine getParsedCommandLine();
 
     /**
-     * Prints a string to the CLI's output.
+     * Prints a string to the CLI's output. Terminates the message by writing
+     * the line separator string.
+     *
      * @param message the message to print
      */
     void printLine(String message);
+
+    /**
+     * Prints a string to the CLI's output.
+     *
+     * @param message the message to print
+     */
+    default void print(String message) {
+        printLine(message);
+    }
 
     /**
      * Prints a collection of strings as columns to the CLI's output.

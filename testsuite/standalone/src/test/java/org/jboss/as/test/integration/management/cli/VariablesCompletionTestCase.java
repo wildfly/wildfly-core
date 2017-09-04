@@ -111,7 +111,7 @@ public class VariablesCompletionTestCase {
         String command = "$" + FOOBAR_NAME;
         List<String> candidates = fetchCandidates(command, command.length(), cli.getCommandContext());
         assertNotNull(candidates);
-        assertEquals(Arrays.asList(":", "/"), candidates);
+        assertEquals(Arrays.asList("/", ":"), candidates);
     }
 
     private List<String> fetchCandidates(String buffer, int cursor, CommandContext ctx) {
