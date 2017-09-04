@@ -27,6 +27,8 @@ import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandHandlerProvider;
 
 /**
+ * WARNING: NO MORE IN USE, REPLACED BY PatchCommand.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012 Red Hat Inc.
  */
 public class PatchHandlerProvider implements CommandHandlerProvider {

@@ -69,6 +69,17 @@ public class CommandExecutor {
     private static final String CANCEL_MSG = "Cancelling running operation...";
     private static final String TIMEOUT_CANCEL_MSG = "Timeout. " + CANCEL_MSG;
 
+    public interface Executable {
+        void execute() throws CommandLineException;
+    }
+
+    public interface ExecutableBuilder {
+
+        Executable build();
+
+        CommandContext getCommandContext();
+    }
+
     // A wrapper to allow to override ModelControllerClient.
     // Public for testing purpose.
     public class TimeoutCommandContext implements CommandContext {
@@ -646,13 +657,43 @@ public class CommandExecutor {
         }
     }
 
-    // Public for testing purpose.
-    public void execute(CommandHandler handler, int timeout, TimeUnit unit) throws
+    // Execute a command handler, a CommandContext is created to handle
+    // timeout and is passed to the handler.
+    // public for testing purpose
+    public void execute(CommandHandler handler,
+            int timeout,
+            TimeUnit unit) throws
             CommandLineException,
             InterruptedException, ExecutionException, TimeoutException {
-        TimeoutCommandContext context = new TimeoutCommandContext(ctx);
+        ExecutableBuilder builder = new ExecutableBuilder() {
+            CommandContext c = newTimeoutCommandContext(ctx);
+            @Override
+            public Executable build() {
+                return () -> {
+                    handler.handle(c);
+                };
+            }
+
+            @Override
+            public CommandContext getCommandContext() {
+                return c;
+            }
+        };
+        execute(builder, timeout, unit);
+    }
+
+    // Allows to delegate the TimeoutCommandContext creation.
+    // CLICommandInvocationBuilder injects the CommandCOntext instance
+    // in the command at Command creation time. When this method is called
+    // the CommandContext has already been created so we need a way to retrieve it.
+    // The CommandContext can be retrieved thatnks to the ExecutableBuilder.
+    void execute(ExecutableBuilder builder,
+            int timeout,
+            TimeUnit unit) throws
+            CommandLineException,
+            InterruptedException, ExecutionException, TimeoutException {
         Future<Void> task = executorService.submit(() -> {
-            handler.handle(context);
+            builder.build().execute();
             return null;
         });
         try {
@@ -663,7 +704,10 @@ public class CommandExecutor {
                     task.get(timeout, unit);
                 } catch (TimeoutException ex) {
                     // First make the context unusable
-                    context.timeout();
+                    CommandContext c = builder.getCommandContext();
+                    if (c instanceof TimeoutCommandContext) {
+                        ((TimeoutCommandContext) c).timeout();
+                    }
                     // Then cancel the task.
                     task.cancel(true);
                     throw ex;
@@ -672,9 +716,12 @@ public class CommandExecutor {
         } catch (InterruptedException ex) {
             // Could have been interrupted by user (Ctrl-C)
             Thread.currentThread().interrupt();
-            cancelTask(task, context, null);
+            cancelTask(task, builder.getCommandContext(), null);
             // Interrupt running operation.
-            context.interrupted();
+            CommandContext c = builder.getCommandContext();
+            if (c instanceof TimeoutCommandContext) {
+                ((TimeoutCommandContext) c).interrupted();
+            }
             throw ex;
         }
     }
@@ -695,6 +742,14 @@ public class CommandExecutor {
 
     void cancel() {
         executorService.shutdownNow();
+    }
+
+    CommandContext newTimeoutCommandContext(CommandContext ctx) {
+        if (ctx.getCommandTimeout() <= 0) {
+            return ctx;
+        } else {
+            return new TimeoutCommandContext(ctx);
+        }
     }
 
     // FOR TESTING PURPOSE ONLY

@@ -105,6 +105,7 @@
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.aesh-readline>1.3</version.org.aesh-readline>
         <version.org.jboss.byteman>3.0.9</version.org.jboss.byteman>
+        <version.org.aesh>1.0-SNAPSHOT</version.org.aesh>
         <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.0.4.Final</version.org.jboss.jandex>
@@ -945,12 +946,12 @@
                 <groupId>org.aesh</groupId>
                 <artifactId>aesh-readline</artifactId>
                 <version>${version.org.aesh-readline}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.aesh</groupId>
+                <artifactId>aesh</artifactId>
+                <version>${version.org.aesh}</version>
             </dependency>
 
             <dependency>

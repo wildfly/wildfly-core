@@ -29,6 +29,7 @@
 
     <resources>
         <artifact name="${org.aesh:aesh-readline}"/>
+        <artifact name="${org.aesh:aesh}"/>
     </resources>
 
     <dependencies>

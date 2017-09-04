@@ -76,6 +76,8 @@ import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
+ * WARNING: NO MORE IN USE, REPLACED BY PatchCommand.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012 Red Hat Inc.
  */
 public class PatchHandler extends CommandHandlerWithHelp {

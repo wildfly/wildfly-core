@@ -78,13 +78,16 @@ public interface CommandContext {
     ParsedCommandLine getParsedCommandLine();
 
     /**
-     * Prints a string to the CLI's output.
+     * Prints a string to the CLI's output. Terminates the message by writing
+     * the line separator string.
+     *
      * @param message the message to print
      */
     void printLine(String message);
 
     /**
      * Prints a ModelNode according to the current configuration.
+     *
      * @param node The ModelNode to print.
      */
     default void printDMR(ModelNode node) {
@@ -93,6 +96,15 @@ public interface CommandContext {
         } else {
             printLine(node.toString());
         }
+    }
+
+    /**
+     * Prints a string to the CLI's output.
+     *
+     * @param message the message to print
+     */
+    default void print(String message) {
+        printLine(message);
     }
 
     /**

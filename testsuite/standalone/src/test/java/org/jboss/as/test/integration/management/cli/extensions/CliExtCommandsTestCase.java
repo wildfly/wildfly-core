@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.inject.Inject;
+import org.aesh.command.Command;
 
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
@@ -108,6 +109,25 @@ public class CliExtCommandsTestCase {
     }
 
     @Test
+    public void testExtensionCommand2() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommand.NAME);
+        cli.executeNonInteractive();
+        assertNotEquals(0, cli.getProcessExitValue());
+
+        cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommand.NAME);
+        cli.executeNonInteractive();
+        assertEquals(0, cli.getProcessExitValue());
+
+        // the output may contain other logs from the cli initialization
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().endsWith(CliExtCommand.OUTPUT));
+    }
+
+    @Test
     public void testExtensionCommandHelp() throws IOException {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
@@ -122,9 +142,9 @@ public class CliExtCommandsTestCase {
     private static void createTestModule() throws Exception {
         final File moduleXml = new File(CliExtCommandsTestCase.class.getResource(CliExtCommandsTestCase.class.getSimpleName() + "-module.xml").toURI());
         testModule = new TestModule(MODULE_NAME, moduleXml);
-
         final JavaArchive archive = testModule.addResource("test-cli-ext-commands-module.jar")
                 .addClass(CliExtCommandHandler.class)
+                .addClass(CliExtCommand.class)
                 .addClass(CliExtCommandHandlerProvider.class)
                 .addClass(CliExtCommandsExtension.class)
                 .addClass(CliExtCommandsParser.class)
@@ -141,6 +161,9 @@ public class CliExtCommandsTestCase {
 
         final ArchivePath cliCmdService = ArchivePaths.create(services, CommandHandlerProvider.class.getName());
         archive.addAsManifestResource(CliExtCommandHandler.class.getPackage(), CommandHandlerProvider.class.getName(), cliCmdService);
+
+        final ArchivePath cliAeshCmdService = ArchivePaths.create(services, Command.class.getName());
+        archive.addAsManifestResource(CliExtCommand.class.getPackage(), Command.class.getName(), cliAeshCmdService);
 
         final ArchivePath helpService = ArchivePaths.create(help, CliExtCommandHandler.NAME + ".txt");
         archive.addAsResource(CliExtCommandHandler.class.getPackage(), CliExtCommandHandler.NAME + ".txt", helpService);
