@@ -35,24 +35,26 @@ import static org.jboss.as.patching.runner.TestUtils.dump;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.touch;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.runner.AbstractTaskTestCase;
 import org.jboss.as.patching.runner.ContentModificationUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 
@@ -110,7 +112,9 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
         assertPatchElements(baseModuleDir, null);
 
         // apply the patch using the cli
-        CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
+        CommandContextConfiguration.Builder config = new CommandContextConfiguration.Builder();
+        config.setInitConsole(true);
+        CommandContext ctx = CommandContextFactory.getInstance().newCommandContext(config.build());
         try {
             ctx.handle("patch apply " + zippedPatch.getAbsolutePath() + " --distribution=" + env.getInstalledImage().getJbossHome());
         } catch(Exception e) {
@@ -162,6 +166,27 @@ public class RollbackLastUnitTestCase extends AbstractTaskTestCase {
         assertNotEqual(originalFileHash, patch2FileHash);
 
         //TestUtils.tree(env.getInstalledImage().getJbossHome());
+        // rollback patch-id auto-completion.
+        {
+            String cmd = "patch rollback " + " --distribution=" + env.getInstalledImage().getJbossHome() + " ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertTrue(candidates.toString(), candidates.size() == 2);
+            assertTrue(candidates.toString(), candidates.contains(patchID));
+            assertTrue(candidates.toString(), candidates.contains(patchID2));
+        }
+
+        // info patch-id auto-completion.
+        {
+            String cmd = "patch info " + " --distribution=" + env.getInstalledImage().getJbossHome() + " ";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertTrue(candidates.toString(), candidates.size() == 2);
+            assertTrue(candidates.toString(), candidates.contains(patchID));
+            assertTrue(candidates.toString(), candidates.contains(patchID2));
+        }
 
         try {
             ctx.handle("patch rollback --reset-configuration=false --distribution=" + env.getInstalledImage().getJbossHome());
