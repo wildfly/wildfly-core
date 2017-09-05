@@ -74,6 +74,17 @@ public class CLIWrapper implements AutoCloseable {
     }
 
     /**
+     * Creates new CLI wrapper using the host, port from the managementClient. If the connect parameter is set to true the CLI will connect to the server using
+     * <code>connect</code> command.
+     *
+     * @param connect indicates if the CLI should connect to server automatically.
+     * @throws Exception
+     */
+    public CLIWrapper(String mgmtAddress, int mgmtPort, boolean connect) throws Exception {
+        this(connect, mgmtAddress, mgmtPort, null, -1);
+    }
+
+    /**
      * Creates new CLI wrapper. If the connect parameter is set to true the CLI will connect to the server using
      * <code>connect</code> command.
      *
@@ -120,6 +131,34 @@ public class CLIWrapper implements AutoCloseable {
             return;
         }
         Assert.assertTrue(sendConnect(cliAddress));
+    }
+
+    /**
+     * Creates new CLI wrapper. If the connect parameter is set to true the CLI will connect to the server using
+     * <code>connect</code> command.
+     *
+     * @param connect indicates if the CLI should connect to server automatically.
+     * @param cliAddress The cli address, if null the value of the {@code node0} property is used, and if that is absent {@code localhost} is used
+     * @param serverPort The cli port, if null the value of the {@code node0} property is used, and if that is absent {@code 9990} is used
+     * @param consoleInput input stream to use for sending to the CLI, or {@code null} if the standard input stream should be used
+     * @param connectionTimeout timeout of the CLI connection (in milliseconds)
+     */
+    public CLIWrapper(boolean connect, String cliAddress, Integer serverPort, InputStream consoleInput, int connectionTimeout) throws CliInitializationException {
+
+        if(cliAddress == null)
+            cliAddress = TestSuiteEnvironment.getServerAddress();
+        if(serverPort == null)
+            serverPort = TestSuiteEnvironment.getServerPort();
+        consoleOut = new ByteArrayOutputStream();
+        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
+        ctx = CLITestUtil.getCommandContext(
+                cliAddress, serverPort,
+                consoleInput, consoleOut, connectionTimeout);
+
+        if (!connect) {
+            return;
+        }
+        Assert.assertTrue(sendConnect());
     }
 
     public CommandContext getCommandContext() {
