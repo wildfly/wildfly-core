@@ -28,12 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
-import java.security.PrivilegedAction;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,12 +52,14 @@ import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.Endpoint;
-import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.SecurityFactory;
+import org.jboss.remoting3.EndpointBuilder;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.MatchRule;
 import org.xnio.OptionMap;
+import org.xnio.Xnio;
+import org.xnio.XnioWorker;
 import org.xnio.http.RedirectException;
 
 /**
@@ -75,21 +72,15 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
     private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
     private static final OptionMap DEFAULT_OPTIONS = OptionMap.EMPTY;
 
-    private static final ThreadPoolExecutor executorService;
     private static final Endpoint endpoint;
     static {
-        final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
-        final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
-            public JBossThreadFactory run() {
-                return new JBossThreadFactory(new ThreadGroup("cli-remoting"), Boolean.FALSE, null, "%G - %t", null, null);
-            }
-        });
-        executorService = new ThreadPoolExecutor(2, 4, 60L, TimeUnit.SECONDS, workQueue, threadFactory);
-        // Allow the core threads to time out as well
-        executorService.allowCoreThreadTimeOut(true);
-
         try {
-            endpoint = Endpoint.builder().setEndpointName("cli-client").build();
+            // Making the XNIO Executor to only used 4 threads + unbounded queue.
+            // This Executor is used by management requests and remoting protocol.
+            EndpointBuilder endpointBuilder = Endpoint.builder();
+            XnioWorker.Builder workerBuilder = endpointBuilder.buildXnioWorker(Xnio.getInstance());
+            workerBuilder.setMaxWorkerPoolSize(4);
+            endpoint = endpointBuilder.setEndpointName("cli-client").build();
         } catch (IOException e) {
             throw new IllegalStateException("Failed to create remoting endpoint");
         }
@@ -97,10 +88,6 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
         CliShutdownHook.add(new CliShutdownHook.Handler() {
             @Override
             public void shutdown() {
-                executorService.shutdown();
-                try {
-                    executorService.awaitTermination(1, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {}
                 try {
                     endpoint.close();
                 } catch (IOException e) {
@@ -142,7 +129,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             @Override
             public void close() throws IOException {
             }
-        }, executorService, this);
+        }, endpoint.getXnioWorker(), this);
 
         URI connURI;
         try {

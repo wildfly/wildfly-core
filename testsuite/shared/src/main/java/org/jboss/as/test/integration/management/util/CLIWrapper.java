@@ -111,7 +111,6 @@ public class CLIWrapper implements AutoCloseable {
     public CLIWrapper(boolean connect, String cliAddress, InputStream consoleInput, int connectionTimeout) throws CliInitializationException {
 
         consoleOut = new ByteArrayOutputStream();
-        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         ctx = CLITestUtil.getCommandContext(
                 TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(),
                 consoleInput, consoleOut, connectionTimeout);
