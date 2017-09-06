@@ -115,6 +115,35 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      */
     protected String getSubsystemXml(String configId) throws IOException {
         return readResource(configId);
+
+    }
+
+    /**
+     * Get the comparison subsystem xml to compare marshalled output
+     * <p>
+     * This default implementation returns null, causing the original source to be used
+     * </p>
+     *
+     * @return the comparison xml or null to compare with the source
+     * @throws IOException
+     */
+    protected String getComparisonXml() throws IOException {
+        return null;
+    }
+
+    /**
+     * Get the comparison subsystem xml to compare marshalled output using the given id as a string.
+     * <p>
+     * This default implementation returns null, causing the original source to be used
+     * </p>
+     *
+     * @param configId the id of the xml configuration
+     *
+     * @return the comparison xml or null to compare with the source
+     * @throws IOException
+     */
+    protected String getComparisonXml(String configId) throws IOException {
+        return null;
     }
 
     @Test
@@ -214,11 +243,14 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         servicesA.shutdown();
 
 
-        // validate the the normalized xmls
+        // validate the the normalized xmls, validate without comparison as well
         String normalizedSubsystem = normalizeXML(subsystemXml);
 
         if (compareXml) {
-            compareXml(configId, normalizedSubsystem, normalizeXML(marshalled));
+            String comparisonXml = configId == null ? getComparisonXml() : getComparisonXml(configId);
+            comparisonXml = comparisonXml != null ? normalizeXML(comparisonXml) : normalizedSubsystem;
+
+            compareXml(configId, comparisonXml, normalizeXML(marshalled));
         }
 
         //Install the persisted xml from the first controller into a second controller
