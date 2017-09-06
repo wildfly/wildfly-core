@@ -371,14 +371,10 @@ class MapperParser {
                 String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case PRINCIPALS:
-                        for (String principal : reader.getListAttributeValue(i)) {
-                            PermissionMapperDefinitions.PRINCIPALS.parseAndAddParameterElement(principal, permissionMapping, reader);
-                        }
+                        PermissionMapperDefinitions.PRINCIPALS.getParser().parseAndSetParameter(PermissionMapperDefinitions.PRINCIPALS, reader.getAttributeValue(i), permissionMapping, reader);
                         break;
                     case ROLES:
-                        for (String role : reader.getListAttributeValue(i)) {
-                            PermissionMapperDefinitions.ROLES.parseAndAddParameterElement(role, permissionMapping, reader);
-                        }
+                        PermissionMapperDefinitions.ROLES.getParser().parseAndSetParameter(PermissionMapperDefinitions.ROLES, reader.getAttributeValue(i), permissionMapping, reader);
                         break;
                     default:
                         throw unexpectedAttribute(reader, i);
