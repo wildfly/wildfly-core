@@ -13,7 +13,7 @@
     <buffer-cache name="default" buffer-size="1025" buffers-per-region="1054" max-regions="15" alias="entry1 entry2 entry3"/>
     <buffer-cache name="extra" buffer-size="1025" buffers-per-region="1054" max-regions="15">
         <object-map>
-            <property name="key1" alias="entry1 entry2 entry3" enabled="false" my-attr1="foo"/>
+            <property name="key1" alias="entry1,entry2,entry3" enabled="false" my-attr1="foo"/>
         </object-map>
     </buffer-cache>
 </subsystem>

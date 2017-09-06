@@ -53,7 +53,7 @@
                            to="businessUnit"/>
             </attribute-mapping>
             <new-identity-attributes>
-                <attribute name="objectClass" value="top inetOrgPerson person organizationalPerson"/>
+                <attribute name="objectClass" value="value with spaces,second element,third"/>
                 <attribute name="sn" value="BlankSurname"/>
                 <attribute name="cn" value="BlankCommonName"/>
             </new-identity-attributes>

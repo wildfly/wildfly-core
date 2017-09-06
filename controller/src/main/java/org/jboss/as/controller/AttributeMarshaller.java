@@ -108,7 +108,11 @@ public abstract class AttributeMarshaller {
             StringBuilder builder = new StringBuilder();
             Iterator<ModelNode> values = value.asList().iterator();
             while (values.hasNext()) {
-                builder.append(values.next().asString());
+                String elValue = values.next().asString();
+                if (delimiter == ' '){
+                    elValue = elValue.replaceAll(" ", String.valueOf((char)160));
+                }
+                builder.append(elValue);
                 if (values.hasNext()) {
                     builder.append(this.delimiter);
                 }
