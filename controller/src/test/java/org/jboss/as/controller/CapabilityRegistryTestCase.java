@@ -37,6 +37,8 @@ import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -923,6 +925,24 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
 
         executeCheckNoFailure(Util.createEmptyOperation("no-root-cap", PathAddress.EMPTY_ADDRESS));
+    }
+
+    @Test
+    public void testGetCapabilities() throws OperationFailedException {
+        CapabilityRegistry reg = new CapabilityRegistry(false);
+        reg.registerPossibleCapability(RuntimeCapability.Builder.of("org.wildfly.obj",
+                true, Object.class).build(),
+                PathAddress.pathAddress(new PathElement("subsystem", "java:jboss"),
+                        new PathElement("foo", "*")));
+        RegistrationPoint rp
+                = new RegistrationPoint(PathAddress.pathAddress(new PathElement("subsystem", "java:jboss"),
+                        new PathElement("foo", "bar")), "bar");
+        RuntimeCapabilityRegistration registration = new RuntimeCapabilityRegistration(RuntimeCapability.Builder.of("org.wildfly.obj.dyn",
+                true, Object.class).build(), CapabilityScope.GLOBAL, rp);
+        reg.registerCapability(registration);
+        Set<String> result = reg.getDynamicCapabilityNames("org.wildfly.obj", CapabilityScope.GLOBAL);
+        Assert.assertEquals(1, result.size());
+        Assert.assertTrue(result.contains("dyn"));
     }
 
     private void addRemoveAddTest() throws OperationFailedException {

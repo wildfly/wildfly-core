@@ -26,9 +26,6 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.nio.file.FileSystems;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -985,41 +982,40 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
 
         // Retrieve all the provider points that matching capabilities
-        // must be compliant with. Each ProviderPoint is converted onto a
-        // PathMatcher that is used to filter-in/out the capabilities.
+        // must be compliant with.
 
         //For possible capabilities it is always global.
         CapabilityId id = new CapabilityId(referencedCapability,
                 CapabilityScope.GLOBAL);
-        List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
-                map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
-                        + escapePath(possiblePoint.toPathStyleString()))).collect(Collectors.toList());
+        Set<PathAddress> possibleProviders = new HashSet<>(getPossibleProviderPoints(id));
         // Any dynamic capability registered to the root address matches (e.g. hardcoded path capabilities)
-        matchers.add(FileSystems.getDefault().getPathMatcher("glob:/"));
+        possibleProviders.add(PathAddress.EMPTY_ADDRESS);
 
-        // Filter the streams of capabilities to extract matching ones
-        return getCapabilities().stream().
-                // Keep capability that matches at least one of the registration point
-                filter((registration) -> registration.getRegistrationPoints().stream().
-                        map((rp) -> Paths.get(escapePath(rp.getAddress().toPathStyleString()))).
-                        filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
-                        count() > 0).
-                // Keep capability that can be reached from the provided scope
-                filter((registration) -> hasCapability(registration.getCapabilityName(), dependentScope)).
-                // Remove static name
-                filter((registration) -> !registration.getCapabilityName().equals(referencedCapability)).
-                // remove aliases
-                filter((registration) -> registration.getCapabilityName().startsWith(referencedCapability)).
-                // Finally convert remaining capabilities onto capability dynamic name.
-                map((registration) -> registration.getCapabilityName().
-                        substring(registration.getCapabilityName().lastIndexOf(".") + 1) //WFCORE-2690 we need something better for multiple dynamic parts
-                ).
-                collect(Collectors.toSet());
-    }
-
-    private static String escapePath(String path) {
-        // On Windows, ':' breaks the Paths.getPath().
-        return path.replaceAll(":", "_");
+        Set<String> capabilityNames = new HashSet<>();
+        for (CapabilityRegistration<?> registration : getCapabilities()) {
+            // Capability with matching name and that can be reached from the provided scope
+            if (!registration.getCapabilityName().equals(referencedCapability)
+                    && registration.getCapabilityName().startsWith(referencedCapability)
+                    && hasCapability(registration.getCapabilityName(), dependentScope)) {
+                // Keep only capabilities that match at least one of the registration point
+                for (RegistrationPoint regPoint : registration.getRegistrationPoints()) {
+                    boolean found = false;
+                    for (PathAddress pattern : possibleProviders) {
+                        if (pattern.matches(regPoint.getAddress())) {
+                            //WFCORE-2690 we need something better for multiple dynamic parts
+                            capabilityNames.add(registration.getCapabilityName().
+                                    substring(registration.getCapabilityName().lastIndexOf(".") + 1));
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+            }
+        }
+        return capabilityNames;
     }
 
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
