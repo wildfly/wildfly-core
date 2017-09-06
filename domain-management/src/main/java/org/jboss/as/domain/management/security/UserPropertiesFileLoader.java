@@ -162,36 +162,6 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
         }
     }
 
-    /**
-     * Remove the realm name block.
-     *
-     * @see PropertiesFileLoader#addLineContent(java.io.BufferedReader, java.util.List, String)
-     */
-    @Override
-    protected void addLineContent(BufferedReader bufferedFileReader, List<String> content, String line) throws IOException {
-        // Is the line an empty comment "#" ?
-        if (line.startsWith(COMMENT_PREFIX) && line.length() == 1) {
-            String nextLine = bufferedFileReader.readLine();
-            if (nextLine != null) {
-                // Is the next line the realm name "#$REALM_NAME=" ?
-                if (nextLine.startsWith(COMMENT_PREFIX) && nextLine.contains(REALM_COMMENT_PREFIX)) {
-                    // Realm name block detected!
-                    // The next line must be and empty comment "#"
-                    bufferedFileReader.readLine();
-                    // Avoid adding the realm block
-                } else {
-                    // It's a user comment...
-                    content.add(line);
-                    content.add(nextLine);
-                }
-            } else {
-                super.addLineContent(bufferedFileReader, content, line);
-            }
-        } else {
-            super.addLineContent(bufferedFileReader, content, line);
-        }
-    }
-
     private void writeRealm(final BufferedWriter bw, final String realmName) throws IOException {
         bw.append(COMMENT_PREFIX);
         bw.newLine();
