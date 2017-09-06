@@ -111,14 +111,24 @@ public class DomainTransformers {
         //todo we should use ChainedTransformationDescriptionBuilder but it doesn't work properly with "root" resources
         ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(null);
 
+        // releases other than the current (latest) one may not understand the current host-release enum values
+        // and releases prior to 4.0 do not understand host exclude at all. Since this is only of use on the domain
+        // controller (DC), and the DC must be running the same, or later release than the slaves, we don't send it to slaves when
+        // they are prior versions to current.
+        // TODO: WFCORE-3252 make this filtering depend on the slaves version and only send that and prior known values?
 
-        // 4.0 and earlier do not understand host-exclude. These are only used by
-        // a DC, which must be running current version, so it's safe to discard them
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
+
+        ModelVersion[] versions = {VERSION_4_1};
+        for (ModelVersion version : versions){
+            TransformersSubRegistration domain = registry.getDomainRegistration(version);
+            TransformationDescription.Tools.register(builder.build(), domain);
+        }
+
         // 4.0 and earlier do not understand the concept of a suspended startup/reload
         DomainServerLifecycleHandlers.registerSuspendedStartTransformers(builder);
 
-        ModelVersion[] versions = {VERSION_3_0, VERSION_4_0};
+        versions = new ModelVersion[]{VERSION_3_0, VERSION_4_0};
         for (ModelVersion version : versions){
             TransformersSubRegistration domain = registry.getDomainRegistration(version);
             TransformationDescription.Tools.register(builder.build(), domain);
