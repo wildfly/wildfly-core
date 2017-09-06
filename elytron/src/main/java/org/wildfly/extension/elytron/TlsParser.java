@@ -34,7 +34,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_S
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TLS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGERS;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
@@ -54,6 +53,8 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Tomaz Cerar
  */
 class TlsParser {
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
     private PersistentResourceXMLDescription keyManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_MANAGER))
             .setXmlWrapperElement("key-managers")
             .addAttribute(SSLDefinitions.ALGORITHM)
@@ -152,6 +153,14 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
             .build();
+
+    TlsParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readTls(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);

@@ -34,7 +34,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REA
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_REALMS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TOKEN_REALM;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.List;
 
@@ -96,6 +95,11 @@ class RealmParser {
     private final PersistentResourceXMLDescription cachingRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CACHING_REALM), null)
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)
             .build();
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    RealmParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
 
    /* final PersistentResourceXMLDescription realmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_REALMS, "ignored"), null)
             .setNoAddOperation(true)
@@ -111,6 +115,9 @@ class RealmParser {
             .addChild(cachingRealmParser)
             .build();*/
 
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readRealms(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {

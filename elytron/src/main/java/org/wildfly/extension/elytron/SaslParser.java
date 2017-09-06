@@ -28,7 +28,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SASL;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SASL_AUTHENTICATION_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SASL_SERVER_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVICE_LOADER_SASL_SERVER_FACTORY;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
@@ -48,6 +47,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 class SaslParser {
 
     private final AuthenticationFactoryParser authenticationFactoryParser = new AuthenticationFactoryParser();
+    private final ElytronSubsystemParser elytronSubsystemParser;
 
     private PersistentResourceXMLDescription aggregateSaslServerMechanismFactory = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_SASL_SERVER_FACTORY))
             .addAttribute(SaslServerDefinitions.getRawAggregateSaslServerFactoryDefinition().getReferencesAttribute(),
@@ -78,6 +78,13 @@ class SaslParser {
             .addAttribute(ClassLoadingAttributeDefinitions.MODULE)
             .build();
 
+    SaslParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readSasl(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);
