@@ -65,6 +65,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAPPED_R
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAPPERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAPPING_MODE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MATCH;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MATCH_ALL;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAXIMUM_SEGMENTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
@@ -75,6 +76,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSI
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_MAPPING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_MAPPINGS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PREFIX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPALS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_DECODERS;
@@ -103,7 +105,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TARGET_N
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.X500_ATTRIBUTE_PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.readCustomComponent;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.writeCustomComponent;
 
 import java.util.Arrays;
@@ -126,6 +127,17 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class MapperParser {
+    private final boolean allowIdentityAttributes;
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    MapperParser(ElytronSubsystemParser elytronSubsystemParser, boolean allowIdentityAttributes) {
+        this.allowIdentityAttributes = allowIdentityAttributes;
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readMappers(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);
@@ -362,6 +374,7 @@ class MapperParser {
 
     private ModelNode readPermissionMapping(XMLExtendedStreamReader reader) throws XMLStreamException {
         ModelNode permissionMapping = new ModelNode();
+        final boolean allowIdentityAttributes = this.allowIdentityAttributes;
 
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -371,14 +384,25 @@ class MapperParser {
                 String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case PRINCIPALS:
+                        if (! allowIdentityAttributes) {
+                            throw unexpectedAttribute(reader, i);
+                        }
+
                         for (String principal : reader.getListAttributeValue(i)) {
                             PermissionMapperDefinitions.PRINCIPALS.parseAndAddParameterElement(principal, permissionMapping, reader);
                         }
                         break;
                     case ROLES:
+                        if (! allowIdentityAttributes) {
+                            throw unexpectedAttribute(reader, i);
+                        }
+
                         for (String role : reader.getListAttributeValue(i)) {
                             PermissionMapperDefinitions.ROLES.parseAndAddParameterElement(role, permissionMapping, reader);
                         }
+                        break;
+                    case MATCH_ALL:
+                        PermissionMapperDefinitions.MATCH_ALL.parseAndSetParameter(reader.getAttributeValue(i), permissionMapping, reader);
                         break;
                     default:
                         throw unexpectedAttribute(reader, i);
@@ -391,10 +415,19 @@ class MapperParser {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
             String localName = reader.getLocalName();
-            if (PERMISSION.equals(localName) == false) {
-                throw unexpectedElement(reader);
+            switch (localName) {
+                case PERMISSION:
+                    permissions.add(readPermission(reader));
+                    break;
+                case PRINCIPAL:
+                    permissionMapping.get(PermissionMapperDefinitions.PRINCIPALS.getName()).add(readNameListItem(reader));
+                    break;
+                case ROLE:
+                    permissionMapping.get(PermissionMapperDefinitions.ROLES.getName()).add(readNameListItem(reader));
+                    break;
+                default:
+                    throw unexpectedElement(reader);
             }
-            permissions.add(readPermission(reader));
         }
         permissionMapping.get(PERMISSIONS).set(permissions);
 
@@ -437,6 +470,31 @@ class MapperParser {
         requireNoContent(reader);
 
         return permission;
+    }
+
+    private String readNameListItem(XMLExtendedStreamReader reader) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        String name = null;
+        for (int i = 0; i < count; i++) {
+            if (!isNoNamespaceAttribute(reader, i)) {
+                throw unexpectedAttribute(reader, i);
+            } else {
+                String attribute = reader.getAttributeLocalName(i);
+                if (NAME.equals(attribute)) {
+                    name = reader.getAttributeValue(i);
+                } else {
+                    throw unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        if (name == null) {
+            throw missingRequired(reader, NAME);
+        }
+
+        requireNoContent(reader);
+
+        return name;
     }
 
     private void readAggregatePrincipalDecoderElement(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
@@ -1375,8 +1433,9 @@ class MapperParser {
                 if (permissionMapper.hasDefined(PERMISSION_MAPPINGS)) {
                     for (ModelNode permissionMapping : permissionMapper.get(PERMISSION_MAPPINGS).asList()) {
                         writer.writeStartElement(PERMISSION_MAPPING);
-                        PermissionMapperDefinitions.PRINCIPALS.getMarshaller().marshallAsAttribute(PermissionMapperDefinitions.PRINCIPALS, permissionMapping, false, writer);
-                        PermissionMapperDefinitions.ROLES.getMarshaller().marshallAsAttribute(PermissionMapperDefinitions.ROLES, permissionMapping, false, writer);
+                        PermissionMapperDefinitions.MATCH_ALL.marshallAsAttribute(permissionMapping, false, writer);
+                        writeNameItemList(PRINCIPALS, PRINCIPAL, permissionMapping, writer);
+                        writeNameItemList(ROLES, ROLE, permissionMapping, writer);
                         if (permissionMapping.hasDefined(PERMISSIONS)) {
                             for (ModelNode permission : permissionMapping.get(PERMISSIONS).asList()) {
                                 writer.writeStartElement(PERMISSION);
@@ -1399,6 +1458,18 @@ class MapperParser {
         }
 
         return false;
+    }
+
+    private void writeNameItemList(String listName, String itemName, ModelNode mapping, XMLExtendedStreamWriter writer) throws XMLStreamException {
+        if (! mapping.hasDefined(listName)) {
+            return;
+        }
+
+        for (ModelNode item : mapping.get(listName).asList()) {
+            writer.writeStartElement(itemName);
+            writer.writeAttribute(NAME, item.asString());
+            writer.writeEndElement();
+        }
     }
 
     private boolean writeConstantPermissionMappers(boolean started, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {

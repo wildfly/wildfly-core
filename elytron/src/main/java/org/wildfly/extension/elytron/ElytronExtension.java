@@ -54,9 +54,11 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 public class ElytronExtension implements Extension {
 
     /**
-     * The name space used for the {@code subsystem} element
+     * The name spaces used for the {@code subsystem} element
      */
-    public static final String NAMESPACE = "urn:wildfly:elytron:1.0";
+    public static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
+    public static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
+    public static final String CURRENT_NAMESPACE = NAMESPACE_1_1;
 
     /**
      * The name of our subsystem within the model.
@@ -100,7 +102,8 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, ElytronSubsystemParser::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, new ElytronSubsystemParser(NAMESPACE_1_0));
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, new ElytronSubsystemParser(NAMESPACE_1_1));
     }
 
     @Override
@@ -113,7 +116,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(ElytronSubsystemParser::new);
+        subsystemRegistration.registerXMLElementWriter(new ElytronSubsystemParser(CURRENT_NAMESPACE));
     }
 
     @SuppressWarnings("unchecked")

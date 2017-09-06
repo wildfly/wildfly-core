@@ -43,7 +43,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_REALMS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TLS;
-import static org.wildfly.extension.elytron.ElytronExtension.NAMESPACE;
 
 import java.util.HashSet;
 import java.util.List;
@@ -69,8 +68,8 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
-    private final AuthenticationClientParser clientParser = new AuthenticationClientParser();
-    private final AuditLoggingParser auditLoggingParser = new AuditLoggingParser();
+    private final AuthenticationClientParser clientParser = new AuthenticationClientParser(this);
+    private final AuditLoggingParser auditLoggingParser = new AuditLoggingParser(this);
 
     private final PersistentResourceXMLDescription domainParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SECURITY_DOMAIN))
                 .setXmlWrapperElement(SECURITY_DOMAINS)
@@ -88,18 +87,22 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
                 .addAttribute(DomainDefinition.REALMS)
                 .build();
 
+    private final RealmParser realmParser = new RealmParser(this);
+    private final TlsParser tlsParser = new TlsParser(this);
+    private final ProviderParser providerParser = new ProviderParser(this);
+    private final CredentialSecurityFactoryParser credentialSecurityFactoryParser = new CredentialSecurityFactoryParser(this);
+    private final SaslParser saslParser = new SaslParser(this);
+    private final HttpParser httpParser = new HttpParser(this);
+    private final CredentialStoreParser credentialStoreParser = new CredentialStoreParser(this);
+    private final DirContextParser dirContextParser = new DirContextParser(this);
+    private final PolicyParser policyParser = new PolicyParser(this);
+    private final String namespace;
+    private final MapperParser mapperParser;
 
-
-    private final RealmParser realmParser = new RealmParser();
-    private final TlsParser tlsParser = new TlsParser();
-    private final ProviderParser providerParser = new ProviderParser();
-    private final CredentialSecurityFactoryParser credentialSecurityFactoryParser = new CredentialSecurityFactoryParser();
-    private final MapperParser mapperParser = new MapperParser();
-    private final SaslParser saslParser = new SaslParser();
-    private final HttpParser httpParser = new HttpParser();
-    private final CredentialStoreParser credentialStoreParser = new CredentialStoreParser();
-    private final DirContextParser dirContextParser = new DirContextParser();
-    private final PolicyParser policyParser = new PolicyParser();
+    ElytronSubsystemParser(String namespace) {
+        this.namespace = namespace;
+        this.mapperParser = new MapperParser(this, ElytronExtension.NAMESPACE_1_0.equals(namespace));
+    }
 
     /**
      * {@inheritDoc}
@@ -239,7 +242,7 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
      */
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        context.startSubsystemElement(ElytronExtension.NAMESPACE, false);
+        context.startSubsystemElement(namespace, false);
 
         ModelNode model = context.getModelNode();
 
@@ -267,8 +270,8 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
         writer.writeEndElement();
     }
 
-    static void verifyNamespace(final XMLExtendedStreamReader reader) throws XMLStreamException {
-        if ((NAMESPACE.equals(reader.getNamespaceURI())) == false) {
+    void verifyNamespace(final XMLExtendedStreamReader reader) throws XMLStreamException {
+        if (!(namespace.equals(reader.getNamespaceURI()))) {
             throw unexpectedElement(reader);
         }
     }

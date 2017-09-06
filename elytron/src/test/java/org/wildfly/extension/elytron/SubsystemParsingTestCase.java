@@ -50,6 +50,12 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         return readResource("domain-test.xml");
     }
 
+    @Override
+    protected String getComparisonXml(String configId) throws IOException {
+        // Mappers utilizes a boolean with a parameter corrector
+        return "mappers.xml".equals(configId) ? readResource("compare-mappers.xml") : null;
+    }
+
     @Test
     public void testParseAndMarshalModel_AuditLogging() throws Exception {
         standardSubsystemTest("audit-logging.xml");

@@ -239,6 +239,7 @@ interface ElytronDescriptionConstants {
     String MATCH = "match";
     String MATCH_ABSTRACT_TYPE = "match-abstract-type";
     String MATCH_ABSTRACT_TYPE_AUTHORITY = "match-abstract-type-authority";
+    String MATCH_ALL = "match-all";
     String MATCH_HOST = "match-host";
     String MATCH_LOCAL_SECURITY_DOMAIN = "match-local-security-domain";
     String MATCH_NO_USER = "match-no-user";
