@@ -31,6 +31,7 @@ import org.wildfly.legacy.version.LegacyVersions;
 
 public enum ModelTestControllerVersion {
     //AS releases
+    WF_11_0_0_CR1("11.0.0.CR1", false, null, true, "3.0.1.Final", "11.0.0"), // used for testing elytron shipped in core 3.0.2.Final vs 3.0.1.Final
     MASTER (CurrentVersion.VERSION, false, null, "master" ),
 
     //EAP releases

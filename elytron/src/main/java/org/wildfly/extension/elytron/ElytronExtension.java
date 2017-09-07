@@ -71,8 +71,9 @@ public class ElytronExtension implements Extension {
     public static final AttachmentKey<AuthenticationContext> AUTHENTICATION_CONTEXT_KEY = AttachmentKey.create(AuthenticationContext.class);
 
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
+    static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_1_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
