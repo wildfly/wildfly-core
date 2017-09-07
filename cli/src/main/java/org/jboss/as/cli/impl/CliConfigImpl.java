@@ -42,9 +42,9 @@ import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.SSLConfig;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.util.CLIExpressionResolver;
 import org.jboss.as.protocol.StreamUtils;
-import org.jboss.logging.Logger;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLMapper;
@@ -84,7 +84,6 @@ class CliConfigImpl implements CliConfig {
     private static final String ECHO_COMMAND = "echo-command";
     private static final String COMMAND_TIMEOUT = "command-timeout";
 
-    private static final Logger log = Logger.getLogger(CliConfig.class);
 
     static CliConfig load(final CommandContext ctx) throws CliInitializationException {
         return load(ctx, null);
@@ -585,9 +584,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        CliLogger.ROOT_LOGGER.tracef("Access-control is %s", config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
@@ -634,9 +631,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        CliLogger.ROOT_LOGGER.tracef("Access-control is %s", config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
@@ -688,9 +683,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        CliLogger.ROOT_LOGGER.tracef("Access-control is %s", config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }

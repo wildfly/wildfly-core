@@ -25,7 +25,7 @@ package org.jboss.as.cli.accesscontrol;
 import org.jboss.as.cli.CliEvent;
 import org.jboss.as.cli.CliEventListener;
 import org.jboss.as.cli.CommandContext;
-import org.jboss.logging.Logger;
+import org.jboss.as.cli.logger.CliLogger;
 
 
 /**
@@ -34,17 +34,16 @@ import org.jboss.logging.Logger;
  */
 public abstract class BaseAccessRequirement implements AccessRequirement, CliEventListener {
 
-    protected Logger log = Logger.getLogger(getClass());
-    protected final boolean traceEnabled = log.isTraceEnabled();
-
     private Boolean satisfied;
 
     @Override
     public boolean isSatisfied(CommandContext ctx) {
         if(satisfied == null) {
             satisfied = checkAccess(ctx);
-            if(traceEnabled) {
-                log.trace(toString() + " " + satisfied);
+            if(satisfied) {
+                CliLogger.ROOT_LOGGER.tracef("Requirement %s is satisfied", this);
+            } else {
+                CliLogger.ROOT_LOGGER.tracef("Requirement %s is not satisfied", this);
             }
         }
         return satisfied;

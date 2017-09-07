@@ -25,19 +25,17 @@ package org.jboss.as.cli.accesscontrol;
 import java.util.Iterator;
 
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestAddress.Node;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
 
 /**
  * @author Alexey Loubyansky
  *
  */
 public class CLIAccessControl {
-
-    private static final Logger log = Logger.getLogger(CLIAccessControl.class);
 
     public static boolean isExecute(ModelControllerClient client, OperationRequestAddress address, String operation) {
         return isExecute(client, null, address, operation);
@@ -50,27 +48,25 @@ public class CLIAccessControl {
         }
 
         if(!accessControl.has(Util.DEFAULT)) {
-            log.warn("access-control is missing defaults: " + accessControl);
+            CliLogger.ROOT_LOGGER.accessControlMissingDefaults(accessControl);
             return false;
         }
 
         final ModelNode defaults = accessControl.get(Util.DEFAULT);
         if(!defaults.has(Util.OPERATIONS)) {
-            log.warn("access-control/default is missing operations: " + defaults);
+            CliLogger.ROOT_LOGGER.accessControlMissingOperations(defaults);
             return false;
         }
 
         final ModelNode operations = defaults.get(Util.OPERATIONS);
         if(!operations.has(operation)) {
-            if(log.isTraceEnabled()) {
-                log.trace("The operation is missing in the description: " + operation);
-            }
+            CliLogger.ROOT_LOGGER.tracef("The operation is missing in the description: %s", operation);
             return false;
         }
 
         final ModelNode opAC = operations.get(operation);
         if(!opAC.has(Util.EXECUTE)) {
-            log.warn("'execute' is missing for " + operation + " in " + accessControl);
+            CliLogger.ROOT_LOGGER.executeMissingForOperation(operation, accessControl);
             return false;
         }
 
@@ -96,7 +92,7 @@ public class CLIAccessControl {
         }
 
         if(address.endsOnType()) {
-            log.debug("The prefix ends on a type.");
+            CliLogger.ROOT_LOGGER.debug("The prefix ends on a type");
             return null;
         }
 
@@ -112,23 +108,23 @@ public class CLIAccessControl {
         try {
             response = client.execute(request);
         } catch (Exception e) {
-            log.warn("Failed to execute " + Util.READ_RESOURCE_DESCRIPTION, e);
+            CliLogger.ROOT_LOGGER.failedToExecute(Util.READ_RESOURCE_DESCRIPTION, e);
             return null;
         }
 
         if (!Util.isSuccess(response)) {
-            log.debug("Failed to execute " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            CliLogger.ROOT_LOGGER.debugf("Failed to execute %s: %s", Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 
         if(!response.has(Util.RESULT)) {
-            log.warn("Response is missing result for " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            CliLogger.ROOT_LOGGER.responseMissingResult(Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 
         final ModelNode result = response.get(Util.RESULT);
         if(!result.has(Util.ACCESS_CONTROL)) {
-            log.warn("Result is missing access-control for " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            CliLogger.ROOT_LOGGER.resultMissingAccessControl(Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 

@@ -34,6 +34,7 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
@@ -48,8 +49,6 @@ import org.jboss.as.cli.parsing.WordCharacterHandler;
 import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 
 /**
  * @author Alexey Loubyansky
@@ -322,8 +321,6 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         CapabilityReferenceCompleter newCompleter(OperationRequestAddress address, String staticPart);
     }
 
-    private static final Logger LOG = Logger.getLogger(ValueTypeCompleter.class);
-
     private static final List<ModelNode> BOOLEAN_LIST = new ArrayList<ModelNode>(2);
     static {
         BOOLEAN_LIST.add(new ModelNode(Boolean.FALSE));
@@ -379,9 +376,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         try {
             handler = parse(buffer);
         } catch (CommandFormatException e) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, e.getLocalizedMessage(), e);
-            }
+            CliLogger.ROOT_LOGGER.errorParsingLine(e.getLocalizedMessage(), e);
             return -1;
         }
         try {
@@ -392,9 +387,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             candidates.addAll(foundCandidates);
             return handler.getCompletionIndex();
         } catch (RuntimeException ex) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, ex.getLocalizedMessage(), ex);
-            }
+            CliLogger.ROOT_LOGGER.errorParsingLine(ex.getLocalizedMessage(), ex);
             return -1;
         }
     }

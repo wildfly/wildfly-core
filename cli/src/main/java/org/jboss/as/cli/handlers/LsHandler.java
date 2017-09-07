@@ -40,6 +40,7 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithValue;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
@@ -52,7 +53,6 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 
 /**
  *
@@ -398,8 +398,7 @@ public class LsHandler extends BaseOperationCommand {
             ret.putAll(dyns);
         } catch (CommandFormatException ex) {
             // XXX OK will not break CLI
-            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
-                    + "description properties", ex);
+            CliLogger.ROOT_LOGGER.trace("Exception while retrieving ls description properties", ex);
         }
         return ret;
     }
@@ -411,8 +410,7 @@ public class LsHandler extends BaseOperationCommand {
             args.addAll(getDynamicOptions(ctx).values());
         } catch (CommandFormatException ex) {
             // XXX OK will not break CLI
-            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
-                    + "description properties", ex);
+            CliLogger.ROOT_LOGGER.trace("Exception while retrieving ls description properties", ex);
         }
         return args;
     }

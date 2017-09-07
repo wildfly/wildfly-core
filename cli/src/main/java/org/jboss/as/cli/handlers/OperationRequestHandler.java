@@ -37,6 +37,7 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.OperationCommand;
 import org.jboss.as.cli.RequestWithAttachments;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
@@ -87,6 +88,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
         }
 
         try {
+            CliLogger.ROOT_LOGGER.debugf("Executing operation request:%n%s", op.getOperation());
             final ModelNode result = ctx.execute(op, "Operation request");
             if (Util.isSuccess(result)) {
                 ctx.printLine(result.toString());

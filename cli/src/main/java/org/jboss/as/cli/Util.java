@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 
 import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestAddress.Node;
@@ -56,7 +57,6 @@ import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.http.RedirectException;
 
@@ -210,8 +210,6 @@ public class Util {
     public static final String NOT_OPERATOR = "!";
 
     private static final String ENCODING_EXCEPTION_MESSAGE = "Encoding exception.";
-
-    private static Logger LOG = Logger.getLogger(Util.class);
 
     public static boolean isWindows() {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
@@ -566,7 +564,7 @@ public class Util {
                 }
             }
         } catch (Exception e) {
-            LOG.debug("Got exception retrieving deployment runtime names " + e);
+            CliLogger.ROOT_LOGGER.debug("Got exception retrieving deployment runtime names", e);
         }
         return names;
     }
@@ -1358,18 +1356,18 @@ public class Util {
                 address = info.getControllerAddress();
             }
             if (address != null && isHttpsRedirect(re, address.getProtocol())) {
-                LOG.debug("Trying to reconnect an http to http upgrade");
+                CliLogger.ROOT_LOGGER.debug("Trying to reconnect an http to http upgrade");
                 try {
                     ctx.connectController();
                     reconnected = true;
                 } catch (Exception ex) {
-                    LOG.warn("Exception reconnecting", ex);
+                    CliLogger.ROOT_LOGGER.reconnectingException(ex);
                     // Proper https redirect but error.
                     // Ignoring it.
                 }
             }
         } catch (URISyntaxException ex) {
-            LOG.warn("Invalid URI: ", ex);
+            CliLogger.ROOT_LOGGER.invalidURI(ex);
             // OK, invalid redirect.
         }
         return reconnected;
