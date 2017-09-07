@@ -339,6 +339,14 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             if (validator == null) {
                 setValidator(new ObjectTypeValidator(isAllowNull(), valueTypes));
             }
+
+            for (AttributeDefinition valueType : valueTypes) {
+                if (valueType.getCorrector() != null) {
+                    // Need to be sure we call this corrector
+                    setCorrector(new ObjectParameterCorrector(getCorrector(), valueTypes));
+                    break;
+                }
+            }
             return new ObjectTypeAttributeDefinition(this);
         }
 
@@ -354,6 +362,46 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         @Override
         public Builder setAllowNull(boolean allowNull) {
             return super.setAllowNull(allowNull);
+        }
+    }
+
+    private static class ObjectParameterCorrector implements ParameterCorrector {
+        private final ParameterCorrector topCorrector;
+        private final AttributeDefinition[] valueTypes;
+
+        private ObjectParameterCorrector(ParameterCorrector topCorrector, AttributeDefinition[] valueTypes) {
+            this.topCorrector = topCorrector;
+            this.valueTypes = valueTypes;
+        }
+
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            ModelNode result = newValue;
+            if (newValue.isDefined()) {
+                for (AttributeDefinition ad : valueTypes) {
+                    ParameterCorrector fieldCorrector = ad.getCorrector();
+                    if (fieldCorrector != null) {
+                        String name = ad.getName();
+                        boolean has = newValue.has(name);
+                        ModelNode toCorrect = has ? newValue.get(name) : new ModelNode();
+                        ModelNode curField = currentValue.has(name) ? currentValue.get(name) : new ModelNode();
+                        ModelNode corrected = fieldCorrector.correct(toCorrect, curField);
+                        if (!corrected.equals(toCorrect) || (!has && corrected.isDefined())) {
+                            if (has) {
+                                toCorrect.set(corrected);
+                            } else {
+                                // the corrector defined it, so add it
+                                newValue.get(name).set(corrected);
+                            }
+                        }
+                    }
+                }
+            }
+            if (topCorrector != null) {
+                result = topCorrector.correct(result, currentValue);
+            }
+            return result;
         }
     }
 

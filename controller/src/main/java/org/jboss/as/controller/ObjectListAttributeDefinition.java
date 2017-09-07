@@ -272,6 +272,10 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
                 acdSet.addAll(valueConstraints);
                 setAccessConstraints(acdSet.toArray(new AccessConstraintDefinition[acdSet.size()]));
             }
+            if (valueType.getCorrector() != null) {
+                // Need to be sure we call this corrector
+                setCorrector(new ListParameterCorrector(getCorrector(), valueType.getCorrector()));
+            }
             return new ObjectListAttributeDefinition(this);
         }
 
@@ -282,6 +286,35 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
         @Override
         public Builder setAllowNull(boolean allowNull) {
             return super.setAllowNull(allowNull);
+        }
+    }
+
+    private static class ListParameterCorrector implements ParameterCorrector {
+        private final ParameterCorrector listCorrector;
+        private final ParameterCorrector elementCorrector;
+
+        private ListParameterCorrector(ParameterCorrector listCorrector, ParameterCorrector elementCorrector) {
+            this.listCorrector = listCorrector;
+            this.elementCorrector = elementCorrector;
+        }
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            ModelNode result = newValue;
+            if (newValue.isDefined()) {
+                int curSize = currentValue.isDefined() ? currentValue.asInt() : 0;
+                for (int i = 0; i < newValue.asInt(); i++) {
+                    ModelNode toCorrect = newValue.get(i);
+                    ModelNode corrected = elementCorrector.correct(toCorrect, i < curSize ? currentValue.get(i) : new ModelNode());
+                    if (!corrected.equals(toCorrect)) {
+                        toCorrect.set(corrected);
+                    }
+                }
+            }
+            if (listCorrector != null) {
+                result = listCorrector.correct(result, currentValue);
+            }
+            return result;
         }
     }
 }
