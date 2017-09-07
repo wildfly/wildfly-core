@@ -458,6 +458,14 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(2, operations.get(1).get("listeners").asList().size());
         ModelNode subsystem = opsToModel(operations);
 
+        ModelNode identityAttributes = subsystem.get("service","process-state-listeners","identity-mapping", "new-identity-attributes");
+        ModelNode listAttribute = identityAttributes.asList().get(0);
+        List<String> list = NewIdentityAttributeObjectDefinition.VALUE.unwrap(ExpressionResolver.SIMPLE, listAttribute);
+        Assert.assertEquals("number of elements is wrong", 3, list.size());
+        Assert.assertEquals("value with spaces",list.get(0));
+        Assert.assertEquals("second element",list.get(1));
+        Assert.assertEquals("third",list.get(2));
+
         StringWriter stringWriter = new StringWriter();
         XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
         SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
@@ -1325,6 +1333,8 @@ public class PersistentResourceXMLParserTestCase {
                     .setAllowExpression(true)
                     .setMinSize(1)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .setAttributeMarshaller(AttributeMarshaller.COMMA_STRING_LIST)
+                    .setAttributeParser(AttributeParser.COMMA_DELIMITED_STRING_LIST)
                     .build();
 
             static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {NAME, VALUE};

@@ -4,7 +4,7 @@
         <custom-permission-mapper name="CustomPermissionMapper2" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <logical-permission-mapper name="LogicalPermissionMapper" logical-operation="unless" left="CustomPermissionMapper" right="CustomPermissionMapper2" />
         <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
-            <permission-mapping principals="John Joe" roles="User Administrator">
+            <permission-mapping principals="John Joe" roles="User Administrator value&#160;with&#160;space">
                 <permission class-name="a.b.MyPermission" />
                 <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
             </permission-mapping>

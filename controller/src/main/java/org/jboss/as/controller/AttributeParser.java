@@ -133,7 +133,8 @@ public abstract class AttributeParser {
             final ModelNode node = operation.get(attribute.getName()).setEmptyList();
             if (!value.isEmpty()) {
                 for (final String element : value.split("\\s+")) {
-                    node.add(parse(attribute, element, reader));
+                    String escapedValue = element.replaceAll(String.valueOf((char)160)," ");
+                    node.add(parse(attribute, escapedValue, reader));
                 }
             }
         }
