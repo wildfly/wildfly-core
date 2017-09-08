@@ -54,9 +54,11 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 public class ElytronExtension implements Extension {
 
     /**
-     * The name space used for the {@code subsystem} element
+     * The name spaces used for the {@code subsystem} element
      */
-    public static final String NAMESPACE = "urn:wildfly:elytron:1.0";
+    public static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
+    public static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
+    public static final String CURRENT_NAMESPACE = NAMESPACE_1_1;
 
     /**
      * The name of our subsystem within the model.
@@ -69,8 +71,9 @@ public class ElytronExtension implements Extension {
     public static final AttachmentKey<AuthenticationContext> AUTHENTICATION_CONTEXT_KEY = AttachmentKey.create(AuthenticationContext.class);
 
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
+    static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_1_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -100,7 +103,8 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, ElytronSubsystemParser::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, new ElytronSubsystemParser(NAMESPACE_1_0));
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, new ElytronSubsystemParser(NAMESPACE_1_1));
     }
 
     @Override
@@ -113,7 +117,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(ElytronSubsystemParser::new);
+        subsystemRegistration.registerXMLElementWriter(new ElytronSubsystemParser(CURRENT_NAMESPACE));
     }
 
     @SuppressWarnings("unchecked")
