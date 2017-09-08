@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.host.controller.HostControllerEnvironment.HOST_NAME;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -342,6 +343,11 @@ public final class Main {
                 } else if (arg.startsWith("--remove-existing-domain-config")) {
                     assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
                     domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
+                } else if (arg.startsWith("--host-controller-name")) {
+                    String val = checkValueIsNotAnArg(arg, args[++i]);
+                    if (val !=null && !val.isEmpty()) {
+                        hostSystemProperties.put(HOST_NAME, val);
+                    }
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_DOMAIN_CONFIG)) {
                     initialDomainConfig = parseValue(arg, CommandLineConstants.READ_ONLY_DOMAIN_CONFIG);
                     if (initialDomainConfig == null) {
