@@ -508,7 +508,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     @Test
     public void testEmptyHostConfigConfigureWithReload() throws Exception {
-        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config --remove-existing-host-config" + JBOSS_HOME;
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config --remove-existing-host-config --host-controller-name=master" + JBOSS_HOME;
         cli.sendLine(line);
         assertTrue(cli.isConnected());
         cli.sendLine("/host=master/core-service=management/security-realm=test-realm:add()");
@@ -543,7 +543,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     @Test
     public void testEmptyDomainConfigAndHostConfigConfigureWithReload() throws Exception {
-        final String line = "embed-host-controller --std-out=echo --domain-config=domain-empty-cli.xml --empty-domain-config --remove-existing-domain-config --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        final String line = "embed-host-controller --std-out=echo --domain-config=domain-empty-cli.xml --empty-domain-config --remove-existing-domain-config --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config --host-controller-name=master" + JBOSS_HOME;
         cli.sendLine(line);
         assertTrue(cli.isConnected());
 
