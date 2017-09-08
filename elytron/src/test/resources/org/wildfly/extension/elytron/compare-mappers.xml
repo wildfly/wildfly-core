@@ -12,7 +12,7 @@
                 <permission class-name="a.b.MyPermission" />
                 <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
             </permission-mapping>
-            <permission-mapping match-all="false">
+            <permission-mapping>
                 <principal name="John Doe"/>
                 <permission class-name="a.b.JohnPermission" />
             </permission-mapping>

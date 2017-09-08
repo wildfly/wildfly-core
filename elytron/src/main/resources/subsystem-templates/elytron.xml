@@ -19,7 +19,7 @@
 
 <config default-supplement="standalone" >
     <extension-module>org.wildfly.extension.elytron</extension-module>
-    <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+    <subsystem xmlns="urn:wildfly:elytron:1.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
         <providers>
             <aggregate-providers name="combined-providers">
                 <providers name="elytron" />
@@ -43,7 +43,8 @@
         <mappers>
             <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
             <simple-permission-mapper name="anonymous-permission-mapper">
-                <permission-mapping principals="anonymous">
+                <permission-mapping>
+                    <principal name="anonymous"/>
                     <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
                 </permission-mapping>
             </simple-permission-mapper>
