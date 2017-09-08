@@ -35,7 +35,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POL
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -57,6 +56,16 @@ import org.wildfly.extension.elytron.PolicyDefinitions.JaccPolicyDefinition;
  * <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class PolicyParser {
+
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    PolicyParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readPolicy(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         ModelNode addPolicy = new ModelNode();
