@@ -615,7 +615,7 @@ public class ModelTestUtils {
             if (transformedComposite.rejectOperation(successResult())) {
                 Assert.fail(transformedComposite.getFailureDescription());
             }
-            mainServices.executeOperation(modelVersion, transformedComposite);
+            ModelTestUtils.checkOutcome(mainServices.executeOperation(modelVersion, transformedComposite));
         } else {
             //The composite already contains the transformed operations
             ModelTestKernelServices<?> legacyServices = mainServices.getLegacyServices(modelVersion);
