@@ -62,90 +62,23 @@ class Filters {
      *
      * @param value the value to convert
      *
-     * @return the filter expression (filter spec)
+     * @return the filter expression (filter spec) or an empty String the value is not
+     * {@linkplain ModelNode#isDefined() defined}
      *
      * @throws org.jboss.as.controller.OperationFailedException
      *          if a conversion error occurs
      */
     static String filterToFilterSpec(final ModelNode value) throws OperationFailedException {
-        if (!value.isDefined()) {
-            return null;
-        }
-        if (value.hasDefined(CommonAttributes.ACCEPT.getName())) {
-            return ACCEPT;
-        } else if (value.hasDefined(CommonAttributes.ALL.getName())) {
-            final StringBuilder result = new StringBuilder(ALL).append('(');
-            boolean add = false;
-            for (ModelNode filterValue : value.get(CommonAttributes.ALL.getName()).asList()) {
-                if (add) {
-                    result.append(",");
-                } else {
-                    add = true;
-                }
-                result.append(filterToFilterSpec(filterValue));
-            }
-            return result.append(")").toString();
-        } else if (value.hasDefined(CommonAttributes.ANY.getName())) {
-            final StringBuilder result = new StringBuilder(ANY).append('(');
-            boolean add = false;
-            for (ModelNode filterValue : value.get(CommonAttributes.ANY.getName()).asList()) {
-                if (add) {
-                    result.append(",");
-                } else {
-                    add = true;
-                }
-                result.append(filterToFilterSpec(filterValue));
-            }
-            return result.append(")").toString();
-        } else if (value.hasDefined(CommonAttributes.CHANGE_LEVEL.getName())) {
-            return String.format("%s(%s)", LEVEL_CHANGE, value.get(CommonAttributes.CHANGE_LEVEL.getName()).asString());
-        } else if (value.hasDefined(CommonAttributes.DENY.getName())) {
-            return DENY;
-        } else if (value.hasDefined(CommonAttributes.LEVEL.getName())) {
-            return String.format("%s(%s)", LEVELS, value.get(CommonAttributes.LEVEL.getName()).asString());
-        } else if (value.hasDefined(CommonAttributes.LEVEL_RANGE_LEGACY.getName())) {
-            final ModelNode levelRange = value.get(CommonAttributes.LEVEL_RANGE_LEGACY.getName());
-            final StringBuilder result = new StringBuilder(LEVEL_RANGE);
-            final boolean minInclusive = (levelRange.hasDefined(CommonAttributes.MIN_INCLUSIVE.getName()) && levelRange.get(CommonAttributes.MIN_INCLUSIVE.getName()).asBoolean());
-            final boolean maxInclusive = (levelRange.hasDefined(CommonAttributes.MAX_INCLUSIVE.getName()) && levelRange.get(CommonAttributes.MAX_INCLUSIVE.getName()).asBoolean());
-            if (minInclusive) {
-                result.append("[");
-            } else {
-                result.append("(");
-            }
-            result.append(levelRange.get(CommonAttributes.MIN_LEVEL.getName()).asString()).append(",");
-            result.append(levelRange.get(CommonAttributes.MAX_LEVEL.getName()).asString());
-            if (maxInclusive) {
-                result.append("]");
-            } else {
-                result.append(")");
+        if (value.isDefined()) {
+            final StringBuilder result = new StringBuilder();
+            filterToFilterSpec(value, result, false);
+            if (result.length() == 0) {
+                final String name = value.hasDefined(CommonAttributes.FILTER.getName()) ? value.get(CommonAttributes.FILTER.getName()).asString() : value.asString();
+                throw Logging.createOperationFailure(LoggingLogger.ROOT_LOGGER.invalidFilter(name));
             }
             return result.toString();
-        } else if (value.hasDefined(CommonAttributes.MATCH.getName())) {
-            return String.format("%s(%s)", MATCH, escapeString(CommonAttributes.MATCH, value));
-        } else if (value.hasDefined(CommonAttributes.NOT.getName())) {
-            return String.format("%s(%s)", NOT, filterToFilterSpec(value.get(CommonAttributes.NOT.getName())));
-        } else if (value.hasDefined(CommonAttributes.REPLACE.getName())) {
-            final ModelNode replace = value.get(CommonAttributes.REPLACE.getName());
-            final boolean replaceAll;
-            if (replace.hasDefined(CommonAttributes.REPLACE_ALL.getName())) {
-                replaceAll = replace.get(CommonAttributes.REPLACE_ALL.getName()).asBoolean();
-            } else {
-                replaceAll = CommonAttributes.REPLACE_ALL.getDefaultValue().asBoolean();
-            }
-            final StringBuilder result = new StringBuilder();
-            if (replaceAll) {
-                result.append(SUBSTITUTE_ALL);
-            } else {
-                result.append(SUBSTITUTE);
-            }
-            return result.append("(")
-                    .append(escapeString(CommonAttributes.FILTER_PATTERN, replace))
-                    .append(",").append(escapeString(CommonAttributes.REPLACEMENT, replace))
-                    .append(")").toString();
         }
-        final String name = value.hasDefined(CommonAttributes.FILTER.getName()) ? value.get(CommonAttributes.FILTER.getName()).asString() : value.asString();
-        throw Logging.createOperationFailure(LoggingLogger.ROOT_LOGGER.invalidFilter(name));
+        return "";
     }
 
     /**
@@ -372,7 +305,148 @@ class Filters {
         return tokens;
     }
 
+    private static void filterToFilterSpec(final ModelNode value, final StringBuilder result, final boolean prefixComma) throws OperationFailedException {
+        if (!value.isDefined()) {
+            return;
+        }
+        if (value.has(CommonAttributes.ACCEPT.getName())) {
+            if (value.get(CommonAttributes.ACCEPT.getName()).isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(ACCEPT);
+            }
+        } else if (value.has(CommonAttributes.ALL.getName())) {
+            final ModelNode allValue = value.get(CommonAttributes.ALL.getName());
+            if (allValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(ALL).append('(');
+                boolean addComma = false;
+                for (ModelNode filterValue : allValue.asList()) {
+                    final int currentLen = result.length();
+                    filterToFilterSpec(filterValue, result, addComma);
+                    if (result.length() > currentLen) {
+                        addComma = true;
+                    }
+                }
+                result.append(")");
+            }
+        } else if (value.has(CommonAttributes.ANY.getName())) {
+            final ModelNode anyValue = value.get(CommonAttributes.ANY.getName());
+            if (anyValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(ANY).append('(');
+                boolean addComma = false;
+                for (ModelNode filterValue : anyValue.asList()) {
+                    final int currentLen = result.length();
+                    filterToFilterSpec(filterValue, result, addComma);
+                    if (result.length() > currentLen) {
+                        addComma = true;
+                    }
+                }
+                result.append(")");
+            }
+        } else if (value.has(CommonAttributes.CHANGE_LEVEL.getName())) {
+            final ModelNode changeLevelValue = value.get(CommonAttributes.CHANGE_LEVEL.getName());
+            if (changeLevelValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(LEVEL_CHANGE).append('(').append(changeLevelValue.asString()).append(')');
+            }
+        } else if (value.has(CommonAttributes.DENY.getName())) {
+            if (value.get(CommonAttributes.DENY.getName()).isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(DENY);
+            }
+        } else if (value.has(CommonAttributes.LEVEL.getName())) {
+            final ModelNode levelValue = value.get(CommonAttributes.LEVEL.getName());
+            if (levelValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(LEVELS).append('(').append(levelValue.asString()).append(')');
+            }
+        } else if (value.has(CommonAttributes.LEVEL_RANGE_LEGACY.getName())) {
+            final ModelNode levelRangeValue = value.get(CommonAttributes.LEVEL_RANGE_LEGACY.getName());
+            if (levelRangeValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                final ModelNode levelRange = value.get(CommonAttributes.LEVEL_RANGE_LEGACY.getName());
+                result.append(LEVEL_RANGE);
+                final boolean minInclusive = (levelRange.hasDefined(CommonAttributes.MIN_INCLUSIVE.getName()) && levelRange.get(CommonAttributes.MIN_INCLUSIVE.getName()).asBoolean());
+                final boolean maxInclusive = (levelRange.hasDefined(CommonAttributes.MAX_INCLUSIVE.getName()) && levelRange.get(CommonAttributes.MAX_INCLUSIVE.getName()).asBoolean());
+                if (minInclusive) {
+                    result.append("[");
+                } else {
+                    result.append("(");
+                }
+                result.append(levelRange.get(CommonAttributes.MIN_LEVEL.getName()).asString()).append(",");
+                result.append(levelRange.get(CommonAttributes.MAX_LEVEL.getName()).asString());
+                if (maxInclusive) {
+                    result.append("]");
+                } else {
+                    result.append(")");
+                }
+            }
+        } else if (value.has(CommonAttributes.MATCH.getName())) {
+            final ModelNode matchValue = value.get(CommonAttributes.MATCH.getName());
+            if (matchValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(MATCH).append('(').append(escapeString(matchValue)).append(')');
+            }
+        } else if (value.has(CommonAttributes.NOT.getName())) {
+            final ModelNode notValue = value.get(CommonAttributes.NOT.getName());
+            if (notValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                result.append(NOT).append('(');
+                filterToFilterSpec(notValue, result, false);
+                result.append(')');
+            }
+        } else if (value.has(CommonAttributes.REPLACE.getName())) {
+            final ModelNode replaceValue = value.get(CommonAttributes.REPLACE.getName());
+            if (replaceValue.isDefined()) {
+                if (prefixComma) {
+                    result.append(',');
+                }
+                final boolean replaceAll;
+                if (replaceValue.hasDefined(CommonAttributes.REPLACE_ALL.getName())) {
+                    replaceAll = replaceValue.get(CommonAttributes.REPLACE_ALL.getName()).asBoolean();
+                } else {
+                    replaceAll = CommonAttributes.REPLACE_ALL.getDefaultValue().asBoolean();
+                }
+                if (replaceAll) {
+                    result.append(SUBSTITUTE_ALL);
+                } else {
+                    result.append(SUBSTITUTE);
+                }
+                result.append("(")
+                        .append(escapeString(CommonAttributes.FILTER_PATTERN, replaceValue))
+                        .append(",").append(escapeString(CommonAttributes.REPLACEMENT, replaceValue))
+                        .append(")");
+            }
+        } else {
+            final String name = value.hasDefined(CommonAttributes.FILTER.getName()) ? value.get(CommonAttributes.FILTER.getName()).asString() : value.asString();
+            throw Logging.createOperationFailure(LoggingLogger.ROOT_LOGGER.invalidFilter(name));
+        }
+    }
+
     private static String escapeString(final AttributeDefinition attribute, final ModelNode value) throws OperationFailedException {
-        return String.format("\"%s\"", value.get(attribute.getName()).asString().replace("\\", "\\\\"));
+        return escapeString(value.get(attribute.getName()));
+    }
+
+    private static String escapeString(final ModelNode value) throws OperationFailedException {
+        return String.format("\"%s\"", value.asString().replace("\\", "\\\\"));
     }
 }

@@ -111,7 +111,7 @@ final class HandlerOperations {
                     final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
                     if (filter.isDefined()) {
                         final String value = Filters.filterToFilterSpec(filter);
-                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value);
+                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                     }
                 } else {
                     // Only update the model for attributes that are defined in the operation
@@ -192,7 +192,7 @@ final class HandlerOperations {
                     final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
                     if (filter.isDefined()) {
                         final String value = Filters.filterToFilterSpec(filter);
-                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value);
+                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                     }
                 } else {
                     attribute.validateAndSet(operation, model);
@@ -421,7 +421,7 @@ final class HandlerOperations {
             // If a filter attribute, update the filter-spec attribute
             if (CommonAttributes.FILTER.getName().equals(attributeName)) {
                 final String filterSpec = Filters.filterToFilterSpec(newValue);
-                final ModelNode filterSpecValue = (filterSpec == null ? new ModelNode() : new ModelNode(filterSpec));
+                final ModelNode filterSpecValue = (filterSpec.isEmpty() ? new ModelNode() : new ModelNode(filterSpec));
                 // Undefine the filter-spec
                 model.getModel().get(CommonAttributes.FILTER_SPEC.getName()).set(filterSpecValue);
             }
