@@ -111,13 +111,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
 
             for (RuntimeCapability<?> capability : capabilitySet) {
                 if (capability.getCapabilityServiceValueType() != null) {
-                    ServiceName sname;
-                    if (capability.isDynamicallyNamed()) {
-                        sname = capability.getCapabilityServiceName(name);
-                    } else {
-                        sname = capability.getCapabilityServiceName();
-                    }
-                    context.removeService(sname);
+                    context.removeService(capability.getCapabilityServiceName(address));
                 }
             }
         } else {

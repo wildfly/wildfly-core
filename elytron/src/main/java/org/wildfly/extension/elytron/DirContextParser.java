@@ -24,7 +24,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DIR_CONTEXT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DIR_CONTEXTS;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.List;
 
@@ -47,6 +46,15 @@ class DirContextParser {
     private final PersistentResourceXMLDescription dirContextParser = builder(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT), null)
             .addAttributes(DirContextDefinition.ATTRIBUTES)
             .build();
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    DirContextParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readDirContexts(ModelNode parentAddressNode, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);

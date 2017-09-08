@@ -43,7 +43,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REQUIRED
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.readCustomComponent;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 import static org.wildfly.extension.elytron.ElytronSubsystemParser.writeCustomComponent;
 
 import java.util.Arrays;
@@ -65,6 +64,16 @@ import org.wildfly.security.SecurityFactory;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class CredentialSecurityFactoryParser {
+
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    CredentialSecurityFactoryParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readCredentialSecurityFactories(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);
