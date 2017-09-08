@@ -69,6 +69,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String REMOVE_EXISTING_HOST_CONFIG = "--remove-existing-host-config";
     private static final String EMPTY_DOMAIN_CONFIG = "--empty-domain-config";
     private static final String REMOVE_EXISTING_DOMAIN_CONFIG = "--remove-existing-domain-config";
+    private static final String HOST_CONTROLLER_NAME = "--host-controller-name";
 
     private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -95,6 +96,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExistingDomainConfig;
     private ArgumentWithoutValue emptyHostConfig;
     private ArgumentWithoutValue removeExistingHostConfig;
+    private ArgumentWithValue hostControllerName;
 
     static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
@@ -113,6 +115,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
         result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
         result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
+        result.hostControllerName = new ArgumentWithValue(result, HOST_CONTROLLER_NAME);
         return result;
     }
 
@@ -240,6 +243,14 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             }
             if (removeHost) {
                 cmdsList.add(REMOVE_EXISTING_HOST_CONFIG);
+            }
+
+            // allow the user to provide --host-controller-name when starting to set the initial name.
+            // if this isn't specified, the name will be generated in HostControllerEnvironment based on the FQDN etc.
+            // in some specific cases, the user may want to set this specifically when starting with an empty config etc.
+            if (hostControllerName.isPresent(parsedCmd)) {
+                cmdsList.add(HOST_CONTROLLER_NAME);
+                cmdsList.add(hostControllerName.getValue(parsedCmd,true));
             }
 
             File hostXmlCfgFile = new File(controllerCfgDir + File.separator + (hostConfig.isPresent(parsedCmd) ? hostXml : "host.xml"));
