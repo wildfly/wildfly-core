@@ -3301,8 +3301,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 389, value = "Could not create an empty configuration at file %s as there is an existing non-empty configuration there")
     IllegalStateException rejectEmptyConfig(String absolutePath);
 
-    @Message(id = 390, value = "An invalid key '%s' has been supplied for parameter '%s'")
-    OperationFailedException invalidKeyForObjectType(String key, String parameter);
+//    @Message(id = 390, value = "An invalid key '%s' has been supplied for parameter '%s'")
+//    OperationFailedException invalidKeyForObjectType(String key, String parameter);
 
     @Message(id = 391, value = "Could not resolve attribute expression: '%s', invalid index '%d'")
     OperationFailedException couldNotResolveExpressionIndex(String attributeExpression, int index);
