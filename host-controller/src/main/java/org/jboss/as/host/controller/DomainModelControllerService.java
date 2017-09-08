@@ -648,41 +648,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
             ConfigurationFile.InteractionPolicy configPolicy = environment.getHostConfigurationFile().getInteractionPolicy();
             if (!environment.getRunningModeControl().isReloaded() && (configPolicy == ConfigurationFile.InteractionPolicy.NEW || configPolicy == ConfigurationFile.InteractionPolicy.DISCARD)) {
 
+                String hostControllerName = environment.getHostControllerName();
                 // minimum needed to boot an embedded HC from an empty host.xml
-                ModelNode baseOp;
-
-                baseOp = new ModelNode();
+                ModelNode baseOp = new ModelNode();
                 baseOp.get("operation").set("register-host-model");
-                baseOp.get("name").set("master");
+                baseOp.get("name").set(hostControllerName);
                 baseOp.get("address").addEmptyList();
-                hostBootOps.add(baseOp);
-
-                baseOp = new ModelNode();
-                baseOp.get("operation").set("write-attribute");
-                baseOp.get("name").set("name");
-                baseOp.get("value").set("master");
-                baseOp.get("address").set(PathAddress.pathAddress("host", "master").toModelNode());
-                hostBootOps.add(baseOp);
-
-                // mgmt extension
-                baseOp = new ModelNode();
-                baseOp.get("operation").set("add");
-                baseOp.get("extension").set("name");
-                baseOp.get("address").set(PathAddress.pathAddress("host", "master").append(
-                        PathAddress.pathAddress("extension", "org.wildfly.extension.core-management")).toModelNode());
-                hostBootOps.add(baseOp);
-
-                // mgmt subsystem
-                baseOp = new ModelNode();
-                baseOp.get("operation").set("add");
-                baseOp.get("address").set(PathAddress.pathAddress("host", "master").
-                        append(PathAddress.pathAddress("subsystem", "core-management")).toModelNode());
                 hostBootOps.add(baseOp);
 
                 // flag as DC initially - without this, the CLI seems to hang in waiting for a "connection"
                 baseOp = new ModelNode();
                 baseOp.get("operation").set("write-local-domain-controller");
-                baseOp.get("address").set(PathAddress.pathAddress("host", "master").toModelNode());
+                baseOp.get("address").set(PathAddress.pathAddress("host", hostControllerName).toModelNode());
                 hostBootOps.add(baseOp);
             }
 
