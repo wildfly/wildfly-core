@@ -523,6 +523,15 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     }
 
     @Test
+    public void testHostControllerNameOnlyAllowedWithEmptyHostConfig() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --remove-existing-host-config --host-controller-name=master" + JBOSS_HOME;
+        cli.sendLine(line, true);
+        String result = cli.readOutput();
+        // should fail, --empty-host-config is not present
+        assertTrue(result.contains("--host-controller-name must be used with --empty-host-config"));
+    }
+
+    @Test
     public void testEmptyDomainConfigConfigureWithReload() throws Exception {
         final String line = "embed-host-controller --std-out=echo --domain-config=domain-empty-cli.xml --empty-domain-config --remove-existing-domain-config" + JBOSS_HOME;
         cli.sendLine(line);
