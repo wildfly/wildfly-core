@@ -18,11 +18,8 @@ package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_FAILURE_DESCRIPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
@@ -195,24 +192,23 @@ public class RuntimeOnlyOperationsTestCase {
 
     @Test
     public void testRuntimeStepOnMaster() throws IOException {
-        illegalRuntimeStepTest("master");
+        ignoredProfileRuntimeStepTest("master");
     }
 
     @Test
     public void testRuntimeStepOnSlave() throws IOException {
-        illegalRuntimeStepTest("slave");
+        ignoredProfileRuntimeStepTest("slave");
     }
 
-    private void illegalRuntimeStepTest(String host) throws IOException {
+    private void ignoredProfileRuntimeStepTest(String host) throws IOException {
         ModelNode op = Util.createEmptyOperation("runtime-only", PROFILE.append(SUBSYSTEM));
         op.get(HOST).set(host);
-        ModelNode response = executeOp(op, FAILED);
-        if ("master".equals(host)) {
-            assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION, DOMAIN_FAILURE_DESCRIPTION));
-        } else {
-            assertFalse(response.toString(), response.hasDefined(FAILURE_DESCRIPTION, DOMAIN_FAILURE_DESCRIPTION));
-            assertTrue(response.toString(), response.hasDefined(FAILURE_DESCRIPTION, HOST_FAILURE_DESCRIPTIONS, "slave"));
-        }
+        ModelNode response = executeOp(op, SUCCESS);
+        assertFalse(response.toString(), response.hasDefined(RESULT)); // handler's attempt to add a step to set a result is ignored on profile
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result").asBoolean());
     }
 
     private static ModelNode executeOp(ModelNode op, String outcome) throws IOException {
