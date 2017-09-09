@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.2.Final-redhat-SNAPSHOT</version>
+        <version>3.0.2.CR1-redhat-dev</version>
     </parent>
 
     <artifactId>wildfly-patching</artifactId>
