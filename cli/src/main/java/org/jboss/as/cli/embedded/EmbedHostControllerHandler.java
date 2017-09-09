@@ -241,6 +241,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             if (emptyHost) {
                 cmdsList.add(EMPTY_HOST_CONFIG);
             }
+
             if (removeHost) {
                 cmdsList.add(REMOVE_EXISTING_HOST_CONFIG);
             }
@@ -248,7 +249,12 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             // allow the user to provide --host-controller-name when starting to set the initial name.
             // if this isn't specified, the name will be generated in HostControllerEnvironment based on the FQDN etc.
             // in some specific cases, the user may want to set this specifically when starting with an empty config etc.
+            // this is only permitted when starting with --empty-host-config, booting with a non-empty config has the normal
+            // methods of setting the hostcontroller name.
             if (hostControllerName.isPresent(parsedCmd)) {
+                if (!emptyHost) {
+                    throw new CommandFormatException("--host-controller-name must be used with --empty-host-config");
+                }
                 cmdsList.add(HOST_CONTROLLER_NAME);
                 cmdsList.add(hostControllerName.getValue(parsedCmd,true));
             }
