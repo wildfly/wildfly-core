@@ -3498,4 +3498,10 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 443, value = "Error getting the password from the supplier %s")
     void errorObtainingPassword(@Cause Exception cause, String message);
+
+    @LogMessage(level = Level.INFO)  // use INFO -- DEBUG is too low as there's a bug here and we want to know;
+                                     // WARN is too high as it likely does not harm the end user and the user can't do anything about it
+    @Message(id = 444, value = "The handler for operation '%s' at address '%s' attempted to add a stage %s step. " +
+            "This is not valid for a 'profile' resource on process type %s so this step will not be executed.")
+    void invalidRuntimeStageForProfile(String operation, String address, OperationContext.Stage stage, ProcessType processType);
 }
