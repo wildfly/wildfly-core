@@ -22,7 +22,9 @@
 
 package org.jboss.as.server.deployment.module;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.Manifest;
 
 import org.jboss.as.server.deployment.Attachments;
@@ -65,7 +67,12 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ServiceModuleLoader deploymentModuleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         final List<ResourceRoot> allResourceRoots = DeploymentUtils.allResourceRoots(deploymentUnit);
+        DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
 
+        Set<ModuleIdentifier> additionalModules = new HashSet<>();
+        for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
+            additionalModules.add(i.getModuleIdentifier());
+        }
         for (final ResourceRoot resourceRoot : allResourceRoots) {
             final Manifest manifest = resourceRoot.getAttachment(Attachments.MANIFEST);
             if (manifest == null)
@@ -103,7 +110,8 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 }
                 if(annotations) {
                     deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependencyId);
-                    if(dependencyLoader == deploymentModuleLoader) {
+                    if(dependencyLoader == deploymentModuleLoader && !additionalModules.contains(dependencyId)) {
+                        //additional modules will not be created till much later, a dep on them would fail
                         phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependencyId));
                     }
                 }
