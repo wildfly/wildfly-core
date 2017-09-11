@@ -72,6 +72,8 @@
         </permission>
         <permission value="600">
             <filter pattern="*-users.properties" include="true" />
+            <filter pattern="*/configuration/mgmt-groups.properties" include="true" />
+            <filter pattern="*/configuration/application-roles.properties" include="true" />
             <filter pattern="*/.installation" include="true"/>
         </permission>
     </file-permissions>
