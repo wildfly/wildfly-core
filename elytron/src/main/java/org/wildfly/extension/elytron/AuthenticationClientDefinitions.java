@@ -120,12 +120,14 @@ class AuthenticationClientDefinitions {
             .build();
 
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
+            .setAllowExpression(false)
             .setRestartAllServices()
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition FORWARDING_MODE =
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FORWARDING_MODE, ModelType.STRING, true)
+                .setAllowExpression(true)
                 .setRestartAllServices()
                 .setAllowedValues(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION)
                 .setValidator(new StringAllowedValuesValidator(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION))

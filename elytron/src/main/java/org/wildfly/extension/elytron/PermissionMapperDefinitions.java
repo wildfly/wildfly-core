@@ -104,7 +104,7 @@ class PermissionMapperDefinitions {
                     return newValue;
                 }
             })
-            .setAllowExpression(false)
+            .setAllowExpression(false) // Only one value possible if present
             .setAlternatives(ElytronDescriptionConstants.PRINCIPALS, ElytronDescriptionConstants.ROLES)
             .setRestartAllServices()
             .build();
