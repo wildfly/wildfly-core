@@ -27,7 +27,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_AUT
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_HTTP_SERVER_MECHANISM_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVICE_LOADER_HTTP_SERVER_MECHANISM_FACTORY;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 import static org.wildfly.extension.elytron.HttpServerDefinitions.CONFIGURED_FILTERS;
 
 import java.util.List;
@@ -49,6 +48,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 class HttpParser {
 
     private final AuthenticationFactoryParser authenticationFactoryParser = new AuthenticationFactoryParser();
+    private final ElytronSubsystemParser elytronSubsystemParser;
 
     private PersistentResourceXMLDescription aggregateHttpServerMechanismFactory = PersistentResourceXMLDescription.builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY))
             .addAttribute(HttpServerDefinitions.getRawAggregateHttpServerFactoryDefinition().getReferencesAttribute(),
@@ -71,6 +71,13 @@ class HttpParser {
             .addAttribute(ClassLoadingAttributeDefinitions.MODULE)
             .build();
 
+    HttpParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readHttp(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         requireNoAttributes(reader);

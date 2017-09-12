@@ -58,6 +58,7 @@ interface ElytronDescriptionConstants {
     String ATTRIBUTES = "attributes";
     String AUDIENCE = "audience";
     String AUDIT_LOGGING = "audit-logging";
+    String AUTHENTICATION = "authentication";
     String AUTHENTICATION_CLIENT = "authentication-client";
     String AUTHENTICATION_CONFIGURATION = "authentication-configuration";
     String AUTHENTICATION_CONTEXT = "authentication-context";
@@ -65,6 +66,7 @@ interface ElytronDescriptionConstants {
     String AUTHENTICATION_NAME = "authentication-name";
     String AUTHENTICATION_OPTIONAL = "authentication-optional";
     String AUTHENTICATION_REALM = "authentication-realm";
+    String AUTHORIZATION = "authorization";
     String AUTHORIZATION_NAME = "authorization-name";
     String AUTHORIZATION_REALM = "authorization-realm";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
@@ -165,6 +167,7 @@ interface ElytronDescriptionConstants {
     String FILTERS = "filters";
     String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     String FINAL_PROVIDERS = "final-providers";
+    String FORWARDING_MODE = "forwarding-mode";
     String FIRST = "first";
     String FORMAT = "format";
     String FROM = "from";
@@ -239,6 +242,7 @@ interface ElytronDescriptionConstants {
     String MATCH = "match";
     String MATCH_ABSTRACT_TYPE = "match-abstract-type";
     String MATCH_ABSTRACT_TYPE_AUTHORITY = "match-abstract-type-authority";
+    String MATCH_ALL = "match-all";
     String MATCH_HOST = "match-host";
     String MATCH_LOCAL_SECURITY_DOMAIN = "match-local-security-domain";
     String MATCH_NO_USER = "match-no-user";

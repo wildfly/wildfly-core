@@ -60,9 +60,13 @@ public class CliConfigTestCase {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--command=version");
-        final String result = cli.executeNonInteractive();
-        assertNotNull(result);
-        assertTrue(result, result.contains("[disconnected /] version"));
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertTrue(result, result.contains("[disconnected /] version"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -71,9 +75,13 @@ public class CliConfigTestCase {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--command=version");
-        final String result = cli.executeNonInteractive();
-        assertNotNull(result);
-        assertFalse(result, result.contains("[disconnected /] version"));
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertFalse(result, result.contains("[disconnected /] version"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -87,23 +95,27 @@ public class CliConfigTestCase {
                         TestSuiteEnvironment.getServerAddress() + ":" +
                         TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        final String result = cli.executeNonInteractive();
-        assertNotNull(result);
-        assertTrue(result, result.contains(":read-attribute(name=foo)"));
-        assertTrue(result, result.contains("/system-property=catch:add(value=bar)"));
-        assertTrue(result, result.contains("/system-property=finally:add(value=bar)"));
-        assertTrue(result, result.contains("/system-property=finally2:add(value=bar)"));
-        assertTrue(result, result.contains("if (outcome == success) of /system-property=catch:read-attribute(name=value)"));
-        assertTrue(result, result.contains("set prop=Catch\\ block\\ was\\ executed"));
-        assertTrue(result, result.contains("/system-property=finally:write-attribute(name=value, value=if)"));
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertTrue(result, result.contains(":read-attribute(name=foo)"));
+            assertTrue(result, result.contains("/system-property=catch:add(value=bar)"));
+            assertTrue(result, result.contains("/system-property=finally:add(value=bar)"));
+            assertTrue(result, result.contains("/system-property=finally2:add(value=bar)"));
+            assertTrue(result, result.contains("if (outcome == success) of /system-property=catch:read-attribute(name=value)"));
+            assertTrue(result, result.contains("set prop=Catch\\ block\\ was\\ executed"));
+            assertTrue(result, result.contains("/system-property=finally:write-attribute(name=value, value=if)"));
 
-        assertFalse(result, result.contains("/system-property=catch2:add(value=bar)"));
-        assertFalse(result, result.contains("set prop=Catch\\ block\\ wasn\\'t\\ executed"));
-        assertFalse(result, result.contains("/system-property=finally:write-attribute(name=value, value=else)"));
+            assertFalse(result, result.contains("/system-property=catch2:add(value=bar)"));
+            assertFalse(result, result.contains("set prop=Catch\\ block\\ wasn\\'t\\ executed"));
+            assertFalse(result, result.contains("/system-property=finally:write-attribute(name=value, value=else)"));
 
-        assertTrue(result, result.contains("/system-property=catch:remove()"));
-        assertTrue(result, result.contains("/system-property=finally:remove()"));
-        assertTrue(result, result.contains("/system-property=finally2:remove()"));
+            assertTrue(result, result.contains("/system-property=catch:remove()"));
+            assertTrue(result, result.contains("/system-property=finally:remove()"));
+            assertTrue(result, result.contains("/system-property=finally2:remove()"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -116,9 +128,13 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        cli.executeInteractive();
-        cli.clearOutput();
-        testTimeout(cli, 1);
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            testTimeout(cli, 1);
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -130,9 +146,13 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect")
                 .addCliArgument("--command-timeout=77");
-        cli.executeInteractive();
-        cli.clearOutput();
-        testTimeout(cli, 77);
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            testTimeout(cli, 77);
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -202,8 +222,12 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        String output = cli.executeNonInteractive();
-        assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+        try {
+            String output = cli.executeNonInteractive();
+            assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -214,8 +238,12 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect")
                 .addCliArgument("--command-timeout=-1");
-        String output = cli.executeNonInteractive();
-        assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+        try {
+            String output = cli.executeNonInteractive();
+            assertTrue(output, output.contains("The command-timeout must be a valid positive integer"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -229,9 +257,13 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        final String result = cli.executeNonInteractive();
-        assertNotNull(result);
-        assertTrue(result, result.contains("Timeout exception for run-batch"));
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertTrue(result, result.contains("Timeout exception for run-batch"));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test

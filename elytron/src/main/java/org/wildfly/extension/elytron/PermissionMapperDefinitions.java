@@ -25,6 +25,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Permissions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +37,7 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -93,15 +95,31 @@ class PermissionMapperDefinitions {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition MATCH_ALL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_ALL, ModelType.BOOLEAN, true)
+            .setCorrector(new ParameterCorrector() {
+                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+                    if (newValue.isDefined() && "false".equals(newValue.asString())) {
+                        newValue.clear();
+                    }
+                    return newValue;
+                }
+            })
+            .setAllowExpression(false) // Only one value possible if present
+            .setAlternatives(ElytronDescriptionConstants.PRINCIPALS, ElytronDescriptionConstants.ROLES)
+            .setRestartAllServices()
+            .build();
+
     static final StringListAttributeDefinition PRINCIPALS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPALS)
             .setAllowExpression(true)
             .setRequired(false)
+            .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
             .build();
 
     static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
             .setAllowExpression(true)
             .setRequired(false)
+            .setAlternatives(ElytronDescriptionConstants.MATCH_ALL)
             .setMinSize(1)
             .build();
 
@@ -123,11 +141,44 @@ class PermissionMapperDefinitions {
             .setRestartAllServices()
             .build();
 
-    static final ObjectTypeAttributeDefinition PERMISSION_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, PRINCIPALS, ROLES, PERMISSIONS)
+    static final ObjectTypeAttributeDefinition PERMISSION_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPING, MATCH_ALL, PRINCIPALS, ROLES, PERMISSIONS)
+            .setCorrector(new ParameterCorrector() {
+                // HACK until corrections chain into nested attribute
+
+                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+                    String name = MATCH_ALL.getName();
+                    if (!newValue.isDefined() || !newValue.hasDefined(name)) {
+                        return newValue;
+                    }
+
+                    ModelNode updated = newValue.get(name);
+                    MATCH_ALL.getCorrector().correct(updated, new ModelNode());
+                    if (! updated.isDefined()) {
+                        newValue.remove(name);
+                    }
+
+                    return newValue;
+                }
+            })
             .build();
+
 
     static final ObjectListAttributeDefinition PERMISSION_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PERMISSION_MAPPINGS, PERMISSION_MAPPING)
             .setRequired(false)
+            .setCorrector(new ParameterCorrector() {
+                // HACK until corrections chain into nested attributes
+
+                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+                    if (!newValue.isDefined() || newValue.getType() != ModelType.LIST) {
+                        return newValue;
+                    }
+                    for (ModelNode newNode: newValue.asList()) {
+                        PERMISSION_MAPPING.getCorrector().correct(newNode, new ModelNode());
+                    }
+
+                    return newValue;
+                }
+            })
             .setRestartAllServices()
             .build();
 
@@ -170,8 +221,9 @@ class PermissionMapperDefinitions {
                 final List<Mapping> permissionMappings = new ArrayList<>();
                 if (model.hasDefined(ElytronDescriptionConstants.PERMISSION_MAPPINGS)) {
                     for (ModelNode permissionMapping : model.get(ElytronDescriptionConstants.PERMISSION_MAPPINGS).asList()) {
-                        Set<String> principals = new HashSet<>(PRINCIPALS.unwrap(context, permissionMapping));
-                        Set<String> roles = new HashSet<>(ROLES.unwrap(context, permissionMapping));
+                        boolean matchAll = MATCH_ALL.resolveModelAttribute(context, permissionMapping).asBoolean(false);
+                        Set<String> principals = !matchAll ? new HashSet<>(PRINCIPALS.unwrap(context, permissionMapping)) : Collections.emptySet();
+                        Set<String> roles = !matchAll ? new HashSet<>(ROLES.unwrap(context, permissionMapping)) : Collections.emptySet();
 
                         List<Permission> permissions = new ArrayList<>();
                         if (permissionMapping.hasDefined(ElytronDescriptionConstants.PERMISSIONS)) {
@@ -183,7 +235,7 @@ class PermissionMapperDefinitions {
                             }
                         }
 
-                        permissionMappings.add(new Mapping(principals, roles, permissions));
+                        permissionMappings.add(new Mapping(principals, roles, permissions, matchAll));
                     }
                 }
 
@@ -205,7 +257,11 @@ class PermissionMapperDefinitions {
                 if (realPerm != null) permissions.add(realPerm);
             }
 
-            builder.addMapping(current.getPrincipals(), current.getRoles(), PermissionVerifier.from(permissions));
+            if (current.matchAll()) {
+                builder.addMatchAllPrincipals(PermissionVerifier.from(permissions));
+            } else {
+                builder.addMapping(current.getPrincipals(), current.getRoles(), PermissionVerifier.from(permissions));
+            }
         }
 
         return builder.build();
@@ -302,14 +358,16 @@ class PermissionMapperDefinitions {
     }
 
     static class Mapping {
+        private boolean matchAll;
         private final Set<String> principals;
         private final Set<String> roles;
         private final List<Permission> permissions;
 
-        Mapping(Set<String> principals, Set<String> roles, List<Permission> permissions) {
+        Mapping(Set<String> principals, Set<String> roles, List<Permission> permissions, boolean matchAll) {
             this.principals = principals;
             this.roles = roles;
             this.permissions = permissions;
+            this.matchAll = matchAll;
         }
 
         public Set<String> getPrincipals() {
@@ -322,6 +380,10 @@ class PermissionMapperDefinitions {
 
         public List<Permission> getPermissions() {
             return permissions;
+        }
+
+        public boolean matchAll() {
+            return matchAll;
         }
 
     }

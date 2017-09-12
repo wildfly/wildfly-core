@@ -19,7 +19,7 @@
 
 <config default-supplement="standalone" >
     <extension-module>org.wildfly.extension.elytron</extension-module>
-    <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+    <subsystem xmlns="urn:wildfly:elytron:1.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
         <providers>
             <aggregate-providers name="combined-providers">
                 <providers name="elytron" />
@@ -41,16 +41,16 @@
         </security-realms>
 
         <mappers>
-            <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
-            <simple-permission-mapper name="anonymous-permission-mapper">
-                <permission-mapping principals="anonymous">
-                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+            <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+                <permission-mapping>
+                    <principal name="anonymous"/>
+                    <?ADDITIONAL_PERMISSIONS?>
+                </permission-mapping>
+                <permission-mapping match-all="true">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
+                    <?ADDITIONAL_PERMISSIONS?>
                 </permission-mapping>
             </simple-permission-mapper>
-            <constant-permission-mapper name="constant-permission-mapper">
-                <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
-                <?ADDITIONAL_PERMISSIONS?>
-            </constant-permission-mapper>
 
             <constant-realm-mapper name="local" realm-name="local" />
 

@@ -38,7 +38,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.RELATIVE_TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TYPE;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -58,6 +57,16 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:pskopek@redhat.com">Peter Skopek</a>
  */
 class CredentialStoreParser {
+
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    CredentialStoreParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readCredentialStores(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {

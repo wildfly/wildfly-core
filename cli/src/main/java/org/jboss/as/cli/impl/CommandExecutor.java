@@ -66,6 +66,9 @@ import org.jboss.threads.AsyncFuture;
  */
 public class CommandExecutor {
 
+    private static final String CANCEL_MSG = "Cancelling running operation...";
+    private static final String TIMEOUT_CANCEL_MSG = "Timeout. " + CANCEL_MSG;
+
     // A wrapper to allow to override ModelControllerClient.
     // Public for testing purpose.
     public class TimeoutCommandContext implements CommandContext {
@@ -158,134 +161,102 @@ public class CommandExecutor {
             }
 
             private AsyncFuture<OperationResponse> doExecuteOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
-                if (ctx.getCommandTimeout() > 0) {
-                    AsyncFuture<OperationResponse> task
-                            = wrapped.executeOperationAsync(operation, messageHandler);
-                    setLastHandlerTask(task);
-                    return task;
-                } else {
-                    return wrapped.executeOperationAsync(operation, messageHandler);
-                }
+                AsyncFuture<OperationResponse> task
+                        = wrapped.executeOperationAsync(operation, messageHandler);
+                setLastHandlerTask(task);
+                return task;
             }
 
             private OperationResponse doExecuteOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                if (ctx.getCommandTimeout() > 0) {
-                    AsyncFuture<OperationResponse> task;
-                    task = wrapped.executeOperationAsync(operation, messageHandler);
-                    setLastHandlerTask(task);
-                    try {
-                        return task.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(ex);
-                    } catch (ExecutionException ex) {
-                        throw new IOException(ex);
-                    }
-                } else {
-                    return wrapped.executeOperation(operation, messageHandler);
+                AsyncFuture<OperationResponse> task;
+                task = wrapped.executeOperationAsync(operation, messageHandler);
+                setLastHandlerTask(task);
+                try {
+                    return task.get();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
+                } catch (ExecutionException ex) {
+                    throw new IOException(ex);
                 }
             }
 
             private AsyncFuture<ModelNode> doExecuteAsync(Operation operation, OperationMessageHandler messageHandler) {
-                if (ctx.getCommandTimeout() > 0) {
-                    AsyncFuture<ModelNode> task
-                            = wrapped.executeAsync(operation, messageHandler);
-                    setLastHandlerTask(task);
-                    return task;
-                } else {
-                    return wrapped.executeAsync(operation, messageHandler);
-                }
+                AsyncFuture<ModelNode> task
+                        = wrapped.executeAsync(operation, messageHandler);
+                setLastHandlerTask(task);
+                return task;
             }
 
             private AsyncFuture<ModelNode> doExecuteAsync(ModelNode operation, OperationMessageHandler messageHandler) {
-                if (ctx.getCommandTimeout() > 0) {
-                    AsyncFuture<ModelNode> task
-                            = wrapped.executeAsync(operation, messageHandler);
-                    setLastHandlerTask(task);
-                    return task;
-                } else {
-                    return wrapped.executeAsync(operation, messageHandler);
-                }
+                AsyncFuture<ModelNode> task
+                        = wrapped.executeAsync(operation, messageHandler);
+                setLastHandlerTask(task);
+                return task;
             }
 
             private ModelNode doExecute(Operation operation) throws IOException {
-                if (ctx.getCommandTimeout() > 0) {
-                    try {
-                        Future<ModelNode> task
-                                = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
-                        setLastHandlerTask(task);
-                        return task.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(ex);
-                    } catch (ExecutionException ex) {
-                        throw new IOException(ex);
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
-                } else {
-                    return wrapped.execute(operation);
+                try {
+                    Future<ModelNode> task
+                            = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
+                    setLastHandlerTask(task);
+                    return task.get();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
+                } catch (ExecutionException ex) {
+                    throw new IOException(ex);
+                } catch (Exception ex) {
+                    throw new IOException(ex);
                 }
             }
 
             private ModelNode doExecute(ModelNode operation) throws IOException {
-                if (ctx.getCommandTimeout() > 0) {
-                    try {
-                        Future<ModelNode> task
-                                = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
-                        setLastHandlerTask(task);
-                        return task.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(ex);
-                    } catch (ExecutionException ex) {
-                        throw new IOException(ex);
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
-                } else {
-                    return wrapped.execute(operation);
+                try {
+                    Future<ModelNode> task
+                            = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
+                    setLastHandlerTask(task);
+                    return task.get();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
+                } catch (ExecutionException ex) {
+                    throw new IOException(ex);
+                } catch (Exception ex) {
+                    throw new IOException(ex);
                 }
             }
 
             private ModelNode doExecute(ModelNode operation, OperationMessageHandler handler) throws IOException {
-                if (ctx.getCommandTimeout() > 0) {
-                    try {
-                        Future<ModelNode> task
-                                = wrapped.executeAsync(operation, handler);
-                        setLastHandlerTask(task);
-                        return task.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(ex);
-                    } catch (ExecutionException ex) {
-                        throw new IOException(ex);
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
-                } else {
-                    return wrapped.execute(operation, handler);
+                try {
+                    Future<ModelNode> task
+                            = wrapped.executeAsync(operation, handler);
+                    setLastHandlerTask(task);
+                    return task.get();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
+                } catch (ExecutionException ex) {
+                    throw new IOException(ex);
+                } catch (Exception ex) {
+                    throw new IOException(ex);
                 }
             }
 
             private ModelNode doExecute(Operation operation,
                     OperationMessageHandler handler) throws IOException {
-                if (ctx.getCommandTimeout() > 0) {
-                    try {
-                        Future<ModelNode> task
-                                = wrapped.executeAsync(operation, handler);
-                        setLastHandlerTask(task);
-                        return task.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException(ex);
-                    } catch (ExecutionException ex) {
-                        throw new IOException(ex);
-                    } catch (Exception ex) {
-                        throw new IOException(ex);
-                    }
-                } else {
-                    return wrapped.execute(operation, handler);
+                try {
+                    Future<ModelNode> task
+                            = wrapped.executeAsync(operation, handler);
+                    setLastHandlerTask(task);
+                    return task.get();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
+                } catch (ExecutionException ex) {
+                    throw new IOException(ex);
+                } catch (Exception ex) {
+                    throw new IOException(ex);
                 }
             }
 
@@ -308,7 +279,11 @@ public class CommandExecutor {
 
         synchronized void timeout() {
             timeout = true;
-            cancelTask(handlerTask);
+            cancelTask(handlerTask, wrapped, TIMEOUT_CANCEL_MSG);
+        }
+
+        synchronized void interrupted() {
+            cancelTask(handlerTask, wrapped, CANCEL_MSG);
         }
 
         /**
@@ -320,7 +295,7 @@ public class CommandExecutor {
          */
         public synchronized void setLastHandlerTask(Future<?> handlerTask) {
             if (timeout) {
-                cancelTask(handlerTask);
+                cancelTask(handlerTask, wrapped, CANCEL_MSG);
             } else {
                 this.handlerTask = handlerTask;
             }
@@ -650,17 +625,24 @@ public class CommandExecutor {
             throw new CommandLineException("CLI not connected");
         }
 
-        if (timeout <= 0) { //Synchronous
-            return client.execute(op);
-        } else { // Guarded execution
-            Future<ModelNode> task = client.executeAsync(op,
-                    OperationMessageHandler.DISCARD);
-            try {
-                return task.get(timeout, unit);
-            } catch (TimeoutException ex) {
-                cancelTask(task);
-                throw ex;
+        Future<ModelNode> task = client.executeAsync(op,
+                OperationMessageHandler.DISCARD);
+        try {
+            if (timeout <= 0) { //Synchronous
+                return task.get();
+            } else { // Guarded execution
+                try {
+                    return task.get(timeout, unit);
+                } catch (TimeoutException ex) {
+                    cancelTask(task, ctx, CANCEL_MSG);
+                    throw ex;
+                }
             }
+        } catch (InterruptedException ex) {
+            // User sending Ctrl-C
+            Thread.currentThread().interrupt();
+            cancelTask(task, ctx, CANCEL_MSG);
+            throw ex;
         }
     }
 
@@ -668,30 +650,42 @@ public class CommandExecutor {
     public void execute(CommandHandler handler, int timeout, TimeUnit unit) throws
             CommandLineException,
             InterruptedException, ExecutionException, TimeoutException {
-        if (timeout <= 0) { //Synchronous
-            handler.handle(ctx);
-        } else { // Guarded execution
-            TimeoutCommandContext context = new TimeoutCommandContext(ctx);
-            Future<Void> task = executorService.submit(() -> {
-                handler.handle(context);
-                return null;
-            });
-            try {
-                task.get(timeout, unit);
-            } catch (TimeoutException ex) {
-                // First make the context unusable
-                context.timeout();
-                // Then cancel the task.
-                task.cancel(true);
-                throw ex;
+        TimeoutCommandContext context = new TimeoutCommandContext(ctx);
+        Future<Void> task = executorService.submit(() -> {
+            handler.handle(context);
+            return null;
+        });
+        try {
+            if (timeout <= 0) { //Synchronous
+                task.get();
+            } else { // Guarded execution
+                try {
+                    task.get(timeout, unit);
+                } catch (TimeoutException ex) {
+                    // First make the context unusable
+                    context.timeout();
+                    // Then cancel the task.
+                    task.cancel(true);
+                    throw ex;
+                }
             }
+        } catch (InterruptedException ex) {
+            // Could have been interrupted by user (Ctrl-C)
+            Thread.currentThread().interrupt();
+            cancelTask(task, context, null);
+            // Interrupt running operation.
+            context.interrupted();
+            throw ex;
         }
     }
 
-    private static void cancelTask(Future<?> task) {
+    private static void cancelTask(Future<?> task, CommandContext ctx, String msg) {
         if (task != null && !(task.isDone()
                 && task.isCancelled())) {
             try {
+                if (msg != null) {
+                    ctx.printLine(msg);
+                }
                 task.cancel(true);
             } catch (Exception cex) {
                 // XXX OK, task could be already canceled or done.

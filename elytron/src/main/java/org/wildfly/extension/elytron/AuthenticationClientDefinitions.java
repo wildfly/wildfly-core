@@ -47,6 +47,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelNode;
@@ -83,13 +84,13 @@ class AuthenticationClientDefinitions {
     static final SimpleAttributeDefinition ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
-            .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
+            .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.SECURITY_DOMAIN, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
+            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setRestartAllServices()
             .build();
 
@@ -119,10 +120,19 @@ class AuthenticationClientDefinitions {
             .build();
 
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
+            .setAllowExpression(false)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
+
+    static final SimpleAttributeDefinition FORWARDING_MODE =
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FORWARDING_MODE, ModelType.STRING, true)
+                .setAllowExpression(true)
+                .setRestartAllServices()
+                .setAllowedValues(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION)
+                .setValidator(new StringAllowedValuesValidator(ElytronDescriptionConstants.AUTHENTICATION, ElytronDescriptionConstants.AUTHORIZATION))
+                .setDefaultValue(new ModelNode(ElytronDescriptionConstants.AUTHENTICATION))
+                .build();
 
     static final SimpleAttributeDefinition SASL_MECHANISM_SELECTOR = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_MECHANISM_SELECTOR, ModelType.STRING, true)
             .setAllowExpression(true)
@@ -141,15 +151,15 @@ class AuthenticationClientDefinitions {
 
     static final SimpleAttributeDefinition KERBEROS_SECURITY_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY, ModelType.STRING, true)
             .setRestartAllServices()
-            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.SECURITY_DOMAIN)
+            .setAlternatives(ElytronDescriptionConstants.ANONYMOUS, ElytronDescriptionConstants.AUTHENTICATION_NAME)
             .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
+            PORT, REALM, SECURITY_DOMAIN, FORWARDING_MODE, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
+            PORT, REALM, SECURITY_DOMAIN, FORWARDING_MODE, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
 
     /* *************************************** */
     /* Authentication Context Attributes */
@@ -279,10 +289,15 @@ class AuthenticationClientDefinitions {
                 configuration = realm != null ? configuration.andThen(c -> c.useRealm(realm)) : configuration;
 
                 String securityDomain = asStringIfDefined(context, SECURITY_DOMAIN, model);
+                String forwardAuth = asStringIfDefined(context, FORWARDING_MODE, model);
+
                 if (securityDomain != null) {
-                    InjectedValue<SecurityDomain> securityDomainInjector = new InjectedValue<>();
-                    serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_DOMAIN_CAPABILITY, securityDomain, SecurityDomain.class), SecurityDomain.class, securityDomainInjector);
-                    configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
+                    InjectedValue<SecurityDomain> securityDomainInjector = getSecurityDomain(serviceBuilder, context, securityDomain);
+                    if (ElytronDescriptionConstants.AUTHORIZATION.equals(forwardAuth)) {
+                        configuration = configuration.andThen(c -> c.useForwardedAuthorizationIdentity(securityDomainInjector.getValue()));
+                    } else {
+                        configuration = configuration.andThen(c -> c.useForwardedIdentity(securityDomainInjector.getValue()));
+                    }
                 }
 
                 String saslMechanismSelector = asStringIfDefined(context, SASL_MECHANISM_SELECTOR, model);
@@ -345,6 +360,12 @@ class AuthenticationClientDefinitions {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
                 };
+            }
+
+            private InjectedValue<SecurityDomain> getSecurityDomain(ServiceBuilder<AuthenticationConfiguration> serviceBuilder, OperationContext context, String securityDomain) {
+                InjectedValue<SecurityDomain> securityDomainInjector = new InjectedValue<>();
+                serviceBuilder.addDependency(context.getCapabilityServiceName(SECURITY_DOMAIN_CAPABILITY, securityDomain, SecurityDomain.class), SecurityDomain.class, securityDomainInjector);
+                return securityDomainInjector;
             }
         };
         return new TrivialResourceDefinition(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, add, AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY);

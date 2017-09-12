@@ -24,7 +24,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_PROVIDERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDERS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_LOADER;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
@@ -53,6 +52,15 @@ class ProviderParser {
                     new CommonAttributes.AggregateAttributeParser(PROVIDERS), //TODO "providers" is a odd name for singular reference
                     new CommonAttributes.AggregateAttributeMarshaller(PROVIDERS))
             .build();
+    private final ElytronSubsystemParser elytronSubsystemParser;
+
+    ProviderParser(ElytronSubsystemParser elytronSubsystemParser) {
+        this.elytronSubsystemParser = elytronSubsystemParser;
+    }
+
+    private void verifyNamespace(XMLExtendedStreamReader reader) throws XMLStreamException {
+        elytronSubsystemParser.verifyNamespace(reader);
+    }
 
     void readProviders(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
             throws XMLStreamException {

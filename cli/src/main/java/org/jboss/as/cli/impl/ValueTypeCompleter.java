@@ -445,6 +445,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             this.logging = logging;
         }
 
+        /**
+         * Returns the list of candidates implied by metadata.
+         * @param propType
+         * @param path
+         * @return List of candidates, null means no candidates, empty candidates
+         * means complete.
+         */
         private List<String> getCandidatesFromMetadata(ModelNode propType,
                 String path) {
             List<String> candidates = null;
@@ -453,6 +460,26 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 CommandLineCompleter completer = FilenameTabCompleter.newCompleter(ctx);
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
+
+                if (candidates.isEmpty()) {
+                    return null;
+                }
+                // Completer returns the last path item.
+                // If equals to path, means that it is complete.
+                if (candidates.size() == 1) {
+                    String candidate = candidates.get(0);
+                    int sepIndex = path.lastIndexOf(File.separator);
+                    String lastPath = path;
+                    if (sepIndex >= 0 && sepIndex < path.length() - 1) {
+                        lastPath = path.substring(sepIndex + 1);
+                    }
+                    if (candidate.equals(lastPath)) {
+                        // return empty candidates
+                        candidates.clear();
+                        return candidates;
+                    }
+                }
+
                 // candidates only contain the last part of a path.
                 // We need to keep the radical and do the replacement after it
                 // valLength is used when computing the replacement index.
@@ -479,12 +506,27 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         = new DeploymentItemCompleter(address);
                 candidates = new ArrayList<>();
                 valLength = completer.complete(ctx, path, offset, candidates);
+                if (candidates.isEmpty()) {
+                    return null;
+                }
             } else if (propType.has(Util.CAPABILITY_REFERENCE)) {
                 CapabilityReferenceCompleter completer
                         = factory.newCompleter(address,
                                 propType.get(Util.CAPABILITY_REFERENCE).asString());
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
+                if (candidates.isEmpty()) {
+                    return null;
+                }
+                if(candidates.size() == 1) {
+                    String candidate = candidates.get(0);
+                    // That is complete
+                    if (candidate.equals(path)) {
+                        // return empty candidates
+                        candidates.clear();
+                        return candidates;
+                    }
+                }
             }
             return candidates;
         }
@@ -763,6 +805,10 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     List<String> c = getCandidatesFromMetadata(propType,
                             radical);
                     if (c != null) {
+                        if (c.isEmpty()) {
+                            // means complete.
+                            return true;
+                        }
                         candidates.addAll(c);
                     }
                     return false;
