@@ -89,7 +89,6 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemTest {
             if (attribute.isDefined()) {
                 for (ModelNode element : attribute.asList()) {
                     if (element.get(PermissionMapperDefinitions.MATCH_ALL.getName()).asBoolean(false)) {
-                        new Exception("found match-all: " + attribute).printStackTrace(System.out);
                         return true;
                     }
                 }
@@ -106,7 +105,6 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemTest {
                     if (matchAll.asBoolean(false)) {
                         matchAll.clear();
                         element.get(PermissionMapperDefinitions.ROLES.getName()).add("Administrator");
-                        new Exception("corrected " + toResolve + " to " + corrected).printStackTrace(System.out);
 
                     }
                 }
