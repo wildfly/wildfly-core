@@ -193,7 +193,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 final AuthMechanism mechanism = currentRegistration.getKey();
 
                 domainBuilder.addRealm(mechanism.toString(),
-                        currentService.allowGroupLoading() && authorizationRealm != null ? new SharedStateSecurityRealm(new AggregateSecurityRealm(elytronRealm, authorizationRealm)) : elytronRealm)
+                        new SharedStateSecurityRealm(currentService.allowGroupLoading() && authorizationRealm != null ? new AggregateSecurityRealm(elytronRealm, authorizationRealm) : elytronRealm))
                         .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                         .build();
                 Function<Principal, Principal> preRealmRewriter = p -> new RealmUser(this.name, p.getName());
