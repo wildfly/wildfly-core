@@ -281,10 +281,9 @@ public class InterdependentDeploymentTestCase {
         for (String dep : dependencies) {
             sb.append(
                     "      <module name=\"deployment.").append(dep).append("\"");
-            // FIXME WFCORE-2235 this should work, but it fails intermittently
-            //if (dep.equals("interrelated-c.jar")) {
-            //    sb.append(" optional=\"true\"");
-            //}
+            if (dep.equals("interrelated-c.jar")) {
+                sb.append(" optional=\"true\"");
+            }
             sb.append("/>\n");
         }
         sb.append(
