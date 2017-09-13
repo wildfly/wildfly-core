@@ -45,10 +45,18 @@ public interface ManagedServerBootConfiguration {
 
     /**
      * Get server launch command.
+     * <p>
+     * The command can optionally omit the usual arg that reports the server's
+     * semi-unique {@link #getServerProcessId() process id}. Omitting this allows comparison of launch
+     * commands without having to account for the fact that process ids for the same logical server
+     * will be different for different launches.
+     *
+     * @param includeProcessId {@code true} if the command should include a {@code -D} arg
+     *                         reporting the {@link #getServerProcessId() server process id}.
      *
      * @return the launch command
      */
-    List<String> getServerLaunchCommand();
+    List<String> getServerLaunchCommand(boolean includeProcessId);
 
     /**
      * Get the host controller environment.
@@ -71,7 +79,7 @@ public interface ManagedServerBootConfiguration {
     ModelNode getSubsystemEndpointConfiguration();
 
     /**
-     * Get a {@link Serializable} {@link Supplier<SSLContext>} that the server will use to create an SSLContext for connecting
+     * Get a {@link java.io.Serializable} {@link Supplier<SSLContext>} that the server will use to create an SSLContext for connecting
      * back to the HostController.
      *
      * @return A {@link Supplier<SSLContext>} or {@code null} if no SSL configuration specified.
@@ -80,4 +88,9 @@ public interface ManagedServerBootConfiguration {
 
     boolean isSuspended();
 
+    /**
+     * Gets a semi-unique id for the server process.
+     * @return the id
+     */
+    int getServerProcessId();
 }

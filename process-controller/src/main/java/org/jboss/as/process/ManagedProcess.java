@@ -68,6 +68,7 @@ final class ManagedProcess {
     private final String authKey;
     private final boolean isPrivileged;
     private final RespawnPolicy respawnPolicy;
+    private final int id;
 
     private OutputStream stdin;
     private volatile State state = State.DOWN;
@@ -100,7 +101,7 @@ final class ManagedProcess {
         ;
     }
 
-    ManagedProcess(final String processName, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
+    ManagedProcess(final String processName, final int id, final List<String> command, final Map<String, String> env, final String workingDirectory, final Object lock, final ProcessController controller, final String authKey, final boolean privileged, final boolean respawn) {
         Assert.checkNotNullParam("processName", processName);
         Assert.checkNotNullParam("command", command);
         Assert.checkNotNullParam("env", env);
@@ -112,6 +113,7 @@ final class ManagedProcess {
             throw ProcessLogger.ROOT_LOGGER.invalidLength("authKey");
         }
         this.processName = processName;
+        this.id = id;
         this.command = command;
         this.env = env;
         this.workingDirectory = workingDirectory;
@@ -261,19 +263,20 @@ final class ManagedProcess {
                 stop(); // Try to stop before destroying the process
             }
 
+            final long timeout = 5000;
             if (state != State.DOWN && jt != null) {
                 try {
                     // Give stop() a small amount of time to work,
                     // in case the user asked for a destroy when a normal stop
                     // was sufficient. But the base assumption is the destroy
                     // is needed
-                    jt.join(5000);
+                    jt.join(timeout);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
             if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
-                log.debugf("Destroying process '%s'", processName);
+                log.destroyingProcess(processName, timeout);
                 process.destroyForcibly();
             }
         }
@@ -286,21 +289,22 @@ final class ManagedProcess {
                 stop(); // Try to stop before killing the process
             }
 
+            final long timeout = 5000;
             if (state != State.DOWN && jt != null) {
                 try {
                     // Give stop() a small amount of time to work,
                     // in case the user asked for a kill when a normal stop
                     // was sufficient. But the base assumption is the kill
                     // is needed
-                    jt.join(5000);
+                    jt.join(timeout);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
 
             if (state != State.DOWN || jt == null || jt.isAlive()) { // Cover all bases just to be robust
-                log.debugf("Attempting to kill -KILL process '%s'", processName);
-                if (!ProcessUtils.killProcess(processName)) {
+                log.attemptingToKillProcess(processName, timeout);
+                if (!ProcessUtils.killProcess(processName, id)) {
                     // Fallback to destroy if kill is not available
                     log.failedToKillProcess(processName);
                     process.destroyForcibly();

@@ -32,12 +32,13 @@ abstract class ProcessUtils {
      * Try to kill a given process.
      *
      * @param processName the process name
+     * @param id the process integer id, or {@code -1} if this is not relevant
      * @return {@code true} if the command succeeded, {@code false} otherwise
      */
-    static boolean killProcess(final String processName) {
+    static boolean killProcess(final String processName, int id) {
         int pid;
         try {
-            pid = processUtils.resolveProcessId(processName);
+            pid = processUtils.resolveProcessId(processName, id);
             if(pid > 0) {
                 try {
                     Runtime.getRuntime().exec(processUtils.getKillCommand(pid));
@@ -81,13 +82,14 @@ abstract class ProcessUtils {
      * This will return the resolved process-id or {@code -1} if not resolvable.
      *
      * @param processName the process name
+     * @param id the process integer id, or {@code -1} if this is not relevant
      * @return the process id
      * @throws IOException
      */
-    private int resolveProcessId(final String processName) throws IOException {
+    private int resolveProcessId(final String processName, int id) throws IOException {
         final String jpsCommand = getJpsCommand();
         if(jpsCommand == null) {
-            ProcessLogger.ROOT_LOGGER.debugf("jps command not found'");
+            ProcessLogger.ROOT_LOGGER.jpsCommandNotFound(processName);
             return -1;
         }
         final Process p = Runtime.getRuntime().exec(jpsCommand);
@@ -97,8 +99,10 @@ abstract class ProcessUtils {
             String line;
             // See if the process contains "jboss-modules.jar" and "-D[Server:server-one]"
             final String process = "-D[" + processName + "]";
+            final String idParam = id < 0 ? null : "-D[pcid:" + id + "]";
             while ((line = input.readLine()) != null) {
-                if (line.contains(modulesJar) && line.contains(process)){
+                if (line.contains(modulesJar) && line.contains(process)
+                        && (idParam == null || line.contains(idParam))) {
                     processes.add(line);
                 }
             }
@@ -111,9 +115,9 @@ abstract class ProcessUtils {
             return Integer.parseInt(proc.substring(0, i));
         }
         if(processes.isEmpty()) {
-            ProcessLogger.ROOT_LOGGER.debugf("process not found '%s'", processName);
+            ProcessLogger.ROOT_LOGGER.processNotFound(processName);
         } else {
-            ProcessLogger.ROOT_LOGGER.debugf("ambiguous result. multiple processes found for '%s'", processName);
+            ProcessLogger.ROOT_LOGGER.multipleProcessesFound(processName);
         }
         return -1;
     }

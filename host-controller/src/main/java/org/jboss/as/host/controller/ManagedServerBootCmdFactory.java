@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -92,6 +93,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             "jboss.server.management.uuid",
             "jboss.server.persist.config"));
 
+    private static final Random random = new Random();
     private static final ModelNode EMPTY = new ModelNode();
     static {
         EMPTY.setEmptyList();
@@ -107,6 +109,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     }
 
     private final String serverName;
+    private final int processId = Math.abs(random.nextInt());
     private final ModelNode domainModel;
     private final ModelNode hostModel;
     private final ModelNode serverModel;
@@ -254,7 +257,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
     /** {@inheritDoc} */
     @Override
-    public List<String> getServerLaunchCommand() {
+    public List<String> getServerLaunchCommand(boolean includeProcessId) {
         final List<String> command = new ArrayList<String>();
 
         if (jvmElement.getLaunchCommand() != null) {
@@ -266,6 +269,10 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         command.add(getJavaCommand());
 
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
+
+        if (includeProcessId) {
+            command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
+        }
 
         JvmOptionsBuilderFactory.getInstance().addOptions(jvmElement, command);
 
@@ -401,6 +408,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     @Override
     public boolean isSuspended() {
         return suspend;
+    }
+
+    @Override
+    public int getServerProcessId() {
+        return processId;
     }
 
     private String getJavaCommand() {

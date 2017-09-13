@@ -103,6 +103,12 @@ class ManagedServer {
         return SERVER_PROCESS_NAME_PREFIX + serverName;
     }
 
+    private static final String SERVER_PROCESS_ID_PREFIX = "pcid:";
+
+    static String getServerProcessId(int serverId) {
+        return SERVER_PROCESS_ID_PREFIX + serverId;
+    }
+
     static boolean isServerProcess(String serverProcessName) {
         return serverProcessName.startsWith(SERVER_PROCESS_NAME_PREFIX);
     }
@@ -781,11 +787,12 @@ class ManagedServer {
         @Override
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
-            final List<String> command = bootConfiguration.getServerLaunchCommand();
+            final List<String> command = bootConfiguration.getServerLaunchCommand(true);
             final Map<String, String> env = bootConfiguration.getServerLaunchEnvironment();
             final HostControllerEnvironment environment = bootConfiguration.getHostControllerEnvironment();
+            final int processId = bootConfiguration.getServerProcessId();
             // Add the process to the process controller
-            processControllerClient.addProcess(serverProcessName, authKey, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
+            processControllerClient.addProcess(serverProcessName, processId, authKey, command.toArray(new String[command.size()]), environment.getHomeDir().getAbsolutePath(), env);
             return true;
         }
 
@@ -821,7 +828,7 @@ class ManagedServer {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Get the standalone boot updates
             final List<ModelNode> bootUpdates = Collections.emptyList(); // bootConfiguration.getBootUpdates();
-            final Map<String, String> launchProperties = parseLaunchProperties(bootConfiguration.getServerLaunchCommand());
+            final Map<String, String> launchProperties = parseLaunchProperties(bootConfiguration.getServerLaunchCommand(true));
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
