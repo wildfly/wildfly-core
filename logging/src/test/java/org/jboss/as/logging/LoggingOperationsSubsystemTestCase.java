@@ -202,13 +202,14 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
         // Write new filters
         for (Map.Entry<String, ModelNode> entry : FilterConversionTestCase.MAP.entrySet()) {
+            final ModelNode filterModel = FilterConversionTestCase.removeUndefined(entry.getValue());
             // Write to a handler
             ModelNode op = SubsystemOperations.createWriteAttributeOperation(handlerAddress, CommonAttributes.FILTER_SPEC, entry.getKey());
             executeOperation(kernelServices, op);
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(handlerAddress, CommonAttributes.FILTER);
             ModelNode filterResult = SubsystemOperations.readResult(executeOperation(kernelServices, op));
-            ModelTestUtils.compare(entry.getValue(), filterResult);
+            ModelTestUtils.compare(filterModel, filterResult);
 
             // Validate an add operation
             final ModelNode tempHandlerAddress = createConsoleHandlerAddress("temp").toModelNode();
@@ -218,7 +219,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(tempHandlerAddress, CommonAttributes.FILTER);
             filterResult = SubsystemOperations.readResult(executeOperation(kernelServices, op));
-            ModelTestUtils.compare(entry.getValue(), filterResult);
+            ModelTestUtils.compare(filterModel, filterResult);
             // Remove the temp handler
             op = SubsystemOperations.createRemoveOperation(tempHandlerAddress, true);
             executeOperation(kernelServices, op);
@@ -231,7 +232,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER);
             filterResult = SubsystemOperations.readResult(executeOperation(kernelServices, op));
-            ModelTestUtils.compare(entry.getValue(), filterResult);
+            ModelTestUtils.compare(filterModel, filterResult);
 
             // Test writing the attribute to the logger
             op = SubsystemOperations.createWriteAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC, entry.getKey());
@@ -239,7 +240,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER);
             filterResult = SubsystemOperations.readResult(executeOperation(kernelServices, op));
-            ModelTestUtils.compare(entry.getValue(), filterResult);
+            ModelTestUtils.compare(filterModel, filterResult);
 
             // Remove the logger
             op = SubsystemOperations.createRemoveOperation(loggerAddress, true);
