@@ -277,7 +277,8 @@ public class VariablesTestCase {
     public void testLastChunkIndex() throws Exception {
         final ParsedCommandLine parsed = parse("$myvar:re");
         assertEquals("re", parsed.getOperationName());
-        assertEquals(7, parsed.getLastChunkIndex());
+        assertEquals(7, parsed.getLastChunkOriginalIndex());
+        assertEquals(19, parsed.getLastChunkIndex());
     }
 
     @Test
