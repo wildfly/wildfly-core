@@ -67,6 +67,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
@@ -567,7 +569,13 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
         RuntimeCapability<Void> runtimeCapability = MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(currentAddress.getLastElement().getValue());
         ServiceName realmName = runtimeCapability.getCapabilityServiceName();
         ServiceController<ModifiableSecurityRealm> serviceController = getRequiredService(serviceRegistry, realmName, ModifiableSecurityRealm.class);
-
+        if ( serviceController.getState() != ServiceController.State.UP ){
+            try {
+                serviceController.awaitValue(500, TimeUnit.MILLISECONDS);
+            } catch (IllegalStateException | InterruptedException | TimeoutException e) {
+                throw ROOT_LOGGER.requiredServiceNotUp(serviceController.getName(), serviceController.getState());
+            }
+        }
         return serviceController.getValue();
     }
 
