@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -45,6 +46,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
+import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
@@ -125,6 +127,25 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     protected String getSubsystemXml(String resource) throws IOException {
         return readResource(resource);
     }
+
+    @Test
+    public void testHttpConnectorValidationStepFail() throws Exception {
+        KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
+                .setSubsystemXml(getSubsystemXml("remoting-with-duplicate-http-connector.xml"))
+                .build();
+
+        Assert.assertFalse(services.isSuccessfulBoot());
+    }
+
+    @Test
+    public void testHttpConnectorValidationStepSuccess() throws Exception {
+        KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
+                .setSubsystemXml(getSubsystemXml("remoting-without-duplicate-http-connector.xml"))
+                .build();
+
+        Assert.assertTrue(services.isSuccessfulBoot());
+    }
+
 
     @Override
     protected void compareXml(String configId, String original, String marshalled) throws Exception {
