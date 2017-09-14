@@ -183,7 +183,10 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, targetModelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(
+                                RemotingEndpointResource.ATTRIBUTES.toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()])
+                        ))
                 .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
                         new FailedOperationTransformationConfig.NewAttributesConfig(
                                 ConnectorCommon.SASL_AUTHENTICATION_FACTORY,
@@ -215,7 +218,10 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, targetModelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(
+                                RemotingEndpointResource.ATTRIBUTES.toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()])
+                        ))
                 .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
                         new FailedOperationTransformationConfig.NewAttributesConfig(
                                 ConnectorCommon.SASL_AUTHENTICATION_FACTORY,
