@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:1.1">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <authentication-client>
         <authentication-configuration name="base" anonymous="true" />
         <authentication-configuration name="forward-authz"

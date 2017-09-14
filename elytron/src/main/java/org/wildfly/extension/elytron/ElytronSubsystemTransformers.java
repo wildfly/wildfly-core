@@ -47,9 +47,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current 1.1.0 to 1.0.0, aka WildFly Core 3.0.0/3.0.1
-        buildTransformers_1_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ElytronExtension.ELYTRON_1_0_0));
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ElytronExtension.ELYTRON_1_0_0});
+        // 1.1.0 to 1.0.0, aka WildFly Core 3.0.0/3.0.1
+        buildTransformers_1_0(chainedBuilder.createBuilder(ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0));
+        // Current 2.0.0 to 1.1.0 aka WildFly Core 3.0.2
+        buildTransformers_1_1(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ElytronExtension.ELYTRON_1_1_0));
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0});
     }
 
     private void buildTransformers_1_0(ResourceTransformationDescriptionBuilder builder) {
@@ -83,6 +85,10 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             .getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(ElytronDescriptionConstants.AUTHENTICATION)), AuthenticationClientDefinitions.FORWARDING_MODE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, AuthenticationClientDefinitions.FORWARDING_MODE);
+
+    }
+
+    private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
 
     }
 }
