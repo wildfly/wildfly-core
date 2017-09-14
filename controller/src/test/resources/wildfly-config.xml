@@ -25,7 +25,7 @@
 <configuration>
     <endpoint name="test-endpoint" xmlns="urn:jboss-remoting:5.0">
         <connections>
-            <connection uri="remote://localhost:32123" immediate="true"/>
+            <connection destination="remote://localhost:32123"/>
         </connections>
     </endpoint>
 </configuration>
