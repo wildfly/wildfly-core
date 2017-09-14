@@ -18,9 +18,13 @@
 
 package org.jboss.as.remoting;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
+import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.AttributeConverter;
@@ -46,41 +50,56 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
 
     @Override
     public void registerTransformers(SubsystemTransformerRegistration registration) {
+
+        // We need separate chains for 1.x and >= 3.0 as the handling of RemotingEndpointResource differs
+        // CRITICAL! Any transformer to 4.0.0 or later MUST be added to both chains
+
+        // First >- 3.0
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current 4.0.0 to 3.0.0
+        // 4.0.0 to 3.0.0
         buildTransformers_3_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_3_0));
 
-        // Current 3.0.0 to 2.1.0
-        buildTransformers_1_4(chainedBuilder.createBuilder(VERSION_3_0, VERSION_1_4));
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_3_0});
 
-        //1.4.0 to 1.3.0
-        buildTransformers_1_3(chainedBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
+        // Next, the 1.x chain
+        ChainedTransformationDescriptionBuilder chained1xBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
+        // 4.0.0 to 1.4.0
+        buildTransformers_1_4(chained1xBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_1_4));
+        // 1.4.0 to 1.3.0
+        buildTransformers_1_3(chained1xBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
 
-
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4, VERSION_3_0});
+        chained1xBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4});
     }
 
     private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
+        builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY, ConnectorResource.SSL_CONTEXT)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY, ConnectorResource.SSL_CONTEXT);
+
         builder.rejectChildResource(HttpConnectorResource.PATH);
-        builder.rejectChildResource(RemotingEndpointResource.ENDPOINT_PATH);
+        builder.addChildResource(RemotingEndpointResource.ENDPOINT_PATH)
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, RemotingEndpointResource.ATTRIBUTES)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, RemotingEndpointResource.ATTRIBUTES.toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()]))
+                .end()
+                .addOperationTransformationOverride(ModelDescriptionConstants.ADD)
+                .inheritResourceAttributeDefinitions()
+                .setCustomOperationTransformer(OperationTransformer.DISCARD)
+                .end()
+                .setCustomResourceTransformer(ResourceTransformer.DISCARD);
         builder.addChildResource(RemoteOutboundConnectionResourceDefinition.ADDRESS).getAttributeBuilder()
                 .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(Protocol.REMOTE.toString())), RemoteOutboundConnectionResourceDefinition.PROTOCOL)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL);
+                .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT);
     }
 
     private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
         builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
                 .setValueConverter(new AttributeConverter.DefaultValueAttributeConverter(ConnectorCommon.SASL_PROTOCOL), ConnectorCommon.SASL_PROTOCOL)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME)
-        ;
-
-        builder.addChildResource(HttpConnectorResource.PATH).getAttributeBuilder()
-                .setValueConverter(new AttributeConverter.DefaultValueAttributeConverter(ConnectorCommon.SASL_PROTOCOL), ConnectorCommon.SASL_PROTOCOL)
-                .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME)
-        ;
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
     }
 
     //EAP 7.0
@@ -108,8 +127,8 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
 
         builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY, ConnectorResource.SSL_CONTEXT)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY, ConnectorResource.SSL_CONTEXT)
-        ;
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY, ConnectorResource.SSL_CONTEXT);
+
         builder.addChildResource(RemotingEndpointResource.ENDPOINT_PATH).getAttributeBuilder()
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
                     @Override
@@ -119,7 +138,6 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
                         }
                     }
                 }, RemotingEndpointResource.SASL_PROTOCOL);
-
 
         builder.addChildResource(HttpConnectorResource.PATH).getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
