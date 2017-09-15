@@ -58,7 +58,8 @@ public class ElytronExtension implements Extension {
      */
     public static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
     public static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
-    public static final String CURRENT_NAMESPACE = NAMESPACE_1_1;
+    public static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
+    public static final String CURRENT_NAMESPACE = NAMESPACE_2_0;
 
     /**
      * The name of our subsystem within the model.
@@ -72,8 +73,9 @@ public class ElytronExtension implements Extension {
 
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
     static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
+    static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_1_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_2_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -105,6 +107,7 @@ public class ElytronExtension implements Extension {
     public void initializeParsers(ExtensionParsingContext context) {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, new ElytronSubsystemParser(NAMESPACE_1_0));
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, new ElytronSubsystemParser(NAMESPACE_1_1));
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, new ElytronSubsystemParser(NAMESPACE_2_0));
     }
 
     @Override
