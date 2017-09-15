@@ -51,10 +51,21 @@ public class SuffixValidator extends ModelTypeValidator {
         if (value.isDefined()) {
             final String suffix = value.asString();
             try {
-                if (denySeconds && (suffix.contains("s") || suffix.contains("S"))) {
-                    throw DomainManagementLogger.ROOT_LOGGER.suffixContainsMillis(suffix);
-                }
                 new SimpleDateFormat(suffix);
+                if (denySeconds) {
+                    for (int i = 0; i < suffix.length(); i++) {
+                        char c = suffix.charAt(i);
+                        if (c == '\'') {
+                            c = suffix.charAt(++i);
+                            while (c != '\'') {
+                                c = suffix.charAt(++i);
+                            }
+                        }
+                        if (c == 's' || c == 'S') {
+                            throw DomainManagementLogger.ROOT_LOGGER.suffixContainsMillis(suffix);
+                        }
+                    }
+                }
             } catch (IllegalArgumentException e) {
                 throw DomainManagementLogger.ROOT_LOGGER.invalidSuffix(suffix);
             }
