@@ -144,7 +144,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
     }
 
 
-    private static void parseLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -209,7 +209,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseAsyncHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseAsyncHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -279,7 +279,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseRootLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations) throws XMLStreamException {
+    void parseRootLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations) throws XMLStreamException {
         // No attributes
         if (reader.getAttributeCount() > 0) {
             throw unexpectedAttribute(reader, 0);
@@ -313,7 +313,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseConsoleHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseConsoleHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -384,7 +384,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -463,7 +463,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parsePeriodicRotatingFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parsePeriodicRotatingFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -545,7 +545,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseSizeRotatingHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseSizeRotatingHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -628,7 +628,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseFileElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
+    void parseFileElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
         final EnumSet<Attribute> required = EnumSet.of(Attribute.PATH);
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -653,7 +653,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         requireNoContent(reader);
     }
 
-    private static void parseHandlerFormatterElement(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
+    void parseHandlerFormatterElement(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
         if (reader.getAttributeCount() > 0) {
             throw unexpectedAttribute(reader, 0);
         }
@@ -677,7 +677,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         }
     }
 
-    private static void parseHandlersElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
+    void parseHandlersElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
         // No attributes
         if (reader.getAttributeCount() > 0) {
             throw unexpectedAttribute(reader, 0);
