@@ -45,6 +45,7 @@ import javax.swing.SwingWorker;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
 import org.jboss.remoting3.Channel;
@@ -59,8 +60,6 @@ import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
 import com.sun.tools.jconsole.JConsolePlugin;
 import java.beans.PropertyChangeEvent;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -131,9 +130,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                     (RemotingMBeanServerConnection) mbeanServerConn)) {
                 // Set a listener for connection state change.
                 jcCtx.addPropertyChangeListener((PropertyChangeEvent evt) -> {
-                    Logger.getLogger("org.foo").log(Level.FINER,
-                            "Received property change {0} value {1}",
-                            new Object[]{evt.getPropertyName(), evt.getNewValue()});
+                    CliLogger.ROOT_LOGGER.tracef("Received property change %s value %s", evt.getPropertyName(), evt.getNewValue());
                     if (JConsoleContext.CONNECTION_STATE_PROPERTY.equals(evt.getPropertyName())) {
                         ConnectionState state = (ConnectionState) evt.getNewValue();
                         if (state == ConnectionState.CONNECTED) {
@@ -145,8 +142,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                                 connectedClient = cmdCtx.getModelControllerClient();
                                 isConnected = true;
                             } catch (Exception ex) {
-                                Logger.getLogger(JConsoleCLIPlugin.class.getName()).
-                                        log(Level.SEVERE, null, ex);
+                                CliLogger.ROOT_LOGGER.jConsoleCLIPluginError(ex);
                             }
                         } else {
                             isConnected = false;

@@ -26,12 +26,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.DefaultCompleter;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -137,7 +136,7 @@ public class CapabilityReferenceCompleter extends DefaultCompleter {
             request = builder.buildRequest();
             request.get("dependent-address").set(address);
         } catch (CommandFormatException | IOException e) {
-            Logger.getLogger(CapabilityReferenceCompleter.class.getName()).log(Level.FINE, null, e);
+            CliLogger.ROOT_LOGGER.trace("Error getting capability names", e);
             return Collections.emptyList();
         }
         List<String> lst = new ArrayList<>();
@@ -152,7 +151,7 @@ public class CapabilityReferenceCompleter extends DefaultCompleter {
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(CapabilityReferenceCompleter.class.getName()).log(Level.FINE, null, ex);
+            CliLogger.ROOT_LOGGER.trace("Error getting capability names", ex);
             return Collections.emptyList();
         }
         Collections.sort(lst);

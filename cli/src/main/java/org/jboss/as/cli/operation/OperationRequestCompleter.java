@@ -34,11 +34,10 @@ import org.jboss.as.cli.CommandLineFormat;
 import org.jboss.as.cli.EscapeSelector;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.operation.impl.SegmentParsingInitialState;
 import org.jboss.as.cli.parsing.StateParser;
-import org.jboss.logging.Logger;
-
 
 /**
  *
@@ -76,8 +75,6 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             return ch == '"' || ch == '\\';
         }
     };
-
-    private static final Logger LOGGER = Logger.getLogger(OperationRequestCompleter.class);
 
     @Override
     public int complete(CommandContext ctx, final String buffer, int cursor, List<String> candidates) {
@@ -601,7 +598,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             StateParser.parse(chunk, handler, SegmentParsingInitialState.INSTANCE, false);
         } catch (CommandFormatException e) {
             // this should not happen during non-strict parsing
-            LOGGER.debug("Error when parsing last chunk of operation request", e);
+            CliLogger.ROOT_LOGGER.debug("Error when parsing last chunk of operation request", e);
         }
         return handler;
     }

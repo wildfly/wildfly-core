@@ -156,6 +156,7 @@ import org.jboss.as.cli.handlers.trycatch.FinallyHandler;
 import org.jboss.as.cli.handlers.trycatch.TryHandler;
 import org.jboss.as.cli.impl.ReadlineConsole.Settings;
 import org.jboss.as.cli.impl.ReadlineConsole.SettingsBuilder;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -178,8 +179,6 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.protocol.GeneralTimeoutHandler;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
-import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 import org.jboss.stdio.StdioContext;
 import org.wildfly.security.OneTimeSecurityFactory;
 import org.wildfly.security.SecurityFactory;
@@ -203,8 +202,6 @@ import org.xnio.http.RedirectException;
  * @author Alexey Loubyansky
  */
 class CommandContextImpl implements CommandContext, ModelControllerClientFactory.ConnectionCloseHandler {
-
-    private static final Logger log = Logger.getLogger(CommandContext.class);
 
     private static final byte RUNNING = 0;
     private static final byte TERMINATING = 1;
@@ -672,7 +669,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             try {
                 coreConfig = SecurityActions.getGlobalJaasConfiguration();
             } catch (SecurityException e) {
-                log.debug("Unable to obtain default configuration", e);
+                CliLogger.ROOT_LOGGER.debug("Unable to obtain default configuration", e);
             }
 
             jaasConfigurationWrapper = new JaasConfigurationWrapper(coreConfig);
@@ -779,9 +776,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         } catch(CommandLineException e) {
             throw e;
         } catch (Throwable t) {
-            if(log.isDebugEnabled()) {
-                log.debug("Failed to handle '" + line + "'", t);
-            }
+            CliLogger.ROOT_LOGGER.debugf(t, "Failed to handle '%s'", line);
             throw new CommandLineException("Failed to handle '" + line + "'", t);
         } finally {
             // so that getArgumentsString() doesn't return this line
@@ -889,14 +884,10 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void printLine(String message) {
-        final Level logLevel;
         if(exitCode != 0) {
-            logLevel = Level.ERROR;
+            CliLogger.ROOT_LOGGER.printMessageError(message);
         } else {
-            logLevel = Level.INFO;
-        }
-        if(log.isEnabled(logLevel)) {
-            log.log(logLevel, message);
+            CliLogger.ROOT_LOGGER.printMessageInfo(message);
         }
 
         if (outputTarget != null) {
@@ -962,9 +953,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public void printColumns(Collection<String> col) {
-        if(log.isInfoEnabled()) {
-            log.info(col);
-        }
+        CliLogger.ROOT_LOGGER.printColumns(col);
         if (outputTarget != null) {
             try {
                 for (String item : col) {
@@ -1076,8 +1065,8 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         do {
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
-                if (log.isDebugEnabled()) {
-                    log.debug("connecting to " + connectionAddress.getHost() + ':' + connectionAddress.getPort() + " as " + username);
+                if (CliLogger.ROOT_LOGGER.isDebugEnabled()) {
+                    CliLogger.ROOT_LOGGER.debugf("Connecting to %s:%d as %s", connectionAddress.getHost(), connectionAddress.getPort());
                 }
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(connectionAddress, cbh,
                         disableLocalAuth, sslContextFactory, defaultSslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);

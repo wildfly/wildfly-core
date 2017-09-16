@@ -39,6 +39,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.VersionHandler;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -287,6 +288,7 @@ public class CliLauncher {
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
+            CliLogger.ROOT_LOGGER.consoleError(t);
             exitCode = 1;
         } finally {
             if((cmdCtx != null) && !gui) {

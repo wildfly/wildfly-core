@@ -27,12 +27,12 @@ import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.logger.CliLogger;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.logging.Logger;
 
 /**
  * A completer for exploded deployment.
@@ -110,12 +110,10 @@ public class DeploymentItemCompleter implements CommandLineCompleter {
                     }
                 }
             } else {
-                Logger.getLogger(DeploymentItemCompleter.class).
-                        debug("Invalid response getting candidates");
+                CliLogger.ROOT_LOGGER.debug("Invalid response getting candidates for the deployment");
             }
         } catch (OperationFormatException | IOException ex) {
-            Logger.getLogger(DeploymentItemCompleter.class).
-                    debug("Exception getting candidates", ex);
+            CliLogger.ROOT_LOGGER.debug("Exception getting candidates for the deployment", ex);
         }
     }
 
