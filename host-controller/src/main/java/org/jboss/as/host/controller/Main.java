@@ -343,7 +343,7 @@ public final class Main {
                 } else if (arg.startsWith("--remove-existing-domain-config")) {
                     assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
                     domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
-                } else if (arg.startsWith("--host-controller-name")) {
+                } else if (arg.startsWith("--temp-host-controller-name")) {
                     String val = checkValueIsNotAnArg(arg, args[++i]);
                     if (val !=null && !val.isEmpty()) {
                         hostSystemProperties.put(HOST_NAME, val);

@@ -69,7 +69,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String REMOVE_EXISTING_HOST_CONFIG = "--remove-existing-host-config";
     private static final String EMPTY_DOMAIN_CONFIG = "--empty-domain-config";
     private static final String REMOVE_EXISTING_DOMAIN_CONFIG = "--remove-existing-domain-config";
-    private static final String HOST_CONTROLLER_NAME = "--host-controller-name";
+    private static final String HOST_CONTROLLER_NAME = "--temp-host-controller-name";
 
     private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -246,14 +246,14 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 cmdsList.add(REMOVE_EXISTING_HOST_CONFIG);
             }
 
-            // allow the user to provide --host-controller-name when starting to set the initial name.
+            // allow the user to provide --temp-host-controller-name when starting to set the initial name.
             // if this isn't specified, the name will be generated in HostControllerEnvironment based on the FQDN etc.
             // in some specific cases, the user may want to set this specifically when starting with an empty config etc.
             // this is only permitted when starting with --empty-host-config, booting with a non-empty config has the normal
             // methods of setting the hostcontroller name.
             if (hostControllerName.isPresent(parsedCmd)) {
                 if (!emptyHost) {
-                    throw new CommandFormatException("--host-controller-name must be used with --empty-host-config");
+                    throw new CommandFormatException("--temp-host-controller-name may only be used with --empty-host-config");
                 }
                 cmdsList.add(HOST_CONTROLLER_NAME);
                 cmdsList.add(hostControllerName.getValue(parsedCmd,true));
