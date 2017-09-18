@@ -1357,7 +1357,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
             if (!executed) {
                 if (addedServices == null || !addedServices.contains(service.getName())) {
-                    service.addListener(getServiceVerificationHelper());
+                    getServiceVerificationHelper().getMonitor().addController(service);
                 } // else we already handled this when it was added
 
             } // else this is rollback stuff we ignore

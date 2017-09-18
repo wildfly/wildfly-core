@@ -35,10 +35,8 @@ import java.util.TreeSet;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
@@ -51,16 +49,9 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a> *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-@SuppressWarnings("deprecation")
-class ServiceVerificationHelper extends AbstractServiceListener<Object> implements ServiceListener<Object>, OperationStepHandler {
+class ServiceVerificationHelper implements OperationStepHandler {
 
     private final StabilityMonitor monitor = new StabilityMonitor();
-
-    @Override
-    public void listenerAdded(ServiceController<?> controller) {
-        monitor.addController(controller);
-        controller.removeListener(this);
-    }
 
     StabilityMonitor getMonitor() {
         return monitor;
