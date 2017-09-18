@@ -67,7 +67,8 @@ public class ChannelServer implements Closeable {
         }
         configuration.validate();
 
-        final Endpoint endpoint = Endpoint.getCurrent();
+        // TODO WFCORE-3302 -- Endpoint.getCurrent() should be ok
+        final Endpoint endpoint = Endpoint.builder().setEndpointName(configuration.getEndpointName()).build();
 
         final NetworkServerProvider networkServerProvider = endpoint.getConnectionProviderInterface(configuration.getUriScheme(), NetworkServerProvider.class);
         final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
@@ -91,10 +92,6 @@ public class ChannelServer implements Closeable {
         return endpoint;
     }
 
-    public Registration addChannelOpenListener(final String channelName) throws ServiceRegistrationException {
-        return addChannelOpenListener(channelName, null);
-    }
-
     public Registration addChannelOpenListener(final String channelName, final OpenListener openListener) throws ServiceRegistrationException {
         return endpoint.registerService(channelName, new OpenListener() {
             public void channelOpened(final Channel channel) {
@@ -115,11 +112,12 @@ public class ChannelServer implements Closeable {
     public void close() {
         IoUtils.safeClose(streamServer);
         IoUtils.safeClose(registration);
+        // TODO WFCORE-3302 -- should not be necessary to dispose of endpoint
+        IoUtils.safeClose(endpoint);
     }
 
     public static final class Configuration {
         private String endpointName;
-        private OptionMap optionMap = OptionMap.EMPTY;
         private String uriScheme;
         private InetSocketAddress bindAddress;
         private Executor executor;
@@ -130,9 +128,6 @@ public class ChannelServer implements Closeable {
         void validate() {
             if (endpointName == null) {
                 throw new IllegalArgumentException("Null endpoint name");
-            }
-            if (optionMap == null) {
-                throw new IllegalArgumentException("Null option map");
             }
             if (uriScheme == null) {
                 throw new IllegalArgumentException("Null protocol name");
@@ -156,14 +151,6 @@ public class ChannelServer implements Closeable {
 
         public void setUriScheme(String uriScheme) {
             this.uriScheme = uriScheme;
-        }
-
-        public OptionMap getOptionMap() {
-            return optionMap;
-        }
-
-        public void setOptionMap(OptionMap optionMap) {
-            this.optionMap = optionMap;
         }
 
         public InetSocketAddress getBindAddress() {
