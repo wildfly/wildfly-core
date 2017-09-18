@@ -154,7 +154,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }

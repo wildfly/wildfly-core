@@ -222,7 +222,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this);
+            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this, false);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, DOMAIN_1_0);
         }
@@ -333,7 +333,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -441,7 +441,7 @@ class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }

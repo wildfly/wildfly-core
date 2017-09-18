@@ -174,7 +174,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
 
         if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
             // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, true);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 
@@ -245,7 +245,7 @@ class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }

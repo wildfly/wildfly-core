@@ -40,16 +40,16 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public interface ManagementXml {
 
-    static ManagementXml newInstance(Namespace namespace, ManagementXmlDelegate delegate) {
+    static ManagementXml newInstance(Namespace namespace, ManagementXmlDelegate delegate, boolean domainConfiguration) {
         switch (namespace.getMajorVersion()) {
             case 1:
             case 2:
             case 3:
-                return new ManagementXml_Legacy(namespace, delegate);
+                return new ManagementXml_Legacy(namespace, delegate, domainConfiguration);
             case 4:
-                return new ManagementXml_4(namespace, delegate);
+                return new ManagementXml_4(namespace, delegate, domainConfiguration);
             default:
-                return new ManagementXml_5(namespace, delegate);
+                return new ManagementXml_5(namespace, delegate, domainConfiguration);
         }
     }
 
@@ -64,5 +64,4 @@ public interface ManagementXml {
     default void writeManagement(XMLExtendedStreamWriter writer, ModelNode management, boolean allowInterfaces) throws XMLStreamException {
         throw new UnsupportedOperationException();
     }
-
 }
