@@ -31,7 +31,6 @@ import org.jboss.remoting3.spi.NetworkServerProvider;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.server.MechanismConfiguration;
@@ -81,7 +80,7 @@ public class StreamServerCloseTest {
         IoUtils.safeClose(streamServer);
     }
 
-    @Test
+    //@Test
     public void testRepeatedOpenClose() throws Exception {
         for (int i = 0; i < 1000; i++) {
             createStreamServer();
