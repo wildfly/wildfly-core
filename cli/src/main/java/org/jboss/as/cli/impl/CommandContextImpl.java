@@ -829,12 +829,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             Thread.currentThread().interrupt();
             throw new CommandLineException("Interrupt exception for " + msg);
         } catch (ExecutionException ex) {
-            Throwable cause = ex.getCause() == null ? ex : ex.getCause();
-            if (cause instanceof CommandLineException) {
-                throw (CommandLineException) cause;
-            }
-            throw new CommandLineException("Execution exception for " + msg
-                    + ": " + cause.getMessage(), cause);
+            throw new CommandLineException(ex);
         } catch (CommandLineException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -846,7 +841,16 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         exitCode = 0;
         try {
             handle(line);
-        } catch(Throwable t) {
+        } catch (Throwable t) {
+            // Remove exceptions that are wrappers to not pollute error message.
+            if (t instanceof CommandLineException
+                    && t.getCause() instanceof ExecutionException) {
+                // Get the ExecutionException cause.
+                Throwable cause = t.getCause().getCause();
+                if (cause != null) {
+                    t = cause;
+                }
+            }
             error(Util.getMessagesFromThrowable(t));
         }
     }
