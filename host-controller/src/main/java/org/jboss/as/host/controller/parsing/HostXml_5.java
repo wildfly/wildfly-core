@@ -212,7 +212,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
 
         if (hasCoreServices) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
             managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
         }
 
@@ -354,7 +354,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
