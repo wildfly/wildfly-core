@@ -44,13 +44,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -109,7 +109,7 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
 
     private static ZoneId getZoneId() {
         if (ZONE_ID == null) {
-            ZONE_ID = ZoneId.of(Calendar.getInstance().getTimeZone().getID());
+            ZONE_ID = ZoneId.systemDefault();
         }
         return ZONE_ID;
     }
