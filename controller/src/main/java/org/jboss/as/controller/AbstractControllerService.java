@@ -363,10 +363,12 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.processState.setStarting();
 
         final long bootStackSize = getBootStackSize();
+        final ClassLoader bootTCCL = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
         final Thread bootThread = new Thread(null, new Runnable() {
             public void run() {
                 try {
                     try {
+                        WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(bootTCCL);
                         boot(new BootContext() {
                             public ServiceTarget getServiceTarget() {
                                 return target;
