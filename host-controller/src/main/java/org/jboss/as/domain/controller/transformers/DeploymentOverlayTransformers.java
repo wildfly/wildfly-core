@@ -15,21 +15,23 @@
  */
 package org.jboss.as.domain.controller.transformers;
 
-import java.util.Set;
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
 import static org.jboss.as.controller.client.helpers.ClientConstants.STEPS;
-import org.jboss.as.controller.client.helpers.Operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
+import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_CONTENTS;
+import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_LINKS;
+
+import java.util.Set;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel;
-import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_CONTENTS;
-import static org.jboss.as.server.deploymentoverlay.DeploymentOverlayModel.REMOVED_LINKS;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -38,11 +40,10 @@ import org.jboss.dmr.ModelNode;
  */
 class DeploymentOverlayTransformers {
 
-     public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
-        ChainedTransformationDescriptionBuilder chainedBuilder =
-                TransformationDescriptionBuilder.Factory.createChainedInstance(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH, currentVersion);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
+        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH);
 
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_6);
+        ResourceTransformationDescriptionBuilder builder = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_1_6);
         builder.addOperationTransformationOverride(REMOVE)
             .setCustomOperationTransformer((TransformationContext context, PathAddress address, ModelNode operation) -> {
                 Set<PathAddress> removedContents = context.getAttachment(REMOVED_CONTENTS);
@@ -61,7 +62,7 @@ class DeploymentOverlayTransformers {
         return chainedBuilder;
     }
 
-     public static void registerServerGroupTransformers1_6_AndBelow(ResourceTransformationDescriptionBuilder parent) {
+    static void registerServerGroupTransformers1_6_AndBelow(ResourceTransformationDescriptionBuilder parent) {
         parent.addChildResource(DeploymentOverlayModel.DEPLOYMENT_OVERRIDE_PATH)
                 .addOperationTransformationOverride(REMOVE)
                 .setCustomOperationTransformer((TransformationContext context, PathAddress address, ModelNode operation) -> {

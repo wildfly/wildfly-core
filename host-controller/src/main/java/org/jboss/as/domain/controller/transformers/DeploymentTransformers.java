@@ -23,11 +23,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE_CONTENT;
-
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.isUnmanagedContent;
 
 import java.util.Map;
-import org.jboss.as.controller.ModelVersion;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.transform.TransformationContext;
@@ -36,7 +37,6 @@ import org.jboss.as.controller.transform.description.ChainedTransformationDescri
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.DeploymentResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -46,11 +46,10 @@ import org.jboss.dmr.ModelNode;
  * @author Emmanuel Hugonnet (c) 2016 Red Hat, inc.
  */
 class DeploymentTransformers {
-    public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
-        ChainedTransformationDescriptionBuilder chainedBuilder =
-                TransformationDescriptionBuilder.Factory.createChainedInstance(DeploymentResourceDefinition.PATH, currentVersion);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
+        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(DeploymentResourceDefinition.PATH);
 
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_4_1);
+        ResourceTransformationDescriptionBuilder builder = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_4_1);
         builder
                 .getAttributeBuilder().addRejectCheck(EXPLODED_REJECT, DeploymentAttributes.CONTENT_RESOURCE_ALL)
                     .setValueConverter(ARCHIVE_REMOVER, DeploymentAttributes.CONTENT_RESOURCE_ALL)
@@ -69,10 +68,7 @@ class DeploymentTransformers {
     private static final RejectAttributeChecker EXPLODED_REJECT = new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
         @Override
         protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            if (!isUnmanagedContent(attributeValue)) {
-                return attributeValue.hasDefined(ARCHIVE) && !attributeValue.get(ARCHIVE).asBoolean(true);
-            }
-            return false;
+            return !isUnmanagedContent(attributeValue) && attributeValue.hasDefined(ARCHIVE) && !attributeValue.get(ARCHIVE).asBoolean(true);
         }
 
         @Override
