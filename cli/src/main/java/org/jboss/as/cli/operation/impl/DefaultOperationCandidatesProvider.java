@@ -64,7 +64,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
-                ParserUtil.parseHeaders(buffer, parsedOp);
+                parsedOp.parseHeaders(buffer, ctx);
             } catch (CommandFormatException e) {
                 //e.printStackTrace();
                 return -1;
@@ -78,18 +78,18 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                 candidates.add("=");
                 return buffer.length();
             }
-            int result = SimpleTabCompleter.BOOLEAN.complete(ctx, buffer.substring(parsedOp.getLastChunkIndex()), cursor, candidates);
+            int result = SimpleTabCompleter.BOOLEAN.complete(ctx, buffer.substring(parsedOp.getLastChunkOriginalIndex()), cursor, candidates);
             // Special case when the value is already complete, add a separator.
             if (candidates.size() == 1) {
-                if (candidates.get(0).equals(buffer.substring(parsedOp.getLastChunkIndex()))) {
+                if (candidates.get(0).equals(buffer.substring(parsedOp.getLastChunkOriginalIndex()))) {
                     candidates.clear();
-                    candidates.add(buffer.substring(parsedOp.getLastChunkIndex()) + ";");
+                    candidates.add(buffer.substring(parsedOp.getLastChunkOriginalIndex()) + ";");
                 }
             }// No value...
             if(result < 0) {
                 return result;
             }
-            return parsedOp.getLastChunkIndex() + result;
+            return parsedOp.getOriginalOffset(parsedOp.getLastChunkIndex() + result);
         }};
 
     private static final CommandLineCompleter INT_HEADER_COMPLETER = new CommandLineCompleter(){
@@ -99,7 +99,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
-                ParserUtil.parseHeaders(buffer, parsedOp);
+                ParserUtil.parseHeaders(buffer, parsedOp, ctx);
             } catch (CommandFormatException e) {
                 //e.printStackTrace();
                 return -1;

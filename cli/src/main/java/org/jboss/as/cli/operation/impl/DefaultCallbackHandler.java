@@ -40,6 +40,7 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.operation.ParsedOperationRequestHeader;
 import org.jboss.as.cli.parsing.ParserUtil;
 import org.jboss.as.cli.parsing.ParsingStateCallbackHandler;
+import org.jboss.as.cli.parsing.StateParser;
 import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.jboss.as.cli.parsing.operation.header.RolloutPlanHeaderCallbackHandler;
 import org.jboss.dmr.ModelNode;
@@ -86,7 +87,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     private boolean validation;
 
     private String originalLine;
-    private String substitutedLine;
+    private StateParser.SubstitutedLine substitutedLine;
 
     private LinkedHashMap<String,ParsedOperationRequestHeader> headers;
     private ParsedOperationRequestHeader lastHeader;
@@ -114,7 +115,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
             address = new DefaultOperationRequestAddress(initialAddress);
         }
         this.originalLine = argsStr;
-        substitutedLine = ParserUtil.parse(argsStr, this, validation, ctx);
+        substitutedLine = ParserUtil.parseLine(argsStr, this, validation, ctx);
     }
 
     @Deprecated
@@ -140,13 +141,13 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         }
         this.setFormat(OperationFormat.INSTANCE);
         this.originalLine = argsStr;
-        substitutedLine = ParserUtil.parseOperationRequest(argsStr, this);
+        substitutedLine = ParserUtil.parseOperationRequestLine(argsStr, this);
     }
 
-    public void parseHeaders(String argsStr) throws CommandFormatException {
+    public void parseHeaders(String argsStr, CommandContext ctx) throws CommandFormatException {
         reset();
         this.originalLine = argsStr;
-        substitutedLine = ParserUtil.parseHeaders(argsStr, this);
+        substitutedLine = ParserUtil.parseHeadersLine(argsStr, this, ctx);
     }
 
     public void reset() {
@@ -177,6 +178,11 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
 
     @Override
     public String getSubstitutedLine() {
+        return substitutedLine.getSubstitued();
+    }
+
+    @Override
+    public StateParser.SubstitutedLine getSubstitutions() {
         return substitutedLine;
     }
 
@@ -625,10 +631,22 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
 
     @Override
     public int getLastChunkIndex() {
-        // When parsing headers, these 2 strings can be null.
-        int subsLength = substitutedLine == null ? 0 : substitutedLine.length();
-        int origLength = originalLine == null ? 0 : originalLine.length();
-        return lastChunkIndex - subsLength + origLength;
+        return lastChunkIndex;
+    }
+
+    @Override
+    public int getLastChunkOriginalIndex() {
+        return substitutedLine.getOriginalOffset(lastChunkIndex);
+    }
+
+    @Override
+    public int getLastSeparatorOriginalIndex() {
+        return substitutedLine.getOriginalOffset(lastSeparatorIndex);
+    }
+
+    @Override
+    public int getOriginalOffset(int offset) {
+        return substitutedLine.getOriginalOffset(offset);
     }
 
     @Override

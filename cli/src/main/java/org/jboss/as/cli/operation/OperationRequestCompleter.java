@@ -37,6 +37,7 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.operation.impl.SegmentParsingInitialState;
 import org.jboss.as.cli.parsing.StateParser;
+import org.jboss.as.cli.parsing.StateParser.SubstitutedLine;
 import org.jboss.logging.Logger;
 
 
@@ -107,7 +108,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             int result = buffer.length();
             if(parsedCmd.getLastHeaderName() != null) {
                 if(buffer.endsWith(parsedCmd.getLastHeaderName())) {
-                    result = parsedCmd.getLastChunkIndex();
+                    result = parsedCmd.getLastChunkOriginalIndex();
                     for (String name : headers.keySet()) {
                         if (name.equals(parsedCmd.getLastHeaderName())) {
                             result = completeHeader(headers, ctx, parsedCmd, buffer, cursor, candidates);
@@ -268,11 +269,17 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         if (argFullName.equals(parsedName)) {
                             if (!arg.isValueRequired()) {
                                 candidates.add(Util.FALSE);
-                                return result;
+                                return parsedCmd.getLastChunkOriginalIndex();
                             }
                         }
                     }
                 }
+                // Completion is done with substituted line, so returned offset
+                // is possibly wrong.
+                // Some completers are reseting the CommandContext referenced parsed
+                // command. We need to keep a local reference to substitution
+                // to compute substitution index after completion occured.
+                SubstitutedLine substitutions = parsedCmd.getSubstitutions();
                 int valueResult = valueCompleter.complete(ctx,
                         chunk == null ? "" : chunk,
                         chunk == null ? 0 : chunk.length(), candidates);
@@ -289,15 +296,15 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                                         return buffer.length();
                                     }
                                 } catch (CommandFormatException e) {
-                                    e.printStackTrace();
-                                    return result + valueResult;
+                                    return -1;
                                 }
                             }
                             candidates.set(0, format.getPropertyListEnd());
                             return buffer.length();
                         }
                     }
-                    return result + valueResult;
+                    int correctedValueOffset = substitutions.getOriginalOffset(result + valueResult);
+                    return correctedValueOffset;
                 }
             }
 
@@ -319,7 +326,6 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         }
                     }
                 } catch (CommandFormatException e) {
-                    e.printStackTrace();
                     return -1;
                 }
             }
@@ -394,7 +400,6 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         }
                     }
                 } catch (CommandFormatException e) {
-                    e.printStackTrace();
                     return -1;
                 }
             }
@@ -450,7 +455,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             } else {
                 Collections.sort(candidates);
             }
-            return result;
+            return parsedCmd.getOriginalOffset(result);
         }
 
         if(parsedCmd.hasOperationName() || parsedCmd.endsOnAddressOperationNameSeparator()) {
@@ -483,7 +488,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     candidates.set(0, chunk + parsedCmd.getFormat().getPropertyListStart());
                 }
 
-                return parsedCmd.getLastChunkIndex();
+                return parsedCmd.getLastChunkOriginalIndex();
             }
         }
 
@@ -592,7 +597,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             offset = parsedSegment.getOffset();
         }
 
-        return parsedCmd.getLastSeparatorIndex() + 1 + offset;
+        return parsedCmd.getLastSeparatorOriginalIndex() + 1 + offset;
     }
 
     private SegmentParsingInitialState.SegmentParsingCallbackHandler parseLastSegment(String chunk) {
@@ -656,10 +661,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         }
 
         int valueResult = headerCompleter.complete(ctx,
-                buffer.substring(parsedCmd.getLastChunkIndex()), cursor, candidates);
+                buffer.substring(parsedCmd.getLastChunkOriginalIndex()), cursor, candidates);
         if (valueResult < 0) {
             return -1;
         }
-        return parsedCmd.getLastChunkIndex() + valueResult;
+        return parsedCmd.getOriginalOffset(parsedCmd.getLastChunkIndex() + valueResult);
     }
 }

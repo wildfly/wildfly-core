@@ -26,6 +26,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineFormat;
 import org.jboss.as.cli.operation.CommandLineParser;
+import org.jboss.as.cli.parsing.StateParser.SubstitutedLine;
 import org.jboss.as.cli.parsing.command.ArgumentListState;
 import org.jboss.as.cli.parsing.command.ArgumentState;
 import org.jboss.as.cli.parsing.command.ArgumentValueNotFinishedException;
@@ -74,20 +75,38 @@ public class ParserUtil {
         if(commandLine == null) {
             return null;
         }
+        SubstitutedLine sl = parseLine(commandLine, handler, strict, ctx);
+        return sl == null ? null : sl.getSubstitued();
+    }
+
+    public static SubstitutedLine parseLine(String commandLine, final CommandLineParser.CallbackHandler handler, boolean strict,
+            CommandContext ctx) throws CommandFormatException {
+        if (commandLine == null) {
+            return null;
+        }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
-        return StateParser.parse(commandLine, callbackHandler, InitialState.INSTANCE, strict, ctx);
+        return StateParser.parseLine(commandLine, callbackHandler, InitialState.INSTANCE, strict, ctx);
     }
 
     /**
      * Returns the string which was actually parsed with all the substitutions performed
      */
     public static String parseOperationRequest(String commandLine, final CommandLineParser.CallbackHandler handler) throws CommandFormatException {
-        if(commandLine == null) {
+        SubstitutedLine sl = parseOperationRequestLine(commandLine, handler);
+        return sl == null ? null : sl.getSubstitued();
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed
+     */
+    public static SubstitutedLine parseOperationRequestLine(String commandLine, final CommandLineParser.CallbackHandler handler) throws CommandFormatException {
+        if (commandLine == null) {
             return null;
         }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
         handler.setFormat(OperationFormat.INSTANCE);
-        return StateParser.parse(commandLine, callbackHandler, OperationRequestState.INSTANCE);
+        return StateParser.parseLine(commandLine, callbackHandler, OperationRequestState.INSTANCE);
     }
 
     /**
@@ -97,8 +116,32 @@ public class ParserUtil {
         if(commandLine == null) {
             return null;
         }
+        SubstitutedLine sl = parseHeadersLine(commandLine, handler, null);
+        return sl == null ? null : sl.getSubstitued();
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed
+     */
+    public static String parseHeaders(String commandLine, final CommandLineParser.CallbackHandler handler, CommandContext ctx) throws CommandFormatException {
+        if (commandLine == null) {
+            return null;
+        }
+        SubstitutedLine sl = parseHeadersLine(commandLine, handler, ctx);
+        return sl == null ? null : sl.getSubstitued();
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed
+     */
+    public static SubstitutedLine parseHeadersLine(String commandLine, final CommandLineParser.CallbackHandler handler, final CommandContext ctx) throws CommandFormatException {
+        if (commandLine == null) {
+            return null;
+        }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
-        return StateParser.parse(commandLine, callbackHandler, HeaderListState.INSTANCE);
+        return StateParser.parseLine(commandLine, callbackHandler, HeaderListState.INSTANCE, ctx);
     }
 
     /**

@@ -1386,4 +1386,131 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testVariablesCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            ctx.handle("set varName=foo");
+            ctx.handle("set varName2=barbarbarbar");
+            {
+                String cmd = "/deployment=$";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("varName", "varName2"),
+                        candidates);
+            }
+
+            {
+                String cmd = "/deployment=$varName:read-co";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 21, offset);
+                assertEquals(candidates.toString(), Arrays.asList("read-content"),
+                        candidates);
+            }
+
+            {
+                String cmd = "/server-group=$varName/deployment=$varName2:wh";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 44, offset);
+                assertEquals(candidates.toString(), Arrays.asList("whoami"),
+                        candidates);
+            }
+
+            {
+                String cmd = "/server-group=$varName/deployment=$varName2:read-resource() {a";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 61, offset);
+                assertEquals(candidates.toString(), Arrays.asList("allow-resource-service-restart"),
+                        candidates);
+            }
+
+            {
+                String cmd = "/server-group=$varName/deployment=$varName2:read-resource() {allow-resource-service-restart";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 91, offset);
+                assertEquals(candidates.toString(), Arrays.asList("="),
+                        candidates);
+            }
+
+            {
+                String cmd = "/server-group=$varName/deployment=$varName2:read-resource() {allow-resource-service-restart=t";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 92, offset);
+                assertEquals(candidates.toString(), Arrays.asList("true"),
+                        candidates);
+            }
+
+            {
+                String cmd = "/server-group=$varName/deployment=$varName2:read-resource() {allow-resource-service-restart=$varName2;rollback-on-runtime-failure=f";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 130, offset);
+                assertEquals(candidates.toString(), Arrays.asList("false"),
+                        candidates);
+            }
+
+            {
+                String cmd = "attachment display --operation=/server-group=$varName/deployment=$varName2:wh";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 75, offset);
+                assertEquals(candidates.toString(), Arrays.asList("whoami"),
+                        candidates);
+            }
+
+            {
+                String cmd = "if () of /server-group=$varName/deployment=$varName2:wh";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 53, offset);
+                assertEquals(candidates.toString(), Arrays.asList("whoami"),
+                        candidates);
+            }
+
+            {
+                ctx.handle("batch");
+                try {
+                    ctx.handle(":read-resource");
+                    String cmd = "edit-batch-line 1 /server-group=$varName/deployment=$varName2:wh";
+                    List<String> candidates = new ArrayList<>();
+                    int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertEquals(candidates.toString(), 62, offset);
+                    assertEquals(candidates.toString(), Arrays.asList("whoami"),
+                            candidates);
+                } finally {
+                    ctx.handle("discard-batch");
+                }
+            }
+
+            {
+                String cmd = "echo-dmr /server-group=$varName/deployment=$varName2:wh";
+                List<String> candidates = new ArrayList<>();
+                int offset = ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertEquals(candidates.toString(), 53, offset);
+                assertEquals(candidates.toString(), Arrays.asList("whoami"),
+                        candidates);
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }

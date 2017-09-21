@@ -55,10 +55,10 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
                         return -1;
                     }
 
-                    final String originalLine = ctx.getParsedCommandLine().getOriginalLine();
+                    final String substitutedLine = ctx.getParsedCommandLine().getSubstitutedLine();
                     boolean skipWS;
                     int wordCount;
-                    if(Character.isWhitespace(originalLine.charAt(0))) {
+                    if(Character.isWhitespace(substitutedLine.charAt(0))) {
                         skipWS = true;
                         wordCount = 0;
                     } else {
@@ -66,16 +66,16 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
                         wordCount = 1;
                     }
                     int cmdStart = 1;
-                    while(cmdStart < originalLine.length()) {
+                    while(cmdStart < substitutedLine.length()) {
                         if(skipWS) {
-                            if(!Character.isWhitespace(originalLine.charAt(cmdStart))) {
+                            if(!Character.isWhitespace(substitutedLine.charAt(cmdStart))) {
                                 skipWS = false;
                                 ++wordCount;
                                 if(wordCount == 3) {
                                     break;
                                 }
                             }
-                        } else if(Character.isWhitespace(originalLine.charAt(cmdStart))) {
+                        } else if(Character.isWhitespace(substitutedLine.charAt(cmdStart))) {
                             skipWS = true;
                         }
                         ++cmdStart;
@@ -87,7 +87,7 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
                     } else if(wordCount != 3) {
                         return -1;
                     } else {
-                        cmd = originalLine.substring(cmdStart);
+                        cmd = substitutedLine.substring(cmdStart);
                     }
 
                     int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
@@ -97,9 +97,9 @@ public class BatchEditLineHandler extends CommandHandlerWithHelp {
 
                     // escaping index correction
                     int escapeCorrection = 0;
-                    int start = originalLine.length() - 1 - buffer.length();
+                    int start = substitutedLine.length() - 1 - buffer.length();
                     while(start - escapeCorrection >= 0) {
-                        final char ch = originalLine.charAt(start - escapeCorrection);
+                        final char ch = substitutedLine.charAt(start - escapeCorrection);
                         if(Character.isWhitespace(ch) || ch == '=') {
                             break;
                         }
