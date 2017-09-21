@@ -238,6 +238,13 @@ public class LoggingExtension implements Extension {
         setParser(context, Namespace.LOGGING_2_0, new LoggingSubsystemParser_2_0());
         setParser(context, Namespace.LOGGING_3_0, new LoggingSubsystemParser_3_0());
         setParser(context, Namespace.LOGGING_4_0, new LoggingSubsystemParser_4_0());
+
+        // Hack to ensure the Element and Attribute enums are loaded during this call which
+        // is part of concurrent boot. These enums trigger a lot of classloading and static
+        // initialization that we don't want deferred until the single-threaded parsing phase
+        if (Element.forName("").equals(Attribute.forName(""))) { // never true
+            throw new IllegalStateException();
+        }
     }
 
     private void registerLoggingProfileSubModels(final ManagementResourceRegistration registration, final PathManager pathManager) {

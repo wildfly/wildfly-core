@@ -79,19 +79,15 @@ public final class OperationEntry {
          *  use of {@link EntryType#PRIVATE} not workable. */
         HIDDEN;
 
-        private static final EnumSet<Flag> NONE = EnumSet.noneOf(Flag.class);
         private static final Map<EnumSet<Flag>, Set<Flag>> flagSets = new ConcurrentHashMap<>(16);
         public static Set<OperationEntry.Flag> immutableSetOf(EnumSet<OperationEntry.Flag> flags) {
-            EnumSet<Flag> baseSet;
-            if (flags == null) {
-                baseSet = NONE;
-            } else {
-                baseSet = flags;
+            if (flags == null || flags.isEmpty()) {
+                return Collections.emptySet();
             }
-            Set<Flag> result = flagSets.get(baseSet);
+            Set<Flag> result = flagSets.get(flags);
             if (result == null) {
-                Set<Flag> immutable = Collections.unmodifiableSet(baseSet);
-                Set<Flag> existing = flagSets.putIfAbsent(baseSet, immutable);
+                Set<Flag> immutable = Collections.unmodifiableSet(flags);
+                Set<Flag> existing = flagSets.putIfAbsent(flags, immutable);
                 result = existing == null ? immutable : existing;
             }
 

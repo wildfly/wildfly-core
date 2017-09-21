@@ -78,9 +78,24 @@ public final class ServiceNameFactory {
         for (int i = 0; i < max; i++) {
             ServiceName interned = cache.putIfAbsent(ancestry[i], ancestry[i]);
             if (interned != null && ancestry[i] != interned) {
+                // Replace this one in the ancestry with the interned one
                 ServiceName parent = ancestry[i] = interned;
+                // Replace all descendants
+                boolean checkCache = true;
                 for (int j = i+1; j < length; j++) {
                     parent = parent.append(ancestry[j].getSimpleName());
+                    if (checkCache && j < max) {
+                        ServiceName cached = cache.get(parent);
+                        if (cached != null) {
+                            // Use what we already have
+                            parent = cached;
+                            // We don't need to recheck in the outer loop.
+                            i = j;
+                        } else {
+                            // Assume we'll miss the rest of the way
+                            checkCache = false;
+                        }
+                    }
                     ancestry[j] = parent;
                 }
             }

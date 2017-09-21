@@ -401,19 +401,17 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         if (!isFlagPresent(flag)) {
             return (BUILDER) this; //if not present no need to remove
         }
-        if (flags != null && flags.length > 0) {
-            final int length = flags.length;
-            final AttributeAccess.Flag[] newFlags = new AttributeAccess.Flag[length - 1];
-            int k = 0;
-            for (AttributeAccess.Flag flag1 : flags) {
-                if (flag1 != flag) {
-                    newFlags[k] = flag1;
-                    k++;
-                }
+        final int length = flags.length;
+        final AttributeAccess.Flag[] newFlags = new AttributeAccess.Flag[length - 1];
+        int k = 0;
+        for (AttributeAccess.Flag flag1 : flags) {
+            if (flag1 != flag) {
+                newFlags[k] = flag1;
+                k++;
             }
-            if (k != length - 1) {
-                flags = newFlags;
-            }
+        }
+        if (k != length - 1) {
+            flags = newFlags;
         }
         return (BUILDER) this;
     }

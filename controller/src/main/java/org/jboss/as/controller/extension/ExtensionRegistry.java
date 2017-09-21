@@ -48,6 +48,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PersistentResourceXMLParser;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
@@ -440,6 +441,16 @@ public class ExtensionRegistry {
                 extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
                 if (extension.xmlMapper != null) {
                     extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), reader);
+                    if (reader instanceof PersistentResourceXMLParser) {
+                        // In a standard WildFly boot this method is being called as part of concurrent
+                        // work on multiple extensions. Generating the PersistentResourceXMLDescription
+                        // used by PersistentResourceXMLParser involves a lot of classloading and static
+                        // field initialization that can benefit by being done as part of this concurrent
+                        // work instead of being deferred to the single-threaded parsing phase. So, we ask
+                        // the parser to generate and cache that description for later use during parsing.
+                        //noinspection deprecation
+                        ((PersistentResourceXMLParser) reader).cacheXMLDescription();
+                    }
                 }
             }
         }

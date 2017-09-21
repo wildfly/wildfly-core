@@ -90,7 +90,9 @@ public final class DiscoveryExtension implements Extension {
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, DiscoverySubsystemParser::new);
+        // For the current version we don't use a Supplier as we want its description initialized
+        // TODO if any new xsd versions are added, use a Supplier for the old version
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, new DiscoverySubsystemParser());
     }
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {

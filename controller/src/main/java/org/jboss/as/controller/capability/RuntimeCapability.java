@@ -94,7 +94,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     private static final ServiceName ORG_WILDFLY = ServiceName.parse("org.wildfly");
 
     private final Class<?> serviceValueType;
-    private final ServiceName serviceName;
+    private volatile ServiceName serviceName;
     private final T runtimeAPI;
     private final boolean allowMultipleRegistrations;
 
@@ -112,7 +112,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         super(name, false, requirements, optionalRequirements, null, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
-        this.serviceName = null;
         this.allowMultipleRegistrations = ALLOW_MULTIPLE;
     }
 
@@ -143,7 +142,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         super(name, false, new HashSet<>(Arrays.asList(requirements)), null, null, null, null, null);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = null;
-        this.serviceName = null;
         this.allowMultipleRegistrations = ALLOW_MULTIPLE;
     }
 
@@ -155,7 +153,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements, builder.dynamicNameMapper);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
-        this.serviceName = this.serviceValueType == null ? null : ServiceNameFactory.parseServiceName(builder.baseName);
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
     }
 
@@ -178,7 +175,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
             this.serviceName = dynamicElement == null ? baseServiceName : baseServiceName.append(dynamicElement);
         } else {
             assert baseServiceName == null;
-            this.serviceName = null;
         }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
     }
@@ -211,7 +207,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 (serviceValueType != null && !serviceValueType.isAssignableFrom(this.serviceValueType))) {
             throw ControllerLogger.MGMT_OP_LOGGER.invalidCapabilityServiceType(getName(), serviceValueType);
         }
-        return serviceName;
+        return getServiceName();
     }
 
     /**
@@ -329,12 +325,20 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert isDynamicallyNamed();
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<T>(getName(), serviceValueType, serviceName, runtimeAPI,
+        return new RuntimeCapability<T>(getName(), serviceValueType, getServiceName(), runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
                 getRuntimeOnlyRequirements(), getDynamicRequirements(),
                 getDynamicOptionalRequirements(), allowMultipleRegistrations,
                 dynamicNameMapper, dynamicElement);
 
+    }
+
+    private ServiceName getServiceName() {
+        ServiceName result = serviceName;
+        if (result == null && serviceValueType != null) {
+            result = this.serviceName = ServiceNameFactory.parseServiceName(getName());
+        }
+        return  result;
     }
 
     /**
@@ -352,7 +356,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert path != null;
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
-        return new RuntimeCapability<>(getName(), serviceValueType, serviceName, runtimeAPI,
+        return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
                 getRequirements(), getOptionalRequirements(),
                 getRuntimeOnlyRequirements(), getDynamicRequirements(),
                         getDynamicOptionalRequirements(), allowMultipleRegistrations,

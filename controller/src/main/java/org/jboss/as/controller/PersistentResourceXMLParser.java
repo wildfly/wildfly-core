@@ -34,11 +34,28 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public abstract class PersistentResourceXMLParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
+    private volatile PersistentResourceXMLDescription cachedDescription;
+
     public abstract PersistentResourceXMLDescription getParserDescription();
+
+    /** @deprecated Experimental; for internal use only. May be removed at any time. */
+    @Deprecated
+    public final void cacheXMLDescription() {
+        if (cachedDescription == null) {
+            cachedDescription = getParserDescription();
+        }
+    }
 
     @Override
     public void readElement(XMLExtendedStreamReader xmlExtendedStreamReader, List<ModelNode> modelNodes) throws XMLStreamException {
-        getParserDescription().parse(xmlExtendedStreamReader, PathAddress.EMPTY_ADDRESS, modelNodes);
+        PersistentResourceXMLDescription xmlDescription = cachedDescription;
+        if (xmlDescription == null) {
+            xmlDescription = getParserDescription();
+        } else {
+            // To reduce memory footprint, we only cache for a single parsing run
+            cachedDescription = null;
+        }
+        xmlDescription.parse(xmlExtendedStreamReader, PathAddress.EMPTY_ADDRESS, modelNodes);
     }
 
     @Override

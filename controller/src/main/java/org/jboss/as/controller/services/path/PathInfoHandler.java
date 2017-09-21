@@ -44,13 +44,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -82,8 +82,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
 
-    private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant().appendZoneId().toFormatter(Locale.ENGLISH);
-    private static final ZoneId ZONE_ID = ZoneId.of(Calendar.getInstance().getTimeZone().getID());
+    private static volatile DateTimeFormatter DATE_FORMAT;
+    private static volatile ZoneId ZONE_ID ;
     private static final String USED_SPACE = "used-space";
     private static final String AVAILABLE_SPACE = "available-space";
     private static final String RESOLVED_PATH = "resolved-path";
@@ -99,6 +99,20 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
                                 MEGABITS.getName(), GIGABITS.getName(), TERABITS.getName(), PETABITS.getName())
                         .setDefaultValue(new ModelNode(MeasurementUnit.BYTES.getName()))
                         .build();
+
+    private static DateTimeFormatter getDateFormat() {
+        if (DATE_FORMAT == null) {
+            DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant().appendZoneId().toFormatter(Locale.ENGLISH);
+        }
+        return DATE_FORMAT;
+    }
+
+    private static ZoneId getZoneId() {
+        if (ZONE_ID == null) {
+            ZONE_ID = ZoneId.systemDefault();
+        }
+        return ZONE_ID;
+    }
 
     private final List<RelativePathSizeAttribute> relativePathAttributes;
     private final PathManager pathManager;
@@ -179,8 +193,10 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
                 if (Files.exists(folder)) {
                     BasicFileAttributes attributes = Files.getFileAttributeView(folder, BasicFileAttributeView.class).readAttributes();
                     replyParameterNode.get(RESOLVED_PATH).set(folder.toAbsolutePath().toString());
-                    replyParameterNode.get(CREATION_TIME).set(DATE_FORMAT.format(attributes.creationTime().toInstant().atZone(ZONE_ID)));
-                    replyParameterNode.get(LAST_MODIFIED).set(DATE_FORMAT.format(attributes.lastModifiedTime().toInstant().atZone(ZONE_ID)));
+                    DateTimeFormatter formatter = getDateFormat();
+                    ZoneId zoneId = getZoneId();
+                    replyParameterNode.get(CREATION_TIME).set(formatter.format(attributes.creationTime().toInstant().atZone(zoneId)));
+                    replyParameterNode.get(LAST_MODIFIED).set(formatter.format(attributes.lastModifiedTime().toInstant().atZone(zoneId)));
                     replyParameterNode.get(AVAILABLE_SPACE).set(new ModelNode(offset * Files.getFileStore(folder).getUsableSpace()));
                 }
             } catch (IOException ex) {

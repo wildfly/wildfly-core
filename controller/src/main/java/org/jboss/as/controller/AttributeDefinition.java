@@ -227,16 +227,6 @@ public abstract class AttributeDefinition {
         }
     }
 
-    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
-        if (flags == null || flags.length == 0) {
-            return EnumSet.noneOf(AttributeAccess.Flag.class);
-        } else if (flags.length == 1) {
-            return EnumSet.of(flags[0]);
-        } else {
-            return EnumSet.of(flags[0], flags);
-        }
-    }
-
     /**
      * The attribute's name in the management model.
      *

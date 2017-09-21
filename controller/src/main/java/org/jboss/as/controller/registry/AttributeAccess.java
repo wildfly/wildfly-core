@@ -148,13 +148,13 @@ public final class AttributeAccess {
          */
          RUNTIME_SERVICE_NOT_REQUIRED;
 
-        private static final EnumSet<AttributeAccess.Flag> NONE = EnumSet.noneOf(AttributeAccess.Flag.class);
         private static final Map<EnumSet<AttributeAccess.Flag>, Set<AttributeAccess.Flag>> flagSets = new ConcurrentHashMap<>(16);
         public static Set<AttributeAccess.Flag> immutableSetOf(AttributeAccess.Flag... flags) {
-            EnumSet<AttributeAccess.Flag> baseSet;
             if (flags == null || flags.length == 0) {
-                baseSet = NONE;
-            } else if (flags.length == 1) {
+                return Collections.emptySet();
+            }
+            EnumSet<AttributeAccess.Flag> baseSet;
+            if (flags.length == 1) {
                 baseSet = EnumSet.of(flags[0]);
             } else {
                 baseSet = EnumSet.of(flags[0], flags);

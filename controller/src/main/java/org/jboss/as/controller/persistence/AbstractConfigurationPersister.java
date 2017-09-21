@@ -25,6 +25,7 @@ package org.jboss.as.controller.persistence;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -44,6 +45,7 @@ import org.jboss.staxmapper.XMLMapper;
 public abstract class AbstractConfigurationPersister implements ExtensibleConfigurationPersister {
 
     private final XMLElementWriter<ModelMarshallingContext> rootDeparser;
+    private final ConcurrentHashMap<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Supplier<XMLElementWriter<SubsystemMarshallingContext>>> subsystemWriterSuppliers = new ConcurrentHashMap<>();
 
     /**
@@ -56,8 +58,8 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     }
 
     @Override
-    public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> deparser) {
-        registerSubsystemWriter(name, () -> deparser);
+    public void registerSubsystemWriter(String name, XMLElementWriter<SubsystemMarshallingContext> writer) {
+        subsystemWriters.putIfAbsent(name, writer);
     }
 
     @Override
@@ -67,6 +69,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
 
     @Override
     public void unregisterSubsystemWriter(String name) {
+        subsystemWriters.remove(name);
         subsystemWriterSuppliers.remove(name);
     }
 
@@ -74,7 +77,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     @Override
     public void marshallAsXml(final ModelNode model, final OutputStream output) throws ConfigurationPersistenceException {
         final XMLMapper mapper = XMLMapper.Factory.create();
-        final Map<String, XMLElementWriter<SubsystemMarshallingContext>> subsystemWriters = new ConcurrentHashMap<>();
+        final Map<String, XMLElementWriter<SubsystemMarshallingContext>> localSubsystemWriters = new HashMap<>(subsystemWriters);
         try {
             XMLStreamWriter streamWriter = null;
             try {
@@ -88,7 +91,16 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
 
                     @Override
                     public XMLElementWriter<SubsystemMarshallingContext> getSubsystemWriter(String extensionName) {
-                        return subsystemWriters.computeIfAbsent(extensionName, name -> subsystemWriterSuppliers.getOrDefault(name, () -> null).get());//lazy create writer, but only once per config serialization
+                        //lazy create writer, but only once per config serialization
+                        XMLElementWriter<SubsystemMarshallingContext> result = localSubsystemWriters.get(extensionName);
+                        if (result == null) {
+                            Supplier<XMLElementWriter<SubsystemMarshallingContext>> supplier = subsystemWriterSuppliers.get(extensionName);
+                            if (supplier != null) {
+                                result = supplier.get();
+                                localSubsystemWriters.put(extensionName, result);
+                            }
+                        }
+                        return result;
                     }
                 };
                 mapper.deparseDocument(rootDeparser, extensibleModel, streamWriter);
