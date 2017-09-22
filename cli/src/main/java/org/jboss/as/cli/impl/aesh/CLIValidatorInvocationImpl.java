@@ -21,8 +21,8 @@
  */
 package org.jboss.as.cli.impl.aesh;
 
+import org.aesh.readline.AeshContext;
 import org.wildfly.core.cli.command.aesh.CLIValidatorInvocation;
-import org.aesh.console.AeshContext;
 import org.jboss.as.cli.CommandContext;
 
 /**

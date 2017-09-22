@@ -21,8 +21,8 @@
  */
 package org.wildfly.core.cli.command.aesh;
 
-import org.aesh.console.AeshContext;
 import org.aesh.command.converter.ConverterInvocation;
+import org.aesh.readline.AeshContext;
 import org.jboss.as.cli.CommandContext;
 
 /**

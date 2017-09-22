@@ -32,26 +32,18 @@ import java.util.Set;
 import org.aesh.readline.completion.CompleteOperation;
 import org.aesh.command.impl.internal.ProcessedCommand;
 import org.aesh.command.impl.internal.ProcessedCommandBuilder;
-import org.aesh.command.impl.parser.CommandLineCompletionParser;
 import org.aesh.command.impl.parser.CommandLineParser;
-import org.aesh.command.populator.CommandPopulator;
 import org.aesh.command.Command;
 import org.aesh.command.CommandNotFoundException;
 import org.aesh.command.impl.container.AeshCommandContainerBuilder;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.impl.container.AeshCommandContainer;
-import org.aesh.command.impl.internal.ProcessedOption;
 import org.aesh.command.impl.parser.CommandLineParserBuilder;
 import org.aesh.command.impl.registry.MutableCommandRegistryImpl;
-import org.aesh.command.invocation.InvocationProviders;
 import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.command.parser.OptionParserException;
 import org.aesh.command.registry.MutableCommandRegistry;
-import org.aesh.command.validator.OptionValidatorException;
-import org.aesh.complete.AeshCompleteOperation;
-import org.aesh.console.AeshContext;
 import org.aesh.parser.ParsedLine;
-import org.aesh.parser.ParsedLineIterator;
 import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
@@ -66,127 +58,6 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  * @author jdenise@redhat.com
  */
 public class CLICommandRegistry extends CommandRegistry implements org.aesh.command.registry.CommandRegistry {
-
-    /**
-     * Wraps an extension command registered as a sub command.
-     */
-    private class ExtSubCommandParser implements CommandLineParser<Command> {
-
-        private final CommandLineParser<Command> parser;
-        private final ProcessedCommand cmd;
-
-        private ExtSubCommandParser(CommandLineParser<Command> parser,
-                ProcessedCommand cmd) {
-            this.parser = parser;
-            this.cmd = cmd;
-        }
-
-        @Override
-        public ProcessedCommand<Command> getProcessedCommand() {
-            return cmd;
-        }
-
-        @Override
-        public Command getCommand() {
-            return parser.getCommand();
-        }
-
-        @Override
-        public CommandLineCompletionParser getCompletionParser() {
-            return parser.getCompletionParser();
-        }
-
-        @Override
-        public List<String> getAllNames() {
-            return parser.getAllNames();
-        }
-
-        @Override
-        public CommandLineParser<Command> getChildParser(String name) {
-            return parser.getChildParser(name);
-        }
-
-        @Override
-        public void addChildParser(CommandLineParser<Command> childParser) throws CommandLineParserException {
-            parser.addChildParser(childParser);
-        }
-
-        @Override
-        public List<CommandLineParser<Command>> getAllChildParsers() {
-            return parser.getAllChildParsers();
-        }
-
-        @Override
-        public CommandPopulator getCommandPopulator() {
-            return parser.getCommandPopulator();
-        }
-
-        @Override
-        public String printHelp() {
-            return parser.printHelp();
-        }
-
-        @Override
-        public void parse(String line) {
-            parser.parse(line);
-        }
-
-        @Override
-        public void clear() {
-            parser.clear();
-        }
-
-        @Override
-        public boolean isGroupCommand() {
-            return parser.isGroupCommand();
-        }
-
-        @Override
-        public void setChild(boolean b) {
-            parser.setChild(b);
-        }
-
-        @Override
-        public void populateObject(String line, InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
-            parser.populateObject(line, invocationProviders, aeshContext, mode);
-        }
-
-        @Override
-        public ProcessedOption lastParsedOption() {
-            return parser.lastParsedOption();
-        }
-
-        @Override
-        public void parse(String line, Mode mode) {
-            parser.parse(line, mode);
-        }
-
-        @Override
-        public void parse(ParsedLineIterator iterator, Mode mode) {
-            parser.parse(iterator, mode);
-        }
-
-        @Override
-        public CommandLineParser<Command> parsedCommand() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void complete(AeshCompleteOperation completeOperation, InvocationProviders invocationProviders) {
-            parser.complete(completeOperation, invocationProviders);
-        }
-
-        @Override
-        public void complete(AeshCompleteOperation completeOperation, ParsedLine line, InvocationProviders invocationProviders) {
-            parser.complete(completeOperation, line, invocationProviders);
-        }
-
-        @Override
-        public void doPopulate(ProcessedCommand processedCommand, InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
-            parser.doPopulate(processedCommand, invocationProviders, aeshContext, mode);
-        }
-
-    }
 
     private static final Logger log = Logger.getLogger(CLICommandRegistry.class);
     private final MutableCommandRegistry reg = new MutableCommandRegistryImpl();
@@ -280,25 +151,25 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
                     }
 
                     try {
+                        ProcessedCommand cmd = container.getParser().getProcessedCommand();
                         // Add sub to existing command.
-                        ProcessedCommand cmd = container.getParser().
-                                getProcessedCommand();
-                        ProcessedCommand sub = new ProcessedCommandBuilder().
-                                activator(cmd.getActivator()).
-                                addOptions(cmd.getOptions()).
-                                aliases(cmd.getAliases()).
-                                arguments(cmd.getArguments()).
-                                argument(cmd.getArgument()).
-                                command(cmd.getCommand()).
-                                description(cmd.description()).
-                                name(childName). // child name
-                                populator(cmd.getCommandPopulator()).
-                                resultHandler(cmd.resultHandler()).
-                                validator(cmd.validator()).
-                                create();
+                        container = new AeshCommandContainer(
+                                new CommandLineParserBuilder()
+                                .processedCommand(new ProcessedCommandBuilder().
+                                        activator(cmd.getActivator()).
+                                        addOptions(cmd.getOptions()).
+                                        aliases(cmd.getAliases()).
+                                        arguments(cmd.getArguments()).
+                                        argument(cmd.getArgument()).
+                                        command(cmd.getCommand()).
+                                        description(cmd.description()).
+                                        name(childName).
+                                        populator(cmd.getCommandPopulator()).
+                                        resultHandler(cmd.resultHandler()).
+                                        validator(cmd.validator()).
+                                        create()).create());
                         existingParent.
-                                addChildParser(new ExtSubCommandParser(container.getParser(),
-                                        sub));
+                                addChildParser(container.getParser());
                     } catch (CommandLineParserException ex) {
                         throw new CommandLineException(ex);
                     }

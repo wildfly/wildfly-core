@@ -28,11 +28,9 @@ import java.util.logging.Logger;
 import org.aesh.command.Executor;
 import org.aesh.readline.Prompt;
 import org.aesh.readline.action.KeyAction;
-import org.aesh.util.Parser;
 import org.aesh.command.impl.parser.CommandLineParser;
 import org.aesh.command.validator.CommandValidatorException;
 import org.aesh.command.validator.OptionValidatorException;
-import org.aesh.console.AeshContext;
 import org.aesh.command.shell.Shell;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandNotFoundException;
@@ -40,10 +38,8 @@ import org.aesh.command.CommandRuntime;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.invocation.CommandInvocationConfiguration;
 import org.aesh.command.parser.CommandLineParserException;
-import org.aesh.readline.terminal.Key;
-import org.aesh.terminal.tty.Size;
+import org.aesh.readline.AeshContext;
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.impl.ReadlineConsole;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 
@@ -52,75 +48,6 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  * @author jdenise@redhat.com
  */
 class CLICommandInvocationImpl implements CLICommandInvocation {
-
-    // XXX jfdenise, we could be ridoff this class and use ReadlineShell in
-    // all cases.
-    private class NonInteractiveShell implements Shell {
-
-        @Override
-        public void write(String out) {
-            ctx.print(out);
-        }
-
-        @Override
-        public void writeln(String out) {
-            ctx.printLine(out);
-        }
-
-        @Override
-        public void write(int[] out) {
-            ctx.print(Parser.stripAwayAnsiCodes(Parser.fromCodePoints(out)));
-        }
-
-        @Override
-        public void write(char c) {
-            ctx.print(Parser.stripAwayAnsiCodes(Parser.fromCodePoints(new int[]{c})));
-        }
-
-        @Override
-        public String readLine() throws InterruptedException {
-            return readLine(new Prompt(""));
-        }
-
-        @Override
-        public String readLine(Prompt prompt) throws InterruptedException {
-            try {
-                return ctx.readLine(Parser.stripAwayAnsiCodes(Parser.
-                        fromCodePoints(prompt.getPromptAsString())), prompt.isMasking());
-            } catch (CommandLineException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        @Override
-        public Key read() throws InterruptedException {
-            return null;
-        }
-
-        @Override
-        public Key read(Prompt prompt) throws InterruptedException {
-            return null;
-        }
-
-        @Override
-        public boolean enableAlternateBuffer() {
-            return false;
-        }
-
-        @Override
-        public boolean enableMainBuffer() {
-            return false;
-        }
-
-        @Override
-        public Size size() {
-            return new Size(80, 40);
-        }
-
-        @Override
-        public void clear() {
-        }
-    }
 
     private final CommandContext ctx;
     private final CLICommandRegistry registry;
@@ -134,7 +61,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
         this.ctx = ctx;
         this.registry = registry;
         this.console = console;
-        this.shell = shell != null ? shell : new NonInteractiveShell();
+        this.shell = shell;
         this.runtime = runtime;
         this.config = config;
     }
@@ -195,11 +122,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
 
     @Override
     public KeyAction input() throws InterruptedException {
-        try {
-            return Key.findStartKey(ctx.input());
-        } catch (CommandLineException ex) {
-            throw new RuntimeException(ex);
-        }
+        return shell.read();
     }
 
     @Override
@@ -209,12 +132,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
 
     @Override
     public String inputLine(Prompt prompt) throws InterruptedException {
-        try {
-            return ctx.input(Parser.stripAwayAnsiCodes(Parser.
-                    fromCodePoints(prompt.getPromptAsString())), prompt.isMasking());
-        } catch (CommandLineException ex) {
-            throw new RuntimeException(ex);
-        }
+        return shell.readLine(prompt);
     }
 
     @Override

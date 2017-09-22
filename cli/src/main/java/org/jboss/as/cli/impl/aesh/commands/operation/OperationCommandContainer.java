@@ -38,9 +38,9 @@ import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.command.populator.CommandPopulator;
 import org.aesh.command.validator.OptionValidatorException;
 import org.aesh.complete.AeshCompleteOperation;
-import org.aesh.console.AeshContext;
 import org.aesh.parser.ParsedLine;
 import org.aesh.parser.ParsedLineIterator;
+import org.aesh.readline.AeshContext;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 

@@ -1116,7 +1116,14 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         printLine(message);
     }
 
-    @Override
+    private String readLine(String prompt, boolean password) throws CommandLineException {
+        try {
+            return input(prompt, password);
+        } catch (InterruptedException ex) {
+            throw new CommandLineException(ex);
+        }
+    }
+
     public String input(String prompt, boolean password) throws CommandLineException, InterruptedException {
         Prompt pr;
         if (password) {
@@ -1140,7 +1147,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         return console.readLine(prompt);
     }
 
-    @Override
     public int[] input() throws CommandLineException, InterruptedException {
         // Only fail an interact if we're not in interactive.
         if (!INTERACT && ERROR_ON_INTERACT) {

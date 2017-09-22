@@ -36,6 +36,7 @@ import org.aesh.command.CommandNotFoundException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.completer.OptionCompleter;
 import org.aesh.command.option.Option;
+import org.aesh.readline.Prompt;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.cli.impl.aesh.converter.ListConverter;
 import org.jboss.as.cli.impl.aesh.converter.MapConverter;
@@ -143,9 +144,9 @@ public abstract class AbstractLoadCommand implements Command<CLICommandInvocatio
                     }
                     boolean done = false;
                     while (!done) {
-                        String res = commandInvocation.getCommandContext().
-                                readLine("A command named " + p + " already exists, "
-                                        + "do you want to rename the plugin [y/n]?", false);
+                        String res = commandInvocation.
+                                inputLine(new Prompt("A command named " + p + " already exists, "
+                                        + "do you want to rename the plugin [y/n]?"));
                         if (!res.equals("n") && !res.equals("y")) {
                             commandInvocation.getCommandContext().
                                     println("Invalid reply, must be y or n.");
@@ -156,9 +157,9 @@ public abstract class AbstractLoadCommand implements Command<CLICommandInvocatio
                             boolean okName = false;
                             String name = null;
                             while (!okName) {
-                                name = commandInvocation.getCommandContext().
-                                        readLine("Original name " + p
-                                                + ", new name:", false);
+                                name = commandInvocation.
+                                        inputLine(new Prompt("Original name " + p
+                                                + ", new name:"));
                                 try {
                                     commandInvocation.getCommandRegistry().getCommand(name, null);
                                 } catch (CommandNotFoundException ex) {

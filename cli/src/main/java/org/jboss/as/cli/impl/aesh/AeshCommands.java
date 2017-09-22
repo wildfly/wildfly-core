@@ -38,7 +38,6 @@ import org.aesh.command.validator.CommandValidatorException;
 import org.aesh.command.validator.OptionValidatorException;
 import org.aesh.command.Executor;
 import org.aesh.complete.AeshCompleteOperation;
-import org.aesh.console.AeshContext;
 import org.aesh.command.shell.Shell;
 import org.aesh.command.Command;
 import org.aesh.command.CommandException;
@@ -50,6 +49,7 @@ import org.aesh.command.operator.OperatorType;
 import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.io.FileResource;
 import org.aesh.io.Resource;
+import org.aesh.readline.AeshContext;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHandler;
@@ -92,6 +92,16 @@ public class AeshCommands {
         @Override
         public void setCurrentWorkingDirectory(Resource cwd) {
             ctx.setCurrentDir(new File(cwd.getAbsolutePath()));
+        }
+
+        @Override
+        public Set<String> exportedVariableNames() {
+            return null;
+        }
+
+        @Override
+        public String exportedVariable(String key) {
+            return null;
         }
     }
 
@@ -174,10 +184,7 @@ public class AeshCommands {
         this.ctx = ctx;
         registry = new CLICommandRegistry(ctx, op);
         Shell shell = null;
-        if (console != null) {
-            shell = new ReadlineShell(console, ctx);
-        }
-        invocationBuilder = new CLICommandInvocationBuilder(ctx, registry, console, shell);
+        invocationBuilder = new CLICommandInvocationBuilder(ctx, registry, console);
         AeshCommandRuntimeBuilder builder = AeshCommandRuntimeBuilder.builder();
         processor = builder.
                 commandRegistry(registry).

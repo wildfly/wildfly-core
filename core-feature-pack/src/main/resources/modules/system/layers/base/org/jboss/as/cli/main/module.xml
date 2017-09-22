@@ -68,12 +68,14 @@
         <module name="javax.api"/>
         <module name="ibm.jdk" />
         <module name="sun.jdk" />
-        
+
+        <!--
         <system>
             <paths>
                 <path name="META-INF/services"/>
             </paths>
         </system>
+        -->
     </dependencies>
 
 </module>
