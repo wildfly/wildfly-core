@@ -780,7 +780,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             throw e;
         } catch (Throwable t) {
             if(log.isDebugEnabled()) {
-                log.debug("Failed to handle '" + line + "'", t);
+                log.debugf(t, "Failed to handle '%s'", line);
             }
             throw new CommandLineException("Failed to handle '" + line + "'", t);
         } finally {
@@ -1081,7 +1081,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             try {
                 CallbackHandler cbh = new AuthenticationCallbackHandler(username, password);
                 if (log.isDebugEnabled()) {
-                    log.debug("connecting to " + connectionAddress.getHost() + ':' + connectionAddress.getPort() + " as " + username);
+                    log.debugf("connecting to %s:%d as %s", connectionAddress.getHost(), connectionAddress.getPort(), username);
                 }
                 ModelControllerClient tempClient = ModelControllerClientFactory.CUSTOM.getClient(connectionAddress, cbh,
                         disableLocalAuth, sslContextFactory, defaultSslContext, config.getConnectionTimeout(), this, timeoutHandler, clientBindAddress);

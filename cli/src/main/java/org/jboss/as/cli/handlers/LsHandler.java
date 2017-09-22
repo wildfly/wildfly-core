@@ -63,6 +63,7 @@ public class LsHandler extends BaseOperationCommand {
     private final ArgumentWithValue nodePath;
     private final ArgumentWithoutValue l;
     private final ArgumentWithoutValue resolve;
+    private final Logger log = Logger.getLogger(LsHandler.class);
 
     public LsHandler(CommandContext ctx) {
         this(ctx, "ls");
@@ -397,9 +398,8 @@ public class LsHandler extends BaseOperationCommand {
             Map<String, CommandArgument> dyns = getDynamicOptions(ctx);
             ret.putAll(dyns);
         } catch (CommandFormatException ex) {
-            // XXX OK will not break CLI
-            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
-                    + "description properties", ex);
+            logLsException(ex);
+
         }
         return ret;
     }
@@ -410,11 +410,15 @@ public class LsHandler extends BaseOperationCommand {
         try {
             args.addAll(getDynamicOptions(ctx).values());
         } catch (CommandFormatException ex) {
-            // XXX OK will not break CLI
-            Logger.getLogger(getClass()).trace("Exception while retreiving ls "
-                    + "description properties", ex);
+            logLsException(ex);
         }
         return args;
+    }
+
+    private void logLsException(CommandFormatException ex) {
+        // XXX OK will not break CLI
+        log.trace("Exception while retreiving ls "
+                + "description properties", ex);
     }
 
     private Map<String, CommandArgument> getDynamicOptions(CommandContext ctx) throws CommandFormatException {

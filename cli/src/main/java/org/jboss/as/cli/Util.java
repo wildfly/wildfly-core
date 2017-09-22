@@ -566,7 +566,7 @@ public class Util {
                 }
             }
         } catch (Exception e) {
-            LOG.debug("Got exception retrieving deployment runtime names " + e);
+            LOG.debug("Got exception retrieving deployment runtime names", e);
         }
         return names;
     }
