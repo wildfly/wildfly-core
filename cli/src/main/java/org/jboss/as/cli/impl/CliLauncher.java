@@ -40,6 +40,7 @@ import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.VersionHandler;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -47,6 +48,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author Alexey Loubyansky
  */
 public class CliLauncher {
+
+    private static final Logger log = Logger.getLogger(CliLauncher.class);
 
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
@@ -287,6 +290,7 @@ public class CliLauncher {
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
+            log.error("Error processing CLI", t);
             exitCode = 1;
         } finally {
             if((cmdCtx != null) && !gui) {
