@@ -44,7 +44,7 @@
 
     <management>
         <!--<configuration-changes max-history="100"/>-->
-        <access-control provider="simple">
+        <access-control provider="rbac">
             <role-mapping>
                 <role name="SuperUser">
                     <include>
@@ -70,14 +70,7 @@
                 <buffer-pool name="default" />
             </subsystem>
 
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
-                <console-handler name="CONSOLE">
-                    <level name="INFO"/>
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                </console-handler>
-
+            <subsystem xmlns="urn:jboss:domain:logging:4.0">
                 <periodic-rotating-file-handler name="FILE">
                     <level name="INFO"/>
                     <formatter>
@@ -86,13 +79,9 @@
                     <file relative-to="jboss.server.log.dir" path="server.log"/>
                     <suffix value=".yyyy-MM-dd"/>
                 </periodic-rotating-file-handler>
-                <logger category="org.jboss.as.controller">
-                    <level name="TRACE"/>
-                </logger>
                 <root-logger>
-                    <level name="INFO"/>
+                    <level name="WARN"/>
                     <handlers>
-                        <handler name="CONSOLE"/>
                         <handler name="FILE"/>
                     </handlers>
                 </root-logger>
@@ -116,14 +105,7 @@
                 <buffer-pool name="default"/>
             </subsystem>
 
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
-                <console-handler name="CONSOLE">
-                    <level name="INFO"/>
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                </console-handler>
-
+            <subsystem xmlns="urn:jboss:domain:logging:4.0">
                 <periodic-rotating-file-handler name="FILE">
                     <level name="INFO"/>
                     <formatter>
@@ -132,13 +114,9 @@
                     <file relative-to="jboss.server.log.dir" path="server.log"/>
                     <suffix value=".yyyy-MM-dd"/>
                 </periodic-rotating-file-handler>
-                <logger category="org.jboss.as.controller">
-                    <level name="TRACE"/>
-                </logger>
                 <root-logger>
-                    <level name="INFO"/>
+                    <level name="WARN"/>
                     <handlers>
-                        <handler name="CONSOLE"/>
                         <handler name="FILE"/>
                     </handlers>
                 </root-logger>
@@ -162,32 +140,22 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.3"/>
         </profile>
         <profile name="minimal">
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
-                <console-handler name="CONSOLE">
-                    <level name="INFO"/>
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                </console-handler>
-                <periodic-rotating-file-handler name="FILE">
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                    <file relative-to="jboss.server.log.dir" path="server.log"/>
-                    <suffix value=".yyyy-MM-dd"/>
-                    <append value="true"/>
-                </periodic-rotating-file-handler>
-                <logger category="org.jboss.as.controller">
-                    <level name="TRACE"/>
-                </logger>
-                <root-logger>
-                    <level name="INFO"/>
-                    <handlers>
-                        <handler name="CONSOLE"/>
-                        <handler name="FILE"/>
-                    </handlers>
-                </root-logger>
-            </subsystem>
+            <subsystem xmlns="urn:jboss:domain:logging:4.0">
+                         <periodic-rotating-file-handler name="FILE">
+                             <level name="INFO"/>
+                             <formatter>
+                                 <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
+                             </formatter>
+                             <file relative-to="jboss.server.log.dir" path="server.log"/>
+                             <suffix value=".yyyy-MM-dd"/>
+                         </periodic-rotating-file-handler>
+                         <root-logger>
+                             <level name="WARN"/>
+                             <handlers>
+                                 <handler name="FILE"/>
+                             </handlers>
+                         </root-logger>
+                     </subsystem>
         </profile>
     </profiles>
 

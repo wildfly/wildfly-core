@@ -42,7 +42,7 @@
     </paths>
 
     <management>
-        <access-control provider="simple">
+        <access-control provider="rbac">
             <role-mapping>
                 <role name="SuperUser">
                     <include>
