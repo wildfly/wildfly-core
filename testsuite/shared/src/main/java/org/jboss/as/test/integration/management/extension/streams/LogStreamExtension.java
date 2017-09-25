@@ -71,7 +71,7 @@ public class LogStreamExtension implements Extension {
     private static final EmptySubsystemParser PARSER = new EmptySubsystemParser("urn:wildfly:extension:log-stream-test:1.0");
     private static final Logger log = Logger.getLogger(LogStreamExtension.class.getCanonicalName());
 
-    public static final AttributeDefinition LOG_FILE = SimpleAttributeDefinitionBuilder.create("log-file", ModelType.INT)
+    public static final AttributeDefinition LOG_FILE = SimpleAttributeDefinitionBuilder.create("log-file", ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(false)
@@ -81,7 +81,7 @@ public class LogStreamExtension implements Extension {
     public void initialize(ExtensionContext context) {
         SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         subsystem.registerSubsystemModel(new LogStreamSubsystemResourceDefinition());
-        subsystem.registerXMLElementWriter(PARSER);
+        subsystem.registerXMLElementWriter( () -> PARSER);
     }
 
     @Override
@@ -109,14 +109,14 @@ public class LogStreamExtension implements Extension {
             resourceRegistration.registerOperationHandler(LogStreamHandler.DEFINITION, handler);
             resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-            log.info("Registered log-stream-test operations");
+            //log.info("Registered log-stream-test operations");
         }
 
         @Override
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
             resourceRegistration.registerReadOnlyAttribute(LOG_FILE, handler);
-            log.info("Registered log-stream-test attributes");
+            //log.info("Registered log-stream-test attributes");
         }
     }
 
@@ -124,7 +124,7 @@ public class LogStreamExtension implements Extension {
 
         private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(STREAM_LOG_FILE,
                 new NonResolvingResourceDescriptionResolver())
-                .setReplyType(ModelType.INT)
+                .setReplyType(ModelType.STRING)
                 .build();
 
 

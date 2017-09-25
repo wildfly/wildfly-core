@@ -64,7 +64,7 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
     private static final String VAULT_BLOCK = "ds_TestDS";
     private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
     private static final String CREDENTIAL_STORE_NAME = "SlaveHostControllerAuthenticationTestCase";
-    private static final Path CREDNETIAL_STORE_STORAGE_FILE = Paths.get("target1/", CREDENTIAL_STORE_NAME + ".jceks");
+    private static final Path CREDNETIAL_STORE_STORAGE_FILE = Paths.get("target/", CREDENTIAL_STORE_NAME + ".jceks");
     private static final String ALIAS_NAME = "aliasName";
 
     private static ModelControllerClient domainMasterClient;

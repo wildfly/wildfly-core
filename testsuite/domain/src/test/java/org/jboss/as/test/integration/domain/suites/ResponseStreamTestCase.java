@@ -215,7 +215,6 @@ public class ResponseStreamTestCase {
             response = masterClient.executeOperation(op, OperationMessageHandler.DISCARD);
 
             ModelNode respNode = response.getResponseNode();
-            System.out.println(respNode.toString());
             Assert.assertEquals(respNode.toString(), "success", respNode.get("outcome").asString());
             List<? extends OperationResponse.StreamEntry> streams = response.getInputStreams();
             //Assert.assertEquals(3, streams.size());
@@ -468,7 +467,7 @@ public class ResponseStreamTestCase {
 
         if (expectedStatus == 200) {
             HttpEntity entity = response.getEntity();
-
+            System.out.println("entity.getContentLength() = " + entity.getContentLength());
             readLogStream(entity.getContent(), true, false);
         }
 

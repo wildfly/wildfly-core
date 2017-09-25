@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -52,28 +53,31 @@ public class ManagementAuthenticationUsersServerSetupTask implements ServerSetup
 
     public static final String CREDENTIAL_STORE_NAME = "ManagementAuthenticationUsersCredentialStore";
     private static final Path CREDNETIAL_STORE_STORAGE_FILE = Paths.get("target/", CREDENTIAL_STORE_NAME + ".jceks");
-    private ModelNode backupProperties;
+    private ModelNode backupProperties = null;
 
     @Override
     public void setup(final ManagementClient managementClient) throws Exception {
         final ModelControllerClient client = managementClient.getControllerClient();
 
-        ModelNode op = new ModelNode();
-        op.get(OP).set(ModelDescriptionConstants.READ_RESOURCE_OPERATION);
-        op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
-            .add(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.PROPERTIES);
-        backupProperties = executeForSuccess(client, op);
+        ModelNode op = Operations.createReadResourceOperation(PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).toModelNode());
+        ModelNode result = managementClient.executeForResult(op);
+        if (Operations.isSuccessfulOutcome(result)) {
+            op = new ModelNode();
+            op.get(OP).set(ModelDescriptionConstants.READ_RESOURCE_OPERATION);
+            op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
+                    .add(ModelDescriptionConstants.AUTHENTICATION, ModelDescriptionConstants.PROPERTIES);
+            backupProperties = executeForSuccess(client, op);
 
-        op = new ModelNode();
-        op.get(OP).set(REMOVE);
-        op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
-            .add(AUTHENTICATION, PROPERTIES);
-        executeForSuccess(client, op);
-
+            op = new ModelNode();
+            op.get(OP).set(REMOVE);
+            op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
+                    .add(AUTHENTICATION, PROPERTIES);
+            executeForSuccess(client, op);
+        }
         op = new ModelNode();
         op.get(OP).set(ModelDescriptionConstants.ADD);
         op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
-            .add(AUTHENTICATION, USERS);
+                .add(AUTHENTICATION, USERS);
         executeForSuccess(client, op);
 
         createCredentialStore(client);
@@ -89,18 +93,20 @@ public class ManagementAuthenticationUsersServerSetupTask implements ServerSetup
         op.get(OP).set(REMOVE);
         op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
             .add(AUTHENTICATION, USERS);
-        executeForSuccess(client, op);
+        managementClient.executeForResult(op);
 
-        op = new ModelNode();
-        op.get(OP).set(ModelDescriptionConstants.ADD);
-        op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
-            .add(AUTHENTICATION, PROPERTIES);
+        if (backupProperties !=null) {
+            op = new ModelNode();
+            op.get(OP).set(ModelDescriptionConstants.ADD);
+            op.get(OP_ADDR).add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm")
+                    .add(AUTHENTICATION, PROPERTIES);
 
-        for (Property property : backupProperties.asPropertyList()) {
-            op.get(property.getName()).set(property.getValue());
+            for (Property property : backupProperties.asPropertyList()) {
+                op.get(property.getName()).set(property.getValue());
+            }
+
+            managementClient.executeForResult(op);
         }
-
-        executeForSuccess(client, op);
 
         removeCredentialStore(client);
 

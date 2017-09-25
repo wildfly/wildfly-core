@@ -25,12 +25,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -55,7 +57,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -73,8 +74,8 @@ import javax.security.auth.login.Configuration;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import javax.security.sasl.SaslException;
-import org.aesh.util.FileAccessPermission;
 
+import org.aesh.util.FileAccessPermission;
 import org.jboss.as.cli.Attachments;
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliEvent;
@@ -1532,14 +1533,11 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             this.outputTarget = null;
             return;
         }
-        FileWriter writer;
         try {
-            writer = new FileWriter(filePath, false);
+            this.outputTarget = Files.newBufferedWriter(Paths.get(filePath), StandardOpenOption.CREATE_NEW);
         } catch (IOException e) {
             error(e.getLocalizedMessage());
-            return;
         }
-        this.outputTarget = new BufferedWriter(writer);
     }
 
     protected void notifyListeners(CliEvent event) {

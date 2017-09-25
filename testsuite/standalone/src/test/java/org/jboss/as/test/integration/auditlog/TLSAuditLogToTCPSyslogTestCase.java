@@ -37,6 +37,7 @@ import org.jboss.as.test.syslogserver.BlockedSyslogServerEventHandler;
 import org.jboss.as.test.syslogserver.TCPSyslogServerConfig;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.productivity.java.syslog4j.SyslogConstants;
@@ -55,6 +56,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerSetup(TLSAuditLogToTCPSyslogTestCase.AuditLogToTCPSyslogTestCaseSetup.class)
+@Ignore
 public class TLSAuditLogToTCPSyslogTestCase {
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
