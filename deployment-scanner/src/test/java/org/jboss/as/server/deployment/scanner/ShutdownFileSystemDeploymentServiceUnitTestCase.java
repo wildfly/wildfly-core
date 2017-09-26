@@ -153,33 +153,38 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         testee.setAutoDeployZippedContent(true);
         sc.addCompositeSuccessResponse(1);
         testSupport.createZip(deployment, 0, false, false, true, true);
-        Future<Boolean> lockDone = Executors.newSingleThreadExecutor().submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                try {
-                    synchronized (ops.lock) {
-                        logger.info("Executor service should be locked");
-                        while (!ops.ready) {//Waiting for deployment to start.
-                            Thread.sleep(100);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future<Boolean> lockDone = executorService.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    try {
+                        synchronized (ops.lock) {
+                            logger.info("Executor service should be locked");
+                            while (!ops.ready) {//Waiting for deployment to start.
+                                Thread.sleep(100);
+                            }
+                            logger.info("About to stop the scanner");
+                            testee.stopScanner();
+                            logger.info("Closing executor service " + myExecutor);
+                            myExecutor.shutdown();
+                            logger.info("Executor service should be closed");
                         }
-                        logger.info("About to stop the scanner");
-                        testee.stopScanner();
-                        logger.info("Closing executor service " + myExecutor);
-                        myExecutor.shutdown();
-                        logger.info("Executor service should be closed");
+                        return true;
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                        throw new RuntimeException(ex);
                     }
-                    return true;
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                    throw new RuntimeException(ex);
                 }
-            }
-        });
-        final File dodeploy = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DO_DEPLOY);
-        Files.createFile(dodeploy.toPath());
-        testee.startScanner(ops);
-        testee.scan();
-        lockDone.get(100000, TimeUnit.MILLISECONDS);
+            });
+            final File dodeploy = new File(tmpDir, "foo.war" + FileSystemDeploymentService.DO_DEPLOY);
+            Files.createFile(dodeploy.toPath());
+            testee.startScanner(ops);
+            testee.scan();
+            lockDone.get(100000, TimeUnit.MILLISECONDS);
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     private static class MockServerController implements LocalModelControllerClient, ModelControllerClientFactory, DeploymentOperations.Factory {
