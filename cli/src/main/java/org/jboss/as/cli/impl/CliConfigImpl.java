@@ -180,12 +180,12 @@ class CliConfigImpl implements CliConfig {
     private static CliConfigImpl overrideConfigWithArguments(CliConfigImpl cliConfig, CommandContextConfiguration configuration){
         // The configuration options from the command line should only override if they are not defaults.
         // This is to prevent a default Configuration option from overriding an Option defined in the config file.
-        cliConfig.connectionTimeout = configuration.getConnectionTimeout() != -1    ? configuration.getConnectionTimeout()  : cliConfig.getConnectionTimeout();
-        cliConfig.silent            = configuration.isSilent()                      ? configuration.isSilent()              : cliConfig.silent;
-        cliConfig.errorOnInteract   = configuration.isErrorOnInteract() != null     ? configuration.isErrorOnInteract()     : cliConfig.errorOnInteract;
-        cliConfig.echoCommand       = configuration.isEchoCommand()                 ? configuration.isEchoCommand()         : cliConfig.echoCommand;
-        cliConfig.commandTimeout    = configuration.getCommandTimeout() != null     ? configuration.getCommandTimeout()     : cliConfig.commandTimeout;
-
+        cliConfig.connectionTimeout         = configuration.getConnectionTimeout() != -1          ? configuration.getConnectionTimeout()        : cliConfig.getConnectionTimeout();
+        cliConfig.silent                    = configuration.isSilent()                            ? configuration.isSilent()                    : cliConfig.silent;
+        cliConfig.errorOnInteract           = configuration.isErrorOnInteract() != null           ? configuration.isErrorOnInteract()           : cliConfig.errorOnInteract;
+        cliConfig.echoCommand               = configuration.isEchoCommand()                       ? configuration.isEchoCommand()               : cliConfig.echoCommand;
+        cliConfig.commandTimeout            = configuration.getCommandTimeout() != null           ? configuration.getCommandTimeout()           : cliConfig.commandTimeout;
+        cliConfig.validateOperationRequests = configuration.isValidateOperationRequests() != null ? configuration.isValidateOperationRequests() : cliConfig.validateOperationRequests;
         return cliConfig;
     }
 
