@@ -1043,7 +1043,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     @Override
     public CommandLineParser getCommandLineParser() {
-        return DefaultOperationRequestParser.INSTANCE;
+        return new DefaultOperationRequestParser(this);
     }
 
     @Override

@@ -54,7 +54,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
-                parsedOp.parseOperation(ctx.getCurrentNodePath(), buffer);
+                parsedOp.parseOperation(ctx.getCurrentNodePath(), buffer, ctx);
             } catch (CommandFormatException e) {
                 return -1;
             }

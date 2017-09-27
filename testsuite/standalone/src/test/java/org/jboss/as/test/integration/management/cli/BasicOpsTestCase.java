@@ -126,4 +126,15 @@ public class BasicOpsTestCase {
             }
         }
     }
+
+    @Test
+    public void testWithVariables() throws Exception {
+        try (CLIWrapper cli = new CLIWrapper(true)) {
+            cli.sendLine("set var1=core-service");
+            cli.sendLine("ls /$var1=management");
+            cli.sendLine("read-operation --node=/$var1=management whoami");
+            cli.sendLine("read-attribute --node=/$var1=capability-registry capabilities");
+            cli.sendLine("cd /$var1=management");
+        }
+    }
 }

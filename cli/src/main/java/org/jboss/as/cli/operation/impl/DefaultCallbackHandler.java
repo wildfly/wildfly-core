@@ -133,6 +133,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         }
     }
 
+    @Deprecated
     public void parseOperation(OperationRequestAddress prefix, String argsStr) throws CommandFormatException {
         reset();
         this.setFormat(OperationFormat.INSTANCE);
@@ -142,6 +143,17 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         this.setFormat(OperationFormat.INSTANCE);
         this.originalLine = argsStr;
         substitutedLine = ParserUtil.parseOperationRequestLine(argsStr, this);
+    }
+
+    public void parseOperation(OperationRequestAddress prefix, String argsStr, CommandContext ctx) throws CommandFormatException {
+        reset();
+        this.setFormat(OperationFormat.INSTANCE);
+        if (prefix != null) {
+            address = new DefaultOperationRequestAddress(prefix);
+        }
+        this.setFormat(OperationFormat.INSTANCE);
+        this.originalLine = argsStr;
+        substitutedLine = ParserUtil.parseOperationRequestLine(argsStr, this, ctx);
     }
 
     public void parseHeaders(String argsStr, CommandContext ctx) throws CommandFormatException {

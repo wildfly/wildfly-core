@@ -58,7 +58,7 @@ public class RolloutPlanCompleter implements CommandLineCompleter {
         }
 
         try {
-            parsedOp.parseOperation(null, buffer);
+            parsedOp.parseOperation(null, buffer, ctx);
         } catch (CommandFormatException e) {
             return -1;
         }

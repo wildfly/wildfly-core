@@ -92,7 +92,7 @@ public class ParserUtil {
      * Returns the string which was actually parsed with all the substitutions performed
      */
     public static String parseOperationRequest(String commandLine, final CommandLineParser.CallbackHandler handler) throws CommandFormatException {
-        SubstitutedLine sl = parseOperationRequestLine(commandLine, handler);
+        SubstitutedLine sl = parseOperationRequestLine(commandLine, handler, null);
         return sl == null ? null : sl.getSubstitued();
     }
 
@@ -100,13 +100,28 @@ public class ParserUtil {
      * Returns the string which was actually parsed with all the substitutions
      * performed
      */
-    public static SubstitutedLine parseOperationRequestLine(String commandLine, final CommandLineParser.CallbackHandler handler) throws CommandFormatException {
+    public static String parseOperationRequest(String commandLine, final CommandLineParser.CallbackHandler handler, CommandContext ctx) throws CommandFormatException {
+        SubstitutedLine sl = parseOperationRequestLine(commandLine, handler, ctx);
+        return sl == null ? null : sl.getSubstitued();
+    }
+
+    public static SubstitutedLine parseOperationRequestLine(String commandLine,
+            final CommandLineParser.CallbackHandler handler) throws CommandFormatException {
+        return parseOperationRequestLine(commandLine, handler, null);
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed
+     */
+    public static SubstitutedLine parseOperationRequestLine(String commandLine,
+            final CommandLineParser.CallbackHandler handler, CommandContext ctx) throws CommandFormatException {
         if (commandLine == null) {
             return null;
         }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
         handler.setFormat(OperationFormat.INSTANCE);
-        return StateParser.parseLine(commandLine, callbackHandler, OperationRequestState.INSTANCE);
+        return StateParser.parseLine(commandLine, callbackHandler, OperationRequestState.INSTANCE, ctx);
     }
 
     /**

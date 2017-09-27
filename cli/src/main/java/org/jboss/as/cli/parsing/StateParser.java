@@ -46,14 +46,20 @@ public class StateParser {
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public String parse(String str, ParsingStateCallbackHandler callbackHandler) throws CommandFormatException {
         return parse(str, callbackHandler, initialState);
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static String parse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState) throws CommandFormatException {
         return parseLine(str, callbackHandler, initialState).getSubstitued();
@@ -61,14 +67,19 @@ public class StateParser {
 
     /**
      * Returns the string which was actually parsed with all the substitutions
-     * performed
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState) throws CommandFormatException {
         return parseLine(str, callbackHandler, initialState, true);
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static String parse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState, boolean strict) throws CommandFormatException {
         return parseLine(str, callbackHandler, initialState, strict).getSubstitued();
@@ -76,7 +87,9 @@ public class StateParser {
 
     /**
      * Returns the string which was actually parsed with all the substitutions
-     * performed
+     * performed. NB: No CommandCOntext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState, boolean strict) throws CommandFormatException {
         return parseLine(str, callbackHandler, initialState, strict, null);
