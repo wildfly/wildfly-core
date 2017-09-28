@@ -22,6 +22,7 @@
 
 package org.wildfly.core.embedded.logging;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 import org.jboss.logging.BasicLogger;
@@ -192,4 +193,15 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 27, value = "The embedded server is stopped and invocations on the ModelControllerClient are not available")
     IllegalStateException processIsStopped();
 
+    @Message(id = 28, value = "Error copying '%s' to '%s' (%s)")
+    RuntimeException errorCopyingFile(String absolutePath, String absolutePath2, IOException e);
+
+    @Message(id = 29, value = "-D%s=%s is not a directory")
+    IllegalArgumentException propertySpecifiedFileIsNotADirectory(String property, String absolutePath);
+
+    @Message(id = 144, value = "-D%s=%s does not exist")
+    IllegalArgumentException propertySpecifiedFileDoesNotExist(String property, String absolutePath);
+
+    @Message(id = 143, value = "No directory called '%s' exists under '%s'")
+    IllegalArgumentException embeddedServerDirectoryNotFound(String string, String absolutePath);
 }

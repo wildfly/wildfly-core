@@ -426,7 +426,7 @@ public interface PatchingHistory {
                                     try {
                                         patch = ((PatchBuilder)PatchXml.parse(patchXml)).build();
                                     } catch (Exception e) {
-                                        e.printStackTrace(); // TODO
+                                        PatchLogger.ROOT_LOGGER.error(e.getLocalizedMessage(), e);
                                     }
                                 }
                             }

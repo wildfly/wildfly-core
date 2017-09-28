@@ -200,9 +200,8 @@ final class ManagedProcess {
         try {
             process = builder.start();
         } catch (IOException e) {
-            e.printStackTrace();
             processController.operationFailed(processName, ProcessMessageHandler.OperationType.START);
-            log.failedToStartProcess(processName);
+            log.failedToStartProcess(e,processName);
             return;
         }
         final long startTime = System.currentTimeMillis();
