@@ -3,7 +3,7 @@
 <!--
   ~ JBoss, Home of Professional Open Source.
   ~
-  ~ Copyright 2018 Red Hat, Inc., and individual contributors
+  ~ Copyright 2017 Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,9 +61,9 @@
             <xs:element name="use-deployment-logging-config" type="booleanTrueValueType">
                 <xs:annotation>
                     <xs:documentation>
-                            Determines whether or not deployments should be scanned for configuration files. If set to
-                            true and a configuration file is found the log manager will be configured based on the
-                            configuration file.
+                        Determines whether or not deployments should be scanned for configuration files. If set to
+                        true and a configuration file is found the log manager will be configured based on the
+                        configuration file.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -471,6 +471,15 @@
         <xs:choice minOccurs="1" maxOccurs="1">
             <xs:element name="pattern-formatter" type="patternFormatterType" maxOccurs="1"/>
             <xs:element name="custom-formatter" type="customFormatterType" maxOccurs="1"/>
+            <xs:element name="json-formatter" type="structuredFormatterType">
+                <xs:annotation>
+                    <xs:documentation>
+                        <![CDATA[
+                            Defines a JSON formatter to be used to format log messages.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:choice>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
@@ -539,6 +548,71 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="structuredFormatterType">
+        <xs:all>
+            <xs:element name="exception-output-type" type="exceptionOutputType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates how the cause of the logged message, if one is available, will be added to the output.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="record-delimiter" type="valueType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The value to be used to indicate the end of a record. If set to null no delimiter will be used
+                        at the end of the record. The default value is a line feed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-overrides" type="keyOverrideType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Allows the names of the keys or elements for the properties to be overridden.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="meta-data" type="propertiesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the meta data to use in the structured format. Properties will be added to each log message.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="date-format" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The date/time format pattern. The pattern must be a valid
+                    java.time.format.DateTimeFormatter.ofPattern() pattern.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="pretty-print" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Indicates whether or not pretty printing should be used when formatting.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="print-details" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets whether or not details should be printed. Printing the details can be expensive as the values
+                    are retrieved from the caller. The details include the source class name, source file name, source
+                    method name and source line number.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="zone-id" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The zone ID for formatting the date and time. The system default is used if left undefined.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="customFormatterType">
         <xs:annotation>
             <xs:documentation>
@@ -563,6 +637,82 @@
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="exceptionOutputType">
+        <xs:annotation>
+            <xs:documentation>
+                Set the output type for exceptions. The default is detailed.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="value" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:token">
+                    <xs:enumeration value="detailed">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cause, if present, will be an array of stack trace elements. This will include
+                                suppressed exceptions and the cause of the exception.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="formatted">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cause, if present, will be a string representation of the stack trace in a
+                                stackTrace property. The property value is a string created by
+                                Throwable.printStackTrace().
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="detailed-and-formatted">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cause, if present, will be a string representation of the stack trace in a
+                                stackTrace property. The property value is a string created by
+                                Throwable.printStackTrace().
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="keyOverrideType">
+        <xs:attribute name="exception" type="xs:string"/>
+        <xs:attribute name="exception-caused-by" type="xs:string"/>
+        <xs:attribute name="exception-circular-reference" type="xs:string"/>
+        <xs:attribute name="exception-frame" type="xs:string"/>
+        <xs:attribute name="exception-frame-class" type="xs:string"/>
+        <xs:attribute name="exception-frame-line" type="xs:string"/>
+        <xs:attribute name="exception-frame-method" type="xs:string"/>
+        <xs:attribute name="exception-frames" type="xs:string"/>
+        <xs:attribute name="exception-message" type="xs:string"/>
+        <xs:attribute name="exception-reference-id" type="xs:string"/>
+        <xs:attribute name="exception-suppressed" type="xs:string"/>
+        <xs:attribute name="exception-type" type="xs:string"/>
+        <xs:attribute name="host-name" type="xs:string"/>
+        <xs:attribute name="level" type="xs:string"/>
+        <xs:attribute name="logger-class-name" type="xs:string"/>
+        <xs:attribute name="logger-name" type="xs:string"/>
+        <xs:attribute name="mdc" type="xs:string"/>
+        <xs:attribute name="message" type="xs:string"/>
+        <xs:attribute name="ndc" type="xs:string"/>
+        <xs:attribute name="process-id" type="xs:string"/>
+        <xs:attribute name="process-name" type="xs:string"/>
+        <xs:attribute name="record" type="xs:string"/>
+        <xs:attribute name="sequence" type="xs:string"/>
+        <xs:attribute name="source-class-name" type="xs:string"/>
+        <xs:attribute name="source-file-name" type="xs:string"/>
+        <xs:attribute name="source-line-number" type="xs:string"/>
+        <xs:attribute name="source-method-name" type="xs:string"/>
+        <xs:attribute name="source-module-name" type="xs:string"/>
+        <xs:attribute name="source-module-version" type="xs:string"/>
+        <xs:attribute name="stack-trace" type="xs:string"/>
+        <xs:attribute name="thread-id" type="xs:string"/>
+        <xs:attribute name="thread-name" type="xs:string"/>
+        <xs:attribute name="timestamp" type="xs:string"/>
     </xs:complexType>
 
     <xs:complexType name="syslogFormatterType">

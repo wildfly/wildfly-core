@@ -98,15 +98,19 @@ public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsyste
         assertEquals(value, SubsystemOperations.readResult(result));
     }
 
-    protected void testUndefine(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute) {
+    void testUndefine(final KernelServices kernelServices, final ModelNode address, final String attribute) {
         final ModelNode undefineOp = SubsystemOperations.createUndefineAttributeOperation(address, attribute);
         executeOperation(kernelServices, undefineOp);
         // Create the read operation
         final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, attribute);
         readOp.get("include-defaults").set(false);
         final ModelNode result = executeOperation(kernelServices, readOp);
-        assertFalse("Attribute '" + attribute.getName() + "' was not undefined.", SubsystemOperations.readResult(result)
+        assertFalse("Attribute '" + attribute + "' was not undefined.", SubsystemOperations.readResult(result)
                 .isDefined());
+    }
+
+    protected void testUndefine(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute) {
+        testUndefine(kernelServices, address, attribute.getName());
     }
 
     protected void verifyRemoved(final KernelServices kernelServices, final ModelNode address) {

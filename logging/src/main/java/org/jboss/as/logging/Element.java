@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 
 /**
  *
@@ -56,6 +57,7 @@ enum Element {
     HANDLER(CommonAttributes.HANDLER),
     HANDLERS(CommonAttributes.HANDLERS),
     HOSTNAME(SyslogHandlerResourceDefinition.HOSTNAME),
+    JSON_FORMATTER(JsonFormatterResourceDefinition.NAME),
     LEVEL(CommonAttributes.LEVEL),
     LEVEL_RANGE(CommonAttributes.LEVEL_RANGE_LEGACY),
     LOGGER(LoggerResourceDefinition.LOGGER),

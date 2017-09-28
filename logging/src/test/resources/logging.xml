@@ -151,6 +151,17 @@
         <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n" color-map="info:cyan,warn:yellow,error:red"/>
     </formatter>
 
+    <formatter name="JSON">
+        <json-formatter date-format="yyyy-MM-dd'T'HH:mm:ssSSS" pretty-print="true" print-details="true" zone-id="GMT">
+            <exception-output-type value="detailed-and-formatted"/>
+            <record-delimiter value="\n"/>
+            <key-overrides exception-caused-by="cause" record="log-record"/>
+            <meta-data>
+                <property name="test" value="value"/>
+            </meta-data>
+        </json-formatter>
+    </formatter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 
