@@ -39,6 +39,7 @@ import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDeploymentResourceProcessor;
 import org.jboss.as.logging.deployments.LoggingProfileDeploymentProcessor;
+import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
@@ -139,6 +140,7 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         final List<String> configuredFormatters = logContextConfiguration.getFormatterNames();
         configuredFormatters.removeAll(resource.getChildrenNames(PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName()));
         configuredFormatters.removeAll(resource.getChildrenNames(CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName()));
+        configuredFormatters.removeAll(resource.getChildrenNames(JsonFormatterResourceDefinition.NAME));
         // Formatter names could also be the name of a handler if the formatter attribute is used rather than a named-formatter
         configuredFormatters.removeAll(subsystemHandlers);
 

@@ -75,6 +75,8 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -215,6 +217,7 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
 
         writeFormatters(writer, PATTERN_FORMATTER, model);
         writeFormatters(writer, CUSTOM_FORMATTER, model);
+        writeStructuredFormatters(writer, JsonFormatterResourceDefinition.NAME, model);
     }
 
     private void writeCommonLogger(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
@@ -363,6 +366,30 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 final ModelNode value = model.get(attribute.getName(), name);
                 attribute.marshallAsElement(value, writer);
                 writer.writeEndElement();
+            }
+        }
+    }
+
+    private void writeStructuredFormatters(final XMLExtendedStreamWriter writer, final String elementName, final ModelNode model) throws XMLStreamException {
+        if (model.hasDefined(elementName)) {
+            for (String name : model.get(elementName).keys()) {
+                writer.writeStartElement(Element.FORMATTER.getLocalName());
+                writer.writeAttribute(NAME.getXmlName(), name);
+                final ModelNode value = model.get(elementName, name);
+                writer.writeStartElement(elementName);
+                // Write attributes first
+                StructuredFormatterResourceDefinition.DATE_FORMAT.marshallAsAttribute(value, writer);
+                StructuredFormatterResourceDefinition.PRETTY_PRINT.marshallAsAttribute(value, writer);
+                StructuredFormatterResourceDefinition.PRINT_DETAILS.marshallAsAttribute(value, writer);
+                StructuredFormatterResourceDefinition.ZONE_ID.marshallAsAttribute(value, writer);
+                // Next write elements
+                StructuredFormatterResourceDefinition.EXCEPTION_OUTPUT_TYPE.marshallAsElement(value, writer);
+                StructuredFormatterResourceDefinition.RECORD_DELIMITER.marshallAsElement(value, writer);
+                StructuredFormatterResourceDefinition.KEY_OVERRIDES.marshallAsElement(value, writer);
+                StructuredFormatterResourceDefinition.META_DATA.marshallAsElement(value, writer);
+
+                writer.writeEndElement(); // end elementName
+                writer.writeEndElement(); // end formatter
             }
         }
     }

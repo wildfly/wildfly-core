@@ -50,7 +50,11 @@ public class PropertyAttributeDefinition extends SimpleAttributeDefinition imple
         if (value == null) {
             configuration.removeProperty(propertyName);
         } else {
-            configuration.setPropertyValueString(propertyName, value);
+            // Only change the property if the two resolved values do not match. We currently don't set expressions.
+            final String currentValue = configuration.getPropertyValueString(propertyName);
+            if (!value.equals(currentValue)) {
+                configuration.setPropertyValueString(propertyName, value);
+            }
         }
     }
 

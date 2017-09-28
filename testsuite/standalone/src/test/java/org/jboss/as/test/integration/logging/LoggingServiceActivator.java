@@ -32,10 +32,13 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jboss.logging.Logger;
+import org.jboss.logging.MDC;
+import org.jboss.logging.NDC;
 import org.wildfly.test.undertow.UndertowServiceActivator;
 
 /**
@@ -47,50 +50,69 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
     public static final String MSG_KEY = "msg";
     public static final String INCLUDE_LEVEL_KEY = "includeLevel";
     public static final String LOG_INFO_ONLY_KEY = "logInfoOnly";
-    private static final Logger LOGGER = Logger.getLogger(LoggingServiceActivator.class);
+    public static final String NDC_KEY = "ndc";
+    public static final String LOG_EXCEPTION_KEY = "logException";
+    public static final Logger LOGGER = Logger.getLogger(LoggingServiceActivator.class);
 
     @Override
     protected HttpHandler getHttpHandler() {
         return new HttpHandler() {
             @Override
             public void handleRequest(final HttpServerExchange exchange) throws Exception {
-                final Map<String, Deque<String>> params = exchange.getQueryParameters();
-                String msg = DEFAULT_MESSAGE;
-                if (params.containsKey(MSG_KEY)) {
-                    msg = getFirstValue(params, MSG_KEY);
+                final Map<String, Deque<String>> params = new TreeMap<>(exchange.getQueryParameters());
+                final String msg = getValue(params, MSG_KEY, DEFAULT_MESSAGE);
+                final boolean includeLevel = getValue(params, INCLUDE_LEVEL_KEY, false);
+                final boolean logInfoOnly = getValue(params, LOG_INFO_ONLY_KEY, false);
+                final boolean logException = getValue(params, LOG_EXCEPTION_KEY, false);
+                final String ndcValue = getValue(params, NDC_KEY, null);
+                if (ndcValue != null) {
+                    NDC.push(ndcValue);
                 }
-                boolean includeLevel = false;
-                if (params.containsKey(INCLUDE_LEVEL_KEY)) {
-                    includeLevel = Boolean.parseBoolean(getFirstValue(params, INCLUDE_LEVEL_KEY));
-                }
-                boolean logInfoOnly = false;
-                if (params.containsKey(LOG_INFO_ONLY_KEY)) {
-                    logInfoOnly = Boolean.parseBoolean(getFirstValue(params, LOG_INFO_ONLY_KEY));
+                // Assume other parameters are MDC key/value pairs
+                for (String key : params.keySet()) {
+                    MDC.put(key, params.get(key).getFirst());
                 }
                 if (logInfoOnly) {
                     LOGGER.info(msg);
                 } else {
                     for (Logger.Level level : LOG_LEVELS) {
                         if (includeLevel) {
-                            LOGGER.log(level, formatMessage(msg, level));
+                            if (logException) {
+                                LOGGER.log(level, formatMessage(msg, level), new RuntimeException());
+                            } else {
+                                LOGGER.log(level, formatMessage(msg, level));
+                            }
                         } else {
-                            LOGGER.log(level, msg);
+                            if (logException) {
+                                LOGGER.log(level, msg, new RuntimeException());
+                            } else {
+                                LOGGER.log(level, msg);
+                            }
                         }
                     }
                 }
+                // Clear NDC and MDC
+                NDC.clear();
+                MDC.clear();
                 exchange.getResponseSender().send("Response sent");
             }
         };
     }
 
-    private String getFirstValue(final Map<String, Deque<String>> params, final String key) {
-        if (params.containsKey(key)) {
-            final Deque<String> values = params.get(key);
-            if (values != null && !values.isEmpty()) {
-                return values.getFirst();
-            }
+    private static String getValue(final Map<String, Deque<String>> params, final String key, final String dft) {
+        final Deque<String> values = params.remove(key);
+        if (values != null) {
+            return values.getFirst();
         }
-        return null;
+        return dft;
+    }
+
+    private static boolean getValue(final Map<String, Deque<String>> params, final String key, final boolean dft) {
+        final Deque<String> values = params.remove(key);
+        if (values != null) {
+            return Boolean.parseBoolean(values.getFirst());
+        }
+        return dft;
     }
 
     public static String formatMessage(final String msg, final Logger.Level level) {

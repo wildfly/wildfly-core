@@ -151,12 +151,14 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
                                 new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
                         .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET)));
+                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
     @Test
     public void testTransformersEAP700() throws Exception {
-        testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml") );
+        testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml"));
     }
 
     private void testEap7Transformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {

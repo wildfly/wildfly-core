@@ -943,4 +943,14 @@ public interface LoggingLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 90, value = "The following path expressions could not be resolved while attempting to determine which log files are available to be read: %s")
     void unresolvablePathExpressions(Set<String> unresolvableExpressions);
+
+    /**
+     * A message indicating the exception output type is not valid.
+     *
+     * @param value the invalid value
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 91, value = "Exception output type %s is invalid.")
+    OperationFailedException invalidExceptionOutputType(String value);
 }

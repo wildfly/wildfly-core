@@ -46,7 +46,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-final class LoggingOperations {
+public final class LoggingOperations {
 
     /**
      * Get the address name from the operation.
@@ -190,7 +190,7 @@ final class LoggingOperations {
     /**
      * A base step handler for logging operations.
      */
-    abstract static class LoggingAddOperationStepHandler extends LoggingOperationStepHandler {
+    public abstract static class LoggingAddOperationStepHandler extends LoggingOperationStepHandler {
 
         @Override
         public final void execute(final OperationContext context, final ModelNode operation, final String name, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -256,7 +256,7 @@ final class LoggingOperations {
     /**
      * A base remove step handler for logging operations.
      */
-    abstract static class LoggingRemoveOperationStepHandler extends LoggingOperationStepHandler {
+    public abstract static class LoggingRemoveOperationStepHandler extends LoggingOperationStepHandler {
 
         @Override
         public final void execute(final OperationContext context, final ModelNode operation, final String name, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -293,7 +293,7 @@ final class LoggingOperations {
     /**
      * A default log handler write attribute step handler.
      */
-    abstract static class LoggingWriteAttributeHandler extends AbstractWriteAttributeHandler<ConfigurationPersistence> {
+    public abstract static class LoggingWriteAttributeHandler extends AbstractWriteAttributeHandler<ConfigurationPersistence> {
         private final AttributeDefinition[] attributes;
 
         protected LoggingWriteAttributeHandler(final AttributeDefinition[] attributes) {
