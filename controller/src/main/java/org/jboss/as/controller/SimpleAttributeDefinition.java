@@ -27,10 +27,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -61,92 +59,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      */
     @Deprecated
     public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull) {
-        super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null);
-    }
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     * @param flags any flags to indicate special characteristics of the attribute
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final AttributeAccess.Flag... flags) {
-        super(name, name, null, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null, flags);
-    }
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     * @param measurementUnit a measurement unit for the attribute's value. Can be {@code null}
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull, final MeasurementUnit measurementUnit) {
-        super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
-                null, false, null, null, null, null);
-    }
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     * @param measurementUnit a measurement unit for the attribute's value. Can be {@code null}
-     * @param flags any flags to indicate special characteristics of the attribute
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelType type, final boolean allowNull,
-                                     final MeasurementUnit measurementUnit, final AttributeAccess.Flag... flags) {
-        super(name, name, null, type, allowNull, false, measurementUnit, null, null, true, null, null,
-                null, false, null, null, null, null, flags);
-    }
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param defaultValue a default value to use for the attribute if none is specified by the user. Can be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type, final boolean allowNull) {
-        super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null);
-    }
-
-    /**
-     * Creates a new attribute definition.
-     *
-     * @param name the name of the attribute. Cannot be {@code null}
-     * @param defaultValue a default value to use for the attribute if none is specified by the user. Can be {@code null}
-     * @param type the type of the attribute value. Cannot be {@code null}
-     * @param allowNull {@code true} if {@link org.jboss.dmr.ModelType#UNDEFINED} is a valid type for the value
-     * @param flags any flags to indicate special characteristics of the attribute
-     *
-     * @deprecated use {@link SimpleAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    public SimpleAttributeDefinition(final String name, final ModelNode defaultValue, final ModelType type,
-                                     final boolean allowNull, final AttributeAccess.Flag... flags) {
-        super(name, name, defaultValue, type, allowNull, false, null, null, null, true, null, null,
-                null, false, null, null, null, null, flags);
+        this(new SimpleAttributeDefinitionBuilder(name, type).setRequired(!allowNull));
     }
 
     protected SimpleAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends SimpleAttributeDefinition> builder) {

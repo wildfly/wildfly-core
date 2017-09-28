@@ -113,23 +113,6 @@ public abstract class AttributeDefinition {
                 toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
     }
 
-    /**
-     * @deprecated use {@link AbstractAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                  final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                  final ParameterCorrector valueCorrector, final ParameterValidator validator,
-                                  boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                  boolean resourceOnly, DeprecationData deprecationData, final AccessConstraintDefinition[] accessConstraints,
-                                  Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
-
-        this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
-                wrapValidator(validator, allowNull, alternatives, allowExpression, type, null, null), validateNull, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, null, null, immutableSetOf(flags));
-    }
-
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
                                 final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
                                 final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
