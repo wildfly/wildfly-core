@@ -139,6 +139,19 @@ public class CliExtCommandsTestCase {
         assertTrue("Output: '" + cli.getOutput() + "'",cli.getOutput().trim().endsWith(CliExtCommandHandler.NAME + "--help"));
     }
 
+    @Test
+    public void testExtensionCommandHelp2() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(String.format("%s %s", "help", CliExtCommand.NAME));
+        cli.executeNonInteractive();
+
+        // the output may contain other logs from the cli initialization
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().contains("THIS IS A USELESS DESCRIPTION"));
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().contains("THIS IS A USELESS OPTION DESCRIPTION"));
+    }
+
     private static void createTestModule() throws Exception {
         final File moduleXml = new File(CliExtCommandsTestCase.class.getResource(CliExtCommandsTestCase.class.getSimpleName() + "-module.xml").toURI());
         testModule = new TestModule(MODULE_NAME, moduleXml);
@@ -167,6 +180,10 @@ public class CliExtCommandsTestCase {
 
         final ArchivePath helpService = ArchivePaths.create(help, CliExtCommandHandler.NAME + ".txt");
         archive.addAsResource(CliExtCommandHandler.class.getPackage(), CliExtCommandHandler.NAME + ".txt", helpService);
+
+        final ArchivePath help2Service = ArchivePaths.create("/"
+                + CliExtCommand.class.getPackage().getName().replaceAll("\\.", "/"), "command_resources.properties");
+        archive.addAsResource(CliExtCommand.class.getPackage(), "command_resources.properties", help2Service);
 
         testModule.create(true);
     }

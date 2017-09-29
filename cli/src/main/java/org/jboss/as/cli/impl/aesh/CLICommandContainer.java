@@ -101,7 +101,8 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
 
         @Override
         public String printHelp() {
-            return null;
+            return HelpSupport.getSubCommandHelp(CLICommandContainer.this.parser.getProcessedCommand().name(),
+                    parser);
         }
 
         @Override
@@ -332,6 +333,6 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
     }
 
     private String doPrintHelp() {
-        return HelpSupport.printHelp(ctx, parser.getProcessedCommand().name());
+        return HelpSupport.getCommandHelp(parser);
     }
 }
