@@ -682,6 +682,10 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         }
     }
 
+    public void printDescription(CommandContext ctx) throws CommandFormatException {
+        printNodeDescription(ctx);
+    }
+
     protected void printNodeDescription(CommandContext ctx) throws CommandFormatException {
 
         int offset = 2;

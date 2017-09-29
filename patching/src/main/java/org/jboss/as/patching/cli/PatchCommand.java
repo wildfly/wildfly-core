@@ -21,6 +21,7 @@ import org.aesh.command.CommandResult;
 import org.aesh.command.GroupCommandDefinition;
 import org.aesh.command.option.Option;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
+import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 
 /**
  *
@@ -31,7 +32,8 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
             PatchInfo.class, PatchInspect.class})
 public class PatchCommand implements Command<CLICommandInvocation> {
 
-    @Option(hasValue = false)
+    @Deprecated
+    @Option(hasValue = false, activator = HideOptionActivator.class)
     private boolean help;
 
     @Override
