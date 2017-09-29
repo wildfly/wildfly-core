@@ -63,6 +63,7 @@ public class CLICommandCompleter {
         to.setIgnoreOffset(from.doIgnoreOffset());
         to.setIgnoreStartsWith(from.isIgnoreStartsWith());
         to.setSeparator(from.getSeparator());
+        to.doAppendSeparator(from.hasAppendSeparator());
         if (!from.getCompletionCandidates().isEmpty()) {
             to.addCompletionCandidatesTerminalString(from.getCompletionCandidates());
             to.setOffset(from.getOffset());

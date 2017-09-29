@@ -104,7 +104,7 @@ Usage:
  --no-operation-validation  - disable the pre validation of the operations from the CLI.
                               Operations will be only validated by the server.
 
-For a list of available commands execute
+For a list of available commands, once the CLI is started, execute:
 
   help --commands
 
@@ -128,8 +128,9 @@ Here are some of the most basic supported commands:
  undeploy               - undeploy an application;
  version                - prints the version and environment information.
 
-For a more detailed description of a specific command, execute the command with
-'--help' as the argument.
+For a more detailed description of a specific command, execute:
+
+  help <command name>
 
 Tab-completion is supported for the commands, just press the tab key to start.
 

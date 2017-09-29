@@ -123,7 +123,6 @@ import org.jboss.as.cli.handlers.DeploymentOverlayHandler;
 import org.jboss.as.cli.handlers.EchoDMRHandler;
 import org.jboss.as.cli.handlers.EchoVariableHandler;
 import org.jboss.as.cli.handlers.GenericTypeOperationHandler;
-import org.jboss.as.cli.handlers.HelpHandler;
 import org.jboss.as.cli.handlers.HistoryHandler;
 import org.jboss.as.cli.handlers.LsHandler;
 import org.jboss.as.cli.handlers.OperationRequestHandler;
@@ -166,6 +165,7 @@ import org.jboss.as.cli.impl.ReadlineConsole.Settings;
 import org.jboss.as.cli.impl.ReadlineConsole.SettingsBuilder;
 import org.jboss.as.cli.impl.aesh.AeshCommands;
 import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
+import org.jboss.as.cli.impl.aesh.cmd.HelpCommand;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -512,13 +512,15 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     private void initCommands() throws CommandLineException, CommandLineParserException {
+        // aesh commands
+        cmdRegistry.addCommand(new HelpCommand(cmdRegistry));
+
         cmdRegistry.registerHandler(new AttachmentHandler(this), "attachment");
         cmdRegistry.registerHandler(new PrefixHandler(), "cd", "cn");
         cmdRegistry.registerHandler(new ClearScreenHandler(), "clear", "cls");
         cmdRegistry.registerHandler(new CommandCommandHandler(cmdRegistry), "command");
         cmdRegistry.registerHandler(new ConnectHandler(), "connect");
         cmdRegistry.registerHandler(new EchoDMRHandler(), "echo-dmr");
-        cmdRegistry.registerHandler(new HelpHandler(cmdRegistry), "help", "h");
         cmdRegistry.registerHandler(new HistoryHandler(), "history");
         cmdRegistry.registerHandler(new LsHandler(this), "ls");
         cmdRegistry.registerHandler(new ASModuleHandler(this), "module");

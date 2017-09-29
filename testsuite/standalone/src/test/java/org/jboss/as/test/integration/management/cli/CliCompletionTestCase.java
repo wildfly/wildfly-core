@@ -87,6 +87,68 @@ public class CliCompletionTestCase {
                         cmd.length(), candidates);
                 assertEquals(candidates.toString(), Arrays.asList(","), candidates);
             }
+
+            {
+                String cmd = "help --";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--commands"));
+            }
+
+            {
+                String cmd = "help l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+            }
+
+            {
+                String cmd = "help ls";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(" "));
+            }
+
+            {
+                String cmd = "help :";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("read-resource"));
+            }
+
+            {
+                String cmd = "help deployment ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("deploy-file"));
+            }
+
+            {
+                String cmd = "deploy";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 4);
+                assertEquals(candidates.toString(), Arrays.asList("deploy",
+                        "deployment", "deployment-info", "deployment-overlay"),
+                        candidates);
+            }
+
+            {
+                String cmd = "deployment";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 3);
+                assertEquals(candidates.toString(), Arrays.asList(
+                        "deployment", "deployment-info", "deployment-overlay"),
+                        candidates);
+            }
         } finally {
             ctx.terminateSession();
         }

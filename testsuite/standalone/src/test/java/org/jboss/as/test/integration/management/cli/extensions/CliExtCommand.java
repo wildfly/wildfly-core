@@ -19,6 +19,7 @@ import org.aesh.command.Command;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
+import org.aesh.command.option.Option;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 
 /**
@@ -31,6 +32,10 @@ public class CliExtCommand implements Command<CLICommandInvocation> {
 
     public static final String OUTPUT = "Very useless";
     public static final String NAME = "useless";
+
+    @Option
+    private boolean myoption;
+
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
         commandInvocation.print(OUTPUT);
