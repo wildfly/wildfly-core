@@ -54,25 +54,13 @@ public class ConnectorAdd extends AbstractAddStepHandler {
     static final ConnectorAdd INSTANCE = new ConnectorAdd();
 
     private ConnectorAdd() {
-        // TODO pass in the ADs and remove populateModel
-    }
-
-    @Override
-    protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException{
-        ConnectorResource.SOCKET_BINDING.validateAndSet(operation, model);
-        ConnectorResource.AUTHENTICATION_PROVIDER.validateAndSet(operation, model);
-        ConnectorResource.SECURITY_REALM.validateAndSet(operation, model);
-        ConnectorResource.SASL_AUTHENTICATION_FACTORY.validateAndSet(operation, model);
-        ConnectorCommon.SASL_PROTOCOL.validateAndSet(operation, model);
-        ConnectorCommon.SERVER_NAME.validateAndSet(operation, model);
-        ConnectorResource.SSL_CONTEXT.validateAndSet(operation, model);
+        super(ConnectorResource.ATTRIBUTES);
     }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String connectorName = address.getLastElement().getValue();
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
         launchServices(context, connectorName, fullModel);

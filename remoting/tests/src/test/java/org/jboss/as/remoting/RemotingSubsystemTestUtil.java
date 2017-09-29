@@ -56,10 +56,10 @@ class RemotingSubsystemTestUtil {
                     // This one is specified in one of the test configs
                     buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"),
                     buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "dummy-outbound-socket"),
-                    buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "other-outbound-socket")
+                    buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "other-outbound-socket"),
+                    buildDynamicCapabilityName("org.wildfly.network.socket-binding", "remoting")
 
-
-                    );
+            );
 
     static final AdditionalInitialization HC_ADDITIONAL_INITIALIZATION =
             new AdditionalInitialization.ManagementAdditionalInitialization() {
