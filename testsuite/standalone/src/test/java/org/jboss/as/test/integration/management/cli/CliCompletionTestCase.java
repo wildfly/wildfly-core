@@ -85,6 +85,30 @@ public class CliCompletionTestCase {
                         cmd.length(), candidates);
                 assertEquals(candidates.toString(), Arrays.asList(","), candidates);
             }
+
+            {
+                String cmd = "help --";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--commands"));
+            }
+
+            {
+                String cmd = "help l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+            }
+
+            {
+                String cmd = "help :";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("read-resource"));
+            }
         } finally {
             ctx.terminateSession();
         }
