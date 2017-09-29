@@ -797,34 +797,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             // We needed to keep a reference to it in order to properly
             // handle printing an error (handleSafe case).
             invocationContext = null;
-            // Required in all cases to handle substitutions.
             resetArgs(line);
-            // Special case for low level operation and command with DMR syntax that contains '=>'.
-            // Can't be handled when parsing the command, values are only parsed at
-            // command/operation execution time.
-            // Can't be parsed by aesh (conflict with operator).
-            if (line.contains("=>")) {
-                if (parsedCmd.getFormat() == OperationFormat.INSTANCE) {
-                    // Handling of the operation. In this case, the only operator supported
-                    // is the legacy one ">".
-                    handleOperation(parsedCmd);
-                } else {
-                    final String cmdName = parsedCmd.getOperationName();
-                    CommandHandler h = cmdRegistry.getCommandHandler(cmdName.toLowerCase());
-                    if (h == null) {
-                        // If an aesh command exists, it can't be used with this syntax.
-                        // if it doesn't exist, then CommandNotFoundException will be thrown.
-                        cmdRegistry.findCommand(cmdName, null);
-                        throw new CommandFormatException("Command " + cmdName
-                                + " Can't be used with DMR syntax containg '=>'.");
-                    } else {
-                        // Handling of the command. In this case, the only operator supported
-                        // is the legacy one ">".
-                        handleLegacyCommand(line, h);
-                    }
-                }
-                return;
-            }
 
             if (redirection != null) {
                 redirection.target.handle(this);
@@ -832,8 +805,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 line = parsedCmd.getSubstitutedLine();
                 CLIExecutor cliExecutor = null;
                 try {
-                    // The support for operator (| only, others conflict with syntax) requires
-                    // that operation and handler are wrapped in aesh command.
+                    // The support for operator requires
+                    // that operation and legacy handlers be wrapped in aesh command.
                     cliExecutor = aeshCommands.newExecutor(line);
                 } catch (CommandNotFoundException ex) {
                     // Deprecated commands for backward compat.
