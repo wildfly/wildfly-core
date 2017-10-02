@@ -276,11 +276,37 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        cli.executeInteractive();
-        cli.clearOutput();
-        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
-        String str = cli.getOutput();
-        assertTrue(str, str.contains("'aaaaa' is not found among the supported properties:"));
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+            String str = cli.getOutput();
+            assertTrue(str, str.contains("'aaaaa' is not found among the supported properties:"));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testNoValidateOperationFlag() throws Exception {
+        File f = createConfigFile(false, 0, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--no-operation-validation")
+                .addCliArgument("--connect");
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+            String str = cli.getOutput();
+            assertTrue(str, str.contains("\"outcome\" => \"success\","));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     @Test
@@ -293,11 +319,15 @@ public class CliConfigTestCase {
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort())
                 .addCliArgument("--connect");
-        cli.executeInteractive();
-        cli.clearOutput();
-        cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
-        String str = cli.getOutput();
-        assertTrue(str, str.contains("\"outcome\" => \"success\","));
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
+            String str = cli.getOutput();
+            assertTrue(str, str.contains("\"outcome\" => \"success\","));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     private void testTimeout(CliProcessWrapper cli, int config) throws Exception {
