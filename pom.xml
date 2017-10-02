@@ -152,7 +152,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>
         <version.org.wildfly.legacy.test>2.0.3.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.security.elytron>1.1.2.Final-redhat-1</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.1.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.1.Final-redhat-1</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.1.Final-redhat-1</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2.0.redhat-11</version.xml-resolver> <!-- Apache xml-resolver -->
