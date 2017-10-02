@@ -1080,26 +1080,6 @@
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
-        <license>
-          <name>ICU License - ICU 1.8.1 to ICU 57.1</name>
-          <url>http://source.icu-project.org/repos/icu/tags/release-57-1/icu4j/main/shared/licenses/LICENSE</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>Sax Public Domain Notice</name>
-          <url>http://www.saxproject.org/copying.html</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>W3C Document License</name>
-          <url>http://www.w3.org/Consortium/Legal/copyright-documents</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>W3C Software Notice and Document License (2002-12-31)</name>
-          <url>https://spdx.org/licenses/W3C.html#licenseText</url>
-          <distribution>repo</distribution>
-        </license>
       </licenses>
     </dependency>
     <dependency>
