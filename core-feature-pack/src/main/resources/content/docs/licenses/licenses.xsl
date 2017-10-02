@@ -71,15 +71,6 @@
             <xsl:when test="$name = 'Indiana University Extreme! Lab Software License 1.1.1'">
                 <xsl:text>indiana university extreme lab software license 1.1.1.html</xsl:text>
             </xsl:when>
-            <xsl:when test="$name = 'Sax Public Domain Notice'">
-                <xsl:text>sax public domain notice.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'W3C Document License'">
-                <xsl:text>w3c document license.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'W3C Software Notice and Document License (2002-12-31)'">
-                <xsl:text>w3c software notice and document license (2002-12-31).html</xsl:text>
-            </xsl:when>
             <xsl:otherwise>
                 <xsl:value-of select="concat(translate($name, $uppercase, $lowercase), '.txt')"/>
             </xsl:otherwise>
