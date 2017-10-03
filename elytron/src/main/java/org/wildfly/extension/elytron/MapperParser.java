@@ -1429,11 +1429,11 @@ class MapperParser {
                 ModelNode permissionMapper = permissionMappers.require(name);
                 writer.writeStartElement(SIMPLE_PERMISSION_MAPPER);
                 writer.writeAttribute(NAME, name);
-                PermissionMapperDefinitions.MAPPING_MODE.marshallAsAttribute(permissionMapper, false, writer);
+                PermissionMapperDefinitions.MAPPING_MODE.marshallAsAttribute(permissionMapper, true, writer);
                 if (permissionMapper.hasDefined(PERMISSION_MAPPINGS)) {
                     for (ModelNode permissionMapping : permissionMapper.get(PERMISSION_MAPPINGS).asList()) {
                         writer.writeStartElement(PERMISSION_MAPPING);
-                        PermissionMapperDefinitions.MATCH_ALL.marshallAsAttribute(permissionMapping, false, writer);
+                        PermissionMapperDefinitions.MATCH_ALL.marshallAsAttribute(permissionMapping, true, writer);
                         writeNameItemList(PRINCIPALS, PRINCIPAL, permissionMapping, writer);
                         writeNameItemList(ROLES, ROLE, permissionMapping, writer);
                         if (permissionMapping.hasDefined(PERMISSIONS)) {
