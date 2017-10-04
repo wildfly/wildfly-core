@@ -403,7 +403,11 @@ public class ScramPlusMgmtSaslTestCase {
                     .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-256-PLUS").build())
                     .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-384-PLUS").build())
                     .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-512-PLUS").build())
-                    .addMechanismConfiguration(MechanismConfiguration.builder().build()).build());
+                    .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-1").build())
+                    .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-256").build())
+                    .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-384").build())
+                    .addMechanismConfiguration(plusMechsConfig.withMechanismName("SCRAM-SHA-512").build())
+                    .build());
 
             // SSLContext
             elements.add(SimpleServerSslContext.builder().withName(NAME).withKeyManagers("server-keymanager")
