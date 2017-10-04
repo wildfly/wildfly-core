@@ -58,11 +58,10 @@ class CompositeOperationTransformer implements OperationTransformer {
 
     @Override
     public TransformedOperation transformOperation(final TransformationContext context, final PathAddress address, final ModelNode operation) throws OperationFailedException {
-        return transformOperation(context, address, operation, false);
+        return transformOperation(context, operation);
     }
 
-    TransformedOperation transformOperation(final TransformationContext context, final PathAddress address, final ModelNode operation, final boolean nested) throws OperationFailedException {
-        assert address.size() == 0;
+    private TransformedOperation transformOperation(final TransformationContext context, final ModelNode operation) throws OperationFailedException {
         final ModelNode composite = operation.clone();
         composite.get(STEPS).setEmptyList();
         final TransformationTarget target = context.getTarget();
@@ -75,10 +74,10 @@ class CompositeOperationTransformer implements OperationTransformer {
             final TransformedOperation result;
             if(stepAddress.size() == 0 && COMPOSITE.equals(operationName)) {
                 // Process nested steps directly
-                result = transformOperation(context, PathAddress.EMPTY_ADDRESS, step, false);
+                result = transformOperation(context, step);
             } else {
                 //If this is an alias, get the real address before transforming
-                ImmutableManagementResourceRegistration reg = context.getResourceRegistration(stepAddress);
+                ImmutableManagementResourceRegistration reg = context.getResourceRegistrationFromRoot(stepAddress);
                 final PathAddress useAddress;
                 if (reg != null && reg.isAlias()) {
                     useAddress = reg.getAliasEntry().convertToTargetAddress(stepAddress, AliasEntry.AliasContext.create(step, context));
