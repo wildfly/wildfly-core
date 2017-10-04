@@ -52,7 +52,7 @@ class RemotingSubsystemTestUtil {
     static final AdditionalInitialization DEFAULT_ADDITIONAL_INITIALIZATION =
             AdditionalInitialization.withCapabilities(
                     buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
-                    RemotingEndpointResource.WORKER.getDefaultValue().asString()),
+                    RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()),
                     // This one is specified in one of the test configs
                     buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"),
                     buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "dummy-outbound-socket"),

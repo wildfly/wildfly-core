@@ -63,6 +63,8 @@ import org.junit.Test;
  */
 public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest {
 
+    private static final AttributeDefinition[] ENDPOINT_ATTRS = RemotingEndpointResource.ATTRIBUTES.values().toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()]);
+
     public RemotingSubsystemTransformersTestCase() {
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
     }
@@ -139,10 +141,10 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, targetModelVersion, ops, new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress,
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ENDPOINT_ATTRS))
                 .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(
-                                RemotingEndpointResource.ATTRIBUTES.toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()])
-                        ))
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ENDPOINT_ATTRS))
                 .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
                         new FailedOperationTransformationConfig.NewAttributesConfig(
                                 ConnectorCommon.SASL_AUTHENTICATION_FACTORY,
@@ -231,7 +233,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         operation.get(OP).set(UNDEFINE_ATTRIBUTE_OPERATION);
         ModelNode address = operation.get(OP_ADDR);
         address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        for (AttributeDefinition ad : RemotingSubsystemRootResource.ATTRIBUTES) {
+        for (AttributeDefinition ad : RemotingSubsystemRootResource.LEGACY_ATTRIBUTES) {
             operation.get(NAME).set(ad.getName());
             ModelNode mainResult = mainServices.executeOperation(operation);
             assertEquals(mainResult.toJSONString(true), SUCCESS, mainResult.get(OUTCOME).asString());
@@ -243,7 +245,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
         address.add(RemotingEndpointResource.ENDPOINT_PATH.getKey(), RemotingEndpointResource.ENDPOINT_PATH.getValue());
         operation.get(OP_ADDR).set(address);
-        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES) {
+        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
             ModelNode dflt = ad.getDefaultValue();
             if (dflt != null) {
                 operation.get(ad.getName()).set(dflt);

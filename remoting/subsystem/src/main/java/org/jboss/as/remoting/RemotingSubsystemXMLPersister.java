@@ -22,18 +22,33 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.CommonAttributes.AUTHENTICATION_CONTEXT;
+import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
+import static org.jboss.as.remoting.CommonAttributes.LOCAL_OUTBOUND_CONNECTION;
+import static org.jboss.as.remoting.CommonAttributes.OUTBOUND_CONNECTION;
+import static org.jboss.as.remoting.CommonAttributes.OUTBOUND_SOCKET_BINDING_REF;
+import static org.jboss.as.remoting.CommonAttributes.POLICY;
+import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
+import static org.jboss.as.remoting.CommonAttributes.PROTOCOL;
+import static org.jboss.as.remoting.CommonAttributes.REMOTE_OUTBOUND_CONNECTION;
+import static org.jboss.as.remoting.CommonAttributes.SASL;
+import static org.jboss.as.remoting.CommonAttributes.SASL_POLICY;
+import static org.jboss.as.remoting.CommonAttributes.SECURITY;
+import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
+import static org.jboss.as.remoting.CommonAttributes.URI;
+
 import java.util.List;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import static org.jboss.as.remoting.CommonAttributes.*;
 
 /**
  * Persister for remoting subsystem 3.0 version
@@ -133,7 +148,19 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
     }
 
     private void writeEndpointIfAttributesSet(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
-        RemotingSubsystem30Parser.ENDPOINT_PARSER.persist(writer, model);
+        boolean defined = false;
+        for (String adName : RemotingEndpointResource.ATTRIBUTES.keySet()) {
+            if (model.hasDefined(adName)) {
+                defined = true;
+                break;
+            }
+        }
+        if (defined) {
+            writer.writeEmptyElement(RemotingEndpointResource.ENDPOINT_PATH.getValue());
+            for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
+                ad.getMarshaller().marshallAsAttribute(ad, model, true, writer);
+            }
+        }
     }
 
     private void writeConnector(final XMLExtendedStreamWriter writer, final ModelNode node, final String name) throws XMLStreamException {

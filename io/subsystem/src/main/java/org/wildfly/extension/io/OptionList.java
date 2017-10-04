@@ -18,6 +18,14 @@ public class OptionList {
 
     }
 
+    public static OptionMap resolveOptions(final ExpressionResolver context, final ModelNode model, OptionAttributeDefinition... attributes) throws OperationFailedException {
+        OptionMap.Builder builder = OptionMap.builder();
+        for (OptionAttributeDefinition attr : attributes) {
+            attr.resolveOption(context, model, builder);
+        }
+        return builder.getMap();
+    }
+
     public static OptionMap resolveOptions(final ExpressionResolver context, final ModelNode model, Collection<OptionAttributeDefinition> attributes) throws OperationFailedException {
         OptionMap.Builder builder = OptionMap.builder();
         for (OptionAttributeDefinition attr : attributes) {
