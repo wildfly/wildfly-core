@@ -217,7 +217,6 @@
 
                             <!-- jboss.http.port and jboss.bind.address are by the UndertowService and the
                             TestSuiteEnvironment to determine where to bind Undertow -->
-                            <jboss.http.port>${jboss.http.port}</jboss.http.port>
                             <jboss.bind.address>${jboss.bind.address}</jboss.bind.address>
 
                             <jboss.args>${jboss.args}</jboss.args>
