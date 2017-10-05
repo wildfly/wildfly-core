@@ -231,7 +231,7 @@
         </license>
         <license>
           <name>Indiana University Extreme! Lab Software License 1.1.1</name>
-          <url>http://www.bearcave.com/software/java/xml/xmlpull_license.html</url>
+          <url>https://enterprise.dejacode.com/licenses/public/indiana-extreme/?_list_filters=q%3Dindiana%2Bextreme#license-text</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -1078,26 +1078,6 @@
         <license>
           <name>Apache License 2.0</name>
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>ICU License - ICU 1.8.1 to ICU 57.1</name>
-          <url>http://source.icu-project.org/repos/icu/tags/release-57-1/icu4j/main/shared/licenses/LICENSE</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>Sax Public Domain Notice</name>
-          <url>http://www.saxproject.org/copying.html</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>W3C Document License</name>
-          <url>http://www.w3.org/Consortium/Legal/copyright-documents</url>
-          <distribution>repo</distribution>
-        </license>
-        <license>
-          <name>W3C Software Notice and Document License (2002-12-31)</name>
-          <url>https://spdx.org/licenses/W3C.html#licenseText</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
