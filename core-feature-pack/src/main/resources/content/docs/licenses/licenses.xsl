@@ -59,26 +59,11 @@
             <xsl:when test="$name = 'BSD 3-clause &quot;New&quot; or &quot;Revised&quot; License'">
                 <xsl:text>bsd 3-clause new or revised license.html</xsl:text>
             </xsl:when>
-            <xsl:when test="$name = 'Common Development and Distribution License 1.1'">
-                <xsl:text>common development and distribution license 1.1.html</xsl:text>
-            </xsl:when>
             <xsl:when test="$name = 'GNU General Public License v2.0 only'">
                 <xsl:text>gnu general public license v2.0 only.html</xsl:text>
             </xsl:when>
-            <xsl:when test="$name = 'GNU Lesser General Public License v2.1 or later'">
-                <xsl:text>gnu lesser general public license v2.1 or later.html</xsl:text>
-            </xsl:when>
             <xsl:when test="$name = 'Indiana University Extreme! Lab Software License 1.1.1'">
                 <xsl:text>indiana university extreme lab software license 1.1.1.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'Sax Public Domain Notice'">
-                <xsl:text>sax public domain notice.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'W3C Document License'">
-                <xsl:text>w3c document license.html</xsl:text>
-            </xsl:when>
-            <xsl:when test="$name = 'W3C Software Notice and Document License (2002-12-31)'">
-                <xsl:text>w3c software notice and document license (2002-12-31).html</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:value-of select="concat(translate($name, $uppercase, $lowercase), '.txt')"/>
