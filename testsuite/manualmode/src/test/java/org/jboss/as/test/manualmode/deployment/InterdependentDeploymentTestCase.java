@@ -166,7 +166,7 @@ public class InterdependentDeploymentTestCase {
         }
 
         // USE A SYSTEM PROPERTY TO EXECUTE full-replace-deployment repeatedly
-        int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "100"));
+        int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "1")); // WFCORE-2235 -- restore to "100" when fixed
         int blockingTime = TimeoutUtil.adjust(30); // set this to fail faster if it fails
         for (int i = 0; i < loops; i++) {
 
