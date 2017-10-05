@@ -113,6 +113,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .setUndefinedMetricValue(new ModelNode(0)).build();
     private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime()
             .setUndefinedMetricValue(new ModelNode(0)).build();
+    private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
 
 
     static final Map<String, OptionAttributeDefinition> ATTRIBUTES_BY_XMLNAME;
@@ -189,6 +191,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         resourceRegistration.registerMetric(MAX_WORKER_POOL_SIZE, metricsHandler);
         resourceRegistration.registerMetric(IO_THREAD_COUNT, metricsHandler);
         resourceRegistration.registerMetric(QUEUE_SIZE, metricsHandler);
+        resourceRegistration.registerMetric(BUSY_WORKER_THREAD_COUNT, metricsHandler);
     }
 
     @Override
@@ -332,6 +335,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             return new ModelNode(metric.getIoThreadCount());
         } else if (QUEUE_SIZE.getName().equals(attributeName)) {
             return new ModelNode(metric.getWorkerQueueSize());
+        } else if (BUSY_WORKER_THREAD_COUNT.getName().equals(attributeName)) {
+            return new ModelNode(metric.getBusyWorkerThreadCount());
         } else {
             throw new OperationFailedException(IOLogger.ROOT_LOGGER.noMetrics());
         }
