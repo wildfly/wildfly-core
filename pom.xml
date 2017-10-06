@@ -114,7 +114,7 @@
         <version.org.jboss.logmanager.commons-logging-jboss-logmanager>1.0.2.Final</version.org.jboss.logmanager.commons-logging-jboss-logmanager>
         <version.org.jboss.logmanager.jboss-logmanager>2.0.7.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.4.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.1.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.marshalling.jboss-marshalling>2.0.2.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.6.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.2.7.SP1</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.2.Final</version.org.jboss.remoting>
