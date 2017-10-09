@@ -33,6 +33,7 @@ import org.jboss.as.test.integration.domain.management.cli.CliCapabilityCompleti
 import org.jboss.as.test.integration.domain.management.cli.CliCompletionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.CloneProfileTestCase;
 import org.jboss.as.test.integration.domain.management.cli.DeployAllDomainTestCase;
+import org.jboss.as.test.integration.domain.management.cli.DeploymentAllDomainTestCase;
 import org.jboss.as.test.integration.domain.management.cli.DeploymentOverlayTestCase;
 import org.jboss.as.test.integration.domain.management.cli.HierarchicalCompositionTestCase;
 import org.jboss.as.test.integration.domain.management.cli.UndeployTestCase;
@@ -59,7 +60,8 @@ import org.junit.runners.Suite;
     HierarchicalCompositionTestCase.class,
     WildCardReadsTestCase.class,
     DeployAllDomainTestCase.class,
-    DeploymentOverlayTestCase.class
+    DeploymentOverlayTestCase.class,
+    DeploymentAllDomainTestCase.class
 })
 public class CLITestSuite {
 

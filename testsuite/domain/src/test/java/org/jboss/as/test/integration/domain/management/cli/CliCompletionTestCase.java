@@ -450,6 +450,14 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "deployment undeploy -l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
                 String cmd = "history --disable";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
@@ -616,6 +624,15 @@ public class CliCompletionTestCase {
             }
 
             {
+                String cmd = "deployment ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("deploy-url"));
+                assertTrue(candidates.toString(), candidates.contains("deploy-file"));
+            }
+
+            {
                 String cmd = "deploy ccc ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
@@ -625,12 +642,12 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = "deploy --name=ccc ";
+                String cmd = "deployment deploy-file ccc ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertFalse(candidates.toString(), candidates.contains("--url"));
                 assertFalse(candidates.toString(), candidates.contains("--name"));
+                assertFalse(candidates.toString(), candidates.contains("--runtime-name"));
             }
 
             {
@@ -967,6 +984,14 @@ public class CliCompletionTestCase {
 
         {
             String cmd = "deployment-info --headers=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList("{"), candidates);
+        }
+
+        {
+            String cmd = "deployment info --headers=";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                     cmd.length(), candidates);
