@@ -163,6 +163,7 @@ import org.jboss.as.cli.impl.ReadlineConsole.SettingsBuilder;
 import org.jboss.as.cli.impl.aesh.AeshCommands;
 import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 import org.jboss.as.cli.impl.aesh.cmd.HelpCommand;
+import org.jboss.as.cli.impl.aesh.cmd.deployment.DeploymentCommand;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -511,6 +512,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     private void initCommands() throws CommandLineException, CommandLineParserException {
         // aesh commands
         cmdRegistry.addCommand(new HelpCommand(cmdRegistry));
+        DeploymentCommand.registerDeploymentCommands(this, aeshCommands.getRegistry());
 
         cmdRegistry.registerHandler(new AttachmentHandler(this), "attachment");
         cmdRegistry.registerHandler(new PrefixHandler(), "cd", "cn");
@@ -537,9 +539,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         cmdRegistry.registerHandler(new UnsetVariableHandler(), "unset");
 
         // deployment
-        cmdRegistry.registerHandler(new DeployHandler(this), "deploy");
-        cmdRegistry.registerHandler(new UndeployHandler(this), "undeploy");
-        cmdRegistry.registerHandler(new DeploymentInfoHandler(this), "deployment-info");
+        cmdRegistry.registerHandler(new DeployHandler(this), true, "deploy");
+        cmdRegistry.registerHandler(new UndeployHandler(this), true, "undeploy");
+        cmdRegistry.registerHandler(new DeploymentInfoHandler(this), true, "deployment-info");
         cmdRegistry.registerHandler(new DeploymentOverlayHandler(this), "deployment-overlay");
 
         // batch commands

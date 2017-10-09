@@ -43,8 +43,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
-
 import static org.junit.Assert.assertTrue;
+
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -118,6 +118,18 @@ public class DeployTestCase {
         checkDeployment(cliTestApp1War.getName(), true);
         checkDeployment(cliTestAnotherWar.getName(), true);
         checkDeployment(cliTestApp2War.getName(), true);
+
+        // Undeploy them all.
+        ctx.handle("deployment disable-all");
+        checkDeployment(cliTestApp1War.getName(), false);
+        checkDeployment(cliTestAnotherWar.getName(), false);
+        checkDeployment(cliTestApp2War.getName(), false);
+
+        // Deploy them all.
+        ctx.handle("deployment enable-all");
+        checkDeployment(cliTestApp1War.getName(), true);
+        checkDeployment(cliTestAnotherWar.getName(), true);
+        checkDeployment(cliTestApp2War.getName(), true);
     }
 
     @Test
@@ -141,7 +153,6 @@ public class DeployTestCase {
             assertTrue(candidates.toString(), candidates.contains("* "));
             assertTrue(candidates.toString(), candidates.size() == 1);
         }
-
     }
 
     @Test
