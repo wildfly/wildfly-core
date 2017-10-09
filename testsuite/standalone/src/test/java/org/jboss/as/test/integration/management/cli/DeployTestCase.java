@@ -23,8 +23,6 @@ package org.jboss.as.test.integration.management.cli;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandFormatException;
@@ -44,7 +42,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
 
-import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -118,30 +115,18 @@ public class DeployTestCase {
         checkDeployment(cliTestApp1War.getName(), true);
         checkDeployment(cliTestAnotherWar.getName(), true);
         checkDeployment(cliTestApp2War.getName(), true);
-    }
 
-    @Test
-    public void testDeployAllCompletion() throws Exception {
-        {
-            String cmd = "deploy --name=";
-            List<String> candidates = new ArrayList<>();
-            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length(), candidates);
-            assertTrue(candidates.toString(), candidates.contains("*"));
-            assertTrue(candidates.toString(), candidates.contains(cliTestApp1War.getName()));
-            assertTrue(candidates.toString(), candidates.contains(cliTestAnotherWar.getName()));
-            assertTrue(candidates.toString(), candidates.contains(cliTestApp2War.getName()));
-        }
+        // Undeploy them all.
+        ctx.handle("deployment disable-all");
+        checkDeployment(cliTestApp1War.getName(), false);
+        checkDeployment(cliTestAnotherWar.getName(), false);
+        checkDeployment(cliTestApp2War.getName(), false);
 
-        {
-            String cmd = "deploy --name=*";
-            List<String> candidates = new ArrayList<>();
-            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                    cmd.length(), candidates);
-            assertTrue(candidates.toString(), candidates.contains("* "));
-            assertTrue(candidates.toString(), candidates.size() == 1);
-        }
-
+        // Deploy them all.
+        ctx.handle("deployment enable-all");
+        checkDeployment(cliTestApp1War.getName(), true);
+        checkDeployment(cliTestAnotherWar.getName(), true);
+        checkDeployment(cliTestApp2War.getName(), true);
     }
 
     @Test

@@ -441,7 +441,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = "undeploy -l";
+                String cmd = "deployment undeploy -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
@@ -474,22 +474,6 @@ public class CliCompletionTestCase {
 
             {
                 String cmd = "history --disable --cl";
-                List<String> candidates = new ArrayList<>();
-                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.isEmpty());
-            }
-
-            {
-                String cmd = "deploy -l";
-                List<String> candidates = new ArrayList<>();
-                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
-                        cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.isEmpty());
-            }
-
-            {
-                String cmd = "undeploy -l";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
@@ -606,12 +590,12 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = "deploy ";
+                String cmd = "deployment ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertTrue(candidates.toString(), candidates.contains("--url"));
-                assertTrue(candidates.toString(), candidates.contains("--name"));
+                assertTrue(candidates.toString(), candidates.contains("deploy-url"));
+                assertTrue(candidates.toString(), candidates.contains("deploy-file"));
             }
 
             {
@@ -624,12 +608,12 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = "deploy --name=ccc ";
+                String cmd = "deployment deploy-file ccc ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
-                assertFalse(candidates.toString(), candidates.contains("--url"));
                 assertFalse(candidates.toString(), candidates.contains("--name"));
+                assertFalse(candidates.toString(), candidates.contains("--runtime-name"));
             }
 
             {
@@ -965,7 +949,7 @@ public class CliCompletionTestCase {
         ctx.connectController();
 
         {
-            String cmd = "deployment-info --headers=";
+            String cmd = "deployment info --headers=";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                     cmd.length(), candidates);
