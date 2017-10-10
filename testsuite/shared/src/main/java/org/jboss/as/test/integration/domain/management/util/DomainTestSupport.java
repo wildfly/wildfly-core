@@ -493,7 +493,7 @@ public class DomainTestSupport {
             masterConfig.setReadOnlyDomain(readOnlyDomain);
             masterConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(domainConfigPath);
-            assert url != null : "cannot find domainConfigPath";
+            assert url != null : "cannot find domainConfigPath: "+domainConfigPath;
             masterConfig.setDomainConfigFile(new File(toURI(url)).getAbsolutePath());
             url = tccl.getResource(hostConfigPath);
             assert url != null : "cannot find hostConfigPath";

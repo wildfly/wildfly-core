@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>24</version>
+      <version>25</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -63,14 +63,13 @@
         <wildfly.core.release.codename>Kenny</wildfly.core.release.codename>
         <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
         <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
-
         <!--
             Build configuration.  Override JBoss Parent settings as necessary.
             For example: <version.surefire.plugin>2.11</version.surefire.plugin>
           -->
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.3.1</maven.min.version>
-        <version.surefire.plugin>2.18.1</version.surefire.plugin>
+       <!-- <version.surefire.plugin>2.18.1</version.surefire.plugin>-->
 
         <!-- use older version of checkstyle as otherwise lots of checks fail -->
         <version.checkstyle>6.8</version.checkstyle>
@@ -95,15 +94,16 @@
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds> <!-- TODO Elytron - Bump to M17 -->
         <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
-        <version.org.apache.maven>3.3.9</version.org.apache.maven>
+        <version.org.apache.maven>3.5.0</version.org.apache.maven>
+        <version.org.apache.maven.resolver>1.1.0</version.org.apache.maven.resolver>
         <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
-        <version.org.codehaus.plexus.plexus-utils>3.0.24</version.org.codehaus.plexus.plexus-utils>
+        <version.org.codehaus.plexus.plexus-utils>3.1.0</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
         <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.aesh-readline>1.0</version.org.aesh-readline>
-        <version.org.jboss.byteman>3.0.6</version.org.jboss.byteman>
+        <version.org.jboss.byteman>3.0.10</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.0.3.Final</version.org.jboss.jandex>
@@ -136,7 +136,6 @@
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.22</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
-        <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
         <version.org.wildfly.build-tools>1.2.2.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.client.config>1.0.0.Final</version.org.wildfly.client.config>
@@ -1052,9 +1051,9 @@
 
             <dependency>
               <groupId>org.apache.maven</groupId>
-              <artifactId>maven-aether-provider</artifactId>
+              <artifactId>maven-resolver-provider</artifactId>
               <version>${version.org.apache.maven}</version>
-               <exclusions>
+               <!--<exclusions>
                    <exclusion>
                        <groupId>org.sonatype.aether</groupId>
                        <artifactId>aether-impl</artifactId>
@@ -1071,7 +1070,7 @@
                        <groupId>org.sonatype.aether</groupId>
                        <artifactId>aether-api</artifactId>
                    </exclusion>
-               </exclusions>
+               </exclusions>-->
            </dependency>
 
 
@@ -1374,28 +1373,6 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- TODO remove once wildfly full is updated-->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>1.10.19</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- TODO: remove, here only till WildFly full moves to new GAV -->
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>woodstox-core-asl</artifactId>
-                <version>4.4.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-
             <dependency>
                 <groupId>org.projectodd.vdx</groupId>
                 <artifactId>vdx-core</artifactId>
@@ -1453,39 +1430,39 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-api</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-api</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-spi</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-spi</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-util</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-util</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-impl</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-impl</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-connector-basic</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-connector-basic</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-transport-file</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-file</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.aether</groupId>
-                <artifactId>aether-transport-http</artifactId>
-                <version>${version.org.eclipse.aether}</version>
+                <groupId>org.apache.maven.resolver</groupId>
+                <artifactId>maven-resolver-transport-http</artifactId>
+                <version>${version.org.apache.maven.resolver}</version>
             </dependency>
 
             <dependency>
@@ -1628,6 +1605,7 @@
                 <version>${version.org.glassfish.javax.json}</version>
             </dependency>
 
+            <!--TODO move to WildFly full as no one uses is in core-->
             <dependency>
                 <groupId>xml-resolver</groupId>
                 <artifactId>xml-resolver</artifactId>
@@ -1646,6 +1624,7 @@
                 </exclusions>
             </dependency>
 
+            <!-- todo consider removing this, as only one class in testsuite uses this-->
             <dependency>
                 <groupId>com.io7m.xom</groupId>
                 <artifactId>xom</artifactId>

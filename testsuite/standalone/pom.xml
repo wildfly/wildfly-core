@@ -126,22 +126,29 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${version.antrun.plugin}</version>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>user.config</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
                         <phase>process-test-resources</phase>
                         <configuration>
-                            <target>
-                                <copy file="${project.build.testOutputDirectory}/mgmt-users.properties" todir="${project.build.directory}/wildfly-core/standalone/configuration" overwrite="true" />
-                            </target>
+                            <outputDirectory>${project.build.directory}/wildfly-core/standalone/configuration</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources</directory>
+                                    <includes>
+                                        <include>mgmt-groups.properties</include>
+                                        <include>mgmt-users.properties</include>
+                                    </includes>
+                                </resource>
+                            </resources>
                         </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

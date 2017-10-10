@@ -20,8 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<domain xmlns="urn:jboss:domain:5.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<domain xmlns="urn:jboss:domain:5.0" >
 
     <extensions>
         <extension module="org.jboss.as.logging"/>
@@ -30,54 +29,36 @@
 
     <profiles>
         <profile name="default">
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
-                <console-handler name="CONSOLE">
-                    <level name="INFO"/>
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                </console-handler>
-
-                <periodic-rotating-file-handler name="FILE">
-                    <level name="INFO"/>
+            <subsystem xmlns="urn:jboss:domain:logging:4.0">
+                <periodic-rotating-file-handler name="FILE" autoflush="true">
                     <formatter>
                         <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
                     </formatter>
                     <file relative-to="jboss.server.log.dir" path="server.log"/>
                     <suffix value=".yyyy-MM-dd"/>
+                    <append value="true"/>
                 </periodic-rotating-file-handler>
-
                 <root-logger>
-                    <level name="INFO"/>
+                    <level name="WARN"/>
                     <handlers>
-                        <handler name="CONSOLE"/>
                         <handler name="FILE"/>
                     </handlers>
                 </root-logger>
             </subsystem>
         </profile>
         <profile name="failure">
-            <subsystem xmlns="urn:jboss:domain:logging:1.2">
-                <console-handler name="CONSOLE">
-                    <level name="INFO"/>
-                    <formatter>
-                        <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
-                    </formatter>
-                </console-handler>
-
-                <periodic-rotating-file-handler name="FILE">
-                    <level name="INFO"/>
+            <subsystem xmlns="urn:jboss:domain:logging:4.0">
+                <periodic-rotating-file-handler name="FILE" autoflush="true">
                     <formatter>
                         <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/>
                     </formatter>
                     <file relative-to="jboss.server.log.dir" path="server.log"/>
                     <suffix value=".yyyy-MM-dd"/>
+                    <append value="true"/>
                 </periodic-rotating-file-handler>
-
                 <root-logger>
-                    <level name="INFO"/>
+                    <level name="WARN"/>
                     <handlers>
-                        <handler name="CONSOLE"/>
                         <handler name="FILE"/>
                     </handlers>
                 </root-logger>
