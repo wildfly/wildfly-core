@@ -92,7 +92,11 @@ class PolicyParser {
             }
         }
 
-        boolean providerFound = defaultPolicy == null;
+        if (defaultPolicy == null) {
+            throw missingRequired(reader, DEFAULT_POLICY);
+        }
+
+        boolean providerFound = false;
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             verifyNamespace(reader);
@@ -113,7 +117,7 @@ class PolicyParser {
         }
 
         if (!providerFound) {
-            throw missingRequired(reader, DEFAULT_POLICY);
+            throw missingRequired(reader, DEFAULT_POLICY); // TODO not the right message
         }
 
         addPolicy.get(OP_ADDR).set(parentAddress).add(POLICY, defaultPolicy);
