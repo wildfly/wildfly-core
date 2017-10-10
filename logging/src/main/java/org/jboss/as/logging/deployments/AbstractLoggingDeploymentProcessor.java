@@ -47,11 +47,12 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProcessor {
 
-    public static final AttachmentKey<LogContext> LOG_CONTEXT_KEY = AttachmentKey.create(LogContext.class);
+    private static final AttachmentKey<LogContext> LOG_CONTEXT_KEY = AttachmentKey.create(LogContext.class);
+    private static final AttachmentKey<LogContext> DEFAULT_LOG_CONTEXT_KEY = AttachmentKey.create(LogContext.class);
 
-    protected final WildFlyLogContextSelector logContextSelector;
+    final WildFlyLogContextSelector logContextSelector;
 
-    protected AbstractLoggingDeploymentProcessor(final WildFlyLogContextSelector logContextSelector) {
+    AbstractLoggingDeploymentProcessor(final WildFlyLogContextSelector logContextSelector) {
         this.logContextSelector = logContextSelector;
     }
 
@@ -65,6 +66,14 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
                 final ResourceRoot root = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
                 if (SubDeploymentMarker.isSubDeployment(root)) return;
                 processDeployment(phaseContext, deploymentUnit, root);
+                // If we still don't have a context registered on the root deployment, register the current context.
+                // This is done to avoid any logging from the root deployment to have access to a sub-deployments log
+                // context. For example any library logging from a EAR/lib should use the EAR's configured log context,
+                // not a log context from a WAR or EJB library.
+                if (!hasRegisteredLogContext(deploymentUnit) && !deploymentUnit.hasAttachment(DEFAULT_LOG_CONTEXT_KEY)) {
+                    // Register the current log context as this could be an embedded server or overridden another way
+                    registerLogContext(deploymentUnit, DEFAULT_LOG_CONTEXT_KEY, deploymentUnit.getAttachment(Attachments.MODULE), LogContext.getLogContext());
+                }
             }
         }
     }
@@ -78,12 +87,16 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
             if (SubDeploymentMarker.isSubDeployment(root)) return;
             // Remove any log context selector references
             final Module module = context.getAttachment(Attachments.MODULE);
-            unregisterLogContext(context, module);
+            // Remove either the default log context or a defined log context. It's safe to attempt to remove a
+            // nonexistent context.
+            unregisterLogContext(context, DEFAULT_LOG_CONTEXT_KEY, module);
+            unregisterLogContext(context, LOG_CONTEXT_KEY, module);
             // Unregister all sub-deployments
             final List<DeploymentUnit> subDeployments = getSubDeployments(context);
             for (DeploymentUnit subDeployment : subDeployments) {
                 final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
-                unregisterLogContext(subDeployment, subDeploymentModule);
+                // Sub-deployment should never have a default log context
+                unregisterLogContext(subDeployment, LOG_CONTEXT_KEY, subDeploymentModule);
             }
         }
     }
@@ -99,7 +112,14 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
      */
     protected abstract void processDeployment(DeploymentPhaseContext phaseContext, DeploymentUnit deploymentUnit, ResourceRoot root) throws DeploymentUnitProcessingException;
 
-    protected void registerLogContext(final DeploymentUnit deploymentUnit, final Module module, final LogContext logContext) {
+    void registerLogContext(final DeploymentUnit deploymentUnit, final Module module, final LogContext logContext) {
+        // If the default log context is registered we need to remove it and unregister before we register a defined log
+        // context
+        unregisterLogContext(deploymentUnit, DEFAULT_LOG_CONTEXT_KEY, module);
+        registerLogContext(deploymentUnit, LOG_CONTEXT_KEY, module, logContext);
+    }
+
+    private void registerLogContext(final DeploymentUnit deploymentUnit, final AttachmentKey<LogContext> attachmentKey, final Module module, final LogContext logContext) {
         LoggingLogger.ROOT_LOGGER.tracef("Registering LogContext %s for deployment %s", logContext, deploymentUnit.getName());
         if (WildFlySecurityManager.isChecking()) {
             WildFlySecurityManager.doUnchecked(new PrivilegedAction<Object>() {
@@ -113,12 +133,12 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
             logContextSelector.registerLogContext(module.getClassLoader(), logContext);
         }
         // Add the log context to the sub-deployment unit for later removal
-        deploymentUnit.putAttachment(LOG_CONTEXT_KEY, logContext);
+        deploymentUnit.putAttachment(attachmentKey, logContext);
     }
 
-    protected void unregisterLogContext(final DeploymentUnit deploymentUnit, final Module module) {
-        if (hasRegisteredLogContext(deploymentUnit)) {
-            final LogContext logContext = deploymentUnit.removeAttachment(LOG_CONTEXT_KEY);
+    private void unregisterLogContext(final DeploymentUnit deploymentUnit, final AttachmentKey<LogContext> attachmentKey, final Module module) {
+        final LogContext logContext = deploymentUnit.removeAttachment(attachmentKey);
+        if (logContext != null) {
             final boolean success;
             if (WildFlySecurityManager.isChecking()) {
                 success = WildFlySecurityManager.doUnchecked(new PrivilegedAction<Boolean>() {
@@ -138,7 +158,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
         }
     }
 
-    protected static List<DeploymentUnit> getSubDeployments(final DeploymentUnit deploymentUnit) {
+    static List<DeploymentUnit> getSubDeployments(final DeploymentUnit deploymentUnit) {
         if (deploymentUnit.hasAttachment(Attachments.SUB_DEPLOYMENTS)) {
             final List<DeploymentUnit> result = new ArrayList<DeploymentUnit>();
             result.addAll(deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS));
@@ -162,7 +182,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
      *
      * @return {@code true} if the deployment unit has a log context, otherwise {@code false}
      */
-    public static boolean hasRegisteredLogContext(final DeploymentUnit deploymentUnit) {
+    static boolean hasRegisteredLogContext(final DeploymentUnit deploymentUnit) {
         return deploymentUnit.hasAttachment(LOG_CONTEXT_KEY);
     }
 }
