@@ -2348,7 +2348,7 @@
                                         <xs:attribute name="name" type="xs:string" use="required">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    The name of the principal. 
+                                                    The name of the principal.
                                                 </xs:documentation>
                                             </xs:annotation>
                                          </xs:attribute>
@@ -2359,7 +2359,7 @@
                                         <xs:attribute name="name" type="xs:string" use="required">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                    The name of the role. 
+                                                    The name of the role.
                                                 </xs:documentation>
                                             </xs:annotation>
                                          </xs:attribute>
@@ -4874,10 +4874,10 @@
             <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="0" />
             <xs:element name="custom-policy" type="customPolicyType" minOccurs="0" />
         </xs:choice>
-        <xs:attribute name="default-policy" type="xs:string" use="optional">
+        <xs:attribute name="default-policy" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The name of a default policy provider. If this is not specified then the name of the resource will be used.
+                    The name of a default policy provider.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
