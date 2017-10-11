@@ -72,8 +72,9 @@ public class ElytronExtension implements Extension {
 
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
     static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
+    static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_1_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_2_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 

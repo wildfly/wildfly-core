@@ -1,0 +1,5 @@
+<subsystem xmlns="urn:wildfly:elytron:1.1">
+    <policy default-policy="custom-b">
+        <custom-policy name="custom-b" class-name="a.b.c.CustomPolicy" module="a.b.c.custom"/>
+    </policy>
+</subsystem>
