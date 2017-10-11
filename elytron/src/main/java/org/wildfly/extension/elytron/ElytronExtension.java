@@ -73,6 +73,7 @@ public class ElytronExtension implements Extension {
 
     static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
     static final ModelVersion ELYTRON_1_1_0 = ModelVersion.create(1, 1);
+    static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
     static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
 
     private static final ModelVersion ELYTRON_CURRENT = ELYTRON_2_0_0;
