@@ -35,20 +35,26 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POL
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
+import static org.wildfly.extension.elytron.ElytronExtension.NAMESPACE_1_0;
+import static org.wildfly.extension.elytron.ElytronExtension.NAMESPACE_1_1;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.extension.elytron.PolicyDefinitions.CustomPolicyDefinition;
 import org.wildfly.extension.elytron.PolicyDefinitions.JaccPolicyDefinition;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 
 /**
  * A parser for the security realm definition.
@@ -58,6 +64,7 @@ import org.wildfly.extension.elytron.PolicyDefinitions.JaccPolicyDefinition;
 class PolicyParser {
 
     private final ElytronSubsystemParser elytronSubsystemParser;
+    private volatile PersistentResourceXMLDescription description;
 
     PolicyParser(ElytronSubsystemParser elytronSubsystemParser) {
         this.elytronSubsystemParser = elytronSubsystemParser;
@@ -67,7 +74,26 @@ class PolicyParser {
         elytronSubsystemParser.verifyNamespace(reader);
     }
 
+    private PersistentResourceXMLDescription getXmlDescription() {
+        if (description == null) {
+            String namespace = elytronSubsystemParser.getNamespace();
+            if (!namespace.equals(NAMESPACE_1_0) && !namespace.equals(NAMESPACE_1_1)) {
+                throw new IllegalStateException("TODO");
+            }
+        }
+        return description;
+    }
+
     void readPolicy(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
+        PersistentResourceXMLDescription xmlDescription = getXmlDescription();
+        if (xmlDescription == null) {
+            readPolicyLegacy(parentAddress, reader, operations);
+        } else {
+            description.parse(reader, PathAddress.pathAddress(parentAddress), operations);
+        }
+    }
+
+    private void readPolicyLegacy(ModelNode parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
         ModelNode addPolicy = new ModelNode();
 
         addPolicy.get(OP).set(ADD);
@@ -83,7 +109,10 @@ class PolicyParser {
                 String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case DEFAULT_POLICY:
-                        PolicyDefinitions.DEFAULT_POLICY.parseAndSetParameter(value, addPolicy, reader);
+                        // Use an AD to validate the resource name, but don't add the value to the op
+                        // It's just the value in the resource address
+                        ModelNode placeholder = new ModelNode().setEmptyObject();
+                        PolicyDefinitions.RESOURCE_NAME.parseAndSetParameter(value, placeholder, reader);
                         defaultPolicy = value;
                         break;
                     default:
@@ -103,31 +132,48 @@ class PolicyParser {
             String localName = reader.getLocalName();
             switch (localName) {
                 // Permission Mapper
-                case JACC_POLICY:
-                    String jaccPolicy = parseJaccPolicy(addPolicy, reader, operations);
-                    providerFound = providerFound || defaultPolicy.equals(jaccPolicy);
+                case JACC_POLICY: {
+                    ModelNode providerModel = new ModelNode().setEmptyObject();
+                    String policyName = parseJaccPolicy(providerModel, reader);
+                    if (!providerFound && defaultPolicy.equals(policyName)) {
+                        providerFound = true;
+                        addPolicy.get(JACC_POLICY).set(providerModel);
+                    }  else {
+                        //ignore it but don't reject it as the xsd says it's allowed
+                        // But log a WARN to help notify the user
+                        ElytronSubsystemMessages.ROOT_LOGGER.discardingUnusedPolicy(JACC_POLICY, NAME, policyName);
+                    }
                     break;
-                case CUSTOM_POLICY:
-                    String customPolicy = parseCustomPolicy(addPolicy, reader, operations);
-                    providerFound = providerFound || defaultPolicy.equals(customPolicy);
+                }
+                case CUSTOM_POLICY: {
+                    ModelNode providerModel = new ModelNode().setEmptyObject();
+                    String policyName = parseCustomPolicy(providerModel, reader);
+                    if (!providerFound && defaultPolicy.equals(policyName)) {
+                        providerFound = true;
+                        addPolicy.get(CUSTOM_POLICY).set(providerModel);
+                    } else {
+                        // ignore it but don't reject it as the xsd says it's allowed.
+                        // But log a WARN to help notify the user
+                        ElytronSubsystemMessages.ROOT_LOGGER.discardingUnusedPolicy(CUSTOM_POLICY, NAME, policyName);
+                    }
                     break;
+                }
                 default:
                     throw unexpectedElement(reader);
             }
         }
 
         if (!providerFound) {
-            throw missingRequired(reader, DEFAULT_POLICY); // TODO not the right message
+            throw ElytronSubsystemMessages.ROOT_LOGGER.cannotFindPolicyProvider(defaultPolicy, reader.getLocation());
         }
 
         addPolicy.get(OP_ADDR).set(parentAddress).add(POLICY, defaultPolicy);
         operations.add(addPolicy);
     }
 
-    private String parseJaccPolicy(ModelNode policyModel, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    private String parseJaccPolicy(ModelNode providerModel, XMLExtendedStreamReader reader)
             throws XMLStreamException {
-        ModelNode providerModel = new ModelNode();
-        Set<String> requiredAttributes = new HashSet<>(Arrays.asList(new String[] { NAME }));
+        Set<String> requiredAttributes = new HashSet<>(Collections.singletonList(NAME));
         String name = null;
 
         for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -140,7 +186,6 @@ class PolicyParser {
                 switch (attribute) {
                     case NAME:
                         name = value;
-                        JaccPolicyDefinition.NAME.parseAndSetParameter(value, providerModel, reader);
                         break;
                     case POLICY:
                         JaccPolicyDefinition.POLICY_PROVIDER.parseAndSetParameter(value, providerModel, reader);
@@ -163,21 +208,12 @@ class PolicyParser {
 
         requireNoContent(reader);
 
-        ModelNode policies = policyModel.get(JACC_POLICY);
-
-        if (!policies.isDefined()) {
-            policies.setEmptyList();
-        }
-
-        policies.add(providerModel);
-
         return name;
     }
 
-    private String parseCustomPolicy(ModelNode policyModel, XMLExtendedStreamReader reader, List<ModelNode> operations)
+    private String parseCustomPolicy(ModelNode providerModel, XMLExtendedStreamReader reader)
             throws XMLStreamException {
-        ModelNode providerModel = new ModelNode();
-        Set<String> requiredAttributes = new HashSet<>(Arrays.asList(new String[] { NAME, CLASS_NAME }));
+        Set<String> requiredAttributes = new HashSet<>(Arrays.asList(NAME, CLASS_NAME));
         String name = null;
 
         for (int i = 0; i < reader.getAttributeCount(); i++) {
@@ -190,7 +226,6 @@ class PolicyParser {
                 switch (attribute) {
                     case NAME:
                         name = value;
-                        CustomPolicyDefinition.NAME.parseAndSetParameter(value, providerModel, reader);
                         break;
                     case CLASS_NAME:
                         CustomPolicyDefinition.CLASS_NAME.parseAndSetParameter(value, providerModel, reader);
@@ -210,18 +245,20 @@ class PolicyParser {
 
         requireNoContent(reader);
 
-        ModelNode policies = policyModel.get(CUSTOM_POLICY);
-
-        if (!policies.isDefined()) {
-            policies.setEmptyList();
-        }
-
-        policies.add(providerModel);
-
         return name;
     }
 
     void writePolicy(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
+        PersistentResourceXMLDescription xmlDescription = getXmlDescription();
+        if (xmlDescription == null) {
+            writePolicyLegacy(subsystem, writer);
+        } else {
+            xmlDescription.persist(writer, subsystem);
+        }
+    }
+
+    private void writePolicyLegacy(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
+
         if (!subsystem.hasDefined(POLICY)) {
             return;
         }
@@ -230,13 +267,7 @@ class PolicyParser {
         String defaultPolicy = policy.getName();
         ModelNode policyModel = policy.getValue();
 
-        if (policyModel.get(DEFAULT_POLICY).isDefined()) {
-            defaultPolicy = policyModel.get(DEFAULT_POLICY).asString();
-        }
-
-        boolean mappersStarted = false;
-
-        mappersStarted = mappersStarted | writeJaccPolicy(mappersStarted, defaultPolicy, policyModel, writer);
+        boolean mappersStarted = writeJaccPolicy(defaultPolicy, policyModel, writer);
         mappersStarted = mappersStarted | writeCustomPolicy(mappersStarted, defaultPolicy, policyModel, writer);
 
         if (mappersStarted) {
@@ -244,22 +275,20 @@ class PolicyParser {
         }
     }
 
-    private boolean writeJaccPolicy(boolean started, String defaultPolicy, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
+    private boolean writeJaccPolicy(String defaultPolicy, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
         if (subsystem.hasDefined(JACC_POLICY)) {
-            ModelNode jaccPolicies = subsystem.get(JACC_POLICY);
+            ModelNode jaccPolicy = subsystem.get(JACC_POLICY);
 
-            startPolicy(started, defaultPolicy, subsystem, writer);
+            startPolicy(false, defaultPolicy, writer);
 
-            for (ModelNode jaccPolicy : jaccPolicies.asList()) {
-                writer.writeStartElement(JACC_POLICY);
+            writer.writeStartElement(JACC_POLICY);
 
-                JaccPolicyDefinition.NAME.marshallAsAttribute(jaccPolicy, writer);
-                JaccPolicyDefinition.POLICY_PROVIDER.marshallAsAttribute(jaccPolicy, writer);
-                JaccPolicyDefinition.CONFIGURATION_FACTORY.marshallAsAttribute(jaccPolicy, writer);
-                JaccPolicyDefinition.MODULE.marshallAsAttribute(jaccPolicy, writer);
+            writer.writeAttribute(NAME, defaultPolicy);
+            JaccPolicyDefinition.POLICY_PROVIDER.marshallAsAttribute(jaccPolicy, writer);
+            JaccPolicyDefinition.CONFIGURATION_FACTORY.marshallAsAttribute(jaccPolicy, writer);
+            JaccPolicyDefinition.MODULE.marshallAsAttribute(jaccPolicy, writer);
 
-                writer.writeEndElement();
-            }
+            writer.writeEndElement();
 
             return true;
         }
@@ -269,19 +298,17 @@ class PolicyParser {
 
     private boolean writeCustomPolicy(boolean started, String defaultPolicy, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
         if (subsystem.hasDefined(CUSTOM_POLICY)) {
-            ModelNode jaccPolicies = subsystem.get(CUSTOM_POLICY);
+            ModelNode customPolicy = subsystem.get(CUSTOM_POLICY);
 
-            startPolicy(started, defaultPolicy, subsystem, writer);
+            startPolicy(started, defaultPolicy, writer);
 
-            for (ModelNode customPolicy : jaccPolicies.asList()) {
-                writer.writeStartElement(CUSTOM_POLICY);
+            writer.writeStartElement(CUSTOM_POLICY);
 
-                CustomPolicyDefinition.NAME.marshallAsAttribute(customPolicy, writer);
-                CustomPolicyDefinition.CLASS_NAME.marshallAsAttribute(customPolicy, writer);
-                CustomPolicyDefinition.MODULE.marshallAsAttribute(customPolicy, writer);
+            writer.writeAttribute(NAME, defaultPolicy);
+            CustomPolicyDefinition.CLASS_NAME.marshallAsAttribute(customPolicy, writer);
+            CustomPolicyDefinition.MODULE.marshallAsAttribute(customPolicy, writer);
 
-                writer.writeEndElement();
-            }
+            writer.writeEndElement();
 
             return true;
         }
@@ -289,7 +316,7 @@ class PolicyParser {
         return false;
     }
 
-    private void startPolicy(boolean started, String defaultPolicy, ModelNode policyModel, XMLExtendedStreamWriter writer) throws XMLStreamException {
+    private void startPolicy(boolean started, String defaultPolicy, XMLExtendedStreamWriter writer) throws XMLStreamException {
         if (started == false) {
             writer.writeStartElement(POLICY);
             writer.writeAttribute(DEFAULT_POLICY, defaultPolicy);
