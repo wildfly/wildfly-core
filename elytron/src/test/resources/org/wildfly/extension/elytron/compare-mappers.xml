@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:1.1">
+<subsystem xmlns="urn:wildfly:elytron:1.2">
     <mappers>
         <custom-permission-mapper name="CustomPermissionMapper" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <custom-permission-mapper name="CustomPermissionMapper2" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
@@ -68,10 +68,10 @@
             <realm-mapping from="a" to="b" />
             <realm-mapping from="c" to="d" />
         </mapped-regex-realm-mapper>
-        
+
         <custom-role-decoder name="CustomDecoderOne" class-name="org.wildfly.elytron.CustomRoleDecoder" module="f.g" />
         <simple-role-decoder name="SimpleRoleDecoder" attribute="groups" />
-        
+
         <add-prefix-role-mapper name="AddPrefix" prefix="p" />
         <add-suffix-role-mapper name="AddSuffix" suffix="s" />
         <aggregate-role-mapper name="AggregateRoleMapper">

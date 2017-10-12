@@ -16,6 +16,8 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
+
 import java.util.Collections;
 
 import org.jboss.as.controller.ModelVersion;
@@ -47,9 +49,27 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current 1.1.0 to 1.0.0, aka WildFly Core 3.0.0/3.0.1
-        buildTransformers_1_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ElytronExtension.ELYTRON_1_0_0));
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ElytronExtension.ELYTRON_1_0_0});
+        // Current to 1.1.0, aka WildFly Core 3.0.5
+        buildTransformers_1_1(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), ElytronExtension.ELYTRON_1_1_0));
+        // 1.1.0 to 1.0.0, aka WildFly Core 3.0.0/3.0.1
+        buildTransformers_1_0(chainedBuilder.createBuilder(ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0));
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ElytronExtension.ELYTRON_1_1_0, ElytronExtension.ELYTRON_1_0_0});
+    }
+
+    private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.POLICY))
+            .getAttributeBuilder()
+                .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
+                    @Override
+                    protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+                        if (attributeValue.isDefined()) {
+                            ModelNode element = attributeValue.clone();
+                            element.get(NAME).set(address.getLastElement().getValue());
+                            attributeValue.setEmptyList();
+                            attributeValue.add(element);
+                        }
+                    }
+                }, PolicyDefinitions.JaccPolicyDefinition.POLICY, PolicyDefinitions.CustomPolicyDefinition.POLICY);
     }
 
     private void buildTransformers_1_0(ResourceTransformationDescriptionBuilder builder) {
