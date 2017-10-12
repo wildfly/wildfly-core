@@ -25,6 +25,7 @@ package org.jboss.as.controller.remote;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -70,7 +71,7 @@ class OperationMessageHandlerProxy implements OperationMessageHandler {
                 StreamUtils.safeClose(os);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            ControllerLogger.MGMT_OP_LOGGER.error(e.getLocalizedMessage(),e);
         }
     }
 

@@ -137,7 +137,7 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new IllegalArgumentException(e);
             }
         }
     }

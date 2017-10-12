@@ -161,7 +161,7 @@ public interface ProcessLogger extends BasicLogger {
      */
     @LogMessage(level = ERROR)
     @Message(id = 9, value = "Failed to start process '%s'")
-    void failedToStartProcess(String processName);
+    void failedToStartProcess(@Cause Throwable cause, String processName);
 
     /**
      * Logs an error message indicating a failure to write a message to the connection.
@@ -819,5 +819,4 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 67, value = "Process '%s' did not complete normal stop within %d ms; attempting to destroy process " +
             "using java.lang.Process.destroyForcibly()")
     void destroyingProcess(String process, long timeout);
-
 }
