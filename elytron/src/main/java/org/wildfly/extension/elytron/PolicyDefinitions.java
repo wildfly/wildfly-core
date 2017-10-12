@@ -233,7 +233,8 @@ class PolicyDefinitions {
                 .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
-                .setCapabilities(POLICY_RUNTIME_CAPABILITY)) {
+                .setCapabilities(POLICY_RUNTIME_CAPABILITY)
+                .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes);
