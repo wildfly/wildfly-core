@@ -4870,14 +4870,14 @@
                 A definition that sets up a policy provider.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice maxOccurs="unbounded">
-            <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="0" />
-            <xs:element name="custom-policy" type="customPolicyType" minOccurs="0" />
+        <xs:choice>
+            <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="1" />
+            <xs:element name="custom-policy" type="customPolicyType" minOccurs="1" />
         </xs:choice>
-        <xs:attribute name="default-policy" type="xs:string">
+        <xs:attribute name="name" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The name of a default policy provider.
+                    The name of the policy provider definition.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4889,13 +4889,6 @@
                 A policy provider definition that sets up JACC and related services.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this provider.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="policy" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4925,13 +4918,6 @@
                 A custom policy provider definition.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this provider.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="class-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>

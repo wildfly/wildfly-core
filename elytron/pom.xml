@@ -202,7 +202,11 @@
                             <includes>
                                 <include>*.xml</include>
                             </includes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_1_1.xsd</systemId>
+                            <excludes>
+                                <exclude>custom-policies.xml</exclude>
+                                <exclude>jacc-with-providers.xml</exclude>
+                            </excludes>
+                            <systemId>src/main/resources/schema/wildfly-elytron_1_2.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>

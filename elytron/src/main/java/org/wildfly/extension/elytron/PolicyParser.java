@@ -47,9 +47,9 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.extension.elytron.PolicyDefinitions.CustomPolicyDefinition;
@@ -78,7 +78,10 @@ class PolicyParser {
         if (description == null) {
             String namespace = elytronSubsystemParser.getNamespace();
             if (!namespace.equals(NAMESPACE_1_0) && !namespace.equals(NAMESPACE_1_1)) {
-                throw new IllegalStateException("TODO");
+                description = PersistentResourceXMLDescription.builder(PathElement.pathElement(POLICY))
+                        .addAttribute(JaccPolicyDefinition.POLICY)
+                        .addAttribute(CustomPolicyDefinition.POLICY)
+                        .build();
             }
         }
         return description;
@@ -251,75 +254,9 @@ class PolicyParser {
     void writePolicy(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
         PersistentResourceXMLDescription xmlDescription = getXmlDescription();
         if (xmlDescription == null) {
-            writePolicyLegacy(subsystem, writer);
+            throw new UnsupportedOperationException();
         } else {
             xmlDescription.persist(writer, subsystem);
-        }
-    }
-
-    private void writePolicyLegacy(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-
-        if (!subsystem.hasDefined(POLICY)) {
-            return;
-        }
-
-        Property policy = subsystem.get(POLICY).asProperty();
-        String defaultPolicy = policy.getName();
-        ModelNode policyModel = policy.getValue();
-
-        boolean mappersStarted = writeJaccPolicy(defaultPolicy, policyModel, writer);
-        mappersStarted = mappersStarted | writeCustomPolicy(mappersStarted, defaultPolicy, policyModel, writer);
-
-        if (mappersStarted) {
-            writer.writeEndElement();
-        }
-    }
-
-    private boolean writeJaccPolicy(String defaultPolicy, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(JACC_POLICY)) {
-            ModelNode jaccPolicy = subsystem.get(JACC_POLICY);
-
-            startPolicy(false, defaultPolicy, writer);
-
-            writer.writeStartElement(JACC_POLICY);
-
-            writer.writeAttribute(NAME, defaultPolicy);
-            JaccPolicyDefinition.POLICY_PROVIDER.marshallAsAttribute(jaccPolicy, writer);
-            JaccPolicyDefinition.CONFIGURATION_FACTORY.marshallAsAttribute(jaccPolicy, writer);
-            JaccPolicyDefinition.MODULE.marshallAsAttribute(jaccPolicy, writer);
-
-            writer.writeEndElement();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean writeCustomPolicy(boolean started, String defaultPolicy, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(CUSTOM_POLICY)) {
-            ModelNode customPolicy = subsystem.get(CUSTOM_POLICY);
-
-            startPolicy(started, defaultPolicy, writer);
-
-            writer.writeStartElement(CUSTOM_POLICY);
-
-            writer.writeAttribute(NAME, defaultPolicy);
-            CustomPolicyDefinition.CLASS_NAME.marshallAsAttribute(customPolicy, writer);
-            CustomPolicyDefinition.MODULE.marshallAsAttribute(customPolicy, writer);
-
-            writer.writeEndElement();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private void startPolicy(boolean started, String defaultPolicy, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (started == false) {
-            writer.writeStartElement(POLICY);
-            writer.writeAttribute(DEFAULT_POLICY, defaultPolicy);
         }
     }
 }
