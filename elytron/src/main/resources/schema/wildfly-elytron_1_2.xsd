@@ -19,11 +19,11 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-            targetNamespace="urn:wildfly:elytron:1.1"
-            xmlns="urn:wildfly:elytron:1.1"
-            elementFormDefault="qualified"
-            attributeFormDefault="unqualified"
-            version="1.0">
+           targetNamespace="urn:wildfly:elytron:1.2"
+           xmlns="urn:wildfly:elytron:1.2"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.2">
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystemType"/>
@@ -173,7 +173,7 @@
         <xs:attribute name="anonymous" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
-                  Enables anonymous authentication.
+                    Enables anonymous authentication.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -380,17 +380,17 @@
         Providers
      -->
 
-     <xs:complexType name="providersType">
-         <xs:annotation>
-             <xs:documentation>
-                 Container of Provider configuration.
-             </xs:documentation>
-         </xs:annotation>
-         <xs:choice maxOccurs="unbounded">
-             <xs:element name="aggregate-providers" type="aggregateProvidersType" />
-             <xs:element name="provider-loader" type="providerLoaderType" />
-         </xs:choice>
-     </xs:complexType>
+    <xs:complexType name="providersType">
+        <xs:annotation>
+            <xs:documentation>
+                Container of Provider configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="aggregate-providers" type="aggregateProvidersType" />
+            <xs:element name="provider-loader" type="providerLoaderType" />
+        </xs:choice>
+    </xs:complexType>
 
     <xs:complexType name="aggregateProvidersType">
         <xs:annotation>
@@ -408,9 +408,9 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-     </xs:complexType>
+    </xs:complexType>
 
-         <xs:complexType name="providersRefType">
+    <xs:complexType name="providersRefType">
         <xs:annotation>
             <xs:documentation>
                 A reference to a Provider[] resource.
@@ -419,71 +419,71 @@
         <xs:attribute name="name" type="xs:string" use="required" />
     </xs:complexType>
 
-     <xs:complexType name="providerLoaderType">
-         <xs:annotation>
-             <xs:documentation>
-                 Definition of a single provider loader.
-             </xs:documentation>
-         </xs:annotation>
-         <xs:sequence>
-             <xs:element name="configuration" minOccurs="0" >
-                 <xs:complexType>
-                     <xs:sequence>
-                         <xs:element name="property" type="propertyType" maxOccurs="unbounded" />
-                     </xs:sequence>
-                 </xs:complexType>
-             </xs:element>
-         </xs:sequence>
-         <xs:attribute name="name" type="xs:string" use="required">
-             <xs:annotation>
-                 <xs:documentation>
-                     The name to use to represent this provider loader in the management model.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-         <xs:attribute name="module" type="xs:string">
-             <xs:annotation>
-                 <xs:documentation>
-                     The name of the module to use to load the providers.
+    <xs:complexType name="providerLoaderType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single provider loader.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="configuration" minOccurs="0" >
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="property" type="propertyType" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name to use to represent this provider loader in the management model.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the module to use to load the providers.
 
-                     If this is not specified the ClassLoader used to load the service will be used instead.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-         <xs:attribute name="class-names" type="stringListType">
-             <xs:annotation>
-                 <xs:documentation>
-                     The fully qualified class names of the providers to load.
+                    If this is not specified the ClassLoader used to load the service will be used instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="class-names" type="stringListType">
+            <xs:annotation>
+                <xs:documentation>
+                    The fully qualified class names of the providers to load.
 
-                     If this attribute is not specified then service loader based discovery will be used instead.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-         <xs:attribute name="path" type="xs:string">
-             <xs:annotation>
-                 <xs:documentation>
-                     The path to the configuration to use to initialise the provider.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-         <xs:attribute name="relative-to" type="xs:string">
-             <xs:annotation>
-                 <xs:documentation>
-                     A reference to a previously defined path that the path of the configuration is
-                     relative to.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-         <xs:attribute name="argument" type="xs:string">
-             <xs:annotation>
-                 <xs:documentation>
-                     Argument to pass into the constructor as the Provider is instantiated.
+                    If this attribute is not specified then service loader based discovery will be used instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The path to the configuration to use to initialise the provider.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="relative-to" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    A reference to a previously defined path that the path of the configuration is
+                    relative to.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="argument" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Argument to pass into the constructor as the Provider is instantiated.
 
-                     Can only be used where the class names to load are specified.
-                 </xs:documentation>
-             </xs:annotation>
-         </xs:attribute>
-     </xs:complexType>
+                    Can only be used where the class names to load are specified.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 
     <!--
         Audit Logging
@@ -881,19 +881,19 @@
             <xs:element name="custom-realm" type="customRealmType" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>
-                      Custom realm definitions can implement either the SecurityRealm interface or the ModifiableSecurityRealm interface.
+                        Custom realm definitions can implement either the SecurityRealm interface or the ModifiableSecurityRealm interface.
 
-                      Regardless of which interface is implemented management operations will not be exposed to manage the realm.  However other
-                      services that depend on the realm will still be able to perform a type check and cast to gain access to the modification API.
+                        Regardless of which interface is implemented management operations will not be exposed to manage the realm.  However other
+                        services that depend on the realm will still be able to perform a type check and cast to gain access to the modification API.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="custom-modifiable-realm" type="customRealmType" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>
-                      Custom realm configured as being modifiable will be expected to implement the ModifiableSecurityRealm interface.
+                        Custom realm configured as being modifiable will be expected to implement the ModifiableSecurityRealm interface.
 
-                      By configuring a realm as being modifiable management operations will be made available to manipulate the realm.
+                        By configuring a realm as being modifiable management operations will be made available to manipulate the realm.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -983,33 +983,33 @@
         </xs:complexContent>
     </xs:complexType>
 
-	<xs:complexType name="customRealmType">
-		<xs:annotation>
-			<xs:documentation>
-				Realm definition for a custom realm implementation.
+    <xs:complexType name="customRealmType">
+        <xs:annotation>
+            <xs:documentation>
+                Realm definition for a custom realm implementation.
 
-				Generally subsystems that provide security realms should make them available
-				using the capabilities and requirements features of the application
-				server, this custom mechanism is provided for truly isolated realm implementations.
-			</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-		    <xs:extension base="realmType">
-		        <xs:sequence>
-		            <xs:element name="configuration" type="customComponentConfiguration" minOccurs="0">
-		                <xs:annotation>
-		                    <xs:documentation>
-		                        The configuration to apply to the SecurityRealm implementation.
+                Generally subsystems that provide security realms should make them available
+                using the capabilities and requirements features of the application
+                server, this custom mechanism is provided for truly isolated realm implementations.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="realmType">
+                <xs:sequence>
+                    <xs:element name="configuration" type="customComponentConfiguration" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The configuration to apply to the SecurityRealm implementation.
 
-		                        Note: If configuration is supplied the realm MUST implement the Configurable interface.
-		                    </xs:documentation>
-		                </xs:annotation>
-		            </xs:element>
-		        </xs:sequence>
+                                Note: If configuration is supplied the realm MUST implement the Configurable interface.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
                 <xs:attributeGroup ref="customComponentAttributes" />
-		    </xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <xs:complexType name="identityRealmType">
         <xs:annotation>
@@ -1199,19 +1199,19 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="password-salt-digest-md5" />
-            		<xs:enumeration value="password-salt-digest-sha-1" />
-            		<xs:enumeration value="password-salt-digest-sha-256" />
-            		<xs:enumeration value="password-salt-digest-sha-384" />
-            		<xs:enumeration value="password-salt-digest-sha-512" />
-            		<xs:enumeration value="salt-password-digest-md5" />
-            		<xs:enumeration value="salt-password-digest-sha-1" />
-            		<xs:enumeration value="salt-password-digest-sha-256" />
-            		<xs:enumeration value="salt-password-digest-sha-384" />
-            		<xs:enumeration value="salt-password-digest-sha-512" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="password-salt-digest-md5" />
+                    <xs:enumeration value="password-salt-digest-sha-1" />
+                    <xs:enumeration value="password-salt-digest-sha-256" />
+                    <xs:enumeration value="password-salt-digest-sha-384" />
+                    <xs:enumeration value="password-salt-digest-sha-512" />
+                    <xs:enumeration value="salt-password-digest-md5" />
+                    <xs:enumeration value="salt-password-digest-sha-1" />
+                    <xs:enumeration value="salt-password-digest-sha-256" />
+                    <xs:enumeration value="salt-password-digest-sha-384" />
+                    <xs:enumeration value="salt-password-digest-sha-512" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>
@@ -1252,15 +1252,15 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="simple-digest-md2" />
-            		<xs:enumeration value="simple-digest-md5" />
-            		<xs:enumeration value="simple-digest-sha-1" />
-            		<xs:enumeration value="simple-digest-sha-256" />
-            		<xs:enumeration value="simple-digest-sha-384" />
-            		<xs:enumeration value="simple-digest-sha-512" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="simple-digest-md2" />
+                    <xs:enumeration value="simple-digest-md5" />
+                    <xs:enumeration value="simple-digest-sha-1" />
+                    <xs:enumeration value="simple-digest-sha-256" />
+                    <xs:enumeration value="simple-digest-sha-384" />
+                    <xs:enumeration value="simple-digest-sha-512" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>
@@ -1289,11 +1289,11 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="scram-sha-1" />
-            		<xs:enumeration value="scram-sha-256" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="scram-sha-1" />
+                    <xs:enumeration value="scram-sha-256" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>
@@ -2060,7 +2060,7 @@
             <xs:extension base="credentialSecurityFactoryType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the SecurityFactory implementation.
@@ -2265,7 +2265,7 @@
             <xs:extension base="permissionMapperType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the PermissionMapper implementation.
@@ -2351,7 +2351,7 @@
                                                     The name of the principal.
                                                 </xs:documentation>
                                             </xs:annotation>
-                                         </xs:attribute>
+                                        </xs:attribute>
                                     </xs:complexType>
                                 </xs:element>
                                 <xs:element name="role" minOccurs="0" maxOccurs="unbounded">
@@ -2362,7 +2362,7 @@
                                                     The name of the role.
                                                 </xs:documentation>
                                             </xs:annotation>
-                                         </xs:attribute>
+                                        </xs:attribute>
                                     </xs:complexType>
                                 </xs:element>
                                 <xs:element name="permission" minOccurs="0" maxOccurs="unbounded">
@@ -2373,28 +2373,28 @@
                                                     The fully qualified class name of the permission.
                                                 </xs:documentation>
                                             </xs:annotation>
-                                         </xs:attribute>
-                                         <xs:attribute name="module" type="xs:string">
-                                             <xs:annotation>
-                                                 <xs:documentation>
-                                                             The module to use to load the permission class.
-                                                 </xs:documentation>
-                                             </xs:annotation>
-                                         </xs:attribute>
-                                         <xs:attribute name="target-name" type="xs:string">
-                                                     <xs:annotation>
-                                                                 <xs:documentation>
-                                                     The target-name to pass to the constructor of the permission.
-                                                 </xs:documentation>
-                                             </xs:annotation>
-                                         </xs:attribute>
-                                         <xs:attribute name="action" type="xs:string">
-                                             <xs:annotation>
-                                                 <xs:documentation>
-                                                     The action to pass to the constructor of the permission.
-                                                 </xs:documentation>
-                                             </xs:annotation>
-                                         </xs:attribute>
+                                        </xs:attribute>
+                                        <xs:attribute name="module" type="xs:string">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    The module to use to load the permission class.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
+                                        <xs:attribute name="target-name" type="xs:string">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    The target-name to pass to the constructor of the permission.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
+                                        <xs:attribute name="action" type="xs:string">
+                                            <xs:annotation>
+                                                <xs:documentation>
+                                                    The action to pass to the constructor of the permission.
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                        </xs:attribute>
                                     </xs:complexType>
                                 </xs:element>
                             </xs:sequence>
@@ -2495,7 +2495,7 @@
             <xs:extension base="principalDecoderType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the PrincipalDecoder implementation.
@@ -2712,7 +2712,7 @@
         <xs:complexContent>
             <xs:extension base="principalTransformerType">
                 <xs:attribute name="pattern" type="xs:string"
-                    use="required">
+                              use="required">
                     <xs:annotation>
                         <xs:documentation>
                             The regular expression to use for this PrincipalTransformer.
@@ -2720,7 +2720,7 @@
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="match" type="xs:boolean"
-                    default="true">
+                              default="true">
                     <xs:annotation>
                         <xs:documentation>
                             If set to true, the name must match the given pattern to make validation successful.
@@ -2761,7 +2761,7 @@
             <xs:extension base="principalTransformerType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the PrincipalTransformer implementation.
@@ -2845,7 +2845,7 @@
             <xs:extension base="realmMapperType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the RealmMapper implementation.
@@ -2911,7 +2911,7 @@
     <xs:complexType name="mappedRegexRealmMapperType">
         <xs:annotation>
             <xs:documentation>
-              A RealmMapper implementation that first uses a regular expression to extract the realm name, this is then converted using the configured mapping of realm names.
+                A RealmMapper implementation that first uses a regular expression to extract the realm name, this is then converted using the configured mapping of realm names.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
@@ -2983,7 +2983,7 @@
             <xs:extension base="roleDecoderType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the RoleDecoder implementation.
@@ -3096,7 +3096,7 @@
             <xs:extension base="roleMapperType">
                 <xs:sequence>
                     <xs:element name="configuration"
-                        type="customComponentConfiguration" minOccurs="0">
+                                type="customComponentConfiguration" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 The configuration to apply to the RoleMapper implementation.
@@ -3298,7 +3298,7 @@
         <xs:attribute name="credential-security-factory" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                  A reference to the security factory to obtain the credential for this mechanism.
+                    A reference to the security factory to obtain the credential for this mechanism.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3357,22 +3357,22 @@
         HTTP Components
      -->
 
-     <xs:complexType name="httpType">
-         <xs:annotation>
-             <xs:documentation>
-                 Complex type definition to hold the various HTTP definitions within the subsystem.
-             </xs:documentation>
-         </xs:annotation>
-         <xs:choice maxOccurs="unbounded">
-             <xs:element name="http-authentication-factory" type="httpAuthenticationFactoryType" minOccurs="0"/>
-             <xs:element name="aggregate-http-server-mechanism-factory" type="aggregateHttpServerMechanismFactoryType" minOccurs="0" />
-             <xs:element name="configurable-http-server-mechanism-factory" type="configurableHttpServerMechanismFactoryType" minOccurs="0" />
-             <xs:element name="provider-http-server-mechanism-factory" type="providerHttpServerMechanismFactoryType" minOccurs="0" />
-             <xs:element name="service-loader-http-server-mechanism-factory" type="serviceLoaderHttpServerMechanismFactoryType" minOccurs="0" />
-         </xs:choice>
-     </xs:complexType>
+    <xs:complexType name="httpType">
+        <xs:annotation>
+            <xs:documentation>
+                Complex type definition to hold the various HTTP definitions within the subsystem.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="http-authentication-factory" type="httpAuthenticationFactoryType" minOccurs="0"/>
+            <xs:element name="aggregate-http-server-mechanism-factory" type="aggregateHttpServerMechanismFactoryType" minOccurs="0" />
+            <xs:element name="configurable-http-server-mechanism-factory" type="configurableHttpServerMechanismFactoryType" minOccurs="0" />
+            <xs:element name="provider-http-server-mechanism-factory" type="providerHttpServerMechanismFactoryType" minOccurs="0" />
+            <xs:element name="service-loader-http-server-mechanism-factory" type="serviceLoaderHttpServerMechanismFactoryType" minOccurs="0" />
+        </xs:choice>
+    </xs:complexType>
 
-     <xs:complexType name="httpAuthenticationFactoryType">
+    <xs:complexType name="httpAuthenticationFactoryType">
         <xs:annotation>
             <xs:documentation>
                 Complex type for the definition of the server side HTTP authentication policy.
@@ -3560,7 +3560,7 @@
             <xs:element name="mechanism-provider-filtering-sasl-server-factory" type="mechanismProviderFilteringSaslServerFactoryType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="provider-sasl-server-factory" type="providerSaslServerFactoryType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="service-loader-sasl-server-factory" type="serviceLoaderSaslServerFactoryType" minOccurs="0" maxOccurs="unbounded" />
-         </xs:choice>
+        </xs:choice>
     </xs:complexType>
 
     <xs:complexType name="saslAuthenticationFactoryType">
@@ -3750,9 +3750,9 @@
                                         <xs:attribute name="mechanism-name" type="xs:string">
                                             <xs:annotation>
                                                 <xs:documentation>
-                                                   This configuration will only apply where a mechanism with the name specified is used.
+                                                    This configuration will only apply where a mechanism with the name specified is used.
 
-                                                   If this attribute is omitted then this will match any mechanism name.
+                                                    If this attribute is omitted then this will match any mechanism name.
                                                 </xs:documentation>
                                             </xs:annotation>
                                         </xs:attribute>
@@ -4415,30 +4415,30 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                    <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Attribute of newly created entry. At least objectClass attribute and required
-                                attributes (which are not part of keystore item) should be defined here.
-                            </xs:documentation>
-                        </xs:annotation>
-                        <xs:complexType>
-                            <xs:attribute name="name" type="xs:string" use="required">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        The LDAP attribute name.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                            <xs:attribute name="value" type="stringListType" use="required">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        The default value(s) of LDAP attribute delimited by space.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                        </xs:complexType>
-                    </xs:element>
+                        <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Attribute of newly created entry. At least objectClass attribute and required
+                                    attributes (which are not part of keystore item) should be defined here.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:attribute name="name" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The LDAP attribute name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="value" type="stringListType" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The default value(s) of LDAP attribute delimited by space.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                     <xs:attribute name="new-item-path" type="xs:string" use="required">
                         <xs:annotation>
@@ -4779,40 +4779,40 @@
         </xs:complexContent>
     </xs:complexType>
 
-	<xs:attributeGroup name="customComponentAttributes">
-		<xs:annotation>
-			<xs:documentation>The attributes required for a custom component.
-			</xs:documentation>
-		</xs:annotation>
-		<xs:attribute name="module" type="xs:string" use="required">
-			<xs:annotation>
-				<xs:documentation>
-					The module to use to load the custom component.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="class-name" type="xs:string" use="required">
-			<xs:annotation>
-				<xs:documentation>
-					The fully qualified class name of the custom component implementation to
-					load.
+    <xs:attributeGroup name="customComponentAttributes">
+        <xs:annotation>
+            <xs:documentation>The attributes required for a custom component.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="module" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The module to use to load the custom component.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="class-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The fully qualified class name of the custom component implementation to
+                    load.
 
-					The specified class must have a public no-args constructor.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-	</xs:attributeGroup>
+                    The specified class must have a public no-args constructor.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
 
-	<xs:complexType name="customComponentConfiguration">
-		<xs:annotation>
-			<xs:documentation>
-				The optional configuration for a custom component.
-			</xs:documentation>
-		</xs:annotation>
-		<xs:sequence>
-			<xs:element name="property" type="propertyType" maxOccurs="unbounded" />
-		</xs:sequence>
-	</xs:complexType>
+    <xs:complexType name="customComponentConfiguration">
+        <xs:annotation>
+            <xs:documentation>
+                The optional configuration for a custom component.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="property" type="propertyType" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
 
     <xs:simpleType name="stringListType">
         <xs:annotation>
@@ -4870,14 +4870,14 @@
                 A definition that sets up a policy provider.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice maxOccurs="unbounded">
-            <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="0" />
-            <xs:element name="custom-policy" type="customPolicyType" minOccurs="0" />
+        <xs:choice>
+            <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="1" />
+            <xs:element name="custom-policy" type="customPolicyType" minOccurs="1" />
         </xs:choice>
-        <xs:attribute name="default-policy" type="xs:string">
+        <xs:attribute name="name" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
-                    The name of a default policy provider.
+                    The name of the policy provider definition.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4889,13 +4889,6 @@
                 A policy provider definition that sets up JACC and related services.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this provider.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="policy" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4925,13 +4918,6 @@
                 A custom policy provider definition.
             </xs:documentation>
         </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this provider.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="class-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>

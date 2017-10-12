@@ -27,6 +27,9 @@ import java.security.NoSuchProviderException;
 import java.security.Policy;
 import java.security.Provider;
 
+import javax.xml.stream.Location;
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -34,6 +37,7 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Param;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
@@ -416,14 +420,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1020, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
     OperationFailedException invalidSuffix(String suffix);
 
-    @Message(id = 1021, value = "Cannot remove the default policy provider [%s]")
-    OperationFailedException cannotRemoveDefaultPolicy(String defaultPolicy);
+//    @Message(id = 1021, value = "Cannot remove the default policy provider [%s]")
+//    OperationFailedException cannotRemoveDefaultPolicy(String defaultPolicy);
 
     @Message(id = 1022, value = "Failed to set policy [%s]")
     RuntimeException failedToSetPolicy(Policy policy, @Cause Exception cause);
 
     @Message(id = 1023, value = "Could not find policy provider with name [%s]")
-    OperationFailedException cannotFindPolicyProvider(String policyProvider);
+    XMLStreamException cannotFindPolicyProvider(String policyProvider, @Param Location location);
 
     @Message(id = 1024, value = "Failed to register policy context handlers")
     RuntimeException failedToRegisterPolicyHandlers(@Cause Exception cause);
@@ -431,4 +435,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1025, value = "Failed to create policy [%s]")
     RuntimeException failedToCreatePolicy(String className, @Cause Exception cause);
 
+    @LogMessage(level = WARN)
+    @Message(id = 1026, value = "Element '%s' with attribute '%s' set to '%s' is unused. Since unused policy " +
+            "configurations can no longer be stored in the configuration model this item is being discarded.")
+    void discardingUnusedPolicy(String element, String attr, String name);
 }
