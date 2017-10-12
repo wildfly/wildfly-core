@@ -1,5 +1,5 @@
 <!-- for needs of DomainTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:1.1">
+<subsystem xmlns="urn:wildfly:elytron:1.2">
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm" realm-mapper="MyRealmMapper" permission-mapper="MyPermissionMapper"
                          pre-realm-principal-transformer="NameRewriterXY" post-realm-principal-transformer="NameRewriterYU" trusted-security-domains="AnotherDomain">
@@ -40,7 +40,7 @@
             </permission-mapping>
         </simple-permission-mapper>
         <simple-permission-mapper name="SimplePermissionMapperPrincipal">
-            <permission-mapping> 
+            <permission-mapping>
                 <principal name="firstUser"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
             </permission-mapping>
