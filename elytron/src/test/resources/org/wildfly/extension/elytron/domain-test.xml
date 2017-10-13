@@ -40,7 +40,7 @@
             </permission-mapping>
         </simple-permission-mapper>
         <simple-permission-mapper name="SimplePermissionMapperPrincipal">
-            <permission-mapping> 
+            <permission-mapping>
                 <principal name="firstUser"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
             </permission-mapping>

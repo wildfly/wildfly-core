@@ -270,6 +270,10 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
         writer.writeEndElement();
     }
 
+    String getNamespace() {
+        return namespace;
+    }
+
     void verifyNamespace(final XMLExtendedStreamReader reader) throws XMLStreamException {
         if (!(namespace.equals(reader.getNamespaceURI()))) {
             throw unexpectedElement(reader);
