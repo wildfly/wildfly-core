@@ -56,19 +56,26 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
             .setRequired(false)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.NAME))
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
+            .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition CONNECTOR_REF = new SimpleAttributeDefinition(CommonAttributes.CONNECTOR_REF, ModelType.STRING, false);
+    static final SimpleAttributeDefinition CONNECTOR_REF = new SimpleAttributeDefinitionBuilder(CommonAttributes.CONNECTOR_REF, ModelType.STRING)
+            .setRequired(true)
+            .setAllowExpression(false)
+            .setRestartAllServices()
+            .build();
 
     static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(CommonAttributes.SECURITY_REALM, ModelType.STRING, true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
             .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, HTTP_CONNECTOR_CAPABILITY)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_FACTORY_REF)
+            .setRestartAllServices()
             .build();
 
     static final HttpConnectorResource INSTANCE = new HttpConnectorResource();
