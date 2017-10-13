@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_POLICY;
@@ -147,10 +148,21 @@ class PolicyDefinitions {
     static ResourceDefinition getPolicy() {
         AttributeDefinition[] attributes = new AttributeDefinition[] {DEFAULT_POLICY, JaccPolicyDefinition.POLICY, CustomPolicyDefinition.POLICY};
         AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
+
             @Override
             protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
                 super.populateModel(context, operation, resource);
+                // default-policy is legacy cruft. We support setting it so legacy scripts don't fail,
+                // but discard the value so we don't report garbage in read-resource etc
                 resource.getModel().get(DEFAULT_POLICY.getName()).clear();
+            }
+
+            @Override
+            protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                super.recordCapabilitiesAndRequirements(context, operation, resource);
+                if (resource.getModel().hasDefined(JACC_POLICY)) {
+                    context.registerCapability(JACC_POLICY_RUNTIME_CAPABILITY);
+                }
             }
 
             @Override
@@ -233,14 +245,33 @@ class PolicyDefinitions {
         return new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement(POLICY),
                 ElytronExtension.getResourceDescriptionResolver(POLICY))
                 .setAddHandler(add)
-                .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .setRemoveHandler(new ReloadRequiredRemoveStepHandler() {
+                    @Override
+                    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                        super.recordCapabilitiesAndRequirements(context, operation, resource);
+                        context.deregisterCapability(JACC_POLICY_CAPABILITY); // even if it wasn't registered, deregistering is ok
+                    }
+                })
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setCapabilities(POLICY_RUNTIME_CAPABILITY)
                 .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes);
+                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
+                    @Override
+                    protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
+                        super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);
+                        if (JACC_POLICY.equals(attributeDefinition.getName())) {
+                            if (!newValue.isDefined()) {
+                                context.deregisterCapability(JACC_POLICY_CAPABILITY);  // even if it wasn't registered, deregistering is ok
+                            } else if (!oldValue.isDefined()) {
+                                // Defined now but wasn't before; register
+                                context.registerCapability(JACC_POLICY_RUNTIME_CAPABILITY);
+                            }
+                        }
+                    }
+                };
                 for (AttributeDefinition current : attributes) {
                     if (current != DEFAULT_POLICY) {
                         resourceRegistration.registerReadWriteAttribute(current, null, write);
