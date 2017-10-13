@@ -176,8 +176,9 @@ class DomainService implements Service<SecurityDomain> {
         if (roleMapper != null) {
             builder.setRoleMapper(roleMappers.get(roleMapper).getValue());
         }
-
-        builder.setDefaultRealmName(defaultRealm);
+        if (defaultRealm != null) {
+            builder.setDefaultRealmName(defaultRealm);
+        }
         for (Entry<String, RealmDependency> entry : realms.entrySet()) {
             String realmName = entry.getKey();
             RealmDependency realmDependency = entry.getValue();
