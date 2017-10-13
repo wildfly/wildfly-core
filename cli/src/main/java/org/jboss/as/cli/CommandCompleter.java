@@ -65,6 +65,7 @@ public class CommandCompleter implements CommandLineCompleter {
         if(result < 0) {
             return result;
         }
+
         return result - offset;
     }
 
