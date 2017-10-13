@@ -95,7 +95,7 @@ class ElytronSubsystemParser implements XMLElementReader<List<ModelNode>>, XMLEl
     private final HttpParser httpParser = new HttpParser(this);
     private final CredentialStoreParser credentialStoreParser = new CredentialStoreParser(this);
     private final DirContextParser dirContextParser = new DirContextParser(this);
-    private final PolicyParser policyParser = new PolicyParser(this);
+    private final PolicyParserTemp policyParser = new PolicyParserTemp(this);
     private final String namespace;
     private final MapperParser mapperParser;
 
