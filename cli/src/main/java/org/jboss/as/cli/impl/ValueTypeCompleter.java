@@ -49,7 +49,6 @@ import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 
 /**
  * @author Alexey Loubyansky
@@ -379,9 +378,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         try {
             handler = parse(buffer);
         } catch (CommandFormatException e) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, e.getLocalizedMessage(), e);
-            }
+            LOG.warn(e.getLocalizedMessage(), e);
             return -1;
         }
         try {
@@ -392,9 +389,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             candidates.addAll(foundCandidates);
             return handler.getCompletionIndex();
         } catch (RuntimeException ex) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, ex.getLocalizedMessage(), ex);
-            }
+            LOG.warn(ex.getLocalizedMessage(), ex);
             return -1;
         }
     }

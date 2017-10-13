@@ -585,9 +585,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        logAccessControl(config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
@@ -634,9 +632,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        logAccessControl(config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
@@ -688,9 +684,7 @@ class CliConfigImpl implements CliConfig {
                         config.silent = resolveBoolean(reader.getElementText());
                     } else if(localName.equals(ACCESS_CONTROL)) {
                         config.accessControl = resolveBoolean(reader.getElementText());
-                        if(log.isTraceEnabled()) {
-                            log.trace(ACCESS_CONTROL + " is " + config.accessControl);
-                        }
+                        logAccessControl(config.accessControl);
                     } else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
@@ -1003,6 +997,12 @@ class CliConfigImpl implements CliConfig {
 
         static void unexpectedElement(XMLExtendedStreamReader reader) throws XMLStreamException {
             throw new XMLStreamException("Unexpected element " + reader.getName() + " at " + reader.getLocation());
+        }
+
+        private static void logAccessControl(boolean accessControl) {
+            if(log.isTraceEnabled()) {
+                log.trace(ACCESS_CONTROL + " is " + accessControl);
+            }
         }
     }
 }

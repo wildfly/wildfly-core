@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
 import org.aesh.readline.Prompt;
 import org.aesh.readline.Readline;
 import org.aesh.readline.ReadlineFlag;
@@ -55,7 +54,7 @@ import org.aesh.util.Parser;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHistory;
 import org.jboss.as.cli.CommandLineCompleter;
-import org.jboss.logmanager.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * Integration point with aesh-readline. There are multiple paths when the CLI
@@ -82,6 +81,7 @@ import org.jboss.logmanager.Logger;
 public class ReadlineConsole implements Console {
 
     private static final Logger LOG = Logger.getLogger(ReadlineConsole.class.getName());
+    private static final boolean isTraceEnabled = LOG.isTraceEnabled();
 
     public interface Settings {
 
@@ -140,8 +140,8 @@ public class ReadlineConsole implements Console {
         CLITerminalConnection(Terminal terminal) {
             super(terminal);
             interceptor = (int[] ints) -> {
-                if (LOG.isLoggable(Level.FINER)) {
-                    LOG.log(Level.FINER, "Writing {0}",
+                if (isTraceEnabled) {
+                    LOG.tracef("Writing %s",
                             Parser.stripAwayAnsiCodes(Parser.fromCodePoints(ints)));
                 }
                 CLITerminalConnection.super.stdoutHandler().accept(ints);
@@ -412,15 +412,13 @@ public class ReadlineConsole implements Console {
         } else {
             readlineHistory.enable();
         }
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "History is enabled? {0}", !settings.isDisableHistory());
+        if (isTraceEnabled) {
+            LOG.tracef("History is enabled? %s", !settings.isDisableHistory());
         }
         connection = newConnection();
         interruptHandler = signal -> {
             if (signal == Signal.INT) {
-                if (LOG.isLoggable(Level.FINER)) {
-                    LOG.finer("Calling InterruptHandler");
-                }
+                LOG.trace("Calling InterruptHandler");
                 connection.write(Config.getLineSeparator());
                 connection.close();
             }
@@ -446,9 +444,7 @@ public class ReadlineConsole implements Console {
 
     private CLITerminalConnection newConnection() throws IOException {
         CLIPrintStream stream = (CLIPrintStream) settings.getOutStream();
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Creating terminal connection ");
-        }
+        LOG.trace("Creating terminal connection");
 
         // The choice of the outputstream to use is ruled by the following rules:
         // - If the output is redefined in CLIPrintStream, the terminal use the CLIPrintStream
@@ -471,8 +467,8 @@ public class ReadlineConsole implements Console {
                 .system(!settings.isOutputRedefined())
                 .build();
         CLITerminalConnection c = new CLITerminalConnection(terminal);
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "New Terminal {0}", terminal.getClass());
+        if (isTraceEnabled) {
+            LOG.tracef("New Terminal %s", terminal.getClass());
         }
         return c;
     }
@@ -481,8 +477,8 @@ public class ReadlineConsole implements Console {
     public void addCompleter(CommandLineCompleter completer) {
         completions.add((Completion) (CompleteOperation co) -> {
             List<String> candidates = new ArrayList<>();
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.log(Level.FINER, "Completing {0}", co.getBuffer());
+            if (isTraceEnabled) {
+                LOG.tracef("Completing %s", co.getBuffer());
             }
             int offset = completer.complete(cmdCtx,
                     co.getBuffer(), co.getCursor(), candidates);
@@ -497,8 +493,8 @@ public class ReadlineConsole implements Console {
             } else {
                 co.doAppendSeparator(false);
             }
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.log(Level.FINER, "Completion candidates {0}",
+            if (isTraceEnabled) {
+                LOG.tracef("Completion candidates %s",
                         co.getCompletionCandidates());
             }
         });
@@ -526,9 +522,7 @@ public class ReadlineConsole implements Console {
 
     @Override
     public void print(String line) {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Print {0}", line);
-        }
+        LOG.tracef("Print %s", line);
         connection.write(line);
     }
 
@@ -562,9 +556,8 @@ public class ReadlineConsole implements Console {
      */
     @Override
     public String readLine(String prompt, Character mask) throws IOException {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Prompt {0} mask {1}", new Object[]{prompt, mask});
-        }
+        logPromptMask(prompt, mask);
+
         // Keep a reference on the caller thread in case Ctrl-C is pressed
         // and thread needs to be interrupted.
         readingThread = Thread.currentThread();
@@ -584,18 +577,16 @@ public class ReadlineConsole implements Console {
     }
 
     private String promptFromNonStartedConsole(String prompt, Character mask) {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Not started");
-        }
+        LOG.trace("Not started");
+
         String[] out = new String[1];
         if (connection.suspended()) {
             connection.awake();
         }
         readline.readline(connection, new Prompt(prompt, mask), newLine -> {
             out[0] = newLine;
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.finer("Got some input");
-            }
+            LOG.trace("Got some input");
+
             // We must call stopReading to stop reading from terminal
             // and release this thread.
             connection.stopReading();
@@ -605,16 +596,14 @@ public class ReadlineConsole implements Console {
         } catch (InterruptedException ex) {
             interrupted(ex);
         }
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Done for prompt");
-        }
+        LOG.trace("Done for prompt");
+
         return out[0];
     }
 
     private String promptFromStartedConsole(String prompt, Character mask) {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Prompt {0} mask {1}", new Object[]{prompt, mask});
-        }
+        logPromptMask(prompt, mask);
+
         String[] out = new String[1];
         // We must be called from another Thread. connection is reading in Main thread.
         // calling readline will wakeup the Main thread that will execute
@@ -631,9 +620,7 @@ public class ReadlineConsole implements Console {
         connection.setSignalHandler(interruptHandler);
         readline.readline(connection, new Prompt(prompt, mask), newLine -> {
             out[0] = newLine;
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.finer("Got some input");
-            }
+            LOG.trace("Got some input");
             latch.countDown();
         }, null, null, null, null, READLINE_FLAGS);
         try {
@@ -643,16 +630,17 @@ public class ReadlineConsole implements Console {
         } finally {
             connection.setSignalHandler(prevHandler);
         }
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Done for prompt");
-        }
+        LOG.trace("Done for prompt");
         return out[0];
     }
 
+    private void logPromptMask(String prompt, Character mask) {
+        LOG.tracef("Prompt %s mask %s", prompt, mask);
+    }
+
     private void interrupted(InterruptedException ex) {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Thread interrupted");
-        }
+        LOG.trace("Thread interrupted");
+
         // Ctrl-C, interrupt and throw exception to cancel prompting.
         Thread.currentThread().interrupt();
         throw new RuntimeException(ex);
@@ -691,26 +679,23 @@ public class ReadlineConsole implements Console {
             startThread = Thread.currentThread();
             started = true;
             loop();
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.log(Level.FINER, "Started in thread {0}. Waiting...",
+            LOG.tracef("Started in thread %s. Waiting...",
                         startThread.getName());
-            }
+
             try {
                 connection.openBlockingInterruptable();
             } catch (InterruptedException ex) {
                 // OK leaving
             }
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.finer("Leaving console");
-            }
-        } else if (LOG.isLoggable(Level.FINER)) {
-            LOG.finer("Already started");
+            LOG.trace("Leaving console");
+        } else {
+            LOG.trace("Already started");
         }
     }
 
     private void loop() {
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Set a readline callback with prompt {0}", prompt);
+        if (isTraceEnabled) {
+            LOG.tracef("Set a readline callback with prompt %s", prompt);
         }
         // Console could have been closed during a command execution.
         if (!closed) {
@@ -719,10 +704,8 @@ public class ReadlineConsole implements Console {
                 // to be executed in a dedicated thread.
                 // This can happen if a security configuration occurs
                 // on the remote server.
-                if (LOG.isLoggable(Level.FINER)) {
-                    LOG.log(Level.FINER,
-                            "Executing command {0} in a new thread.", line);
-                }
+                LOG.tracef("Executing command %s in a new thread.", line);
+
                 if (line == null || line.trim().length() == 0 || handleAlias(line)) {
                     loop();
                     return;
@@ -734,10 +717,7 @@ public class ReadlineConsole implements Console {
                         // Interrupting the current command thread.
                         switch (signal) {
                             case INT: {
-                                if (LOG.isLoggable(Level.FINER)) {
-                                    LOG.log(Level.FINER, "Interrupting command: " + line,
-                                            line);
-                                }
+                                LOG.tracef("Interrupting command: %s", line);
                                 callingThread.interrupt();
                             }
                         }
@@ -749,10 +729,7 @@ public class ReadlineConsole implements Console {
                         // Clear the flag to safely interact with aesh-readline
                         Thread.interrupted();
                         connection.setSignalHandler(handler);
-                        if (LOG.isLoggable(Level.FINER)) {
-                            LOG.log(Level.FINER, "Done Executing command {0}",
-                                    line);
-                        }
+                        LOG.tracef("Done Executing command %s", line);
                         loop();
                     }
                 });
@@ -780,14 +757,11 @@ public class ReadlineConsole implements Console {
     @Override
     public void stop() {
         if (!closed) {
-            if (LOG.isLoggable(Level.FINER)) {
-                LOG.finer("Stopping.");
-            }
+            LOG.trace("Stopping.");
+
             closed = true;
             if (readingThread != null) {
-                if (LOG.isLoggable(Level.FINER)) {
-                    LOG.finer("Interrupting reading thread");
-                }
+                LOG.trace("Interrupting reading thread");
                 readingThread.interrupt();
             }
             if (started) {

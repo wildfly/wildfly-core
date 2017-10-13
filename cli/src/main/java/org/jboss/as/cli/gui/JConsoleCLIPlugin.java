@@ -47,6 +47,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.impl.ExistingChannelModelControllerClient;
+import org.jboss.logging.Logger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remotingjmx.RemotingMBeanServerConnection;
@@ -59,8 +60,6 @@ import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
 import com.sun.tools.jconsole.JConsolePlugin;
 import java.beans.PropertyChangeEvent;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -74,6 +73,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
 
     // Global count of created pools
     private static final AtomicInteger executorCount = new AtomicInteger();
+    private final Logger log = Logger.getLogger(JConsoleCLIPlugin.class.getName());
 
     private ConnectDialog dialog;
     CliGuiContext cliGuiCtx;
@@ -83,6 +83,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
     private boolean isConnected = false;
 
     private ComponentListener doConnectListener;
+
     @Override
     public Map<String,JPanel> getTabs() {
         Map<String, JPanel> panelMap = new HashMap<String, JPanel>();
@@ -131,9 +132,8 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                     (RemotingMBeanServerConnection) mbeanServerConn)) {
                 // Set a listener for connection state change.
                 jcCtx.addPropertyChangeListener((PropertyChangeEvent evt) -> {
-                    Logger.getLogger("org.foo").log(Level.FINER,
-                            "Received property change {0} value {1}",
-                            new Object[]{evt.getPropertyName(), evt.getNewValue()});
+                    log.tracef("Received property change %s value %s",
+                            evt.getPropertyName(), evt.getNewValue());
                     if (JConsoleContext.CONNECTION_STATE_PROPERTY.equals(evt.getPropertyName())) {
                         ConnectionState state = (ConnectionState) evt.getNewValue();
                         if (state == ConnectionState.CONNECTED) {
@@ -145,8 +145,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                                 connectedClient = cmdCtx.getModelControllerClient();
                                 isConnected = true;
                             } catch (Exception ex) {
-                                Logger.getLogger(JConsoleCLIPlugin.class.getName()).
-                                        log(Level.SEVERE, null, ex);
+                                log.error(null, ex);
                             }
                         } else {
                             isConnected = false;

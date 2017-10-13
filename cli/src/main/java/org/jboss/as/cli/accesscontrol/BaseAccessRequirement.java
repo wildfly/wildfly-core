@@ -35,7 +35,6 @@ import org.jboss.logging.Logger;
 public abstract class BaseAccessRequirement implements AccessRequirement, CliEventListener {
 
     protected Logger log = Logger.getLogger(getClass());
-    protected final boolean traceEnabled = log.isTraceEnabled();
 
     private Boolean satisfied;
 
@@ -43,9 +42,7 @@ public abstract class BaseAccessRequirement implements AccessRequirement, CliEve
     public boolean isSatisfied(CommandContext ctx) {
         if(satisfied == null) {
             satisfied = checkAccess(ctx);
-            if(traceEnabled) {
-                log.trace(toString() + " " + satisfied);
-            }
+            log.tracef("%s %s", this, satisfied);
         }
         return satisfied;
     }
