@@ -195,23 +195,9 @@ public final class ServerService extends AbstractControllerService {
     }
 
     static ProcessType getProcessType(ServerEnvironment serverEnvironment) {
-        if (serverEnvironment != null) {
-            switch (serverEnvironment.getLaunchType()) {
-            case DOMAIN:
-                return ProcessType.DOMAIN_SERVER;
-            case STANDALONE:
-                return ProcessType.STANDALONE_SERVER;
-            case EMBEDDED:
-                return ProcessType.EMBEDDED_SERVER;
-            case APPCLIENT:
-                return ProcessType.APPLICATION_CLIENT;
-            case SELF_CONTAINED:
-                return ProcessType.SELF_CONTAINED;
-
-            }
-        }
-
-        return ProcessType.EMBEDDED_SERVER;
+        return serverEnvironment != null
+            ? serverEnvironment.getLaunchType().getProcessType()
+            : ProcessType.EMBEDDED_SERVER;
     }
 
     /**
