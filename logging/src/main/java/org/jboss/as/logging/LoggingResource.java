@@ -336,6 +336,16 @@ public class LoggingResource implements Resource {
             }
 
             @Override
+            public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
+                // If the file was simply not readable we can just skip it, otherwise we should fail
+                if (Files.isReadable(file)) {
+                    throw exc;
+                }
+                // The is likely just not readable so we can just continue
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
             public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
                 final Path relativeFile = dir.relativize(file);
                 final String resourceName = relativeFile.toString();
