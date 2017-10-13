@@ -13,6 +13,7 @@ Usage:
                      [--timeout=timeout]
                      [--echo-command]
                      [--command-timeout=timeout]
+                     [--no-operation-validation]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -95,6 +96,9 @@ Usage:
 
  --command-timeout  - The maximum amount of seconds the CLI will wait for a 
                       command to complete.
+
+ --no-operation-validation  - disable the pre validation of the operations from the CLI.
+                              Operations will be only validated by the server.
 
 For a list of available commands execute
 
