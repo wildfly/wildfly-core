@@ -22,12 +22,14 @@
 
 package org.jboss.as.domain.controller.transformers;
 
-import org.jboss.as.controller.ModelVersion;
+
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
+
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 
@@ -38,12 +40,12 @@ import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
  */
 class ServerGroupTransformers {
 
-    public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(ServerGroupResourceDefinition.PATH, currentVersion);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
+        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(ServerGroupResourceDefinition.PATH);
 
         //////////////////////////////////
         //The EAP/AS 7.x chains
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_8)
+        ResourceTransformationDescriptionBuilder builder = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_1_8)
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
