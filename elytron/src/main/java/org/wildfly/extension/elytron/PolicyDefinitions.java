@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAP
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
 
 import java.security.AccessController;
@@ -101,7 +102,8 @@ class PolicyDefinitions {
             .setMinSize(1)
             .build();
 
-    private static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING)
+    // TODO make private once PolicyParser is deleted
+    static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING)
             .setRequired(false)
             .setCorrector(new ParameterCorrector() {
                 @Override
@@ -115,6 +117,7 @@ class PolicyDefinitions {
             .build();
 
     static class JaccPolicyDefinition {
+        static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POLICY, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode(JaccDelegatingPolicy.class.getName()))
                 .setMinSize(1)
@@ -132,6 +135,7 @@ class PolicyDefinitions {
     }
 
     static class CustomPolicyDefinition {
+        static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition CLASS_NAME = ClassLoadingAttributeDefinitions.CLASS_NAME;
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
         static final ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, CLASS_NAME, MODULE)
@@ -552,6 +556,9 @@ class PolicyDefinitions {
             if (newValue.getType() == ModelType.LIST && newValue.asInt() == 1) {
                 // extract the single element
                 result = newValue.get(0);
+                if (result.has(NAME)) {
+                    result.remove(NAME);
+                }
             }
             return result;
         }
