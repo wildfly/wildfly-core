@@ -43,6 +43,7 @@ class CredentialSecurityFactoryParser {
             .addAttribute(KerberosSecurityFactoryDefinition.OBTAIN_KERBEROS_TICKET)
             .addAttribute(KerberosSecurityFactoryDefinition.MINIMUM_REMAINING_LIFETIME)
             .addAttribute(KerberosSecurityFactoryDefinition.REQUEST_LIFETIME)
+            .addAttribute(KerberosSecurityFactoryDefinition.FAIL_CACHE)
             .addAttribute(KerberosSecurityFactoryDefinition.DEBUG)
             .addAttribute(KerberosSecurityFactoryDefinition.WRAP_GSS_CREDENTIAL)
             .addAttribute(KerberosSecurityFactoryDefinition.REQUIRED)

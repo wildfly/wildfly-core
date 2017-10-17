@@ -154,6 +154,7 @@ interface ElytronDescriptionConstants {
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
 
+    String FAIL_CACHE = "fail-cache";
     String FILE = "file";
     String FILE_AUDIT_LOG = "file-audit-log";
     String FILESYSTEM_REALM = "filesystem-realm";

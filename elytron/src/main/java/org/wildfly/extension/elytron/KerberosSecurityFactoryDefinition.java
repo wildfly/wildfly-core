@@ -90,6 +90,11 @@ class KerberosSecurityFactoryDefinition {
         .setRestartAllServices()
         .build();
 
+    static final SimpleAttributeDefinition FAIL_CACHE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FAIL_CACHE, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     static final SimpleAttributeDefinition SERVER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setDefaultValue(new ModelNode(true))
@@ -150,7 +155,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, FAIL_CACHE, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -158,6 +163,7 @@ class KerberosSecurityFactoryDefinition {
                 final String principal = PRINCIPAL.resolveModelAttribute(context, model).asString();
                 final int minimumRemainingLifetime = MINIMUM_REMAINING_LIFETIME.resolveModelAttribute(context, model).asInt();
                 final int requestLifetime = REQUEST_LIFETIME.resolveModelAttribute(context, model).asInt();
+                final int failCache = FAIL_CACHE.resolveModelAttribute(context, model).asInt(0);
                 final boolean server = SERVER.resolveModelAttribute(context, model).asBoolean();
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
@@ -208,6 +214,7 @@ class KerberosSecurityFactoryDefinition {
                         .setKeyTab(resolvedPath)
                         .setMinimumRemainingLifetime(minimumRemainingLifetime)
                         .setRequestLifetime(requestLifetime)
+                        .setFailCache(failCache)
                         .setIsServer(server)
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
