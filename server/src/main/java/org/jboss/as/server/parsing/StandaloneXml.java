@@ -37,6 +37,8 @@ import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -46,7 +48,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public final class StandaloneXml extends CommonXml {
+public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
 
     public enum ParsingOption {
         /**
@@ -58,8 +60,8 @@ public final class StandaloneXml extends CommonXml {
 
         /**
          * Verifies if an option exist in an array of options
-         * @param options
-         * @return
+         * @param options options to check
+         * @return {@code true} if this option matches any of {@code options}
          */
         public boolean isSet(ParsingOption[] options) {
             boolean matches = false;
@@ -70,7 +72,7 @@ public final class StandaloneXml extends CommonXml {
                 }
             }
             return matches;
-        };
+        }
     }
 
     private final ParsingOption[] parsingOptions;
@@ -78,13 +80,11 @@ public final class StandaloneXml extends CommonXml {
 
     public StandaloneXml(final ModuleLoader loader, final ExecutorService executorService,
             final ExtensionRegistry extensionRegistry) {
-        super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.extensionHandler = new DefaultExtensionHandler(loader, executorService, extensionRegistry);
         this.parsingOptions = new ParsingOption[] {};
     }
 
     public StandaloneXml(ExtensionHandler handler, ParsingOption... options) {
-           super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.extensionHandler = handler;
         this.parsingOptions = options;
     }
@@ -103,8 +103,11 @@ public final class StandaloneXml extends CommonXml {
             case 4:
                 new StandaloneXml_4(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
                 break;
-            default:
+            case 5:
                 new StandaloneXml_5(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
+                break;
+            default:
+                new StandaloneXml_6(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
                 break;
         }
 
@@ -113,7 +116,7 @@ public final class StandaloneXml extends CommonXml {
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_5(extensionHandler, CURRENT, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_6(extensionHandler, CURRENT, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
@@ -121,7 +124,7 @@ public final class StandaloneXml extends CommonXml {
         private final ExtensionXml extensionXml;
         private final ExtensionRegistry extensionRegistry;
 
-        public DefaultExtensionHandler(final ModuleLoader loader, final ExecutorService executorService, ExtensionRegistry extensionRegistry) {
+        DefaultExtensionHandler(final ModuleLoader loader, final ExecutorService executorService, ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
             this.extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
         }

@@ -22,6 +22,7 @@
 package org.jboss.as.host.controller.parsing;
 
 import static org.jboss.as.controller.parsing.Namespace.CURRENT;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -31,9 +32,10 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -43,13 +45,12 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class DomainXml extends CommonXml {
+public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLElementWriter<ModelMarshallingContext> {
 
     private final ExtensionXml extensionXml;
     private final ExtensionRegistry extensionRegistry;
 
     public DomainXml(final ModuleLoader loader, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
-        super(new DomainSocketBindingsXml());
         extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
         this.extensionRegistry = extensionRegistry;
     }
@@ -66,15 +67,18 @@ public class DomainXml extends CommonXml {
             case 4:
                 new DomainXml_4(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
-            default:
+            case 5:
                 new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                break;
+            default:
+                new DomainXml_6(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_5(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
+        new DomainXml_6(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
     }
 
 }
