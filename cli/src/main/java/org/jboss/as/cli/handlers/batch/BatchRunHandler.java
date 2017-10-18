@@ -135,7 +135,7 @@ public class BatchRunHandler extends BaseOperationCommand {
         }
 
         if(v) {
-            ctx.printLine(response.getResponseNode().toString());
+            ctx.printDMR(response.getResponseNode());
         } else {
             ctx.printLine("The batch executed successfully");
             super.handleResponse(ctx, response.getResponseNode(), true);

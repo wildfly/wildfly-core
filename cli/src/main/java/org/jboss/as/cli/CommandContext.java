@@ -84,6 +84,18 @@ public interface CommandContext {
     void printLine(String message);
 
     /**
+     * Prints a ModelNode according to the current configuration.
+     * @param node The ModelNode to print.
+     */
+    default void printDMR(ModelNode node) {
+        if (getConfig().isOutputJSON()) {
+            printLine(node.toJSONString(false));
+        } else {
+            printLine(node.toString());
+        }
+    }
+
+    /**
      * Prints a collection of strings as columns to the CLI's output.
      * @param col  the collection of strings to print as columns.
      */

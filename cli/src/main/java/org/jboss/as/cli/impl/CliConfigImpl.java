@@ -83,6 +83,7 @@ class CliConfigImpl implements CliConfig {
     private static final String VALIDATE_OPERATION_REQUESTS = "validate-operation-requests";
     private static final String ECHO_COMMAND = "echo-command";
     private static final String COMMAND_TIMEOUT = "command-timeout";
+    private static final String OUTPUT_JSON = "output-json";
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
@@ -186,6 +187,7 @@ class CliConfigImpl implements CliConfig {
         cliConfig.echoCommand               = configuration.isEchoCommand()                       ? configuration.isEchoCommand()               : cliConfig.echoCommand;
         cliConfig.commandTimeout            = configuration.getCommandTimeout() != null           ? configuration.getCommandTimeout()           : cliConfig.commandTimeout;
         cliConfig.validateOperationRequests = configuration.isValidateOperationRequests() != null ? configuration.isValidateOperationRequests() : cliConfig.validateOperationRequests;
+        cliConfig.outputJSON                = configuration.isOutputJSON()                        ? configuration.isOutputJSON()                : cliConfig.isOutputJSON();
         return cliConfig;
     }
 
@@ -248,6 +250,8 @@ class CliConfigImpl implements CliConfig {
     private boolean echoCommand;
 
     private Integer commandTimeout;
+
+    private boolean outputJSON;
 
     @Override
     public String getDefaultControllerProtocol() {
@@ -346,6 +350,11 @@ class CliConfigImpl implements CliConfig {
         return commandTimeout;
     }
 
+    @Override
+    public boolean isOutputJSON() {
+        return outputJSON;
+    }
+
     static class SslConfig implements SSLConfig {
 
         private String alias = null;
@@ -441,8 +450,11 @@ class CliConfigImpl implements CliConfig {
                         case CLI_3_0:
                             readCLIElement_3_0(reader, readerNS, config);
                             break;
-                        default:
+                        case CLI_3_1:
                             readCLIElement_3_1(reader, readerNS, config);
+                            break;
+                        default:
+                            readCLIElement_3_2(reader, readerNS, config);
                     }
                     return;
                 }
@@ -663,6 +675,60 @@ class CliConfigImpl implements CliConfig {
                         config.validateOperationRequests = resolveBoolean(reader.getElementText());
                     } else if (localName.equals(ECHO_COMMAND)) {
                         config.echoCommand = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(COMMAND_TIMEOUT)) {
+                        config.commandTimeout = resolveInteger(reader.getElementText());
+                    } else if (localName.equals(HISTORY)) {
+                        readHistory(reader, expectedNs, config);
+                    } else if(localName.equals(RESOLVE_PARAMETER_VALUES)) {
+                        config.resolveParameterValues = resolveBoolean(reader.getElementText());
+                    } else if (CONNECTION_TIMEOUT.equals(localName)) {
+                        final String text = reader.getElementText();
+                        try {
+                            config.connectionTimeout = Integer.parseInt(text);
+                        } catch(NumberFormatException e) {
+                            throw new XMLStreamException("Failed to parse " + JBOSS_CLI + " " + CONNECTION_TIMEOUT + " value '" + text + "'", e);
+                        }
+                    } else if (localName.equals("ssl")) {
+                        SslConfig sslConfig = new SslConfig();
+                        readSSLElement_3_0(reader, expectedNs, sslConfig);
+                        config.sslConfig = sslConfig;
+                    } else if(localName.equals(SILENT)) {
+                        config.silent = resolveBoolean(reader.getElementText());
+                    } else if(localName.equals(ACCESS_CONTROL)) {
+                        config.accessControl = resolveBoolean(reader.getElementText());
+                        logAccessControl(config.accessControl);
+                    } else {
+                        throw new XMLStreamException("Unexpected element: " + localName);
+                    }
+                } else if(tag == XMLStreamConstants.END_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(JBOSS_CLI)) {
+                        jbossCliEnded = true;
+                    }
+                }
+            }
+        }
+
+        // Added the output-json element
+        public void readCLIElement_3_2(XMLExtendedStreamReader reader, Namespace expectedNs, CliConfigImpl config) throws XMLStreamException {
+            boolean jbossCliEnded = false;
+            while (reader.hasNext() && jbossCliEnded == false) {
+                int tag = reader.nextTag();
+                assertExpectedNamespace(reader, expectedNs);
+                if(tag == XMLStreamConstants.START_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(DEFAULT_PROTOCOL)) {
+                        readDefaultProtocol_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(DEFAULT_CONTROLLER)) {
+                        readDefaultController_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(CONTROLLERS)) {
+                        readControllers_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(VALIDATE_OPERATION_REQUESTS)) {
+                        config.validateOperationRequests = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(ECHO_COMMAND)) {
+                        config.echoCommand = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(OUTPUT_JSON)) {
+                        config.outputJSON = resolveBoolean(reader.getElementText());
                     } else if (localName.equals(COMMAND_TIMEOUT)) {
                         config.commandTimeout = resolveInteger(reader.getElementText());
                     } else if (localName.equals(HISTORY)) {

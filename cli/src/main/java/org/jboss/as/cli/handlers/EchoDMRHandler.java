@@ -112,6 +112,6 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
         if(argsStr == null) {
             throw new CommandFormatException("Missing the command or operation to translate to DMR.");
         }
-        ctx.printLine(ctx.buildRequest(argsStr).toString());
+        ctx.printDMR(ctx.buildRequest(argsStr));
     }
 }
