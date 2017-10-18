@@ -25,9 +25,9 @@ import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public class SubsystemBaseParsingTestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem20TestCase extends AbstractSubsystemBaseTest {
 
-    public SubsystemBaseParsingTestCase() {
+    public ElytronSubsystem20TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
@@ -51,7 +51,7 @@ public class SubsystemBaseParsingTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("domain-test.xml");
+        return readResource("elytron-subsystem-2.0.xml");
     }
 
 }

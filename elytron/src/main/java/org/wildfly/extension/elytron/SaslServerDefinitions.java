@@ -489,7 +489,7 @@ class SaslServerDefinitions {
 
         protected ValueSupplier<SaslServerFactory> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
             return () -> null;
-        };
+        }
 
     }
 

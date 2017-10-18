@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -37,7 +38,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -132,10 +132,6 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition READ_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.READ_TIMEOUT, ModelType.INT, true)
             .setAllowExpression(true)
-            .setRestartAllServices()
-            .build();
-
-    static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
             .setRestartAllServices()
             .build();
 

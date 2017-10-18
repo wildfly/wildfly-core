@@ -237,7 +237,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
 
 
     public static final class Builder extends ListAttributeDefinition.Builder<Builder, ObjectListAttributeDefinition> {
-        private final ObjectTypeAttributeDefinition valueType;
+        private ObjectTypeAttributeDefinition valueType;
 
         public Builder(final String name, final ObjectTypeAttributeDefinition valueType) {
             super(name);
@@ -245,6 +245,16 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             setElementValidator(valueType.getValidator());
             setAttributeParser(AttributeParser.OBJECT_LIST_PARSER);
             setAttributeMarshaller(AttributeMarshaller.OBJECT_LIST_MARSHALLER);
+        }
+
+        public Builder(ObjectListAttributeDefinition basis) {
+            super(basis);
+            this.valueType = basis.valueType;
+        }
+
+        public Builder setValueType(ObjectTypeAttributeDefinition valueType) {
+            this.valueType = valueType;
+            return this;
         }
 
         public static Builder of(final String name, final ObjectTypeAttributeDefinition valueType) {
