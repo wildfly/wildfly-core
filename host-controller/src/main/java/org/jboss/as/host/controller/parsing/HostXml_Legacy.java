@@ -82,7 +82,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -105,7 +104,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 
 /**
@@ -115,7 +113,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
+final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     private final AuditLogXml auditLogDelegate;
 
@@ -162,12 +160,6 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
             throw unexpectedElement(reader);
         }
-    }
-
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
     private void readHostElement_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
@@ -1156,7 +1148,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseRemoteDomainController_1_6(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        boolean requireDiscoveryOptions = false;
+        boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
 
         requireDiscoveryOptions = parseRemoteDomainControllerAttributes_1_5(reader, address, list, true);
@@ -1195,7 +1187,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseRemoteDomainController_2_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        boolean requireDiscoveryOptions = false;
+        boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
         if (namespace.getMajorVersion()< 3) {
             requireDiscoveryOptions = parseRemoteDomainControllerAttributes_2_0(reader, address, list);
@@ -1630,8 +1622,8 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         list.add(op);
     }
 
-    protected void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
-            final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
+                                       final Set<String> discoveryOptionNames) throws XMLStreamException {
         requireNoAttributes(reader);
 
         // Handle elements
@@ -1651,7 +1643,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
+    private void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
 
         // OP_ADDR will be set after parsing the NAME attribute
         final ModelNode staticDiscoveryOptionAddress = address.clone();
@@ -1703,7 +1695,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         requireNoContent(reader);
     }
 
-    protected void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
 
         // Handle attributes
         final ModelNode addOp = parseDiscoveryOptionAttributes(reader, address, list, discoveryOptionNames);
@@ -1767,7 +1759,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         return addOp;
     }
 
-    protected void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
+    private void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
         String propertyName = null;
         String propertyValue = null;
         EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);

@@ -65,7 +65,6 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
@@ -80,7 +79,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A mapper between an AS server's configuration model and XML representations, particularly {@code standalone.xml}.
@@ -88,7 +86,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
+final class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
     private final StandaloneXml.ParsingOption[] parsingOptions;
@@ -571,12 +569,6 @@ class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
             final ModelNode update = Util.getWriteAttributeOperation(address, NAME, value);
             operationList.add(update);
         }
-    }
-
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
     /*
