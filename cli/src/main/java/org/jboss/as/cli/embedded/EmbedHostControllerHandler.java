@@ -69,7 +69,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private static final String REMOVE_EXISTING_HOST_CONFIG = "--remove-existing-host-config";
     private static final String EMPTY_DOMAIN_CONFIG = "--empty-domain-config";
     private static final String REMOVE_EXISTING_DOMAIN_CONFIG = "--remove-existing-domain-config";
-    private static final String HOST_CONTROLLER_NAME = "--temp-host-controller-name";
+    private static final String TEMP_HOST_CONTROLLER_NAME = "--temp-host-controller-name";
 
     private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -96,7 +96,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
     private ArgumentWithoutValue removeExistingDomainConfig;
     private ArgumentWithoutValue emptyHostConfig;
     private ArgumentWithoutValue removeExistingHostConfig;
-    private ArgumentWithValue hostControllerName;
+    private ArgumentWithValue tempHostControllerName;
 
     static EmbedHostControllerHandler create(final AtomicReference<EmbeddedProcessLaunch> hostControllerReference, final CommandContext ctx, final boolean modular) {
         EmbedHostControllerHandler result = new EmbedHostControllerHandler(hostControllerReference);
@@ -115,7 +115,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
         result.removeExistingDomainConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_DOMAIN_CONFIG);
         result.emptyHostConfig = new ArgumentWithoutValue(result, EMPTY_HOST_CONFIG);
         result.removeExistingHostConfig = new ArgumentWithoutValue(result, REMOVE_EXISTING_HOST_CONFIG);
-        result.hostControllerName = new ArgumentWithValue(result, HOST_CONTROLLER_NAME);
+        result.tempHostControllerName = new ArgumentWithValue(result, TEMP_HOST_CONTROLLER_NAME);
         return result;
     }
 
@@ -237,6 +237,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             }
 
             boolean emptyHost = emptyHostConfig.isPresent(parsedCmd);
+            boolean hasTempHostName = tempHostControllerName.isPresent(parsedCmd);
             boolean removeHost = removeExistingHostConfig.isPresent(parsedCmd);
             if (emptyHost) {
                 cmdsList.add(EMPTY_HOST_CONFIG);
@@ -251,13 +252,14 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             // in some specific cases, the user may want to set this specifically when starting with an empty config etc.
             // this is only permitted when starting with --empty-host-config, booting with a non-empty config has the normal
             // methods of setting the hostcontroller name.
-            if (hostControllerName.isPresent(parsedCmd)) {
+            if (hasTempHostName) {
                 if (!emptyHost) {
                     throw new CommandFormatException("--temp-host-controller-name may only be used with --empty-host-config");
                 }
-                cmdsList.add(HOST_CONTROLLER_NAME);
-                cmdsList.add(hostControllerName.getValue(parsedCmd,true));
+                cmdsList.add(TEMP_HOST_CONTROLLER_NAME);
+                cmdsList.add(tempHostControllerName.getValue(parsedCmd, true));
             }
+
 
             File hostXmlCfgFile = new File(controllerCfgDir + File.separator + (hostConfig.isPresent(parsedCmd) ? hostXml : "host.xml"));
             if (emptyHost && !removeHost && hostXmlCfgFile.exists() && hostXmlCfgFile.length() != 0) {
@@ -274,58 +276,61 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
             }
             hostController.start();
+
             hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
-
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
-            if (bootTimeout == null || bootTimeout > 0) {
-                long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                String localName = "master";
-                String status = "starting";
+            if (!emptyHost) {
+                if (bootTimeout == null || bootTimeout > 0) {
+                    long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                // read out the host controller name
-                final ModelNode getNameOp = new ModelNode();
-                getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
+                    String localName = "master";
+                    String status = "starting";
 
-                final ModelNode getStateOp = new ModelNode();
-                getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
-                address.add(ClientConstants.HOST, localName);
-                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
-                do {
-                    try {
-                        final ModelNode nameResponse = mcc.execute(getNameOp);
-                        if (Util.isSuccess(nameResponse)) {
-                            localName = nameResponse.get(ClientConstants.RESULT).asString();
-                            address.set(ClientConstants.HOST, localName);
-                            final ModelNode stateResponse = mcc.execute(getStateOp);
-                            if (Util.isSuccess(stateResponse)) {
-                                status = stateResponse.get(ClientConstants.RESULT).asString();
+                    // read out the host controller name
+                    final ModelNode getNameOp = new ModelNode();
+                    getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                    getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
+
+                    final ModelNode getStateOp = new ModelNode();
+                    getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                    ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
+                    address.add(ClientConstants.HOST, localName);
+                    getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
+                    do {
+                        try {
+                            final ModelNode nameResponse = mcc.execute(getNameOp);
+                            if (Util.isSuccess(nameResponse)) {
+                                localName = nameResponse.get(ClientConstants.RESULT).asString();
+                                address.set(ClientConstants.HOST, localName);
+                                final ModelNode stateResponse = mcc.execute(getStateOp);
+                                if (Util.isSuccess(stateResponse)) {
+                                    status = stateResponse.get(ClientConstants.RESULT).asString();
+                                }
                             }
+                        } catch (Exception e) {
+                            // ignore and try again
                         }
-                    } catch (Exception e) {
-                        // ignore and try again
-                    }
+
+                        if ("starting".equals(status)) {
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new CommandLineException("Interrupted while waiting for embedded server to start");
+                            }
+                        } else {
+                            break;
+                        }
+                    } while (System.nanoTime() < expired);
 
                     if ("starting".equals(status)) {
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new CommandLineException("Interrupted while waiting for embedded server to start");
-                        }
-                    } else {
-                        break;
+                        assert bootTimeout != null; // we'll assume the loop didn't run for decades
+                        // Stop server and restore environment
+                        StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
+                        throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
+                                TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
                     }
-                } while (System.nanoTime() < expired);
-
-                if ("starting".equals(status)) {
-                    assert bootTimeout != null; // we'll assume the loop didn't run for decades
-                    // Stop server and restore environment
-                    StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
-                    throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
-                            TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
                 }
             }
             // Expose the client to the rest of the CLI last so nothing can be done with

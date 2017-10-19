@@ -581,6 +581,68 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("ls /host=master/core-service=management/management-interface=http-interface");
     }
 
+    @Test
+    public void testEmptyHostConfigNoAdd() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+    }
+
+    @Test
+    public void testEmptyHostConfigWithAdd() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo:add()");
+        // host-empty-cli.xml
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /host=foo");
+        cli.sendLine("ls /");
+    }
+
+    @Test
+    public void testEmptyHostConfigWithAddAndReload() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo:add()");
+        // host-empty-cli.xml
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        cli.sendLine("/host=foo:write-attribute(name=name, value=foo)");
+        // check things are still there after reload:
+        cli.sendLine("reload --host=foo --admin-only=true");
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+    }
+
+    @Test
+    public void testEmptyHostConfigWithAddAndReloadOnHost() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo:add()");
+        // host-empty-cli.xml
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        // note, this sets the name in host.xml so that after the reload, we keep the name.
+        cli.sendLine("/host=foo:write-attribute(name=name, value=foo)");
+        // check things are still there after reload:
+        cli.sendLine("reload --host=foo --admin-only=true");
+        assertTrue(cli.isConnected());
+        cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+    }
+
     private void assertProperty(final String propertyName, final String expected, final boolean notPresent) throws IOException, InterruptedException {
         cli.sendLine("/system-property=" + propertyName + " :read-attribute(name=value)", true);
         CLIOpResult result = cli.readAllAsOpResult();
