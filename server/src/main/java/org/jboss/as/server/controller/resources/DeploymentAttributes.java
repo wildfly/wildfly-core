@@ -187,20 +187,20 @@ public class DeploymentAttributes {
                     .build();
 
     //Unmanaged content value attributes
-    public static final AttributeDefinition CONTENT_PATH =
+    public static final SimpleAttributeDefinition CONTENT_PATH =
             createContentValueTypeAttribute(ModelDescriptionConstants.PATH, ModelType.STRING, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES,
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.ARCHIVE)
                     .build();
-    public static final AttributeDefinition CONTENT_RELATIVE_TO =
+    public static final SimpleAttributeDefinition CONTENT_RELATIVE_TO =
             createContentValueTypeAttribute(ModelDescriptionConstants.RELATIVE_TO, ModelType.STRING, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES,
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.PATH)
                     .build();
 
-    public static final AttributeDefinition CONTENT_ARCHIVE =
+    public static final SimpleAttributeDefinition CONTENT_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL)
                     .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH, ModelDescriptionConstants.EMPTY)
@@ -254,12 +254,12 @@ public class DeploymentAttributes {
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_NILLABLE =
             ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                 ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                        CONTENT_INPUT_STREAM_INDEX,
-                        CONTENT_HASH,
-                        CONTENT_BYTES,
-                        CONTENT_URL,
-                        CONTENT_PATH,
-                        CONTENT_RELATIVE_TO,
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_INPUT_STREAM_INDEX).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_HASH).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_BYTES).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_URL).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_PATH).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_RELATIVE_TO).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
                         CONTENT_ARCHIVE)
                         .setValidator(new ContentTypeValidator())
                         .build())
@@ -271,10 +271,10 @@ public class DeploymentAttributes {
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_EXPLODED =
                 ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                     ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                        CONTENT_INPUT_STREAM_INDEX,
-                        CONTENT_HASH,
-                        CONTENT_BYTES,
-                        CONTENT_URL,
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_INPUT_STREAM_INDEX).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_HASH).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_BYTES).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_URL).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
                         TARGET_PATH)
                     .build())
                     .setMinSize(1)
