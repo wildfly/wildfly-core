@@ -1153,7 +1153,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
 
             List<String> nodeTypes = Util.getNodeTypes(newClient, new DefaultOperationRequestAddress());
-            domainMode = nodeTypes.contains(Util.SERVER_GROUP);
+            domainMode = nodeTypes.contains(Util.HOST);
 
             try {
                 extLoader.loadHandlers(currentAddress);

@@ -1406,4 +1406,6 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 207, value = "File %s already exists, you must use --remove-existing-host-config to overwrite existing files.")
     IllegalStateException cannotOverwritHostXmlWithEmpty(String filename);
 
+    @Message(id = 208, value = "A host (%s) has already been registered. You must shutdown this host before adding a new one.")
+    IllegalStateException cannotAddHostAlreadyRegistered(String existingName);
 }
