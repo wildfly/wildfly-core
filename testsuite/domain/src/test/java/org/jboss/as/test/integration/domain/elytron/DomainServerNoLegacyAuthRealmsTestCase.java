@@ -73,12 +73,13 @@ public class DomainServerNoLegacyAuthRealmsTestCase {
         waitUntilState(master.getDomainClient(), "slave", "server-one", "STARTED");
         waitUntilState(master.getDomainClient(), "slave", "server-two", "STARTED");
 
-        reloadHostController(master.getDomainClient(), "master", false);
+        // TODO replace all these with simple calls to lifecycleUtil once WFCORE-3373 is done
+        reloadHostController(master, false);
         master.awaitHostController(System.currentTimeMillis());
         waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
         waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
 
-        reloadHostController(master.getDomainClient(), "master", true);
+        reloadHostController(master, true);
         master.awaitHostController(System.currentTimeMillis());
         waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
         waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
@@ -88,16 +89,16 @@ public class DomainServerNoLegacyAuthRealmsTestCase {
         waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
 
         // now reload the slave HC, but don't restart the servers and verify they've reconnected afterwards
-        reloadHostController(slave.getDomainClient(), "slave", false);
+        reloadHostController(slave, false);
         slave.awaitHostController(System.currentTimeMillis());
         waitUntilState(master.getDomainClient(), "slave", "server-one", "STARTED");
         waitUntilState(master.getDomainClient(), "slave", "server-two", "STARTED");
     }
 
-    private static void reloadHostController(final DomainClient client, final String host, final boolean restartServers) throws Exception {
-        ModelNode op = Util.createEmptyOperation(RELOAD, PathAddress.pathAddress(HOST, host));
+    private static void reloadHostController(final DomainLifecycleUtil lifecycleUtil, final boolean restartServers) throws Exception {
+        ModelNode op = Util.createEmptyOperation(RELOAD, lifecycleUtil.getAddress());
         op.get(RESTART_SERVERS).set(restartServers);
-        final ModelNode result = client.execute(op);
+        final ModelNode result = lifecycleUtil.executeAwaitConnectionClosed(op);
         assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
     }
 
