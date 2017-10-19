@@ -309,7 +309,7 @@
                               </property>
                               <property>
                                   <name>test.level</name>
-                                  <value>${test.level}</value>
+                                  <value>${test.level:INFO}</value>
                               </property>
                           </systemProperties>
                           <argLine>${surefire.system.args}</argLine>
