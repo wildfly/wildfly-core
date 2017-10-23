@@ -66,7 +66,7 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
     }
 
     public synchronized void start(final StartContext context) throws StartException {
-        final ThreadGroup threadGroup = new ThreadGroup(threadGroupName);
+        final ThreadGroup threadGroup = (threadGroupName != null) ? new ThreadGroup(threadGroupName) : null;
         value = doPrivileged(new PrivilegedAction<ThreadFactory>() {
             public ThreadFactory run() {
                 return new JBossThreadFactory(threadGroup, Boolean.FALSE, priority, namePattern, null, null);
