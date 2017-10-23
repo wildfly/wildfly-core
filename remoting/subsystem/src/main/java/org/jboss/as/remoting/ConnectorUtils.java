@@ -48,7 +48,6 @@ import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.remoting3.RemotingOptions;
@@ -111,7 +110,7 @@ public class ConnectorUtils {
         if (sasl.hasDefined(STRENGTH)) {
             ModelNode strength = sasl.get(STRENGTH);
             for (ModelNode current : strength.asList()) {
-                builder.set(Options.SASL_STRENGTH, strengthFromString(current.asString()));
+                builder.set(Options.SASL_STRENGTH, SaslStrength.fromString(current.asString()));
             }
         }
         if (sasl.hasDefined(SERVER_AUTH)) {
@@ -181,18 +180,6 @@ public class ConnectorUtils {
             set.add(SaslQop.fromString(element.asString()));
         }
         return set;
-    }
-
-    private static SaslStrength strengthFromString(String name) {
-        if ("low".equals(name)) {
-            return SaslStrength.LOW;
-        } else if ("medium".equals(name)) {
-            return SaslStrength.MEDIUM;
-        } else if ("high".equals(name)) {
-            return SaslStrength.HIGH;
-        } else {
-            throw RemotingLogger.ROOT_LOGGER.illegalStrength(name);
-        }
     }
 
     private ConnectorUtils() {
