@@ -77,11 +77,10 @@ public class HelpSupport {
     public static final String NULL_DESCRIPTION = "WARNING: No Description. Please Fix it";
 
     public static void printHelp(CommandContext ctx) {
-        ctx.printLine(printHelp(ctx, "help"));
+        ctx.printLine(printHelp(ctx, getLegacyHelpPath("help")));
     }
 
     public static String printHelp(CommandContext ctx, String filename) {
-        filename = "help/" + filename + ".txt";
         InputStream helpInput = WildFlySecurityManager.getClassLoaderPrivileged(CommandHandlerWithHelp.class).getResourceAsStream(filename);
         if (helpInput != null) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput));
@@ -101,6 +100,10 @@ public class HelpSupport {
         } else {
             return "Failed to locate command description " + filename;
         }
+    }
+
+    public static String getLegacyHelpPath(String commandName) {
+        return "help/" + commandName + ".txt";
     }
 
     public static String format(CommandContext ctx, BufferedReader reader) throws IOException {

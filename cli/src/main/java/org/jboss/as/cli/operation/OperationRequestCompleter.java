@@ -104,7 +104,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         int result = buffer.length();
         if (parsedCmd.getLastHeaderName() != null) {
             if (buffer.endsWith(parsedCmd.getLastHeaderName())) {
-                result = parsedCmd.getLastChunkOriginalIndex();
+                result = parsedCmd.getLastChunkIndex();
                 for (String name : headers.keySet()) {
                     if (name.equals(parsedCmd.getLastHeaderName())) {
                         result = completeHeader(headers, ctx, parsedCmd, buffer, cursor, candidates);
@@ -171,7 +171,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 candidates.set(0, chunk + parsedCmd.getFormat().getPropertyListStart());
             }
 
-            return parsedCmd.getLastChunkOriginalIndex();
+            return parsedCmd.getLastChunkIndex();
         }
     }
 
@@ -282,7 +282,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             offset = parsedSegment.getOffset();
         }
 
-        return parsedCmd.getLastSeparatorOriginalIndex() + 1 + offset;
+        return parsedCmd.getLastSeparatorIndex() + 1 + offset;
     }
 
     private int completeImplicitValueProperties(CommandContext ctx, String buffer,
@@ -396,7 +396,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 if (argFullName.equals(argName)) {
                     if (!arg.isValueRequired()) {
                         candidates.add(Util.FALSE);
-                        return parsedCmd.getLastChunkOriginalIndex();
+                        return parsedCmd.getLastChunkIndex();
                     }
                 }
             }
@@ -408,9 +408,9 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         // command. We need to keep a local reference to substitution
         // to compute substitution index after completion occured.
         SubstitutedLine substitutions = parsedCmd.getSubstitutions();
-        int valueResult = valueCompleter.complete(ctx,
-                chunk == null ? "" : chunk,
-                chunk == null ? 0 : chunk.length(), candidates);
+
+        final String normalizedChunk = chunk == null ? "" : chunk;
+        int valueResult = valueCompleter.complete(ctx, normalizedChunk, normalizedChunk.length(), candidates);
         // No proposition.
         if (valueResult < 0) {
             return valueResult;
@@ -428,8 +428,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                                 return buffer.length();
                             }
                         } catch (CommandFormatException e) {
-                            e.printStackTrace();
-                            return result + valueResult;
+                            return -1;
                         }
                     }
                     // inline the end of properties.
@@ -438,8 +437,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     return buffer.length();
                 }
             }
-            int correctedValueOffset = substitutions.getOriginalOffset(result + valueResult);
-            return correctedValueOffset;
+            //WFCORE-3190 ignore trailing spaces after the cursor position
+            int trailOffset = substitutions.getSubstitued().substring(result).length() - normalizedChunk.length();
+
+            return result + valueResult + trailOffset;
         }
     }
 
@@ -596,7 +597,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         } else {
             Collections.sort(candidates);
         }
-        return parsedCmd.getOriginalOffset(result);
+        return result;
     }
 
     private int completeProperties(CommandContext ctx, ParsedCommandLine parsedCmd,
@@ -765,10 +766,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         }
 
         int valueResult = headerCompleter.complete(ctx,
-                buffer.substring(parsedCmd.getLastChunkOriginalIndex()), cursor, candidates);
+                buffer.substring(parsedCmd.getLastChunkIndex()), cursor, candidates);
         if (valueResult < 0) {
             return -1;
         }
-        return parsedCmd.getOriginalOffset(parsedCmd.getLastChunkIndex() + valueResult);
+        return parsedCmd.getLastChunkIndex() + valueResult;
     }
 }

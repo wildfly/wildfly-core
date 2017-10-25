@@ -52,8 +52,8 @@ public class CLICommandInvocationBuilder implements
         }
 
         @Override
-        public void write(String out) {
-            ctx.print(out, false, false);
+        public void write(String out, boolean paging) {
+            ctx.print(out, false, paging);
         }
 
         @Override
@@ -62,8 +62,8 @@ public class CLICommandInvocationBuilder implements
         }
 
         @Override
-        public void writeln(String out) {
-            ctx.print(out, true, false);
+        public void writeln(String out, boolean paging) {
+            ctx.print(out, true, paging);
         }
 
         @Override

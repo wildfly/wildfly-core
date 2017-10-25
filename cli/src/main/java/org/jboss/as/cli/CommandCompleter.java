@@ -85,6 +85,7 @@ public class CommandCompleter implements CommandLineCompleter, Completer {
 
     @Override
     public void complete(CommandContext ctx, DefaultCallbackHandler parsedCmd, AeshCompleteOperation op) {
+        parsedCmd = parsedCmd == null ? (DefaultCallbackHandler) ctx.getParsedCommandLine() : parsedCmd;
         final OperationCandidatesProvider candidatesProvider;
         String buffer = op.getBuffer();
         int cursor = op.getCursor();

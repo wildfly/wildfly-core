@@ -28,6 +28,7 @@
     </properties>
 
     <resources>
+        <artifact name="${org.aesh:aesh-extensions}"/>
         <artifact name="${org.aesh:aesh-readline}"/>
         <artifact name="${org.aesh:aesh}"/>
     </resources>

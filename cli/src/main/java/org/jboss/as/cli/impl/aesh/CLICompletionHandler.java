@@ -15,6 +15,7 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import org.aesh.complete.AeshCompleteOperation;
@@ -28,9 +29,13 @@ import org.jboss.as.cli.impl.CLICommandCompleter.Completer;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.parsing.StateParser;
+import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.jboss.logmanager.Logger;
 
 /**
+ * The main entry point for completion. Whatever the type of command and
+ * operation, completion is done from this class. Variable completion is done in
+ * CLICommandCompleter.
  *
  * @author jdenise@redhat.com
  */
@@ -53,6 +58,7 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
         this.legacyCommandCompleter = legacyCommandCompleter;
 
     }
+
     @Override
     public void complete(AeshCompleteOperation co) {
 
@@ -60,13 +66,6 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
             LOG.log(Level.FINER, "Completing {0}", co.getBuffer());
         }
         cliCompleter.complete(ctx, co, this);
-        String buffer = ctx.getArgumentsString() == null ? co.getBuffer() : ctx.getArgumentsString() + co.getBuffer();
-        if (co.getCompletionCandidates().size() == 1
-                && co.getCompletionCandidates().get(0).getCharacters().startsWith(buffer)) {
-            co.doAppendSeparator(true);
-        } else if (!co.getCompletionCandidates().isEmpty()) {
-            co.doAppendSeparator(false);
-        }
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "Completion candidates {0}",
                     co.getCompletionCandidates());
@@ -88,30 +87,65 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
         if (co.getCompletionCandidates().isEmpty()) {
             return -1;
         }
+        Collections.sort(candidates);
         return co.getOffset();
     }
 
     @Override
     public void addAllCommandNames(CommandContext ctx, AeshCompleteOperation op) {
+        op.addCompletionCandidate(OperationFormat.INSTANCE.getAddressOperationSeparator());
         op.addCompletionCandidates(aeshCommands.getRegistry().getAvailableAeshCommands());
-        legacyCommandCompleter.addAllCommandNames(ctx, op);
+
     }
 
     @Override
     public void complete(CommandContext ctx, DefaultCallbackHandler parsedCmd, AeshCompleteOperation op) {
-        legacyCommandCompleter.complete(ctx, parsedCmd, op);
-        boolean hasLegacyContent = !op.getCompletionCandidates().isEmpty();
-        // Because Aesh parser doesn't handle variables, we need to ask completion with substituted command
-        // then correct offset.
+
+        // Completion occurs in Aesh runtime. That is required to properly handle operators.
         StateParser.SubstitutedLine substitutions = parsedCmd.getSubstitutions();
         // Build a CompleteOperation with substituted content.
         AeshCompleteOperation co = new AeshCompleteOperation(aeshCommands.getAeshContext(), parsedCmd.getSubstitutedLine(),
                 substitutions.getSubstitutedOffset(op.getCursor()));
-        aeshCommands.complete(co);
+        /**
+         * Legacy and new Aesh commands have some whitespace separator handling
+         * that differ. Must complete differently per kind of command.
+         */
+        if (parsedCmd.hasOperator()) {
+            completeAeshCommands(co);
+        } else if (parsedCmd.getFormat() == OperationFormat.INSTANCE) {
+            completeLegacyCommands(ctx, parsedCmd, co);
+        } else if (aeshCommands.getRegistry().isLegacyCommand(parsedCmd.getOperationName())) {
+            //special case when there are no properties, we could have to complete a command name.
+            // name that could be the prefix of a legacy or new command
+            if (!parsedCmd.hasProperties() && !parsedCmd.getOriginalLine().endsWith(" ")) {
+                completeAeshCommands(co);
+            } else {
+                completeLegacyCommands(ctx, parsedCmd, co);
+            }
+        } else {
+            completeAeshCommands(co);
+        }
         if (!co.getCompletionCandidates().isEmpty()) {
             int correctedValueOffset = substitutions.getOriginalOffset(co.getOffset());
             co.setOffset(correctedValueOffset);
             CLICommandCompleter.transferOperation(co, op);
+        }
+    }
+
+    private void completeAeshCommands(AeshCompleteOperation co) {
+        aeshCommands.complete(co);
+    }
+
+    private void completeLegacyCommands(CommandContext ctx, DefaultCallbackHandler parsedCmd, AeshCompleteOperation co) {
+        legacyCommandCompleter.complete(ctx, parsedCmd, co);
+        // DMR Operations and command handler completion doesn't work well with whitespace separator, so must not be appended.
+        // whitespace only appended at the end of a command name.
+        String buffer = ctx.getArgumentsString() == null ? co.getBuffer() : ctx.getArgumentsString() + co.getBuffer();
+        if (co.getCompletionCandidates().size() == 1
+                && co.getCompletionCandidates().get(0).getCharacters().startsWith(buffer)) {
+            co.doAppendSeparator(true);
+        } else if (!co.getCompletionCandidates().isEmpty()) {
+            co.doAppendSeparator(false);
         }
     }
 }

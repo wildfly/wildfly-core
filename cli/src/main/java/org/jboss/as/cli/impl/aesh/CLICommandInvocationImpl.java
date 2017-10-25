@@ -135,13 +135,13 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     }
 
     @Override
-    public void print(String msg) {
-        shell.write(msg);
+    public void print(String msg, boolean paging) {
+        shell.write(msg, paging);
     }
 
     @Override
-    public void println(String msg) {
-        shell.writeln(msg);
+    public void println(String msg, boolean paging) {
+        shell.writeln(msg, paging);
     }
 
     @Override

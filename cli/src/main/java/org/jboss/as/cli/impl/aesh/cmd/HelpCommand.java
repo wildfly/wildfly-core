@@ -37,6 +37,8 @@ import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.GenericTypeOperationHandler;
 import org.jboss.as.cli.impl.aesh.HelpSupport;
 import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
+import org.jboss.as.cli.impl.aesh.cmd.operation.LegacyCommandContainer.LegacyCommand;
+import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer;
 import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestCompleter;
@@ -72,7 +74,7 @@ public class HelpCommand implements Command<CLICommandInvocation> {
 
             // Special case for operations.
             String buff = completerInvocation.getGivenCompleteValue();
-            if (isOperation(buff)) {
+            if (OperationCommandContainer.isOperation(buff)) {
                 List<String> candidates = new ArrayList<>();
                 parsedCmd.reset();
                 try {
@@ -107,7 +109,6 @@ public class HelpCommand implements Command<CLICommandInvocation> {
             }
 
             List<String> allExposed = new ArrayList<>(cmd.aeshRegistry.getAllCommandNames());
-            allExposed.addAll(cmd.aeshRegistry.getTabCompletionCommands());
             List<String> candidates = new ArrayList<>();
             if (mainCommand == null) {
                 if (completerInvocation.getCommandContext().getModelControllerClient() != null) {
@@ -134,11 +135,6 @@ public class HelpCommand implements Command<CLICommandInvocation> {
                 } catch (CommandNotFoundException ex) {
                     // XXX OK, no command. CommandHandler has no sub command.
                 }
-            }
-
-            if(buff != null && candidates.size() == 1 && buff.equals(candidates.get(0))) {
-                candidates.set(0, " ");
-                completerInvocation.setOffset(0);
             }
 
             Collections.sort(candidates);
@@ -190,7 +186,7 @@ public class HelpCommand implements Command<CLICommandInvocation> {
         }
 
         // An operation?
-        if (isOperation(mainCommand)) {
+        if (OperationCommandContainer.isOperation(mainCommand)) {
             try {
                 ctx.printLine(getOperationHelp(builder.toString(), commandInvocation.getCommandContext()));
             } catch (Exception ex) {
@@ -201,30 +197,35 @@ public class HelpCommand implements Command<CLICommandInvocation> {
 
         try {
             CommandLineParser parser = aeshRegistry.findCommand(mainCommand, builder.toString());
-            ctx.printLine(parser.printHelp());
-        } catch (CommandNotFoundException ex) {
-            CommandHandler handler = aeshRegistry.getCommandHandler(mainCommand);
-            if (handler instanceof GenericTypeOperationHandler) {
-                try {
-                    ((GenericTypeOperationHandler) handler).printDescription(commandInvocation.getCommandContext());
-                } catch (CommandLineException ex1) {
-                    throw new CommandException(ex1);
-                }
-            } else if (handler instanceof CommandHandlerWithHelp) {
-                try {
-                    ((CommandHandlerWithHelp) handler).displayHelp(commandInvocation.getCommandContext());
-                } catch (CommandLineException ex1) {
-                    throw new CommandException(ex1);
+            // Special case for generic command that generates the help content on the fly.
+            if (parser.getProcessedCommand().getCommand() instanceof LegacyCommand) {
+                CommandHandler handler = ((LegacyCommand) parser.getProcessedCommand().getCommand()).getCommandHandler();
+                if (handler instanceof GenericTypeOperationHandler) {
+                    try {
+                        ((GenericTypeOperationHandler) handler).printDescription(commandInvocation.getCommandContext());
+                    } catch (CommandLineException ex1) {
+                        throw new CommandException(ex1);
+                    }
+                    // We can only rely on handler, handler hides the actual file path
+                    // to its help. eg: remove-batch-line is actually batch-remove-line.txt
+                } else if (handler instanceof CommandHandlerWithHelp) {
+                    try {
+                        ((CommandHandlerWithHelp) handler).displayHelp(commandInvocation.getCommandContext());
+                    } catch (CommandLineException ex1) {
+                        throw new CommandException(ex1);
+                    }
                 }
             } else {
-                throw new CommandException("Command " + builder.toString() + " has no help");
+                ctx.printLine(parser.printHelp());
             }
+        } catch (CommandNotFoundException ex) {
+            throw new CommandException("Command " + builder.toString() + " does not exist.");
         }
         return CommandResult.SUCCESS;
     }
 
     private static final DefaultCallbackHandler LINE = new DefaultCallbackHandler(false);
-    private static final String OP_FALLBACK_HELP = "wildfly_cli_raw_op";
+    private static final String OP_FALLBACK_HELP = "jboss_cli_raw_op";
 
     private static String getOperationHelp(String op, CommandContext ctx) throws Exception {
         if (ctx.getModelControllerClient() == null) {
@@ -234,8 +235,8 @@ public class HelpCommand implements Command<CLICommandInvocation> {
         // Check if the op exists.
         LINE.reset();
         try {
-        LINE.parse(ctx.getCurrentNodePath(),
-                op, ctx);
+            LINE.parse(ctx.getCurrentNodePath(),
+                    op, ctx);
         } catch (CommandFormatException ex) {
             throw new Exception(HelpSupport.printHelp(ctx, OP_FALLBACK_HELP));
         }
@@ -272,11 +273,6 @@ public class HelpCommand implements Command<CLICommandInvocation> {
             throw new Exception("Error retrieving operation description.");
         }
         return content;
-    }
-
-    private static boolean isOperation(String mainCommand) {
-        mainCommand = mainCommand.trim();
-        return mainCommand.startsWith(":") || mainCommand.startsWith(".") || mainCommand.startsWith("/");
     }
 
     private CommandResult listAvailable(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
