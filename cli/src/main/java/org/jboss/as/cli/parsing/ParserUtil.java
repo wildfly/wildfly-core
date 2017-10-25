@@ -361,6 +361,9 @@ public class ParserUtil {
                 } else if (OutputTargetState.ID.equals(id)) {
                     handler.outputTarget(bufferStartIndex, buffer.toString().trim());
                     buffer.setLength(0);
+                } else if (OperatorState.ID.equals(id)) {
+                    handler.operator(bufferStartIndex);
+                    buffer.setLength(0);
                 }
 
                 if(inValue && ctx.getState().lockValueIndex()) {

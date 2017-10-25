@@ -40,20 +40,26 @@ import org.aesh.command.Execution;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.operator.OperatorType;
 import org.aesh.command.parser.CommandLineParserException;
-import org.aesh.converter.CLConverterManager;
 import org.aesh.io.FileResource;
 import org.aesh.io.Resource;
 import org.jboss.as.cli.CliInitializationException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
+import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.CLICommandCompleter.Completer;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.cli.impl.CommandExecutor;
 import org.jboss.as.cli.impl.CommandExecutor.ExecutableBuilder;
 import org.jboss.as.cli.impl.ReadlineConsole;
+import org.jboss.as.cli.impl.aesh.cmd.operation.LegacyCommandContainer.LegacyCommand;
+import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer;
+import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer.OperationCommand;
+import org.jboss.as.cli.impl.aesh.cmd.operation.SpecialCommand;
 import org.jboss.as.cli.operation.ParsedCommandLine;
+import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.wildfly.core.cli.command.BatchCompliantCommand;
 import org.wildfly.core.cli.command.DMRCommand;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
@@ -137,6 +143,24 @@ public class AeshCommands {
             return null;
         }
 
+        public boolean isOperation() {
+            return execution.getCommand() instanceof OperationCommand;
+        }
+
+        public String getLine() {
+            if (execution.getCommand() instanceof SpecialCommand) {
+                return ((SpecialCommand) execution.getCommand()).getLine();
+            }
+            return null;
+        }
+
+        public CommandHandler getLegacyHandler() {
+            if (execution.getCommand() instanceof LegacyCommand) {
+                return ((LegacyCommand) execution.getCommand()).getCommandHandler();
+            }
+            return null;
+        }
+
     }
 
     private final CLICommandInvocationBuilder invocationBuilder;
@@ -146,25 +170,23 @@ public class AeshCommands {
 
     private final Set<String> plugins = new HashSet<>();
 
-    public AeshCommands(CommandContextImpl ctx) throws CliInitializationException {
-        this(ctx, null);
+    public AeshCommands(CommandContextImpl ctx, OperationCommandContainer op) throws CliInitializationException {
+        this(ctx, null, op);
     }
 
-    public AeshCommands(CommandContextImpl ctx, ReadlineConsole console) throws CliInitializationException {
-        for (Class<?> converted : CLConverterManager.getInstance().getConvertedTypes()) {
-            CLConverterManager.getInstance().setConverter(converted,
-                    new ExpressionValueConverter(CLConverterManager.getInstance().getConverter(converted)));
-        }
-        registry = new CLICommandRegistry(ctx);
+    public AeshCommands(CommandContextImpl ctx, ReadlineConsole console, OperationCommandContainer op) throws CliInitializationException {
+        ExpressionValueConverter.registerConverters();
+        registry = new CLICommandRegistry(ctx, op);
         invocationBuilder = new CLICommandInvocationBuilder(ctx, registry, console);
         AeshCommandRuntimeBuilder builder = AeshCommandRuntimeBuilder.builder();
         processor = builder.
                 commandRegistry(registry).
                 parseBrackets(true).
                 aeshContext(new BridgedContext(ctx)).
-                // for now only support '>' as it is already supported for
-                // commands/operation handlers
-                operators(EnumSet.of(OperatorType.REDIRECT_OUT)).
+                // Conditional operators can't be used. They expect commands to return FAILURE, we are throwing exceptions.
+                // Others except the selected one conflict with operation parsing.
+                operators(EnumSet.of(OperatorType.REDIRECT_OUT,
+                        OperatorType.PIPE, OperatorType.APPEND_OUT)).
                 commandActivatorProvider(new CLICommandActivatorProvider(ctx)).
                 commandInvocationBuilder(invocationBuilder).
                 completerInvocationProvider(new CLICompleterInvocationProvider(ctx)).
@@ -201,7 +223,17 @@ public class AeshCommands {
 
     private CLIExecutor newExecutor(String line) throws CommandFormatException, IOException, CommandNotFoundException {
         CLIExecutor exe;
-
+        // The Aesh parser doesn't handle \\n
+        // So remove them all. This has been seen in MultipleLinesCommandsTestCase test
+        String sep = "\\" + Util.LINE_SEPARATOR;
+        if (line.contains(sep)) {
+            String[] split = line.split("\\" + sep);
+            StringBuilder builder = new StringBuilder();
+            for (String ss : split) {
+                builder.append(ss + " ");
+            }
+            line = builder.toString();
+        }
         try {
             exe = new CLIExecutor(processor.buildExecutor(line));
         } catch (CommandLineParserException | OptionValidatorException | CommandValidatorException ex) {
@@ -210,13 +242,18 @@ public class AeshCommands {
         return exe;
     }
 
-    public CLIExecution newExecution(ParsedCommandLine line) throws CommandFormatException, IOException, CommandNotFoundException {
-        CLIExecutor exe = newExecutor(line.getSubstitutedLine());
+    public List<CLIExecution> newExecutions(ParsedCommandLine line) throws CommandFormatException, IOException, CommandNotFoundException {
+        String l = line.getSubstitutedLine();
+        // That is a legacy behavior, lowerCase command name.
+        if (line.getFormat() != OperationFormat.INSTANCE) {
+            String name = line.getOperationName();
+            l = name.toLowerCase() + l.substring(name.length());
+        }
+        CLIExecutor exe = newExecutor(l);
         if (exe.getExecutions().isEmpty()) {
             throw new CommandFormatException("Invalid command " + line.getOriginalLine());
         }
-        // No support for multiple operations on the same line yet.
-        return exe.getExecutions().get(0);
+        return exe.getExecutions();
     }
 
     public ExecutableBuilder newExecutableBuilder(CLIExecution exe) {
@@ -244,14 +281,14 @@ public class AeshCommands {
 
     public void registerExtraCommands() throws CommandLineException, CommandLineParserException {
         ServiceLoader<Command> loader = ServiceLoader.load(Command.class);
-        addExtensions(loader, null);
+        addExtraCommands(loader, null);
     }
 
-    private void addExtensions(Iterable<Command> loader, List<String> filter) throws CommandLineException, CommandLineParserException {
-        addExtensions(loader, filter, Collections.emptySet(), Collections.emptyMap());
+    private void addExtraCommands(Iterable<Command> loader, List<String> filter) throws CommandLineException, CommandLineParserException {
+        addExtraCommands(loader, filter, Collections.emptySet(), Collections.emptyMap());
     }
 
-    private void addExtensions(Iterable<Command> loader, List<String> filter, Set<String> skip, Map<String, String> renaming) throws CommandLineException, CommandLineParserException {
+    private void addExtraCommands(Iterable<Command> loader, List<String> filter, Set<String> skip, Map<String, String> renaming) throws CommandLineException, CommandLineParserException {
         for (Command command : loader) {
             if (filter != null && !filter.isEmpty()) {
                 String name = getRegistry().getCommandName(command);
@@ -259,9 +296,14 @@ public class AeshCommands {
                     continue;
                 }
             }
-            CommandContainer c = getRegistry().addCommand(command, renaming);
+            CommandContainer c = getRegistry().addCommand(command, renaming, false);
             plugins.add(c.getParser().getProcessedCommand().name());
         }
+    }
+
+    // Used by tests to check if the help has to be based on a properties file.
+    public static boolean isAeshExtension(Command<?> command) {
+        return command.getClass().getPackage().getName().startsWith("org.aesh.extensions");
     }
 
     public Set<String> getPlugins() {

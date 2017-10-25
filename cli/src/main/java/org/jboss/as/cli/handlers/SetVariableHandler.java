@@ -56,7 +56,7 @@ public class SetVariableHandler extends CommandHandlerWithHelp {
                 String value = buffer.substring(equals + 1);
                 if (value.startsWith("`")) {
                     value = value.substring(1);
-                    final int valueIndex = ctx.getDefaultCommandCompleter().complete(ctx, value, cursor, candidates);
+                    final int valueIndex = ctx.getDefaultCommandCompleter().complete(ctx, value, value.length(), candidates);
                     if (valueIndex < 0) {
                         return -1;
                     }

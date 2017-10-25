@@ -88,6 +88,8 @@ public interface CommandLineParser {
         void outputTarget(int index, String outputTarget) throws CommandFormatException;
 
         void setFormat(CommandLineFormat format);
+
+        void operator(int index);
     }
 
     void parse(String operationRequest, CallbackHandler handler) throws OperationFormatException;

@@ -36,6 +36,7 @@ import org.aesh.complete.AeshCompleteOperation;
 import org.aesh.parser.ParsedLineIterator;
 import org.aesh.parser.ParsedLine;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.impl.aesh.cmd.operation.LegacyCommandContainer;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 
 /**
@@ -328,6 +329,10 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
     }
 
     private String doPrintHelp() {
-        return HelpSupport.getCommandHelp(parser);
+        if (container.getParser() instanceof LegacyCommandContainer.CommandParser) {
+            return container.getParser().printHelp();
+        } else {
+            return HelpSupport.getCommandHelp(parser);
+        }
     }
 }

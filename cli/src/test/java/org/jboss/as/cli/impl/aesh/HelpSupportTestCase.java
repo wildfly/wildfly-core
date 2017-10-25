@@ -16,13 +16,14 @@ limitations under the License.
 package org.jboss.as.cli.impl.aesh;
 
 import org.aesh.command.Command;
-import org.aesh.command.container.CommandContainer;
 import org.aesh.command.impl.container.AeshCommandContainerBuilder;
 import org.aesh.command.impl.parser.CommandLineParser;
 import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.utils.Config;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.impl.CommandContextImpl;
+import static org.jboss.as.cli.impl.aesh.AeshCommands.isAeshExtension;
+import org.jboss.as.cli.impl.aesh.cmd.operation.LegacyCommandContainer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
@@ -61,10 +62,13 @@ public class HelpSupportTestCase {
         CommandContextImpl ctx = (CommandContextImpl) CommandContextFactory.getInstance().newCommandContext();
         AeshCommands commands = ctx.getAeshCommands();
         for (String name : commands.getRegistry().getAllCommandNames()) {
-            CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> container = commands.getRegistry().getCommand(name, name);
-            HelpSupport.checkCommand(null, container.getParser());
-            for (CommandLineParser<Command<CLICommandInvocation>> child : container.getParser().getAllChildParsers()) {
-                HelpSupport.checkCommand(container.getParser(), child);
+            CLICommandContainer container = (CLICommandContainer) commands.getRegistry().getCommand(name, name);
+            if (!(container.getWrappedContainer() instanceof LegacyCommandContainer)
+                    && !isAeshExtension(container.getParser().getCommand())) {
+                HelpSupport.checkCommand(null, container.getParser());
+                for (CommandLineParser<Command<CLICommandInvocation>> child : container.getParser().getAllChildParsers()) {
+                    HelpSupport.checkCommand(container.getParser(), child);
+                }
             }
         }
     }

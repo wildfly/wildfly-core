@@ -40,6 +40,8 @@ import org.jboss.as.cli.CommandHandler;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.impl.CommandContextImpl;
+import org.jboss.as.cli.impl.aesh.cmd.operation.LegacyCommandContainer;
+import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer;
 import org.jboss.logging.Logger;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 
@@ -53,9 +55,10 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
     private final MutableCommandRegistry reg = new MutableCommandRegistryImpl();
     private final AeshCommandContainerBuilder containerBuilder = new AeshCommandContainerBuilder();
     private final CommandContextImpl ctx;
-
-    public CLICommandRegistry(CommandContextImpl ctx) {
+    private final OperationCommandContainer op;
+    public CLICommandRegistry(CommandContextImpl ctx, OperationCommandContainer op) {
         this.ctx = ctx;
+        this.op = op;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         return super.remove(cmdName);
     }
 
-    private CommandContainer addCommandContainer(CommandContainer container) throws CommandLineException {
+    private CommandContainer addCommandContainer(CommandContainer container, boolean checkExistence) throws CommandLineException {
         CLICommandContainer cliContainer;
         try {
             if (container instanceof CLICommandContainer) {
@@ -75,7 +78,11 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         } catch (OptionParserException ex) {
             throw new CommandLineException(ex);
         }
-        checkExistence(container.getParser().getProcessedCommand().name());
+
+        if (checkExistence) {
+            checkExistence(container.getParser().getProcessedCommand().name());
+        }
+
         reg.addCommand(cliContainer);
 
         return cliContainer;
@@ -100,6 +107,13 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         }
 
         super.registerHandler(handler, tabComplete, names);
+        if (tabComplete) {
+            try {
+                addCommandContainer(new LegacyCommandContainer(ctx, names, handler), false);
+            } catch (CommandLineException | CommandLineParserException ex) {
+                throw new RegisterHandlerException(ex.getLocalizedMessage());
+            }
+        }
     }
 
     private void checkExistence(String name) throws RegisterHandlerException {
@@ -119,11 +133,15 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         return new CLICommandContainer(commandContainer, ctx);
     }
 
-    public CommandContainer addCommand(Command<CLICommandInvocation> command) throws CommandLineException, CommandLineParserException {
-        return addCommand(command, Collections.emptyMap());
+    public CommandContainer addCommand(Command<?> command) throws CommandLineException, CommandLineParserException {
+        return addCommand(command, Collections.emptyMap(), false);
     }
 
-    public CommandContainer addCommand(Command<CLICommandInvocation> command, Map<String, String> renaming) throws CommandLineException, CommandLineParserException {
+    public CommandContainer addThirdPartyCommand(Command<?> command, Map<String, String> renaming) throws CommandLineParserException, CommandLineException {
+        return addCommand(command, renaming, true);
+    }
+
+    public CommandContainer addCommand(Command<?> command, Map<String, String> renaming, boolean thirdparty) throws CommandLineException, CommandLineParserException {
         CommandContainer container = containerBuilder.create(command);
 
         // Sub command handling
@@ -197,16 +215,48 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
                             validator(cmd.validator()).
                             create()).create());
         }
+        // Do not apply CLI specific value resolution to third party extensions.
+        if (thirdparty) {
+            CommandContainer convertedContainer = disableResolution(container.getParser());
+            for (Object obj : container.getParser().getAllChildParsers()) {
+                CommandLineParser cp = (CommandLineParser) obj;
+                convertedContainer.getParser().addChildParser(disableResolution(cp).getParser());
+            }
+            container = convertedContainer;
+        }
         return addCommand(container);
     }
 
+    private CommandContainer disableResolution(CommandLineParser parser) throws OptionParserException, CommandLineParserException {
+        ProcessedCommand cmd = parser.getProcessedCommand();
+        CommandContainer convertedContainer = new AeshCommandContainer(
+                new CommandLineParserBuilder()
+                .processedCommand(new ProcessedCommandBuilder().
+                        activator(cmd.getActivator()).
+                        addOptions(ExpressionValueConverter.disableResolution(cmd.getOptions())).
+                        aliases(cmd.getAliases()).
+                        arguments(ExpressionValueConverter.disableResolution(cmd.getArguments())).
+                        argument(ExpressionValueConverter.disableResolution(cmd.getArgument())).
+                        command(cmd.getCommand()).
+                        description(cmd.description()).
+                        name(cmd.name()).
+                        populator(cmd.getCommandPopulator()).
+                        resultHandler(cmd.resultHandler()).
+                        validator(cmd.validator()).
+                        create()).create());
+        return convertedContainer;
+    }
+
     public CommandContainer addCommand(CommandContainer container) throws CommandLineException {
-        return addCommandContainer(container);
+        return addCommandContainer(container, true);
     }
 
     @Override
     public CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> getCommand(String name, String line)
             throws CommandNotFoundException {
+        if (OperationCommandContainer.isOperation(name)) {
+            return op;
+        }
         return reg.getCommand(name, line);
     }
 
@@ -214,7 +264,6 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
     public void completeCommandName(CompleteOperation completeOperation, ParsedLine parsedLine) {
         reg.completeCommandName(completeOperation, parsedLine);
     }
-
 
     @Override
     public Set<String> getAllCommandNames() {
@@ -286,5 +335,14 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
             }
         }
         return lst;
+    }
+
+    public boolean isLegacyCommand(String name) {
+        try {
+            CLICommandContainer c = (CLICommandContainer) getCommand(name, name);
+            return c.getWrappedContainer() instanceof LegacyCommandContainer;
+        } catch (CommandNotFoundException ex) {
+            return false;
+        }
     }
 }

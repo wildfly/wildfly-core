@@ -21,15 +21,14 @@
  */
 package org.jboss.as.cli.parsing.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.util.List;
 
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
@@ -69,7 +68,7 @@ public class CommandLineArgumentsTestCase {
         assertEquals(1, otherArgs.size());
         assertEquals("value1", otherArgs.get(0));
 
-        assertEquals("output.target", args.getOutputTarget());
+        assertTrue("No operator", args.hasOperator());
     }
 
     protected ParsedCommandLine parse(String line) {
