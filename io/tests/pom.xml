@@ -29,7 +29,7 @@
     <parent>
         <artifactId>wildfly-io-bom</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>3.0.8.Final-redhat-SNAPSHOT</version>
+        <version>3.0.9.Final-redhat-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
