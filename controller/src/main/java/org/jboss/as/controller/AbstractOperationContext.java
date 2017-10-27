@@ -759,15 +759,17 @@ abstract class AbstractOperationContext implements OperationContext {
             return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
         }
         ImmutableManagementResourceRegistration mrr = step.getManagementResourceRegistration(getManagementModel());
-        if (mrr.isRuntimeOnly()) {
-            return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
-        }
-        String opName = step.operationDefinition != null ? step.operationDefinition.getName() : null;
-        if ((WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) && step.operation.hasDefined(NAME)) {
-            String attrName = step.operation.get(NAME).asString();
-            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
-            if (aa != null && aa.getStorageType() == AttributeAccess.Storage.RUNTIME) {
+        if (mrr != null) {
+            if (mrr.isRuntimeOnly()) {
                 return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+            }
+            String opName = step.operationDefinition != null ? step.operationDefinition.getName() : null;
+            if ((WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) && step.operation.hasDefined(NAME)) {
+                String attrName = step.operation.get(NAME).asString();
+                AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
+                if (aa != null && aa.getStorageType() == AttributeAccess.Storage.RUNTIME) {
+                    return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+                }
             }
         }
         return getStepCapabilityStatus(step);
