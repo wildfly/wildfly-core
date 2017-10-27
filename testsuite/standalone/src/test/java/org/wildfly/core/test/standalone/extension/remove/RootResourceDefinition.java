@@ -27,13 +27,14 @@ package org.wildfly.core.test.standalone.extension.remove;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -45,11 +46,16 @@ import org.jboss.dmr.ModelType;
  */
 public class RootResourceDefinition extends SimpleResourceDefinition {
 
+    static final RuntimeCapability<Void> CAPABILITY = RuntimeCapability.Builder.of("module.remove").build();
+
     private static final SimpleAttributeDefinition ATTRIBUTE = new SimpleAttributeDefinitionBuilder("attribute", ModelType.STRING, true).build();
 
-    public RootResourceDefinition() {
-        super(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
-                new AddSubsystemHandler(), ModelOnlyRemoveStepHandler.INSTANCE);
+    RootResourceDefinition() {
+        super(new Parameters(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
+                .setAddHandler(new AddSubsystemHandler())
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setCapabilities(CAPABILITY)
+        );
     }
 
     @Override
