@@ -466,7 +466,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         while (result == null) {
 
             // Track the names of any incorporating capabilities associated with this address
-            Set<RuntimeCapability> incorporating = curReg.getIncorporatingCapabilities();
+            // WFCORE-3385 If curReg is null, that means the entire extension has been dropped, which means any
+            // parent resource that provides caps incorporated by this one must be getting removed too, so we
+            // bypass the 'incorporatingCapabilities' stuff here and just leave the cap cleanup to the op
+            // removing the parent. Use Collections.emptySet() as that's the "don't look higher" signal.
+            Set<RuntimeCapability> incorporating = curReg != null ? curReg.getIncorporatingCapabilities() : Collections.emptySet();
             Set<String> incorporatingDynamic = null;
             Set<String> incorporatingFull = null;
             if (incorporating != null && !incorporating.isEmpty()) {
@@ -538,7 +542,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 if (addrSize > 1 && !SUBSYSTEM.equals(curAddress.getLastElement().getKey())
                         && !(addrSize == 2 && HOST.equals(curAddress.getElement(0).getKey()))) {
                     curAddress = curAddress.getParent();
-                    curReg = curReg.getParent();
+                    // TODO once we have better WFCORE-3385 test coverage, just assert curReg != null;
+                    curReg = curReg != null ? curReg.getParent() : null;
                     // loop continues
                 } else {
                     result = Collections.emptySet();
