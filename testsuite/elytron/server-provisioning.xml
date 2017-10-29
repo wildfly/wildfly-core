@@ -1,4 +1,4 @@
-<server-provisioning xmlns="urn:wildfly:server-provisioning:1.1" copy-module-artifacts="false">
+<server-provisioning xmlns="urn:wildfly:server-provisioning:1.0" copy-module-artifacts="true">
     <feature-packs>
         <feature-pack groupId="org.wildfly.core" artifactId="wildfly-core-feature-pack" version="${project.version}" />
         <feature-pack groupId="org.wildfly.core" artifactId="wildfly-vault-test-feature-pack" version="${project.version}" />
