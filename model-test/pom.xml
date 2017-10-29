@@ -54,7 +54,7 @@
 
         <dependency>
             <groupId>org.apache.maven</groupId>
-            <artifactId>maven-resolver-provider</artifactId>
+            <artifactId>maven-aether-provider</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -75,29 +75,29 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-api</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-spi</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-spi</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-util</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-util</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-connector-basic</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-connector-basic</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-transport-file</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-transport-file</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.resolver</groupId>
-            <artifactId>maven-resolver-transport-http</artifactId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-transport-http</artifactId>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>

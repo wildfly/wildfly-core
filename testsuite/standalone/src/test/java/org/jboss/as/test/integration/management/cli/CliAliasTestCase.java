@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 public class CliAliasTestCase {
 
     private static final String VALID_ALIAS_NAME = "DEBUG123_ALIAS";
-    private static final String VALID_ALIAS_COMMAND = "'/subsystem=io:read-resource'";
+    private static final String VALID_ALIAS_COMMAND = "'/subsystem=undertow:read-resource'";
 
     @Rule
     public final TemporaryFolder temporaryUserHome = new TemporaryFolder();

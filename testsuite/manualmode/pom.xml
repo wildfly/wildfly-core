@@ -34,6 +34,9 @@
     <name>WildFly Core Test Suite: Manual Mode Tests</name>
 
     <properties>
+        <!--<jbossas.ts.integ.dir>${basedir}/..</jbossas.ts.integ.dir>
+        <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
+        <jbossas.project.dir>${jbossas.ts.dir}/..</jbossas.project.dir>-->
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
 
         <ts.elytron.cli>../shared/enable-elytron.cli</ts.elytron.cli>
@@ -158,7 +161,8 @@
                                 <jboss.home>${wildfly.home}</jboss.home>
                                 <module.path>${wildfly.home}/modules/</module.path>
                                 <jvm.args>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar},sys:${org.wildfly.core:wildfly-core-testsuite-shared:jar} -Dorg.jboss.byteman.transform.all -Dorg.jboss.byteman.verbose=true -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
-                                <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
+                                <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
+                                <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                                 <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
                                 <javax.net.ssl.keyStore>${basedir}/src/test/resources/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
@@ -167,7 +171,6 @@
                              <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                              </environmentVariables>
-                            <argLine>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
