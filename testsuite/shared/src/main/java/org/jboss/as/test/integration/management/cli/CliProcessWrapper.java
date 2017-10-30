@@ -276,17 +276,21 @@ public class CliProcessWrapper extends CliProcessBuilder {
     }
 
     private boolean outputHasPrompt(String prompt){
-        if(cliOutputBuffer.toString().contains("\n")) {
+        String buffer = cliOutputBuffer.toString();
+        if (buffer.startsWith("Exception")){
+            throw new RuntimeException(buffer);
+        }
+        if(buffer.contains("\n")) {
             if (prompt == null) {
-                return cliOutputBuffer.toString().substring(cliOutputBuffer.toString().lastIndexOf("\n")+1).matches(".*[\\[].*[\\]].*");
+                return buffer.substring(buffer.lastIndexOf("\n")+1).matches(".*[\\[].*[\\]].*");
             } else {
-                return cliOutputBuffer.toString().substring(cliOutputBuffer.toString().lastIndexOf("\n")).contains(prompt);
+                return buffer.substring(buffer.lastIndexOf("\n")).contains(prompt);
             }
         }else{
             if (prompt == null) {
-                return cliOutputBuffer.toString().matches(".*[\\[].*[\\]].*");
+                return buffer.matches(".*[\\[].*[\\]].*");
             } else {
-                return cliOutputBuffer.toString().contains(prompt);
+                return buffer.contains(prompt);
             }
         }
     }
