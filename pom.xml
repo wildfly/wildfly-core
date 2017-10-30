@@ -653,18 +653,6 @@
                 <type>zip</type>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-build</artifactId>
-                <type>pom</type>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-build</artifactId>
-                <type>zip</type>
-                <version>${project.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
