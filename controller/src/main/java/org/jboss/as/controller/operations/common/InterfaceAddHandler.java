@@ -59,7 +59,7 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
         final String attributeName = definition.getName();
         final boolean has = operation.has(attributeName);
         if(! has && definition.isRequired(operation)) {
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
+            throw ControllerLogger.ROOT_LOGGER.required(attributeName);
         }
         if(has) {
             if(! definition.isAllowed(operation)) {

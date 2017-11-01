@@ -1966,7 +1966,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 172, value = "%s is required")
-    String required(String name);
+    OperationFailedException required(String name);
 
     /**
      * Creates an exception indicating the {@code name} is reserved.
@@ -3505,6 +3505,9 @@ public interface ControllerLogger extends BasicLogger {
             "This is not valid for a 'profile' resource on process type %s so this step will not be executed.")
     void invalidRuntimeStageForProfile(String operation, String address, OperationContext.Stage stage, ProcessType processType);
 
-    @Message(id = 4445, value = "%s with value '%s' in attribute %s is already defined")
+    @Message(id = 445, value = "%s with value '%s' in attribute %s is already defined")
     OperationFailedException alreadyDefinedAttribute(String resource, String value, String attribute);
+
+    @Message(id = 446, value = "%s or alternative(s) %s is required")
+    OperationFailedException requiredWithAlternatives(String name, Set<String> alternatives);
 }
