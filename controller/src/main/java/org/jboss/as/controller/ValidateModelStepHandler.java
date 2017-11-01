@@ -104,7 +104,19 @@ final class ValidateModelStepHandler implements OperationStepHandler {
                         new ErrorHandler() {
                             @Override
                             public void throwError() throws OperationFailedException {
-                                throw ControllerLogger.ROOT_LOGGER.required(attributeName);
+                                    String[] alternatives = attr.getAlternatives();
+                                    if (alternatives == null) {
+                                        throw ControllerLogger.ROOT_LOGGER.required(attributeName);
+                                    } else {
+                                        Set<String> requiredAlternatives = new HashSet<>();
+                                        for (int i = 0; i < alternatives.length; i++) {
+                                            AttributeDefinition requiredAttr = getAttributeDefinition(alternatives[i], attributes);
+                                            if (requiredAttr != null && requiredAttr.isRequired() && !requiredAttr.isResourceOnly()) {
+                                                requiredAlternatives.add(alternatives[i]);
+                                            }
+                                        }
+                                        throw ControllerLogger.ROOT_LOGGER.requiredWithAlternatives(attributeName, requiredAlternatives);
+                                    }
                         }}
                     );
                 }
@@ -120,7 +132,7 @@ final class ValidateModelStepHandler implements OperationStepHandler {
                         AttributeDefinition requiredAttr = getAttributeDefinition(required, attributes);
                         if (requiredAttr == null) {
                             // Coding mistake in the attr AD. Don't mess up the user; just debug log
-                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
+                            ControllerLogger.ROOT_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
                                     required, attributeName);
                         } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), definedKeys)) {
                             attemptReadMissingAttributeValueFromHandler(context, address, access, attributeName, new ErrorHandler() {
@@ -237,7 +249,19 @@ final class ValidateModelStepHandler implements OperationStepHandler {
             String absoluteName = absoluteParentName + "." + subAttributeName;
             if (!definedKeys.contains(subAttributeName)) {
                 if (isRequired(subAttr, definedKeys)) {
-                    throw ControllerLogger.MGMT_OP_LOGGER.required(subAttributeName);
+                    String[] alternatives = attr.getAlternatives();
+                    if (alternatives == null) {
+                        throw ControllerLogger.ROOT_LOGGER.required(subAttributeName);
+                    } else {
+                        Set<String> requiredAlternatives = new HashSet<>();
+                        for (int i = 0; i < alternatives.length; i++) {
+                            AttributeDefinition requiredAttr = getAttributeDefinition(alternatives[i], subAttrs);
+                            if (requiredAttr != null && requiredAttr.isRequired() && !requiredAttr.isResourceOnly()) {
+                                requiredAlternatives.add(alternatives[i]);
+                            }
+                        }
+                        throw ControllerLogger.ROOT_LOGGER.requiredWithAlternatives(subAttributeName, requiredAlternatives);
+                    }
                 }
                 // else undefined is ok and there's nothing more to check for this one
                 continue;
@@ -250,10 +274,10 @@ final class ValidateModelStepHandler implements OperationStepHandler {
                         AttributeDefinition requiredAttr = getAttributeDefinition(required, subAttrs);
                         if (requiredAttr == null) {
                             // Coding mistake in the subAttr AD. Don't mess up the user; just debug log
-                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s of %s is null",
+                            ControllerLogger.ROOT_LOGGER.debugf("AttributeDefinition for %s required by %s of %s is null",
                                     required, subAttributeName, absoluteParentName);
                         } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), definedKeys)) {
-                            throw ControllerLogger.MGMT_OP_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
+                            throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
                         }
                     }
                 }
