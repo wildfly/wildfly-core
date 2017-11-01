@@ -104,7 +104,7 @@ final class ValidateModelStepHandler implements OperationStepHandler {
                         new ErrorHandler() {
                             @Override
                             public void throwError() throws OperationFailedException {
-                                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
+                                throw ControllerLogger.ROOT_LOGGER.required(attributeName);
                         }}
                     );
                 }
@@ -237,7 +237,7 @@ final class ValidateModelStepHandler implements OperationStepHandler {
             String absoluteName = absoluteParentName + "." + subAttributeName;
             if (!definedKeys.contains(subAttributeName)) {
                 if (isRequired(subAttr, definedKeys)) {
-                    throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.required(subAttributeName));
+                    throw ControllerLogger.MGMT_OP_LOGGER.required(subAttributeName);
                 }
                 // else undefined is ok and there's nothing more to check for this one
                 continue;

@@ -1966,7 +1966,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 172, value = "%s is required")
-    String required(String name);
+    OperationFailedException required(String name);
 
     /**
      * Creates an exception indicating the {@code name} is reserved.
