@@ -147,11 +147,29 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
      * @param serviceType the service type
      * @param options the channel options
      * @return the opened channel
-     * @throws IOException
+     * @throws IOException if there is a remoting problem opening the channel or it cannot be opened in a reasonable amount of time
      */
     protected Channel openChannel(final Connection connection, final String serviceType, final OptionMap options) throws IOException {
+        return openChannel(connection, serviceType, options, null);
+    }
+
+    /**
+     * Open a channel.
+     *
+     * @param connection the connection
+     * @param serviceType the service type
+     * @param options the channel options
+     * @param deadline time, in ms since the epoch, by which the channel must be created,
+     *                 or {@code null} if the caller is not imposing a specific deadline.
+     *                 Ignored if less than 10s from the current time, with 10s used as the
+     *                 default if this is {@code null}
+     * @return the opened channel
+     * @throws IOException if there is a remoting problem opening the channel or it cannot be opened in a reasonable amount of time
+     */
+    final Channel openChannel(final Connection connection, final String serviceType, final OptionMap options, final Long deadline) throws IOException {
         final IoFuture<Channel> futureChannel = connection.openChannel(serviceType, options);
-        futureChannel.await(10L, TimeUnit.SECONDS);
+        long waitTime = deadline == null ? 10000 : Math.max(10000, deadline - System.currentTimeMillis());
+        futureChannel.await(waitTime, TimeUnit.MILLISECONDS);
         if (futureChannel.getStatus() == IoFuture.Status.WAITING) {
             futureChannel.cancel();
             throw ProtocolLogger.ROOT_LOGGER.channelTimedOut();

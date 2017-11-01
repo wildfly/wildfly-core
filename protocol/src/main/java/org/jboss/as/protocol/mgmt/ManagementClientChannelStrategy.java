@@ -51,7 +51,7 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
      * Get the channel.
      *
      * @return the channel
-     * @throws IOException
+     * @throws IOException if an IO problem occurs getting the channel
      */
     public abstract Channel getChannel() throws IOException;
 
@@ -144,12 +144,15 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
         private final Channel.Receiver receiver;
         private final ProtocolConnectionManager connectionManager;
         private final CloseHandler<Channel> closeHandler;
+        private final long timeout;
+        private Long deadline;
 
         private Establishing(final ProtocolConnectionConfiguration configuration, final Channel.Receiver receiver, final CloseHandler<Channel> closeHandler) {
             this.receiver = receiver;
             this.channelOptions = configuration.getOptionMap();
             this.connectionManager = ProtocolConnectionManager.create(configuration, this);
             this.closeHandler = closeHandler;
+            this.timeout = configuration.getConnectionTimeout();
         }
 
         @Override
@@ -159,7 +162,11 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
                 return channel;
             }
             // Try to connect and wait for the channel
-            connectionManager.connect();
+            synchronized (connectionManager) {
+                deadline = System.currentTimeMillis() + timeout; // read in openChannel below
+                connectionManager.connect();
+                deadline = null;
+            }
             // In case connect did not succeed the next getChannel() call needs to try to reconnect
             channel = super.getChannel();
             if(channel == null) {
@@ -189,7 +196,16 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
 
         @Override
         protected Channel openChannel(final Connection connection, final String serviceType, final OptionMap options) throws IOException {
-            final Channel channel = super.openChannel(connection, serviceType, options);
+            // This is only called as part of the connectionManager.connect() handling in getChannel() above.
+            // So, we should hold the connectionManager lock. We want to ensure that so we know we have the right deadline.
+            // We could synchronize again on connectionManager to ensure that, but then if there is some corner case
+            // the analysis missed where this gets called asynchronously during connectionManager.connect() handling
+            // we would deadlock. Better to fail than to deadlock. Use an ISE instead of an assert because if this
+            // fails, we don't want an Error; we want something that should eventually be caught and handled.
+            if (!Thread.holdsLock(connectionManager)) {
+                throw new IllegalStateException();
+            }
+            final Channel channel = openChannel(connection, serviceType, options, deadline);
             channel.addCloseHandler(closeHandler);
             return channel;
         }
