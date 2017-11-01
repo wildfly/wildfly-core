@@ -334,6 +334,51 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
+     * Removes {@link AttributeDefinition#getAlternatives() names of alternative attributes} from the set of those that should not
+     * be defined if this attribute is defined.
+     * @param alternatives the attribute names
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public final BUILDER removeAlternatives(String... alternatives) {
+        if (this.alternatives == null) {
+            return (BUILDER) this;
+        } else {
+            for (String alternative : alternatives) {
+                if (isAlternativePresent(alternative)) {
+                    int length = this.alternatives.length;
+                    String[] newAlternatives = new String[length - 1];
+                    int k = 0;
+                    for (String alt : this.alternatives) {
+                        if (alt != alternative) {
+                            newAlternatives[k] = alt;
+                            k++;
+                        }
+                    }
+                    this.alternatives = newAlternatives;
+                }
+            }
+        }
+        return (BUILDER) this;
+    }
+
+    /**
+     * Checks if an alternative has been recorded in {@link AttributeDefinition#getAlternatives() names of alternative attributes}
+     * @param alternative the alternative
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    private boolean isAlternativePresent(final String alternative) {
+        if (alternatives == null) {
+            return false;
+        }
+        for (String alt : alternatives) {
+            if (alt.equals(alternative)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Adds {@link AttributeDefinition#getArbitraryDescriptors() arbitrary descriptor}.
      * @param arbitraryDescriptor the arbitrary descriptor name.
      * @param value the value of the arbitrary descriptor.
@@ -410,9 +455,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
                 k++;
             }
         }
-        if (k != length - 1) {
-            flags = newFlags;
-        }
+        flags = newFlags;
         return (BUILDER) this;
     }
 
