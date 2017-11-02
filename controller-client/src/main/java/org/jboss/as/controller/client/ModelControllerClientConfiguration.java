@@ -35,12 +35,13 @@ import java.net.UnknownHostException;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.controller.client.impl.ClientConfigurationImpl;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.SecurityFactory;
 
@@ -290,7 +291,15 @@ public interface ModelControllerClientConfiguration extends Closeable {
                     return new JBossThreadFactory(defaultThreadGroup, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
                 }
             });
-            return new ThreadPoolExecutor(2, getSystemProperty("org.jboss.as.controller.client.max-threads", 6), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+            final int maxThreads = getSystemProperty("org.jboss.as.controller.client.max-threads", 6);
+            return EnhancedQueueExecutor.DISABLE_HINT ?
+                new ThreadPoolExecutor(2, maxThreads, 60, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), threadFactory) :
+                new EnhancedQueueExecutor.Builder()
+                    .setCorePoolSize(2)
+                    .setMaximumPoolSize(maxThreads)
+                    .setKeepAliveTime(60, TimeUnit.SECONDS)
+                    .setThreadFactory(threadFactory)
+                    .build();
         }
 
         private static int getSystemProperty(final String name, final int defaultValue) {
