@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,6 +31,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.wildfly.legacy.test.spi.subsystem.TestModelControllerFactory;
 
 
@@ -116,8 +115,11 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         builder.install();
         target.addService(pmSvcName, pathManager).addAliases(PathManagerService.SERVICE_NAME).install();
         if (legacyModelVersion == null) {
-            ExecutorService mgmtExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
-                    new SynchronousQueue<Runnable>());
+            ExecutorService mgmtExecutor = new EnhancedQueueExecutor.Builder()
+                .setCorePoolSize(512)
+                .setMaximumPoolSize(1024)
+                .setKeepAliveTime(20L, TimeUnit.SECONDS)
+                .build();
             Service<ExecutorService> mgmtExecSvc = new ValueService<>(new ImmediateValue<>(mgmtExecutor));
             target.addService(AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), mgmtExecSvc).install();
         }
