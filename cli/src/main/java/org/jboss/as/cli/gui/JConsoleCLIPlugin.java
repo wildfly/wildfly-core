@@ -29,7 +29,7 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +51,7 @@ import org.jboss.logging.Logger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
 import org.jboss.remotingjmx.RemotingMBeanServerConnection;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.xnio.IoFuture;
 import org.xnio.OptionMap;
@@ -192,7 +193,14 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
                 return new JBossThreadFactory(group, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
             }
         });
-        return new ThreadPoolExecutor(2, DEFAULT_MAX_THREADS, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+        return EnhancedQueueExecutor.DISABLE_HINT ?
+            new ThreadPoolExecutor(2, DEFAULT_MAX_THREADS, 60, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), threadFactory) :
+            new EnhancedQueueExecutor.Builder()
+                .setCorePoolSize(2)
+                .setMaximumPoolSize(DEFAULT_MAX_THREADS)
+                .setKeepAliveTime(60, TimeUnit.SECONDS)
+                .setThreadFactory(threadFactory)
+                .build();
     }
 
     @Override
