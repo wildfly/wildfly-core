@@ -240,7 +240,26 @@ class PolicyDefinitions {
                 .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes);
+                OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
+                    @Override
+                    protected void validateUpdatedModel(OperationContext context, Resource resource) throws OperationFailedException {
+                        // validate that policy class can be loaded
+
+                        ModelNode customPolicyModel = resource.getModel().get(CUSTOM_POLICY);
+                        if (customPolicyModel.isDefined()) {
+                            String className = CustomPolicyDefinition.CLASS_NAME.resolveModelAttribute(context, customPolicyModel).asString();
+                            String module = CustomPolicyDefinition.MODULE.resolveModelAttribute(context, customPolicyModel).asStringOrNull();
+                            checkClassLoadable(className, module);
+                        }
+
+                        ModelNode jaccPolicyModel = resource.getModel().get(JACC_POLICY);
+                        if (jaccPolicyModel.isDefined()) {
+                            String className = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, jaccPolicyModel).asString();
+                            String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, jaccPolicyModel).asStringOrNull();
+                            checkClassLoadable(className, module);
+                        }
+                    }
+                };
                 for (AttributeDefinition current : attributes) {
                     if (current != DEFAULT_POLICY) {
                         resourceRegistration.registerReadWriteAttribute(current, null, write);
@@ -421,6 +440,15 @@ class PolicyDefinitions {
             return Policy.class.cast(policy);
         } catch (Exception e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
+        }
+    }
+
+    private static void checkClassLoadable(String className, String module) throws OperationFailedException {
+        try {
+            ClassLoader classLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
+            classLoader.loadClass(className);
+        } catch (Exception e) {
+            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToLoadClass(className, e);
         }
     }
 

@@ -51,11 +51,11 @@ public class PoliciesTestCase extends AbstractSubsystemBaseTest {
 
     static {
         ModelNode policy = new ModelNode();
-        policy.get("class-name").set("a.b.c.CustomPolicy");
+        policy.get("class-name").set("org.wildfly.extension.elytron.CustomPolicy");
         policy.get("module").set("a.b.c.custom");
         CUSTOM_POLICY = policy;
         policy = new ModelNode();
-        policy.get("policy").set("a.b.c.Policy");
+        policy.get("policy").set("org.wildfly.security.authz.jacc.JaccDelegatingPolicy");
         policy.get("configuration-factory").set("a.b.PolicyConfigurationFactory");
         policy.get("module").set("a.b");
         JACC_POLICY = policy;
@@ -123,6 +123,50 @@ public class PoliciesTestCase extends AbstractSubsystemBaseTest {
         assertFalse(response.toString(), response.has(RESPONSE_HEADERS, OPERATION_REQUIRES_RELOAD));
         assertFalse(response.toString(), response.has(RESPONSE_HEADERS, OPERATION_REQUIRES_RESTART));
         checkNoDefaultPolicy(services, "custom-b");
+    }
+
+    @Test
+    public void testCustomPolicyClassName() throws Exception {
+        ModelNode policy = new ModelNode();
+        policy.get("class-name").set("org.wildfly.extension.elytron.CustomPolicy");
+
+        KernelServices services = standardSubsystemTest("custom-policy.xml", true);
+        ModelNode write = Util.getWriteAttributeOperation(getPolicyAddress("custom-b"), "custom-policy", policy);
+        ModelNode response = services.executeOperation(write);
+        assertEquals(response.toString(), "success", response.get("outcome").asString());
+    }
+
+    @Test
+    public void testCustomPolicyWrongClassName() throws Exception {
+        ModelNode policy = new ModelNode();
+        policy.get("class-name").set("WrongCustomPolicyClass");
+
+        KernelServices services = standardSubsystemTest("custom-policy.xml", true);
+        ModelNode write = Util.getWriteAttributeOperation(getPolicyAddress("custom-b"), "custom-policy", policy);
+        ModelNode response = services.executeOperation(write);
+        assertEquals(response.toString(), "failed", response.get("outcome").asString());
+    }
+
+    @Test
+    public void testJaccPolicyClassName() throws Exception {
+        ModelNode policy = new ModelNode();
+        policy.get("policy").set("org.wildfly.security.authz.jacc.JaccDelegatingPolicy");
+
+        KernelServices services = standardSubsystemTest("jacc-provider.xml", true);
+        ModelNode write = Util.getWriteAttributeOperation(getPolicyAddress("elytron-a"), "jacc-policy", policy);
+        ModelNode response = services.executeOperation(write);
+        assertEquals(response.toString(), "success", response.get("outcome").asString());
+    }
+
+    @Test
+    public void testJaccPolicyWrongClassName() throws Exception {
+        ModelNode policy = new ModelNode();
+        policy.get("policy").set("WrongPolicyClass");
+
+        KernelServices services = standardSubsystemTest("jacc-provider.xml", true);
+        ModelNode write = Util.getWriteAttributeOperation(getPolicyAddress("elytron-a"), "jacc-policy", policy);
+        ModelNode response = services.executeOperation(write);
+        assertEquals(response.toString(), "failed", response.get("outcome").asString());
     }
 
     private static PathAddress getPolicyAddress(String policy) {

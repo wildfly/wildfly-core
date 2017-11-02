@@ -442,4 +442,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1026, value = "Element '%s' with attribute '%s' set to '%s' is unused. Since unused policy " +
             "configurations can no longer be stored in the configuration model this item is being discarded.")
     void discardingUnusedPolicy(String element, String attr, String name);
+
+    @Message(id = 1027, value = "Failed to load class [%s]")
+    OperationFailedException failedToLoadClass(String className, @Cause Exception cause);
 }
