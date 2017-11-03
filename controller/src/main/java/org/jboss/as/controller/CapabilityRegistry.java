@@ -58,7 +58,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.ServiceName;
 
 /**
- * Registry of {@link org.jboss.as.controller.capability.AbstractCapability capabilities} available in the system.
+ * Registry of {@link org.jboss.as.controller.capability.Capability capabilities} available in the system.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
@@ -138,7 +138,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
     /**
      * Registers a capability with the system. Any
-     * {@link org.jboss.as.controller.capability.AbstractCapability#getRequirements() requirements}
+     * {@link org.jboss.as.controller.capability.Capability#getRequirements() requirements}
      * associated with the capability will be recorded as requirements.
      *
      * @param capabilityRegistration the capability. Cannot be {@code null}

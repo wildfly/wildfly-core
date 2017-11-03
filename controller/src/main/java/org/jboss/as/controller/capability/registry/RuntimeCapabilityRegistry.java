@@ -56,7 +56,7 @@ public interface RuntimeCapabilityRegistry extends ImmutableCapabilityRegistry {
 
     /**
      * Registers a capability with the system. Any
-     * {@link org.jboss.as.controller.capability.AbstractCapability#getRequirements() requirements}
+     * {@link org.jboss.as.controller.capability.Capability#getRequirements() requirements}
      * associated with the capability will be recorded as requirements.
      *
      * @param capability the capability. Cannot be {@code null}
