@@ -242,6 +242,17 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
 
     public void addNotificationListener(final ObjectName name, final NotificationListener listener, final javax.management.NotificationFilter filter, final Object handback)
             throws InstanceNotFoundException {
+        // NOTE: We do not perform any check whether the ObjectName conforms to an existing resource,
+        // throwing an InstanceNotFoundException if not. This is arguably a bug, as the javadoc for
+        // MBeanServerConnection.addNotificationListener says it will do that. But, the kernel management
+        // layer we are wrapping here does not require its notification handling registration be limited
+        // to existing resources, so it doesn't need us to reject this kind of registration. And doing so may
+        // break existing use cases, e.g. see the discussion in https://issues.jboss.org/browse/WFCORE-3387
+        //
+        // Perhaps we could check whether the address corresponds to a resource that *could* exist (i.e. there's
+        // a registration for some resource type that matches) and throw INFE for those that do not. That
+        // would help with catching things like (some) typos in the ObjectName.
+
         PathAddress pathAddress = getHelper(name).toPathAddress(name);
         JMXNotificationHandler handler = new JMXNotificationHandler(getHelper(name).getDomain(), name, listener, filter, handback);
         notificationRegistry.registerNotificationHandler(pathAddress, handler, handler);
