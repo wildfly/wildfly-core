@@ -88,7 +88,7 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
             // Register the resources
             LoggingDeploymentResources.registerDeploymentResource(deploymentResourceSupport, loggingConfigurationService);
             phaseContext.getServiceTarget()
-                    .addService(LoggingConfigurationService.forDeployment(deploymentUnit), loggingConfigurationService)
+                    .addService(deploymentUnit.getServiceName().append("logging", "configuration"), loggingConfigurationService)
                     .install();
         }
     }
