@@ -39,6 +39,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.VersionHandler;
+import org.jboss.as.cli.impl.aesh.HelpSupport;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -55,6 +56,7 @@ public class CliLauncher {
         int exitCode = 0;
         CommandContext cmdCtx = null;
         boolean gui = false;
+        boolean help = false;
         final List<String> systemPropertyKeys = new ArrayList<>();
         try {
             String argError = null;
@@ -191,7 +193,8 @@ public class CliLauncher {
                 } else if(arg.startsWith("--bind=")) {
                     ctxBuilder.setClientBindAddress(arg.substring(7));
                 } else if (arg.equals("--help") || arg.equals("-h")) {
-                    commands = Collections.singletonList("help");
+                    help = true;
+                    break;
                 } else if (arg.startsWith("--properties=")) {
                     final String value  = arg.substring(13);
                     final File propertiesFile = new File(FilenameTabCompleter.expand(value));
@@ -259,6 +262,12 @@ public class CliLauncher {
             if(argError != null) {
                 System.err.println(argError);
                 exitCode = 1;
+                return;
+            }
+
+            if (help) {
+                cmdCtx = initCommandContext(ctxBuilder.build(), false);
+                HelpSupport.printHelp(cmdCtx);
                 return;
             }
 
