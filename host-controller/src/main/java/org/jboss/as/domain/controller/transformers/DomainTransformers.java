@@ -31,6 +31,7 @@ import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSI
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_3_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_4_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_4_1;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_5_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.toModelVersions;
 
 import java.util.EnumSet;
@@ -117,7 +118,7 @@ public class DomainTransformers {
 
 
         // NEXT:  We've registered all the versions that have special transformation needs.
-        // Now, we register a transfomer for every other version that discards host-exclude
+        // Now, we register a transformer for every other version that discards host-exclude
         builder = TransformationDescriptionBuilder.Factory.createInstance(null);
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
         for (KernelAPIVersion version : allOthers) {
@@ -141,7 +142,7 @@ public class DomainTransformers {
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8);
+        registerChainedTransformer(registry, builder, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry) {

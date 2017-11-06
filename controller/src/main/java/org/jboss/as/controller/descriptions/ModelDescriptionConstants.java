@@ -140,6 +140,7 @@ public class ModelDescriptionConstants {
     public static final String DESCRIPTION = "description";
     public static final String DETAILS = "details";
     public static final String DESTINATION_ADDRESS = "destination-address";
+    public static final String DESTROY_SERVERS = "destroy-servers";
     public static final String DESTINATION_PORT = "destination-port";
     public static final String DIRECTORY = "directory";
     public static final String DIRECTORY_GROUPING = "directory-grouping";
@@ -260,6 +261,7 @@ public class ModelDescriptionConstants {
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
     public static final String KEYTAB = "keytab";
+    public static final String KILL_SERVERS = "kill-servers";
     public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
