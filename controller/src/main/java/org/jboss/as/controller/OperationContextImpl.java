@@ -109,6 +109,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.BatchServiceTarget;
+import org.jboss.msc.service.DelegatingServiceBuilder;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -2139,10 +2141,20 @@ final class OperationContextImpl extends AbstractOperationContext {
             return delegate.addListener(listeners);
         }
 
+        public ServiceTarget addListener(final LifecycleListener lifecycleListener) {
+            checkNotInManagementOperation();
+            return delegate.addListener(lifecycleListener);
+        }
+
         @SuppressWarnings("deprecation")
         public ServiceTarget removeListener(final ServiceListener<Object> listener) {
             checkNotInManagementOperation();
             return delegate.removeListener(listener);
+        }
+
+        public ServiceTarget removeListener(final LifecycleListener lifecycleListener) {
+            checkNotInManagementOperation();
+            return delegate.removeListener(lifecycleListener);
         }
 
         @SuppressWarnings("deprecation")
@@ -2427,9 +2439,17 @@ final class OperationContextImpl extends AbstractOperationContext {
             return controller.getAliases();
         }
 
+        public void addListener(final LifecycleListener lifecycleListener) {
+            controller.addListener(lifecycleListener);
+        }
+
         @SuppressWarnings("deprecation")
         public void addListener(ServiceListener<? super S> serviceListener) {
             controller.addListener(serviceListener);
+        }
+
+        public void removeListener(final LifecycleListener lifecycleListener) {
+            controller.removeListener(lifecycleListener);
         }
 
         @SuppressWarnings("deprecation")
