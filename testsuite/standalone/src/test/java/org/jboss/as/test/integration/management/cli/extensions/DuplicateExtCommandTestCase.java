@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
+import org.aesh.command.Command;
 
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
@@ -99,8 +100,9 @@ public class DuplicateExtCommandTestCase {
                 .addCliArgument("extension-commands --errors");
         cli.executeNonInteractive();
 
-        assertEquals(0, cli.getProcessExitValue());
-        assertTrue(cli.getOutput().trim().endsWith(DuplicateExtCommandHandler.NAME));
+        assertEquals(cli.getOutput().trim(), 0, cli.getProcessExitValue());
+        assertTrue(cli.getOutput().trim(), cli.getOutput().trim().contains(DuplicateExtCommandHandler.NAME)
+                && cli.getOutput().trim().contains(DuplicateExtCommand.NAME));
     }
 
     private static void createTestModule() throws Exception {
@@ -112,6 +114,7 @@ public class DuplicateExtCommandTestCase {
                 .addClass(DuplicateExtCommandHandlerProvider.class)
                 .addClass(DuplicateExtCommandsExtension.class)
                 .addClass(CliExtCommandsParser.class)
+                .addClass(DuplicateExtCommand.class)
                 .addClass(DuplicateExtCommandSubsystemResourceDescription.class);
 
         ArchivePath services = ArchivePaths.create("/");
@@ -122,6 +125,9 @@ public class DuplicateExtCommandTestCase {
 
         final ArchivePath cliCmdService = ArchivePaths.create(services, CommandHandlerProvider.class.getName());
         archive.addAsManifestResource(getResource(DuplicateExtCommandHandlerProvider.class), cliCmdService);
+
+        final ArchivePath cliAeshCmdService = ArchivePaths.create(services, Command.class.getName());
+        archive.addAsManifestResource(getResource(DuplicateExtCommand.class), cliAeshCmdService);
         testModule.create(true);
     }
 
