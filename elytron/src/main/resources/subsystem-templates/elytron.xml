@@ -85,7 +85,7 @@
     <supplement name="domain">
         <replacement placeholder="AUDIT_DEFINITIONS">
             <audit-logging>
-                <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" />
+                <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.server.log.dir" synchronized="false" format="JSON" />
             </audit-logging>
         </replacement>
         <replacement placeholder="DOMAIN_DEFINITIONS">
