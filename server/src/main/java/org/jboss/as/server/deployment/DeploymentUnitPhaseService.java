@@ -67,24 +67,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
      */
     private final AtomicBoolean runOnce = new AtomicBoolean();
 
-    /**
-     * If this is true then when a deployment goes down due to a dependency restart it will immediately attempt redeployment,
-     * otherwise it will wait till the dependency is available before doing the restart.
-     *
-     * At present this behaviour has a high chance of hitting MSC race conditions, that are only prevented at this stage
-     * by using the new directional executor. As this executor is only enabled via the <code>org.jboss.msc.directionalExecutor</code>
-     * system property this new restart behaviour is also only enabled if this system property is set.
-     *
-     * Once these MSC issues are fixed this should be removed, and immediate deployment restart should be made the default,
-     * as the current behaviour can cause infinite MSC looping in some circumstances if optional dependencies are in use
-     * between deployments.
-     */
-    private static final boolean immediateDeploymentRestart;
-
-    static {
-        immediateDeploymentRestart = Boolean.getBoolean("org.jboss.msc.directionalExecutor");
-    }
-
     private DeploymentUnitPhaseService(final DeploymentUnit deploymentUnit, final Phase phase, final AttachmentKey<T> valueKey) {
         this.deploymentUnit = deploymentUnit;
         this.phase = phase;
@@ -102,7 +84,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
     @SuppressWarnings("unchecked")
     public synchronized void start(final StartContext context) throws StartException {
         boolean allowRestart = restartAllowed();
-        if(!immediateDeploymentRestart && runOnce.get() && !allowRestart) {
+        if(runOnce.get() && !allowRestart) {
             ServerLogger.DEPLOYMENT_LOGGER.deploymentRestartDetected(deploymentUnit.getName());
             //this only happens on deployment restart, which we don't support at the moment.
             //instead we are going to restart the complete deployment.
@@ -237,40 +219,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
     }
 
     public synchronized void stop(final StopContext context) {
-        if(immediateDeploymentRestart && !restartAllowed()) {
-            final DeploymentUnit topDeployment = deploymentUnit.getParent() != null ? deploymentUnit.getParent() : deploymentUnit;
-            final ServiceName top = topDeployment.getServiceName();
-            final ServiceController<?> topController = context.getController().getServiceContainer().getService(top);
-            final Mode mode = topController.getMode();
-            if (mode != Mode.REMOVE && mode != Mode.NEVER && !context.getController().getServiceContainer().isShutdown()) {
-                //the deployment is going down, but it has not been explicitly stopped or removed
-                //so it must be because of a missing dependency. Unfortunately these phase services cannot fully restart
-                //as the data they require no longer exists, so instead we trigger a complete redeployment
-                //the redeployment will likely not fully complete, but will be waiting on whatever missing dependency
-                //caused this stop
-
-                //add a listener to perform a restart when the service goes down
-                //then stop the deployment unit service
-                final AbstractServiceListener<Object> serviceListener = new AbstractServiceListener<Object>() {
-
-                    @Override
-                    public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                        if (transition.getAfter().equals(ServiceController.Substate.DOWN)) {
-                            //its possible an undeploy happened in the meantime
-                            //so we use compareAndSetMode to make sure the mode is still NEVER and not REMOVE
-                            controller.compareAndSetMode(Mode.NEVER, mode);
-                            controller.removeListener(this);
-                        }
-                    }
-                };
-                topController.addListener(serviceListener);
-                if (topController.compareAndSetMode(mode, Mode.NEVER)) {
-                    ServerLogger.DEPLOYMENT_LOGGER.deploymentRestartDetected(topDeployment.getName());
-                } else {
-                    topController.removeListener(serviceListener);
-                }
-            }
-        }
         final DeploymentUnit deploymentUnitContext = deploymentUnit;
         final DeployerChains chains = deployerChainsInjector.getValue();
         final List<RegisteredDeploymentUnitProcessor> list = chains.getChain(phase);
