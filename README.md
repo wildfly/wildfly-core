@@ -8,6 +8,7 @@ This project provides the core runtime that is used by the Wildfly application s
 * Unified management, including domain mode.
 * Basic deployment architecture.
 * CLI for management.
+* Service Container
 
 Building
 -------------------
