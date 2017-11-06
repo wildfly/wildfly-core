@@ -99,7 +99,7 @@ public class CommandRegistry {
             names = Collections.singletonList(commandName);
         }
 
-        void addCommand(String name) {
+        public void addCommand(String name) {
             if(names.size() == 1) {
                 names = new ArrayList<String>(names);
             }

@@ -175,7 +175,7 @@ public class UndeployWildcardDomainTestCase {
 
     @Test
     public void testUndeployCliTestApps() throws Exception {
-        ctx.handle("undeploy cli-test-app* --all-relevant-server-groups");
+        ctx.handle("deployment undeploy cli-test-app* --all-relevant-server-groups");
         afterTestDeployments.add(cliTestAnotherWar.getName());
     }
 
@@ -188,7 +188,7 @@ public class UndeployWildcardDomainTestCase {
 
     @Test
     public void testUndeployTestAs() throws Exception {
-        ctx.handle("undeploy *test-a* --all-relevant-server-groups");
+        ctx.handle("deployment undeploy *test-a* --all-relevant-server-groups");
     }
 
     @Test
