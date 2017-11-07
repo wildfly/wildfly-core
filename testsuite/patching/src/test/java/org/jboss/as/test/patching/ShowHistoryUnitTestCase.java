@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.test.patching.util.module.Module;
 import org.jboss.dmr.ModelNode;
@@ -90,9 +91,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
         assertTrue(response.has("result"));
         final List<ModelNode> list = response.get("result").asList();
         assertEquals(1, list.size());
-        final ModelNode entry = list.get(0);
-        assertEquals("cp1", entry.get("patch-id").asString());
-        assertEquals("cumulative", entry.get("type").asString());
+        assertPatchInfo(list.get(0), "cp1", "cumulative", "false");
     }
 
     @Test
@@ -112,9 +111,7 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
         assertTrue(response.has("result"));
         final List<ModelNode> list = response.get("result").asList();
         assertEquals(1, list.size());
-        final ModelNode entry = list.get(0);
-        assertEquals("oneoff1", entry.get("patch-id").asString());
-        assertEquals("one-off", entry.get("type").asString());
+        assertPatchInfo(list.get(0), "oneoff1", "one-off", "false");
     }
 
     @Test
@@ -135,12 +132,8 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
         assertTrue(response.has("result"));
         final List<ModelNode> list = response.get("result").asList();
         assertEquals(2, list.size());
-        ModelNode entry = list.get(0);
-        assertEquals("cp1", entry.get("patch-id").asString());
-        assertEquals("cumulative", entry.get("type").asString());
-        entry = list.get(1);
-        assertEquals("oneoff1", entry.get("patch-id").asString());
-        assertEquals("one-off", entry.get("type").asString());
+        assertPatchInfo(list.get(0), "cp1", "cumulative", "false");
+        assertPatchInfo(list.get(1), "oneoff1", "one-off", "false");
     }
 
     @Test
@@ -169,13 +162,16 @@ public class ShowHistoryUnitTestCase extends PatchInfoTestBase {
         final List<ModelNode> list = response.get("result").asList();
         assertEquals(patchIds.length, list.size());
         for (int i = 0; i < patchIds.length; ++i) {
-            final ModelNode info = list.get(i);
-            assertEquals(patchIds[patchIds.length - 1 - i], info.get("patch-id").asString());
-            assertTrue(info.has("type"));
-            final String type = patchTypes[patchTypes.length - 1 - i] ? "cumulative" : "one-off";
-            assertEquals(type, info.get("type").asString());
-            assertTrue(info.has("applied-at"));
+            assertPatchInfo(list.get(i), patchIds[patchIds.length - 1 - i], patchTypes[patchTypes.length - 1 - i] ? "cumulative" : "one-off", "false");
         }
+    }
+
+    protected void assertPatchInfo(final ModelNode info, final String patchId, final String type, String agedOut) {
+        assertEquals(patchId, info.get("patch-id").asString());
+        assertTrue(info.has("type"));
+        assertEquals(type, info.get("type").asString());
+        assertTrue(info.has("applied-at"));
+        assertEquals(agedOut, info.get(Constants.AGED_OUT).asString());
     }
 
     private ModelNode showHistory() throws IOException {

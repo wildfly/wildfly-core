@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.HashUtils;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
@@ -91,8 +92,10 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         try {
             client = createClient();
             assertUnpatched(client);
+            assertRollbackList(client, null, null, null);
             ageoutHistory(client);
             assertUnpatched(client);
+            assertRollbackList(client, null, null, null);
         } finally {
             controller.stop();
         }
@@ -112,9 +115,11 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         controller.start();
         try {
             client = createClient();
-            assertPatched(client, new String[]{"cp1"}, new boolean[]{true});
+            assertPatched(client, new String[]{"cp1"}, new boolean[]{true}, new boolean[]{false});
+            assertRollbackList(client, new String[]{"cp1"}, new boolean[]{true}, new boolean[]{false});
             ageoutHistory(client);
-            assertPatched(client, new String[]{"cp1"}, new boolean[]{true});
+            assertPatched(client, new String[]{"cp1"}, new boolean[]{true}, new boolean[]{false});
+            assertRollbackList(client, new String[]{"cp1"}, new boolean[]{true}, new boolean[]{false});
         } finally {
             controller.stop();
         }
@@ -135,9 +140,11 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         controller.start();
         try {
             client = createClient();
-            assertPatched(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false});
+            assertPatched(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false}, new boolean[]{false, false});
+            assertRollbackList(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false}, new boolean[]{false, false});
             ageoutHistory(client);
-            assertPatched(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false});
+            assertPatched(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false}, new boolean[]{false, false});
+            assertRollbackList(client, new String[]{"oneoff2", "oneoff1"}, new boolean[]{false, false}, new boolean[]{false, false});
         } finally {
             controller.stop();
         }
@@ -159,9 +166,11 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         controller.start();
         try {
             client = createClient();
-            assertPatched(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true});
+            assertPatched(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true}, new boolean[]{false, false, false});
+            assertRollbackList(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true}, new boolean[]{false, false, false});
             ageoutHistory(client);
-            assertPatched(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true});
+            assertPatched(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true}, new boolean[]{false, false, false});
+            assertRollbackList(client, new String[]{"oneoff2", "oneoff1", "cp1"}, new boolean[]{false, false, true}, new boolean[]{false, false, false});
         } finally {
             controller.stop();
         }
@@ -186,12 +195,22 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
             client = createClient();
             assertPatched(client,
                     new String[]{"oneoff2", "oneoff1", "cp1", "cp0"},
-                    new boolean[]{false, false, true, true});
+                    new boolean[]{false, false, true, true},
+                    new boolean[]{false, false, false, false});
+            assertRollbackList(client,
+                    new String[]{"oneoff2", "oneoff1", "cp1", "cp0"},
+                    new boolean[]{false, false, true, true},
+                    new boolean[]{false, false, false, false});
             ageoutHistory(client);
             assertCleanedUp("cp0");
             assertPatched(client,
                     new String[]{"oneoff2", "oneoff1", "cp1", "cp0"},
-                    new boolean[]{false, false, true, true});
+                    new boolean[]{false, false, true, true},
+                    new boolean[]{false, false, false, true});
+            assertRollbackList(client,
+                    new String[]{"oneoff2", "oneoff1", "cp1"},
+                    new boolean[]{false, false, true},
+                    new boolean[]{false, false, false});
         } finally {
             controller.stop();
         }
@@ -220,19 +239,36 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
             client = createClient();
             assertPatched(client,
                     new String[]{"oneoff6", "oneoff5", "cp2", "oneoff4", "oneoff3", "cp1", "oneoff2", "oneoff1"},
-                    new boolean[]{false, false, true, false, false, true, false, false});
+                    new boolean[]{false, false, true, false, false, true, false, false},
+                    new boolean[]{false, false, false, false, false, false, false, false});
+            assertRollbackList(client,
+                    new String[]{"oneoff6", "oneoff5", "cp2", "oneoff4", "oneoff3", "cp1", "oneoff2", "oneoff1"},
+                    new boolean[]{false, false, true, false, false, true, false, false},
+                    new boolean[]{false, false, false, false, false, false, false, false});
             ageoutHistory(client);
             assertCleanedUp("oneoff1", "oneoff2", "cp1", "oneoff3", "oneoff4");
             assertPatched(client,
                     new String[]{"oneoff6", "oneoff5", "cp2", "oneoff4", "oneoff3", "cp1", "oneoff2", "oneoff1"},
-                    new boolean[]{false, false, true, false, false, true, false, false});
+                    new boolean[]{false, false, true, false, false, true, false, false},
+                    new boolean[]{false, false, false, true, true, true, true, true});
+            assertRollbackList(client,
+                    new String[]{"oneoff6", "oneoff5", "cp2"},
+                    new boolean[]{false, false, true},
+                    new boolean[]{false, false, false});
         } finally {
             controller.stop();
         }
     }
 
-    protected void assertPatched(ModelControllerClient client, String[] ids, boolean[] isCumulative) throws UnknownHostException, IOException {
-        final ModelNode response = readHistory(client);
+    protected void assertRollbackList(ModelControllerClient client, String[] ids, boolean[] isCumulative, boolean[] agedout) throws UnknownHostException, IOException {
+        assertHistoryResponse(readHistory(client, true), ids, isCumulative, agedout);
+    }
+
+    protected void assertPatched(ModelControllerClient client, String[] ids, boolean[] isCumulative, boolean[] agedout) throws Exception {
+        assertHistoryResponse(readHistory(client, false), ids, isCumulative, agedout);
+    }
+
+    protected void assertHistoryResponse(final ModelNode response, String[] ids, boolean[] isCumulative, boolean[] agedout) {
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
         assertTrue(response.has("result"));
@@ -246,12 +282,14 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
                 assertEquals(ids[i], patch.get("patch-id").asString());
                 final String type = isCumulative[i] ? Patch.PatchType.CUMULATIVE.getName() : Patch.PatchType.ONE_OFF.getName();
                 assertEquals(type, patch.get("type").asString());
+                assertTrue(patch.has("applied-at"));
+                assertEquals(agedout[i], patch.get(Constants.AGED_OUT).asBoolean());
             }
         }
     }
 
     protected void assertUnpatched(ModelControllerClient client) throws UnknownHostException, IOException {
-        final ModelNode response = readHistory(client);
+        final ModelNode response = readHistory(client, false);
         assertTrue(response.has("outcome"));
         assertEquals("success", response.get("outcome").asString());
         assertTrue(response.has("result"));
@@ -272,10 +310,13 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
         return controller.getClient().getControllerClient();
     }
 
-    protected ModelNode readHistory(ModelControllerClient client) throws UnknownHostException, IOException {
+    protected ModelNode readHistory(ModelControllerClient client, boolean excludeAgedOut) throws UnknownHostException, IOException {
         final ModelNode op = new ModelNode();
         op.get("address").add("core-service", "patching");
         op.get("operation").set("show-history");
+        if(excludeAgedOut) {
+            op.get("exclude-aged-out").set("true");
+        }
         return client.execute(op);
     }
 

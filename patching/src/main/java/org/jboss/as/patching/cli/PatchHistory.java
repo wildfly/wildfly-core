@@ -31,13 +31,16 @@ public class PatchHistory extends AbstractDistributionCommand {
     @Option(name = "patch-stream", hasValue = true, required = false)
     private String patchStream;
 
+    @Option(name = "exclude-aged-out", hasValue = false, required = false)
+    private boolean excludeAgedOut;
+
     public PatchHistory() {
         super("history");
     }
 
     @Override
     protected PatchOperationBuilder createPatchOperationBuilder(CommandContext ctx) throws CommandException {
-        return PatchOperationBuilder.Factory.history(patchStream);
+        return PatchOperationBuilder.Factory.history(patchStream, excludeAgedOut);
     }
 
 }

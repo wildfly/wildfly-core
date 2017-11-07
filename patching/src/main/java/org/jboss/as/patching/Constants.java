@@ -43,6 +43,8 @@ public class Constants {
     public static final String UNKNOWN = "Unknown";
 
     public static final String AGEOUT_HISTORY = "ageout-history";
+    public static final String AGED_OUT = "aged-out";
+    public static final String EXCLUDE_AGED_OUT = "exclude-aged-out";
     public static final String PATCH = "patch";
     public static final String PATCH_ID = "patch-id";
     public static final String PATCH_INFO = "patch-info";
