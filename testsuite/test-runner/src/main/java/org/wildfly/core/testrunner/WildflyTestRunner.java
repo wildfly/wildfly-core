@@ -13,6 +13,7 @@ import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
+import org.junit.Ignore;
 import org.junit.runner.Result;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
@@ -36,6 +37,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     private final List<ServerSetupTask> serverSetupTasks = new LinkedList<>();
 
     private final AtomicBoolean doOnce = new AtomicBoolean(false);
+    private final boolean ignored;
 
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
@@ -44,6 +46,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
      */
     public WildflyTestRunner(Class<?> klass) throws InitializationError {
         super(klass);
+        ignored = getTestClass().getAnnotation(Ignore.class) != null;
         if (klass.isAnnotationPresent(ServerControl.class)) {
             ServerControl serverControl = klass.getAnnotation(ServerControl.class);
             automaticServerControl = !serverControl.manual();
@@ -78,6 +81,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Object createTest() throws Exception {
+        if (ignored){
+            return null;
+        }
         Object res = super.createTest();
         doInject(getTestClass(), res);
         return res;
@@ -85,6 +91,9 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     @Override
     public void run(final RunNotifier notifier){
+        if (ignored) {
+            return;
+        }
         notifier.addListener(new RunListener() {
             @Override
             public void testRunFinished(Result result) throws Exception {

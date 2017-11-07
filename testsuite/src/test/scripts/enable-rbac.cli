@@ -1,0 +1,3 @@
+embed-server --admin-only=true --std-out=discard
+/core-service=management/access=authorization:write-attribute(name=provider, value=rbac)
+stop-embedded-server

@@ -66,7 +66,7 @@ public class RemoveManagementRealmTestCase {
 
     @Before
     public void beforeTest() throws Exception {
-        container.start();
+        container.startInAdminMode();
         String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
         source = Paths.get(jbossDist, "standalone", "configuration", "standalone.xml");
         target = Paths.get(temporaryUserHome.getRoot().getAbsolutePath(), "standalone.xml");

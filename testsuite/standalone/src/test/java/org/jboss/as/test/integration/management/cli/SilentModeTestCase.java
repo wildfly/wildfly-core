@@ -26,8 +26,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
@@ -57,6 +59,7 @@ public class SilentModeTestCase {
 
     @AfterClass
     public static void tearDown() throws Exception {
+        cliOut.close();
         cliOut = null;
     }
 
@@ -96,7 +99,7 @@ public class SilentModeTestCase {
             ctx.connectController();
             ctx.handleSafe(":read-resource");
             assertTrue(cliOut.toString().isEmpty());
-            assertFalse(checkIfEmpty(new File(CLI_LOG_FILE)));
+            assertFalse(checkIfEmpty(Paths.get(CLI_LOG_FILE)));
         } finally {
             ctx.terminateSession();
             cliOut.reset();
@@ -109,26 +112,26 @@ public class SilentModeTestCase {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
 
-        File target = new File("cli_output");
+        Path target = Paths.get(".","cli_output");
 
         try {
             ctx.setCurrentDir(new File("."));
             ctx.setSilent(true);
-            ctx.handleSafe("help > " + target.getAbsolutePath());
+            ctx.handleSafe("help > " + target.toAbsolutePath().toString());
             assertTrue(cliOut.toString().isEmpty());
             assertFalse(checkIfEmpty(target));
+            ctx.handleSafe("ls");
         } finally {
+            ctx.clear(CommandContext.Scope.CONTEXT);
             ctx.terminateSession();
             cliOut.reset();
-            target.delete();
+            Files.deleteIfExists(target);
         }
     }
 
     private void setupCliLogging() throws Exception {
-        File cliLogFile = new File(CLI_LOG_FILE);
-        if (cliLogFile.exists()) {
-            cliLogFile.delete();
-        }
+        Path cliLogFile = Paths.get(CLI_LOG_FILE);
+        Files.deleteIfExists(cliLogFile);
 
         InputStream is = null;
         try {
@@ -146,18 +149,8 @@ public class SilentModeTestCase {
         LogManager.getLogManager().readConfiguration();
     }
 
-    private boolean checkIfEmpty(File file) throws Exception {
-        boolean empty = false;
-        FileInputStream fis = null;
-        assertTrue(file.exists());
-        try {
-            fis = new FileInputStream(file);
-            empty = fis.read() == -1;
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
-        }
-        return empty;
+    private boolean checkIfEmpty(Path file) throws Exception {
+        assertTrue(Files.exists(file));
+        return Files.size(file) <= 0;
     }
 }

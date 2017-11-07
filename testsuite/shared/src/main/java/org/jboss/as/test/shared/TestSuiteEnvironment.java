@@ -250,6 +250,6 @@ public class TestSuiteEnvironment {
      * @return the binding port
      */
     public static int getHttpPort() {
-        return Integer.parseInt(getSystemProperty("jboss.http.port", "8080"));
+        return Integer.getInteger("jboss.http.port", 8080);
     }
 }

@@ -53,7 +53,7 @@ public class TestExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, SUBSYSTEM_NAMESPACE, new EmptySubsystemParser(SUBSYSTEM_NAMESPACE));
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, SUBSYSTEM_NAMESPACE, () -> new EmptySubsystemParser(SUBSYSTEM_NAMESPACE));
     }
 
 }

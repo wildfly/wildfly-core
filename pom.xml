@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>24</version>
+      <version>25</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -63,14 +63,13 @@
         <wildfly.core.release.codename>Kenny</wildfly.core.release.codename>
         <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
         <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
-
         <!--
             Build configuration.  Override JBoss Parent settings as necessary.
             For example: <version.surefire.plugin>2.11</version.surefire.plugin>
           -->
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.3.1</maven.min.version>
-        <version.surefire.plugin>2.18.1</version.surefire.plugin>
+       <!-- <version.surefire.plugin>2.18.1</version.surefire.plugin>-->
 
         <!-- use older version of checkstyle as otherwise lots of checks fail -->
         <version.checkstyle>6.8</version.checkstyle>
@@ -104,7 +103,7 @@
         <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.aesh-readline>1.0</version.org.aesh-readline>
-        <version.org.jboss.byteman>3.0.6</version.org.jboss.byteman>
+        <version.org.jboss.byteman>3.0.10</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.0.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.0.3.Final</version.org.jboss.jandex>
@@ -144,7 +143,7 @@
         <version.org.wildfly.discovery>1.0.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.openssl>1.0.2.Final</version.org.wildfly.openssl>
         <version.org.wildfly.legacy.test>2.0.3.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
+        <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
         <version.org.wildfly.security.elytron>1.2.0.Beta9</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.Final</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Final</version.org.wildfly.security.elytron-web.undertow-server>
@@ -1362,28 +1361,6 @@
                 <scope>test</scope>
             </dependency>
 
-            <!-- TODO remove once wildfly full is updated-->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>1.10.19</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- TODO: remove, here only till WildFly full moves to new GAV -->
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>woodstox-core-asl</artifactId>
-                <version>4.4.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-
             <dependency>
                 <groupId>org.projectodd.vdx</groupId>
                 <artifactId>vdx-core</artifactId>
@@ -1616,6 +1593,7 @@
                 <version>${version.org.glassfish.javax.json}</version>
             </dependency>
 
+            <!--TODO move to WildFly full as no one uses is in core-->
             <dependency>
                 <groupId>xml-resolver</groupId>
                 <artifactId>xml-resolver</artifactId>
@@ -1634,6 +1612,7 @@
                 </exclusions>
             </dependency>
 
+            <!-- todo consider removing this, as only one class in testsuite uses this-->
             <dependency>
                 <groupId>com.io7m.xom</groupId>
                 <artifactId>xom</artifactId>

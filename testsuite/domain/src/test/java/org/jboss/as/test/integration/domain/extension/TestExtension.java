@@ -48,14 +48,14 @@ public class TestExtension implements Extension {
     @Override
     public void initialize(ExtensionContext context) {
         SubsystemRegistration one = context.registerSubsystem("1", ModelVersion.create(1, 1, 1));
-        one.registerXMLElementWriter(parserOne);
+        one.registerXMLElementWriter(() -> parserOne);
         ManagementResourceRegistration mrrOne = one.registerSubsystemModel(new RootResourceDefinition("1"));
         mrrOne.registerSubModel(new ConstrainedResource(PathElement.pathElement("rbac-constrained")));
         mrrOne.registerSubModel(new SensitiveResource(PathElement.pathElement("rbac-sensitive")));
 
 
         SubsystemRegistration two = context.registerSubsystem("2", ModelVersion.create(2, 2, 2));
-        two.registerXMLElementWriter(parserTwo);
+        two.registerXMLElementWriter(() -> parserTwo);
         ManagementResourceRegistration mrrTwo = two.registerSubsystemModel(new RootResourceDefinition("2"));
     }
 

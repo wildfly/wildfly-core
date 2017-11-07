@@ -30,7 +30,7 @@
     <properties>
         <wildfly.home>${project.build.directory}/wildfly-core</wildfly.home>
         <wildfly.standalone.config>${project.build.directory}/wildfly-core/standalone/configuration</wildfly.standalone.config>
-        <xslt.scripts.dir>${basedir}/../src/test/xslt</xslt.scripts.dir>
+        <cli.scripts.dir>${basedir}/../src/test/scripts</cli.scripts.dir>
         <local.xslt.dir>${basedir}/src/test/resources/xslt</local.xslt.dir>
     </properties>
 
@@ -146,6 +146,27 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${version.org.wildfly.plugin}</version>
+                <executions>
+                    <execution>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>execute-commands</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <offline>true</offline>
+                    <scripts>
+                        <script>${cli.scripts.dir}/enable-rbac.cli</script>
+                    </scripts>
+                    <jboss-home>${wildfly.home}</jboss-home>
+                    <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
                 <executions>
@@ -159,15 +180,6 @@
                 </executions>
                 <configuration>
                     <transformationSets>
-                        <transformationSet>
-                            <dir>${wildfly.standalone.config}</dir>
-                            <skipDefaultExcludes>true</skipDefaultExcludes>
-                            <includes>
-                                <include>standalone*.xml</include>
-                            </includes>
-                            <stylesheet>${xslt.scripts.dir}/enableRbac.xsl</stylesheet>
-                            <outputDir>${wildfly.standalone.config}</outputDir>
-                        </transformationSet>
                         <transformationSet>
                             <dir>${wildfly.standalone.config}</dir>
                             <skipDefaultExcludes>true</skipDefaultExcludes>

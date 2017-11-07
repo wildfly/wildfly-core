@@ -98,11 +98,7 @@
         <!-- IP address defaults. -->
         <node0>127.0.0.1</node0>
         <management.address>${node0}</management.address>
-        <!-- HTTP binding settings -->
-        <jboss.http.port>8080</jboss.http.port>
         <jboss.bind.address>${management.address}</jboss.bind.address>
-        <!-- Default multicast address. -->
-        <mcast>230.0.0.4</mcast>
 
         <!-- IP stack configs. -->
         <jvm.args.ip>-Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=false</jvm.args.ip>
@@ -119,8 +115,7 @@
         <jvm.args.other>-server</jvm.args.other>
 
         <!-- Standalone server arguments -->
-        <jboss.http.bind.args>-Djboss.http.port=${jboss.http.port} -Djboss.bind.address=${jboss.bind.address}</jboss.http.bind.args>
-        <jboss.args>${jboss.http.bind.args}</jboss.args>
+        <jboss.args></jboss.args>
         <!-- Domain server argument -->
         <jboss.domain.server.args></jboss.domain.server.args>
 
@@ -139,9 +134,6 @@
         <as.debug.port>8787</as.debug.port>
         <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist}</surefire.system.args>
         <surefire.forked.process.timeout>1500</surefire.forked.process.timeout>
-
-        <!-- If servers should be killed before the test suite is run-->
-        <org.wildfly.test.kill-servers-before-test>false</org.wildfly.test.kill-servers-before-test>
 
         <!-- Don't try to deploy the testsuite modules because they don't build jars -->
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -205,96 +197,7 @@
 
         <pluginManagement>
             <plugins>
-                <!--
-                    Adjust IP addresses used in server config files.
-                 -->
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>xml-maven-plugin</artifactId>
-                    <executions combine.children="append">
-                        <execution>
-                            <id>ts.config-as.ip</id>
-                            <phase>process-test-resources</phase>
-                            <goals>
-                                <goal>transform</goal>
-                            </goals>
-                            <inherited>true</inherited>
-                            <configuration>
-                                <transformationSets>
-                                    <!-- IPs. -->
-                                    <transformationSet>
-                                        <dir>${basedir}/target/wildfly-core/standalone/configuration</dir>
-                                        <outputDir>${basedir}/target/wildfly-core/standalone/configuration</outputDir>
-                                        <stylesheet>${xslt.scripts.dir}/changeIPAddresses.xsl</stylesheet>
-                                        <includes>
-                                            <include>standalone*.xml</include>
-                                        </includes>
-                                        <parameters>
-                                            <parameter>
-                                                <name>managementIPAddress</name>
-                                                <value>${node0}</value>
-                                            </parameter>
-                                            <parameter>
-                                                <name>publicIPAddress</name>
-                                                <value>${node0}</value>
-                                            </parameter>
-
-                                            <parameter>
-                                                <name>udpMcastAddress</name>
-                                                <value>${mcast}</value>
-                                            </parameter>
-                                            <parameter>
-                                                <name>mpingMcastAddress</name>
-                                                <value>${mcast}</value>
-                                            </parameter>
-                                            <parameter>
-                                                <name>modclusterMcastAddress</name>
-                                                <value>${mcast}</value>
-                                            </parameter>
-                                        </parameters>
-                                    </transformationSet>
-                                </transformationSets>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>ts.config-as.trace-logging</id>
-                            <phase>process-test-resources</phase>
-                            <goals>
-                                <goal>transform</goal>
-                            </goals>
-                            <inherited>true</inherited>
-                            <configuration>
-                                <transformationSets>
-                                    <!-- IPs. -->
-                                    <transformationSet>
-                                        <dir>${basedir}/target/wildfly-core/standalone/configuration</dir>
-                                        <outputDir>${basedir}/target/wildfly-core/standalone/configuration</outputDir>
-                                        <stylesheet>${xslt.scripts.dir}/enableTrace.xsl</stylesheet>
-                                        <includes>
-                                            <include>standalone*.xml</include>
-                                        </includes>
-                                        <parameters>
-                                            <parameter>
-                                                <name>trace</name>
-                                                <value>${trace}</value>
-                                            </parameter>
-                                        </parameters>
-                                    </transformationSet>
-                                </transformationSets>
-                            </configuration>
-                        </execution>
-                    </executions>
-                    <!-- WFLY-3361 - use external xalan for XML transformations to
-                    ensure consistent behaviour on all platrforms.-->
-                    <dependencies>
-                        <dependency>
-                            <groupId>xalan</groupId>
-                            <artifactId>xalan</artifactId>
-                            <version>2.7.1</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-
+            
                 <!--
                    Sets general surefire system properties.
                    These can be overridden by inheriting plugin configurations.
@@ -308,14 +211,12 @@
                         <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                         <systemPropertyVariables>
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                            <jboss.dist>${jboss.dist}</jboss.dist>
+                            <!--<jboss.dist>${jboss.dist}</jboss.dist>-->
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
-                            <org.wildfly.test.kill-servers-before-test>${org.wildfly.test.kill-servers-before-test}</org.wildfly.test.kill-servers-before-test>
                             <management.address>${management.address}</management.address>
 
                             <!-- jboss.http.port and jboss.bind.address are by the UndertowService and the
                             TestSuiteEnvironment to determine where to bind Undertow -->
-                            <jboss.http.port>${jboss.http.port}</jboss.http.port>
                             <jboss.bind.address>${jboss.bind.address}</jboss.bind.address>
 
                             <jboss.args>${jboss.args}</jboss.args>
@@ -342,22 +243,13 @@
                     <artifactId>maven-jar-plugin</artifactId>
                     <executions>
                         <execution>
-                            <id>default-jar</id>
-                            <phase>none</phase>
+                            <goals>
+                                <goal>test-jar</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
-                <!-- Don't install - nothing to do. -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>default-install</id>
-                            <phase>none</phase>
-                        </execution>
-                    </executions>
-                </plugin>
+              
             </plugins>
         </pluginManagement>
     </build>
@@ -431,8 +323,6 @@
                 <jvm.args.ip>-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true</jvm.args.ip>
                 <!-- Override IPv4 defaults from the top. -->
                 <node0>::1</node0>
-                <mcast>ff13::1</mcast>
-                <!-- ff01::1  is IPv6 Node-Local scope mcast addr. -->
                 <management.address>${node0}</management.address>
             </properties>
         </profile>
@@ -447,7 +337,7 @@
             </activation>
             <properties>
                 <!-- Standalone security manager argument -->
-                <jboss.args>${jboss.http.bind.args} -secmgr</jboss.args>
+                <jboss.args>-secmgr</jboss.args>
                 <!-- Domain security manager argument -->
                 <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
