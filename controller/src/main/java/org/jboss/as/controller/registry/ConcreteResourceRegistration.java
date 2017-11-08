@@ -261,7 +261,18 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
             if (subregistry != null) {
                 //we remove also children, effectively doing recursive delete
-                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address));
+                // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
+                // that results in querying (and thus read locking) nodes above
+                // this one as that can lead to deadlocks.
+                // Reading from the root would allow the call to find addresses
+                // associated with a wildcard registration for which this MRR
+                // is an override (if it is such an MRR.) But, we only end up
+                // reading our own subregistry to find the MRR
+                // to invoke the recursive delete on anyway, and an override MRR
+                // trying to somehow remove children from the related wildcard MRR
+                // would be wrong, so there's no point reading from the root to
+                // find those kinds of addresses.
+                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
                 if (childAddresses != null) {
                     ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
                     if(!registration.isAlias()) {
