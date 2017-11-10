@@ -52,4 +52,9 @@ class LeafPlatformMBeanResource extends AbstractPlatformMBeanResource {
     public Set<String> getChildTypes() {
         return Collections.emptySet();
     }
+
+    @Override
+    public int getTreeSize() {
+        return 1;
+    }
 }
