@@ -35,10 +35,6 @@
     <artifactId>wildfly-protocol</artifactId>
     <name>WildFly: Protocol Utilities</name>
 
-    <properties>
-        <test.level>INFO</test.level>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>

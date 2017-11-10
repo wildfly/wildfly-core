@@ -36,10 +36,6 @@
 
     <name>WildFly: Controller Core</name>
 
-    <properties>
-        <test.level>INFO</test.level>
-    </properties>
-
     <dependencies>
 
         <dependency>
