@@ -33,10 +33,9 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -71,9 +70,18 @@ public class ExtensionXml {
     private final ExecutorService bootExecutor;
     private final ExtensionRegistry extensionRegistry;
 
+    /**
+     * Create a parser/marshaller for extension elements.
+     *
+     * @param loader loader for modules declared in the extension elements. Cannot be {@code null}
+     * @param executorService executor to handle concurrent
+     *                        {@link Extension#initializeParsers(ExtensionParsingContext) extension initialization}
+     *                        tasks. May be {@code null} in which case no concurrent initialization will be done
+     * @param extensionRegistry registry for initialized extensions. Cannot be {@code null}
+     */
     public ExtensionXml(final ModuleLoader loader, final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
-        moduleLoader = loader;
-        bootExecutor = executorService;
+        this.moduleLoader = loader;
+        this.bootExecutor = executorService;
         this.extensionRegistry = extensionRegistry;
     }
 
@@ -100,9 +108,13 @@ public class ExtensionXml {
 
         final XMLMapper xmlMapper = reader.getXMLMapper();
 
-        final Map<String, Future<XMLStreamException>> loadFutures = bootExecutor != null
-                ? new LinkedHashMap<String, Future<XMLStreamException>>() : null;
+        int exRegMax = extensionRegistry.getMaxParallelBootTasks();
+        // We do twice as many tasks as the subsystem mgmt ops can since mgmt ops use 2 threads per chunk
+        int maxInitializationTasks = exRegMax > 1 ? exRegMax * 2 : exRegMax;
+        final GroupLoadTask[] loadTasks = bootExecutor != null && maxInitializationTasks > 1
+                ? new GroupLoadTask[maxInitializationTasks] : null;
 
+        int taskIdx = -1;
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
             final Element element = Element.forName(reader.getLocalName());
@@ -118,43 +130,50 @@ public class ExtensionXml {
                 throw ControllerLogger.ROOT_LOGGER.duplicateExtensionElement(Element.EXTENSION.getLocalName(), Attribute.MODULE.getLocalName(), moduleName, reader.getLocation());
             }
 
-            if (loadFutures != null) {
+            if (loadTasks != null) {
                 // Load the module asynchronously
-                Callable<XMLStreamException> callable = new Callable<XMLStreamException>() {
-                    @Override
-                    public XMLStreamException call() throws Exception {
-                        return loadModule(moduleName, xmlMapper);
-                    }
-                };
-                Future<XMLStreamException> future = bootExecutor.submit(callable);
-                loadFutures.put(moduleName, future);
+                if (taskIdx == maxInitializationTasks - 1) {
+                    taskIdx = 0;
+                } else {
+                    taskIdx++;
+                }
+                LoadTask loadTask = new LoadTask(moduleName, xmlMapper);
+                if (loadTasks[taskIdx] == null) {
+                    loadTasks[taskIdx] = new GroupLoadTask(loadTask);
+                } else {
+                    loadTasks[taskIdx].loadTasks.add(loadTask);
+                }
             } else {
                 // Load the module from this thread
                 XMLStreamException xse = loadModule(moduleName, xmlMapper);
                 if (xse != null) {
                     throw xse;
                 }
-                addExtensionAddOperation(address, list, moduleName);
             }
 
+            addExtensionAddOperation(address, list, moduleName);
         }
 
-        if (loadFutures != null) {
-            for (Map.Entry<String, Future<XMLStreamException>> entry : loadFutures.entrySet()) {
-
-                try {
-                    XMLStreamException xse = entry.getValue().get();
-                    if (xse != null) {
-                        throw xse;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(entry.getKey());
-                } catch (ExecutionException e) {
-                    throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e, entry.getKey());
+        if (loadTasks != null) {
+            for (GroupLoadTask loadTask : loadTasks) {
+                if (loadTask != null) {
+                    loadTask.execute(bootExecutor);
                 }
-
-                addExtensionAddOperation(address, list, entry.getKey());
+            }
+            for (GroupLoadTask loadTask : loadTasks) {
+                if (loadTask != null) {
+                    try {
+                        XMLStreamException xse = loadTask.future.get();
+                        if (xse != null) {
+                            throw xse;
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(loadTask.currentModule);
+                    } catch (ExecutionException e) {
+                        throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e, loadTask.currentModule);
+                    }
+                }
             }
         }
 
@@ -193,6 +212,50 @@ public class ExtensionXml {
             return null;
         } catch (final ModuleLoadException e) {
             throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e);
+        }
+    }
+
+    private class LoadTask implements Callable<XMLStreamException> {
+
+        private final String moduleName;
+        private final XMLMapper xmlMapper;
+
+        private LoadTask(String moduleName, XMLMapper xmlMapper) {
+            this.moduleName = moduleName;
+            this.xmlMapper = xmlMapper;
+        }
+
+        @Override
+        public XMLStreamException call() throws Exception {
+            return loadModule(moduleName, xmlMapper);
+        }
+    }
+
+    private static class GroupLoadTask implements Callable<XMLStreamException> {
+        private final List<LoadTask> loadTasks = new ArrayList<>();
+        private volatile String currentModule;
+        private volatile Future<XMLStreamException> future;
+
+        private GroupLoadTask(LoadTask first) {
+            this.currentModule = first.moduleName;
+            loadTasks.add(first);
+        }
+
+        @Override
+        public XMLStreamException call() throws Exception {
+
+            for (LoadTask task : loadTasks) {
+                currentModule = task.moduleName;
+                XMLStreamException ex = task.call();
+                if (ex != null) {
+                    return ex;
+                }
+            }
+            return null;
+        }
+
+        private void execute(ExecutorService executorService) {
+            future = executorService.submit(this);
         }
     }
 }

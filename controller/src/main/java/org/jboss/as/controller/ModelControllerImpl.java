@@ -125,6 +125,7 @@ class ModelControllerImpl implements ModelController {
     private final OperationStepHandler prepareStep;
     private final ControlledProcessState processState;
     private final ExecutorService executorService;
+    private final int maxParallelBootTasks;
     private final ExpressionResolver expressionResolver;
     private final Authorizer authorizer;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
@@ -153,7 +154,7 @@ class ModelControllerImpl implements ModelController {
                         final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
-                        final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
+                        final int maxParallelBootTasks, final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
                         final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
                         final CapabilityRegistry capabilityRegistry,
@@ -186,6 +187,7 @@ class ModelControllerImpl implements ModelController {
         this.processState = processState;
         this.serviceTarget.addListener(stateMonitor);
         this.executorService = executorService;
+        this.maxParallelBootTasks = maxParallelBootTasks;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;
         assert securityIdentitySupplier != null;
@@ -595,9 +597,10 @@ class ModelControllerImpl implements ModelController {
         final ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
         final MutableRootResourceRegistrationProvider parallellBRRRProvider = parallelBootRootResourceRegistrationProvider != null ?
                 parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
-        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
-        ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
-                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit, extraValidationStepHandler) : null;
+        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null || maxParallelBootTasks < 2 ? null : new ParallelExtensionAddHandler(executorService, maxParallelBootTasks, parallellBRRRProvider);
+        ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && maxParallelBootTasks > 1 && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
+                ? new ParallelBootOperationStepHandler(executorService, maxParallelBootTasks, rootRegistration, processState, this, lockPermit, extraValidationStepHandler)
+                : null;
         boolean registeredParallelSubsystemHandler = false;
         int subsystemIndex = 0;
         for (ModelNode bootOp : bootList) {

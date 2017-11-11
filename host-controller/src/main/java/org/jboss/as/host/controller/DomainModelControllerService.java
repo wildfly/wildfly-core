@@ -626,6 +626,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
         };
     }
 
+    protected int getMaxParallelBootTasks() {
+        return extensionRegistry.getMaxParallelBootTasks();
+    }
+
     // See superclass start. This method is invoked from a separate non-MSC thread after start. So we can do a fair
     // bit of stuff
     @Override

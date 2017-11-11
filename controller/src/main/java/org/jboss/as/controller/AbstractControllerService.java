@@ -332,7 +332,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
+                processState, executorService, getMaxParallelBootTasks(), expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
                 injectedInstabilityListener.getOptionalValue());
 
@@ -389,6 +389,12 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }, "Controller Boot Thread", bootStackSize);
         bootThread.start();
+    }
+
+    protected int getMaxParallelBootTasks() {
+        return 50; // arbitrary value. Subclasses that support parallel boot would override this.
+                    // Originally I used Integer.MAX_VALUE as the arbitrary value but that's dangerous
+                    // as it can produce OOME if a coding mistake is made and this isn't overridden.
     }
 
     /**
