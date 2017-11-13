@@ -36,10 +36,6 @@
 
     <name>WildFly: Threading Subsystem</name>
 
-    <properties>
-        <test.level>INFO</test.level>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.wildfly.core</groupId>

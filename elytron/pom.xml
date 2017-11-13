@@ -33,8 +33,6 @@
     <properties>
         <!-- TODO Elytron Remove once parent on M17 -->
         <version.org.apache.ds>2.0.0-M17</version.org.apache.ds>
-
-        <test.level>INFO</test.level>
     </properties>
 
     <dependencyManagement>
