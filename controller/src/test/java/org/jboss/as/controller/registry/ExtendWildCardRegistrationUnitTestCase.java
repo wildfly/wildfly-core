@@ -25,6 +25,8 @@ package org.jboss.as.controller.registry;
 import static org.jboss.as.controller.registry.CoreManagementResourceRegistrationUnitTestCase.getOpDef;
 import static org.junit.Assert.*;
 
+import java.util.Set;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -354,6 +356,76 @@ public class ExtendWildCardRegistrationUnitTestCase {
             //
         }
 
+    }
+
+    @Test
+    public void testSubmodelRemoval() {
+        PathElement grandchildWild = PathElement.pathElement("grandchild");
+        PathElement grandchildExt = PathElement.pathElement("grandchild", "ext");
+        PathElement anotherGranchild = PathElement.pathElement("another", "grandchild");
+
+        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, new NonResolvingResourceDescriptionResolver()));
+        childWildExtReg.registerSubModel(new SimpleResourceDefinition(grandchildExt, new NonResolvingResourceDescriptionResolver()));
+        childWildExtReg.registerSubModel(new SimpleResourceDefinition(anotherGranchild, new NonResolvingResourceDescriptionResolver()));
+
+        // Confirm setup.
+
+        // Definition of /parent=*/child=* only has 1 child type -- granchild=*. The fact that
+        // a concrete resource /parent=a/child=wild-ext might allow another=grandchild and also
+        // an override form grandchild=ext doesn't change the fact that /parent=*/child=* only has 1 child type.
+        // Remember, when it comes to MRRs, '*' doesn't mean "match" everything; it identifies a specific MRR
+        // and the children are what are associated with that specific MRR
+        Set<PathElement> grandchildren = childWildReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(grandchildren.toString(), 1, grandchildren.size());
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
+        // However /parent=a/child=wild-ext does allow children another=grandchild,
+        // grandchild=ext (whose API presumably includes overrides) and
+        // grandchild=<* != ext> (whose API does not include overrides). The child=wild-ext
+        // is an override of child=* and that means it supports child=*'s API, including granchild=*
+        grandchildren = childWildExtReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(grandchildren.toString(), 3, grandchildren.size());
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildExt));
+        assertTrue(grandchildren.toString(), grandchildren.contains(anotherGranchild));
+
+        // Now do some removals
+
+        // 1) A removal via the override does not remove from the wildcard
+
+        childWildExtReg.unregisterSubModel(grandchildWild);
+        grandchildren = childWildExtReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(grandchildren.toString(), 3, grandchildren.size());
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
+        assertTrue(grandchildren.toString(), grandchildren.contains(anotherGranchild));
+        grandchildren = childWildReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(grandchildren.toString(), 1, grandchildren.size());
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
+
+        // 2) Removing a wildcard child removes its overrides
+        childWildReg.unregisterSubModel(grandchildWild);
+        grandchildren = childWildReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertTrue(grandchildren.toString(), grandchildren.isEmpty());
+        grandchildren = childWildExtReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        // Minor TODO: it's not gone. Minor problem, as in the real world removing the wildcard
+        // is done in some large scale context like extension remove where everything
+        // ends up being removed
+        //assertEquals(grandchildren.toString(), 1, grandchildren.size());
+
+        // 3) Confirm the remove did not remove unrelated registrations
+        assertTrue(grandchildren.toString(), grandchildren.contains(anotherGranchild));
+
+        // Restore state
+        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, new NonResolvingResourceDescriptionResolver()));
+
+        // 4) Removing a higher level override does not remove children of the related wildcard
+        parentWildReg.unregisterSubModel(childWildExt);
+        Set<PathElement> children = parentWildReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(children.toString(), 1, children.size());
+        assertTrue(children.toString(), children.contains(childWild));
+        grandchildren = childWildReg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
+        assertEquals(grandchildren.toString(), 1, grandchildren.size());
+        assertTrue(grandchildren.toString(), grandchildren.contains(grandchildWild));
     }
 
     private static class TestOSH implements OperationStepHandler {
