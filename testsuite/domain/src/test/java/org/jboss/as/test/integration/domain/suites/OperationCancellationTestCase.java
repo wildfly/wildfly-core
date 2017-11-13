@@ -940,6 +940,7 @@ public class OperationCancellationTestCase {
             op.get("timeout").set(0);
             ModelNode result = executeForResult(op, masterClient);
             assertEquals(result.toString(), id, result.asString());
+
         } finally {
             try {
                 blockFuture.cancel(true);
@@ -948,41 +949,81 @@ public class OperationCancellationTestCase {
                 log.error("Failed to cancel in testFindNonProgressingOperation" , toLog);
             }
         }
+
+        // WFCORE-3405 Test for find-non-progressing-operation call from domain server
+        blockFuture = block("slave", "main-three", BlockerExtension.BlockPoint.RUNTIME);
+        id = findActiveOperation(masterClient, "master", "main-one", "block", null, start);
+        try {
+            ModelNode op = Util.createEmptyOperation("find-non-progressing-operation",
+                    PathAddress.pathAddress(PathElement.pathElement(HOST, "master"))
+                            .append(PathElement.pathElement(SERVER, "main-one"))
+                            .append(MGMT_CONTROLLER));
+            op.get("timeout").set(0);
+            ModelNode result = executeForResult(op, masterClient);
+            assertEquals(result.toString(), id, result.asString());
+        } finally {
+            try {
+                blockFuture.cancel(true);
+                validateNoActiveOperation(masterClient, "master", null, id, true);
+            } catch (Exception toLog) {
+                log.error("Failed to cancel in testFindNonProgressingOperation", toLog);
+            }
+        }
     }
 
     /** WFCORE-263 */
     @Test
     //@Ignore()
     public void testCancellingNonProgressingDomainRollout() throws Exception {
-        failNonProgressingDomainRolloutTest("cancel-non-progressing-operation");
+        failNonProgressingDomainRolloutTest("cancel-non-progressing-operation", null);
     }
 
     /** WFCORE-263 */
     @Test
     //@Ignore()
     public void testFindNonProgressingDomainRollout() throws Exception {
-        failNonProgressingDomainRolloutTest("find-non-progressing-operation");
+        failNonProgressingDomainRolloutTest("find-non-progressing-operation", null);
     }
 
-    private void failNonProgressingDomainRolloutTest(String opName) throws Exception {
+    /** WFCORE-3405 */
+    @Test
+    public void testCancellingNonProgressingDomainRolloutFullServerAddress() throws Exception {
+        failNonProgressingDomainRolloutTest("cancel-non-progressing-operation", "main-three");
+    }
+
+    /** WFCORE-3405 */
+    @Test
+    public void testFindNonProgressingDomainRolloutFullServerAddress() throws Exception {
+        failNonProgressingDomainRolloutTest("find-non-progressing-operation", "main-three");
+    }
+
+    private void failNonProgressingDomainRolloutTest(String opName, String server) throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", "main-three", BlockerExtension.BlockPoint.RUNTIME);
+        Future<ModelNode> blockFuture = block("slave", server, BlockerExtension.BlockPoint.COMMIT);
         String id = null;
         try {
-            id = findActiveOperation(masterClient, "slave", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-            ModelNode op = Util.createEmptyOperation(opName,
-                    PathAddress.pathAddress(PathElement.pathElement(HOST, "slave")).append(MGMT_CONTROLLER));
+            id = findActiveOperation(masterClient, "slave", server, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+            ModelNode op;
+            if (server == null) {
+                op = Util.createEmptyOperation(opName, PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"))
+                        .append(MGMT_CONTROLLER));
+            } else {
+                op = Util.createEmptyOperation(opName,
+                        PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"))
+                        .append(PathElement.pathElement(SERVER, server))
+                        .append(MGMT_CONTROLLER));
+            }
             op.get("timeout").set(0);
             ModelNode cancelled = executeForResult(op, masterClient);
             assertTrue(cancelled.isDefined());
             if (opName.contains("cancel")) {
-                validateNoActiveOperation(masterClient, "slave", null, cancelled.asString(), true);
+                validateNoActiveOperation(masterClient, "slave", server, cancelled.asString(), true);
             }
         } finally {
             try {
                 blockFuture.cancel(true);
                 if (id != null) {
-                    validateNoActiveOperation(masterClient, "slave", null, id, true);
+                    validateNoActiveOperation(masterClient, "slave", server, id, true);
                 }
             } catch (Exception toLog) {
                 log.error("Failed to cancel in failNonProgressingDomainRolloutTest of " + opName , toLog);
