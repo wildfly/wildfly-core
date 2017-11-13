@@ -108,7 +108,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             int result = buffer.length();
             if(parsedCmd.getLastHeaderName() != null) {
                 if(buffer.endsWith(parsedCmd.getLastHeaderName())) {
-                    result = parsedCmd.getLastChunkOriginalIndex();
+                    result = parsedCmd.getLastChunkIndex();
                     for (String name : headers.keySet()) {
                         if (name.equals(parsedCmd.getLastHeaderName())) {
                             result = completeHeader(headers, ctx, parsedCmd, buffer, cursor, candidates);
@@ -269,7 +269,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                         if (argFullName.equals(parsedName)) {
                             if (!arg.isValueRequired()) {
                                 candidates.add(Util.FALSE);
-                                return parsedCmd.getLastChunkOriginalIndex();
+                                return parsedCmd.getLastChunkIndex();
                             }
                         }
                     }
@@ -304,12 +304,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                             return buffer.length();
                         }
                     }
-                    int correctedValueOffset = substitutions.getOriginalOffset(result + valueResult);
-
                     //WFCORE-3190 ignore trailing spaces after the cursor position
                     int trailOffset = substitutions.getSubstitued().substring(result).length() - normalizedChunk.length();
 
-                    return correctedValueOffset + trailOffset;
+                    return result + valueResult + trailOffset;
                 }
             }
 
@@ -460,7 +458,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             } else {
                 Collections.sort(candidates);
             }
-            return parsedCmd.getOriginalOffset(result);
+            return result;
         }
 
         if(parsedCmd.hasOperationName() || parsedCmd.endsOnAddressOperationNameSeparator()) {
@@ -493,7 +491,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                     candidates.set(0, chunk + parsedCmd.getFormat().getPropertyListStart());
                 }
 
-                return parsedCmd.getLastChunkOriginalIndex();
+                return parsedCmd.getLastChunkIndex();
             }
         }
 
@@ -602,7 +600,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
             offset = parsedSegment.getOffset();
         }
 
-        return parsedCmd.getLastSeparatorOriginalIndex() + 1 + offset;
+        return parsedCmd.getLastSeparatorIndex() + 1 + offset;
     }
 
     private SegmentParsingInitialState.SegmentParsingCallbackHandler parseLastSegment(String chunk) {
@@ -666,10 +664,10 @@ public class OperationRequestCompleter implements CommandLineCompleter {
         }
 
         int valueResult = headerCompleter.complete(ctx,
-                buffer.substring(parsedCmd.getLastChunkOriginalIndex()), cursor, candidates);
+                buffer.substring(parsedCmd.getLastChunkIndex()), cursor, candidates);
         if (valueResult < 0) {
             return -1;
         }
-        return parsedCmd.getOriginalOffset(parsedCmd.getLastChunkIndex() + valueResult);
+        return parsedCmd.getLastChunkIndex() + valueResult;
     }
 }

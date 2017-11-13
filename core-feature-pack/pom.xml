@@ -127,6 +127,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-extensions</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.invocation</groupId>
             <artifactId>jboss-invocation</artifactId>
         </dependency>

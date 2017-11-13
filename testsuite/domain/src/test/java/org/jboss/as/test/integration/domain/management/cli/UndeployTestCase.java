@@ -109,6 +109,18 @@ public class UndeployTestCase {
 
         checkState(sgOne, cliTestApp1War.getName(), false);
         checkState(sgTwo, cliTestApp1War.getName(), true);
+
+        ctx.handle("deployment undeploy * --all-relevant-server-groups");
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ',' + sgTwo + " " + cliTestApp1War.getAbsolutePath());
+
+        checkState(sgOne, cliTestApp1War.getName(), true);
+        checkState(sgTwo, cliTestApp1War.getName(), true);
+
+        // From serverGroup1 only, still referenced from sg2. Must keep-content
+        ctx.handle("deployment undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+
+        checkState(sgOne, cliTestApp1War.getName(), false);
+        checkState(sgTwo, cliTestApp1War.getName(), true);
     }
 
     private void checkState(String groupName, String deploymentname, boolean expected) throws Exception {

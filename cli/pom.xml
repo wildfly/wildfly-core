@@ -109,6 +109,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-extensions</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>staxmapper</artifactId>
         </dependency>

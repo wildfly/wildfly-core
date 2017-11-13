@@ -25,6 +25,9 @@ package org.jboss.as.test.integration.management.cli;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.aesh.complete.AeshCompleteOperation;
+import org.aesh.readline.completion.Completion;
+import org.aesh.readline.terminal.formatting.TerminalString;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -55,6 +58,9 @@ public class CliCompletionTestCase {
                         cmd.length(), candidates);
                 assertTrue(candidates.contains("--start-mode"));
                 assertFalse(candidates.contains("--admin-only"));
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.contains("--start-mode"));
+                assertFalse(candidates.contains("--admin-only"));
             }
 
             {
@@ -65,6 +71,12 @@ public class CliCompletionTestCase {
                 assertTrue(candidates.toString(), candidates.size() == 3);
                 assertEquals(candidates.toString(), Arrays.asList("admin-only",
                         "normal", "suspend"), candidates);
+                candidates = complete(ctx, cmd, false);
+                assertTrue(candidates.toString(),
+                        candidates.size() == 3);
+                assertEquals(candidates.toString(),
+                        Arrays.asList("admin-only",
+                                "normal", "suspend"), candidates);
             }
 
             {
@@ -73,6 +85,9 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
                 assertEquals(candidates.toString(), Arrays.asList(","), candidates);
+                candidates = complete(ctx, cmd, false);
+                assertEquals(candidates.toString(), Arrays.asList(","),
+                        candidates);
             }
 
             {
@@ -84,9 +99,156 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
                 assertEquals(candidates.toString(), Arrays.asList(","), candidates);
+                candidates = complete(ctx, cmd, false);
+                assertEquals(candidates.toString(), Arrays.asList(","),
+                        candidates);
+            }
+
+            {
+                String cmd = "help";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("help"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.get(0).equals("help"));
+            }
+
+            {
+                String cmd = "help --";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--commands"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.contains("--commands"));
+            }
+
+            {
+                String cmd = "help l";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+                assertTrue(candidates.toString(), candidates.contains("list-batch"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.contains("ls"));
+                assertTrue(candidates.toString(),
+                        candidates.contains("list-batch"));
+            }
+
+            {
+                String cmd = "help ls";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("ls"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.contains("ls"));
+            }
+
+            {
+                String cmd = "help :";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("read-resource"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.contains("read-resource"));
+            }
+
+            {
+                String cmd = "help deployment ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("deploy-file"));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.contains("deploy-file"));
+            }
+
+            {
+                String cmd = "deploy";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 4);
+                assertEquals(candidates.toString(), Arrays.asList("deploy",
+                        "deployment", "deployment-info", "deployment-overlay"),
+                        candidates);
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.size() == 4);
+                // Sorting of candidates is done in the aesh display layer
+                assertTrue(candidates.toString(), candidates.contains("deploy"));
+                assertTrue(candidates.toString(), candidates.contains("deployment"));
+                assertTrue(candidates.toString(), candidates.contains("deployment-info"));
+                assertTrue(candidates.toString(), candidates.contains("deployment-overlay"));
+            }
+
+            {
+                String cmd = "deployment";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 3);
+                assertEquals(candidates.toString(), Arrays.asList(
+                        "deployment", "deployment-info", "deployment-overlay"),
+                        candidates);
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                        candidates.size() == 3);
+                // Sorting of candidates is done in the aesh display layer
+                assertTrue(candidates.toString(), candidates.contains("deployment"));
+                assertTrue(candidates.toString(), candidates.contains("deployment-info"));
+                assertTrue(candidates.toString(), candidates.contains("deployment-overlay"));
+            }
+
+            {
+                String cmd = "/subsystem";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("="));
+                candidates = complete(ctx, cmd, false);
+                assertTrue(candidates.toString(),
+                        candidates.contains("="));
+            }
+            {
+                String cmd = ":read-resource(p";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("proxies"));
+                candidates = complete(ctx, cmd, false);
+                assertTrue(candidates.toString(),
+                        candidates.contains("proxies"));
             }
         } finally {
             ctx.terminateSession();
         }
+    }
+
+    // This completion is what aesh-readline completion is calling, so more
+    // similar to interactive CLI session
+    private List<String> complete(CommandContext ctx, String cmd, Boolean separator) {
+        Completion<AeshCompleteOperation> completer
+                = (Completion<AeshCompleteOperation>) ctx.getDefaultCommandCompleter();
+        AeshCompleteOperation op = new AeshCompleteOperation(cmd, cmd.length());
+        completer.complete(op);
+        if (separator != null) {
+            assertEquals(op.hasAppendSeparator(), separator);
+        }
+        List<String> candidates = new ArrayList<>();
+        for (TerminalString ts : op.getCompletionCandidates()) {
+            candidates.add(ts.getCharacters());
+        }
+        return candidates;
     }
 }

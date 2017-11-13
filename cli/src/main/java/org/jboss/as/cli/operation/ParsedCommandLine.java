@@ -118,4 +118,6 @@ public interface ParsedCommandLine {
     ParsedOperationRequestHeader getLastHeader();
 
     CommandLineFormat getFormat();
+
+    boolean hasOperator();
 }

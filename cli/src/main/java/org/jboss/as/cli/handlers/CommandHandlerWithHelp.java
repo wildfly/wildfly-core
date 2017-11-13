@@ -89,6 +89,10 @@ public abstract class CommandHandlerWithHelp extends CommandHandlerWithArguments
         doHandle(ctx);
     }
 
+    public void displayHelp(CommandContext ctx) throws CommandLineException {
+        printHelp(ctx);
+    }
+
     protected void printHelp(CommandContext ctx) throws CommandLineException {
         InputStream helpInput = WildFlySecurityManager.getClassLoaderPrivileged(CommandHandlerWithHelp.class).getResourceAsStream(filename);
         if(helpInput != null) {

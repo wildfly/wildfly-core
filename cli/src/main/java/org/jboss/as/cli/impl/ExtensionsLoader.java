@@ -26,8 +26,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
+import org.aesh.command.Command;
+import org.aesh.command.container.CommandContainer;
+import org.aesh.command.parser.CommandLineParserException;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandHandlerProvider;
@@ -36,6 +41,7 @@ import org.jboss.as.cli.CommandRegistry;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
+import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -53,15 +59,23 @@ class ExtensionsLoader {
     private final ModuleLoader moduleLoader;
     private final CommandContext ctx;
     private final CommandRegistry registry;
+    private final CLICommandRegistry aeshRegistry;
 
     /** current address from which the commands are loaded, this could be null */
     private ControllerAddress currentAddress;
-    /** commands loaded from the current address*/
+    /**
+     * handlers loaded from the current address
+     */
+    private List<String> loadedHandlers = Collections.emptyList();
+    /**
+     * commands loaded from the current address
+     */
     private List<String> loadedCommands = Collections.emptyList();
     /** error messages collected during loading the commands */
     private List<String> errors = Collections.emptyList();
 
-    ExtensionsLoader(CommandRegistry registry, CommandContext ctx) throws CommandLineException {
+    ExtensionsLoader(CommandRegistry registry, CLICommandRegistry aeshRegistry,
+            CommandContext ctx) throws CommandLineException {
         assert registry != null : "command registry is null";
         assert ctx != null : "command context is null";
 
@@ -73,17 +87,32 @@ class ExtensionsLoader {
 
         this.ctx = ctx;
         this.registry = registry;
+        this.aeshRegistry = aeshRegistry;
 
         registry.registerHandler(new ExtensionCommandsHandler(), false, ExtensionCommandsHandler.NAME);
     }
 
     void resetHandlers() {
-        for(String cmd : loadedCommands) {
+        for (String cmd : loadedHandlers) {
             registry.remove(cmd);
+        }
+        for (String cmd : loadedCommands) {
+            aeshRegistry.removeCommand(cmd);
         }
         currentAddress = null;
         errors = Collections.emptyList();
+        loadedHandlers = Collections.emptyList();
         loadedCommands = Collections.emptyList();
+    }
+
+    Set<String> getExtensions() {
+        Set<String> all = new HashSet<>(loadedHandlers);
+        all.addAll(loadedCommands);
+        return all;
+    }
+
+    List<String> getExtensionsErrors() {
+        return new ArrayList<>(errors);
     }
 
     /**
@@ -94,7 +123,7 @@ class ExtensionsLoader {
      * @param address
      * @param client
      */
-    void loadHandlers(ControllerAddress address) throws CommandLineException {
+    void loadHandlers(ControllerAddress address) throws CommandLineException, CommandLineParserException {
 
         ModelControllerClient client = ctx.getModelControllerClient();
         assert client != null : "client is null";
@@ -146,12 +175,21 @@ class ExtensionsLoader {
                     for (CommandHandlerProvider provider : loader) {
                         try {
                             registry.registerHandler(provider.createCommandHandler(ctx), provider.isTabComplete(), provider.getNames());
-                            addCommands(Arrays.asList(provider.getNames()));
+                            addHandlers(Arrays.asList(provider.getNames()));
                         } catch(CommandRegistry.RegisterHandlerException e) {
                             addError(e.getLocalizedMessage());
                             final List<String> addedCommands = new ArrayList<String>(Arrays.asList(provider.getNames()));
                             addedCommands.removeAll(e.getNotAddedNames());
-                            addCommands(addedCommands);
+                            addHandlers(addedCommands);
+                        }
+                    }
+                    ServiceLoader<Command> loader2 = ServiceLoader.load(Command.class, cl);
+                    for (Command provider : loader2) {
+                        try {
+                            CommandContainer container = aeshRegistry.addCommand(provider);
+                            addCommand(container.getParser().getProcessedCommand().name());
+                        } catch (CommandLineException e) {
+                            addError(e.getLocalizedMessage());
                         }
                     }
                 } catch (ModuleLoadException e) {
@@ -166,11 +204,18 @@ class ExtensionsLoader {
         }
     }
 
-    private void addCommands(List<String> names) {
-        if(loadedCommands.isEmpty()) {
-            loadedCommands = new ArrayList<String>();
+    private void addHandlers(List<String> names) {
+        if (loadedHandlers.isEmpty()) {
+            loadedHandlers = new ArrayList<>();
         }
-        loadedCommands.addAll(names);
+        loadedHandlers.addAll(names);
+    }
+
+    private void addCommand(String name) {
+        if (loadedCommands.isEmpty()) {
+            loadedCommands = new ArrayList<>();
+        }
+        loadedCommands.add(name);
     }
 
     private void addError(String msg) {

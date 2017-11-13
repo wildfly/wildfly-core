@@ -172,13 +172,28 @@ public class StateParser {
             }
             int delta = 0;
             for (Substitution sub : getSubstitions()) {
-                if (sub.substitutionIndex >= substituedOffset) {
+                if (sub.substitutionIndex > substituedOffset) {
                     break;
                 } else {
                     delta += sub.original.length() - sub.substitution.length();
                 }
             }
             return substituedOffset + delta;
+        }
+
+        public int getSubstitutedOffset(int originalOffset) {
+            if (substitutions.isEmpty()) {
+                return originalOffset;
+            }
+            int delta = 0;
+            for (Substitution sub : getSubstitions()) {
+                if (sub.substitutionIndex > originalOffset) {
+                    break;
+                } else {
+                    delta += sub.substitution.length() - sub.original.length();
+                }
+            }
+            return originalOffset + delta;
         }
 
         private void add(String original, String substitution, int location) {

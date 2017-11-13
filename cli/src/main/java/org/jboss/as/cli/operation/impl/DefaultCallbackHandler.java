@@ -77,6 +77,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     private Map<String, String> props = Collections.emptyMap();
     private List<String> otherArgs = Collections.emptyList();
     private String outputTarget;
+    private boolean hasOperator;
 
     private String lastPropName;
     private String lastPropValue;
@@ -181,6 +182,7 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
         headers = null;
         lastHeaderName = null;
         lastHeader = null;
+        hasOperator = false;
     }
 
     @Override
@@ -665,10 +667,22 @@ public class DefaultCallbackHandler extends ValidatingCallbackHandler implements
     public void outputTarget(int index, String outputTarget) {
         this.outputTarget = outputTarget;
         lastChunkIndex = index;
+        operator(index);
     }
 
+    @Override
     public String getOutputTarget() {
         return outputTarget;
+    }
+
+    @Override
+    public void operator(int index) {
+        this.hasOperator = true;
+    }
+
+    @Override
+    public boolean hasOperator() {
+        return hasOperator;
     }
 
     @Override
