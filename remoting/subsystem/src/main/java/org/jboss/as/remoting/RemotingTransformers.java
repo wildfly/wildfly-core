@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
  * @author Tomaz Cerar (c) 2016 Red Hat Inc.
  */
 public class RemotingTransformers implements ExtensionTransformerRegistration {
-    private static final ModelVersion VERSION_1_3 = ModelVersion.create(1, 3); //eap 6.3 & eap 6.2
+
     private static final ModelVersion VERSION_1_4 = ModelVersion.create(1, 4); //eap 6.4
     private static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0);
 
@@ -66,10 +66,8 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
         ChainedTransformationDescriptionBuilder chained1xBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
         // 4.0.0 to 1.4.0
         buildTransformers_1_4(chained1xBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_1_4));
-        // 1.4.0 to 1.3.0
-        buildTransformers_1_3(chained1xBuilder.createBuilder(VERSION_1_4, VERSION_1_3));
 
-        chained1xBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_3, VERSION_1_4});
+        chained1xBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_4});
     }
 
     private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
@@ -93,13 +91,6 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.PROTOCOL)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, RemoteOutboundConnectionResourceDefinition.AUTHENTICATION_CONTEXT);
-    }
-
-    private void buildTransformers_1_3(ResourceTransformationDescriptionBuilder builder) {
-        builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
-                .setValueConverter(new AttributeConverter.DefaultValueAttributeConverter(ConnectorCommon.SASL_PROTOCOL), ConnectorCommon.SASL_PROTOCOL)
-                .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
     }
 
     //EAP 7.0
