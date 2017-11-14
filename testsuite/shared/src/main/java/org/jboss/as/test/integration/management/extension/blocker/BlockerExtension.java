@@ -159,6 +159,8 @@ public class BlockerExtension implements Extension {
             boolean forMe = false;
             if (context.getProcessType() == ProcessType.STANDALONE_SERVER) {
                 forMe = true;
+                // WFCORE-3406 explicitly get the exclusive lock for standalone server
+                context.acquireControllerLock();
             } else {
                 context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS); // To help with WFCORE-263 testing, get the exclusive lock on this process
                 Resource rootResource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
