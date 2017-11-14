@@ -183,13 +183,6 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_3_0: {
-                rootResourceBuilder.getAttributeBuilder()
-                        .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(false, true, ADD_LOGGING_API_DEPENDENCIES.getDefaultValue()), ADD_LOGGING_API_DEPENDENCIES)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, ADD_LOGGING_API_DEPENDENCIES)
-                        .end();
-                break;
-            }
             case VERSION_1_5_0: {
                 rootResourceBuilder.getAttributeBuilder()
                         .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(false, true, USE_DEPLOYMENT_LOGGING_CONFIG.getDefaultValue()), USE_DEPLOYMENT_LOGGING_CONFIG)
