@@ -65,9 +65,6 @@ class ServerGroupTransformers {
         ResourceTransformationDescriptionBuilder builder30To21 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_3_0, KernelAPIVersion.VERSION_2_1);
         JvmTransformers.registerTransformers2_1_AndBelow(builder30To21);
 
-        ResourceTransformationDescriptionBuilder builder17To16 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_1_7, KernelAPIVersion.VERSION_1_6);
-        DeploymentOverlayTransformers.registerServerGroupTransformers1_6_AndBelow(builder17To16);
-
         return chainedBuilder;
     }
 }

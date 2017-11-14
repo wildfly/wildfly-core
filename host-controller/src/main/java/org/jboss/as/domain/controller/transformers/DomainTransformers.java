@@ -22,8 +22,6 @@
 
 package org.jboss.as.domain.controller.transformers;
 
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_5;
-import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_6;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_7;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_8;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_2_0;
@@ -83,7 +81,6 @@ public class DomainTransformers {
         registerProfileTransformers(registry);
         registerSocketBindingGroupTransformers(registry);
         registerDeploymentTransformers(registry);
-        registerDeploymentOverlayTransformers(registry);
     }
 
     private static void registerRootTransformers(TransformerRegistry registry) {
@@ -114,7 +111,7 @@ public class DomainTransformers {
 
         // 1.8 and earlier do not understand suspend/resume
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
-        registerNonChainedTransformers(allOthers, registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8);
+        registerNonChainedTransformers(allOthers, registry, builder, VERSION_1_7, VERSION_1_8);
 
 
         // NEXT:  We've registered all the versions that have special transformation needs.
@@ -137,12 +134,12 @@ public class DomainTransformers {
 
     private static void registerChainedManagementTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = ManagementTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_1_5, VERSION_1_6, VERSION_1_7, VERSION_1_8, VERSION_4_1);
+        registerChainedTransformer(registry, builder, VERSION_1_7, VERSION_1_8, VERSION_4_1);
     }
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
+        registerChainedTransformer(registry, builder, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry) {
@@ -151,7 +148,7 @@ public class DomainTransformers {
 
         //Registering for all previous WF versions (as well as the required EAP ones) isn't strictly necessary,
         //but it is very handy for testing the 'clone' behaviour
-        final KernelAPIVersion[] PRE_PROFILE_CLONE_VERSIONS = new KernelAPIVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5};
+        final KernelAPIVersion[] PRE_PROFILE_CLONE_VERSIONS = new KernelAPIVersion[]{VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7};
         for (KernelAPIVersion version : PRE_PROFILE_CLONE_VERSIONS) {
             ResourceTransformationDescriptionBuilder builder =
                     ResourceTransformationDescriptionBuilder.Factory.createInstance(ProfileResourceDefinition.PATH);
@@ -168,7 +165,7 @@ public class DomainTransformers {
 
     private static void registerSocketBindingGroupTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = SocketBindingGroupTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
+        registerChainedTransformer(registry, builder, VERSION_1_8, VERSION_1_7);
     }
 
     private static void registerChainedTransformer(TransformerRegistry registry, ChainedTransformationDescriptionBuilder builder, KernelAPIVersion...versions) {
@@ -180,12 +177,7 @@ public class DomainTransformers {
 
     private static void registerDeploymentTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = DeploymentTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7, VERSION_1_6, VERSION_1_5);
-    }
-
-    private static void registerDeploymentOverlayTransformers(TransformerRegistry registry) {
-        ChainedTransformationDescriptionBuilder builder = DeploymentOverlayTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_1_6, VERSION_1_5);
+        registerChainedTransformer(registry, builder, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
     }
 
     private static class ProfileCloneOperationTransformer implements OperationTransformer {
