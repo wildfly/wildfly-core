@@ -204,6 +204,20 @@ public interface Resource extends Cloneable {
         return copy;
     }
 
+    /**
+     * Gets the number of resources in the resource tree rooted in this resource.
+     * @return the number resources. Will not be less than {@code 1}
+     */
+    default int getTreeSize() {
+        int i = 1; // ourself
+        for (String type : getChildTypes()) {
+            for (Resource child : getChildren(type)) {
+                i += child.getTreeSize();
+            }
+        }
+        return i;
+    }
+
     interface ResourceEntry extends Resource {
 
         /**

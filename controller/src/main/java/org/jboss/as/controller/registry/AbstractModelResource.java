@@ -23,6 +23,7 @@
 package org.jboss.as.controller.registry;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -220,6 +221,23 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         return orderedChildTypes;
     }
 
+    @Override
+    public int getTreeSize() {
+        int result = 1; // ourself
+        ResourceProvider[] providers; // don't use a Set as we don't want to lose duplicates registered under different keys!
+        synchronized (children) {
+            if (children.isEmpty()){
+                return result;
+            }
+            Collection<ResourceProvider> source = children.values();
+            providers = source.toArray(new ResourceProvider[source.size()]);
+        }
+        for (ResourceProvider provider : providers) {
+            result += provider.getTreeSize();
+        }
+        return result;
+    }
+
     protected void registerResourceProvider(final String type, final ResourceProvider provider) {
         synchronized (children) {
             if (children.containsKey(type)) {
@@ -341,6 +359,24 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         }
 
         @Override
+        public int getTreeSize() {
+            int result = 0;
+            Resource[] resources; // don't use a Set as we don't want to lose duplicates registered under different keys!
+            synchronized (children) {
+                if (children.isEmpty()) {
+                    return result;
+                }
+                Collection<Resource> values = children.values();
+                resources = values.toArray(new Resource[values.size()]);
+            }
+            for (Resource child : resources) {
+                result += child.getTreeSize();
+            }
+            return result;
+        }
+
+        @SuppressWarnings("MethodDoesntCallSuperMethod")
+        @Override
         public ResourceProvider clone() {
             final DefaultResourceProvider provider = new DefaultResourceProvider();
             synchronized (children) {
@@ -441,8 +477,14 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
             return delegate.isProxy();
         }
 
+        @Override
         public Set<String> getOrderedChildTypes() {
             return delegate.getOrderedChildTypes();
+        }
+
+        @Override
+        public int getTreeSize() {
+            return delegate.getTreeSize();
         }
 
         @SuppressWarnings({"CloneDoesntCallSuperClone"})

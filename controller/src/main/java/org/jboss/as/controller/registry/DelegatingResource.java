@@ -84,50 +84,62 @@ public class DelegatingResource extends ResourceProvider.ResourceProviderRegistr
         return getDelegate().clone();
     }
 
+    @Override
     public Resource getChild(PathElement element) {
         return getDelegate().getChild(element);
     }
 
+    @Override
     public Set<ResourceEntry> getChildren(String childType) {
         return getDelegate().getChildren(childType);
     }
 
+    @Override
     public Set<String> getChildrenNames(String childType) {
         return getDelegate().getChildrenNames(childType);
     }
 
+    @Override
     public Set<String> getChildTypes() {
         return getDelegate().getChildTypes();
     }
 
+    @Override
     public ModelNode getModel() {
         return getDelegate().getModel();
     }
 
+    @Override
     public boolean hasChild(PathElement element) {
         return getDelegate().hasChild(element);
     }
 
+    @Override
     public boolean hasChildren(String childType) {
         return getDelegate().hasChildren(childType);
     }
 
+    @Override
     public boolean isModelDefined() {
         return getDelegate().isModelDefined();
     }
 
+    @Override
     public boolean isProxy() {
         return getDelegate().isProxy();
     }
 
+    @Override
     public boolean isRuntime() {
         return getDelegate().isRuntime();
     }
 
+    @Override
     public Resource navigate(PathAddress address) {
         return getDelegate().navigate(address);
     }
 
+    @Override
     public void registerChild(PathElement address, Resource resource) {
         getDelegate().registerChild(address, resource);
     }
@@ -137,16 +149,24 @@ public class DelegatingResource extends ResourceProvider.ResourceProviderRegistr
         getDelegate().registerChild(address, index, resource);
     }
 
+    @Override
     public Resource removeChild(PathElement address) {
         return getDelegate().removeChild(address);
     }
 
+    @Override
     public Resource requireChild(PathElement element) {
         return getDelegate().requireChild(element);
     }
 
+    @Override
     public void writeModel(ModelNode newModel) {
         getDelegate().writeModel(newModel);
+    }
+
+    @Override
+    public int getTreeSize() {
+        return getDelegate().getTreeSize();
     }
 
     private Resource getDelegate() {

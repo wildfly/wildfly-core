@@ -67,6 +67,7 @@ import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.jmx.model.ChildAddOperationFinder.ChildAddOperationEntry;
@@ -107,23 +108,13 @@ public class ModelControllerMBeanHelper {
     }
 
     int getMBeanCount() {
-        return new RootResourceIterator<Integer>(accessControlUtil, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
-            int count;
-
-            @Override
-            public ObjectName onAddress(PathAddress address) {
-                return isExcludeAddress(address) ? null : ObjectNameAddressUtil.createObjectName(domain, address);
-            }
-
-            public boolean onResource(ObjectName address) {
-                count++;
-                return true;
-            }
-
-            public Integer getResult() {
-                return count;
-            }
-        }).iterate();
+        Resource resource = getRootResourceAndRegistration().getResource();
+        int result = resource.getTreeSize();
+        Resource platform = resource.getChild(CORE_SERVICE_PLATFORM_MBEAN.getElement(0));
+        if (platform != null) {
+            result -= platform.getTreeSize();
+        }
+        return result;
     }
 
     Set<ObjectInstance> queryMBeans(final MBeanServer mbeanServer, final ObjectName name, final QueryExp query) {

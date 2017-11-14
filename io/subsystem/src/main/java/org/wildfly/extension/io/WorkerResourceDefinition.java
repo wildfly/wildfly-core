@@ -363,7 +363,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
                 @Override
                 public boolean hasChildren() {
-                    return false;
+                    return !children().isEmpty();
                 }
 
                 @Override
