@@ -89,7 +89,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
         try {
             final ModelNode result = ctx.execute(op, "Operation request");
             if (Util.isSuccess(result)) {
-                ctx.printLine(result.toString());
+                ctx.printDMR(result);
             } else {
                 throw new CommandLineException(result.toString());
             }

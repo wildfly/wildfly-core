@@ -14,6 +14,7 @@ Usage:
                      [--echo-command]
                      [--command-timeout=timeout]
                      [--no-operation-validation]
+                     [--output-json]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -96,6 +97,9 @@ Usage:
 
  --command-timeout  - The maximum amount of seconds the CLI will wait for a 
                       command to complete.
+
+ --output-json      - causes the CLI to display operation responses using JSON syntax.
+                      By default responses are displayed using DMR string syntax.
 
  --no-operation-validation  - disable the pre validation of the operations from the CLI.
                               Operations will be only validated by the server.

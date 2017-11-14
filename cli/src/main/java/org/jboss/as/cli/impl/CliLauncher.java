@@ -162,6 +162,8 @@ public class CliLauncher {
                     ctxBuilder.setValidateOperationRequests(false);
                 } else if (arg.equals("--echo-command")) {
                     ctxBuilder.setEchoCommand(true);
+                } else if (arg.equals("--output-json")) {
+                    ctxBuilder.setOutputJSON(true);
                 } else if (arg.startsWith("--command-timeout=")) {
                     ctxBuilder.
                             setCommandTimeout(Integer.parseInt(arg.substring(18)));

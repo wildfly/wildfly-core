@@ -42,12 +42,13 @@ public class CommandContextConfiguration {
     private Boolean validateOperationRequests;
     private final boolean echoCommand;
     private final Integer commandTimeout;
+    private final boolean outputJSON;
 
     private CommandContextConfiguration(String controller, String username,
             char[] password, String clientBindAddress,
             boolean disableLocalAuth, boolean initConsole, int connectionTimeout,
             InputStream consoleInput, OutputStream consoleOutput,
-            boolean echoCommand, Integer commandTimeout) {
+            boolean echoCommand, Integer commandTimeout, boolean outputJSON) {
         this.controller = controller;
         this.username = username;
         this.password = password;
@@ -59,6 +60,7 @@ public class CommandContextConfiguration {
         this.connectionTimeout = connectionTimeout;
         this.echoCommand = echoCommand;
         this.commandTimeout = commandTimeout;
+        this.outputJSON = outputJSON;
     }
 
     public Integer getCommandTimeout() {
@@ -117,6 +119,10 @@ public class CommandContextConfiguration {
         return echoCommand;
     }
 
+    public boolean isOutputJSON() {
+        return outputJSON;
+    }
+
     public static class Builder {
         private String controller;
         private String username;
@@ -133,6 +139,8 @@ public class CommandContextConfiguration {
         private Boolean validateOperationRequests;
         private boolean echoCommand;
         private Integer commandTimeout;
+        private boolean outputJSON;
+
         public Builder() {
         }
 
@@ -141,7 +149,7 @@ public class CommandContextConfiguration {
                 this.disableLocalAuth = username != null;
             }
             final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
-                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand, commandTimeout);
+                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand, commandTimeout, outputJSON);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
             config.validateOperationRequests = validateOperationRequests;
@@ -220,6 +228,11 @@ public class CommandContextConfiguration {
 
         public Builder setValidateOperationRequests(boolean validateOperationRequests) {
             this.validateOperationRequests = validateOperationRequests;
+            return this;
+        }
+
+        public Builder setOutputJSON(boolean outputJSON) {
+            this.outputJSON = outputJSON;
             return this;
         }
     }

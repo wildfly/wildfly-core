@@ -33,6 +33,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.impl.Namespace;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import static org.junit.Assert.assertEquals;
@@ -268,7 +269,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testValidateOperation() throws Exception {
-        File f = createConfigFile(false, 0, true);
+        File f = createConfigFile(false, 0, true, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -289,7 +290,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testNoValidateOperationFlag() throws Exception {
-        File f = createConfigFile(false, 0, true);
+        File f = createConfigFile(false, 0, true, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -311,7 +312,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testNotValidateOperation() throws Exception {
-        File f = createConfigFile(false, 0, false);
+        File f = createConfigFile(false, 0, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -325,6 +326,105 @@ public class CliConfigTestCase {
             cli.pushLineAndWaitForResults(":read-children-names(aaaaa,child-type=subsystem");
             String str = cli.getOutput();
             assertTrue(str, str.contains("\"outcome\" => \"success\","));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testOutputJSON1() throws Exception {
+        File f = createConfigFile(false, 0, false, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--connect")
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--command=:read-resource");
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertTrue(result, result.contains("\"product-name\" : "));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testOutputJSON2() throws Exception {
+        File f = createConfigFile(false, 0, false, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--output-json");
+        try {
+            cli.executeInteractive();
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-resource");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"product-name\" : "));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("echo-dmr :read-resource");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"operation\" : \"read-resource\""));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("batch");
+            cli.pushLineAndWaitForResults(":read-resource");
+            cli.pushLineAndWaitForResults("run-batch --verbose");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"product-name\" : "));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testOutputString1() throws Exception {
+        File f = createConfigFile(false, 0, false, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--command=:read-resource");
+        try {
+            final String result = cli.executeNonInteractive();
+            assertNotNull(result);
+            assertTrue(result, result.contains("\"product-name\" => "));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+   @Test
+    public void testOutputString2() throws Exception {
+        File f = createConfigFile(false, 0, false, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+        try {
+            cli.executeInteractive();
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-resource");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"product-name\" => "));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("echo-dmr :read-resource");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"operation\" => \"read-resource\""));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("batch");
+            cli.pushLineAndWaitForResults(":read-resource");
+            cli.pushLineAndWaitForResults("run-batch --verbose");
+            assertTrue(cli.getOutput(), cli.getOutput().contains("\"product-name\" => "));
         } finally {
             cli.destroyProcess();
         }
@@ -415,18 +515,19 @@ public class CliConfigTestCase {
     }
 
     private static File createConfigFile(Boolean enable) {
-        return createConfigFile(enable, 0);
+        return createConfigFile(enable, 0, false, false);
     }
 
     private static File createConfigFile(Boolean enable, int timeout) {
-        return createConfigFile(enable, timeout, true);
+        return createConfigFile(enable, timeout, true, false);
     }
 
-    private static File createConfigFile(Boolean enable, int timeout, Boolean validate) {
+    private static File createConfigFile(Boolean enable, int timeout,
+            Boolean validate, Boolean outputJSON) {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
                 System.currentTimeMillis() + ".xml");
         f.deleteOnExit();
-        String namespace = "urn:jboss:cli:3.1";
+        String namespace = Namespace.CURRENT.getUriString();
         XMLOutputFactory output = XMLOutputFactory.newInstance();
         try (Writer stream = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
             XMLStreamWriter writer = output.createXMLStreamWriter(stream);
@@ -444,6 +545,10 @@ public class CliConfigTestCase {
             writer.writeStartElement("validate-operation-requests");
             writer.writeCharacters(validate.toString());
             writer.writeEndElement(); //validate-operation-requests
+
+            writer.writeStartElement("output-json");
+            writer.writeCharacters(outputJSON.toString());
+            writer.writeEndElement(); //output-json
 
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
