@@ -1,0 +1,12 @@
+SYNOPSIS
+
+    done [--discard]
+
+DESCRIPTION
+
+    Ends the 'for' block and executes the iteration.
+
+ARGUMENTS
+
+ --discard    - Optional. Ends the 'for' block and discard it.
+
