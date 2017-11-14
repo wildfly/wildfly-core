@@ -289,14 +289,12 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
 
         if (persister.getBootOperations().size() == 0) {
-            // XXX fix this to use host:add()
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
             return;
         }
-        //The first operation should be the :register-host-model(name=<host-name>) operation so use that to get the address of the host resource
+        //The first operation should be the /host=master:add() op so use that to get the address of the host resource
         ModelNode registerHostModel = persister.getBootOperations().get(0);
-        if (!registerHostModel.require(OP).asString().equals(HostAddHandler.OPERATION_REGISTER_HOST_MODEL)){
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
+        if (!(registerHostModel.require(OP).asString().equals(HostAddHandler.OPERATION_NAME) &&
+            registerHostModel.hasDefined(NAME))){
             return;
         }
         PathAddress hostAddr = PathAddress.pathAddress(HOST, registerHostModel.get(NAME).asString());

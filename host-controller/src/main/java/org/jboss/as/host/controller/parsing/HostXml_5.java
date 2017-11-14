@@ -539,7 +539,7 @@ final class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
 
         // Add a step to setup the ManagementResourceRegistrations for the root host resource
         final ModelNode hostAdd = new ModelNode();
-        hostAdd.get(OP).set(HostAddHandler.OPERATION_REGISTER_HOST_MODEL);
+        hostAdd.get(OP).set(HostAddHandler.OPERATION_NAME);
         hostAdd.get(NAME).set(resolvedHost);
         hostAdd.get(OP_ADDR).setEmptyList();
 
