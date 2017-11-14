@@ -36,12 +36,14 @@ import java.util.function.Function;
 import org.aesh.readline.Prompt;
 import org.aesh.readline.Readline;
 import org.aesh.readline.ReadlineFlag;
+import org.aesh.readline.action.ActionDecoder;
 import org.aesh.readline.alias.AliasCompletion;
 import org.aesh.readline.alias.AliasManager;
 import org.aesh.readline.alias.AliasPreProcessor;
 import org.aesh.readline.completion.CompleteOperation;
 import org.aesh.readline.completion.Completion;
 import org.aesh.readline.history.FileHistory;
+import org.aesh.readline.terminal.Key;
 import org.aesh.terminal.Terminal;
 import org.aesh.readline.terminal.TerminalBuilder;
 import org.aesh.terminal.tty.Signal;
@@ -390,6 +392,7 @@ public class ReadlineConsole implements Console {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(1,
             (r) -> new Thread(r, "CLI command"));
+    private StringBuilder outputCollector;
 
     private final AliasManager aliasManager;
     private final List<Function<String, Optional<String>>> preProcessors = new ArrayList<>();
@@ -401,6 +404,8 @@ public class ReadlineConsole implements Console {
     }
 
     private final Consumer<Signal> interruptHandler;
+
+    private boolean isSystemTerminal;
 
     ReadlineConsole(CommandContext cmdCtx, Settings settings) throws IOException {
         this.cmdCtx = cmdCtx;
@@ -466,10 +471,12 @@ public class ReadlineConsole implements Console {
                 // will be NOT a system terminal, that is the TerminalBuilder behavior.
                 .system(!settings.isOutputRedefined())
                 .build();
-        CLITerminalConnection c = new CLITerminalConnection(terminal);
         if (isTraceEnabled) {
             LOG.tracef("New Terminal %s", terminal.getClass());
         }
+        CLITerminalConnection c = new CLITerminalConnection(terminal);
+        isSystemTerminal = c.supportsAnsi();
+
         return c;
     }
 
@@ -514,21 +521,125 @@ public class ReadlineConsole implements Console {
     public void printColumns(Collection<String> list) {
         String[] newList = new String[list.size()];
         list.toArray(newList);
-        connection.write(
-                Parser.formatDisplayList(newList,
-                        getHeight(),
-                        getWidth()));
+        String line = Parser.formatDisplayList(newList,
+                getHeight(),
+                getWidth());
+        if (outputCollector == null) {
+            connection.write(line);
+        } else {
+            outputCollector.append(line);
+        }
     }
 
     @Override
     public void print(String line) {
         LOG.tracef("Print %s", line);
-        connection.write(line);
+        if (outputCollector == null) {
+            connection.write(line);
+        } else {
+            outputCollector.append(line);
+        }
+    }
+
+    // handle "a la" 'more' scrolling
+    // Doesn't take into account wrapped lines (lines that are longer than the
+    // terminal width. This could make a page to skip some lines.
+    private void printCollectedOutput() {
+        if (outputCollector == null) {
+            return;
+        }
+        try {
+            String line = outputCollector.toString();
+            if (line.isEmpty()) {
+                return;
+            }
+            // '\R' will match any line break.
+            // -1 to keep empty lines at the end of content.
+            String[] lines = line.split("\\R", -1);
+            int max = connection.getTerminal().getSize().getHeight();
+            int currentLines = 0;
+            int allLines = 0;
+            while (allLines < lines.length) {
+                if (currentLines > max - 2) {
+                    try {
+                        connection.write(ANSI.CURSOR_SAVE);
+                        int percentage = (allLines * 100) / lines.length;
+                        connection.write("--More(" + percentage + "%)--");
+                        Key k = read();
+                        connection.write(ANSI.CURSOR_RESTORE);
+                        connection.stdoutHandler().accept(ANSI.ERASE_LINE_FROM_CURSOR);
+                        if (k == null) { // interrupted, exit.
+                            allLines = lines.length;
+                        } else {
+                            switch (k) {
+                                case SPACE: {
+                                    currentLines = 0;
+                                    break;
+                                }
+                                case ENTER:
+                                case CTRL_M: { // On Mac, CTRL_M...
+                                    currentLines -= 1;
+                                    break;
+                                }
+                                case q: {
+                                    allLines = lines.length;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    String l = lines[allLines];
+                    currentLines += 1;
+                    allLines += 1;
+                    // Do not add an extra \n
+                    // The \n has been added by the previous line.
+                    if (allLines == lines.length) {
+                        if (l.isEmpty()) {
+                            continue;
+                        }
+                    }
+                    connection.write(l + Config.getLineSeparator());
+                }
+            }
+        } finally {
+            outputCollector = null;
+        }
+    }
+
+    private Key read() throws InterruptedException {
+        ActionDecoder decoder = new ActionDecoder();
+        final Key[] key = {null};
+        CountDownLatch latch = new CountDownLatch(1);
+        // We need to set the interrupt SignalHandler to interrupt the workflow.
+        Consumer<Signal> prevHandler = connection.getSignalHandler();
+        connection.setSignalHandler((sig) -> latch.countDown());
+        Attributes attributes = connection.enterRawMode();
+        connection.setStdinHandler(keys -> {
+            decoder.add(keys);
+            if (decoder.hasNext()) {
+                key[0] = Key.findStartKey(decoder.next().buffer().array());
+                latch.countDown();
+                connection.suspend();
+            }
+        });
+        connection.awake();
+        try {
+            // Wait until interrupted
+            latch.await();
+        } finally {
+            connection.setStdinHandler(null);
+            connection.setSignalHandler(prevHandler);
+        }
+        return key[0];
     }
 
     @Override
     public void printNewLine() {
-        print(Config.getLineSeparator());
+        print(outputCollector == null ? Config.getLineSeparator() : "\n");
     }
 
     @Override
@@ -558,6 +669,11 @@ public class ReadlineConsole implements Console {
     public String readLine(String prompt, Character mask) throws IOException {
         logPromptMask(prompt, mask);
 
+        // If there are some output collected, flush it.
+        printCollectedOutput();
+        // New collector
+        outputCollector = createCollector();
+
         // Keep a reference on the caller thread in case Ctrl-C is pressed
         // and thread needs to be interrupted.
         readingThread = Thread.currentThread();
@@ -574,6 +690,13 @@ public class ReadlineConsole implements Console {
         } finally {
             readingThread = null;
         }
+    }
+
+    private StringBuilder createCollector() {
+        if (!isSystemTerminal) {
+            return null;
+        }
+        return new StringBuilder();
     }
 
     private String promptFromNonStartedConsole(String prompt, Character mask) {
@@ -723,8 +846,10 @@ public class ReadlineConsole implements Console {
                         }
                     });
                     try {
+                        outputCollector = createCollector();
                         callback.accept(line);
                     } finally {
+                        printCollectedOutput();
                         // The current thread could have been interrupted.
                         // Clear the flag to safely interact with aesh-readline
                         Thread.interrupted();
