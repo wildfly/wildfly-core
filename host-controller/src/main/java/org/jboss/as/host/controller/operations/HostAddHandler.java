@@ -31,7 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -47,6 +46,8 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -64,6 +65,7 @@ import org.jboss.as.platform.mbean.PlatformMBeanConstants;
 import org.jboss.as.platform.mbean.RootPlatformMBeanResource;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.modules.ModuleClassLoader;
 
 /**
@@ -85,8 +87,13 @@ public class HostAddHandler implements OperationStepHandler {
     public static final String OPERATION_REGISTER_HOST_MODEL = "register-host-model";
     public static final String OPERATION_NAME = "add";
 
+    private static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING)
+            .setRequired(true)
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
             .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+            .addParameter(NAME)
             .build();
 
     private final HostControllerEnvironment hostControllerEnvironment;
@@ -114,7 +121,7 @@ public class HostAddHandler implements OperationStepHandler {
         if (!pa.equals(PathAddress.EMPTY_ADDRESS)) {
             final ModelNode cloned = operation.clone();
             cloned.get(OP_ADDR).set(PathAddress.EMPTY_ADDRESS.toModelNode());
-            cloned.get(NAME).set(pa.getLastElement().getValue());
+            cloned.get(ModelDescriptionConstants.NAME).set(pa.getLastElement().getValue());
             context.addStep(cloned, this, OperationContext.Stage.MODEL, true);
             return;
         }
@@ -127,7 +134,7 @@ public class HostAddHandler implements OperationStepHandler {
             throw HostControllerLogger.ROOT_LOGGER.cannotAddHostAlreadyRegistered(exists);
         }
 
-        final String hostName = operation.require(NAME).asString();
+        final String hostName = operation.require(ModelDescriptionConstants.NAME).asString();
         context.registerCapability(HOST_RUNTIME_CAPABILITY);
 
         final ManagementResourceRegistration rootRegistration = context.getResourceRegistrationForUpdate();
