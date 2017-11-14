@@ -21,8 +21,10 @@
 */
 package org.jboss.as.domain.controller.operations;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTROY_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KILL_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
@@ -33,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_SERVERS;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -49,6 +52,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -91,6 +95,8 @@ public class DomainServerLifecycleHandlers {
     public static final String STOP_SERVERS_NAME = STOP_SERVERS;
     public static final String SUSPEND_SERVERS_NAME = SUSPEND_SERVERS;
     public static final String RESUME_SERVERS_NAME = RESUME_SERVERS;
+    public static final String KILL_SERVERS_NAME = KILL_SERVERS;
+    public static final String DESTROY_SERVERS_NAME = DESTROY_SERVERS;
 
     public static void initializeServerInventory(ServerInventory serverInventory) {
         StopServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
@@ -99,6 +105,8 @@ public class DomainServerLifecycleHandlers {
         ReloadServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
         SuspendServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
         ResumeServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
+        KillServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
+        DestroyServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
     }
 
     public static void registerDomainHandlers(ManagementResourceRegistration registration) {
@@ -116,6 +124,17 @@ public class DomainServerLifecycleHandlers {
         registration.registerOperationHandler(getOperationDefinition(serverGroup, ReloadServersLifecycleHandler.OPERATION_NAME), ReloadServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, SuspendServersLifecycleHandler.OPERATION_NAME), SuspendServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, ResumeServersLifecycleHandler.OPERATION_NAME), ResumeServersLifecycleHandler.INSTANCE);
+        if ( serverGroup ){
+            registration.registerOperationHandler( getKillDestroyOperationDefinition(KillServersLifecycleHandler.OPERATION_NAME), KillServersLifecycleHandler.INSTANCE);
+            registration.registerOperationHandler( getKillDestroyOperationDefinition(DestroyServersLifecycleHandler.OPERATION_NAME), DestroyServersLifecycleHandler.INSTANCE);
+        }
+    }
+
+    private static OperationDefinition getKillDestroyOperationDefinition(String operationName) {
+        return new SimpleOperationDefinitionBuilder(operationName,
+                DomainResolver.getResolver(ModelDescriptionConstants.SERVER_GROUP))
+                .setRuntimeOnly()
+                .build();
     }
 
     private static OperationDefinition getOperationDefinition(boolean serverGroup, String operationName) {
@@ -415,6 +434,78 @@ public class DomainServerLifecycleHandlers {
         }
     }
 
+    private static class KillServersLifecycleHandler extends AbstractHackLifecycleHandler {
+        static final String OPERATION_NAME = KILL_SERVERS_NAME;
+        static final KillServersLifecycleHandler INSTANCE = new KillServersLifecycleHandler();
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.acquireControllerLock();
+            context.readResource(PathAddress.EMPTY_ADDRESS, false);
+            final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+            final String group = getServerGroupName(operation);
+
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                    context.completeStep(new OperationContext.ResultHandler() {
+                        @Override
+                        public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                            Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
+                            final Set<String> serversInGroup = getServersForGroup(model, group);
+                            final Set<String> serversToKill = new HashSet<>();
+                            for (String serverName : processes.keySet()) {
+                                final String serverModelName = serverInventory.getProcessServerName(serverName);
+                                if (group == null || serversInGroup.contains(serverModelName)) {
+                                    serversToKill.add(serverModelName);
+                                }
+                            }
+                            serversToKill.forEach(s -> serverInventory.killServer(s));
+                            context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+                        }
+                    });
+                }
+            }, Stage.RUNTIME);
+        }
+    }
+
+    private static class DestroyServersLifecycleHandler extends AbstractHackLifecycleHandler {
+        static final String OPERATION_NAME = DESTROY_SERVERS_NAME;
+        static final DestroyServersLifecycleHandler INSTANCE = new DestroyServersLifecycleHandler();
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.acquireControllerLock();
+            context.readResource(PathAddress.EMPTY_ADDRESS, false);
+            final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+            final String group = getServerGroupName(operation);
+
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                    context.completeStep(new OperationContext.ResultHandler() {
+                        @Override
+                        public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                            Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
+                            final Set<String> serversInGroup = getServersForGroup(model, group);
+                            final Set<String> serversToDestroy = new HashSet<>();
+                            for (String serverName : processes.keySet()) {
+                                final String serverModelName = serverInventory.getProcessServerName(serverName);
+                                if (group == null || serversInGroup.contains(serverModelName)) {
+                                    serversToDestroy.add(serverModelName);
+                                }
+                            }
+                            serversToDestroy.forEach(s -> serverInventory.destroyServer(s));
+                            context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+                        }
+                    });
+                }
+            }, Stage.RUNTIME);
+        }
+    }
+
     public static void registerServerLifeCycleOperationsTransformers(ResourceTransformationDescriptionBuilder builder) {
         builder.addOperationTransformationOverride(SUSPEND_SERVERS).setReject().end()
                 .discardOperations(RESUME_SERVERS) //If the legacy slave was not able to suspend a server, then nothing is suspended and the "resume" can be interpreted as having worked.
@@ -437,6 +528,15 @@ public class DomainServerLifecycleHandlers {
                 .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end();
 
+    }
+
+    public static void registerKillDestroyTransformers(ResourceTransformationDescriptionBuilder builder) {
+        builder.addOperationTransformationOverride(KILL_SERVERS)
+                .setReject()
+                .end()
+                .addOperationTransformationOverride(DESTROY_SERVERS)
+                .setReject()
+                .end();
     }
 
     enum StartMode {

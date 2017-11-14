@@ -36,7 +36,6 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.server.DomainServerCommunicationServices;
 import org.jboss.as.server.GracefulShutdownService;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.suspend.SuspendController;
@@ -67,18 +66,9 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY, OperationEntry.Flag.RUNTIME_ONLY)
             .build();
 
-    private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
-
-    public ServerDomainProcessShutdownHandler(DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater) {
-        this.operationIDUpdater = operationIDUpdater;
-    }
-
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
-        // Update the operation permit
-        final int permit = operation.require("operation-id").asInt();
-        operationIDUpdater.updateOperationID(permit);
         final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in milliseconds, as this is what is passed in from the HC
         // Acquire the controller lock to prevent new write ops and wait until current ones are done
         context.acquireControllerLock();
