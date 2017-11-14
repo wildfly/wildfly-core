@@ -349,7 +349,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
                     String[] newAlternatives = new String[length - 1];
                     int k = 0;
                     for (String alt : this.alternatives) {
-                        if (alt != alternative) {
+                        if (!alt.equals(alternative)) {
                             newAlternatives[k] = alt;
                             k++;
                         }
