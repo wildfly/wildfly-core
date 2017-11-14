@@ -58,6 +58,19 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
 
     /**
      * Construct a new instance.
+     *
+     * @param file the configuration base file
+     * @param rootElement the root element of the configuration file
+     * @param rootParser the root model parser
+     * @param rootDeparser the root model deparser
+     */
+    public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser, final boolean supressLoad) {
+        super(file.getBootFile(), rootElement, rootParser, rootDeparser, supressLoad);
+        this.configurationFile = file;
+    }
+
+    /**
+     * Construct a new instance.
      *  @param file the configuration base file
      * @param rootElement the root element of the configuration file
      * @param rootParser the root model parser
