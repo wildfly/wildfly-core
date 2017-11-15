@@ -171,7 +171,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private volatile ModelControllerImpl.ManagementModelImpl managementModel;
 
-    private volatile ModelControllerImpl.ManagementModelImpl originalModel;
+    private final ModelControllerImpl.ManagementModelImpl originalModel;
 
     /** Tracks the relationship between domain resources and hosts and server groups */
     private volatile HostServerGroupTracker hostServerGroupTracker;
