@@ -24,7 +24,14 @@ package org.wildfly.test.jmx;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.PropertyPermission;
+import java.util.Set;
+
 import org.jboss.as.test.shared.PermissionUtils;
 
 import org.jboss.as.controller.Extension;
@@ -75,6 +82,10 @@ public class ServiceActivatorDeploymentUtil {
     }
 
     public static void createServiceActivatorListenerDeployment(File destination, String targetName, Class listenerClass) throws IOException {
+        createServiceActivatorListenerDeployment(destination, targetName, listenerClass, Collections.emptySet());
+    }
+
+    public static void createServiceActivatorListenerDeployment(File destination, String targetName, Class listenerClass, Set<Permission> additionalPermissions) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addClass(listenerClass);
@@ -90,7 +101,8 @@ public class ServiceActivatorDeploymentUtil {
         sb.append("\n");
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
-        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+
+        List<Permission> permissions = new ArrayList<>(Arrays.asList(
                 new FilePermission(destination.getAbsolutePath()
                         .replace("archives", "wildfly-core")
                         .replace(destination.getName(), ""), "read"),
@@ -100,7 +112,13 @@ public class ServiceActivatorDeploymentUtil {
                 getMBeanPermission(RunningStateJmx.class, targetName, "addNotificationListener"),
                 getMBeanPermission(RunningStateJmx.class, targetName, "removeNotificationListener"),
                 new PropertyPermission("user.dir", "read")
-        ), "permissions.xml");
+        ));
+        if(additionalPermissions != null && !additionalPermissions.isEmpty()) {
+            permissions.addAll(additionalPermissions);
+        }
+
+
+        archive.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(permissions.toArray(new Permission[permissions.size()])), "permissions.xml");
         archive.as(ZipExporter.class).exportTo(destination);
     }
 

@@ -30,8 +30,13 @@ import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNo
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Permission;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.integration.management.rbac.Outcome;
@@ -61,14 +66,23 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
         deploy(managementClient.getControllerClient(), file);
     }
 
-    public void setup(ModelControllerClient client, String serverGroupName) throws IOException {
+    public void setup(ModelControllerClient client, String serverGroupName, boolean ibm) throws IOException {
         final File dir = new File("target/archives");
         if(dir.exists()) {
             cleanFile(dir);
         }
         dir.mkdirs();
         file = new File(dir, DEPLOYMENT);
-        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ControlledStateNotificationListener.class);
+
+        Set<Permission> additionalPermissions = new HashSet();
+        if(ibm) {
+            //fix of WFCORE-3417
+            additionalPermissions.add(new FilePermission(file.getAbsolutePath()
+                    .replace("archives", "domains/JmxControlledStateNotificationsTestCase/master")
+                    .replace(file.getName(), ""), "read"));
+        }
+
+        ServiceActivatorDeploymentUtil.createServiceActivatorListenerDeployment(file, TARGET_OBJECT_NAME, ControlledStateNotificationListener.class, additionalPermissions);
         deploy(client, file);
         ModelNode op = createOpNode("server-group=" + serverGroupName + "/deployment=" + file.getName(), ADD);
         op.get(ENABLED).set(true);
