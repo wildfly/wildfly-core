@@ -39,7 +39,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
-
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
@@ -84,7 +83,7 @@ import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
+import org.jboss.as.host.controller.operations.HostAddHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
@@ -289,13 +288,12 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
 
         if (persister.getBootOperations().size() == 0) {
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
             return;
         }
-        //The first operation should be the :register-host-model(name=<host-name>) operation so use that to get the address of the host resource
+        //The first operation should be the /host=master:add() op so use that to get the address of the host resource
         ModelNode registerHostModel = persister.getBootOperations().get(0);
-        if (!registerHostModel.require(OP).asString().equals(HostModelRegistrationHandler.OPERATION_NAME)){
-            //The test is a bit unconventional. There is no add operation for the host resource, so don't add what is needed to validate the model
+        if (!(registerHostModel.require(OP).asString().equals(HostAddHandler.OPERATION_NAME) &&
+            registerHostModel.hasDefined(NAME))){
             return;
         }
         PathAddress hostAddr = PathAddress.pathAddress(HOST, registerHostModel.get(NAME).asString());
@@ -535,7 +533,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                         @Override
                         public void registerHostModel(String hostName, ManagementResourceRegistration rootRegistration) {
                         }
-                    },ProcessType.HOST_CONTROLLER, authorizer, modelControllerResource);
+                    },ProcessType.HOST_CONTROLLER, authorizer, modelControllerResource, info);
 
             ManagementResourceRegistration hostReg = HostModelUtil.createHostRegistry(
                     hostName,
@@ -622,7 +620,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
                         @Override
                         public void registerHostModel(String hostName, ManagementResourceRegistration root) {
                         }
-                    },processType, authorizer, modelControllerResource);
+                    },processType, authorizer, modelControllerResource, info);
 
             CoreManagementResourceDefinition.registerDomainResource(rootResource, null);
 

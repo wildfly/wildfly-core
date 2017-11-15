@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.host.controller.HostControllerEnvironment.HOST_NAME;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +42,7 @@ import java.util.Properties;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
+import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.CommandLineArgumentUsageImpl;
 import org.jboss.as.process.CommandLineConstants;
@@ -212,6 +214,8 @@ public final class Main {
         RunningMode initialRunningMode = RunningMode.NORMAL;
         Map<String, String> hostSystemProperties = getHostSystemProperties();
         ProductConfig productConfig;
+        ConfigurationFile.InteractionPolicy hostConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
+        ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
         String modulePath = null;
 
         // Note the java.security.manager shouldn't be set, but we'll check to ensure the security manager gets enabled
@@ -322,6 +326,28 @@ public final class Main {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     domainConfig = val;
+                } else if (arg.startsWith("--empty-host-config")) {
+                    assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
+                    // don't reset to NEW if its already DISCARD
+                    if (hostConfigInteractionPolicy != ConfigurationFile.InteractionPolicy.DISCARD) {
+                        hostConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.NEW;
+                    }
+                } else if (arg.startsWith("--remove-existing-host-config")) {
+                    assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
+                    hostConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
+                } else if (arg.startsWith("--empty-domain-config")) {
+                    assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
+                    if (domainConfigInteractionPolicy != ConfigurationFile.InteractionPolicy.DISCARD) {
+                        domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.NEW;
+                    }
+                } else if (arg.startsWith("--remove-existing-domain-config")) {
+                    assert processType == ProcessType.EMBEDDED_HOST_CONTROLLER;
+                    domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
+                } else if (arg.startsWith("--temp-host-controller-name")) {
+                    String val = checkValueIsNotAnArg(arg, args[++i]);
+                    if (val !=null && !val.isEmpty()) {
+                        hostSystemProperties.put(HOST_NAME, val);
+                    }
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_DOMAIN_CONFIG)) {
                     initialDomainConfig = parseValue(arg, CommandLineConstants.READ_ONLY_DOMAIN_CONFIG);
                     if (initialDomainConfig == null) {
@@ -458,7 +484,7 @@ public final class Main {
         return new HostControllerEnvironmentWrapper(new HostControllerEnvironment(hostSystemProperties, isRestart, modulePath,
                 pmAddress, pmPort, pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM, domainConfig,
                 initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc,
-                productConfig, securityManagerEnabled, startTime, processType));
+                productConfig, securityManagerEnabled, startTime, processType, hostConfigInteractionPolicy, domainConfigInteractionPolicy));
     }
 
     private static String parseValue(final String arg, final String key) {

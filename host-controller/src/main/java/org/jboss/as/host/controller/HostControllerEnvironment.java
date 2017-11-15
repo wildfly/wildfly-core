@@ -219,6 +219,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final Integer processControllerPort;
     private final InetAddress hostControllerAddress;
     private final Integer hostControllerPort;
+    private final ConfigurationFile.InteractionPolicy hostConfigInteractionPolicy;
     private final File homeDir;
     private final File modulesDir;
     private final File domainBaseDir;
@@ -227,6 +228,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final String domainConfig;
     private final String initialDomainConfig;
     private ConfigurationFile domainConfigurationFile;
+    private final ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy;
     private final File domainContentDir;
     private final File domainDataDir;
     private final File domainLogDir;
@@ -257,14 +259,15 @@ public class HostControllerEnvironment extends ProcessEnvironment {
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc, ProductConfig productConfig) {
         this(hostSystemProperties, isRestart, modulePath, processControllerAddress, processControllerPort, hostControllerAddress, hostControllerPort, defaultJVM,
                 domainConfig, initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, useCachedDc, productConfig, false,
-                System.currentTimeMillis(), ProcessType.HOST_CONTROLLER);
+                System.currentTimeMillis(), ProcessType.HOST_CONTROLLER, ConfigurationFile.InteractionPolicy.STANDARD, ConfigurationFile.InteractionPolicy.STANDARD);
     }
 
     public HostControllerEnvironment(Map<String, String> hostSystemProperties, boolean isRestart, String modulePath,
                                      InetAddress processControllerAddress, Integer processControllerPort, InetAddress hostControllerAddress,
                                      Integer hostControllerPort, String defaultJVM, String domainConfig, String initialDomainConfig, String hostConfig,
                                      String initialHostConfig, RunningMode initialRunningMode, boolean backupDomainFiles, boolean useCachedDc,
-                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType) {
+                                     ProductConfig productConfig, boolean securityManagerEnabled, long startTime, ProcessType processType,
+                                     ConfigurationFile.InteractionPolicy hostConfigInteractionPolicy, ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy) {
 
         this.hostSystemProperties = Collections.unmodifiableMap(Assert.checkNotNullParam("hostSystemProperties", hostSystemProperties));
         Assert.checkNotNullParam("modulePath", modulePath);
@@ -281,6 +284,8 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.startTime = startTime;
         this.initialRunningMode = initialRunningMode;
         this.runningModeControl = new HostRunningModeControl(initialRunningMode, RestartMode.SERVERS);
+        this.hostConfigInteractionPolicy = hostConfigInteractionPolicy;
+        this.domainConfigInteractionPolicy = domainConfigInteractionPolicy;
 
         // Calculate host and default server name
         String hostName = hostSystemProperties.get(HOST_NAME);
@@ -378,7 +383,8 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         WildFlySecurityManager.setPropertyPrivileged(DOMAIN_CONFIG_DIR, this.domainConfigurationDir.getAbsolutePath());
 
         final String defaultHostConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOST_DEFAULT_CONFIG, "host.xml");
-        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, initialHostConfig == null);
+
+        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, this.hostConfigInteractionPolicy);
 
         this.domainConfig = domainConfig;
         this.initialDomainConfig = initialDomainConfig;
@@ -796,6 +802,10 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
     public ConfigurationFile getDomainConfigurationFile() {
         return domainConfigurationFile;
+    }
+
+    public ConfigurationFile.InteractionPolicy getDomainConfigurationFileInteactionPolicy() {
+        return domainConfigInteractionPolicy;
     }
 
     String getDomainConfig() {
