@@ -36,19 +36,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.callback.CallbackHandler;
 
-import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -58,13 +54,9 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.controller.client.Operation;
-import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
-import org.jboss.as.host.controller.MasterDomainControllerClient;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.operations.ServerAddHandler;
@@ -73,17 +65,8 @@ import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfig
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
-import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.StartException;
-import org.jboss.threads.AsyncFuture;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -780,185 +763,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
         @Override
         public ServiceRegistry getServiceRegistry(boolean modify) throws UnsupportedOperationException {
-            return new ServiceRegistry() {
-
-                @Override
-                public List<ServiceName> getServiceNames() {
-                    return null;
-                }
-
-                @Override
-                public ServiceController<?> getService(ServiceName name) {
-                    return null;
-                }
-
-                @Override
-                public ServiceController<?> getRequiredService(ServiceName name) throws ServiceNotFoundException {
-                    if (name.equals(MasterDomainControllerClient.SERVICE_NAME)) {
-                        return new ServiceController<MasterDomainControllerClient>() {
-
-                            @Override
-                            public void addListener(ServiceListener<? super MasterDomainControllerClient> arg0) {
-                            }
-
-                            @Override
-                            public MasterDomainControllerClient awaitValue() throws IllegalStateException, InterruptedException {
-                                return null;
-                            }
-
-                            @Override
-                            public MasterDomainControllerClient awaitValue(long arg0, TimeUnit arg1)
-                                    throws IllegalStateException, InterruptedException, TimeoutException {
-                                return null;
-                            }
-
-                            @Override
-                            public boolean compareAndSetMode(org.jboss.msc.service.ServiceController.Mode arg0,
-                                    org.jboss.msc.service.ServiceController.Mode arg1) {
-                                return false;
-                            }
-
-                            @Override
-                            public ServiceName[] getAliases() {
-                                return null;
-                            }
-
-                            @Override
-                            public Set<ServiceName> getImmediateUnavailableDependencies() {
-                                return null;
-                            }
-
-                            @Override
-                            public org.jboss.msc.service.ServiceController.Mode getMode() {
-                                return null;
-                            }
-
-                            @Override
-                            public ServiceName getName() {
-                                return null;
-                            }
-
-                            @Override
-                            public ServiceController<?> getParent() {
-                                return null;
-                            }
-
-                            @Override
-                            public Service<MasterDomainControllerClient> getService() throws IllegalStateException {
-                                return null;
-                            }
-
-                            @Override
-                            public ServiceContainer getServiceContainer() {
-                                return null;
-                            }
-
-                            @Override
-                            public StartException getStartException() {
-                                return null;
-                            }
-
-                            @Override
-                            public org.jboss.msc.service.ServiceController.State getState() {
-                                return null;
-                            }
-
-                            @Override
-                            public org.jboss.msc.service.ServiceController.Substate getSubstate() {
-                                return null;
-                            }
-
-                            @Override
-                            public MasterDomainControllerClient getValue() throws IllegalStateException {
-                                return new MasterDomainControllerClient() {
-
-                                    @Override
-                                    public void close() throws IOException {
-                                    }
-
-                                    @Override
-                                    public AsyncFuture<ModelNode> executeAsync(Operation operation, OperationMessageHandler messageHandler) {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public AsyncFuture<OperationResponse> executeOperationAsync(Operation operation, OperationMessageHandler messageHandler) {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public AsyncFuture<ModelNode> executeAsync(ModelNode operation, OperationMessageHandler messageHandler) {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public ModelNode execute(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public ModelNode execute(ModelNode operation, OperationMessageHandler messageHandler) throws IOException {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public ModelNode execute(Operation operation) throws IOException {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public ModelNode execute(ModelNode operation) throws IOException {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public void unregister() {
-                                    }
-
-                                    @Override
-                                    public void register() throws IOException {
-                                    }
-
-                                    @Override
-                                    public Cancellable pollForConnect() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public HostFileRepository getRemoteFileRepository() {
-                                        return null;
-                                    }
-
-                                    @Override
-                                    public void fetchAndSyncMissingConfiguration(OperationContext context, Resource resource)
-                                            throws OperationFailedException {
-                                        //
-                                    }
-                                };
-                            }
-
-                            @Override
-                            public void removeListener(ServiceListener<? super MasterDomainControllerClient> arg0) {
-                            }
-
-                            @Override
-                            public void retry() {
-                            }
-
-                            @Override
-                            public void setMode(org.jboss.msc.service.ServiceController.Mode arg0) {
-                            }
-
-                        };
-                    }
-                    throw new ServiceNotFoundException();
-                }
-            };
+            return null;
         }
     }
 

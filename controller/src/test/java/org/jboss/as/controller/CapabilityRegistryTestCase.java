@@ -50,9 +50,9 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -785,30 +785,19 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             runtimeOnlyCheck(true, RELOAD_ELEMENT);
 
             // Do a mock reload
-            CountDownLatch latch = new CountDownLatch(1);
             ServiceController<?> svc = container.getRequiredService(ServiceName.of("ModelController"));
             final AtomicInteger downCaps = new AtomicInteger();
             final AtomicInteger downPossibleCaps = new AtomicInteger();
-            svc.addListener(new AbstractServiceListener<Object>(){
+            StabilityMonitor monitor = new StabilityMonitor();
+            monitor.addController(svc);
 
-                @Override
-                public void listenerAdded(ServiceController<?> controller) {
-                    controller.setMode(ServiceController.Mode.NEVER);
-                }
+            svc.setMode(ServiceController.Mode.NEVER);
+            monitor.awaitStability();
+            downCaps.set(capabilityRegistry.getCapabilities().size());
+            downPossibleCaps.set(capabilityRegistry.getPossibleCapabilities().size());
+            svc.setMode(ServiceController.Mode.ACTIVE);
 
-                @Override
-                public void transition(ServiceController<?> controller, ServiceController.Transition transition) {
-                    if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
-                        downCaps.set(capabilityRegistry.getCapabilities().size());
-                        downPossibleCaps.set(capabilityRegistry.getPossibleCapabilities().size());
-                        controller.setMode(ServiceController.Mode.ACTIVE);
-                    } else if (transition == ServiceController.Transition.STARTING_to_UP) {
-                        controller.removeListener(this);
-                        latch.countDown();
-                    }
-                }
-            });
-            Assert.assertTrue("Failed to reload", latch.await(30, TimeUnit.SECONDS));
+            Assert.assertTrue("Failed to reload", monitor.awaitStability(30, TimeUnit.SECONDS));
 
             Assert.assertEquals(0, downCaps.get());
             Assert.assertEquals(0, downPossibleCaps.get());

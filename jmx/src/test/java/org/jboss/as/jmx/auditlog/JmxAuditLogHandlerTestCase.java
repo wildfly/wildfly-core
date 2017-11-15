@@ -31,11 +31,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -81,9 +77,8 @@ import org.jboss.as.jmx.MBeanServerService;
 import org.jboss.as.jmx.test.util.AbstractControllerTestBase;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -749,14 +744,13 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        TestServiceListener listener = new TestServiceListener();
-        listener.reset(1);
+        StabilityMonitor monitor = new StabilityMonitor();
         getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
-                .addListener(listener)
+                .addMonitor(monitor)
                 .install();
 
         try {
-            listener.latch.await(10, TimeUnit.SECONDS);
+            monitor.awaitStability(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -798,25 +792,6 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
         //registration.registerSubModel(JMXSubsystemRootResource.create(auditLogger));
     }
 
-
-    private class TestServiceListener extends AbstractServiceListener<Object> {
-
-        volatile CountDownLatch latch;
-        Map<ServiceController.Transition, ServiceName> services = Collections.synchronizedMap(new LinkedHashMap<ServiceController.Transition, ServiceName>());
-
-
-        void reset(int count) {
-            latch = new CountDownLatch(count);
-            services.clear();
-        }
-
-        public void transition(ServiceController<? extends Object> controller, ServiceController.Transition transition) {
-            if (transition == ServiceController.Transition.STARTING_to_UP || transition == ServiceController.Transition.REMOVING_to_REMOVED) {
-                services.put(transition, controller.getName());
-                latch.countDown();
-            }
-        }
-    }
 
     public interface BeanMBean {
         int getAttr();
