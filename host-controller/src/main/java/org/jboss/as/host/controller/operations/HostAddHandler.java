@@ -41,9 +41,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -74,7 +74,7 @@ import org.jboss.modules.ModuleClassLoader;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:kwills@redhat.com">Ken Wills</a>
  */
-public class HostAddHandler implements OperationStepHandler {
+public class HostAddHandler extends AbstractAddStepHandler {
 
     public static final OperationContext.AttachmentKey<Boolean> HOST_ADD_AFTER_BOOT = OperationContext.AttachmentKey.create(Boolean.class);
 
@@ -104,6 +104,7 @@ public class HostAddHandler implements OperationStepHandler {
                           final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                           final HostModelUtil.HostModelRegistrar hostModelRegistrar,
                           final Resource modelControllerResource) {
+        super(NAME);
         this.hostControllerEnvironment = hostControllerEnvironment;
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.hostModelRegistrar = hostModelRegistrar;

@@ -19,10 +19,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
-import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.as.host.controller.operations.HostAddHandler;
 
@@ -37,11 +37,17 @@ public class HostDefinition extends SimpleResourceDefinition {
                           final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
                           final HostModelUtil.HostModelRegistrar hostModelRegistrar,
                           final Resource modelControllerResource) {
-        super(PathElement.pathElement(HOST), HostResolver.getResolver(HOST, false),
-                new HostAddHandler(environment, ignoredDomainResourceRegistry, hostModelRegistrar, modelControllerResource), null);
+        super(new Parameters(PathElement.pathElement(HOST), HostModelUtil.getResourceDescriptionResolver()));
         this.environment = environment;
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.hostModelRegistrar = hostModelRegistrar;
         this.modelControllerResource = modelControllerResource;
     }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration hostDefinition) {
+        super.registerOperations(hostDefinition);
+        hostDefinition.registerOperationHandler(HostAddHandler.DEFINITION, new HostAddHandler(environment, ignoredDomainResourceRegistry, hostModelRegistrar, modelControllerResource));
+    }
+
 }
