@@ -17,6 +17,7 @@
  */
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertArrayEquals;
@@ -83,6 +84,13 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
 
     private ModelNode assertSuccess(ModelNode response) {
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
+            Assert.fail(response.toJSONString(false));
+        }
+        return response;
+    }
+
+    private ModelNode assertFailed(ModelNode response) {
+        if (! response.get(OUTCOME).asString().equals(FAILED)) {
             Assert.fail(response.toJSONString(false));
         }
         return response;
@@ -640,6 +648,38 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         }
     }
 
+    @Test
+    public void testStoreFileDoesNotExist() throws Exception {
+        String nonExistentFileName = "/does-not-exist.keystore";
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        File file = new File(resources + nonExistentFileName);
+
+        ModelNode operation = getAddKeyStoreUsingNonExistingFileOperation(false, nonExistentFileName);
+        assertSuccess(services.executeOperation(operation));
+        try {
+            operation = new ModelNode();
+            operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KEYSTORE_NAME);
+            operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.STORE);
+            assertSuccess(services.executeOperation(operation));
+            assertTrue(file.exists());
+        } finally {
+            removeKeyStore();
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testFileDoesNotExistAndIsRequired() throws Exception {
+        String nonExistentFileName = "/does-not-exist.keystore";
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        File file = new File(resources + nonExistentFileName);
+
+        ModelNode operation = getAddKeyStoreUsingNonExistingFileOperation(true, nonExistentFileName);
+        assertFailed(services.executeOperation(operation));
+    }
+
     private void addKeyStore() throws Exception {
         Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
         Files.copy(resources.resolve("test.keystore"), resources.resolve("test-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -684,5 +724,23 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", KEYSTORE_NAME);
         operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
         assertSuccess(services.executeOperation(operation));
+    }
+
+    private ModelNode getAddKeyStoreUsingNonExistingFileOperation(boolean required, String nonExistentFileName) throws Exception {
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        File file = new File(resources + nonExistentFileName);
+        assertTrue (! file.exists());
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", KEYSTORE_NAME);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + nonExistentFileName);
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
+        if (required) {
+            operation.get(ElytronDescriptionConstants.REQUIRED).set(true);
+        }
+        return operation;
     }
 }

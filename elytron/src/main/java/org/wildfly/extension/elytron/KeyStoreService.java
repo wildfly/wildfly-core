@@ -120,10 +120,9 @@ class KeyStoreService implements ModifiableKeyStoreService {
                     throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
                 } else {
                     ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
-                    resolvedPath = null;
                 }
             }
-            try (InputStream is = resolvedPath != null ? new FileInputStream(resolvedPath) : null) {
+            try (InputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
                 char[] password = resolvePassword();
 
                 ROOT_LOGGER.tracef(
