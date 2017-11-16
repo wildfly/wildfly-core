@@ -77,8 +77,8 @@ public class DefaultOperationCandidatesProviderTestCase {
 
     private static final String obj_content = "{\n"
             + "            \"type\" => OBJECT,\n"
-            + "            \"value-type\" => { \"prop1\" => { \"type\" => STRING},\n"
-            + "                \"prop2\" => { \"type\" => STRING}\n"
+            + "            \"value-type\" => { \"prop1\" => { \"type\" => STRING,\n \"required\" => false},\n"
+            + "                \"prop2\" => { \"type\" => STRING,\n \"required\" => false}\n"
             + "        } }";
 
     private static final String map_content = "{\n"

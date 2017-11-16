@@ -22,10 +22,12 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import static org.junit.Assert.assertEquals;
@@ -89,4 +91,122 @@ public class CliCompletionTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testDeploymentAdd() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        ctx.connectController();
+        String op = "/deployment=toto:add(content=";
+        try {
+            {
+                String cmd = op + "[{";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("archive", "bytes*", "empty*", "hash*",
+                        "input-stream-index*", "path*", "relative-to", "url*"), candidates);
+            }
+
+            {
+
+                String prefix = System.currentTimeMillis() + "cliCompletionTest";
+                File f = File.createTempFile(prefix, null);
+                f.deleteOnExit();
+                File parent = f.getParentFile();
+                String cmd = op + "[{input-stream-index=" + escapePath(parent.getAbsolutePath() + File.separator + prefix);
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList(f.getName()), candidates);
+            }
+
+            {
+                String prefix = System.currentTimeMillis() + "cliCompletionTest";
+                File f = File.createTempFile(prefix, null);
+                f.deleteOnExit();
+                String cmd = op + "[{input-stream-index=" + escapePath(f.getAbsolutePath());
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("}"), candidates);
+            }
+
+            {
+                String cmd = op + "[{path=xxx,";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("archive*", "relative-to"), candidates);
+            }
+
+            {
+                String cmd = op + "[{relative-to=xxx,";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("archive", "path*"), candidates);
+            }
+
+            {
+                String cmd = op + "[{archive=true,";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("empty*", "hash*", "path*", "relative-to"), candidates);
+            }
+
+            {
+                String cmd = op + "[{empty=true";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList(","), candidates);
+            }
+
+            {
+                String cmd = op + "[{empty=true,";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("archive"), candidates);
+            }
+
+            {
+                String cmd = op + "[{empty=true,archive=true";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("}"), candidates);
+            }
+
+            {
+                // If the prefix of a property name is typed,
+                // the property name (if it exists, hidden or not) is proposed.
+                String cmd = op + "[{empty=true,archive=true,i";
+                final List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(Arrays.asList("input-stream-index"), candidates);
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    private String escapePath(String filePath) {
+        if (Util.isWindows()) {
+            StringBuilder builder = new StringBuilder();
+            for (char c : filePath.toCharArray()) {
+                if (c == '\\') {
+                    builder.append('\\');
+                }
+                builder.append(c);
+            }
+            return builder.toString();
+        } else {
+            return filePath;
+        }
+    }
+
 }

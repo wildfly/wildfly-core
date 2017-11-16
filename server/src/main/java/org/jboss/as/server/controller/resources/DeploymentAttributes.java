@@ -198,12 +198,14 @@ public class DeploymentAttributes {
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES,
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.PATH)
+                    .setRequired(false)
                     .build();
 
     public static final SimpleAttributeDefinition CONTENT_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL)
                     .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH, ModelDescriptionConstants.EMPTY)
+                    .setRequired(false)
                     .build();
 
     //Exploded content attributes
@@ -245,10 +247,12 @@ public class DeploymentAttributes {
                             CONTENT_RELATIVE_TO,
                             CONTENT_ARCHIVE,
                             EMPTY)
+                            .setRequired(true)
                             .setValidator(new ContentTypeValidator())
                             .build())
                     .setMinSize(1)
                     .setMaxSize(1)
+                    .setRequired(true)
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_NILLABLE =
@@ -276,8 +280,10 @@ public class DeploymentAttributes {
                         SimpleAttributeDefinitionBuilder.create(CONTENT_BYTES).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
                         SimpleAttributeDefinitionBuilder.create(CONTENT_URL).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
                         TARGET_PATH)
-                    .build())
+                        .setRequired(true)
+                        .build())
                     .setMinSize(1)
+                    .setRequired(true)
                     .setValidator(new ManagedContentTypeValidator(ModelDescriptionConstants.TARGET_PATH, ModelDescriptionConstants.OVERWRITE))
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
@@ -301,6 +307,7 @@ public class DeploymentAttributes {
     public static final SimpleAttributeDefinition CONTENT_RESOURCE_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false)
                     .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH)
+                    .setRequired(false)
                     .build();
     public static final ObjectListAttributeDefinition CONTENT_RESOURCE_ALL =
             ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
@@ -309,10 +316,12 @@ public class DeploymentAttributes {
                             CONTENT_RESOURCE_PATH,
                             CONTENT_RESOURCE_RELATIVE_TO,
                             CONTENT_RESOURCE_ARCHIVE)
+                            .setRequired(true)
                             .setValidator(new ContentTypeValidator())
                             .build())
                     .setMinSize(1)
                     .setMaxSize(1)
+                    .setRequired(true)
                     .build();
 
 
@@ -485,7 +494,7 @@ public class DeploymentAttributes {
                                                                                     ParameterValidator validator,
                                                                                     boolean allowExpression,
                                                                                     String... alternatives) {
-        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type, true);
+        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type, false);
         if (validator != null) {
             builder.setValidator(validator);
         }
