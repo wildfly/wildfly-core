@@ -84,6 +84,7 @@ interface ElytronDescriptionConstants {
     String CERTIFICATE_TYPE = "certificate-type";
     String CERTIFICATE_REVOCATION_LIST = "certificate-revocation-list";
     String CHAINED_PRINCIPAL_TRANSFORMER = "chained-principal-transformer";
+    String CHANGE_ALIAS = "change-alias";
     String CIPHER_SUITE = "cipher-suite";
     String CIPHER_SUITE_FILTER = "cipher-suite-filter";
     String CLASS_LOADING = "class-loading";
@@ -120,6 +121,7 @@ interface ElytronDescriptionConstants {
     String CREDENTIAL_STORE = "credential-store";
     String CREDENTIAL_STORES = "credential-stores";
     String CREDENTIALS = "credentials";
+    String CRITICAL = "critical";
     String CUSTOM_CREDENTIAL_SECURITY_FACTORY = "custom-credential-security-factory";
     String CUSTOM_PERMISSION_MAPPER = "custom-permission-mapper";
     String CUSTOM_POLICY = "custom-policy";
@@ -145,14 +147,18 @@ interface ElytronDescriptionConstants {
     String DIR_CONTEXTS = "dir-contexts";
     String DIRECT_VERIFICATION = "direct-verification";
     String DISALLOWED_PROVIDERS = "disallowed-providers";
+    String DISTINGUISHED_NAME = "distinguished-name";
 
     String ELYTRON_SECURITY = "elytron-security";
     String ENABLE_CONNECTION_POOLING = "enable-connection-pooling";
     String ENABLING = "enabling";
     String ENCODED = "encoded";
     String ENTRY_TYPE = "entry-type";
+    String EXPORT_CERTIFICATE = "export-certificate";
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
+    String EXTENSION = "extension";
+    String EXTENSIONS = "extensions";
 
     String FAIL_CACHE = "fail-cache";
     String FILE = "file";
@@ -173,6 +179,8 @@ interface ElytronDescriptionConstants {
     String FORMAT = "format";
     String FROM = "from";
 
+    String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
+    String GENERATE_KEY_PAIR = "generate-key-pair";
     String GREATER_THAN = "greater-than";
     String GROUPS = "groups";
     String GROUPS_ATTRIBUTE = "groups-attribute";
@@ -192,6 +200,7 @@ interface ElytronDescriptionConstants {
     String IDENTITY_REALM = "identity-realm";
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
+    String IMPORT_CERTIFICATE = "import-certificate";
     String INDEX = "index";
     String INFO = "info";
     String INIT = "init";
@@ -215,6 +224,7 @@ interface ElytronDescriptionConstants {
     String KEY_TYPE = "key-type";
     String KEY_MANAGER = "key-manager";
     String KEY_MANAGERS = "key-managers";
+    String KEY_SIZE = "key-size";
     String KEY_STORE = "key-store";
     String KEY_STORE_REALM = "key-store-realm";
     String KEY_STORES = "key-stores";
@@ -281,6 +291,7 @@ interface ElytronDescriptionConstants {
 
     String NAME = "name";
     String NEED_CLIENT_AUTH = "need-client-auth";
+    String NEW_ALIAS = "new-alias";
     String NEW_IDENTITY_ATTRIBUTES = "new-identity-attributes";
     String NEW_IDENTITY_PARENT_DN = "new-identity-parent-dn";
     String NEW_ITEM_ATTRIBUTES = "new-item-attributes";
@@ -312,6 +323,7 @@ interface ElytronDescriptionConstants {
     String PEER_HOST = "peer-host";
     String PEER_PORT = "peer-port";
     String PEER_PRINCIPAL = "peer-principal";
+    String PEM = "pem";
     String PERIODIC_ROTATING_FILE_AUDIT_LOG = "periodic-rotating-file-audit-log";
     String PERMISSION = "permission";
     String PERMISSIONS = "permissions";
@@ -456,6 +468,7 @@ interface ElytronDescriptionConstants {
     String TO = "to";
     String TOKEN_REALM = "token-realm";
     String TRANSPORT = "transport";
+    String TRUST_CACERTS = "trust-cacerts";
     String TRUST_MANAGER = "trust-manager";
     String TRUST_MANAGERS = "trust-managers";
     String TRUSTED_SECURITY_DOMAINS = "trusted-security-domains";
@@ -471,6 +484,8 @@ interface ElytronDescriptionConstants {
     String USER_PASSWORD_MAPPER = "user-password-mapper";
 
     String VALID = "valid";
+    String VALIDATE = "validate";
+    String VALIDITY = "validity";
     String VALUE = "value";
     String VERIFIABLE = "verifiable";
     String VERSION = "version";
