@@ -5,7 +5,7 @@ rem -------------------------------------------------------------------------
 rem
 rem A simple utility for adding new users to the properties file used
 rem for domain management authentication out of the box.
-
+set JBOSS_HOME=
 rem $Id$
 
 @if not "%ECHO%" == ""  echo %ECHO%
