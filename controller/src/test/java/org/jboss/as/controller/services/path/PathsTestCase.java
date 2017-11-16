@@ -37,11 +37,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UND
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.AbstractControllerService;
@@ -54,11 +52,11 @@ import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceController.Transition;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -265,97 +263,84 @@ public class PathsTestCase extends AbstractControllerTestBase {
         Assert.assertNull(getContainer().getService(name1));
         Assert.assertNull(getContainer().getService(name2));
 
-        TestServiceListener listener = new TestServiceListener();
-        getContainer().addListener(listener);
-
-        listener.reset(1);
         ModelNode operation = createOperation(ADD);
         operation.get(OP_ADDR).add(PATH, "add1");
         operation.get(PATH).set("xyz");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addUp(name1).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name1));
         checkServiceAndPathEntry("add1", "xyz", null);
 
-        listener.reset(1);
         operation = createOperation(ADD);
         operation.get(OP_ADDR).add(PATH, "add2");
         operation.get(PATH).set("abc");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addUp(name2).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name2));
         checkServiceAndPathEntry("add2", "abc", null);
 
 
-        listener.reset(1);
         operation = createOperation(ADD);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(PATH).set("456");
         operation.get(RELATIVE_TO).set("add1");
         executeForResult(operation);
-        listener.latch.await();
-        ServiceController<?> original3 = getContainer().getRequiredService(name3);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add1", "xyz", null);
         checkServiceAndPathEntry("add2", "abc", null);
         checkServiceAndPathEntry("add3", "456", "add1");
 
-        listener.reset(2);
         operation = createOperation(WRITE_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(NAME).set(PATH);
         operation.get(VALUE).set("new-value");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).addUp(name3).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add3", "new-value", "add1");
 
-        listener.reset(2);
         operation = createOperation(WRITE_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(NAME).set(RELATIVE_TO);
         operation.get(VALUE).set("add2");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).addUp(name3).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add3", "new-value", "add2");
 
-        listener.reset(2);
         operation = createOperation(UNDEFINE_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(NAME).set(RELATIVE_TO);
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).addUp(name3).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add3", "new-value", null);
 
-        listener.reset(2);
         operation = createOperation(WRITE_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(NAME).set(PATH);
         operation.get(VALUE).set("newer-value");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).addUp(name3).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add3", "newer-value", null);
 
 
-        listener.reset(2);
         operation = createOperation(WRITE_ATTRIBUTE_OPERATION);
         operation.get(OP_ADDR).add(PATH, "add3");
         operation.get(NAME).set(RELATIVE_TO);
         operation.get(VALUE).set("add1");
         executeForResult(operation);
-        listener.latch.await();
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).addUp(name3).map, listener.services);
+        getContainer().awaitStability();
+        Assert.assertNotNull(getContainer().getService(name3));
         checkServiceAndPathEntry("add3", "newer-value", "add1");
 
-        listener.reset(1);
         operation = createOperation(REMOVE);
         operation.get(OP_ADDR).add(PATH, "add3");
         executeForResult(operation);
-        listener.latch.await();
+        getContainer().awaitStability();
         Assert.assertNull(getContainer().getService(name3));
-        Assert.assertEquals(new ExpectedResultBuilder().addRemove(name3).map, listener.services);
     }
 
     private void checkServiceAndPathEntry(String name, String path, String relativeTo) {
@@ -816,14 +801,13 @@ public class PathsTestCase extends AbstractControllerTestBase {
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        TestServiceListener listener = new TestServiceListener();
-        listener.reset(1);
+        StabilityMonitor monitor = new StabilityMonitor();
         getContainer().addService(PATH_MANAGER_SVC, pathManagerService)
-                .addListener(listener)
+                .addMonitor(monitor)
                 .install();
 
         try {
-            listener.latch.await(10, TimeUnit.SECONDS);
+            monitor.awaitStability(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -832,25 +816,6 @@ public class PathsTestCase extends AbstractControllerTestBase {
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
 
         pathManagerService.addPathManagerResources(managementModel.getRootResource());
-    }
-
-    private class TestServiceListener extends AbstractServiceListener<Object> {
-
-        volatile CountDownLatch latch;
-        Map<Transition, ServiceName> services = Collections.synchronizedMap(new LinkedHashMap<ServiceController.Transition, ServiceName>());
-
-
-        void reset(int count) {
-            latch = new CountDownLatch(count);
-            services.clear();
-        }
-
-        public void transition(ServiceController<? extends Object> controller, Transition transition) {
-            if (transition == Transition.STARTING_to_UP || transition == Transition.REMOVING_to_REMOVED) {
-                services.put(transition, controller.getName());
-                latch.countDown();
-            }
-        }
     }
 
     private static class ExpectedResultBuilder {
