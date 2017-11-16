@@ -30,10 +30,6 @@ import org.jboss.as.version.Version;
  */
 enum KernelAPIVersion {
 
-    // EAP 6.2.0
-    VERSION_1_5(1, 5, 0),
-    // EAP 6.3.0
-    VERSION_1_6(1, 6, 0),
     // EAP 6.4.0
     VERSION_1_7(1, 7, 0),
     // EAP 6.4.0 CP07

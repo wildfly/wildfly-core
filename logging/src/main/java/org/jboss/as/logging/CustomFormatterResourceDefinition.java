@@ -187,11 +187,6 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
 
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_1_3_0:
-                rootResourceBuilder.rejectChildResource(CUSTOM_FORMATTER_PATH);
-                loggingProfileBuilder.rejectChildResource(CUSTOM_FORMATTER_PATH);
-                break;
-        }
+        // do nothing by default
     }
 }
