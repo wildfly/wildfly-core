@@ -41,6 +41,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
@@ -123,7 +124,9 @@ class CredentialStoreService implements Service<CredentialStore> {
                         name, type, provider, Arrays.toString(otherProvidersArr), credentialStoreAttributes
                 );
             }
-            cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProvidersArr);
+            synchronized (EmptyProvider.getInstance()) {
+                cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProvidersArr);
+            }
             if ( credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && !loc.toFile().exists() ){
                 ROOT_LOGGER.tracef("CredentialStore %s does not exist, creating", name);
                 cs.flush();
