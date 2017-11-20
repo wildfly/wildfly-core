@@ -85,6 +85,7 @@ public abstract class AbstractMgmtSaslTestBase {
     protected static final String DIGEST_ALGORITHM_MD5 = "digest-md5";
     protected static final String DIGEST_ALGORITHM_SHA = "digest-sha";
     protected static final String DIGEST_ALGORITHM_SHA256 = "digest-sha-256";
+    protected static final String DIGEST_ALGORITHM_SHA384 = "digest-sha-384";
     protected static final String DIGEST_ALGORITHM_SHA512 = "digest-sha-512";
 
     protected static final int CONNECTION_TIMEOUT_IN_MS = TimeoutUtil.adjust(6 * 1000);
@@ -156,7 +157,7 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherMechsFail() throws Exception {
-        Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256",
+        Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256", "DIGEST-SHA-384",
                 "DIGEST-SHA-512", "PLAIN", "SCRAM-SHA-1", "JBOSS-LOCAL-USER").forEach(s -> {
                     if (!getMechanism().equals(s)) {
                         assertMechFails(s);
@@ -170,7 +171,7 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherDigestMechsFail() throws Exception {
-        Arrays.asList("MD5", "SHA", "SHA-256", "SHA-512").forEach(s -> {
+        Arrays.asList("MD5", "SHA", "SHA-256", "SHA-384", "SHA-512").forEach(s -> {
             final String mech = "DIGEST-" + s;
             if (!getMechanism().equals(mech)) {
                 assertDigestMechFails(mech, mech.toLowerCase(Locale.ROOT));
@@ -335,6 +336,7 @@ public abstract class AbstractMgmtSaslTestBase {
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_MD5);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA256);
+                addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA384);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA512);
             }
 
