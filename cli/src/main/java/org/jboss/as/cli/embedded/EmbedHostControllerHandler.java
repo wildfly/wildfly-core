@@ -214,7 +214,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                 // Modular environment
                 hostController = EmbeddedProcessFactory.createHostController(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), null, null, cmds);
+                hostController = EmbeddedProcessFactory.createHostController(jbossHome.getAbsolutePath(), WildFlySecurityManager.getPropertyPrivileged("module.path", null), null, cmds);
             }
             hostController.start();
             hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));

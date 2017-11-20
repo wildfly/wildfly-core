@@ -45,7 +45,9 @@ import org.junit.Assert;
 /**
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.
+ * @deprecated this belongs to full together with single user of it.
  */
+@Deprecated
 public class ModelParserUtils {
 
     /**

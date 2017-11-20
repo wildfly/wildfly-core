@@ -229,7 +229,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                 // Modular environment
                 server = EmbeddedProcessFactory.createStandaloneServer(ModuleLoader.forClass(getClass()), jbossHome, cmds);
             } else {
-                server = EmbeddedProcessFactory.createStandaloneServer(jbossHome.getAbsolutePath(), null, null, cmds);
+                server = EmbeddedProcessFactory.createStandaloneServer(jbossHome.getAbsolutePath(), WildFlySecurityManager.getPropertyPrivileged("module.path", null), null, cmds);
             }
             server.start();
             serverReference.set(new EmbeddedProcessLaunch(server, restorer, false));
