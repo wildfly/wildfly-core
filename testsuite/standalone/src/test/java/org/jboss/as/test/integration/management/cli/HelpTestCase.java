@@ -38,7 +38,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class HelpTestCase extends AbstractCliTestBase {
 
     private static final String[] COMMANDS = {
-        "cn", "connect", "deploy", "help", "history", "ls", "pwn", "quit", "undeploy", "version"
+        "cn", "deploy", "help", "history", "ls", "pwn", "quit", "undeploy", "version"
     };
 
     @BeforeClass
@@ -56,11 +56,6 @@ public class HelpTestCase extends AbstractCliTestBase {
         cli.sendLine("help");
         String help = cli.readOutput();
         for (String cmd : COMMANDS) assertTrue("Command '" + cmd + "' missing in help.", help.contains(cmd));
-    }
-
-    @Test
-    public void testConnectHelp() throws Exception {
-        testCmdHelp("connect");
     }
 
     @Test

@@ -388,6 +388,11 @@ public class CommandExecutor {
         }
 
         @Override
+        public void connectController(String controller, String client) throws CommandLineException {
+            wrapped.connectController(controller, client);
+        }
+
+        @Override
         public void connectController(String controller) throws CommandLineException {
             wrapped.connectController(controller);
         }

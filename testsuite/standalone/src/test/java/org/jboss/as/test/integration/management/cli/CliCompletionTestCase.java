@@ -232,6 +232,28 @@ public class CliCompletionTestCase {
                 assertTrue(candidates.toString(),
                         candidates.contains("proxies"));
             }
+
+            {
+                String cmd = "connect ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                                          cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--bind="));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                           candidates.contains("--bind="));
+            }
+
+            {
+                String cmd = "connect --";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                                          cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--bind="));
+                candidates = complete(ctx, cmd, true);
+                assertTrue(candidates.toString(),
+                           candidates.contains("--bind="));
+            }
         } finally {
             ctx.terminateSession();
         }

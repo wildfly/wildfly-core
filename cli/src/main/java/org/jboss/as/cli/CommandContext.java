@@ -235,6 +235,20 @@ public interface CommandContext {
     void connectController(String controller) throws CommandLineException;
 
     /**
+     * Connects to the controller specified.
+     *
+     * If the controller is null then the default specified on starting the CLI
+     * will be used, if no controller was specified on start up then the default
+     * defined in the CLI configuration will be used, if no default is defined
+     * then a connection to remote+http://localhost:9990 will be used instead.
+     *
+     * @param controller the controller to connect to
+     * @param clientAddress the address the client will bind to
+     * @throws CommandLineException in case the attempt to connect failed
+     */
+    void connectController(String controller, String clientAddress) throws CommandLineException;
+
+    /**
      * Connects the controller client using the host and the port.
      * If the host is null, the default controller host will be used,
      * which is localhost.
