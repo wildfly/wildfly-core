@@ -102,7 +102,6 @@ import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
 import org.wildfly.security.http.util.SortedServerMechanismFactory;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.WildFlySasl;
-import org.wildfly.security.sasl.localuser.LocalUserServer;
 import org.wildfly.security.sasl.util.FilterMechanismSaslServerFactory;
 import org.wildfly.security.sasl.util.PropertiesSaslServerFactory;
 import org.wildfly.security.sasl.util.SecurityProviderSaslServerFactory;
@@ -117,6 +116,8 @@ import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
 public class SecurityRealmService implements Service<SecurityRealm>, SecurityRealm {
 
     private static final String[] ADDITIONAL_PERMISSION = new String[] { "org.wildfly.transaction.client.RemoteTransactionPermission", "org.jboss.ejb.client.RemoteEJBPermission" };
+    private static final String LOCAL_AUTH_DEFAULT_USER = "wildfly.sasl.local-user.default-user";
+    private static final String LOCAL_USER_CHALLENGE_PATH = "wildfly.sasl.local-user.challenge-path";
 
     public static final String LOADED_USERNAME_KEY = SecurityRealmService.class.getName() + ".LOADED_USERNAME";
     public static final String SKIP_GROUP_LOADING_KEY = SecurityRealmService.class.getName() + ".SKIP_GROUP_LOADING";
@@ -216,14 +217,14 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                 for (Entry<String, String> currentOption : currentRegistration.getValue().getConfigurationOptions().entrySet()) {
                     switch (currentOption.getKey()) {
                         case LOCAL_DEFAULT_USER:
-                            mechanismConfiguration.put(LocalUserServer.DEFAULT_USER, currentOption.getValue());
+                            mechanismConfiguration.put(LOCAL_AUTH_DEFAULT_USER, currentOption.getValue());
                             break;
                     }
                 }
             }
         }
 
-        mechanismConfiguration.put(LocalUserServer.LEGACY_LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
+        mechanismConfiguration.put(LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
         mechanismConfiguration.put(WildFlySasl.ALTERNATIVE_PROTOCOLS, "remoting");
 
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
