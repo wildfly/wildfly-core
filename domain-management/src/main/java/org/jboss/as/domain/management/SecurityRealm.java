@@ -123,16 +123,8 @@ public interface SecurityRealm {
             return SecurityRealmResourceDefinition.MANAGEMENT_SECURITY_REALM_CAPABILITY.getCapabilityServiceName(realmName);
         }
 
-        @Deprecated
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SecurityRealm> injector,
-                String realmName, boolean optional) {
-            ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
-            sb.addDependency(type, createServiceName(realmName), SecurityRealm.class, injector);
-            return sb;
-        }
-
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SecurityRealm> injector, String realmName) {
-            return sb.addDependency(ServiceBuilder.DependencyType.REQUIRED, createServiceName(realmName), SecurityRealm.class, injector);
+            return sb.addDependency(createServiceName(realmName), SecurityRealm.class, injector);
         }
 
     }
