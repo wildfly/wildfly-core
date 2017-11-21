@@ -79,27 +79,11 @@ public final class Services {
      *
      * @param builder the builder
      * @param injector the injector
-     * @param optional whether dependency is optional or mandatory
-     * @param <T> the parameter type
-     * @return service builder instance
-     * @deprecated  This method will be removed in next major release. Please use {@link #addServerExecutorDependency(ServiceBuilder, Injector)} instead.
-     */
-    @Deprecated
-    public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector, boolean optional) {
-        ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
-        return builder.addDependency(type, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
-    }
-
-    /**
-     * Creates dependency on management executor.
-     *
-     * @param builder the builder
-     * @param injector the injector
      * @param <T> the parameter type
      * @return service builder instance
      */
     public static <T> ServiceBuilder<T> addServerExecutorDependency(ServiceBuilder<T> builder, Injector<ExecutorService> injector) {
-        return builder.addDependency(ServiceBuilder.DependencyType.REQUIRED, ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
+        return builder.addDependency(ServerService.MANAGEMENT_EXECUTOR, ExecutorService.class, injector);
     }
 
 }

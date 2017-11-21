@@ -110,17 +110,8 @@ public interface CallbackHandlerService {
         private ServiceUtil() {
         }
 
-        @Deprecated
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerService> injector,
-                ServiceName serviceName, boolean optional) {
-            ServiceBuilder.DependencyType type = optional ? ServiceBuilder.DependencyType.OPTIONAL : ServiceBuilder.DependencyType.REQUIRED;
-            sb.addDependency(type, serviceName, CallbackHandlerService.class, injector);
-
-            return sb;
-        }
-
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerService> injector, ServiceName serviceName) {
-            return sb.addDependency(ServiceBuilder.DependencyType.REQUIRED, serviceName, CallbackHandlerService.class, injector);
+            return sb.addDependency(serviceName, CallbackHandlerService.class, injector);
         }
 
     }
