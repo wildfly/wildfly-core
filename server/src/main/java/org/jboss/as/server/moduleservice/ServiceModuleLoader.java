@@ -72,9 +72,6 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
         private volatile StartException startException;
         private volatile ModuleSpec moduleSpec;
 
-        private ModuleSpecLoadListener(ModuleIdentifier identifier) {
-        }
-
         @Override
         public void listenerAdded(ServiceController<? extends ModuleDefinition> controller) {
             log.tracef("listenerAdded: %s", controller);
@@ -158,7 +155,7 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
             ServerLogger.MODULE_SERVICE_LOGGER.debugf("Could not load module '%s' as corresponding module spec service '%s' was not found", identifier, identifier);
             return null;
         }
-        ModuleSpecLoadListener listener = new ModuleSpecLoadListener(identifier);
+        ModuleSpecLoadListener listener = new ModuleSpecLoadListener();
         controller.addListener(listener);
         return listener.getModuleSpec();
     }
