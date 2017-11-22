@@ -56,6 +56,7 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to a capability providing a Provider[] which will be registered globally ahead of all existing Provider registrations.
+                    When set, affects a whole server globally, regardless it is referenced from other subsystems.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -63,6 +64,7 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to a capability providing a Provider[] which will be registered globally after all existing Provider registrations.
+                    When set, affects a whole server globally, regardless it is referenced from other subsystems.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -70,6 +72,7 @@
             <xs:annotation>
                 <xs:documentation>
                     A list of providers that are disallowed, and will be removed from the providers list.
+                    When set, affects a whole server globally, regardless it is referenced from other subsystems.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
