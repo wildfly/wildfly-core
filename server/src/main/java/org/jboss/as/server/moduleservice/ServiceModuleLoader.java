@@ -21,8 +21,6 @@
  */
 package org.jboss.as.server.moduleservice;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.Services;
@@ -52,7 +50,7 @@ import org.jboss.msc.value.ImmediateValue;
  * Modules are automatically removed when the corresponding service comes down.
  *
  * @author Stuart Douglas
- *
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ServiceModuleLoader extends ModuleLoader implements Service<ServiceModuleLoader> {
 
@@ -68,7 +66,6 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
      */
     private class ModuleSpecLoadListener extends AbstractServiceListener<ModuleDefinition> {
 
-        private final CountDownLatch latch = new CountDownLatch(1);
         private volatile StartException startException;
         private volatile ModuleSpec moduleSpec;
 
@@ -111,7 +108,6 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
             if (startException == null) {
                 moduleSpec = controller.getValue().getModuleSpec();
             }
-            latch.countDown();
         }
 
         public ModuleSpec getModuleSpec() throws ModuleLoadException {
