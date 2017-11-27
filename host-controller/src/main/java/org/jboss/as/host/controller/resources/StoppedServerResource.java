@@ -48,33 +48,34 @@ public class StoppedServerResource extends SimpleResourceDefinition {
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
 
     public StoppedServerResource() {
-        super(SERVER, HostResolver.getResolver(ModelDescriptionConstants.RUNNING_SERVER, false));
+        super(new Parameters(SERVER, HostResolver.getResolver(ModelDescriptionConstants.RUNNING_SERVER, false))
+                .setRuntime());
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, (context,operation) -> {
-            readResourceServerConfig(context, operation);
+            readResourceServerConfig(context);
             context.getResult().set(ServerEnvironment.LaunchType.DOMAIN.toString());
         });
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, (context, operation) -> {
-            readResourceServerConfig(context, operation);
+            readResourceServerConfig(context);
             // note this is inconsistent with the other values, should be lower case, preserved for now.
             context.getResult().set("STOPPED");
         });
 
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNTIME_CONFIGURATION_STATE,
                 (context, operation) -> {
-                    readResourceServerConfig(context, operation);
+                    readResourceServerConfig(context);
                     context.getResult().set(ClientConstants.CONTROLLER_PROCESS_STATE_STOPPED);
                     }
                 );
     }
 
     // https://issues.jboss.org/browse/WFCORE-3338 read server-config to test name of the server in operation is present
-    private void readResourceServerConfig(OperationContext context, ModelNode operation) {
+    private void readResourceServerConfig(OperationContext context) {
         final PathAddress address = context.getCurrentAddress();
         final String hostName = address.getElement(0).getValue();
         final PathElement element = address.getLastElement();
