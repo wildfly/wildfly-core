@@ -56,22 +56,22 @@ import org.jboss.dmr.ModelType;
 class PatchResourceDefinition extends SimpleResourceDefinition {
 
     public static final String NAME = "patching";
-    static final String RESOURCE_NAME = PatchResourceDefinition.class.getPackage().getName() + ".LocalDescriptions";
+    private static final String RESOURCE_NAME = PatchResourceDefinition.class.getPackage().getName() + ".LocalDescriptions";
     static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, NAME);
 
     private static ResourceDescriptionResolver getResourceDescriptionResolver(final String keyPrefix) {
         return new StandardResourceDescriptionResolver(keyPrefix, RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader(), true, false);
     }
 
-    static final AttributeDefinition VERSION = SimpleAttributeDefinitionBuilder.create("version", ModelType.STRING)
+    private static final AttributeDefinition VERSION = SimpleAttributeDefinitionBuilder.create("version", ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
-    static final AttributeDefinition CUMULATIVE_PATCH_ID = SimpleAttributeDefinitionBuilder.create(Constants.CUMULATIVE, ModelType.STRING)
+    private static final AttributeDefinition CUMULATIVE_PATCH_ID = SimpleAttributeDefinitionBuilder.create(Constants.CUMULATIVE, ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
-    static final AttributeDefinition PATCHES = PrimitiveListAttributeDefinition.Builder.of(Constants.PATCHES, ModelType.STRING)
+    private static final AttributeDefinition PATCHES = PrimitiveListAttributeDefinition.Builder.of(Constants.PATCHES, ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
@@ -81,28 +81,28 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .setDefaultValue(new ModelNode(false))
             .setRequired(false)
             .build();
-    static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
+    private static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setRequired(false)
             .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
             .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
             .build();
-    static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
+    private static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
             .setRequired(false)
             .build();
-    static final AttributeDefinition OVERRIDE_ALL = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_ALL, ModelType.BOOLEAN)
+    private static final AttributeDefinition OVERRIDE_ALL = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_ALL, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
             .setRequired(false)
             .build();
-    static final AttributeDefinition OVERRIDE = PrimitiveListAttributeDefinition.Builder.of(Constants.OVERRIDE, ModelType.STRING)
+    private static final AttributeDefinition OVERRIDE = PrimitiveListAttributeDefinition.Builder.of(Constants.OVERRIDE, ModelType.STRING)
             .setRequired(false)
             .build();
-    static final AttributeDefinition PRESERVE = PrimitiveListAttributeDefinition.Builder.of(Constants.PRESERVE, ModelType.STRING)
+    private static final AttributeDefinition PRESERVE = PrimitiveListAttributeDefinition.Builder.of(Constants.PRESERVE, ModelType.STRING)
             .setRequired(false)
             .build();
 
-    static final OperationDefinition PATCH = new SimpleOperationDefinitionBuilder(Constants.PATCH, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition PATCH = new SimpleOperationDefinitionBuilder(Constants.PATCH, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .addParameter(INPUT_STREAM_IDX_DEF)
             .addParameter(OVERRIDE_ALL)
             .addParameter(OVERRIDE_MODULES)
@@ -130,7 +130,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .setRequired(false)
             .build();
 
-    static final OperationDefinition ROLLBACK = new SimpleOperationDefinitionBuilder(Constants.ROLLBACK, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition ROLLBACK = new SimpleOperationDefinitionBuilder(Constants.ROLLBACK, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .addParameter(PATCH_ID)
             .addParameter(ROLLBACK_TO)
             .addParameter(RESET_CONFIGURATION)
@@ -140,7 +140,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .addParameter(PRESERVE)
             .build();
 
-    static final OperationDefinition ROLLBACK_LAST = new SimpleOperationDefinitionBuilder(Constants.ROLLBACK_LAST, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition ROLLBACK_LAST = new SimpleOperationDefinitionBuilder(Constants.ROLLBACK_LAST, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .addParameter(RESET_CONFIGURATION)
             .addParameter(OVERRIDE_ALL)
             .addParameter(OVERRIDE_MODULES)
@@ -148,14 +148,14 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .addParameter(PRESERVE)
             .build();
 
-    static final OperationDefinition SHOW_HISTORY = new SimpleOperationDefinitionBuilder(Constants.SHOW_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition SHOW_HISTORY = new SimpleOperationDefinitionBuilder(Constants.SHOW_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .addParameter(EXCLUDE_AGEDOUT)
             .build();
 
-    static final OperationDefinition AGEOUT_HISTORY = new SimpleOperationDefinitionBuilder(Constants.AGEOUT_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition AGEOUT_HISTORY = new SimpleOperationDefinitionBuilder(Constants.AGEOUT_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .build();
 
-    static final OperationDefinition PATCH_INFO = new SimpleOperationDefinitionBuilder(Constants.PATCH_INFO, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+    private static final OperationDefinition PATCH_INFO = new SimpleOperationDefinitionBuilder(Constants.PATCH_INFO, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
             .addParameter(PATCH_ID_OPTIONAL)
             .addParameter(VERBOSE)
             .setReplyType(ModelType.OBJECT)
@@ -185,25 +185,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration registry) {
-
         super.registerAttributes(registry);
         registerPatchingAttributes(registry);
-
-        final StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.patch-stream", RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader());
-        registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("patch-stream"), resolver)
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
-
-            @Override
-            public void registerAttributes(final ManagementResourceRegistration resource) {
-                super.registerAttributes(resource);
-                registerPatchingAttributes(resource);
-            }
-
-            @Override
-            public void registerOperations(ManagementResourceRegistration registry) {
-                PatchResourceDefinition.this.registerPatchingOperations(registry, false);
-            }
-        });
     }
 
     @Override
@@ -212,7 +195,33 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
         registerPatchingOperations(registry, true);
     }
 
-    protected void registerPatchingOperations(ManagementResourceRegistration registry, boolean patchOp) {
+    @Override
+    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+        registerPatchingChildren(resourceRegistration);
+
+        final StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.patch-stream", RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader());
+        resourceRegistration.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("patch-stream"), resolver)
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
+
+            @Override
+            public void registerAttributes(final ManagementResourceRegistration registry) {
+                super.registerAttributes(registry);
+                registerPatchingAttributes(registry);
+            }
+
+            @Override
+            public void registerOperations(ManagementResourceRegistration registry) {
+                PatchResourceDefinition.this.registerPatchingOperations(registry, false);
+            }
+
+            @Override
+            public void registerChildren(ManagementResourceRegistration registry) {
+                PatchResourceDefinition.this.registerPatchingChildren(registry);
+            }
+        });
+    }
+
+    private void registerPatchingOperations(ManagementResourceRegistration registry, boolean patchOp) {
         registry.registerOperationHandler(ROLLBACK, LocalPatchRollbackHandler.INSTANCE);
         registry.registerOperationHandler(ROLLBACK_LAST, LocalPatchRollbackLastHandler.INSTANCE);
         if(patchOp) {
@@ -223,7 +232,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
         registry.registerOperationHandler(PATCH_INFO, PatchInfoHandler.INSTANCE);
     }
 
-    protected void registerPatchingAttributes(ManagementResourceRegistration registry) {
+    private void registerPatchingAttributes(ManagementResourceRegistration registry) {
 
         registry.registerReadOnlyAttribute(VERSION, new PatchAttributeReadHandler() {
             @Override
@@ -246,10 +255,13 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                 }
             }
         });
+    }
+
+    private void registerPatchingChildren(ManagementResourceRegistration registry) {
 
         StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.layer", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
         registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("layer"), resolver)
-            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)){
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)){
 
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
@@ -281,7 +293,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
         resolver = new StandardResourceDescriptionResolver("patching.addon", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
         registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("addon"), resolver)
-            .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
                 resource.registerReadOnlyAttribute(CUMULATIVE_PATCH_ID, new ElementProviderAttributeReadHandler.AddOnAttributeReadHandler() {
@@ -309,6 +321,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
                 });
             }
         });
+
     }
 }
 
