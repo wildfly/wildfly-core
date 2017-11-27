@@ -52,7 +52,7 @@ import org.jboss.dmr.ModelType;
  * @author Kabir Khan
  */
 public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition {
-    public static final PathElement RESOURCE_PATH = PathElement.pathElement(CORE_SERVICE, HOST_ENVIRONMENT);
+    private static final PathElement RESOURCE_PATH = PathElement.pathElement(CORE_SERVICE, HOST_ENVIRONMENT);
 
     private static final AttributeDefinition PROCESS_CONTROLLER_ADDRESS =
             createAttributeDefinition("process-controller-address", ModelType.STRING, SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG);
@@ -81,7 +81,7 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
     private static final AttributeDefinition QUALIFIED_HOST_NAME = createAttributeDefinition("qualified-host-name");
     private static final AttributeDefinition HOST_NAME = createAttributeDefinition("host-name");
 
-    public static final AttributeDefinition[] HOST_ENV_ATTRIBUTES = {
+    private static final AttributeDefinition[] HOST_ENV_ATTRIBUTES = {
         PROCESS_CONTROLLER_ADDRESS,
         PROCESS_CONTROLLER_PORT,
         HOST_CONTROLLER_ADDRESS,
@@ -115,7 +115,7 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
      */
 
     private HostEnvironmentResourceDefinition(final HostControllerEnvironment environment) {
-        super(RESOURCE_PATH, HostResolver.getResolver("host.env"));
+        super(new Parameters(RESOURCE_PATH, HostResolver.getResolver("host.env")).setRuntime());
         osh = new HostEnvironmentReadHandler(environment);
     }
 
@@ -181,7 +181,7 @@ public class HostEnvironmentResourceDefinition extends SimpleResourceDefinition 
     private static class HostEnvironmentReadHandler implements OperationStepHandler {
         private final HostControllerEnvironment environment;
 
-        public HostEnvironmentReadHandler(final HostControllerEnvironment environment) {
+        HostEnvironmentReadHandler(final HostControllerEnvironment environment) {
             this.environment = environment;
         }
 
