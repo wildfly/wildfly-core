@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.logging;
 
+import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
@@ -1152,7 +1153,7 @@ public interface ServerLogger extends BasicLogger {
      * Log an error to indicate that the vault is not initialized. This previously was used
      * to create an exception but has been converted to a log message meant to be logged once.
      */
-    @LogMessage(level = ERROR)
+    @LogMessage(level = DEBUG)
     @Message(id = 230, value = "Vault is not initialized; resolution of vault expressions is not possible")
     void vaultNotInitializedException();
 
