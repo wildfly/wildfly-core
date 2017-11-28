@@ -675,6 +675,14 @@ class TestModelControllerService extends ModelTestModelControllerService {
         }
 
         @Override
+        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+            if (type == TestModelType.DOMAIN) {
+                return;
+            }
+            super.registerCapabilities(resourceRegistration);
+        }
+
+        @Override
         public boolean isRuntime() {
             return false;
         }
