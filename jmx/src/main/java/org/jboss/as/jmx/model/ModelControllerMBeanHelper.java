@@ -266,7 +266,8 @@ public class ModelControllerMBeanHelper {
         if (address == null) {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
-        final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, true);
+        // Ensure the resource is addressable; fail if not
+        accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, true);
         return MBeanInfoFactory.createMBeanInfo(name, converters, configuredDomains, mutabilityChecker, address, getMBeanRegistration(address, reg));
     }
 
@@ -277,7 +278,7 @@ public class ModelControllerMBeanHelper {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
         final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, false);
-        return getAttribute(reg, address, name, attribute, accessControl);
+        return getAttribute(reg, address, attribute, accessControl);
     }
 
     AttributeList getAttributes(ObjectName name, String[] attributes) throws InstanceNotFoundException, ReflectionException {
@@ -290,7 +291,7 @@ public class ModelControllerMBeanHelper {
         AttributeList list = new AttributeList();
         for (String attribute : attributes) {
             try {
-                list.add(new Attribute(attribute, getAttribute(reg, address, name, attribute, accessControl)));
+                list.add(new Attribute(attribute, getAttribute(reg, address, attribute, accessControl)));
             } catch (AttributeNotFoundException e) {
                 throw new ReflectionException(e);
             }
@@ -298,7 +299,7 @@ public class ModelControllerMBeanHelper {
         return list;
     }
 
-    private Object getAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final ObjectName name, final String attribute, final ResourceAccessControl accessControl)  throws ReflectionException, AttributeNotFoundException, InstanceNotFoundException {
+    private Object getAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final String attribute, final ResourceAccessControl accessControl)  throws ReflectionException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
         final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
         if (provider == null) {
@@ -333,7 +334,7 @@ public class ModelControllerMBeanHelper {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
         final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, false);
-        setAttribute(reg, address, name, attribute, accessControl);
+        setAttribute(reg, address, attribute, accessControl);
 
     }
 
@@ -347,7 +348,7 @@ public class ModelControllerMBeanHelper {
 
         for (Attribute attribute : attributes.asList()) {
             try {
-                setAttribute(reg, address, name, attribute, accessControl);
+                setAttribute(reg, address, attribute, accessControl);
             } catch (JMRuntimeException e) {
                 //Propagate the JMRuntimeException thrown from authorization
                 throw e;
@@ -359,7 +360,7 @@ public class ModelControllerMBeanHelper {
         return attributes;
     }
 
-    private void setAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final ObjectName name, final Attribute attribute, ResourceAccessControl accessControl)  throws InvalidAttributeValueException, AttributeNotFoundException, InstanceNotFoundException {
+    private void setAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final Attribute attribute, ResourceAccessControl accessControl)  throws InvalidAttributeValueException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
         final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
         if (provider == null) {
@@ -501,10 +502,10 @@ public class ModelControllerMBeanHelper {
                 throw JmxLogger.ROOT_LOGGER.differentLengths("params", "description");
             }
             Iterator<String> it = requestProperties.keys().iterator();
-            for (int i = 0 ; i < params.length ; i++) {
+            for (Object param : params) {
                 String attributeName = it.next();
                 ModelNode paramDescription = requestProperties.get(attributeName);
-                op.get(attributeName).set(converters.toModelNode(paramDescription, params[i]));
+                op.get(attributeName).set(converters.toModelNode(paramDescription, param));
             }
         }
 
@@ -617,7 +618,7 @@ public class ModelControllerMBeanHelper {
         private final boolean propertyListPattern;
         private final ObjectNameAddressUtil.ObjectNameCreationContext creationContext = ObjectNameAddressUtil.ObjectNameCreationContext.create();
 
-        protected ObjectNameMatchResourceAction(ObjectName baseName) {
+        ObjectNameMatchResourceAction(ObjectName baseName) {
             this.baseName = baseName;
             this.properties = baseName == null ? Collections.<String, String>emptyMap() : baseName.getKeyPropertyList();
             try {
