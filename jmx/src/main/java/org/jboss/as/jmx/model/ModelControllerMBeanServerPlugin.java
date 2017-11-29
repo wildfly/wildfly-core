@@ -170,8 +170,7 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
             count += legacyHelper.getMBeanCount();
         }
         if (exprHelper != null) {
-            // exprHelper has the same # of mbeans as legacyHelper, so only ask for a count if we didn't already
-            count = count > 0 ? count * 2 : exprHelper.getMBeanCount();
+            count += exprHelper.getMBeanCount();
         }
         return count;
     }

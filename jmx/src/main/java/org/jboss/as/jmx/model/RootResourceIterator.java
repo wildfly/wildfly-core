@@ -21,8 +21,6 @@
 */
 package org.jboss.as.jmx.model;
 
-import java.util.Set;
-
 import javax.management.ObjectName;
 
 import org.jboss.as.controller.PathAddress;
@@ -56,9 +54,8 @@ class RootResourceIterator<T> {
 
         if (handleChildren) {
             for (String type : current.getChildTypes()) {
-                Set<ResourceEntry> children = current.getChildren(type);
-                if (children != null) {
-                    for (ResourceEntry entry : children) {
+                if (current.hasChildren(type)) {
+                    for (ResourceEntry entry : current.getChildren(type)) {
                         final PathElement pathElement = entry.getPathElement();
                         final PathAddress childAddress = address.append(pathElement);
                         doIterate(entry, childAddress);

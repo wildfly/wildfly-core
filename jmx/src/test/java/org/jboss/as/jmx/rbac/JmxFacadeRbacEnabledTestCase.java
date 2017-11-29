@@ -345,11 +345,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
                     Assert.assertTrue(names.contains(instance.getObjectName()));
                 }
                 int number = server.getMBeanCount();
-                if (standardRole == StandardRole.ADMINISTRATOR || standardRole == StandardRole.SUPERUSER) {
-                    Assert.assertEquals(names.toString(), names.size(), number);
-                } else {
-                    Assert.assertTrue(names.toString(), names.size() < number);
-                }
+                Assert.assertEquals(names.size(), number);
 
                 try {
                     server.getMBeanInfo(ONE_A_NAME);
