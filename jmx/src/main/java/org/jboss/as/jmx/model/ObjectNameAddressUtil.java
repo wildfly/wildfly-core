@@ -46,6 +46,7 @@ import org.jboss.as.jmx.logging.JmxLogger;
 class ObjectNameAddressUtil {
 
     private static final EscapedCharacter[] ESCAPED_KEY_CHARACTERS;
+    private static final EscapedCharacter[] ESCAPED_QUOTED_VALUE_CHARACTERS;
     static {
 
         List<EscapedCharacter> keys = new ArrayList<EscapedCharacter>();
@@ -60,6 +61,38 @@ class ObjectNameAddressUtil {
         keys.add(new EscapedCharacter(','));
 
         ESCAPED_KEY_CHARACTERS = keys.toArray(new EscapedCharacter[keys.size()]);
+
+        List<EscapedCharacter> values = new ArrayList<EscapedCharacter>();
+
+        //From ObjectName javadoc:
+        /*
+        A <em>quoted value</em> consists of a quote (<code>"</code>),
+        followed by a possibly empty string of characters, followed by
+        another quote.  Within the string of characters, the backslash
+        (<code>\</code>) has a special meaning.  It must be followed by
+        one of the following characters:
+
+        * Another backslash.  The second backslash has no special
+          meaning and the two characters represent a single backslash.
+
+        * The character 'n'.  The two characters represent a newline
+          ('\n' in Java).
+
+        * A quote.  The two characters represent a quote, and that quote
+          is not considered to terminate the quoted value. An ending closing
+          quote must be present for the quoted value to be valid.
+
+        * A question mark (?) or asterisk (*).  The two characters represent
+          a question mark or asterisk respectively.
+        */
+        // Process \ itself first so it doesn't escape the \ added by the others
+        values.add(new EscapedCharacter("\\", "\\\\"));
+        values.add(new EscapedCharacter("*", "\\*"));
+        values.add(new EscapedCharacter("\n", "\\n"));
+        values.add(new EscapedCharacter("?", "\\?"));
+        values.add(new EscapedCharacter( "\"", "\\\""));
+
+        ESCAPED_QUOTED_VALUE_CHARACTERS = values.toArray(new EscapedCharacter[values.size()]);
     }
 
     /**
@@ -74,6 +107,7 @@ class ObjectNameAddressUtil {
         }
 
         private final Map<String, String> keyCache = new HashMap<>();
+        private final Map<String, String> valueCache = new HashMap<>();
 
         private String getCachedKey(String key) {
             return keyCache.get(key);
@@ -81,6 +115,14 @@ class ObjectNameAddressUtil {
 
         private void cacheKey(String key, String toCache) {
             keyCache.put(key, toCache);
+        }
+
+        private String getCachedValue(String value) {
+            return valueCache.get(value);
+        }
+
+        private void cacheValue(String value, String toCache) {
+            valueCache.put(value, toCache);
         }
     }
 
@@ -117,7 +159,7 @@ class ObjectNameAddressUtil {
             }
             escapeKey(ESCAPED_KEY_CHARACTERS, sb, element.getKey(), context);
             sb.append("=");
-            escapeValue(sb, element.getValue());
+            escapeValue(sb, element.getValue(), context);
         }
         try {
             return ObjectName.getInstance(sb.toString());
@@ -217,40 +259,31 @@ class ObjectNameAddressUtil {
         sb.append(escaped);
     }
 
-    private static void escapeValue(final StringBuilder sb, final String value) {
-        final boolean containsAsterix = value.contains("*");
-        final boolean containsBackslash = value.contains("\\");
-        final boolean containsColon = value.contains(":");
-        final boolean containsEquals = value.contains("=");
-        final boolean containsNewLine = value.contains("\n");
-        final boolean containsQuestionMark = value.contains("?");
-        final boolean containsQuote = value.contains("\"");
-        final boolean containsComma = value.contains(",");
-
-        boolean quoted = containsAsterix || containsBackslash || containsColon || containsEquals || containsNewLine || containsQuestionMark || containsQuote || containsComma;
-        if (quoted) {
-            String replaced = value;
-            sb.append("\"");
-
-            replaced = checkAndReplace(containsAsterix, replaced, "*", "\\*");
-            replaced = checkAndReplace(containsBackslash, replaced, "\\", "\\\\");
-            //colon, comma and equals do not need escaping
-            replaced = checkAndReplace(containsNewLine, replaced, "\n", "\\n");
-            replaced = checkAndReplace(containsQuestionMark, replaced, "?", "\\?");
-            replaced = checkAndReplace(containsQuote, replaced, "\"", "\\\"");
-            sb.append(replaced);
-
-            sb.append("\"");
-        } else {
-            sb.append(value);
+    private static void escapeValue(final StringBuilder sb, final String value, ObjectNameCreationContext context) {
+        String escaped = context == null ? null : context.getCachedValue(value);
+        if (escaped == null) {
+            escaped = value;
+            for (EscapedCharacter escapedCharacter : ESCAPED_QUOTED_VALUE_CHARACTERS) {
+                escaped = escapedCharacter.escapeString(escaped);
+            }
+            boolean quoted = !value.equals(escaped);
+            if (!quoted) {
+                // Must use quoted value if colon, comma are equals are included
+                for (char c : value.toCharArray()) {
+                    if (c == ':' || c == ',' || c == '=') {
+                        quoted = true;
+                        break;
+                    }
+                }
+            }
+            if (quoted) {
+                escaped = "\"" + escaped + "\"";
+            }
+            if (context != null) {
+                context.cacheValue(value, escaped);
+            }
         }
-    }
-
-    private static String checkAndReplace(boolean condition, String original, String search, String replacement) {
-        if (condition) {
-            return original.replace(search, replacement);
-        }
-        return original;
+        sb.append(escaped);
     }
 
     private static String replaceEscapedCharactersInKey(String escaped) {
@@ -262,18 +295,11 @@ class ObjectNameAddressUtil {
 
     private static String replaceEscapedCharactersInValue(final String escaped) {
         if (escaped.startsWith("\"") && escaped.endsWith("\"")) {
-            final boolean containsAsterix = escaped.contains("\\*");
-            final boolean containsBackslash = escaped.contains("\\\\");
-            final boolean containsNewLine = escaped.contains("\\n");
-            final boolean containsQuestionMark = escaped.contains("\\?");
-            final boolean containsQuote = escaped.contains("\\\"");
-
             String replaced = escaped.substring(1, escaped.length() - 1);
-            replaced = checkAndReplace(containsAsterix, replaced, "\\*", "*");
-            replaced = checkAndReplace(containsBackslash, replaced, "\\\\", "\\");
-            replaced = checkAndReplace(containsNewLine, replaced, "\\n", "\n");
-            replaced = checkAndReplace(containsQuestionMark, replaced, "\\?", "?");
-            replaced = checkAndReplace(containsQuote, replaced, "\\\"", "\"");
+            // Unescape in reverse order so we deal with the \ itself last
+            for (int i = ESCAPED_QUOTED_VALUE_CHARACTERS.length - 1; i >= 0; i--) {
+                replaced = ESCAPED_QUOTED_VALUE_CHARACTERS[i].unescapeString(replaced);
+            }
             return replaced;
         } else {
             return escaped;
