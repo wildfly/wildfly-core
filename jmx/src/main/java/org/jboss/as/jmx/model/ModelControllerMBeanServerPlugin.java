@@ -171,7 +171,8 @@ public class ModelControllerMBeanServerPlugin extends BaseMBeanServerPlugin {
             count += legacyHelper.getMBeanCount();
         }
         if (exprHelper != null) {
-            count += exprHelper.getMBeanCount();
+            // exprHelper has the same # of mbeans as legacyHelper, so only ask for a count if we didn't already
+            count = count > 0 ? count * 2 : exprHelper.getMBeanCount();
         }
         //JmxLogger.ROOT_LOGGER.infof("Elapsed getMBeanCount time using the non-RBAC RootResourceIterator approach was %d, resulting in a count of %d", (System.nanoTime() - start), count);
         return count;
