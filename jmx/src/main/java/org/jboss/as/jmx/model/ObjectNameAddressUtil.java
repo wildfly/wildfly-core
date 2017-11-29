@@ -47,6 +47,7 @@ class ObjectNameAddressUtil {
 
     private static final EscapedCharacter[] ESCAPED_KEY_CHARACTERS;
     static {
+
         List<EscapedCharacter> keys = new ArrayList<EscapedCharacter>();
 
         //From ObjectName javadoc:
@@ -61,7 +62,46 @@ class ObjectNameAddressUtil {
         ESCAPED_KEY_CHARACTERS = keys.toArray(new EscapedCharacter[keys.size()]);
     }
 
+    /**
+     * Contextual object that can be passed to multiple invocations of
+     * {@link #createObjectName(String, PathAddress, ObjectNameCreationContext)}
+     * allowing that method to share state across invocations.
+     */
+    static final class ObjectNameCreationContext {
+
+        static ObjectNameCreationContext create() {
+            return new ObjectNameCreationContext();
+        }
+
+        private final Map<String, String> keyCache = new HashMap<>();
+
+        private String getCachedKey(String key) {
+            return keyCache.get(key);
+        }
+
+        private void cacheKey(String key, String toCache) {
+            keyCache.put(key, toCache);
+        }
+    }
+
+    /**
+     * Creates an ObjectName representation of a {@link PathAddress}.
+     * @param domain the JMX domain to use for the ObjectName. Cannot be {@code null}
+     * @param pathAddress the address. Cannot be {@code null}
+     * @return the ObjectName. Will not return {@code null}
+     */
     static ObjectName createObjectName(final String domain, final PathAddress pathAddress) {
+        return createObjectName(domain, pathAddress, null);
+    }
+
+    /**
+     * Creates an ObjectName representation of a {@link PathAddress}.
+     * @param domain the JMX domain to use for the ObjectName. Cannot be {@code null}
+     * @param pathAddress the address. Cannot be {@code null}
+     * @param context contextual objection that allows this method to cache state across invocations. May be {@code null}
+     * @return the ObjectName. Will not return {@code null}
+     */
+    static ObjectName createObjectName(final String domain, final PathAddress pathAddress, ObjectNameCreationContext context) {
 
         if (pathAddress.size() == 0) {
             return ModelControllerMBeanHelper.createRootObjectName(domain);
@@ -75,7 +115,7 @@ class ObjectNameAddressUtil {
             } else {
                 sb.append(",");
             }
-            escapeKey(ESCAPED_KEY_CHARACTERS, sb, element.getKey());
+            escapeKey(ESCAPED_KEY_CHARACTERS, sb, element.getKey(), context);
             sb.append("=");
             escapeValue(sb, element.getValue());
         }
@@ -163,11 +203,18 @@ class ObjectNameAddressUtil {
         return null;
     }
 
-    private static void escapeKey(EscapedCharacter[] escapedCharacters, StringBuilder sb, String value) {
-        for (EscapedCharacter escapedCharacter : escapedCharacters) {
-            value = escapedCharacter.escapeString(value);
+    private static void escapeKey(EscapedCharacter[] escapedCharacters, StringBuilder sb, String value, ObjectNameCreationContext context) {
+        String escaped = context == null ? null : context.getCachedKey(value);
+        if (escaped == null) {
+            escaped = value;
+            for (EscapedCharacter escapedCharacter : escapedCharacters) {
+                escaped = escapedCharacter.escapeString(escaped);
+            }
+            if (context != null) {
+                context.cacheKey(value, escaped);
+            }
         }
-        sb.append(value);
+        sb.append(escaped);
     }
 
     private static void escapeValue(final StringBuilder sb, final String value) {

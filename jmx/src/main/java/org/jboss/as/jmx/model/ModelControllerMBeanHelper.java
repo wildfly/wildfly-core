@@ -112,13 +112,13 @@ public class ModelControllerMBeanHelper {
         return new RootResourceIterator<Integer>(null, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
             int count;
             final ImmutableManagementResourceRegistration rootRegistration = getRootResourceAndRegistration().getRegistration();
-
+            final ObjectNameAddressUtil.ObjectNameCreationContext context = ObjectNameAddressUtil.ObjectNameCreationContext.create();
             @Override
             public ObjectName onAddress(PathAddress address) {
                 // We don't exclude addresses based on RBAC but we do check that they correspond to a real MRR
                 // plus we exclude the platform mbean resources, which are not visible via this domain
                 return isExcludeAddress(address) || rootRegistration.getSubModel(address) == null
-                        ? null : ObjectNameAddressUtil.createObjectName(domain, address);
+                        ? null : ObjectNameAddressUtil.createObjectName(domain, address, context);
             }
 
             public boolean onResource(ObjectName address) {
@@ -610,6 +610,7 @@ public class ModelControllerMBeanHelper {
         private final Map<String, String> properties;
         private final ObjectName domainOnlyName;
         private final boolean propertyListPattern;
+        private final ObjectNameAddressUtil.ObjectNameCreationContext creationContext = ObjectNameAddressUtil.ObjectNameCreationContext.create();
 
         protected ObjectNameMatchResourceAction(ObjectName baseName) {
             this.baseName = baseName;
@@ -629,7 +630,7 @@ public class ModelControllerMBeanHelper {
             }
 
             ObjectName result = null;
-            ObjectName toMatch = ObjectNameAddressUtil.createObjectName(domain, address);
+            ObjectName toMatch = ObjectNameAddressUtil.createObjectName(domain, address, creationContext);
             if (baseName == null) {
                 result = toMatch;
             } else if (address.size() == 0) {
