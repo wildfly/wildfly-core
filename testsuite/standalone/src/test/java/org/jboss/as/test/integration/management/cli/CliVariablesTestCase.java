@@ -33,6 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -238,6 +239,31 @@ public class CliVariablesTestCase {
         assertTrue(ctx.getExitCode() == 0);
     }
 
+    /**
+     * Tests that variable is properly displayed although line contains leading
+     * whitespaces.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLeadingWhitespaces() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper();
+        cli.executeInteractive();
+        try {
+            String expected = "XXXXXX";
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("          set var=" + expected);
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("          echo $var");
+            String[] lines = cli.getOutput().split(System.getProperty("line.separator"));
+            // lines[0] == echo command
+            // lines[1] == echoed content
+            // lines[3] = prompt.
+            Assert.assertEquals(expected, lines[1]);
+        } finally {
+            cli.destroyProcess();
+        }
+    }
     private static void ensureRemoved(File f) {
         if (f.exists()) {
             if (!f.delete()) {
