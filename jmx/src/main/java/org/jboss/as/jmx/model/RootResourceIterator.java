@@ -48,7 +48,8 @@ class RootResourceIterator<T> {
         boolean handleChildren = false;
 
         ObjectName resourceObjectName = action.onAddress(address);
-        if (resourceObjectName != null && accessControlUtil.getResourceAccess(address, false).isAccessibleResource()) {
+        if (resourceObjectName != null &&
+                (accessControlUtil == null || accessControlUtil.getResourceAccess(address, false).isAccessibleResource())) {
             handleChildren = action.onResource(resourceObjectName);
         }
 

@@ -107,12 +107,18 @@ public class ModelControllerMBeanHelper {
     }
 
     int getMBeanCount() {
-        return new RootResourceIterator<Integer>(accessControlUtil, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
+        // Here we don't provide the accessControlUtil as we don't want to pay the cost of doing RBAC
+        // checks. An mbean exists and can be in the count regardless of whether it can be addressed
+        return new RootResourceIterator<Integer>(null, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
             int count;
+            final ImmutableManagementResourceRegistration rootRegistration = getRootResourceAndRegistration().getRegistration();
 
             @Override
             public ObjectName onAddress(PathAddress address) {
-                return isExcludeAddress(address) ? null : ObjectNameAddressUtil.createObjectName(domain, address);
+                // We don't exclude addresses based on RBAC but we do check that they correspond to a real MRR
+                // plus we exclude the platform mbean resources, which are not visible via this domain
+                return isExcludeAddress(address) || rootRegistration.getSubModel(address) == null
+                        ? null : ObjectNameAddressUtil.createObjectName(domain, address);
             }
 
             public boolean onResource(ObjectName address) {
