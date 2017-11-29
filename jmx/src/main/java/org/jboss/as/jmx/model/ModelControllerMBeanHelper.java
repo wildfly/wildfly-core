@@ -242,11 +242,11 @@ public class ModelControllerMBeanHelper {
 
 
     PathAddress resolvePathAddress(final ObjectName name) {
-        return ObjectNameAddressUtil.resolvePathAddress(domain, getRootResourceAndRegistration().getResource(), name);
+        return ObjectNameAddressUtil.resolvePathAddress(rootObjectInstance.getObjectName(), getRootResourceAndRegistration().getResource(), name);
     }
 
-    PathAddress resolvePathAddress(final ObjectName name, ManagementModelIntegration.ResourceAndRegistration reg) {
-        return ObjectNameAddressUtil.resolvePathAddress(domain, reg.getResource(), name);
+    private PathAddress resolvePathAddress(final ObjectName name, ManagementModelIntegration.ResourceAndRegistration reg) {
+        return ObjectNameAddressUtil.resolvePathAddress(rootObjectInstance.getObjectName(), reg.getResource(), name);
     }
 
     /**
@@ -257,7 +257,7 @@ public class ModelControllerMBeanHelper {
      */
 
     PathAddress toPathAddress(final ObjectName name) {
-        return ObjectNameAddressUtil.toPathAddress(domain, getRootResourceAndRegistration().getRegistration(), name);
+        return ObjectNameAddressUtil.toPathAddress(rootObjectInstance.getObjectName(), getRootResourceAndRegistration().getRegistration(), name);
     }
 
     MBeanInfo getMBeanInfo(final ObjectName name) throws InstanceNotFoundException {

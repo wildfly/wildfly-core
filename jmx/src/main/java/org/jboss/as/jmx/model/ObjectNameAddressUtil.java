@@ -171,15 +171,31 @@ class ObjectNameAddressUtil {
     /**
      * Converts the ObjectName to a PathAddress.
      *
+     * @param domain the name of the caller's JMX domain
+     * @param rootResource the root resource for the management model
      * @param name the ObjectName
      *
      * @return the PathAddress if it exists in the model, {@code null} otherwise
      */
     static PathAddress resolvePathAddress(final String domain, final Resource rootResource, final ObjectName name) {
+        return resolvePathAddress(ModelControllerMBeanHelper.createRootObjectName(domain), rootResource, name);
+    }
+
+    /**
+     * Converts the ObjectName to a PathAddress.
+     *
+     * @param domainRoot the ObjectName used for mbean in the caller's JMX domain that represent the root management resource
+     * @param rootResource the root resource for the management model
+     * @param name the ObjectName to resolve
+     *
+     * @return the PathAddress if it exists in the model, {@code null} otherwise
+     */
+    static PathAddress resolvePathAddress(final ObjectName domainRoot, final Resource rootResource, final ObjectName name) {
+        String domain = domainRoot.getDomain();
         if (!name.getDomain().equals(domain)) {
             return null;
         }
-        if (name.equals(ModelControllerMBeanHelper.createRootObjectName(domain))) {
+        if (name.equals(domainRoot)) {
             return PathAddress.EMPTY_ADDRESS;
         }
         final Hashtable<String, String> properties = name.getKeyPropertyList();
@@ -210,14 +226,44 @@ class ObjectNameAddressUtil {
     /**
      * Straight conversion from an ObjectName to a PathAddress.
      *
-     * There may not necessary be a Resource at this path address (if that correspond to a pattern) but it must
+     * There may not necessarily be a Resource at this path address (if that correspond to a pattern) but it must
      * match a model in the registry.
+     *
+     * @param domain the name of the caller's JMX domain
+     * @param registry the root resource for the management model
+     * @param name the ObjectName to convert
+     *
+     * @return the PathAddress, or {@code null} if no address matches the object name
      */
     static PathAddress toPathAddress(String domain, ImmutableManagementResourceRegistration registry, ObjectName name) {
         if (!name.getDomain().equals(domain)) {
             return PathAddress.EMPTY_ADDRESS;
         }
         if (name.equals(ModelControllerMBeanHelper.createRootObjectName(domain))) {
+            return PathAddress.EMPTY_ADDRESS;
+        }
+        final Hashtable<String, String> properties = name.getKeyPropertyList();
+        return searchPathAddress(PathAddress.EMPTY_ADDRESS, registry, properties);
+    }
+
+    /**
+     * Straight conversion from an ObjectName to a PathAddress.
+     *
+     * There may not necessarily be a Resource at this path address (if that correspond to a pattern) but it must
+     * match a model in the registry.
+
+     * @param domainRoot the ObjectName used for mbean in the caller's JMX domain that represent the root management resource
+     * @param registry the root resource for the management model
+     * @param name the ObjectName to convert
+     *
+     * @return the PathAddress, or {@code null} if no address matches the object name
+     */
+    static PathAddress toPathAddress(final ObjectName domainRoot, ImmutableManagementResourceRegistration registry, ObjectName name) {
+        String domain = domainRoot.getDomain();
+        if (!name.getDomain().equals(domain)) {
+            return PathAddress.EMPTY_ADDRESS;
+        }
+        if (name.equals(domainRoot)) {
             return PathAddress.EMPTY_ADDRESS;
         }
         final Hashtable<String, String> properties = name.getKeyPropertyList();
