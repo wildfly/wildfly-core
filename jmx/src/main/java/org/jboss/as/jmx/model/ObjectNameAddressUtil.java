@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -163,7 +165,7 @@ class ObjectNameAddressUtil {
 
     private static void escapeKey(EscapedCharacter[] escapedCharacters, StringBuilder sb, String value) {
         for (EscapedCharacter escapedCharacter : escapedCharacters) {
-            value = value.replace(escapedCharacter.getChar().toString(), escapedCharacter.getEscaped());
+            value = escapedCharacter.escapeString(value);
         }
         sb.append(value);
     }
@@ -205,10 +207,8 @@ class ObjectNameAddressUtil {
     }
 
     private static String replaceEscapedCharactersInKey(String escaped) {
-        if (escaped.contains("%x")) {
-            for (EscapedCharacter escapedCharacter : ESCAPED_KEY_CHARACTERS) {
-                escaped = escaped.replace(escapedCharacter.getEscaped(), escapedCharacter.getChar());
-            }
+        for (EscapedCharacter escapedCharacter : ESCAPED_KEY_CHARACTERS) {
+            escaped = escapedCharacter.unescapeString(escaped);
         }
         return escaped;
     }
@@ -233,23 +233,37 @@ class ObjectNameAddressUtil {
         }
     }
 
+    /**
+     * Caches objects used in standard String.replaceAll operations
+     * so they can be reused in string escaping/unescaping calls.
+     */
     private static class EscapedCharacter {
-        private final String ch;
-        private final String hexPart;
-        private final String escaped;
+        // Pattern that finds the string to escape
+        private final Pattern pattern;
+        // String to replace it with
+        private final String quotedReplacement;
+        // Pattern that finds the replacement
+        private final Pattern reversePattern;
+        // String to restore
+        private final String reverseQuotedReplacement;
 
-        EscapedCharacter(Character ch){
-            this.ch = String.valueOf(ch);
-            hexPart = Integer.toHexString(ch);
-            escaped = "%x" + hexPart;
+        EscapedCharacter(Character ch) {
+            this(String.valueOf(ch), "%x" + Integer.toHexString(ch));
         }
 
-        String getChar() {
-            return ch;
+        EscapedCharacter(String toReplace, String replacement) {
+            this.pattern = Pattern.compile(toReplace, Pattern.LITERAL);
+            this.quotedReplacement = Matcher.quoteReplacement(replacement);
+            this.reversePattern = Pattern.compile(replacement, Pattern.LITERAL);
+            this.reverseQuotedReplacement = Matcher.quoteReplacement(toReplace);
         }
 
-        String getEscaped() {
-            return escaped;
+        String escapeString(String toEscape) {
+            return pattern.matcher(toEscape).replaceAll(quotedReplacement);
+        }
+
+        String unescapeString(String toUnescape) {
+            return reversePattern.matcher(toUnescape).replaceAll(reverseQuotedReplacement);
         }
     }
 }
