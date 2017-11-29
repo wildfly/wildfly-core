@@ -92,6 +92,7 @@ public class ModelControllerMBeanHelper {
     private final TypeConverters converters;
     private final ConfiguredDomains configuredDomains;
     private final String domain;
+    private final ObjectInstance rootObjectInstance;
     private final ManagementModelIntegration.ManagementModelProvider managementModelProvider;
 
     ModelControllerMBeanHelper(TypeConverters converters, ConfiguredDomains configuredDomains, String domain,
@@ -104,6 +105,7 @@ public class ModelControllerMBeanHelper {
         this.accessControlUtil = new ResourceAccessControlUtil(controller);
         this.mutabilityChecker = mutabilityChecker;
         this.managementModelProvider = managementModelProvider;
+        this.rootObjectInstance = ModelControllerMBeanHelper.createRootObjectInstance(domain);
     }
 
     int getMBeanCount() {
@@ -112,13 +114,16 @@ public class ModelControllerMBeanHelper {
         return new RootResourceIterator<Integer>(null, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
             int count;
             final ImmutableManagementResourceRegistration rootRegistration = getRootResourceAndRegistration().getRegistration();
-            final ObjectNameAddressUtil.ObjectNameCreationContext context = ObjectNameAddressUtil.ObjectNameCreationContext.create();
             @Override
             public ObjectName onAddress(PathAddress address) {
                 // We don't exclude addresses based on RBAC but we do check that they correspond to a real MRR
-                // plus we exclude the platform mbean resources, which are not visible via this domain
+                // plus we exclude the platform mbean resources, which are not visible via this JMX domain.
+                // If the address is good, then we don't need to do a costly parse of it into an ObjectName,
+                // as in this iterator's case all that's done with the ObjectName is a null check.
+                // So we just return an ObjectName we already have at hand, i.e. the name of the root resource mbean
+                // for this JMX domain.
                 return isExcludeAddress(address) || rootRegistration.getSubModel(address) == null
-                        ? null : ObjectNameAddressUtil.createObjectName(domain, address, context);
+                        ? null : rootObjectInstance.getObjectName();
             }
 
             public boolean onResource(ObjectName address) {
@@ -148,7 +153,7 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectInstance> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectInstance(domain))) {
+                if (set.size() == 1 && set.contains(rootObjectInstance)) {
                     return Collections.emptySet();
                 }
                 return set;
@@ -195,7 +200,7 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectName> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectName(domain))) {
+                if (set.size() == 1 && set.contains(rootObjectInstance.getObjectName())) {
                   return Collections.emptySet();
                 }
                 return set;
