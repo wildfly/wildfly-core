@@ -15,7 +15,7 @@ limitations under the License.
  */
 package org.wildfly.core.cli.command.aesh.activator;
 
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 
 /**
  *
@@ -26,7 +26,7 @@ import org.aesh.command.impl.internal.ProcessedCommand;
 public class HideOptionActivator extends AbstractOptionActivator {
 
     @Override
-    public boolean isActivated(ProcessedCommand processedCommand) {
+    public boolean isActivated(ParsedCommand processedCommand) {
         return false;
     }
 

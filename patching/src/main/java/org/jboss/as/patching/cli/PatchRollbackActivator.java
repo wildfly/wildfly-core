@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.aesh.command.CommandException;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -37,7 +37,7 @@ import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
 public class PatchRollbackActivator extends AbstractCommandActivator {
 
     @Override
-    public boolean isActivated(ProcessedCommand command) {
+    public boolean isActivated(ParsedCommand command) {
         try {
             AbstractDistributionCommand cmd = (AbstractDistributionCommand) command.getCommand();
             return !getPatches(getCommandContext(), cmd, cmd.getPatchStream(), cmd.getHost()).isEmpty();

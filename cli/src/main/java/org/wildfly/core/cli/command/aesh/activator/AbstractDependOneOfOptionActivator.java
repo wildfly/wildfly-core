@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.aesh.command.impl.internal.ProcessedCommand;
-import org.aesh.command.impl.internal.ProcessedOption;
+import org.aesh.command.impl.internal.ParsedCommand;
+import org.aesh.command.impl.internal.ParsedOption;
 import static org.wildfly.core.cli.command.aesh.activator.DependOptionActivator.ARGUMENT_NAME;
 
 /**
@@ -44,14 +44,14 @@ public abstract class AbstractDependOneOfOptionActivator implements DependOneOfO
     }
 
     @Override
-    public boolean isActivated(ProcessedCommand processedCommand) {
+    public boolean isActivated(ParsedCommand processedCommand) {
         boolean found = false;
         for (String opt : options) {
             if (ARGUMENT_NAME.equals(opt)) {
-                found |= processedCommand.getArgument() != null && (processedCommand.getArgument().getValue() != null);
+                found |= processedCommand.argument() != null && (processedCommand.argument().value() != null);
             } else {
-                ProcessedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
-                found |= processedOption != null && (processedOption.getValue() != null);
+                ParsedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
+                found |= processedOption != null && (processedOption.value() != null);
             }
         }
         return found;

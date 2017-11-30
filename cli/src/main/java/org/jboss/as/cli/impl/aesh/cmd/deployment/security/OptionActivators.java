@@ -18,7 +18,7 @@ package org.jboss.as.cli.impl.aesh.cmd.deployment.security;
 import java.util.HashSet;
 import java.util.Set;
 import org.aesh.command.activator.OptionActivator;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.wildfly.core.cli.command.aesh.activator.AbstractDependRejectOptionActivator;
 import org.wildfly.core.cli.command.aesh.activator.AbstractRejectOptionActivator;
 import org.wildfly.core.cli.command.aesh.activator.DomainOptionActivator;
@@ -35,8 +35,8 @@ public interface OptionActivators {
     public static class UrlActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getAddOrReplacePermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -45,8 +45,8 @@ public interface OptionActivators {
     public static class NameActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getDeployPermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -56,8 +56,8 @@ public interface OptionActivators {
     public static class UndeployNameActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getRemoveOrUndeployPermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -70,8 +70,8 @@ public interface OptionActivators {
     public static class FileActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getAddOrReplacePermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -80,8 +80,8 @@ public interface OptionActivators {
     public static class UnmanagedActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getMainAddPermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -90,8 +90,8 @@ public interface OptionActivators {
     public static class RuntimeNameActivator implements OptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand pc) {
-            CommandWithPermissions cmd = (CommandWithPermissions) pc.getCommand();
+        public boolean isActivated(ParsedCommand pc) {
+            CommandWithPermissions cmd = (CommandWithPermissions) pc.command();
             return cmd.getPermissions().getAddOrReplacePermission().
                     isSatisfied(cmd.getCommandContext());
         }
@@ -113,8 +113,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getFullReplacePermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -140,8 +140,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getMainAddPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -167,8 +167,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getMainAddPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -194,8 +194,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getDeployPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -215,8 +215,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getCommandContext().isDomainMode()) {
                 return false;
             }
@@ -249,9 +249,9 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             CommandWithPermissions cmd
-                    = (CommandWithPermissions) processedCommand.getCommand();
+                    = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getDeployPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -280,9 +280,9 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             CommandWithPermissions cmd
-                    = (CommandWithPermissions) processedCommand.getCommand();
+                    = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getUndeployPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
@@ -311,8 +311,8 @@ public interface OptionActivators {
         }
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
-            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.getCommand();
+        public boolean isActivated(ParsedCommand processedCommand) {
+            CommandWithPermissions cmd = (CommandWithPermissions) processedCommand.command();
             if (!cmd.getPermissions().getUndeployPermission().
                     isSatisfied(cmd.getCommandContext())) {
                 return false;

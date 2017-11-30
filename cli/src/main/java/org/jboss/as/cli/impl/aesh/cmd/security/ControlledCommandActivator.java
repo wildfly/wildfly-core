@@ -16,7 +16,7 @@ limitations under the License.
 package org.jboss.as.cli.impl.aesh.cmd.security;
 
 import java.io.IOException;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.aesh.cmd.ConnectedActivator;
@@ -32,11 +32,11 @@ import org.jboss.dmr.ModelNode;
 public class ControlledCommandActivator extends ConnectedActivator {
 
     @Override
-    public boolean isActivated(ProcessedCommand cmd) {
+    public boolean isActivated(ParsedCommand cmd) {
         if (!super.isActivated(cmd)) {
             return false;
         }
-        AbstractControlledCommand controlled = (AbstractControlledCommand) cmd.getCommand();
+        AbstractControlledCommand controlled = (AbstractControlledCommand) cmd.command();
         CommandContext ctx = getCommandContext();
         if (controlled.isDependsOnProfile() && ctx.isDomainMode()) { // not checking address in all the profiles
             return ctx.getConfig().isAccessControl()

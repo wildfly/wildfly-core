@@ -30,6 +30,7 @@ import org.aesh.command.activator.CommandActivator;
 import org.aesh.command.impl.container.AeshCommandContainerBuilder;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.impl.container.AeshCommandContainer;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.impl.parser.CommandLineParserBuilder;
 import org.aesh.command.impl.registry.MutableCommandRegistryImpl;
 import org.aesh.command.parser.CommandLineParserException;
@@ -323,14 +324,14 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
     public List<String> getAvailableAeshCommands() {
         List<String> lst = new ArrayList<>();
         for (String c : getAllCommandNames()) {
-            CommandLineParser<? extends Command> cmdParser;
+            CommandLineParser cmdParser;
             try {
                 cmdParser = findCommand(c, null);
             } catch (CommandNotFoundException ex) {
                 continue;
             }
             CommandActivator activator = cmdParser.getProcessedCommand().getActivator();
-            if (activator == null || activator.isActivated(cmdParser.getProcessedCommand())) {
+            if (activator == null || activator.isActivated(new ParsedCommand(cmdParser.getProcessedCommand()))) {
                 lst.add(c);
             }
         }

@@ -28,6 +28,7 @@ import org.aesh.command.CommandException;
 import org.aesh.command.CommandNotFoundException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.activator.CommandActivator;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandHandler;
@@ -288,12 +289,12 @@ public class HelpCommand implements Command<CLICommandInvocation> {
                 continue;
             }
             CommandActivator activator = cmdParser.getProcessedCommand().getActivator();
-            if (activator == null || activator.isActivated(cmdParser.getProcessedCommand())) {
+            if (activator == null || activator.isActivated(new ParsedCommand(cmdParser.getProcessedCommand()))) {
                 if (cmdParser.isGroupCommand()) {
                     for (CommandLineParser child : cmdParser.getAllChildParsers()) {
                         CommandActivator childActivator = child.getProcessedCommand().getActivator();
                         if (childActivator == null
-                                || childActivator.isActivated(child.getProcessedCommand())) {
+                                || childActivator.isActivated(new ParsedCommand(child.getProcessedCommand()))) {
                             lst.add(c + " " + child.getProcessedCommand().name());
                         }
                     }

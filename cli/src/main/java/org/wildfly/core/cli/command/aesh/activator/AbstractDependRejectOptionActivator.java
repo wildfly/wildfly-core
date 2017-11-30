@@ -16,7 +16,7 @@ limitations under the License.
 package org.wildfly.core.cli.command.aesh.activator;
 
 import java.util.Set;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 
 /**
  *
@@ -50,7 +50,7 @@ public abstract class AbstractDependRejectOptionActivator implements DependOptio
     }
 
     @Override
-    public boolean isActivated(ProcessedCommand processedCommand) {
+    public boolean isActivated(ParsedCommand processedCommand) {
         if (!expected.isActivated(processedCommand)) {
             return false;
         }

@@ -23,7 +23,7 @@ import org.aesh.command.Command;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.option.Argument;
 import org.aesh.command.option.Option;
@@ -648,7 +648,7 @@ public class Commands {
     public static class DomainA extends AbstractOptionActivator implements DomainOptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             return getCommandContext().isDomainMode();
         }
 
@@ -657,7 +657,7 @@ public class Commands {
     public static class StandaloneA extends AbstractOptionActivator implements StandaloneOptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             return !getCommandContext().isDomainMode();
         }
 

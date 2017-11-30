@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.aesh.command.impl.internal.ProcessedCommand;
-import org.aesh.command.impl.internal.ProcessedOption;
+import org.aesh.command.impl.internal.ParsedCommand;
+import org.aesh.command.impl.internal.ParsedOption;
 import static org.wildfly.core.cli.command.aesh.activator.DependOptionActivator.ARGUMENT_NAME;
 
 /**
@@ -44,15 +44,15 @@ public abstract class AbstractRejectOptionActivator implements RejectOptionActiv
     }
 
     @Override
-    public boolean isActivated(ProcessedCommand processedCommand) {
+    public boolean isActivated(ParsedCommand processedCommand) {
         for (String opt : options) {
             if (ARGUMENT_NAME.equals(opt)) {
-                if (processedCommand.getArgument() != null && processedCommand.getArgument().getValue() != null) {
+                if (processedCommand.argument() != null && processedCommand.argument().value() != null) {
                     return false;
                 }
             } else {
-                ProcessedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
-                if (processedOption != null && processedOption.getValue() != null) {
+                ParsedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
+                if (processedOption != null && processedOption.value() != null) {
                     return false;
                 }
             }

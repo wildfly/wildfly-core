@@ -19,8 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.aesh.command.impl.internal.ProcessedCommand;
-import org.aesh.command.impl.internal.ProcessedOption;
+import org.aesh.command.impl.internal.ParsedCommand;
+import org.aesh.command.impl.internal.ParsedOption;
 
 /**
  *
@@ -46,14 +46,14 @@ public abstract class AbstractDependOptionActivator implements DependOptionActiv
     }
 
     @Override
-    public boolean isActivated(ProcessedCommand processedCommand) {
+    public boolean isActivated(ParsedCommand processedCommand) {
         boolean found = true;
         for (String opt : options) {
             if (ARGUMENT_NAME.equals(opt)) {
-                found &= processedCommand.getArgument() != null && (lax || processedCommand.getArgument().getValue() != null);
+                found &= processedCommand.argument() != null && (lax || processedCommand.argument().value() != null);
             } else {
-                ProcessedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
-                found &= processedOption != null && (lax || processedOption.getValue() != null);
+                ParsedOption processedOption = processedCommand.findLongOptionNoActivatorCheck(opt);
+                found &= processedOption != null && (lax || processedOption.value() != null);
             }
         }
         return found;

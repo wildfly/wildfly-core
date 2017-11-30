@@ -15,7 +15,7 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd;
 
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
 
 /**
@@ -26,7 +26,7 @@ import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
 public class ConnectedActivator extends AbstractCommandActivator {
 
     @Override
-    public boolean isActivated(ProcessedCommand cmd) {
+    public boolean isActivated(ParsedCommand command) {
         return getCommandContext().getModelControllerClient() != null;
     }
 }

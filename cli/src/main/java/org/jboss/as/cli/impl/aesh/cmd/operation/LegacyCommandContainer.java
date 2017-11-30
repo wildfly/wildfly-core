@@ -22,6 +22,7 @@ import org.aesh.command.Command;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.container.DefaultCommandContainer;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.impl.internal.ProcessedCommand;
 import org.aesh.command.impl.internal.ProcessedCommandBuilder;
 import org.aesh.command.impl.internal.ProcessedOption;
@@ -70,7 +71,7 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
     private class Activator extends AbstractCommandActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand cmd) {
+        public boolean isActivated(ParsedCommand command) {
             return handler.isAvailable(getCommandContext());
         }
     }
