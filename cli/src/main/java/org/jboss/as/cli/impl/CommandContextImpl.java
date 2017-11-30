@@ -427,7 +427,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
         Settings settings = createSettings(consoleInput);
         this.console = Console.Factory.getConsole(this, settings);
         this.console.setActionCallback((line) -> {
-            handleSafe(line);
+            handleSafe(line.trim());
             if (console != null) {
                 console.setPrompt(getPrompt());
             }
