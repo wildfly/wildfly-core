@@ -444,8 +444,14 @@ public interface OperationContext extends ExpressionResolver {
      * returned registry must not be used to remove services, if an attempt is made to call {@code ServiceController.setMode(REMOVE)}
      * on a {@code ServiceController} returned from this registry an {@code IllegalStateException} will be thrown. To
      * remove a service call {@link #removeService(org.jboss.msc.service.ServiceName)}.
+     * <p>
+     * <strong>Note:</strong> It is very important that the {@code modify} parameter accurately reflect whether the
+     * caller intends to make any modifications to any object reachable, directly or indirectly, from the returned
+     * {@link ServiceRegistry}. This includes modifying any {@link ServiceController},
+     * {@link org.jboss.msc.service.Service}, {@link org.jboss.msc.value.Value} or any object reachable from a value.
      *
-     * @param modify {@code true} if the operation may be modifying a service, {@code false} otherwise
+     * @param modify {@code true} if the operation may be modifying any object reachable directly or indirectly from
+     *                           the returned {@link ServiceRegistry}, {@code false} otherwise
      * @return the service registry
      * @throws UnsupportedOperationException if the calling step is not a runtime operation step
      */
