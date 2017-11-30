@@ -270,22 +270,6 @@ public class LoggingResource implements Resource {
     }
 
     @Override
-    public int getTreeSize() {
-        int result = delegate.getTreeSize(); // ourself
-        // Simple form
-        // result += getChildrenNames(LOG_FILE).size();
-        // Slightly optimized alternative that saves unnecessary population of a set of names
-        final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
-        try {
-            result += findFiles(logDir, getFileHandlersModel(), true).size();
-        } catch (IOException e) {
-            LoggingLogger.ROOT_LOGGER.errorProcessingLogDirectory(logDir);
-        }
-        return result;
-    }
-
-    @SuppressWarnings("MethodDoesntCallSuperMethod")
-    @Override
     public Resource clone() {
         return new LoggingResource(delegate.clone(), pathManager, fileHandlersModel);
     }

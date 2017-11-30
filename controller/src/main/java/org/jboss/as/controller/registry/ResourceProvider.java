@@ -33,29 +33,18 @@ public interface ResourceProvider extends Cloneable {
     Resource get(String name);
     boolean hasChildren();
     Set<String> children();
-    /** Gets the total {@link Resource#getTreeSize() tree size} of all the resources provided by this provider */
-    default int getTreeSize() {
-        int result = 0;
-        for (String name : children()) {
-            Resource res = get(name);
-            if (res != null) {
-                result += res.getTreeSize();
-            }
-        }
-        return result;
-    }
     void register(String name, Resource resource);
     void register(String value, int index, Resource resource);
     Resource remove(String name);
     ResourceProvider clone();
 
-    abstract class ResourceProviderRegistry {
+    public abstract static class ResourceProviderRegistry {
 
         protected abstract void registerResourceProvider(final String type, final ResourceProvider provider);
 
     }
 
-    class Tool {
+    public static class Tool {
 
         public static void addResourceProvider(final String name, final ResourceProvider provider, final Resource resource) {
             if (resource instanceof ResourceProviderRegistry) {

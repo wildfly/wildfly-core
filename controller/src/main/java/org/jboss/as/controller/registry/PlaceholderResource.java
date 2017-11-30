@@ -135,11 +135,6 @@ public class PlaceholderResource implements Resource {
     }
 
     @Override
-    public int getTreeSize() {
-        return 1;
-    }
-
-    @Override
     public Resource clone() {
         return INSTANCE;
     }
