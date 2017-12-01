@@ -103,27 +103,25 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                 if (enabled) {
                                     ServerLogger.ROOT_LOGGER.deploymentUndeployed(managementName, runtimeName);
                                 }
-                                Set<String> newHash;
-                                try {
-                                    newHash = DeploymentUtils.getDeploymentHexHash(context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel());
-                                } catch (Resource.NoSuchResourceException ex) {
-                                    newHash = Collections.emptySet();
-                                }
-                                for (byte[] hash : removedHashes) {
-                                    try {
-                                        if(newHash.isEmpty() || !newHash.contains(HashUtil.bytesToHexString(hash))) {
-                                            contentRepository.removeContent(ModelContentReference.fromDeploymentName(name, hash));
-                                        } else {
-                                            ServerLogger.ROOT_LOGGER.undeployingDeploymentHasBeenRedeployed(name);
-                                        }
-                                    } catch (Exception e) {
-                                        //TODO
-                                        ServerLogger.ROOT_LOGGER.failedToRemoveDeploymentContent(e, HashUtil.bytesToHexString(hash));
-                                    }
-                                }
+                                removeContent(context, removedHashes, name);
                             }
                         }
                     });
+                }
+            }, OperationContext.Stage.RUNTIME);
+        } else {
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.completeStep(new OperationContext.ResultHandler() {
+                        @Override
+                        public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                            if (resultAction != OperationContext.ResultAction.ROLLBACK) {
+                                removeContent(context, removedHashes, name);
+                            }
+                        }
+                    });
+
                 }
             }, OperationContext.Stage.RUNTIME);
         }
@@ -134,5 +132,26 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                                    ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader) {
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(contentNode);
         DeploymentHandlerUtil.doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+    }
+
+    private void removeContent(OperationContext context, List<byte[]> removedHashes, String name) {
+        Set<String> newHash;
+        try {
+            newHash = DeploymentUtils.getDeploymentHexHash(context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel());
+        } catch (Resource.NoSuchResourceException ex) {
+            newHash = Collections.emptySet();
+        }
+        for (byte[] hash : removedHashes) {
+            try {
+                if (newHash.isEmpty() || !newHash.contains(HashUtil.bytesToHexString(hash))) {
+                    contentRepository.removeContent(ModelContentReference.fromDeploymentName(name, hash));
+                } else {
+                    ServerLogger.ROOT_LOGGER.undeployingDeploymentHasBeenRedeployed(name);
+                }
+            } catch (Exception e) {
+                //TODO
+                ServerLogger.ROOT_LOGGER.failedToRemoveDeploymentContent(e, HashUtil.bytesToHexString(hash));
+            }
+        }
     }
 }
