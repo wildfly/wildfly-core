@@ -24,6 +24,7 @@ package org.jboss.as.cli.parsing.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -500,6 +501,39 @@ public class ArgumentValueParsingTestCase {
         assertEquals(ModelType.BYTES, mn.get("a").getType());
         byte[] bytes = mn.get("a").asBytes();
         assertEquals(0, bytes.length);
+    }
+
+    @Test
+    public void testBytesBorderValues() throws Exception {
+        try {
+            parse("{a=bytes{128}}");
+            fail("Decimals larger than Byte.MAX_VALUE shouldn't be accepted.");
+        } catch (CommandFormatException ignore) {}
+
+        try {
+            parse("{a=bytes{-129}}");
+            fail("Decimals lower than Byte.MIN_VALUE shouldn't be accepted.");
+        } catch (CommandFormatException ignore) {}
+
+        try {
+            parse("{a=bytes{-0x1}}");
+            fail("Negative hexadecimals shouldn't be accepted.");
+        } catch (CommandFormatException ignore) {}
+
+        try {
+            parse("{a=bytes{0x100}}");
+            fail("Hexadecimals larger than 0xff shouldn't be accepted.");
+        } catch (CommandFormatException ignore) {}
+
+        ModelNode mn = parse("{a=bytes{0x0, 0x1, 0x01, 0xff, 0x0ff, 0x80, 0x7f}}");
+        byte[] bytes = mn.get("a").asBytes();
+        assertEquals(0, bytes[0]);
+        assertEquals(1, bytes[1]);
+        assertEquals(1, bytes[2]);
+        assertEquals(-1, bytes[3]);
+        assertEquals(-1, bytes[4]);
+        assertEquals(Byte.MIN_VALUE, bytes[5]);
+        assertEquals(Byte.MAX_VALUE, bytes[6]);
     }
 
     private void checkBytes(ModelNode value) {
