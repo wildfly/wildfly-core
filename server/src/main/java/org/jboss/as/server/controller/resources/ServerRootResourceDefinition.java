@@ -23,6 +23,7 @@ package org.jboss.as.server.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
@@ -245,7 +246,14 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider,
             final BootErrorCollector bootErrorCollector,
             final CapabilityRegistry capabilityRegistry) {
-        super(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false));
+        super(new Parameters(null, ServerDescriptions.getResourceDescriptionResolver(SERVER, false))
+                .addCapabilities(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.HOME_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_CONFIG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_DATA_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_LOG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_TEMP_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.CONTROLLER_TEMP_DIR)));
         this.contentRepository = contentRepository;
         this.extensibleConfigurationPersister = extensibleConfigurationPersister;
         this.serverEnvironment = serverEnvironment;
@@ -264,6 +272,20 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.securityIdentitySupplier = securityIdentitySupplier;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
         this.bootErrorCollector = bootErrorCollector;
+    }
+
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        super.registerCapabilities(resourceRegistration);
+        // In the domain mode add a few more paths
+        if(serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.DOMAIN) {
+            if(serverEnvironment.getDomainBaseDir() != null) {
+                resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.DOMAIN_BASE_DIR));
+            }
+            if(serverEnvironment.getDomainConfigurationDir() != null) {
+                resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.DOMAIN_CONFIG_DIR));
+            }
+        }
     }
 
     @Override

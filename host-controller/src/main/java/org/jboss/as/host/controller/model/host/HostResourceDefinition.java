@@ -70,6 +70,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
@@ -105,6 +106,7 @@ import org.jboss.as.host.controller.resources.StoppedServerResource;
 import org.jboss.as.platform.mbean.PlatformMBeanResourceRegistrar;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.CapabilityRegistryResourceDefinition;
 import org.jboss.as.server.controller.resources.ModuleLoadingResourceDefinition;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
@@ -387,6 +389,23 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
     }
 
+    @Override
+    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+        super.registerCapabilities(resourceRegistration);
+
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.HOME_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_CONFIG_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_DATA_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_LOG_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_TEMP_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.CONTROLLER_TEMP_DIR));
+
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_CONFIG_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_DATA_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_LOG_DIR));
+        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_TEMP_DIR));
+    }
 
     @Override
     public void registerChildren(final ManagementResourceRegistration hostRegistration) {
