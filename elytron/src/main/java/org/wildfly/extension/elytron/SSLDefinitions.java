@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
@@ -703,7 +702,7 @@ class SSLDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.TRUST_MANAGER, add, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY, CREDENTIAL_STORE_RUNTIME_CAPABILITY) {
+        return new TrivialResourceDefinition(ElytronDescriptionConstants.TRUST_MANAGER, add, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
             @Override
             public void registerOperations(ManagementResourceRegistration resourceRegistration) {
                 super.registerOperations(resourceRegistration);
