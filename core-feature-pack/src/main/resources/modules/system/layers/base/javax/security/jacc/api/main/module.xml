@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="javax.security.jacc.api">
+<module xmlns="urn:jboss:module:1.6" name="javax.security.jacc.api" version="${org.jboss.spec.javax.security.jacc:jboss-jacc-api_1.5_spec}">
     <dependencies>
         <module name="javax.servlet.api" optional="true"/>
     </dependencies>

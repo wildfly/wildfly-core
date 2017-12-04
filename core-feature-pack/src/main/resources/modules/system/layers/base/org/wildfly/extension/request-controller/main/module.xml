@@ -24,7 +24,7 @@
   ~ */
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.wildfly.extension.request-controller">
+<module xmlns="urn:jboss:module:1.6" name="org.wildfly.extension.request-controller" version="${org.wildfly.core:wildfly-request-controller}">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
