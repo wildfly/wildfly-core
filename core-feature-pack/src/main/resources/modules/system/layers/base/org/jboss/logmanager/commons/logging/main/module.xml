@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.5" name="org.jboss.logmanager.commons.logging">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.logmanager.commons.logging">
 
     <properties>
         <property name="jboss.api" value="private"/>
