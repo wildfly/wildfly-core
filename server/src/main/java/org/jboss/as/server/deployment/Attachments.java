@@ -103,6 +103,13 @@ public final class Attachments {
     public static final AttachmentKey<ServiceVerificationHandler> SERVICE_VERIFICATION_HANDLER = AttachmentKey.create(ServiceVerificationHandler.class);
 
 
+    /**
+     * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for
+     * binary compatiblity. It was used for OSGi integration.
+     *
+     * @deprecated the object attached under this key does nothing
+     */
+    @Deprecated
     public static final AttachmentKey<Boolean> ALLOW_PHASE_RESTART = AttachmentKey.create(Boolean.class);
 
     /**
