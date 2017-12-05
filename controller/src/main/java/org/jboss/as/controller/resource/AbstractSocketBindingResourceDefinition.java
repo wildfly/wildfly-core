@@ -62,6 +62,7 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
 
     public static final SimpleAttributeDefinition INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INTERFACE, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setExpressionsDeprecated()
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setCapabilityReference("org.wildfly.network.interface", SOCKET_BINDING_CAPABILITY_NAME, true)

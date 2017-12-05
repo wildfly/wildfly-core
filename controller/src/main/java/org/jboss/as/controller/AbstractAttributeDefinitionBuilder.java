@@ -629,6 +629,16 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
+     * Marks that support for use of an expression for the attribute's value is deprecated and
+     * may be removed in a future release.
+     *
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public final BUILDER setExpressionsDeprecated() {
+        return addFlag(AttributeAccess.Flag.EXPRESSIONS_DEPRECATED);
+    }
+
+    /**
      * Sets access constraints to use with the attribute
      * @param accessConstraints the constraints
      * @return a builder that can be used to continue building the attribute definition

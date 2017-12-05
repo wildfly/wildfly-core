@@ -45,7 +45,7 @@ import org.jboss.dmr.ModelType;
  */
 public abstract class OutboundSocketBindingResourceDefinition extends SimpleResourceDefinition {
 
-    static final String OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.outbound-socket-binding";
+    private static final String OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME = "org.wildfly.network.outbound-socket-binding";
     static final RuntimeCapability<Void> OUTBOUND_SOCKET_BINDING_CAPABILITY =
             RuntimeCapability.Builder.of(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME,
                     true, OutboundSocketBinding.class)
@@ -60,6 +60,7 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
 
     public static final SimpleAttributeDefinition SOURCE_INTERFACE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOURCE_INTERFACE, ModelType.STRING, true)
             .setAllowExpression(true)
+            .setExpressionsDeprecated()
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setCapabilityReference("org.wildfly.network.interface", OUTBOUND_SOCKET_BINDING_CAPABILITY)

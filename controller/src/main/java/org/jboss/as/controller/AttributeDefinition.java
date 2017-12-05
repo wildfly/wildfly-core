@@ -506,6 +506,11 @@ public abstract class AttributeDefinition {
             operationObject.get(name).set(correctedValue);
         }
         ModelNode node = validateOperation(operationObject, true);
+        if (node.getType() == ModelType.EXPRESSION
+                && (referenceRecorder != null || flags.contains(AttributeAccess.Flag.EXPRESSIONS_DEPRECATED))) {
+            ControllerLogger.DEPRECATED_LOGGER.attributeExpressionDeprecated(getName(),
+                PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
+        }
         model.get(name).set(node);
     }
 
