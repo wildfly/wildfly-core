@@ -339,9 +339,6 @@ public enum Phase {
     public static final int PARSE_WAB_CONTEXT_FACTORY                   = 0x3900;
     // should be after all components are known
     public static final int PARSE_EJB_INJECTION_ANNOTATION              = 0x4000;
-    public static final int PARSE_JACORB                                = 0x4100;
-    //TODO remove JDKORB constants after IIOP rename is merged
-    public static final int PARSE_JDKORB                                = 0x4180;
     public static final int PARSE_IIOP_OPENJDK                          = 0x4180;
     public static final int PARSE_TRANSACTION_ROLLBACK_ACTION           = 0x4200;
     public static final int PARSE_EAR_MESSAGE_DESTINATIONS              = 0x4400;
@@ -390,9 +387,6 @@ public enum Phase {
     public static final int DEPENDENCIES_TRANSACTIONS                   = 0x1100;
     public static final int DEPENDENCIES_XTS                            = 0x1110;
     public static final int DEPENDENCIES_JDK                            = 0x1200;
-    public static final int DEPENDENCIES_JACORB                         = 0x1300;
-    //TODO remove JDKORB constants after IIOP rename is merged
-    public static final int DEPENDENCIES_JDKORB                         = 0x1380;
     public static final int DEPENDENCIES_IIOP_OPENJDK                   = 0x1380;
     public static final int DEPENDENCIES_JMS                            = 0x1400;
     public static final int DEPENDENCIES_CMP                            = 0x1500;
