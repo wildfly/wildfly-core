@@ -52,12 +52,12 @@ if not exist "%ELYTRON_TOOL_RUNJAR%" (
 )
 
 if not "x%ELYTRON_TOOL_ADDONS%" == "x" (
-   set SEP=;
+   set ELYTRON_TOOL_SEP=;
 )
 
 
 "%JAVA%" %JAVA_OPTS% ^
-    -cp "%ELYTRON_TOOL_RUNJAR%%SEP%%ELYTRON_TOOL_ADDONS%" org.wildfly.security.tool.ElytronTool ^
+    -cp "%ELYTRON_TOOL_RUNJAR%%ELYTRON_TOOL_SEP%%ELYTRON_TOOL_ADDONS%" org.wildfly.security.tool.ElytronTool ^
      {%~nx0}%*
 
 :END

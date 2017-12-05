@@ -74,9 +74,9 @@ if $cygwin; then
 fi
 
 if [ "x$ELYTRON_TOOL_ADDONS" != "x" ]; then
-    SEP=:
+    ELYTRON_TOOL_SEP=:
 fi    
 
-eval \"$JAVA\" $JAVA_OPTS -cp \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar$SEP$ELYTRON_TOOL_ADDONS\" \
+eval \"$JAVA\" $JAVA_OPTS -cp \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar$ELYTRON_TOOL_SEP$ELYTRON_TOOL_ADDONS\" \
          org.wildfly.security.tool.ElytronTool \
          '{"$0"}"$@"'
