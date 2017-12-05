@@ -83,7 +83,7 @@ public class JmxControlledStateNotificationsTestCase {
                         "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
         testSupport.start();
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
+        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group", IS_IBM);
     }
 
     @AfterClass
