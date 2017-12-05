@@ -2140,6 +2140,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="fail-cache" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Amount of seconds before new try to obtain server credential should be done if it has failed last time.
+                            Allows to prevent long waiting to unavailable KDC on every authentication.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="server" type="xs:boolean" default="true">
                     <xs:annotation>
                         <xs:documentation>

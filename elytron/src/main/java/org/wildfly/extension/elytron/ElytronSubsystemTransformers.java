@@ -60,6 +60,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     }
 
     private void buildTransformers_1_1(ResourceTransformationDescriptionBuilder builder) {
+        // Pack policies into lists (jacc-policy and custom-policy was made non-lists)
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.POLICY))
             .getAttributeBuilder()
                 .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
@@ -73,6 +74,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                         }
                     }
                 }, PolicyDefinitions.JaccPolicyDefinition.POLICY, PolicyDefinitions.CustomPolicyDefinition.POLICY);
+
+        // Discard new "fail-cache" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY))
+                .getAttributeBuilder()
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(0)), KerberosSecurityFactoryDefinition.FAIL_CACHE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
     }
 
     private void buildTransformers_1_0(ResourceTransformationDescriptionBuilder builder) {
