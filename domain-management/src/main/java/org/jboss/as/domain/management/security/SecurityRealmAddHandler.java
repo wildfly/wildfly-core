@@ -611,7 +611,10 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         if (suitesNode.isDefined()) {
             List<ModelNode> list = suitesNode.asList();
             for (ModelNode current : list) {
-                enabledCipherSuites.add(current.asString());
+                // When a system property is used, multiple values (TLSv1.1 TLSv1.2)
+                // can be set and passed in as a single string...turn that into multilple entries
+                String[] cipherStringArray = current.asString().split(" ");
+                enabledCipherSuites.addAll(java.util.Arrays.asList(cipherStringArray));
             }
         }
 
@@ -621,7 +624,10 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         if (protocolsNode.isDefined()) {
             List<ModelNode> list = protocolsNode.asList();
             for (ModelNode current : list) {
-                enabledProtocols.add(current.asString());
+                // When a system property is used, multiple values (TLS_cipher_1 TLS_cipher_2)
+                // can be set and passed in as a single string...turn that into multilple entries
+                String[] protocolStringArray = current.asString().split(" ");
+                enabledProtocols.addAll(java.util.Arrays.asList(protocolStringArray));
             }
         }
 
