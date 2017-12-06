@@ -22,31 +22,48 @@
 package org.jboss.as.test.integration.management.http;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.Closeable;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.NoSuchElementException;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.http.Authentication;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -59,179 +76,142 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Jonathan Pearlin
  */
 @RunWith(WildflyTestRunner.class)
-@Ignore("See WFCORE-2785 for details on why this test is being ignored")
 public class HttpDeploymentUploadUnitTestCase {
 
     private static final String BOUNDARY_PARAM = "NeAG1QNIHHOyB5joAS7Rox!!";
-
-    private static final String BOUNDARY = "--" + BOUNDARY_PARAM;
-
-    private static final String CRLF = "\r\n";
-
-    private static final String POST_REQUEST_METHOD = "POST";
 
     public static final String MANAGEMENT_URL_PART = "management";
 
     private static final String UPLOAD_URL_PART = "add-content";
 
+    private static final String DEPLOYMENT_NAME = "test-http-deployment.sar";
+
     @Inject
     private ManagementClient managementClient;
+
+    private final ModelNode deploymentAddress = Operations.createAddress("deployment", DEPLOYMENT_NAME);
 
 
     @Test
     public void testHttpDeploymentUpload() throws Exception {
-        Authentication.setupDefaultAuthenticator();
+        final String basicUrl = "http://" + managementClient.getMgmtAddress() + ":" + managementClient.getMgmtPort() + "/" + MANAGEMENT_URL_PART;
+        final String uploadUrl = basicUrl + "/" + UPLOAD_URL_PART;
+        final Path deploymentFile = Files.createTempFile("test-http-deployment", ".sar");
 
-        HttpURLConnection connection = null;
-        BufferedOutputStream os = null;
-        BufferedInputStream is = null;
-        //TODO: hard coded port
-        final String basicUrl = "http://" + managementClient.getMgmtAddress() + ":9990/" + MANAGEMENT_URL_PART;
-        String uploadUrl = basicUrl + "/" + UPLOAD_URL_PART;
-
-        try {
-            // Create the HTTP connection to the upload URL
-            connection = getHttpURLConnection(uploadUrl, "multipart/form-data; boundary=" + BOUNDARY_PARAM);
-            // Grab the test WAR file and get a stream to its contents to be included in the POST.
+        try (CloseableHttpClient client = createHttpClient()) {
+            // Create the deployment
             final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive(
-                    "test-http-deployment.jar", new HashMap<String, String>());
-            os = new BufferedOutputStream(connection.getOutputStream());
-            is = new BufferedInputStream(archive.as(ZipExporter.class).exportAsInputStream());
+                    DEPLOYMENT_NAME, Collections.emptyMap());
+            // Create the HTTP connection to the upload URL
+            final HttpPost addContentPost = new HttpPost(uploadUrl);
 
-            // Write the POST request and read the response from the HTTP server.
-            writeUploadRequest(is, os);
-            // JBAS-9291
-            assertEquals("text/html; charset=utf-8", connection.getContentType());
-            ModelNode node = readResult(connection.getInputStream());
-            assertNotNull(node);
-            assertEquals(SUCCESS, node.require(OUTCOME).asString());
+            // Create a deployment file
+            archive.as(ZipExporter.class).exportTo(deploymentFile.toFile(), true);
+            addContentPost.setEntity(createUploadEntity(deploymentFile.toFile()));
 
-            byte[] hash = node.require(RESULT).asBytes();
+            final byte[] hash;
 
-            connection.disconnect();
+            // Execute the request and get the HTTP response
+            try (CloseableHttpResponse response = client.execute(addContentPost)) {
+                final ModelNode result = validateStatus(response);
+                hash = Operations.readResult(result).asBytes();
+                // JBAS-9291
+                assertEquals("text/html; charset=utf-8", response.getEntity().getContentType().getValue());
+            }
 
-            connection = getHttpURLConnection(basicUrl, "application/json");
-            os = new BufferedOutputStream(connection.getOutputStream());
+            final HttpPost addHashContentPost = new HttpPost(basicUrl);
+            addHashContentPost.addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+            addHashContentPost.setEntity(createAddEntity(hash));
+            try (CloseableHttpResponse response = client.execute(addHashContentPost)) {
+                validateStatus(response);
+            }
 
-            writeAddRequest(os, hash);
-
-            node = readResult(connection.getInputStream());
-            assertNotNull(node);
-            assertEquals(SUCCESS, node.require(OUTCOME).asString());
-
-            connection.disconnect();
+            // Remove the deployment
+            final HttpPost removePost = new HttpPost(basicUrl);
+            removePost.addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+            removePost.setEntity(createRemoveEntity());
+            try (CloseableHttpResponse response = client.execute(removePost)) {
+                validateStatus(response);
+            }
         } finally {
-            closeQuietly(is);
-            closeQuietly(os);
-            try {
-                connection = getHttpURLConnection(basicUrl, "application/json");
-                os = new BufferedOutputStream(connection.getOutputStream());
-                writeRemoveRequest(os);
-                ModelNode node = readResult(connection.getInputStream());
-                System.out.println(node);
-                connection.disconnect();
-            } catch (Exception ignored) {
-                ignored.printStackTrace();
-            } finally {
-                closeQuietly(os);
+            Files.deleteIfExists(deploymentFile);
+            boolean found = false;
+            final ModelControllerClient client = managementClient.getControllerClient();
+            // Use the management client to ensure we removed the deployment
+            final ModelNode readOp = Operations.createOperation("read-children-names");
+            readOp.get("child-type").set("deployment");
+            ModelNode result = client.execute(readOp);
+            if (Operations.isSuccessfulOutcome(result)) {
+                final List<ModelNode> deployments = Operations.readResult(result).asList();
+                for (ModelNode deployment : deployments) {
+                    if (deployment.asString().equals(DEPLOYMENT_NAME)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found) {
+                result = client.execute(Operations.createRemoveOperation(deploymentAddress));
+                if (!Operations.isSuccessfulOutcome(result)) {
+                    fail(String.format("Failed to remove deployment %s: %s", DEPLOYMENT_NAME, Operations.getFailureDescription(result).asString()));
+                }
             }
         }
     }
 
-    private HttpURLConnection getHttpURLConnection(final String url, final String contentType) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setRequestMethod(POST_REQUEST_METHOD);
-        connection.setRequestProperty("Content-Type", contentType);
-        return connection;
-    }
-
-    private void writeUploadRequest(final InputStream is, final OutputStream os) throws IOException {
-        os.write(buildUploadPostRequestHeader());
-        writePostRequestPayload(is, os);
-        os.write((CRLF + BOUNDARY + "--" + CRLF).getBytes(StandardCharsets.US_ASCII));
-        os.flush();
-    }
-
-    private void writeAddRequest(BufferedOutputStream os, byte[] hash) throws IOException {
-
-        ModelNode op = new ModelNode();
-        op.get("operation").set("add");
-        op.get("address").add("deployment", "test-http-deployment.sar");
+    private HttpEntity createAddEntity(final byte[] hash) throws IOException {
+        final ModelNode op = Operations.createAddOperation(deploymentAddress);
         op.get("content").get(0).get("hash").set(hash);
         op.get("enabled").set(true);
-
-        os.write(op.toJSONString(true).getBytes(StandardCharsets.UTF_8));
-        os.flush();
+        return new StringEntity(op.toJSONString(true));
     }
 
-    private void writeRemoveRequest(BufferedOutputStream os) throws IOException {
-
-        ModelNode op = new ModelNode();
-        op.get("operation").set("remove");
-        op.get("address").add("deployment", "test-http-deployment.sar");
-
-        os.write(op.toJSONString(true).getBytes(StandardCharsets.UTF_8));
-        os.flush();
+    private HttpEntity createRemoveEntity() throws IOException {
+        return new StringEntity(Operations.createRemoveOperation(deploymentAddress).toJSONString(true));
     }
 
-    private ModelNode readResult(final InputStream is) throws IOException, NoSuchElementException {
-        return ModelNode.fromJSONStream(is);
+    private HttpEntity createUploadEntity(final File archive) {
+        return MultipartEntityBuilder.create()
+                .setContentType(ContentType.MULTIPART_FORM_DATA)
+                .setBoundary(BOUNDARY_PARAM)
+                .addTextBody("test1", BOUNDARY_PARAM)
+                .addTextBody("test2", BOUNDARY_PARAM)
+                .addBinaryBody("file", archive, ContentType.APPLICATION_OCTET_STREAM, DEPLOYMENT_NAME)
+                .build();
     }
 
-    private byte[] buildUploadPostRequestHeader() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("blah blah blah preamble blah blah blah");
-        builder.append(buildPostRequestHeaderSection("form-data; name=\"test1\"", "", "test1"));
-        builder.append(CRLF);
-        builder.append(buildPostRequestHeaderSection("form-data; name=\"test2\"", "", "test2"));
-        builder.append(CRLF);
-        builder.append(buildPostRequestHeaderSection("form-data; name=\"file\"; filename=\"test.war\"", "application/octet-stream", ""));
-
-        return builder.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private String buildPostRequestHeaderSection(final String contentDisposition, final String contentType, final String content) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(BOUNDARY);
-        builder.append(CRLF);
-        if (contentDisposition != null && contentDisposition.length() > 0) {
-            builder.append(String.format("Content-Disposition: %s", contentDisposition));
-            builder.append(CRLF);
+    private CloseableHttpClient createHttpClient() {
+        try {
+            final Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .build();
+            final CredentialsProvider credsProvider = new BasicCredentialsProvider();
+            credsProvider.setCredentials(new AuthScope(managementClient.getMgmtAddress(), managementClient.getMgmtPort()),
+                    new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD));
+            return HttpClientBuilder.create()
+                    .setConnectionManager(new PoolingHttpClientConnectionManager(registry))
+                    .setDefaultCredentialsProvider(credsProvider)
+                    .build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        if (contentType != null && contentType.length() > 0) {
-            builder.append(String.format("Content-Type: %s", contentType));
-            builder.append(CRLF);
-        }
-
-        builder.append(CRLF);
-
-        if (content != null && content.length() > 0) {
-            builder.append(content);
-        }
-        return builder.toString();
     }
 
-    private void writePostRequestPayload(final InputStream is, final OutputStream os) throws IOException {
-        final byte[] buffer = new byte[1024];
-        int numRead = 0;
-
-        while (numRead > -1) {
-            numRead = is.read(buffer);
-            if (numRead > 0) {
-                os.write(buffer, 0, numRead);
+    private static ModelNode validateStatus(final HttpResponse response) throws IOException {
+        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            final ByteArrayOutputStream out = new ByteArrayOutputStream();
+            final InputStream in = response.getEntity().getContent();
+            final byte[] buffer = new byte[64];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
             }
+            fail(out.toString());
         }
-    }
-
-    private void closeQuietly(final Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (final IOException e) {
-            }
-        }
+        final HttpEntity entity = response.getEntity();
+        final ModelNode result = ModelNode.fromJSONStream(entity.getContent());
+        assertNotNull(result);
+        assertTrue(Operations.isSuccessfulOutcome(result));
+        return result;
     }
 }
