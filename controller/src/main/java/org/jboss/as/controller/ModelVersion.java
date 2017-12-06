@@ -22,26 +22,28 @@
 
 package org.jboss.as.controller;
 
+import static java.lang.Integer.signum;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
 
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.Assert;
 
 /**
  * @author Emanuel Muckenhuber
  */
-public final class ModelVersion implements ModelVersionRange {
+public final class ModelVersion implements ModelVersionRange, Comparable<ModelVersion> {
 
-    public static final ModelVersion CURRENT = new ModelVersion(Version.MANAGEMENT_MAJOR_VERSION,
+    public static final ModelVersion CURRENT = create(Version.MANAGEMENT_MAJOR_VERSION,
             Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 
     private final int major;
     private final int minor;
     private final int micro;
 
-    ModelVersion(int major, int minor, int micro) {
+    private ModelVersion(int major, int minor, int micro) {
         this.major = major;
         this.minor = minor;
         this.micro = micro;
@@ -61,16 +63,11 @@ public final class ModelVersion implements ModelVersionRange {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        return this == o || o instanceof ModelVersion && equals((ModelVersion) o);
+    }
 
-        ModelVersion that = (ModelVersion) o;
-
-        if (major != that.major) return false;
-        if (micro != that.micro) return false;
-        if (minor != that.minor) return false;
-
-        return true;
+    private boolean equals(ModelVersion other) {
+        return major == other.major && minor == other.minor && micro == other.micro;
     }
 
     @Override
@@ -114,6 +111,9 @@ public final class ModelVersion implements ModelVersionRange {
     }
 
     public static ModelVersion create(final int major, final int minor, final int micro) {
+        Assert.checkMinimumParameter("major", 0, major);
+        Assert.checkMinimumParameter("minor", 0, minor);
+        Assert.checkMinimumParameter("micro", 0, micro);
         return new ModelVersion(major, minor, micro);
     }
 
@@ -127,9 +127,9 @@ public final class ModelVersion implements ModelVersionRange {
         if(length > 3) {
             throw new IllegalStateException();
         }
-        int major = Integer.valueOf(s[0]);
-        int minor = length > 1 ? Integer.valueOf(s[1]) : 0;
-        int micro = length == 3 ? Integer.valueOf(s[2]) : 0;
+        int major = Integer.parseInt(s[0]);
+        int minor = length > 1 ? Integer.parseInt(s[1]) : 0;
+        int micro = length == 3 ? Integer.parseInt(s[2]) : 0;
         return ModelVersion.create(major, minor, micro);
     }
 
@@ -146,25 +146,13 @@ public final class ModelVersion implements ModelVersionRange {
      *         </ul>
      */
     public static int compare(ModelVersion versionA, ModelVersion versionB) {
-        if (versionB.getMajor() > versionA.getMajor()) {
-            return 1;
-        }
-        if (versionB.getMajor() < versionA.getMajor()) {
-            return -1;
-        }
-        if (versionB.getMinor() > versionA.getMinor()) {
-            return 1;
-        }
-        if (versionB.getMinor() < versionA.getMinor()) {
-            return -1;
-        }
-        if (versionB.getMicro() > versionA.getMicro()) {
-            return 1;
-        }
-        if (versionB.getMicro() < versionA.getMicro()) {
-            return -1;
-        }
-        return 0;
+        return versionA.compareTo(versionB);
     }
 
+    public int compareTo(final ModelVersion o) {
+        int res = signum(o.major - major);
+        if (res == 0) res = signum(o.minor - minor);
+        if (res == 0) res = signum(o.micro - micro);
+        return res;
+    }
 }
