@@ -143,6 +143,11 @@ If the operation request doesn't require a node path then the request can start
 with ':' followed by an operation name and the property list if necessary ('/:'
 and './:' are also possible).
 
+In operation Tab-completion, required properties have a name terminated by the '*' character.
+This helps identify which are the properties that must be set in order to
+construct a valid operation. Furthermore, Tab-completion does not propose properties
+that are alternatives of properties already present in the operation.
+
 Whitespaces between the separators are insignificant.
 If the operation doesn't require arguments then the brackets '()' are optional.
 Tab-completion for operation requests supports node types and names, operation
