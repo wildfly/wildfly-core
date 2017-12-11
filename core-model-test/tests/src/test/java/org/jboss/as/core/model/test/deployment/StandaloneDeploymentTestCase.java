@@ -166,19 +166,17 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
         op = createAddOperation(kernelServices, "Test1",  content);
         ModelTestUtils.checkOutcome(kernelServices.executeOperation(op));
         ModelNode hashB = checkSingleDeployment(kernelServices, "Test1", false);
-        removeDeployment(kernelServices, "Test1");
-        checkNoDeployments(kernelServices);
+        // do not remove this deployment now, so that its' content can be reused in the next deployment
 
         Assert.assertEquals(hashA, hashB);
 
         content = new ModelNode();
         content.get(HASH).set(hashA);
-        op = createAddOperation(kernelServices, "Test1",  content);
+        op = createAddOperation(kernelServices, "Test2",  content);
         ModelTestUtils.checkOutcome(kernelServices.executeOperation(op));
-        //This deployment does not actually exist, it was removed by the previous removeDeployment()
-        //so if that becomes a problem, clean this part of the test up
-        ModelNode hashC = checkSingleDeployment(kernelServices, "Test1", false);
+        ModelNode hashC = checkDeployment(kernelServices, "Test2", false);
         removeDeployment(kernelServices, "Test1");
+        removeDeployment(kernelServices, "Test2");
         checkNoDeployments(kernelServices);
 
         Assert.assertEquals(hashA, hashC);
@@ -637,6 +635,10 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
         ModelNode hash1 = getContentHashOnly(deployments.get("Test2"));
 
         removeDeployment(kernelServices, "Test2");
+        // content for 2 got removed, so create another deployment which content can be taken from
+        op = createAddOperation(kernelServices, "Test3", getByteContent(6, 7, 8, 9, 10));
+        ModelTestUtils.checkOutcome(kernelServices.executeOperation(op));
+
 
         op = Util.createOperation(DeploymentReplaceHandler.OPERATION_NAME, PathAddress.EMPTY_ADDRESS);
         op.get(NAME).set("Test2");
@@ -662,7 +664,7 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
 
         //TODO replace with more sane checks once rebased
         deployments = getDeploymentParentResource(kernelServices);
-        Assert.assertEquals(2, deployments.keys().size());
+        Assert.assertEquals(3, deployments.keys().size());
         Assert.assertEquals(false, deployments.get("Test1", ENABLED).asBoolean());//now false
         Assert.assertEquals("Test1", deployments.get("Test1", NAME).asString());
         Assert.assertEquals(true, deployments.get("Test1", PERSISTENT).asBoolean());
@@ -676,6 +678,7 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
         Assert.assertFalse(deployments.get("Test2", SUBDEPLOYMENT).isDefined());
         getContentHashOnly(deployments.get("Test2"));
 
+        removeDeployment(kernelServices, "Test3");
         removeDeployment(kernelServices, "Test1");
 
         File file1 = writeToFile("test-file2", 5, 6, 7, 8, 9);
