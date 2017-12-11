@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.security.sasl.SaslException;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -305,7 +306,18 @@ public class ReloadHandler extends BaseOperationCommand {
                         if (Util.reconnectContext((RedirectException) ex, ctx)) {
                             return;
                         }
+                    } else if (ex instanceof SaslException) {
+                        // Try to reconnect, would make the CLI
+                        // to prompt for credentials in case the current ones became
+                        // invalid (eg: change of security-realm or SASL reconfiguration).
+                        try {
+                            ctx.connectController();
+                            return;
+                        } catch (CommandLineException clex) {
+                            // Not reconnected.
+                        }
                     }
+
                     ex = ex.getCause();
                 }
                 // ignore and try again
