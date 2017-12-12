@@ -461,7 +461,9 @@ public class DomainServerLifecycleHandlers {
                                     serversToKill.add(serverModelName);
                                 }
                             }
-                            serversToKill.forEach(s -> serverInventory.killServer(s));
+                            for (String s : serversToKill) {
+                                serverInventory.killServer(s);
+                            }
                             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                         }
                     });
@@ -497,7 +499,9 @@ public class DomainServerLifecycleHandlers {
                                     serversToDestroy.add(serverModelName);
                                 }
                             }
-                            serversToDestroy.forEach(s -> serverInventory.destroyServer(s));
+                            for (String s : serversToDestroy) {
+                                serverInventory.destroyServer(s);
+                            }
                             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                         }
                     });
