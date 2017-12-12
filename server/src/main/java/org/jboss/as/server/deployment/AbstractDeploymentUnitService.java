@@ -102,9 +102,11 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             Set<AttachmentKey<?>> initialAttachmentKeys = this.getDeploymentUnitAttachmentKeys();
             Consumer<StopContext> uninstaller = stopContext -> {
                 // Cleanup any deployment unit attachments that were not properly removed during DUP undeploy
-                this.getDeploymentUnitAttachmentKeys().stream()
-                    .filter(key -> !initialAttachmentKeys.contains(key))
-                    .forEach(key -> this.deploymentUnit.removeAttachment(key));
+                for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
+                    if (! initialAttachmentKeys.contains(key)) {
+                        this.deploymentUnit.removeAttachment(key);
+                    }
+                }
             };
             ServiceName serviceName = this.deploymentUnit.getServiceName().append("installer");
             this.phaseBuilder.build(target, serviceName, new FunctionalVoidService(installer, uninstaller)).install();
@@ -134,7 +136,9 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         // Retain any attached builder across restarts
         this.phaseBuilder = this.deploymentUnit.getAttachment(Attachments.DEPLOYMENT_UNIT_PHASE_BUILDER);
         //clear up all attachments
-        this.getDeploymentUnitAttachmentKeys().forEach(key -> deploymentUnit.removeAttachment(key));
+        for (AttachmentKey<?> key : this.getDeploymentUnitAttachmentKeys()) {
+            deploymentUnit.removeAttachment(key);
+        }
         deploymentUnit = null;
         monitor.removeController(context.getController());
         monitor = null;
