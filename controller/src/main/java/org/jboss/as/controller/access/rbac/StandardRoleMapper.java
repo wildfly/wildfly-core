@@ -120,7 +120,7 @@ public class StandardRoleMapper implements RoleMapper {
             if (authorizerConfiguration.isMapUsingIdentityRoles()) {
                 rolesToCheck = new HashMap<String, AuthorizerConfiguration.RoleMapping>(authorizerConfiguration.getRoleMappings());
                 SecurityIdentity securityIdentity = caller.getSecurityIdentity();
-                securityIdentity.getRoles().forEach(r -> {
+                for (String r : securityIdentity.getRoles()) {
                     String roleName = r.toUpperCase(Locale.ENGLISH);
                     if (rolesToCheck.containsKey(roleName)) {
                         AuthorizerConfiguration.RoleMapping roleMapping = rolesToCheck.remove(roleName);
@@ -147,7 +147,7 @@ public class StandardRoleMapper implements RoleMapper {
                         }
                         mappedRoles.add(roleName);
                     }
-                });
+                }
             } else {
                 // A clone is not needed here as the whole set of values is to be iterated with no need for removal.
                 rolesToCheck = authorizerConfiguration.getRoleMappings();

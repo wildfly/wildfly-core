@@ -95,9 +95,9 @@ public interface ConfigurationChangesCollector {
                 changes = new TreeSet<>(history);
             }
             ModelNode result = new ModelNode().setEmptyList();
-            changes.stream().forEach((change) -> {
+            for (ConfigurationChange change : changes) {
                 result.add(change.asModel());
-            });
+            }
             return result.asList();
         }
 
@@ -162,9 +162,9 @@ public interface ConfigurationChangesCollector {
             entry.get(OUTCOME).set(resultAction == OperationContext.ResultAction.KEEP ? SUCCESS : FAILED);
             if (operations != null && !operations.isEmpty()) {
                 ModelNode changes = entry.get(OPERATIONS).setEmptyList();
-                operations.stream().forEach((op) -> {
+                for (ModelNode op : operations) {
                     changes.add(op);
-                });
+                }
             }
             return entry;
         }

@@ -26,6 +26,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +39,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -691,18 +691,26 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             final CapabilityId capId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
             CapabilityRegistration<?> reg =  possibleCapabilities.get(capId);
             if (reg != null) {
-                result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
+                List<PathAddress> list = new ArrayList<>();
+                for (RegistrationPoint registrationPoint : reg.getRegistrationPoints()) {
+                    PathAddress address = registrationPoint.getAddress();
+                    list.add(address);
+                }
+                result.addAll(list);
             } else {
-                result.addAll(possibleCapabilities.values().stream()
-                        .filter((registration) -> {
-                            return registration.getCapability().isDynamicallyNamed()
-                                    && registration.getCapabilityScope().equals(capId.getScope())
-                                    && capId.getName().startsWith(registration.getCapabilityName());
-                        })
-                        .map(CapabilityRegistration::getRegistrationPoints)
-                        .flatMap(Set::stream)
-                        .map(RegistrationPoint::getAddress)
-                        .collect(Collectors.toList()));
+                List<PathAddress> list = new ArrayList<>();
+                for (CapabilityRegistration<?> registration : possibleCapabilities.values()) {
+                    if (registration.getCapability().isDynamicallyNamed()
+                        && registration.getCapabilityScope().equals(capId.getScope())
+                        && capId.getName().startsWith(registration.getCapabilityName())) {
+                        Set<RegistrationPoint> registrationPoints = registration.getRegistrationPoints();
+                        for (RegistrationPoint registrationPoint : registrationPoints) {
+                            PathAddress address = registrationPoint.getAddress();
+                            list.add(address);
+                        }
+                    }
+                }
+                result.addAll(list);
             }
 
         } finally {
@@ -785,9 +793,9 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private void copy(CapabilityRegistry source, CapabilityRegistry target) {
         assert target.writeLock.isHeldByCurrentThread();
         copyCapabilities(source.capabilities, target.capabilities);
-        source.possibleCapabilities.entrySet().stream().forEach(entry -> {
+        for (Map.Entry<CapabilityId, CapabilityRegistration<?>> entry : source.possibleCapabilities.entrySet()) {
             target.possibleCapabilities.put(entry.getKey(), new CapabilityRegistration<>(entry.getValue()));
-        });
+        }
         copyRequirements(source.requirements, target.requirements);
         copyRequirements(source.runtimeOnlyRequirements, target.runtimeOnlyRequirements);
         target.reloadCapabilities.addAll(source.reloadCapabilities);

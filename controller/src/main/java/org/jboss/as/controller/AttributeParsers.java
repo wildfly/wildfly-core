@@ -26,9 +26,9 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -239,13 +239,17 @@ public interface AttributeParsers {
         static void parseEmbeddedElement(ObjectTypeAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode op, String... additionalExpectedAttributes) throws XMLStreamException {
             AttributeDefinition[] valueTypes = attribute.getValueTypes();
 
-            Map<String, AttributeDefinition> attributes = Arrays.stream(valueTypes)
-                    .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
+            Map<String, AttributeDefinition> attributes = new HashMap<>();
+            for (AttributeDefinition valueType : valueTypes) {
+                attributes.put(valueType.getXmlName(), valueType);
+            }
 
-            Map<String, AttributeDefinition> attributeElements = Arrays.stream(valueTypes)
-                                   .filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement())
-                    .collect(Collectors.toMap(a -> a.getParser().getXmlName(a) , Function.identity()));
-
+            Map<String, AttributeDefinition> attributeElements = new HashMap<>();
+            for (AttributeDefinition attributeDefinition : valueTypes) {
+                if (attributeDefinition.getParser().isParseAsElement()) {
+                    attributeElements.put(attributeDefinition.getParser().getXmlName(attributeDefinition), attributeDefinition);
+                }
+            }
 
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attributeName = reader.getAttributeLocalName(i);
