@@ -1345,7 +1345,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private static List<File> listDirectoryChildren(File directory) {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory.toPath())) {
             final List<File> result = new ArrayList<>();
-            stream.forEach(entry -> result.add(entry.toFile()));
+            for (Path entry : stream) {
+                result.add(entry.toFile());
+            }
             return result;
         } catch (SecurityException | IOException ex) {
             throw DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex, directory);
@@ -1355,7 +1357,9 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private static List<File> listDirectoryChildren(File directory, DirectoryStream.Filter<Path> filter) {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory.toPath(), filter)) {
             final List<File> result = new ArrayList<>();
-            stream.forEach(entry -> result.add(entry.toFile()));
+            for (Path entry : stream) {
+                result.add(entry.toFile());
+            }
             return result;
         } catch (SecurityException | IOException ex) {
             throw DeploymentScannerLogger.ROOT_LOGGER.cannotListDirectoryFiles(ex, directory);
