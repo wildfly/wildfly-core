@@ -34,7 +34,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>wildfly-vault-test-feature-pack</artifactId>
+    <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
 
     <name>WildFly: Vault Test Feature Pack</name>
     <packaging>pom</packaging>

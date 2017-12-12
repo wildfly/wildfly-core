@@ -32,7 +32,7 @@
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>target/${server.output.dir.prefix}-core-feature-pack-${project.version}</directory>
+            <directory>target/${server.output.dir.prefix}-feature-pack-${project.version}</directory>
             <outputDirectory/>            
         </fileSet>
     </fileSets>
