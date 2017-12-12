@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -792,7 +791,12 @@ class SSLDefinitions {
                     @Override
                     protected void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException {
                         SSLSessionContext sessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
-                        result.set(Collections.list(sessionContext.getIds()).stream().mapToInt((byte[] b) -> 1).sum());
+                        int sum = 0;
+                        for (byte[] b : Collections.list(sessionContext.getIds())) {
+                            int i = 1;
+                            sum += i;
+                        }
+                        result.set(sum);
                     }
 
                     @Override
@@ -886,9 +890,16 @@ class SSLDefinitions {
                     if (trustManager != null) builder.setTrustManager(trustManager);
                     if (providers != null) builder.setProviderSupplier(() -> providers);
                     if (cipherSuiteFilter != null) builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
-                    if ( ! protocols.isEmpty()) builder.setProtocolSelector(ProtocolSelector.empty().add(
-                            EnumSet.copyOf(protocols.stream().map(Protocol::forName).collect(Collectors.toList()))
-                    ));
+                    if ( ! protocols.isEmpty()) {
+                        List<Protocol> list = new ArrayList<>();
+                        for (String protocol : protocols) {
+                            Protocol forName = Protocol.forName(protocol);
+                            list.add(forName);
+                        }
+                        builder.setProtocolSelector(ProtocolSelector.empty().add(
+                                EnumSet.copyOf(list)
+                        ));
+                    }
                     if (preRealmRewriter != null || postRealmRewriter != null || finalRewriter != null || realmMapper != null) {
                         MechanismConfiguration.Builder mechBuilder = MechanismConfiguration.builder();
                         if (preRealmRewriter != null) mechBuilder.setPreRealmRewriter(preRealmRewriter);
@@ -970,9 +981,16 @@ class SSLDefinitions {
                     if (trustManager != null) builder.setTrustManager(trustManager);
                     if (providers != null) builder.setProviderSupplier(() -> providers);
                     if (cipherSuiteFilter != null) builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
-                    if ( ! protocols.isEmpty()) builder.setProtocolSelector(ProtocolSelector.empty().add(
-                            EnumSet.copyOf(protocols.stream().map(Protocol::forName).collect(Collectors.toList()))
-                    ));
+                    if ( ! protocols.isEmpty()) {
+                        List<Protocol> list = new ArrayList<>();
+                        for (String protocol : protocols) {
+                            Protocol forName = Protocol.forName(protocol);
+                            list.add(forName);
+                        }
+                        builder.setProtocolSelector(ProtocolSelector.empty().add(
+                                EnumSet.copyOf(list)
+                        ));
+                    }
                     builder.setClientMode(true)
                         .setWrap(false);
 
@@ -1009,9 +1027,13 @@ class SSLDefinitions {
 
     private static Provider[] filterProviders(Provider[] all, String provider) {
         if (provider == null || all == null) return all;
-        return Arrays.stream(all)
-                .filter(current -> provider.equals(current.getName()))
-                .toArray(Provider[]::new);
+        List<Provider> list = new ArrayList<>();
+        for (Provider current : all) {
+            if (provider.equals(current.getName())) {
+                list.add(current);
+            }
+        }
+        return list.toArray(new Provider[0]);
     }
 
     private static X509ExtendedKeyManager getX509KeyManager(KeyManager keyManager) throws StartException {

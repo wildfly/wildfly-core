@@ -317,7 +317,9 @@ class AuthenticationClientDefinitions {
                 ModelNode properties = MECHANISM_PROPERTIES.resolveModelAttribute(context, model);
                 if (properties.isDefined()) {
                     Map<String, String> propertiesMap = new HashMap<String, String>();
-                    properties.keys().forEach((String s) -> propertiesMap.put(s, properties.require(s).asString()));
+                    for (String s : properties.keys()) {
+                        propertiesMap.put(s, properties.require(s).asString());
+                    }
                     configuration = configuration.andThen(c -> c.useMechanismProperties(propertiesMap, parent == null));
                 }
 

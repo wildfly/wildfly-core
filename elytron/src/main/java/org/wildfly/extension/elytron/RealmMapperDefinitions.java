@@ -219,7 +219,9 @@ class RealmMapperDefinitions {
             ModelNode realmMapList = REALM_REALM_MAP.resolveModelAttribute(context, model);
             Set<String> names = realmMapList.keys();
             final Map<String, String> realmRealmMap = new HashMap<String, String>(names.size());
-            names.forEach((String s) -> realmRealmMap.put(s, realmMapList.require(s).asString()));
+            for (String s : names) {
+                realmRealmMap.put(s, realmMapList.require(s).asString());
+            }
 
             String delegateRealmMapper = asStringIfDefined(context, DELEGATE_REALM_MAPPER, model);
 

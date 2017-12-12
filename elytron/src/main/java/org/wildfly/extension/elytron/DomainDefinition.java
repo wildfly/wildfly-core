@@ -92,6 +92,7 @@ import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
+import org.wildfly.security.authz.Attributes;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
@@ -336,8 +337,12 @@ class DomainDefinition extends SimpleResourceDefinition {
 
             @Override
             public SecurityDomain get() throws StartException {
-                trustedSecurityDomainInjectors.forEach(i -> trustedSecurityDomains.add(i.getValue()));
-                outflowSecurityDomainInjectors.forEach(i -> outflowSecurityDomains.add(i.getValue()));
+                for (InjectedValue<SecurityDomain> trustedSecurityDomainInjector : trustedSecurityDomainInjectors) {
+                    trustedSecurityDomains.add(trustedSecurityDomainInjector.getValue());
+                }
+                for (InjectedValue<SecurityDomain> i : outflowSecurityDomainInjectors) {
+                    outflowSecurityDomains.add(i.getValue());
+                }
                 return securityDomain.getValue();
             }
 
@@ -400,7 +405,7 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
         List<SecurityIdentity> outflowIdentities = new ArrayList<>(outflowDomains.size());
-        outflowDomains.forEach(d -> {
+        for (SecurityDomain d : outflowDomains) {
             ServerAuthenticationContext sac = d.createNewAuthenticationContext();
             try {
                 if (sac.importIdentity(identity)) {
@@ -411,7 +416,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.unableToPerformOutflow(identity.getPrincipal().getName(), e);
             }
-        });
+        }
 
         return outflowIdentities.toArray(new SecurityIdentity[outflowIdentities.size()]);
     }
@@ -613,13 +618,17 @@ class DomainDefinition extends SimpleResourceDefinition {
 
                 ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
 
-                identity.getAttributes().entries().forEach(entry -> {
+                for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
-                    entry.forEach(entryNode::add);
-                });
+                    for (String s : entry) {
+                        entryNode.add(s);
+                    }
+                }
 
                 ModelNode rolesNode = result.get(ElytronDescriptionConstants.ROLES);
-                identity.getRoles().forEach(rolesNode::add);
+                for (String s : identity.getRoles()) {
+                    rolesNode.add(s);
+                }
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotReadIdentity(principalName, domainServiceName, e);
             }
