@@ -22,9 +22,9 @@
 package org.jboss.as.cli;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.jboss.as.cli.impl.CommandCandidatesProvider;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -150,8 +150,12 @@ public class CommandCompleter implements CommandLineCompleter {
             if (index != -1 && buffer.length() != index + 1) {
                 String variable = buffer.substring(index + 1);
                 if (buffer.endsWith(variable)) {
-                    List<String> candidateVariables = ctx.getVariables().stream()
-                            .filter(e -> e.startsWith(variable) && !e.equals(variable)).collect(Collectors.toList());
+                    List<String> candidateVariables = new ArrayList<>();
+                    for (String e : ctx.getVariables()) {
+                        if (e.startsWith(variable) && ! e.equals(variable)) {
+                            candidateVariables.add(e);
+                        }
+                    }
                     if (!candidateVariables.isEmpty()) {
                         candidates.addAll(candidateVariables);
                         Collections.sort(candidates);
