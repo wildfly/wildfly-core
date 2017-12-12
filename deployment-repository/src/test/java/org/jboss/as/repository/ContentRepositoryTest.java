@@ -42,13 +42,13 @@ import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.hamcrest.CoreMatchers;
@@ -337,17 +337,31 @@ public class ContentRepositoryTest {
                     true);
             assertThat(hash, is(notNullValue()));
             assertThat(HashUtil.bytesToHexString(hash), is(updatedExpectedResult));
-            List<String> contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> contents = new ArrayList<>();
+            for (ContentRepositoryElement element : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(- 1, false))) {
+                String repositoryElement1Path = element.getPath();
+                contents.add(repositoryElement1Path);
+            }
             assertThat(contents.size(), is(2));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml"));
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
-            contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> result = new ArrayList<>();
+            for (ContentRepositoryElement repositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(- 1, false))) {
+                String contentRepositoryElement1Path = repositoryElement.getPath();
+                result.add(contentRepositoryElement1Path);
+            }
+            contents = result;
             assertThat(contents, is(notNullValue()));
             assertThat(contents.size(), is(5));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/empty-file.txt", "test/", "empty-dir/"));
             hash = repository.removeContentFromExploded(hash, Collections.singletonList("test.jsp"));
-            contents = repository.listContent(hash, "", ContentFilter.Factory.createFileFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (ContentRepositoryElement contentRepositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createFileFilter(- 1, false))) {
+                String path = contentRepositoryElement.getPath();
+                list.add(path);
+            }
+            contents = list;
             assertThat(contents, is(notNullValue()));
             assertThat(contents.size(), is(2));
             assertThat(contents, CoreMatchers.hasItems("overlay.xhtml", "test/empty-file.txt"));
@@ -361,16 +375,30 @@ public class ContentRepositoryTest {
             byte[] hash = repository.addContent(stream);
             //hash is different from the simple overlay.xhtml as we add the content folder name in the computation
             assertThat(hash, is(notNullValue()));
-            List<String> contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> contents = new ArrayList<>();
+            for (ContentRepositoryElement element : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(- 1, false))) {
+                String repositoryElement1Path = element.getPath();
+                contents.add(repositoryElement1Path);
+            }
             assertThat(contents.size(), is(5));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/empty-file.txt", "test/", "empty-dir/"));
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("test/empty-file.txt", emptyStream())), true);
             hash = repository.addContentToExploded(hash, Collections.singletonList(new ExplodedContent("empty-dir", null)), true);
-            contents = repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> result = new ArrayList<>();
+            for (ContentRepositoryElement repositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createContentFilter(1, false))) {
+                String contentRepositoryElement1Path = repositoryElement.getPath();
+                result.add(contentRepositoryElement1Path);
+            }
+            contents = result;
             assertThat(contents, is(notNullValue()));
             assertThat(contents.size(), is(4));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/", "empty-dir/"));
-            contents = repository.listContent(hash, "", ContentFilter.Factory.createFileFilter(-1, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+            List<String> list = new ArrayList<>();
+            for (ContentRepositoryElement contentRepositoryElement : repository.listContent(hash, "", ContentFilter.Factory.createFileFilter(- 1, false))) {
+                String path = contentRepositoryElement.getPath();
+                list.add(path);
+            }
+            contents = list;
             assertThat(contents, is(notNullValue()));
             assertThat(contents.size(), is(3));
             assertThat(contents, CoreMatchers.hasItems("test.jsp", "overlay.xhtml", "test/empty-file.txt"));

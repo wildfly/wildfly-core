@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.jboss.as.protocol.StreamUtils;
@@ -197,7 +197,11 @@ public class PathUtilTest {
         Files.createDirectories(root.resolve("empty").resolve("directory"));
         Files.createDirectories(root.resolve("htdocs").resolve("www"));
         Files.copy(this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml"), root.resolve("htdocs").resolve("www").resolve("overlay.xhtml"));
-        List<String> result = PathUtil.listFiles(root, root, ALL).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result = new ArrayList<>();
+        for (ContentRepositoryElement element1 : PathUtil.listFiles(root, root, ALL)) {
+            String repositoryElement2Path = element1.getPath();
+            result.add(repositoryElement2Path);
+        }
         Assert.assertEquals(9, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
@@ -208,19 +212,39 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("htdocs/www/overlay.xhtml"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/"));
-        result = PathUtil.listFiles(root, root, explodableFileFilter(true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result2 = new ArrayList<>();
+        for (ContentRepositoryElement repositoryElement1 : PathUtil.listFiles(root, root, explodableFileFilter(true))) {
+            String contentRepositoryElement2Path = repositoryElement1.getPath();
+            result2.add(contentRepositoryElement2Path);
+        }
+        result = result2;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test.zip"));
-        result = PathUtil.listFiles(root, root, directoryListFileFilter()).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list2 = new ArrayList<>();
+        for (ContentRepositoryElement contentRepositoryElement1 : PathUtil.listFiles(root, root, directoryListFileFilter())) {
+            String element1Path = contentRepositoryElement1.getPath();
+            list2.add(element1Path);
+        }
+        result = list2;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
-        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result1 = new ArrayList<>();
+        for (ContentRepositoryElement element : PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, true))) {
+            String repositoryElement1Path = element.getPath();
+            result1.add(repositoryElement1Path);
+        }
+        result = result1;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test.zip"));
-        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list1 = new ArrayList<>();
+        for (ContentRepositoryElement repositoryElement : PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, false))) {
+            String contentRepositoryElement1Path = repositoryElement.getPath();
+            list1.add(contentRepositoryElement1Path);
+        }
+        result = list1;
         Assert.assertEquals(8, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
@@ -230,7 +254,12 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("empty/directory/"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/"));
-        result = PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(3, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list = new ArrayList<>();
+        for (ContentRepositoryElement contentRepositoryElement : PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(3, false))) {
+            String path = contentRepositoryElement.getPath();
+            list.add(path);
+        }
+        result = list;
         Assert.assertEquals(9, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
@@ -279,24 +308,48 @@ public class PathUtilTest {
             out.closeEntry();
         }
         Files.delete(archive);
-        List<String> result = PathUtil.listFiles(unexploded, root, ALL).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result = new ArrayList<>();
+        for (ContentRepositoryElement repositoryElement1 : PathUtil.listFiles(unexploded, root, ALL)) {
+            String contentRepositoryElement2Path = repositoryElement1.getPath();
+            result.add(contentRepositoryElement2Path);
+        }
         Assert.assertEquals(3, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test2.zip"));
-        result = PathUtil.listFiles(unexploded, root, explodableFileFilter(true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list2 = new ArrayList<>();
+        for (ContentRepositoryElement contentRepositoryElement1 : PathUtil.listFiles(unexploded, root, explodableFileFilter(true))) {
+            String element1Path = contentRepositoryElement1.getPath();
+            list2.add(element1Path);
+        }
+        result = list2;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test2.zip"));
-        result = PathUtil.listFiles(unexploded, root, directoryListFileFilter()).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> result1 = new ArrayList<>();
+        for (ContentRepositoryElement element : PathUtil.listFiles(unexploded, root, directoryListFileFilter())) {
+            String repositoryElement1Path = element.getPath();
+            result1.add(repositoryElement1Path);
+        }
+        result = result1;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
-        result = PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, true)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list1 = new ArrayList<>();
+        for (ContentRepositoryElement repositoryElement : PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, true))) {
+            String contentRepositoryElement1Path = repositoryElement.getPath();
+            list1.add(contentRepositoryElement1Path);
+        }
+        result = list1;
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test2.zip"));
-        result = PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, false)).stream().map(ContentRepositoryElement::getPath).collect(Collectors.toList());
+        List<String> list = new ArrayList<>();
+        for (ContentRepositoryElement contentRepositoryElement : PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, false))) {
+            String path = contentRepositoryElement.getPath();
+            list.add(path);
+        }
+        result = list;
         Assert.assertEquals(3, result.size());
         Assert.assertTrue(result.contains("overlay.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
