@@ -91,10 +91,13 @@ public class WorkerServerDefinition extends SimpleResourceDefinition {
                 return;
             }
             XnioWorkerMXBean metrics = worker.getMXBean();
-            Optional<XnioServerMXBean> serverMetrics = metrics.getServerMXBeans()
-                    .stream()
-                    .filter(xnioServerMXBean -> xnioServerMXBean.getBindAddress().equals(context.getCurrentAddressValue()))
-                    .findFirst();
+            Optional<XnioServerMXBean> serverMetrics = Optional.empty();
+            for (XnioServerMXBean xnioServerMXBean : metrics.getServerMXBeans()) {
+                if (xnioServerMXBean.getBindAddress().equals(context.getCurrentAddressValue())) {
+                    serverMetrics = Optional.of(xnioServerMXBean);
+                    break;
+                }
+            }
             if (serverMetrics.isPresent()) {
                 context.getResult().set(getMetricValue(serverMetrics.get()));
             } else {

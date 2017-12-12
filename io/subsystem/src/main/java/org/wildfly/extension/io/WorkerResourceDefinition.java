@@ -63,6 +63,7 @@ import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
+import org.xnio.management.XnioServerMXBean;
 import org.xnio.management.XnioWorkerMXBean;
 
 /**
@@ -373,7 +374,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                         return Collections.emptySet();
                     }
                     Set<String> res = new LinkedHashSet<>();
-                    metrics.getServerMXBeans().forEach(serverMXBean -> res.add(serverMXBean.getBindAddress()));
+                    for (XnioServerMXBean serverMXBean : metrics.getServerMXBeans()) {
+                        res.add(serverMXBean.getBindAddress());
+                    }
                     return res;
                 }
 
