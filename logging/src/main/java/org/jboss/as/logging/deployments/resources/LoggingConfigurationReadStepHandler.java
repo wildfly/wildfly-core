@@ -76,7 +76,9 @@ abstract class LoggingConfigurationReadStepHandler implements OperationStepHandl
      * @param model         the model to update
      */
     static void addProperties(final PropertyConfigurable configuration, final ModelNode model) {
-        configuration.getPropertyNames().forEach(name -> setModelValue(model.get(name), configuration.getPropertyValueString(name)));
+        for (String name : configuration.getPropertyNames()) {
+            setModelValue(model.get(name), configuration.getPropertyValueString(name));
+        }
     }
 
     /**
