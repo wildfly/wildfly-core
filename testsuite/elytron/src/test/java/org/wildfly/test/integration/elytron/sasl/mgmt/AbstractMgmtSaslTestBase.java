@@ -157,12 +157,12 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherMechsFail() throws Exception {
-        Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256", "DIGEST-SHA-384",
-                "DIGEST-SHA-512", "PLAIN", "SCRAM-SHA-1", "JBOSS-LOCAL-USER").forEach(s -> {
-                    if (!getMechanism().equals(s)) {
-                        assertMechFails(s);
-                    }
-                });
+        for (String s : Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256", "DIGEST-SHA-384",
+            "DIGEST-SHA-512", "PLAIN", "SCRAM-SHA-1", "JBOSS-LOCAL-USER")) {
+            if (! getMechanism().equals(s)) {
+                assertMechFails(s);
+            }
+        }
     }
 
     /**
@@ -171,12 +171,12 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherDigestMechsFail() throws Exception {
-        Arrays.asList("MD5", "SHA", "SHA-256", "SHA-384", "SHA-512").forEach(s -> {
+        for (String s : Arrays.asList("MD5", "SHA", "SHA-256", "SHA-384", "SHA-512")) {
             final String mech = "DIGEST-" + s;
-            if (!getMechanism().equals(mech)) {
+            if (! getMechanism().equals(mech)) {
                 assertDigestMechFails(mech, mech.toLowerCase(Locale.ROOT));
             }
-        });
+        }
     }
 
     /**

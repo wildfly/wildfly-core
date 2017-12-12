@@ -33,12 +33,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.management.InstanceNotFoundException;
@@ -211,7 +211,12 @@ public class ModelControllerMBeanTestCase {
         ModelNode result = managementClient.getControllerClient().execute(op);
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
         List<ModelNode> propertyNames = result.get(RESULT).asList();
-        return propertyNames.stream().map(ModelNode::asString).collect(Collectors.toList()).toArray(new String[propertyNames.size()]);
+        List<String> list = new ArrayList<>();
+        for (ModelNode propertyName : propertyNames) {
+            String asString = propertyName.asString();
+            list.add(asString);
+        }
+        return list.toArray(new String[propertyNames.size()]);
     }
 
 

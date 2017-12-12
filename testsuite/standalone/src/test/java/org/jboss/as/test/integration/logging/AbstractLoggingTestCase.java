@@ -223,7 +223,9 @@ public abstract class AbstractLoggingTestCase {
         }
         if (!errors.isEmpty()) {
             final RuntimeException e = new RuntimeException("Error undeploying: " + Arrays.asList(runtimeNames));
-            errors.forEach(e::addSuppressed);
+            for (Throwable error : errors) {
+                e.addSuppressed(error);
+            }
             throw e;
         }
     }
