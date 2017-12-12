@@ -76,7 +76,9 @@ class DeleteOp {
      */
     public static void execute(Collection<DeleteOp> deleteOps) throws IOException {
         try {
-            deleteOps.forEach(DeleteOp::prepare);
+            for (DeleteOp deleteOp : deleteOps) {
+                deleteOp.prepare();
+            }
 
             // best effort cleanup - delete what's possible and report error if anything remains
             boolean commitResult = true;
@@ -88,7 +90,9 @@ class DeleteOp {
             }
 
         } catch (PrepareException pe) {
-            deleteOps.forEach(DeleteOp::rollback);
+            for (DeleteOp deleteOp : deleteOps) {
+                deleteOp.rollback();
+            }
 
             throw PatchLogger.ROOT_LOGGER.failedToDelete(pe.getPath());
         }
