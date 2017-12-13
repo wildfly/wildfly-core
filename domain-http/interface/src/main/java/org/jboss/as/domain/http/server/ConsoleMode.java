@@ -193,6 +193,10 @@ public enum ConsoleMode {
         }
 
         static ResourceHandlerDefinition createNoConsoleForAdminMode(String slot) throws ModuleLoadException {
+            // Even though we are not going to use the console in admin-only, try and load
+            // its module so we react properly if it's not even present.
+            ConsoleHandler.findConsoleClassLoader(Module.getCallerModuleLoader(), slot);
+            // If we got here we have a console module, so now we can set up a temporary redirect
             return createConsoleHandler(slot, NO_CONSOLE_FOR_ADMIN_MODE);
         }
 
