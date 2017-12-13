@@ -48,7 +48,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class PropertyTestHelper {
 
-    protected static final String USER_NAME = "Aldo.Raine";
+    protected static final String USER_NAME = "/A.l,do-R=a\\ine";
+    protected static final String INVALID_USER_NAME = "%A#l$d!o%R?a&i*n^e><|~";
     protected static final String ROLES = "admin, jms";
     protected ConsoleMock consoleMock;
     protected StateValues values;

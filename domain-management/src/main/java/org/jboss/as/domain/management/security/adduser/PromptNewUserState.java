@@ -52,6 +52,11 @@ public class PromptNewUserState implements State {
             theConsole.printf(usernamePrompt);
             String temp = theConsole.readLine(" : ");
             if (temp != null && temp.length() > 0) {
+                // If the username contains '%', insert another '%' to avoid the Formatter Exception (WFCORE-3306)
+                if (temp.contains("%")) {
+                    // Insert '%' before every "%", to format the String as the initial typed username
+                    temp = temp.replaceAll("%", "%%");
+                }
                 existingUsername = temp;
             }
             // The user could have pressed Ctrl-D, in which case we do not use the default value.

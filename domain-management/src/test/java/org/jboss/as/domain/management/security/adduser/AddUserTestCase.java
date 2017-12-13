@@ -29,10 +29,10 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Properties;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * Test the AddUser state
@@ -43,17 +43,35 @@ public class AddUserTestCase extends PropertyTestHelper {
 
     @Test
     public void testAddUser() throws IOException, StartException {
-        values.setGroups(ROLES);
-
-        AssertConsoleBuilder consoleBuilder = buildAddUserGroupAssertConsole();
-
-        AddUserState addUserState = new AddUserState(consoleMock, values);
-        addUserState.update(values);
+        AssertConsoleBuilder consoleBuilder = addUser();
 
         assertRolePropertyFile(values.getUserName());
         assertUserPropertyFile(values.getUserName());
 
         consoleBuilder.validate();
+    }
+
+    @Test
+    public void testAddUserValidUserName() throws IOException, StartException {
+        values.setUserName(USER_NAME);
+        values.setGroups(ROLES);
+
+        AssertConsoleBuilder consoleBuilder = addUser();
+        consoleBuilder.validate();
+
+        Properties properties = loadProperties(values.getGroupFiles().get(0).getAbsolutePath());
+        assertNotNull(properties.get(USER_NAME));
+    }
+
+    @Test
+    public void testAddUserInvalidUserName() throws IOException, StartException {
+        values.setUserName(INVALID_USER_NAME);
+        values.setGroups(ROLES);
+
+        addUser();
+
+        Properties properties = loadProperties(values.getGroupFiles().get(0).getAbsolutePath());
+        assertNull(properties.get(INVALID_USER_NAME));
     }
 
     @Test
@@ -219,5 +237,15 @@ public class AddUserTestCase extends PropertyTestHelper {
             assertEquals("Enabling/disabling a user just uncomment/comment out the line and must not create a new one", previousUserFileLineNumber, countLineNumberUserFile());
         }
         assertConsole.validate();
+    }
+
+    private AssertConsoleBuilder addUser() throws IOException {
+        values.setGroups(ROLES);
+
+        AssertConsoleBuilder consoleBuilder = buildAddUserGroupAssertConsole();
+
+        AddUserState addUserState = new AddUserState(consoleMock, values);
+        addUserState.update(values);
+        return consoleBuilder;
     }
 }
