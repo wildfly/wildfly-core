@@ -487,7 +487,12 @@ public class DeploymentAttributes {
     private static final List<String> UNMANAGED_CONTENT_ATTS = Arrays.asList(DeploymentAttributes.CONTENT_PATH.getName(), DeploymentAttributes.CONTENT_RELATIVE_TO.getName());
 
     public static boolean isUnmanagedContent(ModelNode content) {
-        return UNMANAGED_CONTENT_ATTS.stream().anyMatch((s) -> (content.hasDefined(s)));
+        for (String s : UNMANAGED_CONTENT_ATTS) {
+            if ((content.hasDefined(s))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static SimpleAttributeDefinitionBuilder createContentValueTypeAttribute(String name, ModelType type,

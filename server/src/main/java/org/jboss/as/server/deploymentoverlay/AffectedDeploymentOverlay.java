@@ -39,7 +39,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -156,16 +156,22 @@ public class AffectedDeploymentOverlay {
                     listDeployments(context.readResourceFromRoot(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, serverGoupName))),runtimeNames));
         }
         if (deploymentPerServerGroup.isEmpty()) {
-            runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any server-group for %s", s));
+            for (String s : runtimeNames) {
+                ServerLogger.ROOT_LOGGER.debugf("We haven't found any server-group for %s", s);
+            }
         }
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if(removeOperation != null) {
              opBuilder.addStep(removeOperation);
         }
         //Add a deploy step for each affected deployment in its server-group.
-        deploymentPerServerGroup.entrySet().stream().filter((entry) -> (!entry.getValue().isEmpty())).forEach((entry) -> {
-            entry.getValue().forEach((deploymentName) -> opBuilder.addStep(addRedeployStep(context.getCurrentAddress().getParent().append(SERVER_GROUP, entry.getKey()).append(DEPLOYMENT, deploymentName))));
-        });
+        for (Map.Entry<String, Set<String>> entry : deploymentPerServerGroup.entrySet()) {
+            if ((! entry.getValue().isEmpty())) {
+                for (String deploymentName : entry.getValue()) {
+                    opBuilder.addStep(addRedeployStep(context.getCurrentAddress().getParent().append(SERVER_GROUP, entry.getKey()).append(DEPLOYMENT, deploymentName)));
+                }
+            }
+        }
         // Add the domain op transformer
         List<DomainOperationTransmuter> transformers = context.getAttachment(OperationAttachments.SLAVE_SERVER_OPERATION_TRANSMUTERS);
         if (transformers == null) {
@@ -191,7 +197,9 @@ public class AffectedDeploymentOverlay {
         Set<String> deploymentNames = listDeployments(context.readResourceFromRoot(deploymentsRootAddress), runtimeNames);
         Operations.CompositeOperationBuilder opBuilder = Operations.CompositeOperationBuilder.create();
         if (deploymentNames.isEmpty()) {
-            runtimeNames.forEach(s -> ServerLogger.ROOT_LOGGER.debugf("We haven't found any deployment for %s in server-group %s", s, deploymentsRootAddress.getLastElement().getValue()));
+            for (String s : runtimeNames) {
+                ServerLogger.ROOT_LOGGER.debugf("We haven't found any deployment for %s in server-group %s", s, deploymentsRootAddress.getLastElement().getValue());
+            }
         }
         if(removeOperation != null) {
              opBuilder.addStep(removeOperation);
@@ -215,10 +223,12 @@ public class AffectedDeploymentOverlay {
      * @return the deployment names with the specified runtime names at the specified deploymentRootAddress.
      */
       public static Set<String> listDeployments(Resource deploymentRootResource, Set<String> runtimeNames) {
-          return listDeploymentNames(deploymentRootResource, runtimeNames
-                .stream()
-                .map(wildcardExpr -> DeploymentOverlayIndex.getPattern(wildcardExpr))
-                .collect(Collectors.toSet()));
+          Set<Pattern> set = new HashSet<>();
+          for (String wildcardExpr : runtimeNames) {
+              Pattern pattern = DeploymentOverlayIndex.getPattern(wildcardExpr);
+              set.add(pattern);
+          }
+          return listDeploymentNames(deploymentRootResource, set);
       }
 
     private static Set<String> listDeploymentNames(Resource deploymentRootResource, Set<Pattern> patterns) {
@@ -251,8 +261,13 @@ public class AffectedDeploymentOverlay {
     private static Set<String> listServerGroupsReferencingOverlay(Resource rootResource, String overlayName) {
         final PathElement overlayPath = PathElement.pathElement(DEPLOYMENT_OVERLAY, overlayName);
         if (rootResource.hasChildren(SERVER_GROUP)) {
-            return rootResource.getChildrenNames(SERVER_GROUP).stream().filter(
-                    serverGroupName -> rootResource.getChild(PathElement.pathElement(SERVER_GROUP, serverGroupName)).hasChild(overlayPath)).collect(Collectors.toSet());
+            Set<String> set = new HashSet<>();
+            for (String serverGroupName : rootResource.getChildrenNames(SERVER_GROUP)) {
+                if (rootResource.getChild(PathElement.pathElement(SERVER_GROUP, serverGroupName)).hasChild(overlayPath)) {
+                    set.add(serverGroupName);
+                }
+            }
+            return set;
         }
         return Collections.emptySet();
     }
