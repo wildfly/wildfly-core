@@ -129,9 +129,9 @@ public class AdditionalInitialization extends AdditionalParsers {
                     config.registerAttributeArbitraryDescriptor(address, arbitraryDescriptor.getKey(), arbitraryDescriptor.getValue(), ARBITRARY_DESCRIPTOR_VALIDATOR);
                     return arbitraryDescriptor;
                 }).forEach((arbitraryDescriptor) -> {
-                    operations.stream().forEach((operation) -> {
+                    for (String operation : operations) {
                         config.registerArbitraryDescriptorForOperation(address, operation, arbitraryDescriptor.getValue(), ARBITRARY_DESCRIPTOR_VALIDATOR);
-                    });
+                    }
                 });
                 return config;
             }
