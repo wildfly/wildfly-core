@@ -1404,10 +1404,14 @@ final class OperationContextImpl extends AbstractOperationContext {
             try {
                 // Decouple any ServiceTarget or ServiceRegistry we have created from this object
                 try {
-                    serviceTargets.forEach(ContextServiceTarget::done);
+                    for (ContextServiceTarget serviceTarget : serviceTargets) {
+                        serviceTarget.done();
+                    }
                     serviceTargets.clear();
                 } finally {
-                    serviceRegistries.forEach(OperationContextServiceRegistry::done);
+                    for (OperationContextServiceRegistry serviceRegistry : serviceRegistries) {
+                        serviceRegistry.done();
+                    }
                     serviceRegistries.clear();
                 }
             } finally {
@@ -2057,7 +2061,9 @@ final class OperationContextImpl extends AbstractOperationContext {
          */
         synchronized void done() {
             builderSupplier = null;
-            builders.forEach(ContextServiceBuilder::done);
+            for (ContextServiceBuilder builder : builders) {
+                builder.done();
+            }
             builders.clear();
         }
 
@@ -2304,7 +2310,9 @@ final class OperationContextImpl extends AbstractOperationContext {
          */
         synchronized void done() {
             registryActiveStep = null;
-            controllers.forEach(OperationContextServiceController::done);
+            for (OperationContextServiceController controller : controllers) {
+                controller.done();
+            }
             controllers.clear();
         }
 

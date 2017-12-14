@@ -134,9 +134,9 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
             entry.get(OUTCOME).set(item.getResultAction() == OperationContext.ResultAction.KEEP ? SUCCESS : FAILED);
             if (item.getOperations() != null && !item.getOperations().isEmpty()) {
                 ModelNode operations = entry.get(OPERATIONS).setEmptyList();
-                item.getOperations().stream().forEach((op) -> {
+                for (ModelNode op : item.getOperations()) {
                     operations.add(op);
-                });
+                }
             }
             addItem(entry);
             return entry.asString();

@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
@@ -205,10 +204,15 @@ public final class ParseUtils {
      * @return the exception
      */
     public static XMLStreamException missingRequired(final XMLExtendedStreamReader reader, final Set<?> required) {
+        Set<String> set = new HashSet<>();
+        for (Object o : required) {
+            String toString = o.toString();
+            set.add(toString);
+        }
         return wrapMissingRequiredAttribute(ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(asStringList(required),
                                                                                                    reader.getLocation()),
                                             reader,
-                                            required.stream().map(Object::toString).collect(Collectors.toSet()));
+            set);
     }
 
     /**
@@ -251,11 +255,15 @@ public final class ParseUtils {
         }
         final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.missingRequiredElements(b, reader.getLocation());
 
+        Set<String> set = new HashSet<>();
+        for (Object o : required) {
+            String toString = o.toString();
+            set.add(toString);
+        }
         return new XMLStreamValidationException(ex.getMessage(),
                                                 ValidationError.from(ex, ErrorType.REQUIRED_ELEMENTS_MISSING)
                                                         .element(reader.getName())
-                                                        .alternatives(required.stream().map(Object::toString)
-                                                                              .collect(Collectors.toSet())),
+                                                        .alternatives(set),
                                                 ex);
     }
 
@@ -278,11 +286,15 @@ public final class ParseUtils {
         }
         final XMLStreamException ex = ControllerLogger.ROOT_LOGGER.missingOneOf(b, reader.getLocation());
 
+        Set<String> set = new HashSet<>();
+        for (Object o : required) {
+            String toString = o.toString();
+            set.add(toString);
+        }
         return new XMLStreamValidationException(ex.getMessage(),
                                                 ValidationError.from(ex, ErrorType.REQUIRED_ELEMENT_MISSING)
                                                                     .element(reader.getName())
-                                                                    .alternatives(required.stream().map(Object::toString)
-                                                                                          .collect(Collectors.toSet())),
+                                                                    .alternatives(set),
                                                 ex);
     }
 

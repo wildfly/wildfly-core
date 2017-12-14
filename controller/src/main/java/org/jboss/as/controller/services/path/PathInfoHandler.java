@@ -44,12 +44,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -284,28 +284,30 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
 
     private static void registerOperation(final ManagementResourceRegistration resourceRegistration,
             final MeasurementUnit unit, final PathInfoHandler handler) {
-        List<AttributeDefinition> replyParameters = handler.relativePathAttributes.stream().map( att -> {
-            return ObjectTypeAttributeDefinition.Builder.of(att.pathAttribute.getName(),
+        List<AttributeDefinition> replyParameters = new ArrayList<>();
+        for (RelativePathSizeAttribute att : handler.relativePathAttributes) {
+            ObjectTypeAttributeDefinition build = ObjectTypeAttributeDefinition.Builder.of(att.pathAttribute.getName(),
                 SimpleAttributeDefinitionBuilder.create(USED_SPACE, ModelType.DOUBLE, false)
-                        .setUndefinedMetricValue(new ModelNode(0d))
-                        .setMeasurementUnit(unit)
-                        .setStorageRuntime()
-                        .build(),
-                 SimpleAttributeDefinitionBuilder.create(CREATION_TIME, ModelType.STRING, false)
-                        .setStorageRuntime()
-                        .build(),
+                    .setUndefinedMetricValue(new ModelNode(0d))
+                    .setMeasurementUnit(unit)
+                    .setStorageRuntime()
+                    .build(),
+                SimpleAttributeDefinitionBuilder.create(CREATION_TIME, ModelType.STRING, false)
+                    .setStorageRuntime()
+                    .build(),
                 SimpleAttributeDefinitionBuilder.create(LAST_MODIFIED, ModelType.STRING, false)
-                        .setStorageRuntime()
-                        .build(),
+                    .setStorageRuntime()
+                    .build(),
                 SimpleAttributeDefinitionBuilder.create(RESOLVED_PATH, ModelType.STRING, false)
-                        .setStorageRuntime()
-                        .build(),
+                    .setStorageRuntime()
+                    .build(),
                 SimpleAttributeDefinitionBuilder.create(AVAILABLE_SPACE, ModelType.DOUBLE, false)
-                        .setMeasurementUnit(unit)
-                        .setStorageRuntime()
-                        .build())
-                    .build();
-         }).collect(Collectors.toList());
+                    .setMeasurementUnit(unit)
+                    .setStorageRuntime()
+                    .build())
+                .build();
+            replyParameters.add(build);
+        }
         OperationDefinition operation = new SimpleOperationDefinitionBuilder(OPERATION_NAME, new DiskUsagePathResourceDescriptionResolver(OPERATION_NAME, replyParameters))
                 .addParameter(UNIT_ATTRIBUTE)
                 .setReadOnly()
@@ -375,7 +377,12 @@ public class PathInfoHandler extends AbstractRuntimeOnlyHandler {
         public DiskUsagePathResourceDescriptionResolver(final String operationName, List<AttributeDefinition> replyParameters) {
             super(FILESYSTEM, ControllerResolver.RESOURCE_NAME, ResolvePathHandler.class.getClassLoader(), false, false);
             this.operationName = operationName;
-            replyParameterKeys = replyParameters.stream().map(AttributeDefinition::getName).collect(Collectors.toSet());
+            Set<String> set = new HashSet<>();
+            for (AttributeDefinition replyParameter : replyParameters) {
+                String name = replyParameter.getName();
+                set.add(name);
+            }
+            replyParameterKeys = set;
         }
 
         @Override
