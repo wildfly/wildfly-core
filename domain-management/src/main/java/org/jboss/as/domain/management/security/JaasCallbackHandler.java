@@ -29,13 +29,14 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import java.io.IOException;
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -362,8 +363,13 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
 
             @Override
             public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
+                List<String> list = new ArrayList<>();
+                for (RealmGroup realmGroup : subject.getPrincipals(RealmGroup.class)) {
+                    String realmGroupName = realmGroup.getName();
+                    list.add(realmGroupName);
+                }
                 Attributes attributes = new MapAttributes(Collections.singletonMap("GROUPS",
-                        subject.getPrincipals(RealmGroup.class).stream().map(Principal::getName).collect(Collectors.toList())));
+                    list));
                 return AuthorizationIdentity.basicIdentity(attributes);
             }
 

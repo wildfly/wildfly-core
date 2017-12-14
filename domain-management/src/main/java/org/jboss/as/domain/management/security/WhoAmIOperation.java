@@ -109,16 +109,20 @@ public class WhoAmIOperation implements OperationStepHandler {
             Roles roles = securityIdentity.getRoles();
             if (roles.isEmpty() == false) {
                 ModelNode rolesModel = result.get(ROLES);
-                roles.forEach(s -> rolesModel.add(s));
+                for (String s : roles) {
+                    rolesModel.add(s);
+                }
             }
 
             Attributes attributes = securityIdentity.getAttributes();
             if (attributes.isEmpty() == false) {
                 ModelNode attributesModel = result.get(ATTRIBUTES);
-                attributes.entries().forEach(e -> {
+                for (Attributes.Entry e : attributes.entries()) {
                     ModelNode entry = attributesModel.get(e.getKey());
-                    e.forEach(s -> entry.add(s));
-                });
+                    for (String s : e) {
+                        entry.add(s);
+                    }
+                }
             }
 
             Set<String> mappedRoles = authorizer == null ? null : authorizer.getCallerRoles(context.getCaller(), context.getCallEnvironment(), RunAsRoleMapper.getOperationHeaderRoles(operation));
