@@ -164,7 +164,7 @@
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
-        <server.output.dir.prefix>wildfly</server.output.dir.prefix>
+        <server.output.dir.prefix>wildfly-core</server.output.dir.prefix>
         <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
         <test.level>INFO</test.level>
 
@@ -906,13 +906,13 @@
 
             <dependency>
                 <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-vault-test-feature-pack</artifactId>
+                <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
                 <type>pom</type>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-vault-test-feature-pack</artifactId>
+                <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
                 <type>zip</type>
                 <version>${project.version}</version>
             </dependency>

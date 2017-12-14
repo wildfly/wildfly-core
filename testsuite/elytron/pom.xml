@@ -76,7 +76,7 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-vault-test-feature-pack</artifactId>
+            <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
             <type>zip</type>
         </dependency>
         <dependency>

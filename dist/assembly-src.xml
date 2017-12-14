@@ -37,7 +37,7 @@
     <fileSets>
         <fileSet>
             <directory>..</directory>
-            <outputDirectory>${server.output.dir.prefix}-${project.version}-src</outputDirectory>
+            <outputDirectory>${server.output.dir.prefix}-${wildfly.core.release.version}-src</outputDirectory>
             <includes>
                 <include>**/*.xml</include>
                 <include>**/src/**</include>
