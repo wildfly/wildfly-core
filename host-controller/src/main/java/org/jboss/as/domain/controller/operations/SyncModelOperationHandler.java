@@ -174,9 +174,11 @@ class SyncModelOperationHandler implements OperationStepHandler {
             Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             ModelNode rootModel = rootResource.getModel().clone();
             ModelNode remoteRootModel = remoteModel.getModel();
-            ROOT_ATTRIBUTES.stream().filter((attributeName) -> (remoteRootModel.hasDefined(attributeName))).forEach((attributeName) -> {
-                rootModel.get(attributeName).set(remoteRootModel.get(attributeName));
-            });
+            for (String attributeName : ROOT_ATTRIBUTES) {
+                if ((remoteRootModel.hasDefined(attributeName))) {
+                    rootModel.get(attributeName).set(remoteRootModel.get(attributeName));
+                }
+            }
             rootResource.writeModel(rootModel);
         }
 
