@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.StreamUtils;
@@ -193,7 +192,12 @@ final class ManagedProcess {
         }
         log.startingProcess(processName);
         log.debugf("Process name='%s' command='%s' workingDirectory='%s'", processName, command, workingDirectory);
-        final ProcessBuilder builder = new ProcessBuilder(command.stream().map(c -> c.trim()).collect(Collectors.toList()));
+        List<String> list = new ArrayList<>();
+        for (String c : command) {
+            String trim = c.trim();
+            list.add(trim);
+        }
+        final ProcessBuilder builder = new ProcessBuilder(list);
         builder.environment().putAll(env);
         builder.directory(new File(workingDirectory));
         final Process process;
