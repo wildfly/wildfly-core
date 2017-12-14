@@ -147,9 +147,9 @@ public class InstallationReportHandler extends BaseOperationCommand {
     private Set<String> listStreams(OperationResponse operationResponse) {
         List<StreamEntry> streams = operationResponse.getInputStreams();
         Set<String> uuids = new HashSet<>(streams.size());
-        streams.stream().forEach((stream) -> {
+        for (StreamEntry stream : streams) {
             uuids.add(stream.getUUID());
-        });
+        }
         return uuids;
     }
 
