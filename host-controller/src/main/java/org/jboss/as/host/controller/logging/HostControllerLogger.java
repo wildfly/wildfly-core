@@ -1400,4 +1400,19 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 205, value = "An error occurred setting the -Dlogging.configuration property for server %s. Configuration path %s")
     void failedToSetLoggingConfiguration(@Cause Throwable cause, String serverName, File path);
 
+    @Message(id = 206, value = "File %s already exists, you must use --remove-existing-domain-config to overwrite existing files.")
+    IllegalStateException cannotOverwriteDomainXmlWithEmpty(String filename);
+
+    @Message(id = 207, value = "File %s already exists, you must use --remove-existing-host-config to overwrite existing files.")
+    IllegalStateException cannotOverwriteHostXmlWithEmpty(String filename);
+
+    @Message(id = 208, value = "A host (%s) has already been registered. You must shutdown this host before adding a new one.")
+    OperationFailedException cannotAddHostAlreadyRegistered(String existingName);
+
+    @Message(id = 209, value = "Host name may not be null.")
+    OperationFailedException nullHostName();
+
+    @Message(id = 210, value = "A slave host controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
+    OperationFailedException cannotAddSlaveHostAfterBoot();
+
 }

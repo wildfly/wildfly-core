@@ -33,7 +33,7 @@ public class HostRunningModeControl extends RunningModeControl {
     private volatile RestartMode restartMode;
     private boolean useCurrentDomainConfig;
     private String newDomainBootFileName;
-
+    private String reloadHostName;
 
 
     public HostRunningModeControl(RunningMode runningMode, RestartMode restartMode) {
@@ -85,4 +85,24 @@ public class HostRunningModeControl extends RunningModeControl {
     public void setNewDomainBootFileName(String newDomainBootFileName) {
         this.newDomainBootFileName = newDomainBootFileName;
     }
+
+    /**
+     * Set the hostname for the reloaded host controller.
+     * This is used when restarting a host controller started with an empty config
+     *
+     * @param hostName the name to use for registering this hostcontroller at /host=foo
+     */
+    public void setReloadHostName(final String hostName) {
+        this.reloadHostName = hostName;
+    }
+
+    /**
+     * Get the hostname for the reloaded host controller.
+     * This is used when restarting a host controller started with an empty config to override the computed
+     * hostname.
+     */
+    public String getReloadHostName() {
+        return this.reloadHostName;
+    }
+
 }

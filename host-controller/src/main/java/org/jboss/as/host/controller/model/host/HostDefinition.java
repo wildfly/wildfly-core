@@ -1,25 +1,19 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * Copyright 2017 JBoss by Red Hat.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-package org.jboss.as.host.controller.operations;
+package org.jboss.as.host.controller.model.host;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTIONS;
@@ -30,7 +24,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRODUCT_VERSION;
@@ -40,83 +33,72 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCH
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.HostControllerEnvironment;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.discovery.DiscoveryOptionsResource;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.host.controller.operations.HostAddHandler;
+import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.platform.mbean.PlatformMBeanConstants;
 import org.jboss.as.platform.mbean.RootPlatformMBeanResource;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleClassLoader;
 
-/**
- * The handler to add the local host definition to the DomainModel.
- *
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
- */
-public class HostModelRegistrationHandler implements OperationStepHandler {
+public class HostDefinition extends SimpleResourceDefinition {
 
-    private static final RuntimeCapability<Void> HOST_RUNTIME_CAPABILITY = RuntimeCapability
-            .Builder.of("org.wildfly.host.controller", false)
-            .build();
-
-    public static final String OPERATION_NAME = "register-host-model";
-
-    //Private method does not need resources for description
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, null)
-        .setPrivateEntry()
-        .build();
-
-    private final HostControllerEnvironment hostControllerEnvironment;
+    private final ManagementResourceRegistration root;
+    private final HostControllerEnvironment environment;
     private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private final HostModelUtil.HostModelRegistrar hostModelRegistrar;
+    private final ProcessType processType;
+    private final DelegatingConfigurableAuthorizer authorizer;
     private final Resource modelControllerResource;
+    private final LocalHostControllerInfo localHostControllerInfo;
 
-    public HostModelRegistrationHandler(final HostControllerEnvironment hostControllerEnvironment,
-                                        final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
-                                        final HostModelUtil.HostModelRegistrar hostModelRegistrar,
-                                        final Resource modelControllerResource) {
-        this.hostControllerEnvironment = hostControllerEnvironment;
+    public HostDefinition(
+            final ManagementResourceRegistration root,
+            final HostControllerEnvironment environment,
+            final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
+            final HostModelUtil.HostModelRegistrar hostModelRegistrar,
+            final ProcessType processType,
+            final DelegatingConfigurableAuthorizer authorizer,
+            final Resource modelControllerResource,
+            final LocalHostControllerInfoImpl localHostControllerInfo) {
+        super(new Parameters(PathElement.pathElement(HOST), HostModelUtil.getResourceDescriptionResolver()));
+        this.root = root;
+        this.environment = environment;
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
         this.hostModelRegistrar = hostModelRegistrar;
+        this.processType = processType;
+        this.authorizer = authorizer;
         this.modelControllerResource = modelControllerResource;
+        this.localHostControllerInfo = localHostControllerInfo;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void execute(OperationContext context, ModelNode operation) {
+    public LocalHostControllerInfo getLocalHostControllerInfo() {
+        return localHostControllerInfo;
+    }
 
-        if (!context.isBooting()) {
-            throw HostControllerLogger.ROOT_LOGGER.invocationNotAllowedAfterBoot(OPERATION_NAME);
-        }
+    public void registerHostModel(final String hostName) {
+        hostModelRegistrar.registerHostModel(hostName, root);
+    }
 
-        context.registerCapability(HOST_RUNTIME_CAPABILITY);
+    public void initCoreModel(final ModelNode model) {
+        initCoreModel(model, environment);
+    }
 
-        final String hostName = operation.require(NAME).asString();
-
-        // Set up the host model registrations
-        final ManagementResourceRegistration rootRegistration = context.getResourceRegistrationForUpdate();
-        hostModelRegistrar.registerHostModel(hostName, rootRegistration);
-
-        final PathAddress hostAddress =  PathAddress.pathAddress(PathElement.pathElement(HOST, hostName));
-        final Resource rootResource = context.createResource(hostAddress);
-        final ModelNode model = rootResource.getModel();
-
-        initCoreModel(model, hostControllerEnvironment);
-
+    public void initModelServices(final OperationContext context, final PathAddress hostAddress, final Resource rootResource) {
         // Create the management resources
         Resource management = context.createResource(hostAddress.append(PathElement.pathElement(CORE_SERVICE, MANAGEMENT)));
         if (modelControllerResource != null) {
@@ -132,7 +114,6 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         //Create the empty capability registry resource
         rootResource.registerChild(PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.CAPABILITY_REGISTRY), PlaceholderResource.INSTANCE);
 
-
         // Wire in the platform mbean resources. We're bypassing the context.createResource API here because
         // we want to use our own resource type. But it's ok as the createResource calls above have taken the lock
         rootResource.registerChild(PlatformMBeanConstants.ROOT_PATH, new RootPlatformMBeanResource());
@@ -144,13 +125,19 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         context.addResource(hostAddress.append(PathElement.pathElement(CORE_SERVICE, DISCOVERY_OPTIONS)), new DiscoveryOptionsResource());
     }
 
+    @Override
+    public void registerOperations(ManagementResourceRegistration hostDefinition) {
+        super.registerOperations(hostDefinition);
+        hostDefinition.registerOperationHandler(HostAddHandler.DEFINITION, new HostAddHandler(this));
+    }
+
     private static void initCoreModel(final ModelNode root, HostControllerEnvironment environment) {
 
         try {
             root.get(RELEASE_VERSION).set(Version.AS_VERSION);
             root.get(RELEASE_CODENAME).set(Version.AS_RELEASE_CODENAME);
         } catch (RuntimeException e) {
-            if (HostModelRegistrationHandler.class.getClassLoader() instanceof ModuleClassLoader) {
+            if (HostAddHandler.class.getClassLoader() instanceof ModuleClassLoader) {
                 //The standalone tests can't get this info
                 throw e;
             }
@@ -178,7 +165,5 @@ public class HostModelRegistrationHandler implements OperationStepHandler {
         //Set empty lists for namespaces and schema-locations to pass model validation
         root.get(NAMESPACES).setEmptyList();
         root.get(SCHEMA_LOCATIONS).setEmptyList();
-
     }
-
 }

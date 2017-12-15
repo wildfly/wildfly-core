@@ -1159,12 +1159,17 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
 
             List<String> nodeTypes = Util.getNodeTypes(newClient, new DefaultOperationRequestAddress());
-            domainMode = nodeTypes.contains(Util.SERVER_GROUP);
+            // this is present even if the host hasn't been added yet.
+            domainMode = nodeTypes.contains(Util.HOST);
 
-            try {
-                extLoader.loadHandlers(currentAddress);
-            } catch (CommandLineException e) {
-                printLine(Util.getMessagesFromThrowable(e));
+            // if we're going to add a host manually, don't try to read the extensions,
+            // as they won't be there until after the /host:add()
+            if (! (nodeTypes.size() == 1 && nodeTypes.get(0).equals(Util.HOST))) {
+                try {
+                    extLoader.loadHandlers(currentAddress);
+                } catch (CommandLineException e) {
+                    printLine(Util.getMessagesFromThrowable(e));
+                }
             }
         }
     }

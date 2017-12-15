@@ -128,6 +128,8 @@ class ContentRepositoryCleaner {
                     return;
                 } else if (FAILED.equals(response.get(OUTCOME).asString())) {
                     error(response);
+                    // if we can't read the local-host-name on a host controller, don't try and run the content cleaner
+                    return;
                 }
             }
             ModelNode request = Util.createOperation(CleanObsoleteContentHandler.OPERATION_NAME, address);

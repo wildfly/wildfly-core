@@ -23,6 +23,7 @@
 package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY_GROUPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
@@ -423,7 +424,12 @@ public class WildcardOperationsTestCase {
             PathElement matchElement = toMatch.getElement(i);
             PathElement testeeElement = testee.getElement(i);
             assertEquals(testee.toString(), matchElement.getKey(), testeeElement.getKey());
-            wildcardChecker.checkPathElement(testeeElement);
+            // the /host=* registration can be returned as part of RRD, so we skip it.
+            if (! (node.get(RESULT).has(DESCRIPTION) &&
+                node.get(RESULT).get(DESCRIPTION).asString().contains("The root node of the host-level management model"))) {
+                wildcardChecker.checkPathElement(testeeElement);
+            }
+
             if (!matchElement.isWildcard()) {
                 if (matchElement.isMultiTarget()) {
                     boolean matched = false;
@@ -445,7 +451,7 @@ public class WildcardOperationsTestCase {
         void checkPathElement(PathElement actualElement);
     }
 
-    // The standard behavious is that nothing should be resolved
+    // The standard behavior is that nothing should be resolved
     private static class StandardWildcardChecker implements WildcardChecker {
         @Override
         public void checkPathElement(PathElement actualElement) {

@@ -98,7 +98,9 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ProxyOperationAddressTranslator;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -118,6 +120,7 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
@@ -246,8 +249,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     };
 
-    // @GuardedBy(this)
-    private Future<ServerInventory> inventoryFuture;
     private final AtomicBoolean serverInventoryLock = new AtomicBoolean();
     // @GuardedBy(serverInventoryLock), after the HC started reads just use the volatile value
     private volatile ServerInventory serverInventory;
@@ -549,7 +550,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
     @Override
     protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
         HostModelUtil.createRootRegistry(managementModel.getRootResourceRegistration(), environment,
-                ignoredRegistry, this, processType, authorizer, modelControllerResource);
+                ignoredRegistry, this, processType, authorizer, modelControllerResource,
+                hostControllerInfo);
         VersionModelInitializer.registerRootResource(managementModel.getRootResource(), environment != null ? environment.getProductConfig() : null);
         CoreManagementResourceDefinition.registerDomainResource(managementModel.getRootResource(), authorizer.getWritableAuthorizerConfiguration());
         this.modelNodeRegistration = managementModel.getRootResourceRegistration();
@@ -633,7 +635,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
         boolean ok = false;
+        boolean isEmptyHost = false;
         boolean reachedServers = false;
+
         try {
             // Install server inventory callback
             ServerInventoryCallbackService.install(serviceTarget);
@@ -642,10 +646,15 @@ public class DomainModelControllerService extends AbstractControllerService impl
             DomainManagedServerCallbackHandler.install(serviceTarget);
             // Parse the host.xml and invoke all the ops. The ops should rollback on any Stage.RUNTIME failure
             List<ModelNode> hostBootOps = hostControllerConfigurationPersister.load();
+            if (hostBootOps.isEmpty()) { // booting with empty config
+                isEmptyHost = true;
+                ok = bootEmptyConfig();
+                return;
+            }
 
-            // We run the first op ("add-host") separately to let it set up the host ManagementResourceRegistration
+            // We run the first op ("/host=foo:add()") separately to let it set up the host ManagementResourceRegistration
             ModelNode addHostOp = hostBootOps.remove(0);
-            HostControllerLogger.ROOT_LOGGER.debug("Invoking the initial add-host op");
+            HostControllerLogger.ROOT_LOGGER.debug("Invoking the initial host=foo:add() op");
             //Disable model validation here since it will will fail
             ok = boot(Collections.singletonList(addHostOp), true, true);
 
@@ -860,6 +869,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
             }
         }
+    }
+
+    private boolean bootEmptyConfig() throws OperationFailedException, ConfigurationPersistenceException {
+        HostControllerLogger.ROOT_LOGGER.debug("Invoking initial empty config host controller boot");
+        boolean ok = boot(Collections.emptyList(), true, true);
+        // until a host is added with the host add op, there is no root description provider delegate. We just install a non-resolving one for now, so the
+        // CLI doesn't get a lot of NPEs from :read-resource-description etc.
+        SimpleResourceDefinition def = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(null, new NonResolvingResourceDescriptionResolver()));
+        rootResourceDefinition.setFakeDelegate(def);
+        // just initialize the persister and return, we have to wait for /host=foo:add()
+        hostControllerConfigurationPersister.initializeDomainConfigurationPersister(false);
+        return ok;
     }
 
     @Override
@@ -1338,6 +1359,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
         void setDelegate(DomainRootDefinition delegate, ManagementResourceRegistration root) {
             super.setDelegate(delegate);
             delegate.initialize(root);
+        }
+
+        // this is only used for providing a delegate before /host:add() is called. Once the host is added
+        // it will be replace with the real delegate.
+        void setFakeDelegate(ResourceDefinition delegate) {
+            super.setDelegate(delegate);
         }
 
         @Override

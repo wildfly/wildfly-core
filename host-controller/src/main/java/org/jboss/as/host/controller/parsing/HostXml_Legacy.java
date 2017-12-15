@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IS_DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -92,7 +93,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
+import org.jboss.as.host.controller.operations.HostAddHandler;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
@@ -210,7 +211,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+         final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -238,7 +239,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, DOMAIN_1_0);
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, DOMAIN_1_0);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -308,7 +309,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+        final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -340,7 +341,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -418,7 +419,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+        final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -454,7 +455,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -974,7 +975,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     /**
      * Add the operation to add the local host definition.
      */
-    private void addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
+    private ModelNode addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
 
         String resolvedHost =  hostName != null ? hostName : defaultHostControllerName;
 
@@ -982,20 +983,20 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         address.add(HOST, resolvedHost);
 
         // Add a step to setup the ManagementResourceRegistrations for the root host resource
-        final ModelNode hostAdd = new ModelNode();
-        hostAdd.get(OP).set(HostModelRegistrationHandler.OPERATION_NAME);
-        hostAdd.get(NAME).set(resolvedHost);
-        hostAdd.get(OP_ADDR).setEmptyList();
+        final ModelNode hostAddOp = new ModelNode();
+        hostAddOp.get(OP).set(HostAddHandler.OPERATION_NAME);
+        hostAddOp.get(OP_ADDR).set(address);
 
-        operationList.add(hostAdd);
+        operationList.add(hostAddOp);
 
         // Add a step to store the HC name
         ModelNode nameValue = hostName == null ? new ModelNode() : new ModelNode(hostName);
         final ModelNode writeName = Util.getWriteAttributeOperation(address, NAME, nameValue);
         operationList.add(writeName);
+        return hostAddOp;
     }
 
-    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final ModelNode hostAddOp)
             throws XMLStreamException {
 
         requireNoAttributes(reader);
@@ -1012,6 +1013,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasRemote) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.REMOTE.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(true);
                     switch (namespace.getMajorVersion()) {
                         case 1:
                             requireNoAttributes(reader);
@@ -1030,6 +1032,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasLocal) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.LOCAL.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(false);
                     switch (namespace) {
                         case DOMAIN_1_0:
                             parseRemoteDomainController1_0(reader, address, list);
@@ -1053,7 +1056,6 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                             }
                             break;
                     }
-
                     hasRemote = true;
                     break;
                 }
@@ -1063,13 +1065,6 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
         if (!hasLocal && !hasRemote) {
             throw ControllerLogger.ROOT_LOGGER.domainControllerMustBeDeclared(Element.REMOTE.getLocalName(), Element.LOCAL.getLocalName(), reader.getLocation());
-        }
-
-        if (hasLocal) {
-            final ModelNode update = new ModelNode();
-            update.get(OP_ADDR).set(address);
-            update.get(OP).set("write-local-domain-controller");
-            list.add(update);
         }
     }
 

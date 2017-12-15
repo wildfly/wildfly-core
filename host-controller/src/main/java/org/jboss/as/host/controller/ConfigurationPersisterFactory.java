@@ -44,6 +44,7 @@ import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.persistence.XmlConfigurationPersister;
+import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.parsing.DomainXml;
 import org.jboss.as.host.controller.parsing.HostXml;
@@ -64,10 +65,17 @@ public class ConfigurationPersisterFactory {
 
     // host.xml
     public static ExtensibleConfigurationPersister createHostXmlConfigurationPersister(final ConfigurationFile file, final HostControllerEnvironment environment,
-            ExecutorService executorService, ExtensionRegistry hostExtensionRegistry) {
-        HostXml hostXml = new HostXml(environment.getHostControllerName(), environment.getRunningModeControl().getRunningMode(),
+                                                                                       final ExecutorService executorService, final ExtensionRegistry hostExtensionRegistry,
+                                                                                       final LocalHostControllerInfo localHostControllerInfo) {
+        String defaultHostname = localHostControllerInfo.getLocalHostName();
+        if (environment.getRunningModeControl().isReloaded()) {
+            if (environment.getRunningModeControl().getReloadHostName() != null) {
+                defaultHostname = environment.getRunningModeControl().getReloadHostName();
+            }
+        }
+        HostXml hostXml = new HostXml(defaultHostname, environment.getRunningModeControl().getRunningMode(),
                 environment.isUseCachedDc(), Module.getBootModuleLoader(), executorService, hostExtensionRegistry);
-        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "host"), hostXml, hostXml);
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "host"), hostXml, hostXml, false);
         for (Namespace namespace : Namespace.domainValues()) {
             if (!namespace.equals(Namespace.CURRENT)) {
                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "host"), hostXml);
@@ -78,9 +86,22 @@ public class ConfigurationPersisterFactory {
     }
 
     // domain.xml
-    public static ExtensibleConfigurationPersister createDomainXmlConfigurationPersister(final ConfigurationFile file, ExecutorService executorService, ExtensionRegistry extensionRegistry) {
+    public static ExtensibleConfigurationPersister createDomainXmlConfigurationPersister(final ConfigurationFile file, ExecutorService executorService, ExtensionRegistry extensionRegistry, final HostControllerEnvironment environment) {
         DomainXml domainXml = new DomainXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml);
+
+        boolean suppressLoad = false;
+        ConfigurationFile.InteractionPolicy policy = file.getInteractionPolicy();
+        final boolean isReloaded = environment.getRunningModeControl().isReloaded();
+
+        if (!isReloaded && (policy == ConfigurationFile.InteractionPolicy.NEW && (file.getBootFile().exists() && file.getBootFile().length() != 0))) {
+            throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteDomainXmlWithEmpty(file.getBootFile().getName());
+        }
+
+        if (!isReloaded && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD)) {
+            suppressLoad = true;
+        }
+
+        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(file, new QName(Namespace.CURRENT.getUriString(), "domain"), domainXml, domainXml, suppressLoad);
         for (Namespace namespace : Namespace.domainValues()) {
             if (!namespace.equals(Namespace.CURRENT)) {
                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "domain"), domainXml);

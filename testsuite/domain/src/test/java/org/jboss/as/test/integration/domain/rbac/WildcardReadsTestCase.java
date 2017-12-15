@@ -251,8 +251,8 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
         ModelNode result = response.get(RESULT);
         assertEquals(result.toString(), ModelType.LIST, result.getType());
-        assertEquals(result.toString(), 1, result.asInt());
-        ModelNode entry = result.asList().get(0);
+        assertEquals(result.toString(), 2, result.asInt());
+        ModelNode entry = result.asList().get(1);
         Assert.assertEquals(PathAddress.pathAddress(HOST, host), PathAddress.pathAddress(entry.get(ADDRESS)));
 
 

@@ -32,6 +32,12 @@ public class CLIEmbedUtil {
                 StandardCopyOption.COPY_ATTRIBUTES);
     }
 
+    static void delConfigFile(final File root, String baseDirName, String base) throws IOException {
+        File configDir = new File(root, baseDirName + File.separatorChar + "configuration");
+        File baseFile = new File(configDir, base);
+        baseFile.delete();
+    }
+
     static void copyServerBaseDir(final File root, final String baseDirName, final String newbaseDirName, boolean force) throws IOException {
         // copy the base server directory (standalone etc to a new name to test changing jboss.server.base.dir etc)
         final File baseDir = new File(root + File.separator + baseDirName);

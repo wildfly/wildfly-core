@@ -157,7 +157,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                 dc.remove(REMOTE);
             }
             if (context.isBooting()) {
-                initializeLocalDomain();
+                initializeLocalDomain(null);
             }
         } else if (operation.hasDefined(VALUE, REMOTE)) {
             if (dc.has(LOCAL)) {
@@ -171,7 +171,12 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
     }
 
-    abstract void initializeLocalDomain();
+    /**
+     *
+     * @param localHostNameOverride - if this is not null this name will be used to override either the default, computed host name (see {@link org.jboss.as.host.controller.HostControllerEnvironment})
+     *                              or the configured name from host.xml (see {@link org.jboss.as.host.controller.parsing.HostXml_6}). If this value is null, then no override is present.
+     */
+    abstract void initializeLocalDomain(final String localHostNameOverride);
 
     abstract void secureRemoteDomain(OperationContext context, ModelNode operation, ModelNode remoteDC) throws OperationFailedException;
 
@@ -213,10 +218,16 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
         }
 
         @Override
-        void initializeLocalDomain() {
+        void initializeLocalDomain(final String localHostNameOverride) {
             hostControllerInfo.setMasterDomainController(true);
-            overallConfigPersister.initializeDomainConfigurationPersister(false);
-            domainController.initializeMasterDomainRegistry(rootRegistration, overallConfigPersister.getDomainPersister(),
+            if (localHostNameOverride != null) {
+                hostControllerInfo.setLocalHostName(localHostNameOverride);
+            }
+            if (localHostNameOverride == null) {
+                // for adding a host later, we don't use the domain persister
+                overallConfigPersister.initializeDomainConfigurationPersister(false);
+            }
+            domainController.initializeMasterDomainRegistry(rootRegistration, localHostNameOverride == null ? overallConfigPersister.getDomainPersister() : null,
                     contentRepository, localFileRepository, extensionRegistry, pathManager);
         }
 
@@ -288,7 +299,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
     private static class TestLocalDomainControllerAddHandler extends DomainControllerWriteAttributeHandler {
 
         @Override
-        void initializeLocalDomain() {
+        void initializeLocalDomain(final String hostName) {
         }
 
         @Override

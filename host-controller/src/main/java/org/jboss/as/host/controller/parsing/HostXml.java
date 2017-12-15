@@ -57,7 +57,7 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
     private final ExtensionXml extensionXml;
 
     public HostXml(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC, final ModuleLoader loader,
-            final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
+                   final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
         this.defaultHostControllerName = defaultHostControllerName;
         this.runningMode = runningMode;
         this.isCachedDc = isCachedDC;

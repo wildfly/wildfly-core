@@ -68,8 +68,12 @@ public abstract class LocalDomainControllerAddHandler implements OperationStepHa
             dc.remove(REMOTE);
         }
 
-        if (context.isBooting()) {
-            initializeDomain();
+        // check if this is /host=foo:add() being performed after HC boot.
+        final boolean hostAdd = context.getAttachment(HostAddHandler.HOST_ADD_AFTER_BOOT) == null ? false :
+                context.getAttachment(HostAddHandler.HOST_ADD_AFTER_BOOT).booleanValue();
+
+        if (context.isBooting() || hostAdd) {
+            initializeDomain(hostAdd ? context.getCurrentAddress().getLastElement().getValue() : null);
         } else {
             context.reloadRequired();
         }
@@ -84,7 +88,7 @@ public abstract class LocalDomainControllerAddHandler implements OperationStepHa
         });
     }
 
-    abstract void initializeDomain();
+    abstract void initializeDomain(final String hostName);
 
     private static class RealLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
         private final DomainControllerWriteAttributeHandler writeAttributeHandler;
@@ -93,15 +97,15 @@ public abstract class LocalDomainControllerAddHandler implements OperationStepHa
             this.writeAttributeHandler = writeAttributeHandler;
         }
 
-        void initializeDomain() {
-            writeAttributeHandler.initializeLocalDomain();
+        void initializeDomain(final String hostName) {
+            writeAttributeHandler.initializeLocalDomain(hostName);
         }
     }
 
     private static class TestLocalDomainControllerAddHandler extends LocalDomainControllerAddHandler {
 
         @Override
-        void initializeDomain() {
+        void initializeDomain(final String hostName) {
         }
     }
 }
