@@ -239,7 +239,9 @@ class SaslServerDefinitions {
                 ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
                 if (properties.isDefined()) {
                     propertiesMap = new HashMap<String, String>();
-                    properties.keys().forEach((String s) -> propertiesMap.put(s, properties.require(s).asString()));
+                    for (String s : properties.keys()) {
+                        propertiesMap.put(s, properties.require(s).asString());
+                    }
                 } else {
                     propertiesMap = null;
                 }

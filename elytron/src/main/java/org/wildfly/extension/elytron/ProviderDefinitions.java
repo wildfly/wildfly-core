@@ -144,7 +144,9 @@ class ProviderDefinitions {
                 ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
                 if (configuration.isDefined()) {
                     properties = new Properties();
-                    configuration.keys().forEach((String s) -> properties.setProperty(s, configuration.require(s).asString()));
+                    for (String s : configuration.keys()) {
+                        properties.setProperty(s, configuration.require(s).asString());
+                    }
                 } else {
                     properties = null;
                 }

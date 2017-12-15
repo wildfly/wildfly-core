@@ -221,7 +221,9 @@ class KerberosSecurityFactoryDefinition {
                         .setWrapGssCredential(wrapGssCredential)
                         .setCheckKeyTab(required)
                         .setOptions(options);
-                    mechanismOids.forEach(builder::addMechanismOid);
+                    for (Oid mechanismOid : mechanismOids) {
+                        builder.addMechanismOid(mechanismOid);
+                    }
 
                     try {
                         return CredentialSecurityFactory.from(builder.build());

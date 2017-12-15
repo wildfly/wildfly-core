@@ -59,7 +59,9 @@ class TrivialCapabilityServiceRemoveHandler extends ServiceRemoveStepHandler imp
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
         final String pathValue = context.getCurrentAddressValue();
-        allCapabilities.forEach(r -> context.deregisterCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName()));
+        for (RuntimeCapability r : allCapabilities) {
+            context.deregisterCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName());
+        }
     }
 
     /**

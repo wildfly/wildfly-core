@@ -210,10 +210,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 result.get(ElytronDescriptionConstants.NAME).set(principalName);
 
                 ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
-                identity.getAttributes().entries().forEach(entry -> {
+                for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
-                    entry.forEach(entryNode::add);
-                });
+                    for (String s : entry) {
+                        entryNode.add(s);
+                    }
+                }
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotReadIdentity(principalName, e);
             }
@@ -259,7 +261,9 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             try {
                 Attributes attributes = new MapAttributes(authorizationIdentity.getAttributes());
                 String name = NAME.resolveModelAttribute(context, operation).asString();
-                VALUES.resolveModelAttribute(context, operation).asList().forEach(modelNode -> attributes.addLast(name, modelNode.asString()));
+                for (ModelNode modelNode : VALUES.resolveModelAttribute(context, operation).asList()) {
+                    attributes.addLast(name, modelNode.asString());
+                }
 
                 realmIdentity.setAttributes(attributes);
             } catch (RealmUnavailableException e) {

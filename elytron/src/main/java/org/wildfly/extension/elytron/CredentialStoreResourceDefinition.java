@@ -32,14 +32,13 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -172,8 +171,11 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition ENTRY_TYPE;
 
     static {
-        List<String> entryTypes = Stream.of(SUPPORTED_CREDENTIAL_TYPES).map(Class::getCanonicalName)
-                .collect(Collectors.toList());
+        List<String> entryTypes = new ArrayList<>();
+        for (Class<?> SUPPORTED_CREDENTIAL_TYPE : SUPPORTED_CREDENTIAL_TYPES) {
+            String canonicalName = SUPPORTED_CREDENTIAL_TYPE.getCanonicalName();
+            entryTypes.add(canonicalName);
+        }
         ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
                 .setAllowedValues(entryTypes.toArray(new String[entryTypes.size()]))
                 .build();
@@ -275,7 +277,9 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             ModelNode implAttrModel = IMPLEMENTATION_PROPERTIES.resolveModelAttribute(context, model);
             if (implAttrModel.isDefined()) {
                 implementationAttributes = new HashMap<>();
-                implAttrModel.keys().forEach((String s) -> implementationAttributes.put(s, implAttrModel.require(s).asString()));
+                for (String s : implAttrModel.keys()) {
+                    implementationAttributes.put(s, implAttrModel.require(s).asString());
+                }
             } else {
                 implementationAttributes = null;
             }
@@ -473,7 +477,12 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
             try {
-                result.set(credentialStoreService.getValue().getAliases().stream().map(ModelNode::new).collect(Collectors.toList()));
+                List<ModelNode> list = new ArrayList<>();
+                for (String s : credentialStoreService.getValue().getAliases()) {
+                    ModelNode modelNode = new ModelNode(s);
+                    list.add(modelNode);
+                }
+                result.set(list);
             } catch (CredentialStoreException e) {
                 throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
             }

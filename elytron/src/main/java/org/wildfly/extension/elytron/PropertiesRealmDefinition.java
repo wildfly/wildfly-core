@@ -201,7 +201,9 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
                 @Override
                 public void dispose() {
-                    callbackHandles.forEach(h -> h.remove());
+                    for (Handle h : callbackHandles) {
+                        h.remove();
+                    }
                 }
 
                 private File resolveFileLocation(String path, String relativeTo) {
