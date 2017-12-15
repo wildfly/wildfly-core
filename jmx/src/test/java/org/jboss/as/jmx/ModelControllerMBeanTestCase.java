@@ -257,9 +257,22 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         checkSameMBeans(instances, objectNames);
 
-        assertContainsNames(objectNames,
-                LEGACY_ROOT_NAME, LEGACY_INTERFACE_NAME, LEGACY_SOCKET_BINDING_GROUP_NAME, LEGACY_SERVER_SOCKET_BINDING_NAME, LEGACY_SUBSYSTEM_NAME,
-                EXPR_ROOT_NAME, EXPR_INTERFACE_NAME, EXPR_SOCKET_BINDING_GROUP_NAME, EXPR_SERVER_SOCKET_BINDING_NAME, EXPR_SUBSYSTEM_NAME);
+        final ObjectName[] names = {LEGACY_ROOT_NAME, LEGACY_INTERFACE_NAME, LEGACY_SOCKET_BINDING_GROUP_NAME, LEGACY_SERVER_SOCKET_BINDING_NAME, LEGACY_SUBSYSTEM_NAME,
+                EXPR_ROOT_NAME, EXPR_INTERFACE_NAME, EXPR_SOCKET_BINDING_GROUP_NAME, EXPR_SERVER_SOCKET_BINDING_NAME, EXPR_SUBSYSTEM_NAME};
+        assertContainsNames(objectNames, names);
+
+        for (ObjectName name : names) {
+            checkQuerySingleMBean(connection, name);
+        }
+    }
+
+    private void checkQuerySingleMBean(MBeanServerConnection connection, ObjectName filter) throws Exception {
+        Set<ObjectInstance> instances = connection.queryMBeans(filter, null);
+        Set<ObjectName> objectNames = connection.queryNames(filter, null);
+        Assert.assertEquals("Expected 1 for " + filter, 1, instances.size());
+        Assert.assertEquals("Expected 1 for " + filter, 1, objectNames.size());
+        Assert.assertEquals(filter, instances.iterator().next().getObjectName());
+        Assert.assertEquals(filter, objectNames.iterator().next());
     }
 
     @Test

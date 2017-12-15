@@ -153,9 +153,6 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectInstance> getResult() {
-                if (set.size() == 1 && set.contains(rootObjectInstance)) {
-                    return Collections.emptySet();
-                }
                 return set;
             }
         }).iterate();
@@ -200,9 +197,6 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectName> getResult() {
-                if (set.size() == 1 && set.contains(rootObjectInstance.getObjectName())) {
-                  return Collections.emptySet();
-                }
                 return set;
             }
         }).iterate();
