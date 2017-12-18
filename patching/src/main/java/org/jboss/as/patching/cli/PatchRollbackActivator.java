@@ -39,7 +39,7 @@ public class PatchRollbackActivator extends AbstractCommandActivator {
     @Override
     public boolean isActivated(ParsedCommand command) {
         try {
-            AbstractDistributionCommand cmd = (AbstractDistributionCommand) command.getCommand();
+            AbstractDistributionCommand cmd = (AbstractDistributionCommand) command.command();
             return !getPatches(getCommandContext(), cmd, cmd.getPatchStream(), cmd.getHost()).isEmpty();
         } catch (Exception ex) {
             // Could be, among other problems an invalid installation (such as in test)

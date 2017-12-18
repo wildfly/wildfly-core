@@ -31,7 +31,7 @@ import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.completer.OptionCompleter;
 import org.aesh.command.converter.Converter;
-import org.aesh.command.impl.internal.ProcessedCommand;
+import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.option.Option;
 import org.aesh.command.validator.OptionValidatorException;
 import org.jboss.as.cli.CommandContext;
@@ -105,7 +105,7 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
     public static class HostsActivator extends AbstractOptionActivator implements DomainOptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             return (getCommandContext().getModelControllerClient() != null)
                     && getCommandContext().isDomainMode();
         }
@@ -114,7 +114,7 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
     public static class DisconnectedActivator extends AbstractOptionActivator {
 
         @Override
-        public boolean isActivated(ProcessedCommand processedCommand) {
+        public boolean isActivated(ParsedCommand processedCommand) {
             return getCommandContext().getModelControllerClient() == null;
         }
     };
