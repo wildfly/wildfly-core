@@ -19,6 +19,7 @@
 package org.wildfly.extension.io;
 
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_0_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.extension.io.IOExtension.SUBSYSTEM_PATH;
 import static org.wildfly.extension.io.IOExtension.WORKER_PATH;
@@ -61,6 +62,11 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         testTransformation(ModelTestControllerVersion.EAP_7_0_0);
     }
 
+    @Test
+    public void testTransformerEAP710() throws Exception {
+        testTransformation(EAP_7_1_0);
+    }
+
     private KernelServices buildKernelServices(ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
         return this.buildKernelServices(this.getSubsystemXml(), controllerVersion, version, mavenResourceURLs);
     }
@@ -80,50 +86,50 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     }
 
     private void testTransformation(final ModelTestControllerVersion controller) throws Exception {
-        final ModelVersion version = ModelVersion.create(2,0);
+        final ModelVersion version = controller.getSubsystemModelVersion(getMainSubsystemName());
 
         KernelServices services = this.buildKernelServices(controller, version,
-                controller.getCoreMavenGroupId()+":wildfly-io:"+controller.getCoreVersion());
+                controller.getCoreMavenGroupId() + ":wildfly-io:" + controller.getCoreVersion());
 
         // check that both versions of the legacy model are the same and valid
         checkSubsystemModelTransformation(services, version, null, false);
 
         ModelNode transformed = services.readTransformedModel(version);
-
-
+        Assert.assertTrue(transformed.isDefined());
     }
 
     @Test
-        public void testRejectingTransformersEAP_7_0_0() throws Exception {
-            testRejectingTransformers(EAP_7_0_0, IOSubsystemTransformers.VERSION_2_0);
-        }
+    public void testRejectingTransformersEAP_7_0_0() throws Exception {
+        testRejectingTransformers(EAP_7_0_0);
+    }
 
-    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, ModelVersion messagingVersion) throws Exception {
-            //Boot up empty controllers with the resources needed for the ops coming from the xml to work
-            KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
-            builder.createLegacyKernelServicesBuilder(createAdditionalInitialization(), controllerVersion, messagingVersion)
-                    .addMavenResourceURL(controllerVersion.getCoreMavenGroupId()+":wildfly-io:"+controllerVersion.getCoreVersion())
-                    .dontPersistXml();
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
+        ModelVersion modelVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
+        //Boot up empty controllers with the resources needed for the ops coming from the xml to work
+        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
+        builder.createLegacyKernelServicesBuilder(createAdditionalInitialization(), controllerVersion, modelVersion)
+                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-io:" + controllerVersion.getCoreVersion())
+                .dontPersistXml();
 
-            KernelServices mainServices = builder.build();
-            assertTrue(mainServices.isSuccessfulBoot());
-            assertTrue(mainServices.getLegacyServices(messagingVersion).isSuccessfulBoot());
+        KernelServices mainServices = builder.build();
+        assertTrue(mainServices.isSuccessfulBoot());
+        assertTrue(mainServices.getLegacyServices(modelVersion).isSuccessfulBoot());
 
-            List<ModelNode> ops = builder.parseXmlResource("io-1.1-reject.xml");
-            PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
-            ModelTestUtils.checkFailedTransformedBootOperations(mainServices, messagingVersion, ops, new FailedOperationTransformationConfig()
-                    .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
-                            new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                    WorkerResourceDefinition.STACK_SIZE,
-                                    WorkerResourceDefinition.WORKER_IO_THREADS,
-                                    WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
-                                    WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
-                                    )
-                    )
-                    .addFailedAttribute(subsystemAddress.append(WORKER_PATH, PathElement.pathElement("outbound-bind-address")),
-                            FailedOperationTransformationConfig.REJECTED_RESOURCE
-                    )
-            );
-        }
+        List<ModelNode> ops = builder.parseXmlResource("io-1.1-reject.xml");
+        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
+                        new FailedOperationTransformationConfig.RejectExpressionsConfig(
+                                WorkerResourceDefinition.STACK_SIZE,
+                                WorkerResourceDefinition.WORKER_IO_THREADS,
+                                WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
+                                WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
+                        )
+                )
+                .addFailedAttribute(subsystemAddress.append(WORKER_PATH, PathElement.pathElement("outbound-bind-address")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+        );
+    }
 
 }

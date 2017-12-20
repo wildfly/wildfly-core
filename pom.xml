@@ -143,7 +143,7 @@
         <version.org.wildfly.common>1.2.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.openssl>1.0.2.Final</version.org.wildfly.openssl>
-        <version.org.wildfly.legacy.test>2.0.3.Final</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>3.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <version.org.wildfly.security.elytron>1.2.0.Beta11</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.Final</version.org.wildfly.security.elytron.tool>

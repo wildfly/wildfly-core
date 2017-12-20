@@ -55,6 +55,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
 //        for (URL url : urls) {
 //            System.out.println(url);
 //        }
+         registerAsParallelCapable();
     }
 
     protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
