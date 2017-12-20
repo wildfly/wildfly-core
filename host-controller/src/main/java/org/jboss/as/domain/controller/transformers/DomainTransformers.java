@@ -73,7 +73,7 @@ public class DomainTransformers {
     public static void initializeDomainRegistry(final TransformerRegistry registry) {
 
         //The chains for transforming will be as follows
-        //For JBoss EAP: 4.0.0 -> 1.8.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
+        //For JBoss EAP: 5.0.0 -> 4.0.0 -> 1.8.0 -> 1.7.0 -> 1.6.0 -> 1.5.0
 
         registerRootTransformers(registry);
         registerChainedManagementTransformers(registry);
