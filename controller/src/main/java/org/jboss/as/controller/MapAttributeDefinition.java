@@ -145,8 +145,8 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
 
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-        if (attributeMarshaller.isMarshallable(this,resourceModel,marshallDefault)){
-            attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        if (getMarshaller().isMarshallable(this,resourceModel,marshallDefault)){
+            getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
         }
     }
 

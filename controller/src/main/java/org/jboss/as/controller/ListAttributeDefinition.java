@@ -174,7 +174,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
 
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
     }
 
     /**

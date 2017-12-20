@@ -50,8 +50,8 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 //todo maybe replace with SimpleMapAttributeDefinition?
 public final class PropertiesAttributeDefinition extends MapAttributeDefinition {
 
-    final boolean wrapXmlElement;
-    final String wrapperElement;
+    private final boolean wrapXmlElement;
+    private final String wrapperElement;
 
     private PropertiesAttributeDefinition(final Builder builder) {
         super(builder);
