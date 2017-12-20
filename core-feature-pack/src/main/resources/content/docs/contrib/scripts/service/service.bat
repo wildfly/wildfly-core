@@ -113,6 +113,7 @@ echo(
 
 rem defaults
 set SHORTNAME=Wildfly
+rem NO quotes around the display name here !
 set DISPLAYNAME=WildFly
 rem NO quotes around the description here !
 set DESCRIPTION=WildFly Application Server
@@ -147,10 +148,11 @@ echo Usage:
 echo(
 echo   service install ^<options^>  , where the options are:
 echo(
-echo     /startup                  : Set the service to auto start
+echo     /startup                    : Set the service to auto start
 echo                                 Not specifying sets the service to manual
 echo(
 echo     /jbossuser ^<username^>     : JBoss username to use for the shutdown command.
+echo(
 echo     /jbosspass ^<password^>     : Password for /jbossuser
 echo(
 echo     /controller ^<host:port^>   : The host:port of the management interface.
@@ -165,8 +167,13 @@ echo(
 echo Options to use when multiple services or different accounts are needed:
 echo(
 echo     /name ^<servicename^>       : The name of the service
-echo(
 echo                                 default: %SHORTNAME%
+echo(
+echo     /display ^<displayname^>    : The display name of the service, use double
+echo                                 quotes to allow spaces.
+echo                                 Maximum 256 characters.
+echo                                 default: %DISPLAYNAME%
+echo(
 echo     /desc ^<description^>       : The description of the service, use double
 echo                                 quotes to allow spaces.
 echo                                 Maximum 1024 characters.
@@ -178,12 +185,14 @@ echo                                 Use an account name in the form of
 echo                                 DomainName\UserName
 echo                                 default: not used, the service runs as
 echo                                 Local System Account.
+echo(
 echo     /servicepass ^<password^>   : password for /serviceuser
 echo(
 echo Advanced options:
 echo(
 echo     /config ^<xmlfile^>         : The server-config to use
 echo                                 default: standalone.xml / domain.xml
+echo(
 echo     /hostconfig ^<xmlfile^>     : domain mode only, the host config to use
 echo                                 default: host.xml
 echo(
@@ -195,13 +204,14 @@ echo(
 echo     /loglevel ^<level^>         : The log level for the service:  Error, Info,
 echo                                 Warn or Debug ^(Case insensitive^)
 echo                                 default: %LOGLEVEL%
+echo(
 echo     /logpath ^<path^>           : Path of the log
 echo                                 default depends on domain or standalone mode
 echo                                 /base applies when /logpath is not set.
 echo                                   %JBOSS_HOME%\domain\log
 echo                                   %JBOSS_HOME%\standalone\log
 echo(
-echo     /debug                    : run the service install in debug mode
+echo     /debug                      : run the service install in debug mode
 echo(
 echo Other commands:
 echo(
@@ -300,7 +310,6 @@ if /I "%~1"== "/name" (
     set T=%~2
     if not "!T:~0,1!"=="/" (
       set SHORTNAME=%~2
-      set DISPLAYNAME=%~2
     )
   )
   if "!SHORTNAME!" == "" (
@@ -311,6 +320,23 @@ if /I "%~1"== "/name" (
   shift
   goto LoopArgs
 )
+if /I "%~1"== "/display" (
+  set DISPLAYNAME=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set DISPLAYNAME=%~2
+    )
+  )
+  if "!DISPLAYNAME!" == "" (
+    echo ERROR: You need to specify a service display name, maximum of 256 characters
+    goto endBatch
+  )
+  shift
+  shift
+  goto LoopArgs
+)
+
 if /I "%~1"== "/desc" (
   set DESCRIPTION=
   if not "%~2"=="" (
@@ -491,6 +517,7 @@ if /I "%ISDEBUG%" == "true" (
   echo JBOSS_HOME="%JBOSS_HOME%"
   echo RUNAS=%RUNAS%
   echo SHORTNAME="%SHORTNAME%"
+  echo DISPLAYNAME="%DISPLAYNAME%"
   echo DESCRIPTION="%DESCRIPTION%"
   echo STARTPARAM=%STARTPARAM%
   echo STOPPARAM=%STOPPARAM%
@@ -510,11 +537,9 @@ if /I "%ISDEBUG%" == "true" (
   @echo on
 )
 
-@rem quotes around the "%DESCRIPTION%" but nowhere else
-echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName=%DISPLAYNAME% --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
-
-%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName=%DISPLAYNAME% --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
-@rem %PRUNSRV% install "%SHORTNAME%" "%RUNAS%" --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel="%LOGLEVEL%" --LogPath="%LOGPATH%" --LogPrefix=service --StdOutput="%STDOUT%" --StdError="%STDERR%" --StartMode=exe --Startup="%STARTUP_MODE%" --StartImage=cmd.exe --StartPath="%START_PATH%" ++StartParams="%STARTPARAM%" --StopMode=exe --StopImage=cmd.exe --StopPath="%STOP_PATH%"  ++StopParams="%STOPPARAM%"
+@rem quotes around the "%DESCRIPTION%" and "%DISPLAYNAME" but nowhere else
+echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
+%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
 
 @if /I "%ISDEBUG%" == "true" (
   @echo off
