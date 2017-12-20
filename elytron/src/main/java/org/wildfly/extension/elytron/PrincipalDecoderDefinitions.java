@@ -52,7 +52,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
-import org.wildfly.security.asn1.OidsUtil;
+import org.wildfly.security.asn1.util.OidsUtil;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.x500.X500AttributePrincipalDecoder;
 
