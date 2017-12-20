@@ -39,10 +39,8 @@ class WriteAutoDeployExplodedAttributeHandler extends AbstractWriteAttributeHand
     }
 
     @Override
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
 
-        boolean enable = newValue.resolve().asBoolean();
-
-        scanner.setAutoDeployExplodedContent(enable);
+        scanner.setAutoDeployExplodedContent(resolvedNewValue.asBoolean());
     }
 }

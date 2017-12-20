@@ -39,9 +39,9 @@ class WriteEnabledAttributeHandler extends AbstractWriteAttributeHandler {
     }
 
     @Override
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
 
-        boolean enable = newValue.resolve().asBoolean();
+        boolean enable = resolvedNewValue.asBoolean();
         if (enable) {
             scanner.startScanner();
         }

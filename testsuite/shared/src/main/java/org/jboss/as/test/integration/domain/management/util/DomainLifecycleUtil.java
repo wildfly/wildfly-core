@@ -50,6 +50,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
@@ -602,8 +604,12 @@ public class DomainLifecycleUtil {
             ModelNode address = new ModelNode();
             address.add("host", configuration.getHostName());
             address.add("server-config", server);
-            String group = readAttribute("group", address).resolve().asString();
-            if (!readAttribute("auto-start", address).resolve().asBoolean()) {
+            String group = readAttribute("group", address).asString();
+            try {
+                if (!ExpressionResolver.TEST_RESOLVER.resolveExpressions(readAttribute("auto-start", address)).asBoolean()) {
+                    continue;
+                }
+            } catch (OperationFailedException e) {
                 continue;
             }
             // Make sure the server is started before trying to contact it

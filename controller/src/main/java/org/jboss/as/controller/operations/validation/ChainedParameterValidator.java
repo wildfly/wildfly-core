@@ -31,7 +31,7 @@ import org.wildfly.common.Assert;
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class ChainedParameterValidator extends AbstractParameterValidator implements MinMaxValidator, AllowedValuesValidator {
+public class ChainedParameterValidator implements ParameterValidator, MinMaxValidator, AllowedValuesValidator {
     private final ParameterValidator[] validators;
 
 

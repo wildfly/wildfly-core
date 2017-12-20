@@ -26,14 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
 
-import javax.management.openmbean.ArrayType;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -44,8 +36,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.jmx.logging.JmxLogger;
+import javax.management.openmbean.ArrayType;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularType;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.as.jmx.model.TypeConverters.TypeConverter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -785,7 +787,7 @@ public class ExpressionTypeConverterUnitTestCase {
     }
 
     @Test
-    public void testUndefinedTypeEmptyConverter() {
+    public void testUndefinedTypeEmptyConverter() throws OperationFailedException {
         TypeConverter converter = getConverter(new ModelNode());
         Assert.assertEquals(SimpleType.STRING, converter.getOpenType());
 
@@ -795,7 +797,7 @@ public class ExpressionTypeConverterUnitTestCase {
         node.protect();
 
         String json = assertCast(String.class, converter.fromModelNode(node));
-        Assert.assertEquals(node.resolve(), ModelNode.fromJSONString(json));
+        Assert.assertEquals(ExpressionResolver.TEST_RESOLVER.resolveExpressions(node), ModelNode.fromJSONString(json));
         Assert.assertEquals(json, assertCast(String.class, converter.fromModelNode(node)));
         assertToArray(converter, json);
     }

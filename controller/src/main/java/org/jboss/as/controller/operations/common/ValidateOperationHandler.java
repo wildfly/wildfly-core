@@ -133,7 +133,7 @@ public class ValidateOperationHandler implements OperationStepHandler {
                 if (authorize(context, op, operation).getDecision() == Decision.DENY) {
                     context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.managementResourceNotFoundMessage(addr));
                 } else {
-                    new OperationValidator(context.getResourceRegistration(), false, false).validateOperation(op);
+                    new OperationValidator(context, context.getResourceRegistration(), false, false, true).validateOperation(op);
                 }
             } catch (IllegalArgumentException e) {
                 context.getFailureDescription().set(e.getMessage());

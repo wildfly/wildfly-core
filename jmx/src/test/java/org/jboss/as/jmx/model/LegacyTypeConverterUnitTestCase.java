@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.jmx.logging.JmxLogger;
 
 import org.jboss.as.jmx.model.TypeConverters.TypeConverter;
@@ -662,7 +664,7 @@ public class LegacyTypeConverterUnitTestCase {
     }
 
     @Test
-    public void testPropertyTypeExpressionConverter() {
+    public void testPropertyTypeExpressionConverter() throws OperationFailedException {
         ModelNode description = createDescription(ModelType.PROPERTY);
         TypeConverter converter = getConverter(description);
 
@@ -670,7 +672,7 @@ public class LegacyTypeConverterUnitTestCase {
         node.set("name", "${this.should.not.exist.!!!!!:value}");
         node.protect();
 
-        ModelNode expected = node.clone().resolve();
+        ModelNode expected = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node.clone());
 
         Assert.assertEquals(SimpleType.STRING, converter.getOpenType());
         String dmr = assertCast(String.class, converter.fromModelNode(node));
@@ -689,7 +691,7 @@ public class LegacyTypeConverterUnitTestCase {
         node.set("name", "${this.should.not.exist.!!!!!:1}");
         node.protect();
 
-        ModelNode expected = node.clone().resolve();
+        ModelNode expected = ExpressionResolver.TEST_RESOLVER.resolveExpressions(node.clone());
 
         Assert.assertEquals(SimpleType.STRING, converter.getOpenType());
         String dmr = assertCast(String.class, converter.fromModelNode(node));
@@ -845,7 +847,7 @@ public class LegacyTypeConverterUnitTestCase {
     }
 
     @Test
-    public void testUndefinedTypeEmptyConverter() {
+    public void testUndefinedTypeEmptyConverter() throws OperationFailedException {
         TypeConverter converter = getConverter(new ModelNode());
         Assert.assertEquals(SimpleType.STRING, converter.getOpenType());
 
@@ -855,7 +857,7 @@ public class LegacyTypeConverterUnitTestCase {
         node.protect();
 
         String json = assertCast(String.class, converter.fromModelNode(node));
-        Assert.assertEquals(node.resolve(), ModelNode.fromJSONString(json));
+        Assert.assertEquals(ExpressionResolver.TEST_RESOLVER.resolveExpressions(node), ModelNode.fromJSONString(json));
         Assert.assertEquals(json, assertCast(String.class, converter.fromModelNode(node)));
         assertToArray(converter, json);
     }

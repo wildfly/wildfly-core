@@ -37,8 +37,7 @@ public class WriteDeploymentTimeoutAttributeHandler extends AbstractWriteAttribu
         super(DeploymentScannerDefinition.DEPLOYMENT_TIMEOUT);
     }
 
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
-        final long timeout = newValue.resolve().asLong();
-        scanner.setDeploymentTimeout(timeout);
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
+        scanner.setDeploymentTimeout(resolvedNewValue.asLong());
     }
 }

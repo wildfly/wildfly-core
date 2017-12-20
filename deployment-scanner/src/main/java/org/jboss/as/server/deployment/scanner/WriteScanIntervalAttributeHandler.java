@@ -39,9 +39,9 @@ class WriteScanIntervalAttributeHandler extends AbstractWriteAttributeHandler {
     }
 
     @Override
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
 
-        int interval = newValue.resolve().asInt();
+        int interval = resolvedNewValue.asInt();
         scanner.setScanInterval(interval);
     }
 }

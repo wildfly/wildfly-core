@@ -39,10 +39,8 @@ class WriteAutoDeployXMLAttributeHandler extends AbstractWriteAttributeHandler {
     }
 
     @Override
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
 
-        boolean enable = newValue.resolve().asBoolean();
-
-        scanner.setAutoDeployXMLContent(enable);
+        scanner.setAutoDeployXMLContent(resolvedNewValue.asBoolean());
     }
 }

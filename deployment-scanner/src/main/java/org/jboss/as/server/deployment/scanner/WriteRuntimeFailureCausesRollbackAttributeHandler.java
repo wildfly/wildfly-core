@@ -37,8 +37,8 @@ class WriteRuntimeFailureCausesRollbackAttributeHandler extends AbstractWriteAtt
     }
 
     @Override
-    protected void updateScanner(DeploymentScanner scanner, ModelNode newValue) {
-        boolean rollback = newValue.resolve().asBoolean();
+    protected void updateScanner(DeploymentScanner scanner, ModelNode resolvedNewValue) {
+        boolean rollback = resolvedNewValue.asBoolean();
         scanner.setRuntimeFailureCausesRollback(rollback);
     }
 

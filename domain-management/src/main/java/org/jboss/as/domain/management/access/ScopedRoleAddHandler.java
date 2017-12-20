@@ -75,12 +75,6 @@ abstract class ScopedRoleAddHandler extends AbstractAddStepHandler {
                 enhanced.add(new SimpleAttributeDefinitionBuilder((SimpleAttributeDefinition)current)
                 .setValidator(new ParameterValidator() {
                     @Override
-                    public void validateResolvedParameter(String parameterName, ModelNode value)
-                            throws OperationFailedException {
-                        validateParameter(parameterName, value);
-                    }
-
-                    @Override
                     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
                         Set<String> standardRoles = authorizerConfiguration.getStandardRoles();
                         String specifiedRole = value.asString();

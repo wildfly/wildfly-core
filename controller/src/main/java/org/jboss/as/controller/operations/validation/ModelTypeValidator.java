@@ -177,14 +177,6 @@ public class ModelTypeValidator implements ParameterValidator {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        validateParameter(parameterName, value.resolve());
-    }
-
     private boolean matches(ModelNode value, ModelType validType) {
         if (validType == value.getType()) {
             return true;

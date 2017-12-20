@@ -46,7 +46,7 @@ abstract class AbstractWriteAttributeHandler extends org.jboss.as.controller.Abs
 
     @Override
     protected boolean applyUpdateToRuntime(final OperationContext context, final ModelNode operation,
-            final String attributeName, final ModelNode newValue, final ModelNode currentValue,
+            final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue,
             final HandbackHolder<DeploymentScanner> handbackHolder) throws OperationFailedException {
 
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
@@ -56,7 +56,7 @@ abstract class AbstractWriteAttributeHandler extends org.jboss.as.controller.Abs
             throw new OperationFailedException(DeploymentScannerLogger.ROOT_LOGGER.scannerNotConfigured());
         } else if (controller.getState() == ServiceController.State.UP) {// https://issues.jboss.org/browse/WFCORE-1635
             DeploymentScanner scanner = (DeploymentScanner) controller.getValue();
-            updateScanner(scanner, newValue);
+            updateScanner(scanner, resolvedValue);
             handbackHolder.setHandback(scanner);
         }
 
@@ -66,8 +66,8 @@ abstract class AbstractWriteAttributeHandler extends org.jboss.as.controller.Abs
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                                          ModelNode valueToRestore, ModelNode valueToRevert, DeploymentScanner handback) throws OperationFailedException {
-        updateScanner(handback, valueToRestore.resolve());
+        updateScanner(handback, context.resolveExpressions(valueToRestore));
     }
 
-    protected abstract void updateScanner(DeploymentScanner scanner, ModelNode newValue);
+    protected abstract void updateScanner(DeploymentScanner scanner, ModelNode resolvedNewValue);
 }

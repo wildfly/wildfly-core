@@ -42,9 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.EntryType;
@@ -58,20 +60,28 @@ import org.jboss.dmr.ModelType;
  */
 public class OperationValidator {
 
+    private final ExpressionResolver expressionResolver;
     private final ImmutableManagementResourceRegistration root;
     private final boolean validateDescriptions;
     private final boolean includeOperationInError;
     private final boolean exitOnError;
 
     public OperationValidator(final ImmutableManagementResourceRegistration root) {
-        this(root, true, true);
+        this(ExpressionResolver.SIMPLE, root, true, true, true);
     }
 
+    @Deprecated
     public OperationValidator(final ImmutableManagementResourceRegistration root, boolean validateDescriptions, boolean includeOperationInError) {
-        this(root, true, true, true);
+        this(ExpressionResolver.SIMPLE, root, true, true, true);
     }
 
+    @Deprecated
     public OperationValidator(final ImmutableManagementResourceRegistration root, boolean validateDescriptions, boolean includeOperationInError, boolean exitOnError) {
+        this(ExpressionResolver.SIMPLE, root, validateDescriptions, includeOperationInError, exitOnError);
+    }
+
+    public OperationValidator(final ExpressionResolver expressionResolver, final ImmutableManagementResourceRegistration root, boolean validateDescriptions, boolean includeOperationInError, boolean exitOnError) {
+        this.expressionResolver = expressionResolver;
         this.root = root;
         this.validateDescriptions = validateDescriptions;
         this.includeOperationInError = includeOperationInError;
@@ -134,7 +144,7 @@ public class OperationValidator {
         final Map<String, ModelNode> describedProperties = getDescribedRequestProperties(operation, description);
         final Map<String, ModelNode> actualParams = getActualRequestProperties(operation);
 
-        checkActualOperationParamsAreDescribed(description, operation, describedProperties, actualParams);
+        checkActualOperationParamsAreDescribed(operation, describedProperties, actualParams);
         checkAllRequiredPropertiesArePresent(description, operation, describedProperties, actualParams);
         checkParameterTypes(description, operation, describedProperties, actualParams);
 
@@ -166,7 +176,7 @@ public class OperationValidator {
         return requestProperties;
     }
 
-    private void checkActualOperationParamsAreDescribed(final ModelNode description, final ModelNode operation, final Map<String, ModelNode> describedProperties, final Map<String, ModelNode> actualParams) {
+    private void checkActualOperationParamsAreDescribed(final ModelNode operation, final Map<String, ModelNode> describedProperties, final Map<String, ModelNode> actualParams) {
         for (String paramName : actualParams.keySet()) {
             final ModelNode param = actualParams.get(paramName);
             if(! param.isDefined()) {
@@ -241,7 +251,7 @@ public class OperationValidator {
                 throw ControllerLogger.ROOT_LOGGER.validationFailedCouldNotConvertParamToType(paramName, modelType, formatOperationForMessage(operation));
             }
             checkRange(operation, description, paramName, modelType, describedProperties.get(paramName), value);
-            checkList(operation, paramName, modelType, describedProperties.get(paramName), value);
+            checkList(operation, paramName, describedProperties.get(paramName), value);
         }
     }
 
@@ -259,7 +269,7 @@ public class OperationValidator {
                         throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.invalidDescriptionMinMaxForParameterHasWrongType(MIN, paramName, ModelType.BIG_DECIMAL, getPathAddress(operation), description));
                         return;
                     }
-                    if (value.asBigDecimal().compareTo(min) == -1) {
+                    if (value.asBigDecimal().compareTo(min) < 0) {
                         throw ControllerLogger.ROOT_LOGGER.validationFailedValueIsSmallerThanMin(value.asBigDecimal(), paramName, min, formatOperationForMessage(operation));
                     }
                 }
@@ -272,7 +282,7 @@ public class OperationValidator {
                         throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.invalidDescriptionMinMaxForParameterHasWrongType(MIN, paramName, ModelType.BIG_INTEGER, getPathAddress(operation), description));
                         return;
                     }
-                    if (value.asBigInteger().compareTo(min) == -1) {
+                    if (value.asBigInteger().compareTo(min) < 0) {
                         throw ControllerLogger.ROOT_LOGGER.validationFailedValueIsSmallerThanMin(value.asBigInteger(), paramName, min, formatOperationForMessage(operation));
                     }
                 }
@@ -328,7 +338,7 @@ public class OperationValidator {
                         throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.invalidDescriptionMinMaxForParameterHasWrongType(MAX, paramName, ModelType.BIG_DECIMAL, getPathAddress(operation), description));
                         return;
                     }
-                    if (value.asBigDecimal().compareTo(max) == 1) {
+                    if (value.asBigDecimal().compareTo(max) > 0) {
                         throw ControllerLogger.ROOT_LOGGER.validationFailedValueIsGreaterThanMax(value.asBigDecimal(), paramName, max, formatOperationForMessage(operation));
                     }
                 }
@@ -341,7 +351,7 @@ public class OperationValidator {
                         throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.invalidDescriptionMinMaxForParameterHasWrongType(MAX, paramName, ModelType.BIG_INTEGER, getPathAddress(operation), description));
                         return;
                     }
-                    if (value.asBigInteger().compareTo(max) == 1) {
+                    if (value.asBigInteger().compareTo(max) > 0) {
                         throw ControllerLogger.ROOT_LOGGER.validationFailedValueIsGreaterThanMax(value.asBigInteger(), paramName, max, formatOperationForMessage(operation));
                     }
                 }
@@ -443,33 +453,42 @@ public class OperationValidator {
 
 
     private void checkType(final ModelType modelType, final ModelNode value) {
+        ModelNode resolved;
+        try {
+            resolved = expressionResolver.resolveExpressions(value);
+        } catch (OperationFailedException e) {
+            // Dealing with an unresolvable expression is beyond what this class can do.
+            // So fall through and see what happens. Basically if modelType is EXPRESSION or STRING
+            // it will pass, otherwise an IAE will be thrown
+            resolved = value;
+        }
         switch (modelType) {
             case BIG_DECIMAL:
-                value.resolve().asBigDecimal();
+                resolved.asBigDecimal();
                 break;
             case BIG_INTEGER:
-                value.resolve().asBigInteger();
+                resolved.asBigInteger();
                 break;
             case BOOLEAN:
-                value.resolve().asBoolean();
+                resolved.asBoolean();
                 break;
             case BYTES:
-                value.resolve().asBytes();
+                resolved.asBytes();
                 break;
             case DOUBLE:
-                value.resolve().asDouble();
+                resolved.asDouble();
                 break;
             case EXPRESSION:
                 value.asString();
                 break;
             case INT:
-                value.resolve().asInt();
+                resolved.asInt();
                 break;
             case LIST:
                 value.asList();
                 break;
             case LONG:
-                value.resolve().asLong();
+                resolved.asLong();
                 break;
             case OBJECT:
                 value.asObject();
@@ -481,12 +500,12 @@ public class OperationValidator {
                 value.asString();
                 break;
             case TYPE:
-                value.resolve().asType();
+                resolved.asType();
                 break;
         }
     }
 
-    private void checkList(final ModelNode operation, final String paramName, final ModelType modelType, final ModelNode describedProperty, final ModelNode value) {
+    private void checkList(final ModelNode operation, final String paramName, final ModelNode describedProperty, final ModelNode value) {
         if (describedProperty.get(TYPE).asType() == ModelType.LIST) {
             if (describedProperty.hasDefined(VALUE_TYPE) && describedProperty.get(VALUE_TYPE).getType() == ModelType.TYPE) {
                 ModelType elementType = describedProperty.get(VALUE_TYPE).asType();

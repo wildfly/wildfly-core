@@ -39,10 +39,8 @@ class WriteAutoDeployZipAttributeHandler extends AbstractWriteAttributeHandler {
     }
 
     @Override
-    protected void updateScanner(final DeploymentScanner scanner, final ModelNode newValue) {
+    protected void updateScanner(final DeploymentScanner scanner, final ModelNode resolvedNewValue) {
 
-        boolean enable = newValue.resolve().asBoolean();
-
-        scanner.setAutoDeployZippedContent(enable);
+        scanner.setAutoDeployZippedContent(resolvedNewValue.asBoolean());
     }
 }

@@ -57,6 +57,7 @@ import java.util.logging.Level;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CapabilityServiceTarget;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.NoopOperationStepHandler;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -544,8 +545,8 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public ModelNode resolveExpressions(ModelNode node) {
-            return node.resolve();
+        public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
+            return ExpressionResolver.TEST_RESOLVER.resolveExpressions(node);
         }
 
         @Override

@@ -67,7 +67,6 @@ import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
-import org.jboss.as.controller.operations.validation.AbstractParameterValidator;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
@@ -356,7 +355,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
         registerChildren(resourceRegistration);
     }
 
-    public static class RolloutPlanValidator extends AbstractParameterValidator {
+    public static class RolloutPlanValidator implements ParameterValidator {
         private static final List<String> ALLOWED_SERVER_GROUP_CHILDREN = Arrays.asList(ROLLING_TO_SERVERS, MAX_FAILURE_PERCENTAGE, MAX_FAILED_SERVERS);
         @Override
         public void validateParameter(String parameterName, ModelNode plan) throws OperationFailedException {
