@@ -134,7 +134,6 @@ import org.jboss.as.cli.handlers.SetVariableHandler;
 import org.jboss.as.cli.handlers.ShutdownHandler;
 import org.jboss.as.cli.handlers.UndeployHandler;
 import org.jboss.as.cli.handlers.UnsetVariableHandler;
-import org.jboss.as.cli.handlers.VersionHandler;
 import org.jboss.as.cli.handlers.batch.BatchClearHandler;
 import org.jboss.as.cli.handlers.batch.BatchDiscardHandler;
 import org.jboss.as.cli.handlers.batch.BatchEditLineHandler;
@@ -166,6 +165,7 @@ import org.jboss.as.cli.impl.aesh.AeshCommands.CLIExecution;
 import org.jboss.as.cli.impl.aesh.CLICommandRegistry;
 import org.jboss.as.cli.impl.aesh.cmd.ConnectCommand;
 import org.jboss.as.cli.impl.aesh.cmd.HelpCommand;
+import org.jboss.as.cli.impl.aesh.cmd.VersionCommand;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.DeploymentCommand;
 import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer;
 import org.jboss.as.cli.operation.CommandLineParser;
@@ -512,10 +512,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     private void initCommands() throws CommandLineException, CommandLineParserException {
         // aesh commands
+        cmdRegistry.addCommand(new VersionCommand());
         cmdRegistry.addCommand(new HelpCommand(cmdRegistry));
         cmdRegistry.addCommand(new ConnectCommand());
         DeploymentCommand.registerDeploymentCommands(this, aeshCommands.getRegistry());
-
         // aesh extensions, for now add grep to make | operator
         // usable.
         cmdRegistry.addThirdPartyCommand(new Grep(), Collections.emptyMap());
@@ -532,7 +532,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         cmdRegistry.registerHandler(new QuitHandler(), "quit", "q", "exit");
         cmdRegistry.registerHandler(new ReadAttributeHandler(this), "read-attribute");
         cmdRegistry.registerHandler(new ReadOperationHandler(this), "read-operation");
-        cmdRegistry.registerHandler(new VersionHandler(), "version");
         cmdRegistry.registerHandler(new ConnectionInfoHandler(), "connection-info");
 
         // command-timeout

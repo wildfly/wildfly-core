@@ -38,7 +38,6 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
-import org.jboss.as.cli.handlers.VersionHandler;
 import org.jboss.as.cli.impl.aesh.HelpSupport;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.logging.Logger;
@@ -275,7 +274,7 @@ public class CliLauncher {
 
             if(version) {
                 cmdCtx = initCommandContext(ctxBuilder.build(), connect);
-                VersionHandler.INSTANCE.handle(cmdCtx);
+                cmdCtx.handle("version");
                 return;
             }
 
