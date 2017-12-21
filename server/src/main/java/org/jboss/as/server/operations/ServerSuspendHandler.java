@@ -124,7 +124,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 };
                 suspendController.addListener(operationListener);
                 suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
-                if(timeout != 0) {
+                if(timeout != 0 && suspendController.getState() != SuspendController.State.SUSPENDED) {
                     try {
                         latch.await();
                     } catch (InterruptedException e) {
