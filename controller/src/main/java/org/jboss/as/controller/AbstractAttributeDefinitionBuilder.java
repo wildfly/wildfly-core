@@ -217,7 +217,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *
      * @param name the attribute's name. {@code null} is not allowed
      * @return a builder that can be used to continue building the attribute definition
+     *
+     * @deprecated may be removed at any time; the name should be immutable
      */
+    @Deprecated
     public BUILDER setName(String name) {
         assert name != null;
         //noinspection deprecation
@@ -244,7 +247,10 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * Sets the {@link AttributeDefinition#getType() type} for the attribute.
      * @param type the type. {@code null} is not allowed
      * @return a builder that can be used to continue building the attribute definition
+     *
+     * @deprecated may be removed at any time; the type should be immutable
      */
+    @Deprecated
     public BUILDER setType(ModelType type) {
         //noinspection deprecation
         this.type = type;
