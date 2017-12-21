@@ -19,6 +19,9 @@ package org.jboss.as.domain.management.security;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.junit.Assert;
@@ -124,6 +127,40 @@ public class PropertiesFileLoaderTestCase {
             Properties props2 = loader2.getProperties();
             verifyProperties(props2, props2.size()-1, "NEW", "VALUE");
             loader2.stop(null);
+        } finally {
+            cleanupTempFile(tmpFile);
+        }
+    }
+
+    @Test
+    public void testDoublePersistWithEmptyValue() throws Exception {
+        File tmpFile = null;
+        try {
+            tmpFile = createTempFile();
+            writeTestDataToFile(tmpFile);
+
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            loader.start(null);
+            Properties props = loader.getProperties();
+            props.put("EMPTY", "");
+            loader.persistProperties();
+
+            props = loader.getProperties();
+            props.put("NEW", "VALUE");
+            loader.persistProperties();
+            loader.stop(null);
+
+            //verify all properties are present
+            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            loader2.start(null);
+            Properties props2 = loader2.getProperties();
+            verifyProperties(props2, props2.size()-2, "NEW", "VALUE");
+            loader2.stop(null);
+
+            //verify that key is present only once
+            Assert.assertEquals(properties.length + 2,
+                    Files.lines(Paths.get(tmpFile.getAbsolutePath()), Charset.defaultCharset()).count());
+
         } finally {
             cleanupTempFile(tmpFile);
         }
