@@ -353,6 +353,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 920, value = "Credential alias '%s' of credential type '%s' does not exist in the store")
     OperationFailedException credentialDoesNotExist(String alias, String credentialType);
 
+    @Message(id = 921, value = "Location parameter is not specified for filebased keystore type '%s'")
+    OperationFailedException filebasedKeystoreLocationMissing(String type);
+
     @Message(id = Message.NONE, value = "Reload dependent services which might already have cached the secret value")
     String reloadDependantServices();
 
