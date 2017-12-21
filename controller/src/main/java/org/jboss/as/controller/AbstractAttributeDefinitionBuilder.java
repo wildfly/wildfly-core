@@ -1098,14 +1098,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return undefinedMetricValue;
     }
 
-    /**
-     * @deprecated Use {@link #getNullSignificant()}.
-     */
-    @Deprecated
-    public Boolean getNullSignficant() {
-        return getNullSignificant();
-    }
-
     public AttributeParser getParser() {
         //noinspection deprecation
         return parser;
