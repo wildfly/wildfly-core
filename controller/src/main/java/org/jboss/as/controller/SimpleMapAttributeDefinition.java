@@ -100,7 +100,7 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
         @Override
         public SimpleMapAttributeDefinition build() {
             if (elementValidator == null) {
-                elementValidator = new ModelTypeValidator(valueType, allowNull, allowExpression);
+                elementValidator = new ModelTypeValidator(valueType);
             }
             return new SimpleMapAttributeDefinition(this);
         }

@@ -167,12 +167,12 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         }
 
         public SimpleListAttributeDefinition build() {
-            if (attributeMarshaller == null) {
-                attributeMarshaller = AttributeMarshallers.getSimpleListMarshaller(wrapXmlList);
+            if (getAttributeMarshaller() == null) {
+                setAttributeMarshaller(AttributeMarshallers.getSimpleListMarshaller(wrapXmlList));
             }
             //todo add parser for SimpleListAttributeDefinition, for now no one is using it yet.
-            /*if (parser == null) {
-                parser = AttributeParser..
+            /*if (getParser() == null) {
+                setAttributeParser(AttributeParser..);
             }*/
             return new SimpleListAttributeDefinition(this, valueType);
         }

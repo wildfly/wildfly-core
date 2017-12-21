@@ -48,32 +48,82 @@ import org.jboss.dmr.ModelType;
 @SuppressWarnings("unchecked")
 public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends AbstractAttributeDefinitionBuilder, ATTRIBUTE extends AttributeDefinition> {
 
+    /** @deprecated use {@link #getName()} as this field will be made private in a future release */
+    @Deprecated
     protected String name;
+    /** @deprecated use {@link #getType()} as this field will be made private in a future release */
+    @Deprecated
     protected ModelType type;
+    /** @deprecated use {@link #getXmlName()} as this field will be made private in a future release */
+    @Deprecated
     protected String xmlName;
+    /** @deprecated use {@link #isAllowNull()} as this field will be made private in a future release */
+    @Deprecated
     protected boolean allowNull;
+    /** @deprecated use {@link #isAllowExpression()} as this field will be made private in a future release */
+    @Deprecated
     protected boolean allowExpression;
+    /** @deprecated use {@link #getDefaultValue()} as this field will be made private in a future release */
+    @Deprecated
     protected ModelNode defaultValue;
+    /** @deprecated use {@link #getMeasurementUnit()} as this field will be made private in a future release */
+    @Deprecated
     protected MeasurementUnit measurementUnit;
+    /** @deprecated use {@link #getAlternatives()} as this field will be made private in a future release */
+    @Deprecated
     protected String[] alternatives;
+    /** @deprecated use {@link #getRequires()} as this field will be made private in a future release */
+    @Deprecated
     protected String[] requires;
+    /** @deprecated use {@link #getAllowedValues()} as this field will be made private in a future release */
+    @Deprecated
     protected ModelNode[] allowedValues;
+    /** @deprecated use {@link #getCorrector()} as this field will be made private in a future release */
+    @Deprecated
     protected ParameterCorrector corrector;
+    /** @deprecated use {@link #getValidator()} as this field will be made private in a future release */
+    @Deprecated
     protected ParameterValidator validator;
+    /** @deprecated use {@link #isValidateNull()} as this field will be made private in a future release */
+    @Deprecated
     protected boolean validateNull = true;
+    /** @deprecated use {@link #getName()} as this field will be made private in a future release */
+    @Deprecated
     protected int minSize = 0;
     private boolean minSizeSet;
+    /** @deprecated use {@link #getMaxSize()} as this field will be made private in a future release */
+    @Deprecated
     protected int maxSize = Integer.MAX_VALUE;
     private boolean maxSizeSet;
+    /** @deprecated use {@link #getFlags()} as this field will be made private in a future release */
+    @Deprecated
     protected AttributeAccess.Flag[] flags;
+    /** @deprecated use {@link #getAttributeMarshaller()} as this field will be made private in a future release */
+    @Deprecated
     protected AttributeMarshaller attributeMarshaller = null;
+    /** @deprecated use {@link #isResourceOnly()} as this field will be made private in a future release */
+    @Deprecated
     protected boolean resourceOnly = false;
+    /** @deprecated use {@link #getDeprecated()} as this field will be made private in a future release */
+    @Deprecated
     protected DeprecationData deprecated = null;
+    /** @deprecated use {@link #getAccessConstraints()} as this field will be made private in a future release */
+    @Deprecated
     protected AccessConstraintDefinition[] accessConstraints;
+    /** @deprecated use {@link #getNullSignificant()} as this field will be made private in a future release */
+    @Deprecated
     protected Boolean nullSignificant;
+    /** @deprecated use {@link #getParser()} as this field will be made private in a future release */
+    @Deprecated
     protected AttributeParser parser;
+    /** @deprecated use {@link #getAttributeGroup()} as this field will be made private in a future release */
+    @Deprecated
     protected String attributeGroup;
+    /** @deprecated use {@link #getCapabilityReferenceRecorder()} as this field will be made private in a future release */
+    @Deprecated
     protected CapabilityReferenceRecorder referenceRecorder;
+    /** @deprecated use {@link #getArbitraryDescriptors()} as this field will be made private in a future release */
+    @Deprecated
     protected Map<String, ModelNode> arbitraryDescriptors = null;
     private ModelNode undefinedMetricValue;
 
@@ -95,6 +145,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param type the {@link AttributeDefinition#getType() type} of the attribute. Cannot be {@code null}
      * @param optional {@code true} if the attribute {@link AttributeDefinition#isAllowNull() allows undefined values} in the absence of {@link #setAlternatives(String...) alternatives}
      */
+    @SuppressWarnings("deprecation")
     public AbstractAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean optional) {
         this.name = attributeName;
         this.type = type;
@@ -119,6 +170,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *                      or {@code null} if the name from {@code basis} should be used
      * @param basis the existing attribute definition. Cannot be {@code null}
      */
+    @SuppressWarnings("deprecation")
     public AbstractAttributeDefinitionBuilder(final String attributeName, final AttributeDefinition basis) {
         this.name = attributeName != null ? attributeName : basis.getName();
         this.xmlName = basis.getXmlName();
@@ -168,6 +220,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      */
     public BUILDER setName(String name) {
         assert name != null;
+        //noinspection deprecation
         this.name = name;
         return (BUILDER) this;
     }
@@ -182,6 +235,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setXmlName(String xmlName) {
+        //noinspection deprecation
         this.xmlName = xmlName == null ? this.name : xmlName;
         return (BUILDER) this;
     }
@@ -192,6 +246,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setType(ModelType type) {
+        //noinspection deprecation
         this.type = type;
         return (BUILDER) this;
     }
@@ -206,6 +261,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setRequired(boolean required) {
+        //noinspection deprecation
         this.allowNull = !required;
         return (BUILDER) this;
     }
@@ -236,6 +292,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setAllowExpression(boolean allowExpression) {
+        //noinspection deprecation
         this.allowExpression = allowExpression;
         return (BUILDER) this;
     }
@@ -247,6 +304,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setDefaultValue(ModelNode defaultValue) {
+        //noinspection deprecation
         this.defaultValue = (defaultValue == null || !defaultValue.isDefined()) ? null : defaultValue;
         return (BUILDER) this;
     }
@@ -258,6 +316,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setMeasurementUnit(MeasurementUnit unit) {
+        //noinspection deprecation
         this.measurementUnit = unit;
         return (BUILDER) this;
     }
@@ -270,6 +329,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setCorrector(ParameterCorrector corrector) {
+        //noinspection deprecation
         this.corrector = corrector;
         return (BUILDER) this;
     }
@@ -284,6 +344,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setValidator(ParameterValidator validator) {
+        //noinspection deprecation
         this.validator = validator;
         return (BUILDER) this;
     }
@@ -312,6 +373,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setAlternatives(String... alternatives) {
+        //noinspection deprecation
         this.alternatives = alternatives;
         return (BUILDER) this;
     }
@@ -322,6 +384,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param alternatives the attribute names
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER addAlternatives(String... alternatives) {
         if (this.alternatives == null) {
             this.alternatives = alternatives;
@@ -339,6 +402,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param alternatives the attribute names
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public final BUILDER removeAlternatives(String... alternatives) {
         if (this.alternatives == null) {
             return (BUILDER) this;
@@ -366,6 +430,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param alternative the alternative
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     private boolean isAlternativePresent(final String alternative) {
         if (alternatives == null) {
             return false;
@@ -384,6 +449,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param value the value of the arbitrary descriptor.
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER addArbitraryDescriptor(String arbitraryDescriptor, ModelNode value) {
         if (this.arbitraryDescriptors == null) {
             this.arbitraryDescriptors = Collections.singletonMap(arbitraryDescriptor, value);
@@ -396,7 +462,9 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return (BUILDER) this;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public Map<String, ModelNode> getArbitraryDescriptors() {
+        //noinspection deprecation
         return arbitraryDescriptors;
     }
 
@@ -407,6 +475,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setRequires(String... requires) {
+        //noinspection deprecation
         this.requires = requires;
         return (BUILDER) this;
     }
@@ -417,6 +486,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setFlags(AttributeAccess.Flag... flags) {
+        //noinspection deprecation
         this.flags = flags;
         return (BUILDER) this;
     }
@@ -426,6 +496,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param flag the flag
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER addFlag(final AttributeAccess.Flag flag) {
         if (flags == null) {
             flags = new AttributeAccess.Flag[]{flag};
@@ -442,6 +513,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param flag the flag
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings({"deprecation", "UnusedReturnValue", "WeakerAccess"})
     public BUILDER removeFlag(final AttributeAccess.Flag flag) {
         if (!isFlagPresent(flag)) {
             return (BUILDER) this; //if not present no need to remove
@@ -455,6 +527,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
                 k++;
             }
         }
+        //noinspection deprecation
         flags = newFlags;
         return (BUILDER) this;
     }
@@ -464,6 +537,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param flag the flag
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings({"deprecation", "WeakerAccess"})
     protected boolean isFlagPresent(final AttributeAccess.Flag flag) {
         if (flags == null) { return false; }
         for (AttributeAccess.Flag f : flags) {
@@ -524,6 +598,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setMaxSize(final int maxSize) {
+        //noinspection deprecation
         this.maxSize = maxSize;
         this.maxSizeSet = true;
         return (BUILDER) this;
@@ -536,6 +611,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return the minimum size or {@code null} if it was not explicitly set
      */
     Integer getConfiguredMaxSize()  {
+        //noinspection deprecation
         return maxSizeSet ? maxSize : null;
     }
 
@@ -548,6 +624,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setMinSize(final int minSize) {
+        //noinspection deprecation
         this.minSize = minSize;
         this.minSizeSet = true;
         return (BUILDER) this;
@@ -560,6 +637,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return the minimum size or {@code null} if it was not explicitly set
      */
     Integer getConfiguredMinSize()  {
+        //noinspection deprecation
         return minSizeSet ? minSize : null;
     }
 
@@ -570,6 +648,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setAttributeMarshaller(AttributeMarshaller marshaller) {
+        //noinspection deprecation
         this.attributeMarshaller = marshaller;
         return (BUILDER) this;
     }
@@ -580,6 +659,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setAttributeParser(AttributeParser parser) {
+        //noinspection deprecation
         this.parser = parser;
         return (BUILDER) this;
     }
@@ -592,6 +672,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setResourceOnly() {
+        //noinspection deprecation
         this.resourceOnly = true;
         return (BUILDER) this;
     }
@@ -624,6 +705,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setDeprecated(ModelVersion since, boolean notificationUseful) {
+        //noinspection deprecation
         this.deprecated = new DeprecationData(since, notificationUseful);
         return (BUILDER) this;
     }
@@ -644,6 +726,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setAccessConstraints(AccessConstraintDefinition... accessConstraints) {
+        //noinspection deprecation
         this.accessConstraints = accessConstraints;
         return (BUILDER) this;
     }
@@ -653,6 +736,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param accessConstraint the constraint
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER addAccessConstraint(final AccessConstraintDefinition accessConstraint) {
         if (accessConstraints == null) {
             accessConstraints = new AccessConstraintDefinition[] {accessConstraint};
@@ -675,6 +759,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @return a builder that can be used to continue building the attribute definition
      */
     public BUILDER setNullSignificant(boolean nullSignificant) {
+        //noinspection deprecation
         this.nullSignificant = nullSignificant;
         return (BUILDER) this;
     }
@@ -696,6 +781,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      */
     public BUILDER setAttributeGroup(String attributeGroup) {
         assert attributeGroup == null || attributeGroup.length() > 0;
+        //noinspection deprecation
         this.attributeGroup = attributeGroup;
         return (BUILDER) this;
     }
@@ -708,6 +794,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      */
     public BUILDER setAllowedValues(ModelNode ... allowedValues) {
         assert allowedValues!= null;
+        //noinspection deprecation
         this.allowedValues = allowedValues;
         return (BUILDER) this;
     }
@@ -718,6 +805,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param allowedValues values that are legal as part in this attribute
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER setAllowedValues(String ... allowedValues) {
         assert allowedValues!= null;
         this.allowedValues = new ModelNode[allowedValues.length];
@@ -731,6 +819,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @param allowedValues values that are legal as part in this attribute
      * @return a builder that can be used to continue building the attribute definition
      */
+    @SuppressWarnings("deprecation")
     public BUILDER setAllowedValues(int ... allowedValues) {
         assert allowedValues!= null;
         this.allowedValues = new ModelNode[allowedValues.length];
@@ -781,6 +870,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability) {
+        //noinspection deprecation
         referenceRecorder = new CapabilityReferenceRecorder.ContextDependencyRecorder(referencedCapability);
         return (BUILDER) this;
     }
@@ -807,6 +897,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, AttributeDefinition ... dependantAttributes) {
+        //noinspection deprecation
         referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(referencedCapability, dependantAttributes);
         return (BUILDER) this;
     }
@@ -830,6 +921,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(RuntimeCapability capability, String referencedCapability, AttributeDefinition ... dependantAttributes) {
+        //noinspection deprecation
         referenceRecorder = new CapabilityReferenceRecorder.CompositeAttributeDependencyRecorder(capability, referencedCapability, dependantAttributes);
         return (BUILDER) this;
     }
@@ -854,6 +946,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
+        //noinspection deprecation
         referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
         return (BUILDER) this;
     }
@@ -870,6 +963,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(CapabilityReferenceRecorder referenceRecorder) {
+        //noinspection deprecation
         this.referenceRecorder = referenceRecorder;
         return (BUILDER)this;
     }
@@ -888,46 +982,59 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
 
     public String getName() {
+        //noinspection deprecation
         return name;
     }
 
     public ModelType getType() {
+        //noinspection deprecation
         return type;
     }
 
     public String getXmlName() {
+        //noinspection deprecation
         return xmlName;
     }
 
     public boolean isAllowNull() {
+        //noinspection deprecation
         return allowNull;
     }
 
     public boolean isAllowExpression() {
+        //noinspection deprecation
         return allowExpression;
     }
 
     public ModelNode getDefaultValue() {
+        //noinspection deprecation
         return defaultValue;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public MeasurementUnit getMeasurementUnit() {
+        //noinspection deprecation
         return measurementUnit;
     }
 
     public String[] getAlternatives() {
+        //noinspection deprecation
         return copyStrings(alternatives);
     }
 
     public String[] getRequires() {
+        //noinspection deprecation
         return copyStrings(requires);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public ParameterCorrector getCorrector() {
+        //noinspection deprecation
         return corrector;
     }
 
     public ParameterValidator getValidator() {
+        //noinspection deprecation
         return validator;
     }
 
@@ -938,37 +1045,49 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     public int getMinSize() {
+        //noinspection deprecation
         return minSize;
     }
 
     public int getMaxSize() {
+        //noinspection deprecation
         return maxSize;
     }
 
     public AttributeAccess.Flag[] getFlags() {
+        //noinspection deprecation
         return copyFlags(flags);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public AttributeMarshaller getAttributeMarshaller() {
+        //noinspection deprecation
         return attributeMarshaller;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public boolean isResourceOnly() {
+        //noinspection deprecation
         return resourceOnly;
     }
 
     public DeprecationData getDeprecated() {
+        //noinspection deprecation
         return deprecated;
     }
 
     public AccessConstraintDefinition[] getAccessConstraints() {
+        //noinspection deprecation
         return copyConstraints(accessConstraints);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public Boolean getNullSignificant() {
+        //noinspection deprecation
         return nullSignificant;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public ModelNode getUndefinedMetricValue() {
         return undefinedMetricValue;
     }
@@ -982,15 +1101,24 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     public AttributeParser getParser() {
+        //noinspection deprecation
         return parser;
     }
 
     public String getAttributeGroup() {
+        //noinspection deprecation
         return attributeGroup;
     }
 
     public ModelNode[] getAllowedValues() {
+        //noinspection deprecation
         return allowedValues;
+    }
+
+    @SuppressWarnings({"WeakerAccess", "unused"})
+    protected final CapabilityReferenceRecorder getCapabilityReferenceRecorder() {
+        //noinspection deprecation
+        return referenceRecorder;
     }
 
     private String[] copyStrings(String[] toCopy) {

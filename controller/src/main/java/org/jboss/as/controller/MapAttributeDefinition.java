@@ -293,7 +293,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
             Assert.checkNotNullParam("elementValidator", elementValidator);
             this.elementValidator = elementValidator;
             // Setting an element validator invalidates any existing overall attribute validator
-            this.validator = null;
+            super.setValidator(null);
             return (BUILDER) this;
         }
 
@@ -319,20 +319,29 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          * @param validator the validator. {@code null} is allowed
          * @return a builder that can be used to continue building the attribute definition
          */
+        @SuppressWarnings("WeakerAccess")
         public BUILDER setMapValidator(ParameterValidator validator) {
             return super.setValidator(validator);
         }
 
         @Override
         public int getMinSize() {
-            if (minSize < 0) { minSize = 0;}
-            return minSize;
+            int min = super.getMinSize();
+            if (min < 0) {
+                min = 0;
+                setMinSize(min);
+            }
+            return min;
         }
 
         @Override
         public int getMaxSize() {
-            if (maxSize < 1) { maxSize = Integer.MAX_VALUE; }
-            return maxSize;
+            int max = super.getMaxSize();
+            if (max < 1) {
+                max = Integer.MAX_VALUE;
+                setMaxSize(max);
+            }
+            return max;
         }
 
         /**
@@ -350,7 +359,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
          * @param allowNullElement whether undefined elements are valid
          * @return a builder that can be used to continue building the attribute definition
          */
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "WeakerAccess"})
         public BUILDER setAllowNullElement(boolean allowNullElement) {
             this.allowNullElement = allowNullElement;
             return (BUILDER) this;

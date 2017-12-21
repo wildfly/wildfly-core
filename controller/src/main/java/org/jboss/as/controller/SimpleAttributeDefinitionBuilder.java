@@ -78,7 +78,7 @@ public class SimpleAttributeDefinitionBuilder extends AbstractAttributeDefinitio
 
     public SimpleAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean optional) {
         super(attributeName, type, optional);
-        parser = AttributeParser.SIMPLE;
+        setAttributeParser(AttributeParser.SIMPLE);
     }
 
     public SimpleAttributeDefinitionBuilder(final SimpleAttributeDefinition basis) {
