@@ -1415,4 +1415,10 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 210, value = "A slave host controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
     OperationFailedException cannotAddSlaveHostAfterBoot();
 
+    @Message(id = 211, value = "Boot configuration validation failed")
+    OperationFailedException bootConfigValidationFailed(@Param ModelNode failureDescription);
+
+    @Message(id = 212, value = "Fetch of missing configuration from the master Host Controller failed without explanation. Fetch operation outcome was %s")
+    OperationFailedException fetchOfMissingConfigurationFailed(String failedOutcome);
+
 }
