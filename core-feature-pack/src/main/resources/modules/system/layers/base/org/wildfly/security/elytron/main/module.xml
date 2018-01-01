@@ -29,6 +29,7 @@
             <exports>
                 <include-set>
                     <path name="org/wildfly/security"/>
+                    <path name="org/wildfly/security/asn1"/>
                     <path name="org/wildfly/security/auth"/>
                     <path name="org/wildfly/security/auth/callback"/>
                     <path name="org/wildfly/security/auth/client"/>
@@ -53,6 +54,8 @@
                     <path name="org/wildfly/security/permission"/>
                     <path name="org/wildfly/security/sasl/util"/>
                     <path name="org/wildfly/security/ssl"/>
+                    <path name="org/wildfly/security/x500"/>
+                    <path name="org/wildfly/security/x500/cert"/>
                 </include-set>
             </exports>
         </module>
