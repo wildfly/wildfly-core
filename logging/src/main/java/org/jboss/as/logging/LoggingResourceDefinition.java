@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -331,8 +330,11 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
                 files.addAll(LoggingResource.findFiles(defaultLogDir, property.getValue(), false));
             }
         }
-        return files.stream()
-                .map(Path::toFile)
-                .collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<File> result = new ArrayList<>();
+        for (Path file : files) {
+            File toFile = file.toFile();
+            result.add(toFile);
+        }
+        return result;
     }
 }
