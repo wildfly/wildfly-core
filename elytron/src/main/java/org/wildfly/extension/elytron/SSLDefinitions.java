@@ -491,6 +491,10 @@ class SSLDefinitions {
 
     }
 
+    private abstract static class ReloadableX509ExtendedTrustManager extends X509ExtendedTrustManager {
+        abstract void reload();
+    }
+
     static ResourceDefinition getTrustManagerDefinition() {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
@@ -506,8 +510,6 @@ class SSLDefinitions {
                 .build();
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST};
-
-        AtomicBoolean reloadCrl = new AtomicBoolean(false);
 
         AbstractAddStepHandler add = new TrivialAddHandler<TrustManager>(TrustManager.class, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
 
@@ -538,7 +540,7 @@ class SSLDefinitions {
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
 
                 if (crlNode.isDefined()) {
-                    return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode, reloadCrl);
+                    return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode);
                 }
 
                 return () -> {
@@ -574,7 +576,7 @@ class SSLDefinitions {
                 };
             }
 
-            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode, AtomicBoolean reloadCrl) throws OperationFailedException {
+            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode) throws OperationFailedException {
                 String crlPath = asStringIfDefined(context, PATH, crlNode);
                 String crlRelativeTo = asStringIfDefined(context, RELATIVE_TO, crlNode);
                 int certPath = asIntIfDefined(context, MAXIMUM_CERT_PATH, crlNode);
@@ -594,7 +596,7 @@ class SSLDefinitions {
                     if (crlPath != null) {
                         try {
                             X509CRLExtendedTrustManager trustManager = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)), certPath, null);
-                            return createReloadableX509CRLTrustManager(reloadCrl, crlPath, crlRelativeTo, certPath, pathManagerInjector, trustManagerFactory, keyStore, trustManager);
+                            return createReloadableX509CRLTrustManager(crlPath, crlRelativeTo, certPath, pathManagerInjector, trustManagerFactory, keyStore, trustManager);
                         } catch (FileNotFoundException e) {
                             throw ElytronSubsystemMessages.ROOT_LOGGER.unableToAccessCRL(e);
                         }
@@ -604,63 +606,58 @@ class SSLDefinitions {
                 };
             }
 
-            private TrustManager createReloadableX509CRLTrustManager(final AtomicBoolean reloadCrl, final String crlPath, final String crlRelativeTo, final int certPath, final InjectedValue<PathManager> pathManagerInjector, final TrustManagerFactory trustManagerFactory, final KeyStore keyStore, final X509CRLExtendedTrustManager trustManager) {
-                return new X509ExtendedTrustManager() {
+            private TrustManager createReloadableX509CRLTrustManager(final String crlPath, final String crlRelativeTo, final int certPath, final InjectedValue<PathManager> pathManagerInjector, final TrustManagerFactory trustManagerFactory, final KeyStore keyStore, final X509CRLExtendedTrustManager trustManager) {
+                return new ReloadableX509ExtendedTrustManager() {
 
                     private volatile X509ExtendedTrustManager delegate = trustManager;
                     private AtomicBoolean reloading = new AtomicBoolean();
 
-                    private X509ExtendedTrustManager getDelegate() {
-                        if (reloadCrl.get() && reloading.compareAndSet(false, true)) {
-                            X509ExtendedTrustManager reloaded = null;
+                    @Override
+                    void reload() {
+                        if (reloading.compareAndSet(false, true)) {
                             try {
-                                reloaded = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)), certPath, null);
+                                delegate = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)), certPath, null);
                             } catch (FileNotFoundException cause) {
                                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToReloadCRL(cause);
                             } finally {
-                                if (reloaded != null) {
-                                    delegate = reloaded;
-                                }
-                                reloadCrl.lazySet(false);
                                 reloading.lazySet(false);
                             }
                         }
-                        return delegate;
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
-                        getDelegate().checkClientTrusted(x509Certificates, s, socket);
+                        delegate.checkClientTrusted(x509Certificates, s, socket);
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
-                        getDelegate().checkServerTrusted(x509Certificates, s, socket);
+                        delegate.checkServerTrusted(x509Certificates, s, socket);
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
-                        getDelegate().checkClientTrusted(x509Certificates, s, sslEngine);
+                        delegate.checkClientTrusted(x509Certificates, s, sslEngine);
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
-                        getDelegate().checkServerTrusted(x509Certificates, s, sslEngine);
+                        delegate.checkServerTrusted(x509Certificates, s, sslEngine);
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                        getDelegate().checkClientTrusted(x509Certificates, s);
+                        delegate.checkClientTrusted(x509Certificates, s);
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                        getDelegate().checkServerTrusted(x509Certificates, s);
+                        delegate.checkServerTrusted(x509Certificates, s);
                     }
 
                     @Override
                     public X509Certificate[] getAcceptedIssuers() {
-                        return getDelegate().getAcceptedIssuers();
+                        return delegate.getAcceptedIssuers();
                     }
                 };
             }
@@ -708,18 +705,22 @@ class SSLDefinitions {
                 resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, getResourceDescriptionResolver())
                             .setRuntimeOnly()
                             .build()
-                        , new ReloadCertificateRevocationList());
-            }
-
-            class ReloadCertificateRevocationList extends ElytronRuntimeOnlyHandler {
-
-                private ReloadCertificateRevocationList() {
-                }
-
-                @Override
-                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    reloadCrl.compareAndSet(false, true);
-                }
+                        , new ElytronRuntimeOnlyHandler() {
+                            @Override
+                            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                                ServiceName serviceName = TRUST_MANAGER_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()).getCapabilityServiceName();
+                                ServiceController<TrustManager> serviceContainer = getRequiredService(context.getServiceRegistry(true), serviceName, TrustManager.class);
+                                State serviceState;
+                                if ((serviceState = serviceContainer.getState()) != State.UP) {
+                                    throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
+                                }
+                                TrustManager trustManager = serviceContainer.getValue();
+                                if (! (trustManager instanceof ReloadableX509ExtendedTrustManager)) {
+                                    throw ROOT_LOGGER.unableToReloadCRLNotReloadable();
+                                }
+                                ((ReloadableX509ExtendedTrustManager) trustManager).reload();
+                            }
+                        });
             }
         };
     }
