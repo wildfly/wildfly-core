@@ -314,7 +314,14 @@ public class PathAddress implements Iterable<PathElement> {
      * @param create {@code true} to create the last part of the node if it does not exist
      * @return the submodel
      * @throws NoSuchElementException if the model contains no such element
+     *
+     * @deprecated manipulating a deep DMR node tree via PathAddress is no longer how the management layer works
+     *             internally, so this method has become legacy cruft. Management operation handlers
+     *             should obtain a {@link org.jboss.as.controller.registry.Resource Resource} from the
+     *             {@link org.jboss.as.controller.OperationContext#readResource(PathAddress) OperationContext}
+     *             and use the {@code Resource} API to access child resources
      */
+    @Deprecated
     public ModelNode navigate(ModelNode model, boolean create) throws NoSuchElementException {
         final Iterator<PathElement> i = pathAddressList.iterator();
         while (i.hasNext()) {
@@ -337,7 +344,13 @@ public class PathAddress implements Iterable<PathElement> {
      * @param model the model node
      * @return the submodel
      * @throws NoSuchElementException if the model contains no such element
+     *
+     * @deprecated manipulating a deep DMR node tree via PathAddress is no longer how the management layer works
+     *             internally, so this method has become legacy cruft. Management operation handlers would
+     *             use {@link org.jboss.as.controller.OperationContext#removeResource(PathAddress)} to
+     *             remove resources.
      */
+    @Deprecated
     public ModelNode remove(ModelNode model) throws NoSuchElementException {
         final Iterator<PathElement> i = pathAddressList.iterator();
         while (i.hasNext()) {
