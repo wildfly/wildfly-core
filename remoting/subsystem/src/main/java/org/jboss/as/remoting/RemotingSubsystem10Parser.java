@@ -23,6 +23,7 @@ import static org.jboss.as.remoting.CommonAttributes.VALUE;
 
 import java.util.EnumSet;
 import java.util.List;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 

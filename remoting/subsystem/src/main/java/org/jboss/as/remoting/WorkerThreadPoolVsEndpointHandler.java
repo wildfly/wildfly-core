@@ -22,76 +22,46 @@
 
 package org.jboss.as.remoting;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 
 /**
- * Ensures that legacy worker thread configurations and newer endpoint configurations
- * are properly used. Specifically:
- * <ol>
- *     <li>legacy worker thread pool attributes are not used on servers</li>
- *     <li>legacy worker thread pool attributes and an endpoint configuration are not both used</li>
- *     <li>adds default endpoint configuration if not present and worker thread pool attributes are not used</li>
- * </ol>
+ * Ensures that a placeholder resource for the deprecated configuration=endpoint resource
+ * exists, unless this is a domain profile and the user configured the legacy 'worker' attributes.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
 class WorkerThreadPoolVsEndpointHandler implements OperationStepHandler {
 
-    static final OperationStepHandler INSTANCE = new WorkerThreadPoolVsEndpointHandler();
+    private final boolean forDomain;
+
+    WorkerThreadPoolVsEndpointHandler(boolean forDomain) {
+        this.forDomain = forDomain;
+    }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
         ModelNode model = resource.getModel();
-        Set<String> configuredAttributes = new HashSet<String>();
-        for (final AttributeDefinition attribute : RemotingSubsystemRootResource.ATTRIBUTES) {
-            String attrName = attribute.getName();
-            if (model.hasDefined(attrName)) {
-                configuredAttributes.add(attrName);
+        boolean hasLegacy = false;
+        if (forDomain) {
+            for (final AttributeDefinition attribute : RemotingSubsystemRootResource.LEGACY_ATTRIBUTES) {
+                if (model.hasDefined(attribute.getName())) {
+                    hasLegacy = true;
+                    break;
+                }
             }
         }
 
-        Resource endpointConfig = resource.getChild(RemotingEndpointResource.ENDPOINT_PATH);
-        if (configuredAttributes.size() > 0) {
-            if (context.getProcessType().isServer()) {
-                // worker-thread-pool not allowed on a server
-                throw RemotingLogger.ROOT_LOGGER.workerConfigurationIgnored();
-            } else if (endpointConfig != null) {
-                // Can't configure both worker-thread-pool and endpoint
-                ModelNode endpointModel = endpointConfig.getModel();
-                if (endpointModel.isDefined()) {
-                    for (Property prop : endpointModel.asPropertyList()) {
-                        if (prop.getValue().isDefined()) {
-                            throw new OperationFailedException(
-                                    RemotingLogger.ROOT_LOGGER.workerThreadsEndpointConfigurationChoiceRequired(
-                                            Element.WORKER_THREAD_POOL.getLocalName(), Element.ENDPOINT.getLocalName()
-                                    ));
-                        }
-                    }
-                }
-            }
-        } else if (endpointConfig == null) {
+        if (!hasLegacy && !resource.hasChild(RemotingEndpointResource.ENDPOINT_PATH)) {
             // User didn't configure either worker-thread-pool or endpoint. Add a default endpoint resource so
             // users can read the default config attribute values
             context.addResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH), Resource.Factory.create());
-
-            // Record the requirement of the default xnio worker
-            // WFCORE-778 don't do this on an HC so we won't mistakenly trigger a requirement
-            // in a profile meant for servers that don't have the io subsystem
-            if (context.getProcessType().isServer()) {
-                RemotingEndpointResource.WORKER.addCapabilityRequirements(context, resource, new ModelNode()); // use an undefined node so WORKER will use its default value
-            }
         }
     }
 }

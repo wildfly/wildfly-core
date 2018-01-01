@@ -553,6 +553,11 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public ContextType getType() {
+            return extensionRegistryType.getContextType();
+        }
+
+        @Override
         public ProcessType getProcessType() {
             return processType;
         }

@@ -181,12 +181,11 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
         ModelNode model = services.readWholeModel();
         ModelNode subsystem = model.require(SUBSYSTEM).require(RemotingExtension.SUBSYSTEM_NAME);
-        for (AttributeDefinition ad : RemotingSubsystemRootResource.ATTRIBUTES) {
-            ModelNode dflt = ad.getDefaultValue();
-            assertEquals(ad.getName(), dflt == null ? new ModelNode() : dflt, subsystem.require(ad.getName()));
+        for (AttributeDefinition ad : RemotingSubsystemRootResource.LEGACY_ATTRIBUTES) {
+            assertFalse(ad.getName(), subsystem.hasDefined(ad.getName()));
         }
         ModelNode endpoint = subsystem.get(RemotingEndpointResource.ENDPOINT_PATH.getKey(), RemotingEndpointResource.ENDPOINT_PATH.getValue());
-        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES) {
+        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
             ModelNode dflt = ad.getDefaultValue();
             assertEquals(ad.getName(), dflt == null ? new ModelNode() : dflt, endpoint.require(ad.getName()));
         }
@@ -336,7 +335,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                     RemotingSubsystemTestUtil.registerIOExtension(extensionRegistry, rootRegistration);
                 } else {
                     capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
-                            RemotingEndpointResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
+                            RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
                 }
 
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
