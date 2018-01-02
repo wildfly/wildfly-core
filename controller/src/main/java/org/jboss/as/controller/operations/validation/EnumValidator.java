@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -216,8 +217,8 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         ModelType type = value.getType();
-        if (type == ModelType.STRING || type == ModelType.EXPRESSION) {
-            String tuString = value.resolve().asString(); // Sorry, no support for resolving against vault!
+        if (type == ModelType.STRING ) {
+            String tuString = ExpressionResolver.SIMPLE.resolveExpressions(value).asString(); // Sorry, no support for resolving against vault!
             E enumValue;
             try {
                 enumValue = Enum.valueOf(enumType, tuString.toUpperCase(Locale.ENGLISH));
@@ -229,12 +230,10 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
                 throw ControllerLogger.ROOT_LOGGER.invalidEnumValue(tuString, parameterName, toStringMap.keySet());
             }
             // Hack to store the allowed value in the model, not the user input
-            if (type != ModelType.EXPRESSION) {
-                try {
-                    value.set(enumValue.toString());
-                } catch (Exception e) {
-                    // node must be protected.
-                }
+            try {
+                value.set(enumValue.toString());
+            } catch (Exception e) {
+                // node must be protected.
             }
         }
     }

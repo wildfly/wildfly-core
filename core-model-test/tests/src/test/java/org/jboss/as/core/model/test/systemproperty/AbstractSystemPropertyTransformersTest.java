@@ -29,7 +29,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 
 import java.util.List;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -163,7 +165,7 @@ public abstract class AbstractSystemPropertyTransformersTest extends AbstractCor
             public ModelNode fixModel(ModelNode modelNode) {
                 modelNode.remove(SOCKET_BINDING_GROUP);
                 if (!allowExpressions()) {
-                    modelNode =  modelNode.resolve();
+                    modelNode =  resolve(modelNode);
                     ModelNode sysPropRoot = serverGroup ? modelNode.get(SERVER_GROUP, "test") : modelNode;
                     for (Property sysprop : sysPropRoot.get(SYSTEM_PROPERTY).asPropertyList()) {
                         ModelNode bootTime;
@@ -192,5 +194,13 @@ public abstract class AbstractSystemPropertyTransformersTest extends AbstractCor
 
     private boolean modelVersion_1_4_0_OrGreater() {
         return ModelVersion.compare(ModelVersion.create(1, 4, 0), modelVersion) >= 0;
+    }
+
+    private static ModelNode resolve(ModelNode unresolved) {
+        try {
+            return ExpressionResolver.TEST_RESOLVER.resolveExpressions(unresolved);
+        } catch (OperationFailedException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

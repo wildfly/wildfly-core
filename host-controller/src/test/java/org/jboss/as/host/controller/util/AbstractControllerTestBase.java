@@ -531,12 +531,7 @@ public abstract class AbstractControllerTestBase {
 
         @Override
         public ExpressionResolver getExpressionResolver() {
-            return new ExpressionResolver() {
-                @Override
-                public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                    return node.resolve();
-                }
-            };
+            return ExpressionResolver.TEST_RESOLVER;
         }
 
         @Override

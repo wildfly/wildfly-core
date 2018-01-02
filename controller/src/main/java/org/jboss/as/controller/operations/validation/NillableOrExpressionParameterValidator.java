@@ -79,27 +79,6 @@ public class NillableOrExpressionParameterValidator implements ParameterValidato
         }
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        switch (value.getType()) {
-            case EXPRESSION:
-                if (!allowExpression) {
-                    throw ControllerLogger.ROOT_LOGGER.expressionNotAllowed(parameterName);
-                }
-                break;
-            case UNDEFINED:
-                if (allowNull != null) {
-                    if (!allowNull) {
-                        throw ControllerLogger.ROOT_LOGGER.nullNotAllowed(parameterName);
-                    }
-                    break;
-                } // else fall through and let the delegate validate
-            default:
-                delegate.validateResolvedParameter(parameterName, value);
-        }
-    }
-
     @Override
     public Long getMin() {
         return (delegate instanceof MinMaxValidator) ? ((MinMaxValidator) delegate).getMin() : null;

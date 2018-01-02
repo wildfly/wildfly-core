@@ -55,6 +55,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -247,7 +248,15 @@ public class ModelTestUtils {
      * @param node2 the second model
      */
     public static void resolveAndCompareModels(ModelNode node1, ModelNode node2) {
-        compare(node1.resolve(), node2.resolve(), false, true, new Stack<String>());
+        compare(resolve(node1), resolve(node2), false, true, new Stack<String>());
+    }
+
+    private static ModelNode resolve(ModelNode unresolved) {
+        try {
+            return ExpressionResolver.TEST_RESOLVER.resolveExpressions(unresolved);
+        } catch (OperationFailedException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**

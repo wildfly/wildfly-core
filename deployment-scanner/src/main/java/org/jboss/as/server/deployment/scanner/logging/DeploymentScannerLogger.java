@@ -344,13 +344,13 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @Message(id = Message.NONE, value = " A previous version of this content was deployed and remains deployed.")
     String previousContentDeployed();
 
-    /**
-     * A message indicating the scanner has not been configured.
-     *
-     * @return the message.
-     */
-    @Message(id = 29, value = "scanner not configured")
-    String scannerNotConfigured();
+//    /**
+//     * A message indicating the scanner has not been configured.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 29, value = "scanner not configured")
+//    String scannerNotConfigured();
 
     /**
      * A message indicating the file was configured for auto-deploy but could not be safely auto-deployed.

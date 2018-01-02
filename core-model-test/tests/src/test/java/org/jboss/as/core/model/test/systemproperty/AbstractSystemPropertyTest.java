@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
@@ -347,9 +348,9 @@ public abstract class AbstractSystemPropertyTest extends AbstractCoreModelTest {
             Assert.assertNull(System.getProperty(PROP_THREE));
             if (!domain) {
                 Assert.assertEquals(ModelType.EXPRESSION, props.get(PROP_FIVE, VALUE).getType());
-                Assert.assertEquals("5", props.get(PROP_FIVE, VALUE).resolve().asString());
+                Assert.assertEquals("5", ExpressionResolver.TEST_RESOLVER.resolveExpressions(props.get(PROP_FIVE, VALUE)).asString());
                 Assert.assertEquals(ModelType.EXPRESSION, props.get(PROP_FIVE, BOOT_TIME).getType());
-                Assert.assertFalse(props.get(PROP_FIVE, BOOT_TIME).resolve().asBoolean());
+                Assert.assertFalse(ExpressionResolver.TEST_RESOLVER.resolveExpressions(props.get(PROP_FIVE, BOOT_TIME)).asBoolean());
             }
         } else {
             Assert.assertEquals("1", System.getProperty(PROP_ONE));

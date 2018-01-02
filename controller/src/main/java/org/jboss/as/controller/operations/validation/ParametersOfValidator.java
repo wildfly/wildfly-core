@@ -23,8 +23,8 @@ package org.jboss.as.controller.operations.validation;
 
 import java.util.List;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
@@ -53,16 +53,6 @@ public class ParametersOfValidator implements ParameterValidator, MinMaxValidato
             final ModelNode failureDescription = new ModelNode().add(ControllerLogger.ROOT_LOGGER.validationFailed(parameterName));
             failureDescription.add(e.getFailureDescription());
             throw new OperationFailedException(e.getMessage(), e.getCause(), failureDescription);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        try {
-            delegate.validateResolved(value);
-        } catch (OperationFailedException e) {
-            throw new OperationFailedException(e.getMessage(), e.getCause(), new ModelNode().set(parameterName + ": " + e.getFailureDescription().asString()));
         }
     }
 

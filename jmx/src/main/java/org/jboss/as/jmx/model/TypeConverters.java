@@ -43,6 +43,8 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -218,7 +220,13 @@ class TypeConverters {
             if (!expressions || valueAccessor == UndefinedValueAccessor.INSTANCE) {
                 if (!expressions && node.getType() == ModelType.EXPRESSION) {
                     if (!VAULT_PATTERN.matcher(node.asString()).matches()) {
-                        return valueAccessor.fromModelNode(node.resolve());
+                        ModelNode resolved;
+                        try {
+                            resolved = ExpressionResolver.SIMPLE.resolveExpressions(node);
+                        } catch (OperationFailedException e) {
+                            throw new IllegalArgumentException(e);
+                        }
+                        return valueAccessor.fromModelNode(resolved);
                     }
                 }
                 return valueAccessor.fromModelNode(node);
@@ -728,7 +736,10 @@ class TypeConverters {
         }
 
         Object fromModelNode(final ModelNode node) {
-            return node.resolve().asBytes();
+            // The only use of this is BYTES_NO_EXPR so skip resolution.
+            // If that changes, use ExpressionResolver.SIMPLER I guess
+            //return node.resolve().asBytes();
+            return node.asBytes();
         }
 
         ModelNode toModelNode(final Object o) {

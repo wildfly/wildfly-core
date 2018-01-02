@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -494,7 +496,11 @@ public class FailedOperationTransformationConfig {
             if (toResolve.getType() == ModelType.STRING) {
                 toResolve = new ModelNode().set(new ValueExpression(toResolve.asString()));
             }
-            return toResolve.resolve();
+            try {
+                return ExpressionResolver.TEST_RESOLVER.resolveExpressions(toResolve);
+            } catch (OperationFailedException e) {
+                throw new IllegalArgumentException(e);
+            }
         }
 
 

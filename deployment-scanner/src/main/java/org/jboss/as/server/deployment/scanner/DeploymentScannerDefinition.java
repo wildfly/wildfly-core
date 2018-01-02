@@ -133,13 +133,14 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
         //resourceRegistration.registerReadOnlyAttribute(NAME, null);
         resourceRegistration.registerReadWriteAttribute(PATH, null, new WritePathAttributeHandler(pathManager));
         resourceRegistration.registerReadWriteAttribute(RELATIVE_TO, null, new WriteRelativeToAttributeHandler(pathManager));
-        resourceRegistration.registerReadWriteAttribute(SCAN_ENABLED, null, WriteEnabledAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(SCAN_INTERVAL, null, WriteScanIntervalAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_ZIPPED, null, WriteAutoDeployZipAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_EXPLODED, null, WriteAutoDeployExplodedAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_XML, null, WriteAutoDeployXMLAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(DEPLOYMENT_TIMEOUT, null, WriteDeploymentTimeoutAttributeHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(RUNTIME_FAILURE_CAUSES_ROLLBACK, null, WriteRuntimeFailureCausesRollbackAttributeHandler.INSTANCE);
+        UpdateScannerWriteAttributeHandler commonHandler = new UpdateScannerWriteAttributeHandler();
+        resourceRegistration.registerReadWriteAttribute(SCAN_ENABLED, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(SCAN_INTERVAL, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_ZIPPED, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_EXPLODED, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(AUTO_DEPLOY_XML, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(DEPLOYMENT_TIMEOUT, null, commonHandler);
+        resourceRegistration.registerReadWriteAttribute(RUNTIME_FAILURE_CAUSES_ROLLBACK, null, commonHandler);
     }
 
     @Override

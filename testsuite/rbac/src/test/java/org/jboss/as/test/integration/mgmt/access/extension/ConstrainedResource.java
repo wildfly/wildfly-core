@@ -99,11 +99,6 @@ public class ConstrainedResource extends SimpleResourceDefinition {
                         throw new OperationFailedException("Jndi name is required");
                     }
                 }
-
-                @Override
-                public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-                    validateParameter(parameterName, value.resolve());
-                }
             })
             .build();
 
