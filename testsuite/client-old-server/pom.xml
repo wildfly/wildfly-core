@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- 
-  Set these VM properties in your IDE debugger 
+  Set these VM properties in your IDE debugger (replace ${VERSION} with actual project version)
 
   -Djava.util.logging.manager=org.jboss.logmanager.LogManager
-  -Djboss.home=${workspace_loc:wildfly-build}/target/wildfly-4.0.1.Final-SNAPSHOT 
+  -Djboss.home=${workspace_loc:wildfly-build}/target/wildfly-${VERSION}
   -DallowConnectingToRunningServer=true
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
