@@ -114,9 +114,14 @@ public class StateParser {
 
     public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
             boolean strict, CommandContext ctx) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, strict, false, ctx);
+    }
+
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
+            boolean strict, boolean disableResolutionException, CommandContext ctx) throws CommandFormatException {
 
         try {
-            return doParse(str, callbackHandler, initialState, strict, ctx);
+            return doParse(str, callbackHandler, initialState, strict, disableResolutionException, ctx);
         } catch (CommandFormatException e) {
             throw e;
         } catch (Throwable t) {
@@ -128,7 +133,7 @@ public class StateParser {
      * Returns the string which was actually parsed with all the substitutions performed
      */
     protected static SubstitutedLine doParse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
-            boolean strict, CommandContext cmdCtx) throws CommandFormatException {
+            boolean strict, boolean disableResolutionException, CommandContext cmdCtx) throws CommandFormatException {
 
         if (str == null || str.isEmpty()) {
             return new SubstitutedLine(str);
@@ -140,6 +145,7 @@ public class StateParser {
         ctx.input = str;
         ctx.strict = strict;
         ctx.cmdCtx = cmdCtx;
+        ctx.disableResolutionException = disableResolutionException;
 
         ctx.substitued.substitued = ctx.parse();
         return ctx.substitued;
@@ -217,6 +223,7 @@ public class StateParser {
         ParsingStateCallbackHandler callbackHandler;
         ParsingState initialState;
         boolean strict;
+        boolean disableResolutionException;
         CommandFormatException error;
         CommandContext cmdCtx;
         private final SubstitutedLine substitued = new SubstitutedLine();
@@ -337,7 +344,7 @@ public class StateParser {
             final String name = input.substring(location+1, endIndex);
             final String value = cmdCtx == null ? null : cmdCtx.getVariable(name);
             if(value == null) {
-                if (exceptionIfNotResolved) {
+                if (exceptionIfNotResolved && !disableResolutionException) {
                     throw new UnresolvedVariableException(name, "Unrecognized variable " + name);
                 }
             } else {

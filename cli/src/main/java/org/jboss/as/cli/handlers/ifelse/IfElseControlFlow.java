@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContext.Scope;
+import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.batch.BatchManager;
@@ -87,6 +88,9 @@ class IfElseControlFlow implements CommandLineRedirection {
             }
 
             final String cmd = line.getOperationName();
+            if ("if".equals(cmd)) {
+                throw new CommandFormatException("if is not allowed while in if block");
+            }
             if("else".equals(cmd) || "end-if".equals(cmd)) {
                 registration.handle(line);
             } else {

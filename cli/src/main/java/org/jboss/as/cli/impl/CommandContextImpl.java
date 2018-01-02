@@ -1436,7 +1436,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
 
     private void resetArgs(String cmdLine) throws CommandFormatException {
         if (cmdLine != null) {
-            parsedCmd.parse(prefix, cmdLine, this);
+            parsedCmd.parse(prefix, cmdLine, this, redirection != null);
             setOutputTarget(parsedCmd.getOutputTarget());
         }
         this.cmdLine = cmdLine;

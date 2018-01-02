@@ -159,6 +159,8 @@ public class ForLoopTestCase extends AbstractCliTestBase {
         try {
             cli.sendLine("for propName in :read-children-names(child-type=system-property");
             cli.sendLine("if (result!=[]) of :read-children-names(child-type=system-property");
+            cli.sendLine("set foo=bar");
+            cli.sendLine("echo $foo");
             cli.sendLine("/system-property=$propName:remove");
             cli.sendLine("end-if");
             cli.sendLine("done");
