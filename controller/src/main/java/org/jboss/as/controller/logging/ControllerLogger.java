@@ -421,7 +421,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @LogMessage(level = Level.INFO)
     @Message(id = 28, value = "Attribute '%s' in the resource at address '%s' is deprecated, and may be removed in " +
-            "future version. See the attribute description in the output of the read-resource-description operation " +
+            "a future version. See the attribute description in the output of the read-resource-description operation " +
             "to learn more about the deprecation.")
     void attributeDeprecated(String name, String address);
 
@@ -3510,4 +3510,12 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 446, value = "%s or alternative(s) %s is required")
     OperationFailedException requiredWithAlternatives(String name, Set<String> alternatives);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 447, value = "Attribute '%s' in the resource at address '%s' has been configured with an expression, " +
+            "but support for use of expressions in this attribute's value may be removed in a future version. This " +
+            "attribute configures whether a capability that can be required by other parts of the configuration is present " +
+            "or itself configures a requirement for a capability provided by another part of the configuration. " +
+            "Full support for this kind of configuration cannot be provided when an expression is used.")
+    void attributeExpressionDeprecated(String name, String address);
 }

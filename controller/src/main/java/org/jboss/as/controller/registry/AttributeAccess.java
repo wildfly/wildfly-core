@@ -146,7 +146,12 @@ public final class AttributeAccess {
          * This flag can be used in conjunction with STORAGE_RUNTIME to specify that a runtime
          * attribute can work in the absence of runtime services.
          */
-         RUNTIME_SERVICE_NOT_REQUIRED;
+        RUNTIME_SERVICE_NOT_REQUIRED,
+        /**
+         * Support for use of an expression for the value of this attribute is deprecated
+         * and may be removed in a future release.
+         */
+        EXPRESSIONS_DEPRECATED;
 
         private static final Map<EnumSet<AttributeAccess.Flag>, Set<AttributeAccess.Flag>> flagSets = new ConcurrentHashMap<>(16);
         public static Set<AttributeAccess.Flag> immutableSetOf(AttributeAccess.Flag... flags) {
