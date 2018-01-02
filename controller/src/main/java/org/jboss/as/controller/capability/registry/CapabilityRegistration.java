@@ -32,7 +32,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.capability.Capability;
 
 /**
- * Encapsulates the registration information for an {@link org.jboss.as.controller.capability.AbstractCapability capability}.
+ * Encapsulates the registration information for a {@link org.jboss.as.controller.capability.Capability capability}.
  *
  * @param <C> the specific type of capability associated with this registration
  *

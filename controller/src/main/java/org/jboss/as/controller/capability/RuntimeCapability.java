@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.capability;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -72,26 +71,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         return sb.toString();
     }
 
-    /**
-     * Creates a fully named capability from a {@link #isDynamicallyNamed() dynamically named} base
-     * capability. Capability providers should use this method to generate fully named capabilities in logic
-     * that handles dynamically named resources.
-     *
-     * @param base the base capability. Cannot be {@code null}, and {@link #isDynamicallyNamed()} must return {@code true}
-     * @param dynamicElement the dynamic portion of the full capability name. Cannot be {@code null} or empty
-     * @param <T> the type of the runtime API object exposed by the capability
-     * @return the fully name capability.
-     *
-     * @deprecated use {@link #fromBaseCapability(String...)} on {@code base}
-     */
-    @Deprecated
-    public static <T> RuntimeCapability<T> fromBaseCapability(RuntimeCapability<T> base, String dynamicElement) {
-        return base.fromBaseCapability(dynamicElement);
-    }
-
     // Default value for allowMultipleRegistrations.
     private static final boolean ALLOW_MULTIPLE = false;
-    private static final ServiceName ORG_WILDFLY = ServiceName.parse("org.wildfly");
 
     private final Class<?> serviceValueType;
     private volatile ServiceName serviceName;
@@ -99,58 +80,10 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     private final boolean allowMultipleRegistrations;
 
     /**
-     * Creates a new capability
-     * @param name the name of the capability. Cannot be {@code null}
-     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
-     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
-     * @param optionalRequirements names of other capabilities upon which this capability has an optional requirement. May be {@code null}
-     *
-     * @deprecated use a {@link org.jboss.as.controller.capability.RuntimeCapability.Builder}
-     */
-    @Deprecated
-    public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements, Set<String> optionalRequirements) {
-        super(name, false, requirements, optionalRequirements, null, null, null, null);
-        this.runtimeAPI = runtimeAPI;
-        this.serviceValueType = null;
-        this.allowMultipleRegistrations = ALLOW_MULTIPLE;
-    }
-
-    /**
-     * Creates a new capability
-     * @param name the name of the capability. Cannot be {@code null}
-     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
-     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
-     *
-     * @deprecated use a {@link org.jboss.as.controller.capability.RuntimeCapability.Builder}
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public RuntimeCapability(String name, T runtimeAPI, Set<String> requirements) {
-        this(name, runtimeAPI, requirements, null);
-    }
-
-    /**
-     * Creates a new capability
-     * @param name the name of the capability. Cannot be {@code null}
-     * @param runtimeAPI implementation of the API exposed by this capability to other capabilities. May be {@code null}
-     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
-     *
-     * @deprecated use a {@link org.jboss.as.controller.capability.RuntimeCapability.Builder}
-     */
-    @Deprecated
-    public RuntimeCapability(String name, T runtimeAPI, String... requirements) {
-        super(name, false, new HashSet<>(Arrays.asList(requirements)), null, null, null, null, null);
-        this.runtimeAPI = runtimeAPI;
-        this.serviceValueType = null;
-        this.allowMultipleRegistrations = ALLOW_MULTIPLE;
-    }
-
-    /**
      * Constructor for use by the builder.
      */
     private RuntimeCapability(Builder<T> builder) {
-        super(builder.baseName, builder.dynamic, builder.requirements, builder.optionalRequirements,
-                builder.runtimeOnlyRequirements, builder.dynamicRequirements, builder.dynamicOptionalRequirements, builder.dynamicNameMapper);
+        super(builder.baseName, builder.dynamic, builder.requirements, builder.dynamicNameMapper);
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
@@ -160,14 +93,11 @@ public class RuntimeCapability<T> extends AbstractCapability  {
      * Constructor for use by {@link #fromBaseCapability(String...)}
      */
     private RuntimeCapability(String baseName, Class<?> serviceValueType, ServiceName baseServiceName, T runtimeAPI,
-                              Set<String> requirements, Set<String> optionalRequirements,
-                              Set<String> runtimeOnlyRequirements, Set<String> dynamicRequirements,
-                              Set<String> dynamicOptionalRequirements,
+                              Set<String> requirements,
                               boolean allowMultipleRegistrations,
                               Function<PathAddress, String[]> dynamicNameMapper, String... dynamicElement
     ) {
-        super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements,
-                optionalRequirements, runtimeOnlyRequirements, dynamicRequirements, dynamicOptionalRequirements, dynamicNameMapper);
+        super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements, dynamicNameMapper);
         this.runtimeAPI = runtimeAPI;
         this.serviceValueType = serviceValueType;
         if (serviceValueType != null) {
@@ -326,10 +256,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
         return new RuntimeCapability<T>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), getOptionalRequirements(),
-                getRuntimeOnlyRequirements(), getDynamicRequirements(),
-                getDynamicOptionalRequirements(), allowMultipleRegistrations,
-                dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, dynamicElement);
 
     }
 
@@ -357,10 +284,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), getOptionalRequirements(),
-                getRuntimeOnlyRequirements(), getDynamicRequirements(),
-                        getDynamicOptionalRequirements(), allowMultipleRegistrations,
-                        dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, dynamicElement);
     }
 
     /**
@@ -374,11 +298,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private final boolean dynamic;
         private Class<?> serviceValueType;
         private Set<String> requirements;
-        private Set<String> optionalRequirements;
-        private Set<String> runtimeOnlyRequirements;
-        private Set<String> dynamicRequirements;
-        private Set<String> dynamicOptionalRequirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
+        @SuppressWarnings("deprecation")
         private Function<PathAddress, String[]> dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
 
         /**
@@ -477,81 +398,6 @@ public class RuntimeCapability<T> extends AbstractCapability  {
                 this.requirements = new HashSet<>(requirements.length);
             }
             Collections.addAll(this.requirements, requirements);
-            return this;
-        }
-
-        /**
-         * Adds the names of other capabilities that this capability optionally requires.
-         * @param requirements the capability names
-         * @return the builder
-         *
-         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
-         */
-        @Deprecated
-        public Builder<T> addOptionalRequirements(String... requirements) {
-            assert requirements != null;
-            if (this.optionalRequirements == null) {
-                this.optionalRequirements = new HashSet<>(requirements.length);
-            }
-            Collections.addAll(this.optionalRequirements, requirements);
-            return this;
-        }
-
-        /**
-         * Adds the names of other capabilities that this capability optionally uses,
-         * but only if they are present in the runtime. The persistent configuration of
-         * the capability being built will never mandate the presence of these capabilities.
-         *
-         * @param requirements the capability names
-         * @return the builder
-         *
-         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
-         */
-        @Deprecated
-        public Builder<T> addRuntimeOnlyRequirements(String... requirements) {
-            assert requirements != null;
-            if (this.runtimeOnlyRequirements == null) {
-                this.runtimeOnlyRequirements = new HashSet<>(requirements.length);
-            }
-            Collections.addAll(this.runtimeOnlyRequirements, requirements);
-            return this;
-        }
-
-        /**
-         * Adds the the names of other dynamically named capabilities upon a concrete instance of which this
-         * capability will have a hard requirement once the full name is known
-         *
-         * @param requirements the capability names
-         * @return the builder
-         *
-         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
-         */
-        @Deprecated
-        public Builder<T> addDynamicRequirements(String... requirements) {
-            assert requirements != null;
-            if (this.dynamicRequirements == null) {
-                this.dynamicRequirements = new HashSet<>(requirements.length);
-            }
-            Collections.addAll(this.dynamicRequirements, requirements);
-            return this;
-        }
-
-        /**
-         * Adds the the names of other dynamically named capabilities upon a concrete instance of which this
-         * capability will have an optional requirement once the full name is known
-         *
-         * @param requirements the capability names
-         * @return the builder
-         *
-         * @deprecated nothing is currently done with this data and unless a true use is implemented this method may be removed
-         */
-        @Deprecated
-        public Builder<T> addDynamicOptionalRequirements(String... requirements) {
-            assert requirements != null;
-            if (this.dynamicOptionalRequirements == null) {
-                this.dynamicOptionalRequirements = new HashSet<>(requirements.length);
-            }
-            Collections.addAll(this.dynamicOptionalRequirements, requirements);
             return this;
         }
 
