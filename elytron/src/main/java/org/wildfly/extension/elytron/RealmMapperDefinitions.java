@@ -101,7 +101,11 @@ class RealmMapperDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.CONSTANT_REALM_MAPPER, add, CONSTANT_REALM_MAPPER_ATTRIBUTES, REALM_MAPPER_RUNTIME_CAPABILITY);
+        return TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.CONSTANT_REALM_MAPPER)
+                .setAddHandler(add)
+                .setAttributes(CONSTANT_REALM_MAPPER_ATTRIBUTES)
+                .setRuntimeCapabilities(REALM_MAPPER_RUNTIME_CAPABILITY).build();
     }
 
     private static class SimpleRegexRealmMapperDefinition extends SimpleResourceDefinition {

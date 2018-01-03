@@ -31,7 +31,6 @@ import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_RUNTIME_CAP
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -82,13 +81,13 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManager;
@@ -102,6 +101,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
@@ -476,17 +476,15 @@ class SSLDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.KEY_MANAGER, add, attributes, KEY_MANAGER_RUNTIME_CAPABILITY) {
-            @Override
-            public void registerOperations(ManagementResourceRegistration registration) {
-                super.registerOperations(registration);
-                registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
-                            .setRuntimeOnly()
-                            .build()
-                        , init);
-            }
-        };
-
+        return TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.KEY_MANAGER)
+                .setAddHandler(add)
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(KEY_MANAGER_RUNTIME_CAPABILITY)
+                .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
+                        .setRuntimeOnly()
+                        .build(), init)
+                .build();
     }
 
     private abstract static class ReloadableX509ExtendedTrustManager extends X509ExtendedTrustManager {
@@ -696,14 +694,16 @@ class SSLDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.TRUST_MANAGER, add, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
-            @Override
-            public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-                super.registerOperations(resourceRegistration);
-                resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, getResourceDescriptionResolver())
-                            .setRuntimeOnly()
-                            .build()
-                        , new ElytronRuntimeOnlyHandler() {
+        ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TRUST_MANAGER);
+        return TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.TRUST_MANAGER)
+                .setResourceDescriptionResolver(resolver)
+                .setAddHandler(add)
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(TRUST_MANAGER_RUNTIME_CAPABILITY)
+                .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST, resolver)
+                        .setRuntimeOnly()
+                        .build(), new ElytronRuntimeOnlyHandler() {
                             @Override
                             protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
                                 ServiceName serviceName = TRUST_MANAGER_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue()).getCapabilityServiceName();
@@ -718,9 +718,8 @@ class SSLDefinitions {
                                 }
                                 ((ReloadableX509ExtendedTrustManager) trustManager).reload();
                             }
-                        });
-            }
-        };
+                        })
+                .build();
     }
 
     private static class DelegatingKeyManager extends X509ExtendedKeyManager {
@@ -772,47 +771,34 @@ class SSLDefinitions {
         }
     }
 
-    private static class SSLContextDefinition extends TrivialResourceDefinition {
-        final boolean server;
+    private static ResourceDefinition createSSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes, boolean serverOrHostController) {
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(pathKey)
+                .setAddHandler(addHandler)
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY);
 
-        private SSLContextDefinition(String pathKey, boolean server, AbstractAddStepHandler addHandler, AttributeDefinition[] attributes) {
-            super(pathKey, addHandler, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY);
-            this.server = server;
-        }
-
-        @Override
-        public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-            super.registerAttributes(resourceRegistration);
-
-            if (isServerOrHostController(resourceRegistration)) {
-                resourceRegistration.registerReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
-                    @Override
-                    protected void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException {
-                        SSLSessionContext sessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
-                        int sum = 0;
-                        for (byte[] b : Collections.list(sessionContext.getIds())) {
-                            int i = 1;
-                            sum += i;
-                        }
-                        result.set(sum);
+        if (serverOrHostController) {
+            builder.addReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
+                @Override
+                protected void performRuntime(ModelNode result, ModelNode operation, SSLContext sslContext) throws OperationFailedException {
+                    SSLSessionContext sessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
+                    int sum = 0;
+                    for (byte[] b : Collections.list(sessionContext.getIds())) {
+                        int i = 1;
+                        sum += i;
                     }
+                    result.set(sum);
+                }
 
-                    @Override
-                    protected ServiceUtil<SSLContext> getSSLContextServiceUtil() {
-                        return server ? SERVER_SERVICE_UTIL : CLIENT_SERVICE_UTIL;
-                    }
-                });
-            }
+                @Override
+                protected ServiceUtil<SSLContext> getSSLContextServiceUtil() {
+                    return server ? SERVER_SERVICE_UTIL : CLIENT_SERVICE_UTIL;
+                }
+            }).addChild(new SSLSessionDefinition(server));
         }
 
-        @Override
-        public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-            super.registerChildren(resourceRegistration);
-
-            if (isServerOrHostController(resourceRegistration)) {
-                resourceRegistration.registerSubModel(new SSLSessionDefinition(server));
-            }
-        }
+        return builder.build();
     }
 
     private static <T> InjectedValue<T> addDependency(String baseName, SimpleAttributeDefinition attribute,
@@ -829,7 +815,7 @@ class SSLDefinitions {
         return injectedValue;
     }
 
-    static ResourceDefinition getServerSSLContextDefinition() {
+    static ResourceDefinition getServerSSLContextDefinition(boolean serverOrHostController) {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
                 .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
@@ -848,9 +834,11 @@ class SSLDefinitions {
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
                 providersDefinition, PROVIDER_NAME };
 
-        return new SSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
+
             @Override
-            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+            protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder,
+                    OperationContext context, ModelNode model) throws OperationFailedException {
 
                 final InjectedValue<SecurityDomain> securityDomainInjector = addDependency(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN, SecurityDomain.class, serviceBuilder, context, model);
                 final InjectedValue<KeyManager> keyManagerInjector = addDependency(KEY_MANAGER_CAPABILITY, KEY_MANAGER, KeyManager.class, serviceBuilder, context, model);
@@ -883,42 +871,50 @@ class SSLDefinitions {
                     Provider[] providers = filterProviders(providersInjector.getOptionalValue(), providerName);
 
                     SSLContextBuilder builder = new SSLContextBuilder();
-                    if (securityDomain != null) builder.setSecurityDomain(securityDomain);
-                    if (keyManager != null) builder.setKeyManager(keyManager);
-                    if (trustManager != null) builder.setTrustManager(trustManager);
-                    if (providers != null) builder.setProviderSupplier(() -> providers);
-                    if (cipherSuiteFilter != null) builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
-                    if ( ! protocols.isEmpty()) {
+                    if (securityDomain != null)
+                        builder.setSecurityDomain(securityDomain);
+                    if (keyManager != null)
+                        builder.setKeyManager(keyManager);
+                    if (trustManager != null)
+                        builder.setTrustManager(trustManager);
+                    if (providers != null)
+                        builder.setProviderSupplier(() -> providers);
+                    if (cipherSuiteFilter != null)
+                        builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
+                    if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
                         for (String protocol : protocols) {
                             Protocol forName = Protocol.forName(protocol);
                             list.add(forName);
                         }
-                        builder.setProtocolSelector(ProtocolSelector.empty().add(
-                                EnumSet.copyOf(list)
-                        ));
+                        builder.setProtocolSelector(ProtocolSelector.empty().add(EnumSet.copyOf(list)));
                     }
                     if (preRealmRewriter != null || postRealmRewriter != null || finalRewriter != null || realmMapper != null) {
                         MechanismConfiguration.Builder mechBuilder = MechanismConfiguration.builder();
-                        if (preRealmRewriter != null) mechBuilder.setPreRealmRewriter(preRealmRewriter);
-                        if (postRealmRewriter != null) mechBuilder.setPostRealmRewriter(postRealmRewriter);
-                        if (finalRewriter != null) mechBuilder.setFinalRewriter(finalRewriter);
-                        if (realmMapper != null) mechBuilder.setRealmMapper(realmMapper);
-                        builder.setMechanismConfigurationSelector(MechanismConfigurationSelector.constantSelector(mechBuilder.build()));
+                        if (preRealmRewriter != null)
+                            mechBuilder.setPreRealmRewriter(preRealmRewriter);
+                        if (postRealmRewriter != null)
+                            mechBuilder.setPostRealmRewriter(postRealmRewriter);
+                        if (finalRewriter != null)
+                            mechBuilder.setFinalRewriter(finalRewriter);
+                        if (realmMapper != null)
+                            mechBuilder.setRealmMapper(realmMapper);
+                        builder.setMechanismConfigurationSelector(
+                                MechanismConfigurationSelector.constantSelector(mechBuilder.build()));
                     }
                     builder.setWantClientAuth(wantClientAuth)
-                           .setNeedClientAuth(needClientAuth)
-                           .setAuthenticationOptional(authenticationOptional)
-                           .setUseCipherSuitesOrder(useCipherSuitesOrder)
-                           .setSessionCacheSize(maximumSessionCacheSize)
-                           .setSessionTimeout(sessionTimeout)
-                           .setWrap(wrap);
+                        .setNeedClientAuth(needClientAuth)
+                        .setAuthenticationOptional(authenticationOptional)
+                        .setUseCipherSuitesOrder(useCipherSuitesOrder)
+                        .setSessionCacheSize(maximumSessionCacheSize)
+                        .setSessionTimeout(sessionTimeout)
+                        .setWrap(wrap);
 
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
-                                "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  " +
-                                "providers = %s  cipherSuiteFilter = %s  protocols = %s  wantClientAuth = %s  needClientAuth = %s  " +
-                                "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
+                                "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  "
+                                        + "providers = %s  cipherSuiteFilter = %s  protocols = %s  wantClientAuth = %s  needClientAuth = %s  "
+                                        + "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
                                 securityDomain, keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter,
                                 Arrays.toString(protocols.toArray()), wantClientAuth, needClientAuth, authenticationOptional,
                                 maximumSessionCacheSize, sessionTimeout, wrap);
@@ -941,12 +937,16 @@ class SSLDefinitions {
 
             @Override
             protected void installedForResource(ServiceController<SSLContext> serviceController, Resource resource) {
-                ((SSLContextResource)resource).setSSLContextServiceController(serviceController);
+                ((SSLContextResource) resource).setSSLContextServiceController(serviceController);
             }
-        }, attributes);
+
+        };
+
+        return createSSLContextDefinition(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, true, add, attributes,
+                serverOrHostController);
     }
 
-    static ResourceDefinition getClientSSLContextDefinition() {
+    static ResourceDefinition getClientSSLContextDefinition(boolean serverOrHostController) {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
                 .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
@@ -957,7 +957,7 @@ class SSLDefinitions {
         AttributeDefinition[] attributes = new AttributeDefinition[] { CIPHER_SUITE_FILTER, PROTOCOLS,
                 KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME };
 
-        return new SSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
             @Override
             protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
 
@@ -1020,7 +1020,9 @@ class SSLDefinitions {
             protected void installedForResource(ServiceController<SSLContext> serviceController, Resource resource) {
                 ((SSLContextResource)resource).setSSLContextServiceController(serviceController);
             }
-        }, attributes);
+        };
+
+        return createSSLContextDefinition(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, false, add, attributes, serverOrHostController);
     }
 
     private static Provider[] filterProviders(Provider[] all, String provider) {
