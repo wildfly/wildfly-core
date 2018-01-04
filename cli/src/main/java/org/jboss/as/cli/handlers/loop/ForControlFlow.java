@@ -78,7 +78,11 @@ class ForControlFlow implements CommandLineRedirection {
             throw new CommandLineException("iterable request failed, no result");
         }
         ModelNode mn = targetValue.get(Util.RESULT);
-        result = mn.asList();
+        try {
+            result = mn.asList();
+        } catch (Exception ex) {
+            throw new CommandLineException("for cannot be used with operations that produce a non-iterable result");
+        }
         // Define the variable with a dummy value. That is required for operations in the block
         // referencing this variable otherwise parsing would fail.
         ctx.setVariable(varName, "null");
