@@ -22,9 +22,7 @@
 
 package org.jboss.as.controller.operations.validation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -37,18 +35,15 @@ import org.jboss.dmr.ModelType;
 *
 * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
 */
-public class ObjectTypeValidator extends ModelTypeValidator implements AllowedValuesValidator {
+public class ObjectTypeValidator extends ModelTypeValidator {
 
     private final Map<String, AttributeDefinition> allowedValues;
-    private final List<ModelNode> nodeValues;
 
     public ObjectTypeValidator(final boolean nullable, final AttributeDefinition... attributes) {
         super(nullable, true, false, ModelType.OBJECT);
         allowedValues = new HashMap<String, AttributeDefinition>(attributes.length);
-        nodeValues = new ArrayList<ModelNode>(attributes.length);
         for (AttributeDefinition attribute : attributes) {
             allowedValues.put(attribute.getName(), attribute);
-            nodeValues.add(new ModelNode(attribute.getName()));
         }
     }
 
@@ -66,11 +61,5 @@ public class ObjectTypeValidator extends ModelTypeValidator implements AllowedVa
                 ad.getValidator().validateParameter(key, toTest);
             }
         }
-    }
-
-    /** TODO WFCORE-2251 This is an incorrect impl and this class should not implement AllowedValuesValidator */
-    @Override
-    public List<ModelNode> getAllowedValues() {
-        return nodeValues;
     }
 }
