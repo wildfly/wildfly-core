@@ -21,7 +21,11 @@
 */
 package org.jboss.as.server.operations;
 
+import java.util.EnumSet;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
@@ -29,20 +33,34 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.access.Action;
+import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.ProcessReloadHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.OperationListener;
+import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
+
+import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  *
@@ -68,7 +86,11 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
             .setValidator(new EnumValidator<>(StartMode.class, true, false))
             .setAlternatives(ModelDescriptionConstants.ADMIN_ONLY)
             .setDefaultValue(new ModelNode(StartMode.NORMAL.toString())).build();
-    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE};
+
+    protected static final AttributeDefinition SUSPEND_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(0)).build();
+
+    private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE, SUSPEND_TIMEOUT};
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
                                                                 .setParameters(ATTRIBUTES)
@@ -80,6 +102,66 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
             ControlledProcessState processState, ServerEnvironment environment) {
         super(rootService, runningModeControl, processState);
         this.environment = environment;
+    }
+
+    @Override
+    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        final int timeoutInSeconds = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+        context.acquireControllerLock();
+        context.addStep(new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                final ReloadContext<RunningModeControl> reloadContext = initializeReloadContext(context, operation);
+
+                AuthorizationResult authorizationResult = context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                if (authorizationResult.getDecision() == AuthorizationResult.Decision.DENY) {
+                    throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
+                            PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
+                }
+
+                context.completeStep(new OperationContext.ResultHandler() {
+                    @Override
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        if (resultAction == OperationContext.ResultAction.KEEP) {
+                            final ServiceController<?> service = context.getServiceRegistry(false).getRequiredService(rootService);
+                            final ServiceRegistry registry = context.getServiceRegistry(false);
+                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
+                            final SuspendController suspendController = suspendControllerServiceController.getValue();
+                            final ExecutorService executor = (ExecutorService) context.getServiceRegistry(false).getRequiredService(EXECUTOR_CAPABILITY.getCapabilityServiceName()).getValue();
+                            final RestartAction restartAction = new RestartAction(service, reloadContext, suspendController, executor);
+                            if (timeoutInSeconds != 0) {
+                                OperationListener operationListener = new OperationListener() {
+                                    @Override
+                                    public void suspendStarted() {}
+
+                                    @Override
+                                    public void complete() {
+                                        suspendController.removeListener(this);
+                                        restartAction.restart();
+                                    }
+
+                                    @Override
+                                    public void cancelled() {
+                                        suspendController.removeListener(this);
+                                        restartAction.resume();
+                                    }
+
+                                    @Override
+                                    public void timeout() {
+                                        suspendController.removeListener(this);
+                                        restartAction.restart();
+                                    }
+                                };
+                                suspendController.addListener(operationListener);
+                                suspendController.suspend(timeoutInSeconds > 0 ?  timeoutInSeconds * 1000 : timeoutInSeconds);
+                            } else {
+                                restartAction.restart();
+                            }
+                        }
+                    }
+                });
+            }
+        }, OperationContext.Stage.RUNTIME);
     }
 
     @Override
@@ -148,6 +230,53 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         @Override
         public String toString() {
             return localName;
+        }
+    }
+
+    private class RestartAction {
+        private final ServiceController<?> service;
+        private final ReloadContext<RunningModeControl> reloadContext;
+        private final SuspendController suspendController;
+        private final ExecutorService executorService;
+
+        RestartAction(final ServiceController<?> service, final ReloadContext<RunningModeControl> reloadContext, final SuspendController suspendController, ExecutorService executorService) {
+            this.service = service;
+            this.reloadContext = reloadContext;
+            this.suspendController = suspendController;
+            this.executorService = executorService;
+        }
+
+        void restart() {
+            service.addListener(new AbstractServiceListener<Object>() {
+                @Override
+                public void listenerAdded(final ServiceController<?> controller) {
+                    Future<?> stopping = executorService.submit(() -> {
+                        reloadContext.reloadInitiated(runningModeControl);
+                        processState.setStopping();
+                        controller.setMode(ServiceController.Mode.NEVER);
+                    });
+                    try {
+                        stopping.get();
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException ex) {
+                        ControllerLogger.ROOT_LOGGER.errorStoppingServer(ex);
+                    }
+                }
+
+                @Override
+                public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
+                    if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
+                        controller.removeListener(this);
+                        reloadContext.doReload(runningModeControl);
+                        controller.setMode(ServiceController.Mode.ACTIVE);
+                    }
+                }
+            });
+        }
+
+        void resume(){
+            suspendController.resume();
         }
     }
 }
