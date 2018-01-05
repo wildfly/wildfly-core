@@ -56,6 +56,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1257,6 +1258,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
+        public Map<String, ServerStatus> restartServers(Set<String> serverNames, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
+            return getServerInventory().restartServers(serverNames, gracefulTimeout, domainModel, blocking, suspend);
+        }
+
+        @Override
         public ServerStatus stopServer(String serverName, int gracefulTimeout) {
             return getServerInventory().stopServer(serverName, gracefulTimeout);
         }
@@ -1579,6 +1585,18 @@ public class DomainModelControllerService extends AbstractControllerService impl
             @Override
             public ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
                 return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public Map<String, ServerStatus> restartServers(Set<String> serverNames, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
+                if ( serverNames != null && !serverNames.isEmpty() ){
+                    Map<String, ServerStatus> result = new HashMap<>();
+                    for (String serverName : serverNames){
+                        result.put(serverName, ServerStatus.STOPPED);
+                    }
+                    return result;
+                }
+                return Collections.EMPTY_MAP;
             }
 
             @Override

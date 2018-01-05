@@ -563,6 +563,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
+        public Map<String, ServerStatus> restartServers(Set<String> serverNames, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public ServerStatus stopServer(String serverName, int gracefulTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
