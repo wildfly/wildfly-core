@@ -35,6 +35,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -49,14 +50,16 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final String OPERATION_NAME = REMOVE;
 
-    public static final ServerRemoveHandler INSTANCE = new ServerRemoveHandler();
+    private final ServerInventory serverInventory;
 
     /**
      * Create the InterfaceRemoveHandler
      */
-    private ServerRemoveHandler() {
+    public ServerRemoveHandler(ServerInventory serverInventory) {
         super(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY);
+        this.serverInventory = serverInventory;
     }
+
 
     @Override
     protected void performRemove(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
@@ -90,7 +93,7 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 final PathAddress serverAddress = PathAddress.EMPTY_ADDRESS.append(PathElement.pathElement(SERVER, serverName));
                 final ProxyController controller = context.getResourceRegistration().getProxyController(serverAddress);
-                if (controller != null) {
+                if (controller != null || serverInventory.determineRunningProcesses(true).keySet().contains(serverInventory.getServerProcessName(serverName)) ) {
                     context.getFailureDescription().set(HostControllerLogger.ROOT_LOGGER.serverStillRunning(serverName));
                 }
             }

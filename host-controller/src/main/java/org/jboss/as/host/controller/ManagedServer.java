@@ -24,6 +24,7 @@ package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
@@ -31,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
@@ -236,8 +238,8 @@ class ManagedServer {
      * @param permit the controller permit
      * @return whether the state was changed successfully or not
      */
-    synchronized boolean reload(int permit, boolean suspend) {
-        return internalSetState(new ReloadTask(permit, suspend), InternalState.SERVER_STARTED, InternalState.RELOADING);
+    synchronized boolean reload(int permit, boolean suspend, int gracefulTimeout) {
+        return internalSetState(new ReloadTask(permit, suspend, gracefulTimeout), InternalState.SERVER_STARTED, InternalState.RELOADING);
     }
 
     /**
@@ -752,6 +754,23 @@ class ManagedServer {
         return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
 
+    private AsyncFuture<OperationResponse> reload(boolean suspend, int timeoutInSeconds, final BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener, int operationID) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(RELOAD);
+        operation.get(OP_ADDR).setEmptyList();
+        if(suspend) {
+            operation.get(START_MODE).set(SUSPEND);
+        }
+        operation.get(SUSPEND_TIMEOUT).set(timeoutInSeconds);
+        // See WFCORE-1791, Operation-id is sent back again to the HC in
+        // HostControllerConnection.ServerRegisterRequest.sendRequest method.
+        // With this operation-id ServerRegistrationStepHandler is able to acquire
+        // the lock and register the server in the domain.
+        operation.get(OPERATION_ID).set(operationID);
+
+        return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
+    }
+
     enum InternalState {
 
         STOPPED,
@@ -936,34 +955,39 @@ class ManagedServer {
 
         private final int permit;
         private final boolean suspend;
-        private ReloadTask(int permit, boolean suspend) {
+        private final int gracefulTimeout;
+
+        private ReloadTask(int permit, boolean suspend, int gracefulTimeout) {
             this.permit = permit;
             this.suspend = suspend;
+            this.gracefulTimeout = gracefulTimeout;
         }
 
         @Override
-        public boolean execute(ManagedServer server) throws Exception {
-
-            final ModelNode operation = new ModelNode();
-            operation.get(OP).set(RELOAD);
-            operation.get(OP_ADDR).setEmptyList();
-            if(suspend) {
-                operation.get(START_MODE).set(SUSPEND);
-            }
-            // See WFCORE-1791, Operation-id is sent back again to the HC in
-            // HostControllerConnection.ServerRegisterRequest.sendRequest method.
-            // With this operation-id ServerRegistrationStepHandler is able to acquire
-            // the lock and register the server in the domain.
-            operation.get("operation-id").set(permit);
+        public boolean execute(ManagedServer server) {
+            BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new BlockingQueueOperationListener<>();
+            AsyncFuture<OperationResponse> future = null;
 
             try {
-                final TransactionalProtocolClient.PreparedOperation<?> prepared = TransactionalProtocolHandlers.executeBlocking(operation, protocolClient);
+                future = reload(suspend, gracefulTimeout, listener, permit);
+                final TransactionalProtocolClient.PreparedOperation<?> prepared = listener.retrievePreparedOperation();
+
                 if (prepared.isFailed()) {
                     return false;
                 }
+
                 prepared.commit(); // Just commit and discard the result
-            } catch (IOException ignore) {
-                //
+
+            } catch (IOException e) {
+                //Failed executing operation for server
+                HostControllerLogger.ROOT_LOGGER.reloadExecutionFailed(e, serverName);
+                return false;
+            } catch (InterruptedException e) {
+                //interrupted awaiting server response
+                HostControllerLogger.ROOT_LOGGER.interruptedAwaitingReloadResponse(e, serverName);
+                future.asyncCancel(true);
+                Thread.currentThread().interrupt();
+                return false;
             }
             return true;
         }

@@ -34,6 +34,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -303,24 +304,69 @@ public class ServerInventoryImpl implements ServerInventory {
         }
     }
 
+    /**
+     * Reload a set of servers with the given name.
+     *
+     * @param serverName the name of the server
+     * @param blocking whether to block until the server is started
+     * @param gracefulTimeout time in seconds a server should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @return the status of the server following the attempt to reload.
+     */
     @Override
-    public ServerStatus reloadServer(final String serverName, final boolean blocking, boolean suspend) {
+    public ServerStatus reloadServer(final String serverName, final boolean blocking, boolean suspend, int gracefulTimeout) {
+        return reloadServers( Collections.singleton(serverName), blocking, suspend, gracefulTimeout ).get(serverName);
+    }
+
+    /**
+     * Reload a set of servers with the given name.
+     *
+     * @param serverNames The server names to be reload, can be an immutable collection
+     * @param blocking whether to block until the servers are started
+     * @param gracefulTimeout time in seconds the servers should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @return A Map with a key value of server name and its status after call reload on it.
+     */
+    @Override
+    public Map<String, ServerStatus> reloadServers(final Set<String> serverNames, final boolean blocking, boolean suspend, int gracefulTimeout) {
         if (shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
-        final ManagedServer server = servers.get(serverName);
-        if (server == null) {
-            return ServerStatus.STOPPED;
+        final Map<String, ServerStatus> results = new HashMap<>();
+        int permit = !blocking ? -1 : CurrentOperationIdHolder.getCurrentOperationID();
+
+        final List<ManagedServer> reloadedServers = new ArrayList<>();
+        for(String serverName : serverNames){
+            final ManagedServer server = servers.get(serverName);
+            if (server == null) {
+                results.put(serverName, ServerStatus.STOPPED);
+                continue;
+            }
+            if ( server.reload(permit, suspend, gracefulTimeout) ){
+                reloadedServers.add(server);
+            }
+            results.put(serverName, null);
         }
-        if (server.reload(CurrentOperationIdHolder.getCurrentOperationID(), suspend)) {
-            // Reload with current permit
-            if (blocking) {
-                server.awaitState(ManagedServer.InternalState.SERVER_STARTED);
-            } else {
-                server.awaitState(ManagedServer.InternalState.SERVER_STARTING);
+
+        for(ManagedServer server : reloadedServers){
+            if ( server.getState() != ServerStatus.STARTED ) {
+                if (blocking) {
+                    server.awaitState(ManagedServer.InternalState.SERVER_STARTED);
+                } else {
+                    // We do not want to block waiting for the server to suspend, but we
+                    // also do not want this server to be visible for other operations
+                    // until it suspends, reconnects and gets the proper domain model
+                    domainController.unregisterRunningServer(server.getServerName());
+                }
             }
         }
-        return determineServerStatus(serverName);
+
+        for (Map.Entry<String, ServerStatus> retEntry : results.entrySet()){
+            if (retEntry.getValue() == null){
+                retEntry.setValue( determineServerStatus(retEntry.getKey()) );
+            }
+        }
+        return results;
     }
 
     @Override
@@ -409,7 +455,7 @@ public class ServerInventoryImpl implements ServerInventory {
         Map<String, OperationData> operationDataMap = new HashMap<>();
         for (String serverName : serverNames) {
             final ManagedServer server = servers.get(serverName);
-            if (server != null) {
+            if (server != null && domainController.isRunningServerRegistered(serverName)) {
                 try {
                     int blockingTimeoutValue = blockingTimeout.getProxyBlockingTimeout(server.getAddress(), server.getProxyController());
                     BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new  BlockingQueueOperationListener<>();
@@ -482,7 +528,7 @@ public class ServerInventoryImpl implements ServerInventory {
         Map<String, OperationData> operationDataMap = new HashMap<>();
         for (String serverName : serverNames) {
             final ManagedServer server = servers.get(serverName);
-            if (server != null) {
+            if (server != null && domainController.isRunningServerRegistered(serverName)) {
                 try {
                     int blockingTimeoutValue = blockingTimeout.getProxyBlockingTimeout(server.getAddress(), server.getProxyController());
                     BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new  BlockingQueueOperationListener<>();

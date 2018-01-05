@@ -184,9 +184,25 @@ public interface ServerInventory {
      * Reload a server with the given name.
      *
      * @param serverName the name of the server
-     * @blockign whether to block until the server is started
+     * @param blocking whether to block until the server is started
+     * @param suspend If the server should reload suspended
+     * @param gracefulTimeout time in seconds a server should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @return the status of the server following the attempt to reload
      */
-    ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend);
+    ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend, int gracefulTimeout);
+
+    /**
+     * Reload a set of servers with the given name.
+     *
+     * @param serverNames The server names to be reload, can be an immutable collection
+     * @param blocking whether to block until the servers are started
+     * @param suspend If the server should reload suspended
+     * @param gracefulTimeout time in seconds the servers should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @return A Map with a key value of server name and its status after call reload on it.
+     */
+    Map<String, ServerStatus> reloadServers(final Set<String> serverNames, final boolean blocking, boolean suspend, int gracefulTimeout);
 
     /**
      * Destroy a stopping server process. In case the the server is not stopping, this will attempt to stop the server

@@ -322,6 +322,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
             }
 
             @Override
+            public boolean isRunningServerRegistered(String serverName) {
+                return true;
+            }
+
+            @Override
             public void registerRemoteHost(String hostName, ManagementChannelHandler handler, Transformers transformers,
                     Long remoteConnectionId, boolean registerProxyController) throws SlaveRegistrationException {
             }
@@ -677,6 +682,11 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
         @Override
         public void unregisterRunningServer(String serverName) {
+        }
+
+        @Override
+        public boolean isRunningServerRegistered(String serverName) {
+            return true;
         }
 
         @Override

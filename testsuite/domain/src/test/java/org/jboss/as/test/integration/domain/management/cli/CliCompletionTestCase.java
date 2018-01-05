@@ -22,20 +22,22 @@
  */
 package org.jboss.as.test.integration.domain.management.cli;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  * Test completion of properties with and without rollout support.
@@ -101,6 +103,55 @@ public class CliCompletionTestCase {
                 assertFalse(candidates.toString(), candidates.contains(","));
             }
 
+            {
+                String cmd = ":reload-servers(";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+                assertTrue(candidates.toString(), candidates.contains("blocking"));
+                assertTrue(candidates.toString(), candidates.contains("start-mode"));
+                assertTrue(candidates.toString(), candidates.contains("suspend-timeout"));
+            }
+
+            {
+                String cmd = ":reload-servers(blocking";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("=false"));
+                assertTrue(candidates.toString(), candidates.contains(")"));
+                assertFalse(candidates.toString(), candidates.contains(","));
+            }
+
+            {
+                String cmd = ":reload-servers(start-mode=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("normal"));
+                assertTrue(candidates.toString(), candidates.contains("suspend"));
+            }
+
+            {
+                String cmd = ":reload-servers(start-mode=normal,";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+                assertTrue(candidates.toString(), candidates.contains("blocking"));
+                assertTrue(candidates.toString(), candidates.contains("suspend-timeout"));
+            }
+
+            {
+                String cmd = ":reload-servers(start-mode=normal,suspend-timeout=10,";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(Util.NOT_OPERATOR));
+                assertTrue(candidates.toString(), candidates.contains("blocking"));
+            }
+
         } finally {
             ctx.terminateSession();
         }
@@ -161,6 +212,15 @@ public class CliCompletionTestCase {
 
             {
                 String cmd = ":reload-servers(start-mode=normal," + Util.NOT_OPERATOR + "blocking";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains(")"));
+            }
+
+            {
+                String cmd = ":reload-servers(suspend-timeout=10," + Util.NOT_OPERATOR + "blocking";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx, cmd,
                         cmd.length(), candidates);
