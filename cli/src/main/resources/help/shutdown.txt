@@ -6,7 +6,7 @@ SYNOPSIS
 
    Domain mode:
 
-      shutdown --host=host_name [--restart=true|false] [--timeout=seconds]
+      shutdown --host=host_name [--restart=true|false]
 
 DESCRIPTION
 
@@ -40,7 +40,8 @@ ARGUMENTS
  --restart   - optional, if true, once shutdown the controller will be
                restarted again; if not present, false is assumed.
 
- --timeout   - the shutdown timeout in seconds. If this is zero (the default)
+ --timeout   - Standalone mode only.
+               The shutdown timeout in seconds. If this is zero (the default)
                then the server will shutdown immediately. A value larger than
                zero means the server will wait up to this many seconds for all
                active requests to finish. A value smaller than zero means that

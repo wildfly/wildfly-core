@@ -62,7 +62,15 @@ public class ShutdownHandler extends BaseOperationCommand {
 
         restart = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--restart");
 
-        timeout = new ArgumentWithValue(this, "--timeout");
+        timeout = new ArgumentWithValue(this, "--timeout"){
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (ctx.isDomainMode()) {
+                    return false;
+                }
+                return super.canAppearNext(ctx);
+            }
+        };
 
         host = new ArgumentWithValue(this, new CommaSeparatedCompleter() {
             @Override
@@ -175,6 +183,10 @@ public class ShutdownHandler extends BaseOperationCommand {
                 throw new CommandFormatException("Missing required argument " + host.getFullName());
             }
             op.get(Util.ADDRESS).add(Util.HOST, hostName);
+
+            if(timeout.isPresent(args)){
+                throw new CommandFormatException(timeout.getFullName() + " is not allowed in the domain mode.");
+            }
         } else {
             if(host.isPresent(args)) {
                 throw new CommandFormatException(host.getFullName() + " is not allowed in the standalone mode.");
