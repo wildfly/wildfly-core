@@ -138,7 +138,7 @@ class ServerInventoryService implements Service<ServerInventory> {
                 @Override
                 public void run() {
                     try {
-                        serverInventory.shutdown(true, -1, true); // TODO graceful shutdown
+                        serverInventory.shutdown(true, 0, true); // TODO graceful shutdown
                         serverInventory = null;
                         // client.getValue().setServerInventory(null);
                     } finally {

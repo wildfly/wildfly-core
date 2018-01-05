@@ -137,7 +137,7 @@ class ManagedServer {
     private volatile InternalState requiredState = InternalState.STOPPED;
     private volatile InternalState internalState = InternalState.STOPPED;
 
-    private volatile int operationID = CurrentOperationIdHolder.getCurrentOperationID();
+    private volatile Integer operationID = CurrentOperationIdHolder.getCurrentOperationID();
     private volatile ManagedServerBootConfiguration bootConfiguration;
     private volatile boolean unstable;
 
@@ -892,14 +892,14 @@ class ManagedServer {
         }
 
         @Override
-        public boolean execute(ManagedServer server) throws Exception {
+        public boolean execute(ManagedServer server) {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
 
             try {
                 //graceful shutdown
                 //this just suspends the server, it does not actually shut it down
                 //All catch use the suspend error log traces because the operation at the end is a suspend
-                if ( gracefulTimeout != null ){
+                if (gracefulTimeout != null){
                     BlockingQueueOperationListener<TransactionalProtocolClient.Operation> listener = new BlockingQueueOperationListener<>();
                     AsyncFuture<OperationResponse> future = null;
 

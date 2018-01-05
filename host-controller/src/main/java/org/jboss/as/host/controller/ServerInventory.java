@@ -111,7 +111,7 @@ public interface ServerInventory {
      * is completely started; it usually will only be in the process of starting, having received all startup instructions.
      *
      * @param serverName the name of the server
-     * @param gracefulTimeout time in ms the server should allow for graceful shutdown (if supported) before terminating all services
+     * @param gracefulTimeout time in seconds the server should allow for graceful shutdown (if supported) before terminating all services
      * @param domainModel the configuration model for the domain
      *
      * @return the status of the server following the attempt to restart
@@ -122,13 +122,26 @@ public interface ServerInventory {
      * Restart the server with the given name.
      *
      * @param serverName the name of the server
-     * @param gracefulTimeout time in ms the server should allow for graceful shutdown (if supported) before terminating all services
+     * @param gracefulTimeout time in seconds the server should allow for graceful shutdown (if supported) before terminating all services
      * @param domainModel the configuration model for the domain
      * @param blocking whether to block until the server is restarted
      * @param suspend if the servers should restart in suspended mode
      * @return the status of the server following the attempt to restart
      */
     ServerStatus restartServer(String serverName, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend);
+
+    /**
+     * Restart the server with the given name.
+     *
+     * @param serverNames The server names to restart. It allows an immutable collection.
+     * @param gracefulTimeout time in seconds the server should allow for graceful shutdown (if supported) before terminating all services
+     * @param domainModel the configuration model for the domain
+     * @param blocking whether to block until the server is restarted
+     * @param suspend if the servers should restart in suspended mode
+     *
+     * @return A Map with a key value of server name and its status following the attempt to restart.
+     */
+    Map<String, ServerStatus> restartServers(Set<String> serverNames, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend);
 
     /**
      * Stop the server with the given name. Note that returning from this method does not mean the server

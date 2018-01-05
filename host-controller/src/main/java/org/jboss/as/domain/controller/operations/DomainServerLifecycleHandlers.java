@@ -123,8 +123,8 @@ public class DomainServerLifecycleHandlers {
     private static void registerHandlers(ManagementResourceRegistration registration, boolean serverGroup) {
         registration.registerOperationHandler(getStopOperationDefinition(serverGroup, StopServersLifecycleHandler.OPERATION_NAME), StopServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getOperationDefinition(serverGroup, StartServersLifecycleHandler.OPERATION_NAME), StartServersLifecycleHandler.INSTANCE);
-        registration.registerOperationHandler(getOperationDefinition(serverGroup, RestartServersLifecycleHandler.OPERATION_NAME), RestartServersLifecycleHandler.INSTANCE);
-        registration.registerOperationHandler(getReloadOperationDefinition(serverGroup, ReloadServersLifecycleHandler.OPERATION_NAME), ReloadServersLifecycleHandler.INSTANCE);
+        registration.registerOperationHandler(getReloadRestartOperationDefinition(serverGroup, RestartServersLifecycleHandler.OPERATION_NAME), RestartServersLifecycleHandler.INSTANCE);
+        registration.registerOperationHandler(getReloadRestartOperationDefinition(serverGroup, ReloadServersLifecycleHandler.OPERATION_NAME), ReloadServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, SuspendServersLifecycleHandler.OPERATION_NAME), SuspendServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, ResumeServersLifecycleHandler.OPERATION_NAME), ResumeServersLifecycleHandler.INSTANCE);
         if ( serverGroup ){
@@ -169,7 +169,7 @@ public class DomainServerLifecycleHandlers {
         return builder.build();
     }
 
-    private static OperationDefinition getReloadOperationDefinition(boolean serverGroup, String operationName) {
+    private static OperationDefinition getReloadRestartOperationDefinition(boolean serverGroup, String operationName) {
         return new SimpleOperationDefinitionBuilder(operationName,
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .addParameter(BLOCKING)
@@ -310,8 +310,9 @@ public class DomainServerLifecycleHandlers {
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
-            final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
             final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
+            final int gracefulTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -319,17 +320,15 @@ public class DomainServerLifecycleHandlers {
                     context.getServiceRegistry(true);
                     Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
-                    final Set<String> waitForServers = new HashSet<String>();
+                    final Set<String> affectedServers = new HashSet<>();
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.restartServer(serverModelName, timeout > 0 ? timeout * 1000 : timeout, model, false, suspend);
-                            waitForServers.add(serverModelName);
+                            affectedServers.add(serverModelName);
                         }
                     }
-                    if (blocking) {
-                        serverInventory.awaitServersState(waitForServers, true);
-                    }
+                    Map<String, ServerStatus> results = serverInventory.restartServers(affectedServers, gracefulTimeout, model, blocking, suspend);
+                    context.getResult().set(results.toString());
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
             }, Stage.RUNTIME);

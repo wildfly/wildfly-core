@@ -42,7 +42,7 @@ public final class CurrentOperationIdHolder {
         return currentOperationID.get();
     }
 
-    protected static void setCurrentOperationID(final Integer value) {
+    public static void setCurrentOperationID(final Integer value) {
         currentOperationID.set(value);
     }
 

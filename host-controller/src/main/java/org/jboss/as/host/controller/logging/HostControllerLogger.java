@@ -1422,4 +1422,8 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 212, value = "%s interrupted awaiting server reload response(s)")
     void interruptedAwaitingReloadResponse(@Cause InterruptedException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 213, value = "Failed executing the restart operation for server: %s")
+    void restartExecutionFailed(@Cause Throwable cause, String serverName);
 }

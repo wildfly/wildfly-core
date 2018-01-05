@@ -22,41 +22,6 @@
 
 package org.jboss.as.host.controller;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.AuthorizeCallback;
-import javax.security.sasl.RealmCallback;
-
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.ModelVersion;
@@ -92,6 +57,42 @@ import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.interfaces.DigestPassword;
 import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.sasl.AuthorizeCallback;
+import javax.security.sasl.RealmCallback;
+import java.io.IOException;
+import java.net.URI;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 /**
  * Inventory of the managed servers.
@@ -235,7 +236,60 @@ public class ServerInventoryImpl implements ServerInventory {
 
     @Override
     public ServerStatus restartServer(final String serverName, final int gracefulTimeout, final ModelNode domainModel, final boolean blocking, final boolean suspend) {
-        stopServer(serverName, gracefulTimeout);
+        return this.restartServers(Collections.singleton(serverName),gracefulTimeout,domainModel,blocking,suspend).get(serverName);
+    }
+
+    @Override
+    public Map<String, ServerStatus> restartServers(final Set<String> serverNames, final int gracefulTimeout, final ModelNode domainModel, final boolean blocking, final boolean suspend) {
+        final Map<String, ServerStatus> results = new ConcurrentHashMap<>();
+        ExecutorService executor = null;
+        try {
+            executor = Executors.newFixedThreadPool(Math.min(10, serverNames.size()));
+            final Integer currentOperationId = CurrentOperationIdHolder.getCurrentOperationID();
+            for (String serverName : serverNames) {
+                stopServer(serverName, gracefulTimeout);
+                results.put(serverName, determineServerStatus(serverName));
+                if (blocking) {
+                    executor.execute(() -> {
+                        try {
+                            waitForServerShutdownCondition(serverName);
+                            CurrentOperationIdHolder.setCurrentOperationID(currentOperationId);
+                            startServer(serverName, domainModel, blocking, suspend);
+                        } catch (Throwable t) {
+                            HostControllerLogger.ROOT_LOGGER.restartExecutionFailed(t, serverName);
+                        } finally {
+                            results.put(serverName, determineServerStatus(serverName));
+                        }
+                    });
+                } else {
+                    executor.execute(() -> {
+                        try {
+                            waitForServerShutdownCondition(serverName);
+                            //Special handling which allows the server registration without acquiring the lock of an existing operation ID
+                            CurrentOperationIdHolder.setCurrentOperationID(-1);
+                            startServer(serverName, domainModel, blocking, suspend);
+                        } catch (Throwable t) {
+                            HostControllerLogger.ROOT_LOGGER.restartExecutionFailed(t, serverName);
+                        }
+                    });
+                }
+            }
+        } finally {
+            if (executor != null) {
+                executor.shutdown();
+                if (blocking) {
+                    try {
+                        executor.awaitTermination(1, TimeUnit.HOURS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    private void waitForServerShutdownCondition(String serverName) {
         synchronized (shutdownCondition) {
             for(;;) {
                 if(shutdown || connectionFinished) {
@@ -252,8 +306,6 @@ public class ServerInventoryImpl implements ServerInventory {
                 }
             }
         }
-        startServer(serverName, domainModel, blocking, suspend);
-        return determineServerStatus(serverName);
     }
 
     @Override
@@ -267,8 +319,7 @@ public class ServerInventoryImpl implements ServerInventory {
         if(server == null) {
             return ServerStatus.STOPPED;
         }
-        Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
-        server.stop(currentOperationID == null ? null : gracefulTimeout);
+        server.stop(gracefulTimeout);
         if(blocking) {
             server.awaitState(ManagedServer.InternalState.STOPPED);
         }
@@ -395,8 +446,7 @@ public class ServerInventoryImpl implements ServerInventory {
     @Override
     public void stopServers(final int gracefulTimeout, final boolean blockUntilStopped) {
         for(final ManagedServer server : servers.values()) {
-            Integer currentOperationID = CurrentOperationIdHolder.getCurrentOperationID();
-            server.stop(currentOperationID == null ? null : gracefulTimeout);
+            server.stop(gracefulTimeout);
         }
         if(blockUntilStopped) {
             synchronized (shutdownCondition) {
