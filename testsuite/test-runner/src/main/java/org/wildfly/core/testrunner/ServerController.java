@@ -181,4 +181,7 @@ public class ServerController {
         server.waitForLiveServerToReload(timeout);
     }
 
+    public void reloadSuspendTimeout(boolean blocking, int suspendTimeout) {
+        server.reloadSuspendTimeout(blocking, suspendTimeout);
+    }
 }

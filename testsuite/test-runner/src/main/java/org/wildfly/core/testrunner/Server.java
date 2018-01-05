@@ -1,11 +1,14 @@
 package org.wildfly.core.testrunner;
 
+import static org.jboss.as.controller.client.helpers.ClientConstants.BLOCKING;
 import static org.jboss.as.controller.client.helpers.ClientConstants.NAME;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
 import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RELOAD;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.client.helpers.ClientConstants.SUSPEND_TIMEOUT;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -367,6 +370,24 @@ public class Server {
         fail("Live Server did not reload in the imparted time.");
     }
 
+    public void reloadSuspendTimeout(boolean blocking, int suspendTimeout) {
+        ModelNode operation = new ModelNode();
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(OP).set(RELOAD);
+        operation.get(BLOCKING).set(blocking);
+        operation.get(SUSPEND_TIMEOUT).set(suspendTimeout);
+        try {
+            ModelNode result = client.getControllerClient().execute(operation);
+            Assert.assertEquals("success", result.get(ClientConstants.OUTCOME).asString());
+        } catch (IOException e) {
+            final Throwable cause = e.getCause();
+            if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException) && !(cause instanceof SocketException) ) {
+                throw new RuntimeException(e);
+            } // else ignore, this might happen if the channel gets closed before we got the response
+        }finally {
+            safeCloseClient();//close existing client
+        }
+    }
 
     /**
      * Runnable that consumes the output of the process. If nothing consumes the output the AS will hang on some
