@@ -183,7 +183,12 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
                 public void execute(final ManagementRequestContext<Void> context) throws Exception {
                     try {
                         final OperationStepHandler stepHandler = new ServerRegistrationStepHandler(serverName, context);
-                        final ModelNode result = operationExecutor.joinActiveOperation(EMPTY_OP.getOperation(), OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, stepHandler, operationId);
+                        final ModelNode result;
+                        if ( operationId == -1 ){
+                            result = operationExecutor.execute(EMPTY_OP, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, stepHandler);
+                        }else{
+                            result = operationExecutor.joinActiveOperation(EMPTY_OP.getOperation(), OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, stepHandler, operationId);
+                        }
                         if(! SUCCESS.equals(result.get(OUTCOME).asString())) {
                             safeWriteResponse(context.getChannel(), context.getRequestHeader(), DomainServerProtocol.PARAM_ERROR);
                         }

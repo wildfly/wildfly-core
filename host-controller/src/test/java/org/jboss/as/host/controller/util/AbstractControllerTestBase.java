@@ -497,6 +497,11 @@ public abstract class AbstractControllerTestBase {
         }
 
         @Override
+        public boolean isRunningServerRegistered(String serverName) {
+            return true;
+        }
+
+        @Override
         public ModelNode getProfileOperations(String profileName) {
             return new ModelNode().setEmptyList();
         }

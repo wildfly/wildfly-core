@@ -89,6 +89,8 @@ public class DomainServerLifecycleHandlers {
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS).setDefaultValue(new ModelNode(0)).build();
 
+    private static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS).setDefaultValue(new ModelNode(0)).build();
 
     public static final String RESTART_SERVERS_NAME = RESTART_SERVERS;
     public static final String START_SERVERS_NAME = START_SERVERS;
@@ -97,6 +99,7 @@ public class DomainServerLifecycleHandlers {
     public static final String RESUME_SERVERS_NAME = RESUME_SERVERS;
     public static final String KILL_SERVERS_NAME = KILL_SERVERS;
     public static final String DESTROY_SERVERS_NAME = DESTROY_SERVERS;
+    public static final String RELOAD_SERVERS_NAME = RELOAD_SERVERS;
 
     public static void initializeServerInventory(ServerInventory serverInventory) {
         StopServersLifecycleHandler.INSTANCE.setServerInventory(serverInventory);
@@ -121,7 +124,7 @@ public class DomainServerLifecycleHandlers {
         registration.registerOperationHandler(getStopOperationDefinition(serverGroup, StopServersLifecycleHandler.OPERATION_NAME), StopServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getOperationDefinition(serverGroup, StartServersLifecycleHandler.OPERATION_NAME), StartServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getOperationDefinition(serverGroup, RestartServersLifecycleHandler.OPERATION_NAME), RestartServersLifecycleHandler.INSTANCE);
-        registration.registerOperationHandler(getOperationDefinition(serverGroup, ReloadServersLifecycleHandler.OPERATION_NAME), ReloadServersLifecycleHandler.INSTANCE);
+        registration.registerOperationHandler(getReloadOperationDefinition(serverGroup, ReloadServersLifecycleHandler.OPERATION_NAME), ReloadServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, SuspendServersLifecycleHandler.OPERATION_NAME), SuspendServersLifecycleHandler.INSTANCE);
         registration.registerOperationHandler(getSuspendOperationDefinition(serverGroup, ResumeServersLifecycleHandler.OPERATION_NAME), ResumeServersLifecycleHandler.INSTANCE);
         if ( serverGroup ){
@@ -165,6 +168,17 @@ public class DomainServerLifecycleHandlers {
         }
         return builder.build();
     }
+
+    private static OperationDefinition getReloadOperationDefinition(boolean serverGroup, String operationName) {
+        return new SimpleOperationDefinitionBuilder(operationName,
+                DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
+                .addParameter(BLOCKING)
+                .addParameter(START_MODE)
+                .addParameter(SUSPEND_TIMEOUT)
+                .setRuntimeOnly()
+                .build();
+    }
+
     private abstract static class AbstractHackLifecycleHandler implements OperationStepHandler {
         volatile ServerInventory serverInventory;
 
@@ -324,7 +338,7 @@ public class DomainServerLifecycleHandlers {
     }
 
     private static class ReloadServersLifecycleHandler extends AbstractHackLifecycleHandler {
-        static final String OPERATION_NAME = RELOAD_SERVERS;
+        static final String OPERATION_NAME = RELOAD_SERVERS_NAME;
         static final ReloadServersLifecycleHandler INSTANCE = new ReloadServersLifecycleHandler();
 
         @Override
@@ -335,6 +349,8 @@ public class DomainServerLifecycleHandlers {
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
             final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
+            final int gracefulTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -342,17 +358,14 @@ public class DomainServerLifecycleHandlers {
                     context.getServiceRegistry(true);
                     Map<String, ProcessInfo> processes = serverInventory.determineRunningProcesses(true);
                     final Set<String> serversInGroup = getServersForGroup(model, group);
-                    final Set<String> waitForServers = new HashSet<String>();
+                    final Set<String> affectedServers = new HashSet<>();
                     for (String serverName : processes.keySet()) {
                         final String serverModelName = serverInventory.getProcessServerName(serverName);
                         if (group == null || serversInGroup.contains(serverModelName)) {
-                            serverInventory.reloadServer(serverModelName, false, suspend);
-                            waitForServers.add(serverModelName);
+                            affectedServers.add(serverModelName);
                         }
                     }
-                    if (blocking) {
-                        serverInventory.awaitServersState(waitForServers, true);
-                    }
+                    serverInventory.reloadServers(affectedServers, blocking, suspend, gracefulTimeout);
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
             }, Stage.RUNTIME);

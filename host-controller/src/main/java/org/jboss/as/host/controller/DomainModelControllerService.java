@@ -472,10 +472,16 @@ public class DomainModelControllerService extends AbstractControllerService impl
     public void unregisterRunningServer(String serverName) {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, hostControllerInfo.getLocalHostName()));
         PathElement pe = PathElement.pathElement(RUNNING_SERVER, serverName);
-        ROOT_LOGGER.unregisteringServer(serverName);
-        ManagementResourceRegistration hostRegistration = modelNodeRegistration.getSubModel(pa);
-        hostRegistration.unregisterProxyController(pe);
-        serverProxies.remove(serverName);
+        if (serverProxies.remove(serverName) != null) {
+            ROOT_LOGGER.unregisteringServer(serverName);
+            ManagementResourceRegistration hostRegistration = modelNodeRegistration.getSubModel(pa);
+            hostRegistration.unregisterProxyController(pe);
+        }
+    }
+
+    @Override
+    public boolean isRunningServerRegistered(String serverName){
+        return serverProxies.containsKey(serverName);
     }
 
     @Override
@@ -1196,8 +1202,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
 
         @Override
-        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
-            return getServerInventory().reloadServer(serverName, blocking, suspend);
+        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend, int gracefulTimeout) {
+            return getServerInventory().reloadServer(serverName, blocking, suspend, gracefulTimeout);
+        }
+
+        @Override
+        public Map<String, ServerStatus> reloadServers(Set<String> serverNames, boolean blocking, boolean suspend, int gracefulTimeout) {
+            return getServerInventory().reloadServers(serverNames, blocking, suspend, gracefulTimeout);
         }
 
         @Override
@@ -1595,8 +1606,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
             }
 
             @Override
-            public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
+            public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend, int gracefulTimeout) {
                 return ServerStatus.STOPPED;
+            }
+
+            @Override
+            public Map<String, ServerStatus> reloadServers(Set<String> serverNames, boolean blocking, boolean suspend, int gracefulTimeout) {
+                return Collections.EMPTY_MAP;
             }
 
             @Override

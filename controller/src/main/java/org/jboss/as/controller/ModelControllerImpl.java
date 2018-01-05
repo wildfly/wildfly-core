@@ -392,7 +392,7 @@ class ModelControllerImpl implements ModelController {
         for (;;) {
             responseStreams = null;
             // Create a random operation-id
-            final Integer operationID = random.nextInt();
+            final Integer operationID = random.nextInt(Integer.MAX_VALUE);
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     headers, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
