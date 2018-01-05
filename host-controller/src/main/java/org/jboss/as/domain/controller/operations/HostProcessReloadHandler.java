@@ -76,10 +76,12 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             .setAlternatives(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG)
             .build();
 
+    protected static final AttributeDefinition SUSPEND_TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
+            .setDefaultValue(new ModelNode(0)).build();
 
-    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG, SUSPEND_TIMEOUT};
 
-    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG, SUSPEND_TIMEOUT};
 
     private final HostControllerEnvironment environment;
     private final LocalHostControllerInfo hostControllerInfo;
@@ -125,6 +127,8 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
         final boolean useCurrentDomainConfig = hostControllerInfo.isMasterDomainController() && USE_CURRENT_DOMAIN_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
         final String domainConfig = hostControllerInfo.isMasterDomainController() && operation.hasDefined(DOMAIN_CONFIG.getName()) ? DOMAIN_CONFIG.resolveModelAttribute(context, operation).asString() : null;
         final String hostConfig = operation.hasDefined(HOST_CONFIG.getName()) ? HOST_CONFIG.resolveModelAttribute(context, operation).asString() : null;
+        final int gracefulTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt(); //Timeout in seconds
+
         // we use the same name as the current one on a reload. If a host has been added with a specific name, it stays with that name until it is stopped and reloaded
         // from the persistent config.
         final String hostName = context.getCurrentAddress().getLastElement().getValue();
@@ -140,12 +144,16 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
         if (hostConfig != null && !environment.getHostConfigurationFile().checkCanFindNewBootFile(hostConfig)) {
             throw HostControllerLogger.ROOT_LOGGER.domainConfigForReloadNotFound(hostConfig);
         }
+        if (!restartServers && operation.hasDefined(SUSPEND_TIMEOUT.getName())){
+            throw HostControllerLogger.ROOT_LOGGER.suspendTimeoutWithoutRestartingServers();
+        }
 
         return new ReloadContext<HostRunningModeControl>() {
 
             @Override
             public void reloadInitiated(HostRunningModeControl runningModeControl) {
                 runningModeControl.setRestartMode(restartServers ? RestartMode.SERVERS : RestartMode.HC_ONLY);
+                runningModeControl.setGracefulTimeout(gracefulTimeout);
             }
 
             @Override
@@ -157,6 +165,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                 runningModeControl.setNewDomainBootFileName(domainConfig);
                 runningModeControl.setNewBootFileName(hostConfig);
                 runningModeControl.setReloadHostName(hostName);
+                runningModeControl.setGracefulTimeout(0);
             }
         };
     }

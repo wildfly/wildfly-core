@@ -1426,4 +1426,7 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message( id = 213, value = "Failed executing the restart operation for server: %s")
     void restartExecutionFailed(@Cause Throwable cause, String serverName);
+
+    @Message(id = 214, value = "suspend-timeout cannot be used if server(s) are not going to be restarted.")
+    OperationFailedException suspendTimeoutWithoutRestartingServers();
 }
