@@ -34,6 +34,7 @@ public class HostRunningModeControl extends RunningModeControl {
     private boolean useCurrentDomainConfig;
     private String newDomainBootFileName;
     private String reloadHostName;
+    private int gracefulTimeout;
 
 
     public HostRunningModeControl(RunningMode runningMode, RestartMode restartMode) {
@@ -103,6 +104,24 @@ public class HostRunningModeControl extends RunningModeControl {
      */
     public String getReloadHostName() {
         return this.reloadHostName;
+    }
+
+    /**
+     * Get the time in seconds the server should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @return graceful timeout in seconds
+     */
+    public int getGracefulTimeout() {
+        return gracefulTimeout;
+    }
+
+    /**
+     * Set the time in seconds the server should allow for graceful shutdown (if supported) before terminating all services
+     *
+     * @param gracefulTimeout graceful timeout in seconds
+     */
+    public void setGracefulTimeout(int gracefulTimeout) {
+        this.gracefulTimeout = gracefulTimeout;
     }
 
 }

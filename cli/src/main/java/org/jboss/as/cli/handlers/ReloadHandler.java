@@ -185,14 +185,7 @@ public class ReloadHandler extends BaseOperationCommand {
             }
         };
 
-        suspendTimeout = new ArgumentWithValue(this, "--suspend-timeout") {
-            @Override
-            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                if(ctx.isDomainMode()) {
-                    return false;
-                }
-                return super.canAppearNext(ctx);
-        }};
+        suspendTimeout = new ArgumentWithValue(this, "--suspend-timeout");
     }
 
     @Override
@@ -366,6 +359,12 @@ public class ReloadHandler extends BaseOperationCommand {
             if (serverConfig.isPresent(args)) {
                 throw new CommandFormatException(serverConfig.getFullName() + " is not allowed in the domain mode.");
             }
+            if (restartServers.isPresent(args) && suspendTimeout.isPresent(args)) {
+                final String value = restartServers.getValue(args);
+                if(value != null && value.equalsIgnoreCase(Util.FALSE) ) {
+                    throw new CommandFormatException(suspendTimeout.getFullName() + " can't be used if server(s) are not going to be restarted.");
+                }
+            }
 
             final String hostName = host.getValue(args);
             if(hostName == null) {
@@ -401,12 +400,11 @@ public class ReloadHandler extends BaseOperationCommand {
             op.get(Util.ADDRESS).setEmptyList();
             setBooleanArgument(args, op, this.useCurrentServerConfig, "use-current-server-config");
             setStringValue(args, op, serverConfig, "server-config");
-
-            setIntArgument(args, op, suspendTimeout, "suspend-timeout");
         }
         op.get(Util.OPERATION).set(Util.RELOAD);
 
         setStartMode(ctx, args, op);
+        setIntArgument(args, op, suspendTimeout, "suspend-timeout");
         return op;
     }
 
