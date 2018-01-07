@@ -368,8 +368,8 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(Integer.class.getName(), op.getSignature()[3].getType());
         OpenMBeanParameterInfo parameterInfo = assertCast(OpenMBeanParameterInfo.class, op.getSignature()[3]);
         Assert.assertEquals(6, parameterInfo.getDefaultValue());
-        //Assert.assertEquals(5, parameterInfo.getMinValue()); //todo min & max with expressions have lots of problems WFLY-3500
-        //Assert.assertEquals(10, parameterInfo.getMaxValue());
+        Assert.assertEquals(5, parameterInfo.getMinValue());
+        Assert.assertEquals(10, parameterInfo.getMaxValue());
 
         Assert.assertEquals("param5", op.getSignature()[4].getName());
         Assert.assertEquals("int-with-params-param5", op.getSignature()[4].getDescription());
