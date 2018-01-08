@@ -75,15 +75,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
-
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         if (deploymentUnit.hasAttachment(Attachments.MODULE))
             return;
-
-        // No {@link ModuleSpec} creation for OSGi deployments
-        if (deploymentUnit.hasAttachment(Attachments.OSGI_MANIFEST))
-            return;
-
         deployModuleSpec(phaseContext);
     }
 

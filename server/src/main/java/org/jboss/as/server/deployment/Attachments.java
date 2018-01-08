@@ -91,15 +91,6 @@ public final class Attachments {
     public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
 
     /**
-     * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for
-     * binary compatiblity. It was used for OSGi integration.
-     *
-     * @deprecated the object attached under this key does nothing
-     */
-    @Deprecated
-    public static final AttachmentKey<Boolean> ALLOW_PHASE_RESTART = AttachmentKey.create(Boolean.class);
-
-    /**
      * A builder used to install a deployment phase
      */
     public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
@@ -127,11 +118,6 @@ public final class Attachments {
      * The MANIFEST.MF of the deployment unit.
      */
     public static final AttachmentKey<Manifest> MANIFEST = AttachmentKey.create(Manifest.class);
-
-    /**
-     * Available when the deployment contains a valid OSGi manifest
-     */
-    public static final AttachmentKey<Manifest> OSGI_MANIFEST = AttachmentKey.create(Manifest.class);
 
     /**
      * Module identifiers for Class-Path information
@@ -227,8 +213,6 @@ public final class Attachments {
     // REGISTER
     //
 
-    public static final AttachmentKey<BundleState> BUNDLE_STATE_KEY = AttachmentKey.create(BundleState.class);
-
     //
     // DEPENDENCIES
     //
@@ -312,11 +296,6 @@ public final class Attachments {
     public static final AttachmentKey<AttachmentList<SetupAction>> SETUP_ACTIONS = AttachmentKey.createList(SetupAction.class);
 
     /**
-     * Attachment key for services that the {@link BundleActivateService} depends on.
-     */
-    public static final AttachmentKey<AttachmentList<ServiceName>> BUNDLE_ACTIVE_DEPENDENCIES = AttachmentKey.createList(ServiceName.class);
-
-    /**
      * List of services that need to be up before we consider this deployment 'done'. This is used to manage initialize-in-order,
      * and inter deployment dependencies.
      *
@@ -329,15 +308,5 @@ public final class Attachments {
     //
 
     private Attachments() {
-    }
-
-    /**
-     * The state of an OSGi bundle deployment
-     */
-    public static enum BundleState {
-        INSTALLED,
-        RESOLVED,
-        ACTIVE,
-        UNINSTALLED
     }
 }
