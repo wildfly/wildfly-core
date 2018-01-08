@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -96,9 +95,6 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         // Attach the deployment repo
         deploymentUnit.putAttachment(Attachments.SERVER_DEPLOYMENT_REPOSITORY, serverDeploymentRepositoryInjector.getValue());
 
-        // For compatibility only
-        addSVH(deploymentUnit);
-
         return deploymentUnit;
     }
 
@@ -112,10 +108,5 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
 
     InjectedValue<VirtualFile> getContentsInjector() {
         return contentsInjector;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void addSVH(DeploymentUnit deploymentUnit) {
-        deploymentUnit.putAttachment(Attachments.SERVICE_VERIFICATION_HANDLER, ServiceVerificationHandler.INSTANCE);
     }
 }

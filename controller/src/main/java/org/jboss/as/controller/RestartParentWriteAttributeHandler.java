@@ -108,12 +108,6 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
 
     /**
      * Recreate the parent service(s) using the given model.
-     * <p>
-     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
-     * {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode, ServiceVerificationHandler)}
-     * method. It then does nothing with the objects referenced by the {@code verificationHandler} parameter passed to
-     * that method. Subclasses that overrode that method are encouraged to instead override this one.
-     * <strong>Subclasses that override this method should not call{@code super.recreateParentService(...)}.</strong>
      *
      * @param context the operation context
      * @param parentAddress the address of the parent resource
@@ -121,37 +115,14 @@ public abstract class RestartParentWriteAttributeHandler extends AbstractWriteAt
      *
      * @throws OperationFailedException if there is a problem installing the services
      */
-    @SuppressWarnings("deprecation")
     protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel) throws OperationFailedException {
-        recreateParentService(context, parentAddress, parentModel, ServiceVerificationHandler.INSTANCE);
-    }
-
-    /**
-     * <strong>Deprecated</strong>. Override {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode)}
-     * instead.
-     *
-     * @param context the operation context
-     * @param parentAddress the address of the parent resource
-     * @param parentModel the current configuration model for the parent resource and its children
-     * @param verificationHandler does nothing; ignored
-     *
-     * @throws OperationFailedException if there is a problem installing the services
-     *
-     * @deprecated override {@link #recreateParentService(OperationContext, PathAddress, org.jboss.dmr.ModelNode)}
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    protected void recreateParentService(OperationContext context, PathAddress parentAddress, ModelNode parentModel, ServiceVerificationHandler verificationHandler) throws OperationFailedException {
-        throw new UnsupportedOperationException();
     }
 
     protected abstract ServiceName getParentServiceName(PathAddress parentAddress);
 
-
     protected PathAddress getParentAddress(PathAddress address) {
         return Util.getParentAddressByKey(address, parentKeyName);
     }
-
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, ModelNode invalidatedParentModel) throws OperationFailedException {

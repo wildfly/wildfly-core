@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Manifest;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
@@ -91,17 +90,6 @@ public final class Attachments {
      * The deployment contents
      */
     public static final AttachmentKey<VirtualFile> DEPLOYMENT_CONTENTS = AttachmentKey.create(VirtualFile.class);
-
-    /**
-     * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for
-     * binary compatiblity. The management layer handles service verification internally, with no need
-     * for involvment by deployment processors.
-     *
-     * @deprecated the object attached under this key does nothing
-     */
-    @Deprecated
-    public static final AttachmentKey<ServiceVerificationHandler> SERVICE_VERIFICATION_HANDLER = AttachmentKey.create(ServiceVerificationHandler.class);
-
 
     /**
      * <strong>Deprecated</strong>. The attached object does nothing; this key is only retained for

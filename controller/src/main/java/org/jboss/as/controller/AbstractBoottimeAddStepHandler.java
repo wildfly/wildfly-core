@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -120,22 +119,6 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     }
 
     /**
-     * <strong>Deprecated</strong>. Always throws {@link java.lang.UnsupportedOperationException}.
-     *
-     * {@inheritDoc}
-     *
-     * @throws java.lang.UnsupportedOperationException always
-     *
-     * @deprecated subclasses should override {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     */
-    @Override
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Will only be
      * invoked if {@link OperationContext#isBooting()} returns {@code true}. Executes
      * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
@@ -166,43 +149,13 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
      * changes to runtime services should override this method or the
      * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      * variant.
-     * <p>
-     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
-     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
-     * variant. It then does nothing with the objects referenced by the {@code verificationHandler} and
-     * {@code controllers} parameters passed to that method. Subclasses that overrode that method are encouraged to
-     * instead override this one instead.
-     * <strong>Subclasses that override this method should not call{@code super.performBoottime(...)}.</strong>
      *
      * @param context             the operation context
      * @param operation           the operation being executed
      * @param model               persistent configuration model from the resource that corresponds to the address of {@code operation}
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
-    @SuppressWarnings("deprecation")
     protected void performBoottime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        performBoottime(context, operation, model,
-                ServiceVerificationHandler.INSTANCE, new ArrayList<ServiceController<?>>());
-    }
-
-    /**
-     * <strong>Deprecated</strong>. Subclasses should instead override
-     * {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * or {@link #performBoottime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}.
-     * <p>
-     * This default implementation does nothing.
-     *
-     * @param context             the operation context
-     * @param operation           the operation being executed
-     * @param model               persistent configuration model node that corresponds to the address of {@code operation}
-     * @param verificationHandler not used; service verification is performed automatically
-     * @param newControllers not used; removal of added services during rollback is performed automatically.
-     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected void performBoottime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) throws OperationFailedException {
-        // no-op
     }
 
     /**
