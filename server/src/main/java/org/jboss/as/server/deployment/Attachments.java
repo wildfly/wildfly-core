@@ -25,7 +25,6 @@ package org.jboss.as.server.deployment;
 import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -242,12 +241,6 @@ public final class Attachments {
      * The module identifier.
      */
     public static final AttachmentKey<ModuleIdentifier> MODULE_IDENTIFIER = AttachmentKey.create(ModuleIdentifier.class);
-
-    /**
-     * Flags for deferred module phase handling.
-     */
-    public static final AttachmentKey<AttachmentList<String>> DEFERRED_MODULES = AttachmentKey.createList(String.class);
-    public static final AttachmentKey<AtomicInteger> DEFERRED_ACTIVATION_COUNT = AttachmentKey.create(AtomicInteger.class);
 
     //
     // MODULARIZE

@@ -53,8 +53,6 @@ import org.jboss.msc.value.InjectedValue;
  */
 final class DeploymentUnitPhaseService<T> implements Service<T> {
 
-    private static final AttachmentKey<AttachmentList<DeploymentUnit>> UNVISITED_DEFERRED_MODULES = AttachmentKey.createList(DeploymentUnit.class);
-
     private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
     private final DeploymentUnit deploymentUnit;
     private final Phase phase;
@@ -192,16 +190,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
                 phaseServiceBuilder.addDependencies(du.getServiceName().append(phase.name()));
             }
 
-            // Defer the {@link Phase.FIRST_MODULE_USE} phase
-            List<String> deferredModules = DeploymentUtils.getDeferredModules(deploymentUnit);
-            if (nextPhase == Phase.FIRST_MODULE_USE) {
-                Mode initialMode = getDeferableInitialMode(deploymentUnit, deferredModules);
-                if (initialMode != Mode.ACTIVE) {
-                    ServerLogger.DEPLOYMENT_LOGGER.infoDeferDeploymentPhase(nextPhase, name, initialMode);
-                    phaseServiceBuilder.setInitialMode(initialMode);
-                }
-            }
-
             phaseServiceBuilder.install();
         }
     }
@@ -215,41 +203,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             final RegisteredDeploymentUnitProcessor prev = iterator.previous();
             safeUndeploy(deploymentUnitContext, phase, prev);
         }
-    }
-
-    private Mode getDeferableInitialMode(final DeploymentUnit deploymentUnit, List<String> deferredModules) {
-        // Make the deferred module NEVER
-        if (deferredModules.contains(deploymentUnit.getName())) {
-            return Mode.NEVER;
-        }
-        Mode initialMode = Mode.ACTIVE;
-        DeploymentUnit parent = DeploymentUtils.getTopDeploymentUnit(deploymentUnit);
-        if (parent == deploymentUnit) {
-            List<DeploymentUnit> subDeployments = parent.getAttachmentList(Attachments.SUB_DEPLOYMENTS);
-            for (DeploymentUnit du : subDeployments) {
-                // Always make the EAR LAZY if it could contain deferrable sub-deployments
-                if (du.hasAttachment(Attachments.OSGI_MANIFEST)) {
-                    initialMode = Mode.LAZY;
-                    break;
-                }
-            }
-            // Initialize the list of unvisited deferred modules
-            if (initialMode == Mode.LAZY) {
-                for (DeploymentUnit du : subDeployments) {
-                    parent.addToAttachmentList(UNVISITED_DEFERRED_MODULES, du);
-                }
-            }
-        } else {
-            // Make the non-deferred sibling PASSIVE if it is not the last to visit
-            List<DeploymentUnit> unvisited = parent.getAttachmentList(UNVISITED_DEFERRED_MODULES);
-            synchronized (unvisited) {
-                unvisited.remove(deploymentUnit);
-                if (!deferredModules.isEmpty() || !unvisited.isEmpty()) {
-                    initialMode = Mode.PASSIVE;
-                }
-            }
-        }
-        return initialMode;
     }
 
     private static void safeUndeploy(final DeploymentUnit deploymentUnit, final Phase phase, final RegisteredDeploymentUnitProcessor prev) {
