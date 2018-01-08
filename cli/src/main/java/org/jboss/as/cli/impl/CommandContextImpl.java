@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -1978,7 +1979,7 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
                         theTrustStore.load(null);
                     }
                     for (X509Certificate current : temporarilyTrusted) {
-                        theTrustStore.setCertificateEntry(current.getSubjectX500Principal().getName(), current);
+                        theTrustStore.setCertificateEntry(UUID.randomUUID().toString(), current);
                     }
                     TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
                     trustManagerFactory.init(theTrustStore);
