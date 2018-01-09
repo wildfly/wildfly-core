@@ -131,8 +131,8 @@
         <version.org.jboss.xnio>3.5.4.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
-        <version.org.jmockit>1.33</version.org.jmockit>
-        <version.org.mockito>2.8.47</version.org.mockito>
+        <version.org.jmockit>1.38</version.org.jmockit>
+        <version.org.mockito>2.13.0</version.org.mockito>
         <version.org.picketbox>5.0.2.Final</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.22</version.org.slf4j>
@@ -1360,14 +1360,6 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.org.mockito}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- TODO remove once wildfly full is updated-->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>1.10.19</version>
                 <scope>test</scope>
             </dependency>
 
