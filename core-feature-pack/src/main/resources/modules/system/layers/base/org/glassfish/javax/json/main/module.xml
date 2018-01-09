@@ -29,9 +29,9 @@
     </properties>
 
     <dependencies>
+        <module name="javax.json.api" />
     </dependencies>
     <resources>
         <artifact name="${org.glassfish:javax.json}"/>
     </resources>
-
 </module>

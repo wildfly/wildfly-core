@@ -29,14 +29,9 @@
     </properties>
 
     <dependencies>
-        <module name="org.glassfish.javax.json" export="false">
-            <exports>
-                <include-set>
-                    <path name="javax/json"/>
-                    <path name="javax/json/spi"/>
-                    <path name="javax/json/stream"/>
-                </include-set>
-            </exports>
-        </module>
+        <module name="org.glassfish.javax.json" services="import" />
     </dependencies>
+    <resources>
+        <artifact name="${javax.json:javax.json-api}"/>
+    </resources>
 </module>

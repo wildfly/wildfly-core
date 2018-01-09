@@ -44,6 +44,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectodd.vdx</groupId>
             <artifactId>vdx-core</artifactId>
         </dependency>
