@@ -22,6 +22,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
@@ -131,7 +133,7 @@ public class Server {
 
             commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
             if (jvmArgs != null) {
-                commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
+                commandBuilder.setJavaOptions(Stream.of(jvmArgs.split("\\s+")).filter(s -> !s.contains("agentlib:jdwp")).collect(Collectors.toList()));
             }
             if(Boolean.getBoolean(serverDebug)) {
                 commandBuilder.setDebug(true, serverDebugPort);
