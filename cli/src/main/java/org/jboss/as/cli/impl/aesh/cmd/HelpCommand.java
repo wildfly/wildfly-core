@@ -303,13 +303,6 @@ public class HelpCommand implements Command<CLICommandInvocation> {
                 }
             }
         }
-        // Then handler
-        for (String cmd : aeshRegistry.getTabCompletionCommands()) {
-            CommandHandler handler = aeshRegistry.getCommandHandler(cmd);
-            if (handler.isAvailable(ctx)) {
-                lst.add(cmd);
-            }
-        }
         ctx.printLine("Commands available in the current context:");
         print(lst, ctx);
         ctx.printLine("To read a description of a specific command execute 'help <command name>'.");
