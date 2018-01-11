@@ -122,6 +122,15 @@ public interface DomainController {
     void unregisterRunningServer(String serverName);
 
     /**
+     * Check if a running server is registered in the domain model
+     *
+     * @param serverName the name of the server
+     *
+     * @return <code>true</code> if the server is registered, <code>false</code> otherwise
+     */
+    boolean isRunningServerRegistered(String serverName);
+
+    /**
      * Report to the domain controller that a server has been reported as unstable.
      * @param serverName  the name of the server
      */

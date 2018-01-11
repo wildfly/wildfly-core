@@ -242,7 +242,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         operation.get(OP_ADDR).set(pa.toModelNode());
         operation.get(OP).set(REMOVE);
 
-        ServerRemoveHandler.INSTANCE.execute(operationContext, operation);
+        new ServerRemoveHandler(new ServerInventoryMock()).execute(operationContext, operation);
 
         Assert.assertFalse(operationContext.isReloadRequired());
     }
@@ -563,6 +563,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
+        public Map<String, ServerStatus> restartServers(Set<String> serverNames, int gracefulTimeout, ModelNode domainModel, boolean blocking, boolean suspend) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public ServerStatus stopServer(String serverName, int gracefulTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -588,7 +593,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend) {
+        public ServerStatus reloadServer(String serverName, boolean blocking, boolean suspend, int gracefulTimeout) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public Map<String, ServerStatus> reloadServers(Set<String> serverNames, boolean blocking, boolean suspend, int gracefulTimeout) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

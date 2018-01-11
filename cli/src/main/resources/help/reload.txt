@@ -5,6 +5,7 @@ SYNOPSIS
       reload [--start-mode=admin-only|normal|suspend]
              [--use-current-server-config=true|false]
              [--server-config=new_server_config_file_name]
+             [--suspend-timeout=seconds]
 
    Domain mode:
 
@@ -14,6 +15,7 @@ SYNOPSIS
              [--user-current-host-config=true|false]
              [--domain-config=new_domain_config_file_name]
              [--host-config=new_host_config_file_name]
+             [--suspend-timeout=seconds]
       
 DESCRIPTION
 
@@ -122,3 +124,14 @@ ARGUMENTS
                  after the reload, the changes will still be persisted to the
                  original server configuration file that was used to first
                  boot up the server.
+
+--suspend-timeout  - optional, timeout for suspending the server(s) prior to a
+                 subsequent action. In standalone mode the subsequent action is
+                 reloading the server. In domain mode the subsequent action on
+                 each server is a shutdown and the timeout is only relevant if
+                 the --restart-servers param is not set or is set to true.
+                 If timeout for suspending is zero (the default) then the server(s)
+                 will shutdown/reload immediately. A value larger than zero means
+                 the server(s) will wait up to this many seconds for all active
+                 requests to finish. A value smaller than zero means that the
+                 server will wait indefinitely for all active requests to finish.

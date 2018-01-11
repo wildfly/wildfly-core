@@ -58,10 +58,10 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
     protected static final AttributeDefinition ADMIN_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY, ModelType.BOOLEAN, true)
                                                                     .setDefaultValue(new ModelNode(false)).build();
 
-    private final T runningModeControl;
-    private final ControlledProcessState processState;
+    protected final T runningModeControl;
+    protected final ControlledProcessState processState;
 
-    private final ServiceName rootService;
+    protected final ServiceName rootService;
 
     public ProcessReloadHandler(final ServiceName rootService, final T runningModeControl,
                                 final ControlledProcessState processState) {

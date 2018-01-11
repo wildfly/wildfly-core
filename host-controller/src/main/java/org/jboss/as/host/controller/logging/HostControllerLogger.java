@@ -1415,4 +1415,18 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 210, value = "A slave host controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
     OperationFailedException cannotAddSlaveHostAfterBoot();
 
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 211, value = "Failed executing the reload operation for server: %s")
+    void reloadExecutionFailed(@Cause IOException cause, String serverName);
+
+    @LogMessage(level = Level.INFO)
+    @Message(id = 212, value = "%s interrupted awaiting server reload response(s)")
+    void interruptedAwaitingReloadResponse(@Cause InterruptedException cause, String serverName);
+
+    @LogMessage(level = Level.ERROR)
+    @Message( id = 213, value = "Failed executing the restart operation for server: %s")
+    void restartExecutionFailed(@Cause Throwable cause, String serverName);
+
+    @Message(id = 214, value = "suspend-timeout cannot be used if server(s) are not going to be restarted.")
+    OperationFailedException suspendTimeoutWithoutRestartingServers();
 }

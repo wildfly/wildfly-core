@@ -154,7 +154,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
      */
     public ServerConfigResourceDefinition(final LocalHostControllerInfo hostControllerInfo, final ServerInventory serverInventory, final PathManagerService pathManager, final ControlledProcessState processState, final File domainDataDir) {
         super(PathElement.pathElement(SERVER_CONFIG), HostResolver.getResolver(SERVER_CONFIG, false),
-                ServerAddHandler.create(hostControllerInfo, serverInventory, processState, domainDataDir), ServerRemoveHandler.INSTANCE);
+                ServerAddHandler.create(hostControllerInfo, serverInventory, processState, domainDataDir), new ServerRemoveHandler(serverInventory));
 
         assert pathManager != null : "pathManager is null";
 

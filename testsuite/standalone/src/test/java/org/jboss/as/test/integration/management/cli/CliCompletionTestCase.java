@@ -87,6 +87,15 @@ public class CliCompletionTestCase {
                         cmd.length(), candidates);
                 assertEquals(candidates.toString(), Arrays.asList(","), candidates);
             }
+
+            {
+                String cmd = "reload --suspend";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertEquals(candidates.toString(), Arrays.asList("--suspend-timeout"), candidates);
+            }
         } finally {
             ctx.terminateSession();
         }
