@@ -123,7 +123,7 @@ public class LogoutHandler implements HttpHandler {
          */
         String userAgent = requestHeaders.getFirst(USER_AGENT);
         boolean opera = userAgent != null && userAgent.contains("Opera");
-        boolean win = !opera && userAgent != null && userAgent.contains("MSIE");
+        boolean win = !opera && userAgent != null && (userAgent.contains("MSIE") || userAgent.contains("Trident"));
 
         String rawQuery = exchange.getQueryString();
         boolean exit = rawQuery != null && rawQuery.contains(EXIT);
