@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
@@ -77,16 +78,19 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
 
     private final ParsingOption[] parsingOptions;
     private final ExtensionHandler extensionHandler;
+    private final DeferredExtensionContext deferredExtensionContext;
 
     public StandaloneXml(final ModuleLoader loader, final ExecutorService executorService,
             final ExtensionRegistry extensionRegistry) {
-        this.extensionHandler = new DefaultExtensionHandler(loader, executorService, extensionRegistry);
+        deferredExtensionContext = new DeferredExtensionContext(loader, extensionRegistry, executorService);
+        this.extensionHandler = new DefaultExtensionHandler(extensionRegistry, deferredExtensionContext);
         this.parsingOptions = new ParsingOption[] {};
     }
 
-    public StandaloneXml(ExtensionHandler handler, ParsingOption... options) {
+    public StandaloneXml(ExtensionHandler handler, DeferredExtensionContext deferredExtensionContext, ParsingOption... options) {
         this.extensionHandler = handler;
         this.parsingOptions = options;
+        this.deferredExtensionContext = deferredExtensionContext;
     }
 
     @Override
@@ -97,17 +101,17 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
             case 1:
             case 2:
             case 3:
-                new StandaloneXml_Legacy(extensionHandler, readerNS, parsingOptions)
+                new StandaloneXml_Legacy(extensionHandler, readerNS, deferredExtensionContext, parsingOptions)
                         .readElement(reader, operationList);
                 break;
             case 4:
-                new StandaloneXml_4(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_4(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             case 5:
-                new StandaloneXml_5(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_5(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             default:
-                new StandaloneXml_6(extensionHandler, readerNS, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_6(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
         }
 
@@ -116,7 +120,7 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_6(extensionHandler, CURRENT, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_6(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
@@ -124,9 +128,9 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
         private final ExtensionXml extensionXml;
         private final ExtensionRegistry extensionRegistry;
 
-        DefaultExtensionHandler(final ModuleLoader loader, final ExecutorService executorService, ExtensionRegistry extensionRegistry) {
+        DefaultExtensionHandler(ExtensionRegistry extensionRegistry, DeferredExtensionContext deferredExtensionContext) {
             this.extensionRegistry = extensionRegistry;
-            this.extensionXml = new ExtensionXml(loader, executorService, extensionRegistry);
+            this.extensionXml = new ExtensionXml(deferredExtensionContext);
         }
 
         @Override

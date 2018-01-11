@@ -61,6 +61,7 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -93,13 +94,15 @@ final class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
     private AuditLogXml auditLogDelegate;
     private final Namespace namespace;
     private ExtensionHandler extensionHandler;
+    private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_4(ExtensionHandler extensionHandler, Namespace namespace, StandaloneXml.ParsingOption... options) {
+    StandaloneXml_4(ExtensionHandler extensionHandler, Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.namespace = namespace;
         this.extensionHandler = extensionHandler;
         this.accessControlXml = AccessControlXml.newInstance(namespace);
         this.auditLogDelegate = AuditLogXml.newInstance(namespace, false);
+        this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = options;
     }
 
@@ -196,6 +199,8 @@ final class StandaloneXml_4 extends CommonXml implements ManagementXmlDelegate {
         Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
             extensionHandler.parseExtensions(reader, address, namespace, list);
+            //load immediately for legacy configs
+            deferredExtensionContext.load();
             element = nextElement(reader, namespace);
         }
         // System properties

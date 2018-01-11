@@ -61,6 +61,7 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -94,10 +95,12 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
     private final StandaloneXml.ParsingOption[] parsingOptions;
     private AuditLogXml auditLogDelegate;
     private final Namespace namespace;
+    private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_Legacy(ExtensionHandler extensionHandler, final Namespace namespace, StandaloneXml.ParsingOption... parsingOptions) {
+    StandaloneXml_Legacy(ExtensionHandler extensionHandler, final Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... parsingOptions) {
         super(new ServerSocketBindingsXml());
         this.extensionHandler = extensionHandler;
+        this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = parsingOptions;
         accessControlXml = AccessControlXml.newInstance(namespace);
         auditLogDelegate = AuditLogXml.newInstance(namespace, false);
@@ -207,6 +210,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         Element element = nextElement(reader, DOMAIN_1_0);
         if (element == Element.EXTENSIONS) {
             extensionHandler.parseExtensions(reader, address, DOMAIN_1_0, list);
+            deferredExtensionContext.load();
             element = nextElement(reader, DOMAIN_1_0);
         }
         // System properties
@@ -313,6 +317,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
             extensionHandler.parseExtensions(reader, address, namespace, list);
+            deferredExtensionContext.load();
             element = nextElement(reader, namespace);
         }
         // System properties
@@ -422,6 +427,7 @@ final class StandaloneXml_Legacy extends CommonXml implements ManagementXmlDeleg
         Element element = nextElement(reader, namespace);
         if (element == Element.EXTENSIONS) {
             extensionHandler.parseExtensions(reader, address, namespace, list);
+            deferredExtensionContext.load();
             element = nextElement(reader, namespace);
         }
         // System properties

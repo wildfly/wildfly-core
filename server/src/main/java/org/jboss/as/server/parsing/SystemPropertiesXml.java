@@ -33,19 +33,20 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.controller.parsing.WriteUtils.writeAttribute;
 
 import java.util.Collections;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.SystemPropertyAddHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -81,12 +82,13 @@ class SystemPropertiesXml {
             // Will set OP_ADDR after parsing the NAME attribute
             ModelNode op = Util.getEmptyOperation(SystemPropertyAddHandler.OPERATION_NAME, new ModelNode());
             final int count = reader.getAttributeCount();
+            String name = null;
             for (int i = 0; i < count; i++) {
                 final String val = reader.getAttributeValue(i);
                 if (!isNoNamespaceAttribute(reader, i)) {
                     throw unexpectedAttribute(reader, i);
                 } else {
-                    final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                    final String attribute = reader.getAttributeLocalName(i);
 
                     switch (attribute) {
                         case NAME: {
@@ -96,6 +98,7 @@ class SystemPropertiesXml {
                             setName = true;
                             ModelNode addr = new ModelNode().set(address).add(SYSTEM_PROPERTY, val);
                             op.get(OP_ADDR).set(addr);
+                            name = val;
                             break;
                         }
                         case VALUE: {
@@ -127,6 +130,15 @@ class SystemPropertiesXml {
             if (!setName) {
                 throw ParseUtils.missingRequired(reader, Collections.singleton(NAME));
             }
+            if(standalone) {
+                //eagerly set the property so it can potentially be used by jboss modules
+                //only do this for standalone servers
+                try {
+                    System.setProperty(name, SystemPropertyResourceDefinition.VALUE.resolveValue(ExpressionResolver.SIMPLE, op.get(VALUE)).asString());
+                } catch (OperationFailedException e) {
+                    ServerLogger.AS_ROOT_LOGGER.tracef(e, "Failed to set property %s at parse time, it will be set later in the boot process", name);
+                }
+            }
 
             updates.add(op);
         }
@@ -139,7 +151,7 @@ class SystemPropertiesXml {
             writer.writeStartElement(element.getLocalName());
             for (Property prop : properties) {
                 writer.writeStartElement(Element.PROPERTY.getLocalName());
-                writeAttribute(writer, Attribute.NAME, prop.getName());
+                writer.writeAttribute(NAME, prop.getName());
                 ModelNode sysProp = prop.getValue();
                 SystemPropertyResourceDefinition.VALUE.marshallAsAttribute(sysProp, writer);
                 if (!standalone) {
