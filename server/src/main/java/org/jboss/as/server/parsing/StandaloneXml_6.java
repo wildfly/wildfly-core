@@ -70,6 +70,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.parsing.DeferredExtensionContext;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -109,13 +110,15 @@ final class StandaloneXml_6 extends CommonXml implements ManagementXmlDelegate {
     private AuditLogXml auditLogDelegate;
     private final Namespace namespace;
     private ExtensionHandler extensionHandler;
+    private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_6(ExtensionHandler extensionHandler, Namespace namespace, StandaloneXml.ParsingOption... options) {
+    StandaloneXml_6(ExtensionHandler extensionHandler, Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.namespace = namespace;
         this.extensionHandler = extensionHandler;
         this.accessControlXml = AccessControlXml.newInstance(namespace);
         this.auditLogDelegate = AuditLogXml.newInstance(namespace, false);
+        this.deferredExtensionContext = deferredExtensionContext;
         this.parsingOptions = options;
     }
 
@@ -233,6 +236,8 @@ final class StandaloneXml_6 extends CommonXml implements ManagementXmlDelegate {
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
+        //load all extensions and initialize the parsers
+        deferredExtensionContext.load();
         // Single profile
         if (element == Element.PROFILE) {
             parseServerProfile(reader, address, list);
