@@ -50,6 +50,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -183,6 +184,18 @@ public class SuspendOnSoftKillTestCase {
                     break;
                 }
             } while (System.currentTimeMillis() < timeout);
+            if ("RUNNING".equals(suspendState) && processUtil instanceof WindowsProcessUtil) {
+                // taskkill with no /f doesn't seem to soft kill Windows vms. I can't find
+                // any other way to test this than trying taskkill without the hard-kill /f arg.
+                // I tried wmic and terminate but that results in a hard kill.
+                // So just ignore this test. The point of this test is to test how the shutdown hook
+                // we install handles things. If the hook is never invoked by the VM we
+                // can't do anything about that anyway.
+                // I let the test run all the way to here before ignoring so that if
+                // taskkill happens to actually work in some Windows environment, then
+                // we get the coverage
+                throw new AssumptionViolatedException("taskkill did not produce a 'soft kill' of the server on Windows");
+            }
             Assert.assertEquals("SUSPENDING", suspendState);
 
             // Send a request that will trigger the first request to complete
