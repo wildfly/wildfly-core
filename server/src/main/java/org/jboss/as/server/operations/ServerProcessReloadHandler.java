@@ -23,9 +23,12 @@ package org.jboss.as.server.operations;
 
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
@@ -128,7 +131,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                             final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
                             final SuspendController suspendController = suspendControllerServiceController.getValue();
                             final ExecutorService executor = (ExecutorService) context.getServiceRegistry(false).getRequiredService(EXECUTOR_CAPABILITY.getCapabilityServiceName()).getValue();
-                            final RestartAction restartAction = new RestartAction(service, reloadContext, suspendController, executor);
+                            final RestartAction restartAction = new RestartAction(service, reloadContext, executor);
                             if (timeoutInSeconds != 0) {
                                 OperationListener operationListener = new OperationListener() {
                                     @Override
@@ -143,7 +146,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
                                     @Override
                                     public void cancelled() {
                                         suspendController.removeListener(this);
-                                        restartAction.resume();
+                                        restartAction.cancel();
                                     }
 
                                     @Override
@@ -233,50 +236,50 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
         }
     }
 
-    private class RestartAction {
+    private class RestartAction  extends AtomicBoolean {
         private final ServiceController<?> service;
         private final ReloadContext<RunningModeControl> reloadContext;
-        private final SuspendController suspendController;
         private final ExecutorService executorService;
 
-        RestartAction(final ServiceController<?> service, final ReloadContext<RunningModeControl> reloadContext, final SuspendController suspendController, ExecutorService executorService) {
+        RestartAction(final ServiceController<?> service, final ReloadContext<RunningModeControl> reloadContext, ExecutorService executorService) {
             this.service = service;
             this.reloadContext = reloadContext;
-            this.suspendController = suspendController;
             this.executorService = executorService;
         }
 
         void restart() {
-            service.addListener(new AbstractServiceListener<Object>() {
-                @Override
-                public void listenerAdded(final ServiceController<?> controller) {
-                    Future<?> stopping = executorService.submit(() -> {
-                        reloadContext.reloadInitiated(runningModeControl);
-                        processState.setStopping();
-                        controller.setMode(ServiceController.Mode.NEVER);
-                    });
-                    try {
-                        stopping.get();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                    } catch (ExecutionException ex) {
-                        ControllerLogger.ROOT_LOGGER.errorStoppingServer(ex);
+            if(compareAndSet(false, true)) {
+                service.addListener(new AbstractServiceListener<Object>() {
+                    @Override
+                    public void listenerAdded(final ServiceController<?> controller) {
+                        Future<?> stopping = executorService.submit(() -> {
+                            reloadContext.reloadInitiated(runningModeControl);
+                            processState.setStopping();
+                            controller.setMode(ServiceController.Mode.NEVER);
+                        });
+                        try {
+                            stopping.get();
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                        } catch (ExecutionException ex) {
+                            ControllerLogger.ROOT_LOGGER.errorStoppingServer(ex);
+                        }
                     }
-                }
 
-                @Override
-                public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
-                    if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
-                        controller.removeListener(this);
-                        reloadContext.doReload(runningModeControl);
-                        controller.setMode(ServiceController.Mode.ACTIVE);
+                    @Override
+                    public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
+                        if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
+                            controller.removeListener(this);
+                            reloadContext.doReload(runningModeControl);
+                            controller.setMode(ServiceController.Mode.ACTIVE);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
-        void resume(){
-            suspendController.resume();
+        void cancel() {
+            compareAndSet(false, true);
         }
     }
 }
