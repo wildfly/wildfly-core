@@ -182,8 +182,11 @@ public class HelpCommand implements Command<CLICommandInvocation> {
         }
         String mainCommand = command.get(0);
         StringBuilder builder = new StringBuilder();
-        for (String s : command) {
-            builder.append(s).append(" ");
+        for (int i = 0; i < command.size(); i++) {
+            builder.append(command.get(i));
+            if (i < command.size() - 1) {
+                builder.append(" ");
+            }
         }
 
         // An operation?
