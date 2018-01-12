@@ -2092,7 +2092,7 @@ public class ValueTypeCompletionTestCase {
     }
 
     @Test
-    public void testRequires1() throws Exception {
+    public void testRequiresNotHideMultipleNotRequiredAlternatives() throws Exception {
         final ModelNode propDescr = ModelNode.fromString(requires_alternatives1);
         assertTrue(propDescr.isDefined());
 
@@ -2213,7 +2213,7 @@ public class ValueTypeCompletionTestCase {
     }
 
     @Test
-    public void testRequires2() throws Exception {
+    public void testRequiresHideSingleNotRequiredAlternatives() throws Exception {
         final ModelNode propDescr = ModelNode.fromString(requires_alternatives2);
         assertTrue(propDescr.isDefined());
 
