@@ -96,10 +96,10 @@ public class ElytronExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, ElytronSubsystemParser1_0::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, ElytronSubsystemParser1_1::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, ElytronSubsystemParser1_2::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, ElytronSubsystemParser2_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, () -> new ElytronSubsystemParser1_0());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, () -> new ElytronSubsystemParser1_1());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, () -> new ElytronSubsystemParser1_2());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, () -> new ElytronSubsystemParser2_0());
     }
 
     @Override
@@ -112,7 +112,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(ElytronSubsystemParser2_0::new);
+        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser2_0());
     }
 
     @SuppressWarnings("unchecked")
