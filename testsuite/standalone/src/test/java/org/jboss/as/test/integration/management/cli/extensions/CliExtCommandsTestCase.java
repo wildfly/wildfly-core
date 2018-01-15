@@ -90,7 +90,7 @@ public class CliExtCommandsTestCase {
     }
 
     @Test
-    public void testExtensionCommand() throws Exception {
+    public void testExtensionLegacyCommand() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
@@ -109,7 +109,7 @@ public class CliExtCommandsTestCase {
     }
 
     @Test
-    public void testExtensionCommand2() throws Exception {
+    public void testExtensionAeshCommand() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommand.NAME);
@@ -128,7 +128,7 @@ public class CliExtCommandsTestCase {
     }
 
     @Test
-    public void testExtensionCommandHelp() throws IOException {
+    public void testExtensionLegacyCommandHelp() throws IOException {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
@@ -140,7 +140,7 @@ public class CliExtCommandsTestCase {
     }
 
     @Test
-    public void testExtensionCommandHelp2() throws IOException {
+    public void testExtensionAeshCommandHelp() throws IOException {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
