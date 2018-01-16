@@ -64,6 +64,9 @@ public final class ClassReflectionIndex {
      */
     private volatile Set<Method> classMethods;
 
+    /* Map of all methods defined by this class and its superclasses (including default methods) */
+    private volatile Map<String, Map<ParamNameList, Map<String, Method>>> allMethodsByTypeName;
+
     @SuppressWarnings({"unchecked"})
     ClassReflectionIndex(final Class<?> indexedClass, final DeploymentReflectionIndex deploymentReflectionIndex) {
         this.deploymentReflectionIndex = deploymentReflectionIndex;
@@ -219,6 +222,31 @@ public final class ClassReflectionIndex {
         return getMethod(method.getReturnType(), method.getName(), method.getParameterTypes());
     }
 
+
+    /**
+     * Get the canonical method declared on this object or on a superclass or as a default method on a interface
+     * implemented by this class or a superclass
+     *
+     * @param methodIdentifier the method to look up
+     * @return the canonical method object, or {@code null} if no matching method exists
+     */
+    public Method getMethodIncludingSuperclassAndDefaultMethods(MethodIdentifier methodIdentifier) {
+        assert methodIdentifier != null;
+        String name = methodIdentifier.getName();
+        String returnType = methodIdentifier.getReturnType();
+        String[] paramTypes = methodIdentifier.getParameterTypes();
+
+        getClassMethods();
+        final Map<ParamNameList, Map<String, Method>> returnTypeNameMape = allMethodsByTypeName.get(name);
+        if (returnTypeNameMape == null) {
+            return null;
+        }
+        final Map<String, Method> paramsMap = returnTypeNameMape.get(createParamNameList(paramTypes));
+        if (paramsMap == null) {
+            return null;
+        }
+        return paramsMap.get(returnType);
+    }
     /**
      * Get a method declared on this object.
      *
@@ -402,6 +430,23 @@ public final class ClassReflectionIndex {
                         methods.addAll(methodSet);
                     }
                     this.classMethods = methods;
+
+                    /* Add all found methods to map for faster access */
+                    allMethodsByTypeName = new HashMap<>();
+                    for (Method method : classMethods) {
+                        final String methodName = method.getName();
+                        final ParamNameList paramNameList = createParamNameList(method.getParameterTypes());
+                        final String returnTypeName = method.getReturnType().getCanonicalName();
+                        Map<ParamNameList, Map<String, Method>> paramNameListToMethodMap = allMethodsByTypeName.get(methodName);
+                        if (paramNameListToMethodMap == null) {
+                            allMethodsByTypeName.put(methodName, paramNameListToMethodMap = new HashMap<>());
+                        }
+                        Map<String, Method> returnTypeToMethodMap = paramNameListToMethodMap.get(paramNameList);
+                        if (returnTypeToMethodMap == null) {
+                            paramNameListToMethodMap.put(paramNameList, returnTypeToMethodMap = new HashMap<String, Method>());
+                        }
+                        returnTypeToMethodMap.put(returnTypeName, method);
+                    }
                 }
             }
         }
