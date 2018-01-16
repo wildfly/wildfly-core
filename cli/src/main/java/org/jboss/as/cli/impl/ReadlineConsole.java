@@ -576,6 +576,7 @@ public class ReadlineConsole implements Console {
                                     currentLines = 0;
                                     break;
                                 }
+                                case DOWN:
                                 case ENTER:
                                 case CTRL_M: { // On Mac, CTRL_M...
                                     currentLines -= 1;
