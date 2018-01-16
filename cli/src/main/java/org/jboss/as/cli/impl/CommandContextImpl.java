@@ -2217,4 +2217,13 @@ class CommandContextImpl implements CommandContext, ModelControllerClientFactory
             }
         }
     }
+
+    /**
+     * Public for testing purpose only.
+     *
+     * @return
+     */
+    public ReadlineConsole getConsole() {
+        return (ReadlineConsole) console;
+    }
 }
