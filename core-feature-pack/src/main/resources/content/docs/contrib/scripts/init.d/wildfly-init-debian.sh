@@ -95,13 +95,20 @@ if [ -z "$JBOSS_MODE" ]; then
 	JBOSS_MODE=standalone
 fi
 
+if [ -z "$JBOSS_BASE_DIR" ]; then
+         JBOSS_BASE_DIR="$JBOSS_HOME/$JBOSS_MODE"
+else
+         JBOSS_OPTS="$JBOSS_OPTS -Djboss.server.base.dir=$JBOSS_BASE_DIR"
+fi
+
+JBOSS_MARKERFILE=$JBOSS_BASE_DIR/tmp/startup-marker
+
 # Startup mode script
 if [ "$JBOSS_MODE" = "standalone" ]; then
 	JBOSS_SCRIPT="$JBOSS_HOME/bin/standalone.sh"
 	if [ -z "$JBOSS_CONFIG" ]; then
 		JBOSS_CONFIG=standalone.xml
 	fi
-	JBOSS_MARKERFILE="$JBOSS_HOME/standalone/tmp/startup-marker"
 else
 	JBOSS_SCRIPT="$JBOSS_HOME/bin/domain.sh"
 	if [ -z "$JBOSS_DOMAIN_CONFIG" ]; then
@@ -110,7 +117,6 @@ else
 	if [ -z "$JBOSS_HOST_CONFIG" ]; then
 		JBOSS_HOST_CONFIG=host.xml
 	fi
-	JBOSS_MARKERFILE="$JBOSS_HOME/domain/tmp/startup-marker"
 fi
 
 # Check startup file
