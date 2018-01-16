@@ -49,6 +49,9 @@ import org.xnio.channels.AcceptingChannel;
  * @version $Revision: 1.1 $
  */
 public class ChannelServer implements Closeable {
+
+    private static boolean firstCreate = true;
+
     private final Endpoint endpoint;
     private final Registration registration;
     private final AcceptingChannel<StreamConnection> streamServer;
@@ -66,6 +69,19 @@ public class ChannelServer implements Closeable {
             throw new IllegalArgumentException("Null configuration");
         }
         configuration.validate();
+
+        // Hack WFCORE-3302/REM3-303 workaround
+        if (firstCreate) {
+            firstCreate = false;
+        } else {
+            try {
+                // wait in case the previous socket has not closed
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
 
         // TODO WFCORE-3302 -- Endpoint.getCurrent() should be ok
         final Endpoint endpoint = Endpoint.builder().setEndpointName(configuration.getEndpointName()).build();
