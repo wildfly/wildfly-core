@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.integration.management.cli.ifelse.CLISystemPropertyTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
@@ -375,6 +376,28 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
         } finally {
             ctx.terminateSession();
             cliOut.reset();
+        }
+    }
+
+    @Test
+    public void testTryInsideTry() throws Exception {
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        boolean failed = false;
+        try {
+            ctx.connectController();
+            ctx.handle("try");
+            ctx.handle("try");
+        } catch (CommandFormatException ex) {
+            failed = true;
+        } finally {
+            try {
+                if (!failed) {
+                    throw new Exception("try inside try should have failed");
+                }
+            } finally {
+                ctx.terminateSession();
+                cliOut.reset();
+            }
         }
     }
 }

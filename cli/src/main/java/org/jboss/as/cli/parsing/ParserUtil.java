@@ -81,11 +81,16 @@ public class ParserUtil {
 
     public static SubstitutedLine parseLine(String commandLine, final CommandLineParser.CallbackHandler handler, boolean strict,
             CommandContext ctx) throws CommandFormatException {
+        return parseLine(commandLine, handler, strict, ctx, false);
+    }
+
+    public static SubstitutedLine parseLine(String commandLine, final CommandLineParser.CallbackHandler handler, boolean strict,
+            CommandContext ctx, boolean disableResolutionException) throws CommandFormatException {
         if (commandLine == null) {
             return null;
         }
         final ParsingStateCallbackHandler callbackHandler = getCallbackHandler(handler);
-        return StateParser.parseLine(commandLine, callbackHandler, InitialState.INSTANCE, strict, ctx);
+        return StateParser.parseLine(commandLine, callbackHandler, InitialState.INSTANCE, strict, disableResolutionException, ctx);
     }
 
     /**
