@@ -282,10 +282,16 @@ public class MBeanInfoFactory {
                     }
                 } else {
                     if (value.has(MIN)) {
-                        descriptions.put(MIN_VALUE_FIELD, getIfExistsAsComparable(value, MIN));
+                        Comparable minC = getIfExistsAsComparable(value, MIN);
+                        if (minC instanceof Number) {
+                            descriptions.put(MIN_VALUE_FIELD, minC);
+                        }
                     }
                     if (value.has(MAX)) {
-                        descriptions.put(MAX_VALUE_FIELD, getIfExistsAsComparable(value, MAX));
+                        Comparable maxC = getIfExistsAsComparable(value, MAX);
+                        if (maxC instanceof Number) {
+                            descriptions.put(MAX_VALUE_FIELD, maxC);
+                        }
                     }
                 }
             }
