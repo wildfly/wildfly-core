@@ -24,8 +24,6 @@ package org.jboss.as.model.test;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -33,6 +31,8 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -46,7 +46,6 @@ import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.jboss.logging.Logger;
 import org.jboss.modules.filter.ClassFilter;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -184,30 +183,24 @@ public class ChildFirstClassLoaderBuilder {
 
     public ChildFirstClassLoaderBuilder addMavenResourceURL(String artifactGav) throws IOException, ClassNotFoundException {
         final String name = "maven-" + escape(artifactGav);
-        final File file = new File(cache, name);
-        if (file.exists()) {
-            log.trace("Using cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
-            final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
-            try {
+        final Path file = new File(cache, name).toPath();
+        if (Files.exists(file)) {
+            log.trace("Using cached maven url for " + artifactGav + " from " + file.toAbsolutePath().toString());
+            try (final ObjectInputStream in = new ObjectInputStream(Files.newInputStream(file))){
                 classloaderURLs.add((URL)in.readObject());
             } catch (Exception e) {
-                log.warn("Error loading cached maven url for " + artifactGav + " from " + file.getAbsolutePath());
+                log.warn("Error loading cached maven url for " + artifactGav + " from " + file.toAbsolutePath().toString());
                 throw e;
-            } finally {
-                IoUtils.safeClose(in);
             }
         } else {
-            log.trace("No cached maven url for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
+            log.trace("No cached maven url for " + artifactGav + " found. " + file.toAbsolutePath().toString() + " does not exist.");
             final URL url = mavenUtil.createMavenGavURL(artifactGav);
             classloaderURLs.add(url);
-            final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-            try {
+            try (final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))){
                 out.writeObject(url);
             } catch (Exception e) {
-                log.warn("Error writing cached maven url for " + artifactGav + " to " + file.getAbsolutePath());
+                log.warn("Error writing cached maven url for " + artifactGav + " to " + file.toAbsolutePath().toString());
                 throw e;
-            } finally {
-                IoUtils.safeClose(out);
             }
         }
         return this;
@@ -216,30 +209,24 @@ public class ChildFirstClassLoaderBuilder {
     public ChildFirstClassLoaderBuilder addRecursiveMavenResourceURL(String artifactGav, String... excludes)
             throws DependencyCollectionException, DependencyResolutionException, IOException, ClassNotFoundException {
         final String name = "maven-recursive-" + escape(artifactGav);
-        final File file = new File(cache, name);
-        if (file.exists()) {
-            log.trace("Using cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
-            final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
-            try {
+        final Path file = new File(cache, name).toPath();
+        if (Files.exists(file)) {
+            log.trace("Using cached recursive maven urls for " + artifactGav + " from " + file.toAbsolutePath().toString());
+            try (final ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(file)))){
                 classloaderURLs.addAll((List<URL>)in.readObject());
             } catch (Exception e) {
-                log.warn("Error loading cached recursive maven urls for " + artifactGav + " from " + file.getAbsolutePath());
+                log.warn("Error loading cached recursive maven urls for " + artifactGav + " from " + file.toAbsolutePath().toString());
                 throw e;
-            } finally {
-                IoUtils.safeClose(in);
             }
         } else {
-            log.trace("No cached recursive maven urls for " + artifactGav + " found. " + file.getAbsolutePath() + " does not exist.");
+            log.trace("No cached recursive maven urls for " + artifactGav + " found. " + file.toAbsolutePath().toString() + " does not exist.");
             final List<URL> urls = mavenUtil.createMavenGavRecursiveURLs(artifactGav, excludes);
             classloaderURLs.addAll(urls);
-            final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-            try {
+            try (final ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))){
                 out.writeObject(urls);
             } catch (Exception e) {
-                log.warn("Error writing cached recursive maven urls for " + artifactGav + " to " + file.getAbsolutePath());
+                log.warn("Error writing cached recursive maven urls for " + artifactGav + " to " + file.toAbsolutePath().toString());
                 throw e;
-            } finally {
-                IoUtils.safeClose(out);
             }
         }
 

@@ -16,8 +16,10 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
@@ -27,89 +29,93 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.subsystem.test.AbstractSubsystemTest;
+import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Tests of transformation of the elytron subsystem to previous API versions.
  *
  * @author Brian Stansberry
+ * @author Tomaz Cerar
  */
-public class SubsystemTransformerTestCase extends AbstractSubsystemTest {
+public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     public SubsystemTransformerTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
+    @Override
+    protected String getSubsystemXml() throws IOException {
+        return readResource("elytron-transformers-1.2.xml");
+    }
 
     @Test
-    public void testRejectingTransformersWFCore300() throws Exception {
-        ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.WF_11_0_0_CR1;
-        ModelVersion elytronVersion = ElytronSubsystemTransformers.ELYTRON_1_0_0;
+    public void testRejectingTransformersEAP710() throws Exception {
+        testRejectingTransformers(EAP_7_1_0);
+    }
+
+    @Test
+    public void testTransformerEAP710() throws Exception {
+        testTransformation(EAP_7_1_0);
+    }
+
+    private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
+        KernelServicesBuilder builder = this.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(xml);
+
+        builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, version)
+                .addMavenResourceURL(mavenResourceURLs)
+                .skipReverseControllerCheck()
+                .dontPersistXml();
+
+        KernelServices services = builder.build();
+        Assert.assertTrue(ModelTestControllerVersion.MASTER + " boot failed", services.isSuccessfulBoot());
+        Assert.assertTrue(controllerVersion.getMavenGavVersion() + " boot failed", services.getLegacyServices(version).isSuccessfulBoot());
+        return services;
+    }
+
+    private void testTransformation(final ModelTestControllerVersion controller) throws Exception {
+        final ModelVersion version = controller.getSubsystemModelVersion(getMainSubsystemName());
+
+        KernelServices services = this.buildKernelServices(getSubsystemXml(), controller, version,
+                controller.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controller.getCoreVersion());
+
+        // check that both versions of the legacy model are the same and valid
+        checkSubsystemModelTransformation(services, version, null, false);
+
+        ModelNode transformed = services.readTransformedModel(version);
+        Assert.assertTrue(transformed.isDefined());
+    }
+
+
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
+        ModelVersion elytronVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
         KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)
-                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId()+":wildfly-elytron-integration:"+controllerVersion.getCoreVersion())
+                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controllerVersion.getCoreVersion())
                 .dontPersistXml();
 
         KernelServices mainServices = builder.build();
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(elytronVersion).isSuccessfulBoot());
 
-        List<ModelNode> ops = builder.parseXmlResource("transformers-1.0.xml");
+        List<ModelNode> ops = builder.parseXmlResource("elytron-transformers-1.2-reject.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_PERMISSION_MAPPER)),
-                        new MatchAllConfig()
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION)),
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
                         new FailedOperationTransformationConfig.NewAttributesConfig(AuthenticationClientDefinitions.FORWARDING_MODE)
                 )
         );
+        /*ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
+               ...
+        );*/
     }
 
-    private static class MatchAllConfig extends FailedOperationTransformationConfig.AttributesPathAddressConfig<MatchAllConfig> {
 
-        private MatchAllConfig() {
-            super(PermissionMapperDefinitions.PERMISSION_MAPPINGS.getName());
-        }
-
-        @Override
-        protected boolean isAttributeWritable(String attributeName) {
-            return true;
-        }
-
-        @Override
-        protected boolean checkValue(String attrName, ModelNode attribute, boolean isGeneratedWriteAttribute) {
-            if (attribute.isDefined()) {
-                for (ModelNode element : attribute.asList()) {
-                    if (element.get(PermissionMapperDefinitions.MATCH_ALL.getName()).asBoolean(false)) {
-                        return true;
-                    }
-                }
-            }
-            return  false;
-        }
-
-        @Override
-        protected ModelNode correctValue(ModelNode toResolve, boolean isGeneratedWriteAttribute) {
-            ModelNode corrected = toResolve.clone();
-            if (corrected.isDefined()) {
-                for (ModelNode element : corrected.asList()) {
-                    ModelNode matchAll = element.get(PermissionMapperDefinitions.MATCH_ALL.getName());
-                    if (matchAll.asBoolean(false)) {
-                        matchAll.clear();
-                        element.get(PermissionMapperDefinitions.ROLES.getName()).add("Administrator");
-
-                    }
-                }
-            }
-            return corrected;
-        }
-    }
 }

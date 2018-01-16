@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
@@ -33,7 +34,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry
  */
-public class InterfaceRemoveHandler extends org.jboss.as.controller.operations.common.InterfaceRemoveHandler {
+public class InterfaceRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final InterfaceRemoveHandler INSTANCE = new InterfaceRemoveHandler();
 
