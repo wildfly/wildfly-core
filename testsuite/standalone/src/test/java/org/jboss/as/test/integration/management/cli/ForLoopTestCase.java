@@ -17,6 +17,7 @@ package org.jboss.as.test.integration.management.cli;
 
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
@@ -168,6 +169,20 @@ public class ForLoopTestCase extends AbstractCliTestBase {
         } finally {
             removeProperties();
         }
+    }
+
+    @Test
+    public void testNonIterableResult() {
+        cli.sendLine("set name=World");
+
+        try {
+            assertFalse(cli.sendLine("for var in :resolve-expression(expression=Hello $name!)", true));
+            String line = cli.readOutput();
+            assertEquals("for cannot be used with operations that produce a non-iterable result", line.trim());
+        } finally {
+            cli.sendLine("set name=");
+        }
+
     }
 
     private void addProperty(String name, String value) {
