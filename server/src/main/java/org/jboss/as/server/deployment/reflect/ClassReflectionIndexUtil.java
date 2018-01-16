@@ -61,6 +61,29 @@ public class ClassReflectionIndexUtil {
         return null;
     }
 
+
+    /**
+     * Finds and returns a method corresponding to the passed <code>methodIdentifier</code>.
+     * The passed <code>classReflectionIndex</code> will be used to traverse the class hierarchy while finding the method.
+     * The Method is looked up in the implementation class given as clazz, all superclasses and also all default methods
+     * implemented in interfaces will be considered.
+     * <p/>
+     * Returns null if no such method is found
+     *
+     * @param deploymentReflectionIndex The deployment reflection index
+     * @param clazz      The class reflection index which will be used to traverse the class hierarchy to find the method
+     * @param methodIdentifier          The method identifier of the method being searched for
+     * @return
+     */
+    public static Method findMethodIncludingSuperclassAndDefaultMethods(final DeploymentReflectionIndex deploymentReflectionIndex, final Class<?> clazz, final MethodIdentifier methodIdentifier) {
+        Method m = findMethod(deploymentReflectionIndex, clazz, methodIdentifier);
+        if (m != null) {
+            return m;
+        }
+        final ClassReflectionIndex index = deploymentReflectionIndex.getClassIndex(clazz);
+        return index.getMethodIncludingSuperclassAndDefaultMethods(methodIdentifier);
+    }
+
     /**
      * Finds and returns a method corresponding to the passed <code>methodIdentifier</code>.
      * The passed <code>classReflectionIndex</code> will be used to traverse the class hierarchy while finding the method.
