@@ -73,10 +73,24 @@ public class DuplicateExtCommandTestCase {
 
     private static TestModule testModule;
 
+    /**
+     * Output of "extension-commands --errors" cli command
+     */
+    private static String cliErrors;
+
     @BeforeClass
     public static void setupServer() throws Exception {
         createTestModule();
         setupServerWithExtension();
+
+        // call "extension-commands --errors"
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument("extension-commands --errors");
+        cli.executeNonInteractive();
+        cliErrors = cli.getOutput().trim();
+        assertEquals("Wrong CLI return value", 0, cli.getProcessExitValue());
     }
 
     @AfterClass
@@ -92,17 +106,20 @@ public class DuplicateExtCommandTestCase {
         }
     }
 
+    /**
+     * Checks error message if custom Aesh CLI command has the same name as already registered command.
+     */
     @Test
-    public void testExtensionCommandCollision() throws Exception {
-        CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("--connect")
-                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
-                .addCliArgument("extension-commands --errors");
-        cli.executeNonInteractive();
+    public void testExtensionAeshCommandCollision() throws Exception {
+        assertTrue("Required CLI error was not printed", cliErrors.contains(DuplicateExtCommand.NAME));
+    }
 
-        assertEquals(cli.getOutput().trim(), 0, cli.getProcessExitValue());
-        assertTrue(cli.getOutput().trim(), cli.getOutput().trim().contains(DuplicateExtCommandHandler.NAME)
-                && cli.getOutput().trim().contains(DuplicateExtCommand.NAME));
+    /**
+     * Checks error message if custom legacy CLI command has the same name as already registered command.
+     */
+    @Test
+    public void testExtensionLegacyCommandCollision() throws Exception {
+        assertTrue("Required CLI error was not printed", cliErrors.contains(DuplicateExtCommandHandler.NAME));
     }
 
     private static void createTestModule() throws Exception {

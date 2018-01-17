@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.patching;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.test.patching.PatchingTestUtil.AS_DISTRIBUTION;
 import static org.jboss.as.test.patching.PatchingTestUtil.AS_VERSION;
@@ -38,6 +39,7 @@ import java.io.File;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
@@ -115,6 +117,28 @@ public class NonStandardSituationsTestCase extends AbstractPatchingTestCase {
 
         Assert.assertEquals(originalContent1, actualContent1);
         Assert.assertEquals(originalContent2, actualContent2);
+    }
+
+
+    /**
+     * Patch non-zip plain-text file as a patch and check error message
+     */
+    @Test
+    public void testInconsistentPatch() throws Exception {
+        // prepare the patch
+        final String wrongPatchFile = AS_DISTRIBUTION + FILE_SEPARATOR + randomString();
+        setFileContent(wrongPatchFile, "whatever");
+
+        // start server
+        controller.start();
+        try (CLIWrapper cli = new CLIWrapper(true)) {
+            // try to apply patch
+            boolean success = cli.sendLine("patch apply " + new File(wrongPatchFile).getAbsolutePath(), true);
+            // check error status
+            Assert.assertFalse("Patch should not be applied successfully", success);
+            Assert.assertThat("Wrong error message", cli.readOutput(), containsString("WFLYPAT0046"));
+        }
+        controller.stop();
     }
 
 

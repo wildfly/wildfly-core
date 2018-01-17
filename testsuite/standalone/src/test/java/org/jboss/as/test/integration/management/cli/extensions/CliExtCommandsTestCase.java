@@ -22,8 +22,9 @@
 
 package org.jboss.as.test.integration.management.cli.extensions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -46,6 +47,7 @@ import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,42 +91,58 @@ public class CliExtCommandsTestCase {
         }
     }
 
+    /**
+     * Try to use legacy CLI command, CLI is not connected. Error message should be printed.
+     */
     @Test
-    public void testExtensionLegacyCommand() throws Exception {
+    public void testLegacyExtensionCommandNotConnected() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
         cli.executeNonInteractive();
-        assertNotEquals(0, cli.getProcessExitValue());
-
-        cli = new CliProcessWrapper()
-                .addCliArgument("--connect")
-                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
-                .addCliArgument(CliExtCommandHandler.NAME);
-        cli.executeNonInteractive();
-        assertEquals(0, cli.getProcessExitValue());
-
-        // the output may contain other logs from the cli initialization
-        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().endsWith(CliExtCommandHandler.OUTPUT));
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'test-cli-ext-commands'"));
     }
 
+    /**
+     * Use legacy CLI command, CLI is connected. CLI command should work correctly.
+     */
     @Test
-    public void testExtensionAeshCommand() throws Exception {
+    public void testLegacyExtensionCommandConnected() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommandHandler.NAME);
+        cli.executeNonInteractive();
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommandHandler.OUTPUT));
+    }
+
+    /**
+     * Try to use Aesh CLI command, CLI is not connected. Error message should be printed.
+     */
+    @Test
+    public void testAeshExtensionCommandNotConnected() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommand.NAME);
         cli.executeNonInteractive();
-        assertNotEquals(0, cli.getProcessExitValue());
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'useless'"));
+    }
 
-        cli = new CliProcessWrapper()
+    /**
+     * Use Aesh CLI command, CLI is connected. CLI command should work correctly.
+     */
+    @Test
+    public void testAeshExtensionCommandConnected() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommand.NAME);
         cli.executeNonInteractive();
-        assertEquals(0, cli.getProcessExitValue());
-
-        // the output may contain other logs from the cli initialization
-        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().endsWith(CliExtCommand.OUTPUT));
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommand.OUTPUT));
     }
 
     @Test
