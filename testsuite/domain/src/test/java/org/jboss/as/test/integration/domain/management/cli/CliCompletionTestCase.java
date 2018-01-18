@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -1549,6 +1550,367 @@ public class CliCompletionTestCase {
                     ctx.handle("done --discard");
                 }
             }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    @Ignore("https://issues.jboss.org/browse/WFCORE-3489")
+    public void testIfInFor() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+
+        try {
+
+            ctx.handle("for var in :read-resource");
+            try {
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"if\": " + candidates.toString(), candidates.contains("if"));
+                    assertFalse("candidates contain \"else\": " + candidates.toString(), candidates.contains("else"));
+                    assertFalse("candidates contain \"end-if\": " + candidates.toString(), candidates.contains("end-if"));
+                }
+
+                ctx.handle("if (outcome == success) of /system-property=test:read-resource");
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"if\": " + candidates.toString(), candidates.contains("if"));
+                        assertTrue("candidates do not contain \"else\": " + candidates.toString(), candidates.contains("else"));
+                        assertTrue("candidates do not contain \"end-if\": " + candidates.toString(), candidates.contains("end-if"));
+                    }
+
+                    ctx.handle("else");
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"if\": " + candidates.toString(), candidates.contains("if"));
+                        assertFalse("candidates contain \"else\": " + candidates.toString(), candidates.contains("else"));
+                        assertTrue("candidates do not contain \"end-if\": " + candidates.toString(), candidates.contains("end-if"));
+                    }
+
+                } finally {
+                    ctx.handle("end-if");
+                }
+
+            } finally {
+                ctx.handle("done --discard");
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    @Ignore("https://issues.jboss.org/browse/WFCORE-3489")
+    public void testForInIf() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+
+        try {
+
+            ctx.handle("if (outcome == success) of /system-property=test:read-resource");
+            try {
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                    assertFalse("candidates contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                }
+
+                ctx.handle("for var in :read-resource");
+
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                        assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                    }
+
+                } finally {
+                    ctx.handle("done --discard");
+                }
+
+                ctx.handle("else");
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                    assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                }
+
+                ctx.handle("for var in :read-resource");
+
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                        assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                    }
+
+                } finally {
+                    ctx.handle("done --discard");
+                }
+
+            } finally {
+                ctx.handle("end-if");
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    @Ignore("https://issues.jboss.org/browse/WFCORE-3489")
+    public void testTryInFor() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+
+        try {
+
+            ctx.handle("for var in :read-resource");
+            try {
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"try\": " + candidates.toString(), candidates.contains("try"));
+                    assertFalse("candidates contain \"catch\": " + candidates.toString(), candidates.contains("catch"));
+                    assertFalse("candidates contain \"finally\": " + candidates.toString(), candidates.contains("finally"));
+                    assertFalse("candidates contain \"end-try\": " + candidates.toString(), candidates.contains("end-try"));
+                }
+
+                ctx.handle("try");
+                try {
+
+                    try {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"try\": " + candidates.toString(), candidates.contains("try"));
+                        assertTrue("candidates do not contain \"catch\": " + candidates.toString(), candidates.contains("catch"));
+                        assertTrue("candidates do not contain \"finally\": " + candidates.toString(), candidates.contains("finally"));
+                        assertTrue("candidates do not contain \"end-try\": " + candidates.toString(), candidates.contains("end-try"));
+                    } finally {
+                        ctx.handle("catch");
+                    }
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"try\": " + candidates.toString(), candidates.contains("try"));
+                        assertFalse("candidates contain \"catch\": " + candidates.toString(), candidates.contains("catch"));
+                        assertTrue("candidates do not contain \"finally\": " + candidates.toString(), candidates.contains("finally"));
+                        assertTrue("candidates do not contain \"end-try\": " + candidates.toString(), candidates.contains("end-try"));
+                    }
+
+                    ctx.handle("finally");
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"try\": " + candidates.toString(), candidates.contains("try"));
+                        assertFalse("candidates contain \"catch\": " + candidates.toString(), candidates.contains("catch"));
+                        assertFalse("candidates contain \"finally\": " + candidates.toString(), candidates.contains("finally"));
+                        assertTrue("candidates do not contain \"end-try\": " + candidates.toString(), candidates.contains("end-try"));
+                    }
+
+                } finally {
+                    ctx.handle("end-try");
+                }
+
+            } finally {
+                ctx.handle("done --discard");
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    @Ignore("https://issues.jboss.org/browse/WFCORE-3489")
+    public void testForInTry() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+
+        try {
+
+            ctx.handle("try");
+            try {
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                    assertFalse("candidates contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                }
+
+                ctx.handle("for var in :read-resource");
+
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                        assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                    }
+
+                } finally {
+                    ctx.handle("done --discard");
+                    ctx.handle("catch");
+                }
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                    assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                }
+
+                ctx.handle("for var in :read-resource");
+
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                        assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                    }
+
+                } finally {
+                    ctx.handle("done --discard");
+                }
+
+                ctx.handle("finally");
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                    assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                }
+
+                ctx.handle("for var in :read-resource");
+
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"for\": " + candidates.toString(), candidates.contains("for"));
+                        assertTrue("candidates do not contain \"done\": " + candidates.toString(), candidates.contains("done"));
+                    }
+
+                } finally {
+                    ctx.handle("done --discard");
+                }
+
+            } finally {
+                ctx.handle("end-try");
+            }
+
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    @Test
+    @Ignore("https://issues.jboss.org/browse/WFCORE-3489")
+    public void testBatchInFor() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+
+        try {
+
+            ctx.handle("for var in :read-resource");
+            try {
+
+                {
+                    String cmd = "";
+                    List<String> candidates = new ArrayList<>();
+                    ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                            cmd.length(), candidates);
+                    assertTrue("candidates do not contain \"batch\": " + candidates.toString(), candidates.contains("batch"));
+                    assertFalse("candidates contain \"run-batch\": " + candidates.toString(), candidates.contains("run-batch"));
+                    assertFalse("candidates contain \"discard-batch\": " + candidates.toString(), candidates.contains("discard-batch"));
+                }
+
+                ctx.handle("batch");
+                try {
+
+                    {
+                        String cmd = "";
+                        List<String> candidates = new ArrayList<>();
+                        ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                                cmd.length(), candidates);
+                        assertFalse("candidates contain \"batch\": " + candidates.toString(), candidates.contains("batch"));
+                        assertTrue("candidates do not contain \"run-batch\": " + candidates.toString(), candidates.contains("run-batch"));
+                        assertTrue("candidates do not contain \"discard-batch\": " + candidates.toString(), candidates.contains("discard-batch"));
+                    }
+
+                } finally {
+                    ctx.handle("discard-batch");
+                }
+
+            } finally {
+                ctx.handle("done --discard");
+            }
+
         } finally {
             ctx.terminateSession();
         }

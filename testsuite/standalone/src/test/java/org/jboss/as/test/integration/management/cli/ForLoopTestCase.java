@@ -15,6 +15,7 @@ limitations under the License.
  */
 package org.jboss.as.test.integration.management.cli;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -93,6 +94,8 @@ public class ForLoopTestCase extends AbstractCliTestBase {
         cli.sendLine("for var in :read-children-names(child-type=system-property", true);
         try {
             assertFalse(cli.sendLine("for var in :read-children-names(child-type=system-property", true));
+            String line = cli.readOutput();
+            assertEquals("for is not allowed while in for block", line.trim());
         } finally {
             cli.sendLine("done");
         }
@@ -123,11 +126,23 @@ public class ForLoopTestCase extends AbstractCliTestBase {
         assertTrue(line, line.contains("EMPTY") && !line.contains("FAILURE"));
     }
 
+    private void checkNonEmpty() {
+        cli.sendLine("if (result!=[]) of :read-children-names(child-type=system-property");
+        cli.sendLine("echo EMPTY");
+        cli.sendLine("else");
+        cli.sendLine("echo FAILURE");
+        cli.sendLine("end-if");
+        String line = cli.readOutput();
+        assertTrue(line, line.contains("EMPTY") && !line.contains("FAILURE"));
+    }
+
     @Test
     public void testForNobatch() throws Exception {
         cli.sendLine("batch");
         try {
             assertFalse(cli.sendLine("for propName in :read-children-names(child-type=system-property", true));
+            String line = cli.readOutput();
+            assertTrue(line, line.contains("The command is not available in the current context"));
         } finally {
             cli.sendLine("discard-batch");
         }
@@ -169,6 +184,94 @@ public class ForLoopTestCase extends AbstractCliTestBase {
         } finally {
             removeProperties();
         }
+    }
+
+    @Test
+    public void testIfFor() throws Exception {
+        try {
+            cli.sendLine("if (result==[]) of :read-children-names(child-type=system-property");
+            cli.sendLine("for propName in :read-children-names(child-type=subsystem)");
+            cli.sendLine("/system-property=$propName:add(value=$propName)");
+            cli.sendLine("done");
+            cli.sendLine("end-if");
+            checkNonEmpty();
+        } finally {
+            removeProperties();
+        }
+    }
+
+    @Test
+    public void testForTry() throws Exception {
+        try {
+            cli.sendLine("for propName in :read-children-names(child-type=subsystem)");
+            cli.sendLine("try");
+            cli.sendLine("/system-property=$propName:add(value=$propName)");
+            cli.sendLine("catch");
+            cli.sendLine("/system-property=$propName:remove");
+            cli.sendLine("end-try");
+            cli.sendLine("done");
+
+            checkNonEmpty();
+
+            cli.sendLine("for propName in :read-children-names(child-type=subsystem)");
+            cli.sendLine("try");
+            cli.sendLine("/system-property=$propName:add(value=$propName)");
+            cli.sendLine("catch");
+            cli.sendLine("/system-property=$propName:remove");
+            cli.sendLine("end-try");
+            cli.sendLine("done");
+
+            checkEmpty();
+        } finally {
+            removeProperties();
+        }
+    }
+
+    @Test
+    public void testTryFor() throws Exception {
+        try {
+            addProperty("prop1", "prop1_a");
+            addProperty("prop2", "prop1_a");
+            addProperty("prop3", "prop1_a");
+            addProperty("prop4", "prop1_a");
+            addProperty("prop5", "prop1_a");
+
+            cli.sendLine("try");
+            cli.sendLine("for propName in :read-children-names(child-type=system-property");
+            cli.sendLine("/system-property=$propName:remove");
+            cli.sendLine("/system-property=$propName:remove");
+            cli.sendLine("done");
+            cli.sendLine("catch");
+            cli.sendLine("echo FAILURE");
+            cli.sendLine("end-try");
+
+            String line = cli.readOutput();
+            assertTrue(line, line.contains("success") && line.contains("FAILURE"));
+
+            cli.sendLine("try");
+            cli.sendLine("for propName in :read-children-names(child-type=system-property");
+            cli.sendLine("/system-property=$propName:remove");
+            cli.sendLine("done");
+            cli.sendLine("catch");
+            cli.sendLine("echo FAILURE");
+            cli.sendLine("end-try");
+
+            line = cli.readOutput();
+            assertEquals(line, 4, StringUtils.countMatches(line, "success"));
+
+        } finally {
+            removeProperties();
+        }
+    }
+
+    @Test
+    public void testVarVisibility() {
+        cli.sendLine("for propName in :read-children-names(child-type=system-property");
+        cli.sendLine("echo $propName");
+        cli.sendLine("done");
+        assertFalse(cli.sendLine("echo $propName", true));
+        String line = cli.readOutput();
+        assertEquals("Unrecognized variable propName", line.trim());
     }
 
     @Test
