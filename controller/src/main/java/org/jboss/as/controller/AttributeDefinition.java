@@ -658,8 +658,23 @@ public abstract class AttributeDefinition {
         if (!node.isDefined() && defaultValue != null && defaultValue.isDefined()) {
             node.set(defaultValue);
         }
-        final ModelNode resolved = resolver.resolveExpressions(node);
+        ModelNode resolved = resolver.resolveExpressions(node);
+        resolved = parseResolvedValue(value, resolved);
         validator.validateParameter(name, resolved);
+        return resolved;
+    }
+
+    /**
+     * "Parse", if appropriate, an attribute value that may have been resolved by the expression resolver into
+     * a different form, returning that new form, or returning {@code resolved} unchanged if no conversion
+     * is appropriate. The default implementation does the latter.
+     *
+     * @param original the original value of the attribute before any resolution work was done
+     * @param resolved the value of the attribute following resolution work
+     *
+     * @return the new form of the value or {@code resolved} itself, unchanged
+     */
+    ModelNode parseResolvedValue(ModelNode original, ModelNode resolved) {
         return resolved;
     }
 

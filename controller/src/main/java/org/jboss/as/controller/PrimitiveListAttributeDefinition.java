@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -100,6 +102,38 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     @Override
     public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         handleCapabilityRequirements(context, resource, attributeValue, true);
+    }
+
+    @Override
+    ModelNode parseResolvedValue(ModelNode original, ModelNode resolved) {
+        return parseSingleElementToList(this, original, resolved);
+    }
+
+    static ModelNode parseSingleElementToList(AttributeDefinition ad, ModelNode original, ModelNode resolved) {
+        ModelNode result = resolved;
+        if (original.isDefined()
+                && !resolved.equals(original)
+                && resolved.getType() == ModelType.LIST
+                && resolved.asInt() == 1) {
+            // WFCORE-3448. We have a list with 1 element that is not the same as the defined original.
+            // So that implies we had an expression as the element, which is what we would have gotten
+            // if the expression string was passed by an xml parser to parseAndSetParameter. See if the
+            // resolved form of that expression in turn parses to a list and if it does, used the parsed list.
+            ModelNode element = resolved.get(0);
+            if (element.getType() == ModelType.STRING) {
+                ModelNode holder = new ModelNode();
+                try {
+                    ad.getParser().parseAndSetParameter(ad, element.asString(), holder, null);
+                    ModelNode parsed = holder.get(ad.getName());
+                    if (parsed.getType() == ModelType.LIST && parsed.asInt() > 1) {
+                        result = parsed;
+                    }
+                } catch (XMLStreamException | RuntimeException e) {
+                    // ignore and just return the original value
+                }
+            }
+        }
+        return result;
     }
 
     private void handleCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue, boolean remove) {
