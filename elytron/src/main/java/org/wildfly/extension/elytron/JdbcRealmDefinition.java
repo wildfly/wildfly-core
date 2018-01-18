@@ -456,7 +456,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 SaltedSimpleDigestObjectDefinition.OBJECT_DEFINITION,
                 SimpleDigestMapperObjectDefinition.OBJECT_DEFINITION,
                 ScramMapperObjectDefinition.OBJECT_DEFINITION)
-                .setRequired(false)
+                .setRequired(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
