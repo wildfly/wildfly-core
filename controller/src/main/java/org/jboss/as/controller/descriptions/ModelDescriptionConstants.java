@@ -93,6 +93,7 @@ public class ModelDescriptionConstants {
     public static final String CANCELLED = "cancelled";
     public static final String CAPABILITIES = "capabilities";
     public static final String CAPABILITY_REFERENCE = "capability-reference";
+    public static final String CAPABILITY_REFERENCE_PATTERN_ELEMENTS = "capability-reference-pattern-elements";
     public static final String CAPABILITY_REGISTRY = "capability-registry";
     public static final String CHILD_TYPE = "child-type";
     public static final String CHILDREN = "children";
@@ -160,6 +161,7 @@ public class ModelDescriptionConstants {
     public static final String DOMAIN_ROLLOUT = "domain-rollout";
     public static final String DOMAIN_UUID = "domain-uuid";
     public static final String DYNAMIC = "dynamic";
+    public static final String DYNAMIC_ELEMENTS = "dynamic-elements";
     public static final String DUMP_SERVICES = "dump-services";
     public static final String EMPTY = "empty";
     public static final String ENABLE = "enable";

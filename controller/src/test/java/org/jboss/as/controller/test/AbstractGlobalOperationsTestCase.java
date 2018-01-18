@@ -187,9 +187,16 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("boolean", ModelType.BOOLEAN), null);
 
 
+        AttributeDefinition att1 = TestUtils.createAttribute("param1", ModelType.STRING);
+        AttributeDefinition att2 = TestUtils.createAttribute("param2", ModelType.STRING);
+        AttributeDefinition ref = SimpleAttributeDefinitionBuilder.create("test_capability", ModelType.STRING)
+                .setCapabilityReference("org.wildfly.test.capability", att1, att2)
+                .build();
         ManagementResourceRegistration profileBSub3Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), new NonResolvingResourceDescriptionResolver()));
-
+        profileBSub3Reg.registerReadOnlyAttribute(att1, null);
+        profileBSub3Reg.registerReadOnlyAttribute(att2, null);
+        profileBSub3Reg.registerReadOnlyAttribute(ref, null);
         profileSub1Reg.registerOperationHandler(TestUtils.createOperationDefinition("testA1-1", TestUtils.createAttribute("paramA1", ModelType.INT)),
                 new OperationStepHandler() {
                     @Override
@@ -216,8 +223,12 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                 }
         );
 
+        AttributeDefinition simpleRef = SimpleAttributeDefinitionBuilder.create("simple_ref", ModelType.STRING)
+                .setCapabilityReference("org.wildfly.test.capability")
+                .build();
         ManagementResourceRegistration profileCSub4Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem4"), new NonResolvingResourceDescriptionResolver()));
+        profileCSub4Reg.registerReadOnlyAttribute(simpleRef, null);
 
         ManagementResourceRegistration profileCSub5Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), new NonResolvingResourceDescriptionResolver()));

@@ -87,6 +87,8 @@ import org.jboss.as.controller.registry.AttributeAccess.AccessType;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS;
+
 /**
  * Validates the types and entries of the of the description providers in the model, as read by
  * {@code /some/path:read-resource-description(recursive=true,inherited=false,operations=true,notifications=true)}
@@ -155,6 +157,7 @@ public class ModelTestModelDescriptionValidator {
         paramAndAttributeKeys.put(EXPRESSIONS_ALLOWED, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(CAPABILITY_REFERENCE, NullDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(CAPABILITY_REFERENCE_PATTERN_ELEMENTS, NullDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(WEB_URL, BooleanDescriptorValidator.INSTANCE);
 
         Map<String, AttributeOrParameterArbitraryDescriptorValidator> validAttributeKeys = new HashMap<String, AttributeOrParameterArbitraryDescriptorValidator>();
@@ -699,7 +702,6 @@ public class ModelTestModelDescriptionValidator {
                     if (!entry.hasDefined(DYNAMIC)) {
                         return "'" + descriptor + "." + entry + "'.dynamic is not defined";
                     }
-
                     if (!entry.hasDefined(DYNAMIC) || entry.get(DYNAMIC).getType() != ModelType.BOOLEAN) {
                         return "'" + descriptor + "." + entry + "'.dynamic is not of type boolean";
                     }
