@@ -153,11 +153,11 @@ public class JMXExtension implements Extension {
             boolean gotConnector = false;
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
-                    case JMX_CONNECTOR: {
+                    case CommonAttributes.JMX_CONNECTOR: {
                         if (gotConnector) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.JMX_CONNECTOR.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.JMX_CONNECTOR);
                         }
                         parseConnector(reader);
                         gotConnector = true;
@@ -177,13 +177,13 @@ public class JMXExtension implements Extension {
             int count = reader.getAttributeCount();
             for (int i = 0; i < count; i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
-                    case SERVER_BINDING: {
+                    case CommonAttributes.SERVER_BINDING: {
                         serverBinding = value;
                         break;
                     }
-                    case REGISTRY_BINDING: {
+                    case CommonAttributes.REGISTRY_BINDING: {
                         registryBinding = value;
                         break;
                     }
@@ -195,10 +195,10 @@ public class JMXExtension implements Extension {
             // Require no content
             ParseUtils.requireNoContent(reader);
             if (serverBinding == null) {
-                throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.SERVER_BINDING));
+                throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.SERVER_BINDING));
             }
             if (registryBinding == null) {
-                throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.REGISTRY_BINDING));
+                throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.REGISTRY_BINDING));
             }
         }
     }
@@ -217,11 +217,11 @@ public class JMXExtension implements Extension {
             ModelNode connectorAdd = null;
             list.add(createAddOperation());
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
-                    case SHOW_MODEL:
+                    case CommonAttributes.SHOW_MODEL:
                         if (showModel) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.SHOW_MODEL.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.SHOW_MODEL);
                         }
                         if (parseShowModelElement(reader)) {
                             //Add the show-model=>resolved part with the default domain name
@@ -232,9 +232,9 @@ public class JMXExtension implements Extension {
                         }
                         showModel = true;
                         break;
-                    case REMOTING_CONNECTOR: {
+                    case CommonAttributes.REMOTING_CONNECTOR: {
                         if (connectorAdd != null) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.REMOTING_CONNECTOR.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.REMOTING_CONNECTOR);
                         }
                         list.add(parseRemoteConnector(reader));
                         break;
@@ -255,9 +255,9 @@ public class JMXExtension implements Extension {
             int count = reader.getAttributeCount();
             for (int i = 0; i < count; i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
-                    case USE_MANAGEMENT_ENDPOINT: {
+                    case CommonAttributes.USE_MANAGEMENT_ENDPOINT: {
                         RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT.parseAndSetParameter(value, connector, reader);
                         break;
                     }
@@ -291,25 +291,25 @@ public class JMXExtension implements Extension {
             list.add(createAddOperation());
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
-                    case EXPOSE_RESOLVED_MODEL:
+                    case CommonAttributes.EXPOSE_RESOLVED_MODEL:
                         if (showResolvedModel) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.EXPOSE_RESOLVED_MODEL.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.EXPOSE_RESOLVED_MODEL);
                         }
                         showResolvedModel = true;
                         list.add(parseShowModelElement(reader, CommonAttributes.RESOLVED));
                         break;
-                    case EXPOSE_EXPRESSION_MODEL:
+                    case CommonAttributes.EXPOSE_EXPRESSION_MODEL:
                         if (showExpressionModel) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.EXPOSE_EXPRESSION_MODEL.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.EXPOSE_EXPRESSION_MODEL);
                         }
                         showExpressionModel = true;
                         list.add(parseShowModelElement(reader, CommonAttributes.EXPRESSION));
                         break;
                     case REMOTING_CONNECTOR:
                         if (connectorAdd) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.REMOTING_CONNECTOR.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.REMOTING_CONNECTOR);
                         }
                         connectorAdd = true;
                         list.add(parseRemoteConnector(reader));
@@ -330,12 +330,12 @@ public class JMXExtension implements Extension {
 
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
-                    case DOMAIN_NAME:
+                    case CommonAttributes.DOMAIN_NAME:
                         ExposeModelResource.getDomainNameAttribute(showModelChild).parseAndSetParameter(value, op, reader);
                         break;
-                    case PROPER_PROPETY_FORMAT:
+                    case CommonAttributes.PROPER_PROPERTY_FORMAT:
                         if (showModelChild.equals(CommonAttributes.RESOLVED)) {
                             ExposeModelResourceResolved.PROPER_PROPERTY_FORMAT.parseAndSetParameter(value, op, reader);
                         } else {
@@ -369,39 +369,39 @@ public class JMXExtension implements Extension {
             list.add(add);
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
-                    case EXPOSE_RESOLVED_MODEL:
+                    case CommonAttributes.EXPOSE_RESOLVED_MODEL:
                         if (showResolvedModel) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.EXPOSE_RESOLVED_MODEL.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.EXPOSE_RESOLVED_MODEL);
                         }
                         showResolvedModel = true;
                         list.add(parseShowModelElement(reader, CommonAttributes.RESOLVED));
                         break;
-                    case EXPOSE_EXPRESSION_MODEL:
+                    case CommonAttributes.EXPOSE_EXPRESSION_MODEL:
                         if (showExpressionModel) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.EXPOSE_EXPRESSION_MODEL.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.EXPOSE_EXPRESSION_MODEL);
                         }
                         showExpressionModel = true;
                         list.add(parseShowModelElement(reader, CommonAttributes.EXPRESSION));
                         break;
                     case REMOTING_CONNECTOR:
                         if (connectorAdd) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.REMOTING_CONNECTOR.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.REMOTING_CONNECTOR);
                         }
                         connectorAdd = true;
                         list.add(parseRemoteConnector(reader));
                         break;
-                    case AUDIT_LOG:
+                    case CommonAttributes.AUDIT_LOG:
                         if (auditLog) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.AUDIT_LOG.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.AUDIT_LOG);
                         }
                         auditLog = true;
                         parseAuditLogElement(reader, list);
                         break;
-                    case SENSITIVITY:
+                    case CommonAttributes.SENSITIVITY:
                         if (sensitivity) {
-                            throw ParseUtils.duplicateNamedElement(reader, Element.SENSITIVITY.getLocalName());
+                            throw ParseUtils.duplicateNamedElement(reader, CommonAttributes.SENSITIVITY);
                         }
                         sensitivity = true;
                         parseSensitivity(add, reader);
@@ -417,9 +417,9 @@ public class JMXExtension implements Extension {
             final int count = reader.getAttributeCount();
             for (int i = 0; i < count; i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
-                    case NON_CORE_MBEANS:
+                    case CommonAttributes.NON_CORE_MBEANS:
                         JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.parseAndSetParameter(value, add, reader);
                         break;
                     default:
@@ -437,17 +437,17 @@ public class JMXExtension implements Extension {
             final int count = reader.getAttributeCount();
             for (int i = 0; i < count; i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
-                    case LOG_BOOT: {
+                    case CommonAttributes.LOG_BOOT: {
                         JmxAuditLoggerResourceDefinition.LOG_BOOT.parseAndSetParameter(value, op, reader);
                         break;
                     }
-                    case LOG_READ_ONLY: {
+                    case CommonAttributes.LOG_READ_ONLY: {
                         JmxAuditLoggerResourceDefinition.LOG_READ_ONLY.parseAndSetParameter(value, op, reader);
                         break;
                     }
-                    case ENABLED: {
+                    case CommonAttributes.ENABLED: {
                         JmxAuditLoggerResourceDefinition.ENABLED.parseAndSetParameter(value, op, reader);
                         break;
                     }
@@ -459,9 +459,9 @@ public class JMXExtension implements Extension {
             list.add(op);
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
-                    case HANDLERS:
+                    case CommonAttributes.HANDLERS:
                         parseAuditLogHandlers(reader, list);
                         break;
                     default: {
@@ -475,7 +475,7 @@ public class JMXExtension implements Extension {
             ParseUtils.requireNoAttributes(reader);
 
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-                final Element element = Element.forName(reader.getLocalName());
+                final String element = reader.getLocalName();
                 switch (element) {
                     case HANDLER:
                         parseAuditLogHandler(reader, list);
@@ -493,7 +493,7 @@ public class JMXExtension implements Extension {
             final int count = reader.getAttributeCount();
             for (int i = 0; i < count; i++) {
                 final String value = reader.getAttributeValue(i);
-                final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case NAME:
                         name = value;
@@ -530,17 +530,17 @@ public class JMXExtension implements Extension {
             if (node.hasDefined(CommonAttributes.EXPOSE_MODEL)) {
                 ModelNode showModel = node.get(CommonAttributes.EXPOSE_MODEL);
                 if (showModel.hasDefined(CommonAttributes.RESOLVED)) {
-                    writer.writeEmptyElement(Element.EXPOSE_RESOLVED_MODEL.getLocalName());
+                    writer.writeEmptyElement(CommonAttributes.EXPOSE_RESOLVED_MODEL);
                     ExposeModelResourceResolved.DOMAIN_NAME.marshallAsAttribute(showModel.get(CommonAttributes.RESOLVED), false, writer);
                     ExposeModelResourceResolved.PROPER_PROPERTY_FORMAT.marshallAsAttribute(showModel.get(CommonAttributes.RESOLVED), false, writer);
                 }
                 if (showModel.hasDefined(CommonAttributes.EXPRESSION)) {
-                    writer.writeEmptyElement(Element.EXPOSE_EXPRESSION_MODEL.getLocalName());
+                    writer.writeEmptyElement(CommonAttributes.EXPOSE_EXPRESSION_MODEL);
                     ExposeModelResourceExpression.DOMAIN_NAME.marshallAsAttribute(showModel.get(CommonAttributes.EXPRESSION), false, writer);
                 }
             }
             if (node.hasDefined(CommonAttributes.REMOTING_CONNECTOR)) {
-                writer.writeStartElement(Element.REMOTING_CONNECTOR.getLocalName());
+                writer.writeStartElement(CommonAttributes.REMOTING_CONNECTOR);
                 final ModelNode resourceModel = node.get(CommonAttributes.REMOTING_CONNECTOR).get(CommonAttributes.JMX);
                 RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT.marshallAsAttribute(resourceModel, writer);
                 writer.writeEndElement();
@@ -549,7 +549,7 @@ public class JMXExtension implements Extension {
             if (node.hasDefined(JmxAuditLoggerResourceDefinition.PATH_ELEMENT.getKey()) &&
                     node.get(JmxAuditLoggerResourceDefinition.PATH_ELEMENT.getKey()).hasDefined(JmxAuditLoggerResourceDefinition.PATH_ELEMENT.getValue())) {
                 ModelNode auditLog = node.get(JmxAuditLoggerResourceDefinition.PATH_ELEMENT.getKey(), JmxAuditLoggerResourceDefinition.PATH_ELEMENT.getValue());
-                writer.writeStartElement(Element.AUDIT_LOG.getLocalName());
+                writer.writeStartElement(CommonAttributes.AUDIT_LOG);
                 JmxAuditLoggerResourceDefinition.LOG_BOOT.marshallAsAttribute(auditLog, writer);
                 JmxAuditLoggerResourceDefinition.LOG_READ_ONLY.marshallAsAttribute(auditLog, writer);
                 JmxAuditLoggerResourceDefinition.ENABLED.marshallAsAttribute(auditLog, writer);
@@ -566,7 +566,7 @@ public class JMXExtension implements Extension {
                 writer.writeEndElement();
             }
             if (node.hasDefined(JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.getName())) {
-                writer.writeStartElement(Element.SENSITIVITY.getLocalName());
+                writer.writeStartElement(CommonAttributes.SENSITIVITY);
                 JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.marshallAsAttribute(node, writer);
                 writer.writeEndElement();
             }
