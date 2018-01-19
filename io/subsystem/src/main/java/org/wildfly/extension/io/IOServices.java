@@ -43,4 +43,5 @@ public final class IOServices {
     public static final String IO_WORKER_CAPABILITY_NAME = "org.wildfly.io.worker";
 
     public static final String BUFFER_POOL_CAPABILITY_NAME = "org.wildfly.io.buffer-pool";
+    public static final String BYTE_BUFFER_POOL_CAPABILITY_NAME = "org.wildfly.undertow.byte-buffer-pool";
 }

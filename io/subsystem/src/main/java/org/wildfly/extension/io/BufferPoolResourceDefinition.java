@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -44,8 +45,16 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
+import org.jboss.msc.value.InjectedValue;
 import org.xnio.Pool;
+
+import io.undertow.connector.ByteBufferPool;
+import io.undertow.server.XnioByteBufferPool;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
@@ -54,6 +63,9 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
     static final RuntimeCapability<Void> IO_POOL_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IOServices.BUFFER_POOL_CAPABILITY_NAME, true, Pool.class).build();
+    static final RuntimeCapability<Void> IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY =
+            RuntimeCapability.Builder.of(IOServices.BYTE_BUFFER_POOL_CAPABILITY_NAME, true, ByteBufferPool.class).build();
+
 
     private static final int defaultBufferSize;
     private static final int defaultBuffersPerRegion;
@@ -110,10 +122,11 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
 
     private BufferPoolResourceDefinition() {
-        super(IOExtension.BUFFER_POOL_PATH,
-                IOExtension.getResolver(Constants.BUFFER_POOL),
-                new BufferPoolAdd(),
-                new ReloadRequiredRemoveStepHandler()
+        super(new Parameters(IOExtension.BUFFER_POOL_PATH,
+                IOExtension.getResolver(Constants.BUFFER_POOL))
+                .setAddHandler(new BufferPoolAdd())
+                .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .setDeprecatedSince(ModelVersion.create(4))
         );
     }
 
@@ -126,6 +139,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerCapability(IO_POOL_RUNTIME_CAPABILITY);
+        resourceRegistration.registerCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY);
     }
 
     private static class BufferPoolAdd extends AbstractAddStepHandler {
@@ -148,9 +162,38 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
             final BufferPoolService service = new BufferPoolService(bufferSize, bufferPerSlice, direct);
             context.getCapabilityServiceTarget().addCapability(IO_POOL_RUNTIME_CAPABILITY, service)
-                    .setInitialMode(ServiceController.Mode.ACTIVE)
+                    .setInitialMode(ServiceController.Mode.ON_DEMAND)
                     .install();
 
+            ByteBufferPoolService poolService = new ByteBufferPoolService();
+
+            context.getCapabilityServiceTarget().addCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY, poolService)
+                    .addCapabilityRequirement(IO_POOL_RUNTIME_CAPABILITY.getDynamicName(address), Pool.class, poolService.bufferPool)
+                    .setInitialMode(ServiceController.Mode.ON_DEMAND)
+                    .install();
+
+        }
+    }
+
+    private static final class ByteBufferPoolService implements Service<ByteBufferPool> {
+
+        final InjectedValue<Pool> bufferPool = new InjectedValue<>();
+        private volatile ByteBufferPool byteBufferPool;
+
+        @Override
+        public void start(StartContext startContext) throws StartException {
+            byteBufferPool = new XnioByteBufferPool(bufferPool.getValue());
+        }
+
+        @Override
+        public void stop(StopContext stopContext) {
+            byteBufferPool.close();
+            byteBufferPool = null;
+        }
+
+        @Override
+        public ByteBufferPool getValue() throws IllegalStateException, IllegalArgumentException {
+            return byteBufferPool;
         }
     }
 }
