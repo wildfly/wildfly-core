@@ -250,7 +250,7 @@ public class CliConfigTestCase {
     @Test
     public void testNonInteractiveCommandTimeout() throws Exception {
         File f = createConfigFile(true, 1);
-        File script = createScript2();
+        File script = createScriptBatch();
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--file=" + script.getAbsolutePath())
@@ -332,7 +332,7 @@ public class CliConfigTestCase {
     }
 
     @Test
-    public void testOutputJSON1() throws Exception {
+    public void testOutputJSONViaConfig() throws Exception {
         File f = createConfigFile(false, 0, false, true);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
@@ -351,7 +351,7 @@ public class CliConfigTestCase {
     }
 
     @Test
-    public void testOutputJSON2() throws Exception {
+    public void testInteractiveOutputJSON() throws Exception {
         File f = createConfigFile(false, 0, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
@@ -382,7 +382,7 @@ public class CliConfigTestCase {
     }
 
     @Test
-    public void testOutputString1() throws Exception {
+    public void testOutputDmrByDefault() throws Exception {
         File f = createConfigFile(false, 0, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
@@ -400,8 +400,8 @@ public class CliConfigTestCase {
         }
     }
 
-   @Test
-    public void testOutputString2() throws Exception {
+    @Test
+    public void testInteractiveOutputDmrByDefault() throws Exception {
         File f = createConfigFile(false, 0, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
@@ -460,7 +460,7 @@ public class CliConfigTestCase {
     }
 
     private static File createScript() {
-         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-script" +
+        File f = new File(TestSuiteEnvironment.getTmpDir(), "test-script" +
                 System.currentTimeMillis() + ".cli");
         f.deleteOnExit();
         try (Writer stream = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
@@ -497,7 +497,7 @@ public class CliConfigTestCase {
         return f;
     }
 
-    private static File createScript2() {
+    private static File createScriptBatch() {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-script"
                 + System.currentTimeMillis() + ".cli");
         f.deleteOnExit();
