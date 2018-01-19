@@ -238,14 +238,15 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             addResourceRoot(specBuilder, resourceRoot, permFactories);
         }
 
-        createDependencies(specBuilder, dependencies, false);
-        createDependencies(specBuilder, userDependencies, false);
-
         if (moduleSpecification.isLocalLast()) {
+            createDependencies(specBuilder, dependencies, false);
+            createDependencies(specBuilder, userDependencies, false);
             createDependencies(specBuilder, localDependencies, moduleSpecification.isLocalDependenciesTransitive());
             specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
         } else {
             specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
+            createDependencies(specBuilder, dependencies, false);
+            createDependencies(specBuilder, userDependencies, false);
             createDependencies(specBuilder, localDependencies, moduleSpecification.isLocalDependenciesTransitive());
         }
 
