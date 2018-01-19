@@ -1682,7 +1682,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         @Override
         protected void addParsers(ExtensionRegistry extensionRegistry, XMLMapper xmlMapper) {
-            extension.initializeParsers(extensionRegistry.getExtensionParsingContext("additional", xmlMapper));
+            extensionRegistry.initializeParsers(extension,"additional", xmlMapper);
         }
 
         @Override

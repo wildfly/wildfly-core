@@ -113,7 +113,7 @@ public class DeferredExtensionContext {
             for (final Extension extension : module.loadService(Extension.class)) {
                 ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
                 try {
-                    extension.initializeParsers(extensionRegistry.getExtensionParsingContext(moduleName, xmlMapper));
+                    extensionRegistry.initializeParsers(extension, moduleName, xmlMapper);
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }

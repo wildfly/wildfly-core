@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
@@ -229,6 +230,24 @@ public class ExtensionRegistry {
     }
 
     /**
+     * Ask the given {@code extension} to
+     * {@link Extension#initializeParsers(ExtensionParsingContext) initialize its parsers}. Should be used in
+     * preference to calling {@link #getExtensionParsingContext(String, XMLMapper)} and passing the returned
+     * value to {@code Extension#initializeParsers(context)} as this method allows the registry to take
+     * additional action when the extension is done.
+     *
+     * @param extension  the extension. Cannot be {@code null}
+     * @param moduleName the name of the extension's module. Cannot be {@code null}
+     * @param xmlMapper  the {@link XMLMapper} handling the extension parsing. Can be {@code null} if there won't
+     *                   be any actual parsing (e.g. in a slave Host Controller or in a server in a managed domain)
+     */
+    public final void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
+        ExtensionParsingContextImpl parsingContext = new ExtensionParsingContextImpl(moduleName, xmlMapper);
+        extension.initializeParsers(parsingContext);
+        parsingContext.attemptCurrentParserInitialization();
+    }
+
+    /**
      * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
      * a resource representing an {@link org.jboss.as.controller.Extension}.
      *
@@ -413,6 +432,9 @@ public class ExtensionRegistry {
     private class ExtensionParsingContextImpl implements ExtensionParsingContext {
 
         private final ExtensionInfo extension;
+        private boolean hasNonSupplierParser;
+        private String latestNamespace;
+        private Supplier<XMLElementReader<List<ModelNode>>> latestSupplier;
 
         private ExtensionParsingContextImpl(String extensionName, XMLMapper xmlMapper) {
             extension = getExtensionInfo(extensionName);
@@ -441,16 +463,8 @@ public class ExtensionRegistry {
                 extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
                 if (extension.xmlMapper != null) {
                     extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), reader);
-                    if (reader instanceof PersistentResourceXMLParser) {
-                        // In a standard WildFly boot this method is being called as part of concurrent
-                        // work on multiple extensions. Generating the PersistentResourceXMLDescription
-                        // used by PersistentResourceXMLParser involves a lot of classloading and static
-                        // field initialization that can benefit by being done as part of this concurrent
-                        // work instead of being deferred to the single-threaded parsing phase. So, we ask
-                        // the parser to generate and cache that description for later use during parsing.
-                        //noinspection deprecation
-                        ((PersistentResourceXMLParser) reader).cacheXMLDescription();
-                    }
+                    preCacheParserDescription(reader);
+                    hasNonSupplierParser = true;
                 }
             }
         }
@@ -463,6 +477,12 @@ public class ExtensionRegistry {
                 extension.getSubsystemInfo(subsystemName).addParsingNamespace(namespaceUri);
                 if (extension.xmlMapper != null) {
                     extension.xmlMapper.registerRootElement(new QName(namespaceUri, SUBSYSTEM), supplier);
+                    if (!hasNonSupplierParser) {
+                        if (latestNamespace == null || latestNamespace.compareTo(namespaceUri) < 0) {
+                            latestNamespace = namespaceUri;
+                            latestSupplier = supplier;
+                        }
+                    }
                 }
             }
         }
@@ -472,6 +492,32 @@ public class ExtensionRegistry {
             assert handler != null : "handler is null";
             synchronized (extension) {
                 extension.parsingCompletionHandler = handler;
+            }
+        }
+
+        private void attemptCurrentParserInitialization() {
+            if (ExtensionRegistry.this.processType != ProcessType.DOMAIN_SERVER
+                    && !hasNonSupplierParser && latestSupplier != null) {
+                // We've only been passed suppliers for parsers, which means the model
+                // initialization work commonly performed when a parser is constructed or
+                // by a PersistentResourceXMLParser may not have been done. And we want
+                // it done now, and not during parsing, as this may be called by a
+                // parallel boot thread while parsing is single threaded.
+                preCacheParserDescription(latestSupplier.get());
+            }
+        }
+
+        private void preCacheParserDescription(XMLElementReader<List<ModelNode>> reader) {
+            if (ExtensionRegistry.this.processType != ProcessType.DOMAIN_SERVER
+                    && reader instanceof PersistentResourceXMLParser) {
+                // In a standard WildFly boot this method is being called as part of concurrent
+                // work on multiple extensions. Generating the PersistentResourceXMLDescription
+                // used by PersistentResourceXMLParser involves a lot of classloading and static
+                // field initialization that can benefit by being done as part of this concurrent
+                // work instead of being deferred to the single-threaded parsing phase. So, we ask
+                // the parser to generate and cache that description for later use during parsing.
+                //noinspection deprecation
+                ((PersistentResourceXMLParser) reader).cacheXMLDescription();
             }
         }
     }
