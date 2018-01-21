@@ -387,7 +387,7 @@ public class ConfigurationFile {
             files = snapshotsDirectory.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith(prefix);
+                    return name.startsWith(prefix) && SNAPSHOT_XML.matcher(name).find();
                 }
 
             });
