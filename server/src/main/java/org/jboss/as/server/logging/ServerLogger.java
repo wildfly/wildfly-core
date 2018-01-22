@@ -66,7 +66,6 @@ import org.jboss.logging.annotations.Param;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
 import org.jboss.vfs.VirtualFile;
@@ -426,9 +425,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 68, value = "No deployment overlay content with hash %s is available in the deployment content repository for deployment %s at location %s. Because this Host Controller is booting in ADMIN-ONLY mode, boot will be allowed to proceed to provide administrators an opportunity to correct this problem. If this Host Controller were not in ADMIN-ONLY mode this would be a fatal boot failure.")
     void reportAdminOnlyMissingDeploymentOverlayContent(String contentHash, String deploymentName, String contentName);
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 69, value = "Defer %s for %s making it %s")
-    void infoDeferDeploymentPhase(Phase phase, String deploymentName, Mode mode);
+    //@LogMessage(level = Logger.Level.INFO)
+    //@Message(id = 69, value = "Defer %s for %s making it %s")
+    //void infoDeferDeploymentPhase(Phase phase, String deploymentName, Mode mode);
 
     @LogMessage(level = Logger.Level.INFO)
     @Message(id = 70, value = "Deployment restart detected for deployment %s, performing full redeploy instead.")
