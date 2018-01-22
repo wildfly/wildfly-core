@@ -29,6 +29,17 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.AUTO_DEPLOY_EXPLODED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.AUTO_DEPLOY_XML;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.AUTO_DEPLOY_ZIPPED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.DEPLOYMENT_SCANNER;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.DEPLOYMENT_TIMEOUT;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.NAME;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.PATH;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.RELATIVE_TO;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.SCAN_ENABLED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.SCAN_INTERVAL;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -65,10 +76,10 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
                 final String scannerName = scanner.getName();
                 final ModelNode configuration = scanner.getValue();
 
-                writer.writeEmptyElement(Element.DEPLOYMENT_SCANNER.getLocalName());
+                writer.writeEmptyElement(DEPLOYMENT_SCANNER);
 
                 if (!DeploymentScannerExtension.DEFAULT_SCANNER_NAME.equals(scannerName)) {
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), scannerName);
+                    writer.writeAttribute(NAME, scannerName);
                 }
 
                 DeploymentScannerDefinition.PATH.marshallAsAttribute(configuration, writer);
@@ -108,7 +119,7 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
                 case DEPLOYMENT_SCANNER_1_0:
                 case DEPLOYMENT_SCANNER_1_1:
                 case DEPLOYMENT_SCANNER_2_0: {
-                    final Element element = Element.forName(reader.getLocalName());
+                    final String element = reader.getLocalName();
                     switch (element) {
                         case DEPLOYMENT_SCANNER: {
                             //noinspection unchecked
@@ -137,7 +148,7 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
         for (int i = 0; i < attrCount; i++) {
             requireNoNamespaceAttribute(reader, i);
             final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            final String attribute = reader.getAttributeLocalName(i);
             switch (attribute) {
                 case PATH: {
                     path = value;
@@ -188,7 +199,7 @@ class DeploymentScannerParser_2_0 implements XMLStreamConstants, XMLElementReade
             throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.NAME));
         }
         if (path == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.PATH));
+            throw ParseUtils.missingRequired(reader, Collections.singleton(PATH));
         }
         requireNoContent(reader);
         operation.get(OP_ADDR).set(address).add(CommonAttributes.SCANNER, name);

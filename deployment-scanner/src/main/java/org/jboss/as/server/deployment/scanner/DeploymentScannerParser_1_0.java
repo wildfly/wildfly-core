@@ -45,6 +45,14 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.AUTO_DEPLOY_EXPLODED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.AUTO_DEPLOY_ZIPPED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.DEPLOYMENT_TIMEOUT;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.NAME;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.PATH;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.RELATIVE_TO;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.SCAN_ENABLED;
+import static org.jboss.as.server.deployment.scanner.CommonAttributes.SCAN_INTERVAL;
 
 /**
 */
@@ -60,37 +68,37 @@ class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReade
 
             for (final Property scanner : node.asPropertyList()) {
 
-                writer.writeEmptyElement(Element.DEPLOYMENT_SCANNER.getLocalName());
-                writer.writeAttribute(Attribute.NAME.getLocalName(), scanner.getName());
+                writer.writeEmptyElement(CommonAttributes.DEPLOYMENT_SCANNER);
+                writer.writeAttribute(CommonAttributes.NAME, scanner.getName());
                 ModelNode configuration = scanner.getValue();
-                if (configuration.hasDefined(CommonAttributes.PATH)) {
-                    writer.writeAttribute(Attribute.PATH.getLocalName(), configuration.get(CommonAttributes.PATH)
+                if (configuration.hasDefined(PATH)) {
+                    writer.writeAttribute(PATH, configuration.get(PATH)
                             .asString());
                 }
                 if (configuration.hasDefined(CommonAttributes.SCAN_ENABLED)) {
-                    writer.writeAttribute(Attribute.SCAN_ENABLED.getLocalName(),
+                    writer.writeAttribute(CommonAttributes.SCAN_ENABLED,
                             configuration.get(CommonAttributes.SCAN_ENABLED).asString());
                 }
                 if (configuration.hasDefined(CommonAttributes.SCAN_INTERVAL)) {
-                    writer.writeAttribute(Attribute.SCAN_INTERVAL.getLocalName(),
+                    writer.writeAttribute(CommonAttributes.SCAN_INTERVAL,
                             configuration.get(CommonAttributes.SCAN_INTERVAL).asString());
                 }
                 if (configuration.hasDefined(CommonAttributes.RELATIVE_TO)) {
-                    writer.writeAttribute(Attribute.RELATIVE_TO.getLocalName(),
+                    writer.writeAttribute(CommonAttributes.RELATIVE_TO,
                             configuration.get(CommonAttributes.RELATIVE_TO).asString());
                 }
                 if (configuration.hasDefined(CommonAttributes.AUTO_DEPLOY_ZIPPED)) {
                     if (!configuration.get(CommonAttributes.AUTO_DEPLOY_ZIPPED).asBoolean()) {
-                        writer.writeAttribute(Attribute.AUTO_DEPLOY_ZIPPED.getLocalName(), Boolean.FALSE.toString());
+                        writer.writeAttribute(CommonAttributes.AUTO_DEPLOY_ZIPPED, Boolean.FALSE.toString());
                     }
                 }
                 if (configuration.hasDefined(CommonAttributes.AUTO_DEPLOY_EXPLODED)) {
                     if (configuration.get(CommonAttributes.AUTO_DEPLOY_EXPLODED).asBoolean()) {
-                        writer.writeAttribute(Attribute.AUTO_DEPLOY_EXPLODED.getLocalName(), Boolean.TRUE.toString());
+                        writer.writeAttribute(CommonAttributes.AUTO_DEPLOY_EXPLODED, Boolean.TRUE.toString());
                     }
                 }
                 if (configuration.hasDefined(CommonAttributes.DEPLOYMENT_TIMEOUT)) {
-                    writer.writeAttribute(Attribute.DEPLOYMENT_TIMEOUT.getLocalName(), configuration.get(CommonAttributes.DEPLOYMENT_TIMEOUT).asString());
+                    writer.writeAttribute(CommonAttributes.DEPLOYMENT_TIMEOUT, configuration.get(CommonAttributes.DEPLOYMENT_TIMEOUT).asString());
                 }
             }
             writer.writeEndElement();
@@ -116,9 +124,9 @@ class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReade
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             switch (Namespace.forUri(reader.getNamespaceURI())) {
                 case DEPLOYMENT_SCANNER_1_0: {
-                    final Element element = Element.forName(reader.getLocalName());
+                    final String element = reader.getLocalName();
                     switch (element) {
-                        case DEPLOYMENT_SCANNER: {
+                        case CommonAttributes.DEPLOYMENT_SCANNER: {
                             //noinspection unchecked
                             parseScanner(reader, address, list);
                             break;
@@ -146,7 +154,7 @@ class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReade
         for (int i = 0; i < attrCount; i++) {
             requireNoNamespaceAttribute(reader, i);
             final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            final String attribute = reader.getAttributeLocalName(i);
             switch (attribute) {
                 case PATH: {
                     path = value;
@@ -188,14 +196,14 @@ class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReade
             throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.NAME));
         }
         if (path == null) {
-            throw ParseUtils.missingRequired(reader, Collections.singleton(CommonAttributes.PATH));
+            throw ParseUtils.missingRequired(reader, Collections.singleton(PATH));
         }
         requireNoContent(reader);
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(ADD);
         operation.get(OP_ADDR).set(address).add(CommonAttributes.SCANNER, name);
-        operation.get(CommonAttributes.PATH).set(path);
+        operation.get(PATH).set(path);
         if (interval != null) operation.get(CommonAttributes.SCAN_INTERVAL).set(interval.intValue());
         if (autoDeployZipped != null) operation.get(CommonAttributes.AUTO_DEPLOY_ZIPPED).set(autoDeployZipped.booleanValue());
         if (autoDeployExploded != null) operation.get(CommonAttributes.AUTO_DEPLOY_EXPLODED).set(autoDeployExploded.booleanValue());

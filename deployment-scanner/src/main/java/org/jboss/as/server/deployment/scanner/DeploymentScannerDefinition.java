@@ -62,66 +62,66 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
 
     protected static final SimpleAttributeDefinition NAME =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.NAME, ModelType.STRING, false)
-                    .setXmlName(Attribute.NAME.getLocalName())
+                    .setXmlName(CommonAttributes.NAME)
                     .setAllowExpression(false)
                     .setValidator(new StringLengthValidator(1))
                     .build();
 
     protected static final SimpleAttributeDefinition PATH =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.PATH, ModelType.STRING, false)
-                    .setXmlName(Attribute.PATH.getLocalName())
+                    .setXmlName(CommonAttributes.PATH)
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
                     .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
                     .build();
     protected static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)
-                    .setXmlName(Attribute.RELATIVE_TO.getLocalName())
+                    .setXmlName(CommonAttributes.RELATIVE_TO)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
                     .setCapabilityReference("org.wildfly.management.path")
                     .build();
     protected static final SimpleAttributeDefinition SCAN_ENABLED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_ENABLED, ModelType.BOOLEAN, true)
-                    .setXmlName(Attribute.SCAN_ENABLED.getLocalName())
+                    .setXmlName(CommonAttributes.SCAN_ENABLED)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(true))
                     .build();
     protected static final SimpleAttributeDefinition SCAN_INTERVAL =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_INTERVAL, ModelType.INT, true)
-                    .setXmlName(Attribute.SCAN_INTERVAL.getLocalName())
+                    .setXmlName(CommonAttributes.SCAN_INTERVAL)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode().set(0))
                     .build();
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_ZIPPED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_ZIPPED, ModelType.BOOLEAN, true)
-                    .setXmlName(Attribute.AUTO_DEPLOY_ZIPPED.getLocalName())
+                    .setXmlName(CommonAttributes.AUTO_DEPLOY_ZIPPED)
                     .setDefaultValue(new ModelNode().set(true))
                     .setAllowExpression(true)
                     .build();
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_EXPLODED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_EXPLODED, ModelType.BOOLEAN, true)
-                    .setXmlName(Attribute.AUTO_DEPLOY_EXPLODED.getLocalName())
+                    .setXmlName(CommonAttributes.AUTO_DEPLOY_EXPLODED)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode().set(false))
                     .build();
 
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_XML =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_XML, ModelType.BOOLEAN, true)
-                    .setXmlName(Attribute.AUTO_DEPLOY_XML.getLocalName())
+                    .setXmlName(CommonAttributes.AUTO_DEPLOY_XML)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode().set(true))
                     .build();
 
     protected static final SimpleAttributeDefinition DEPLOYMENT_TIMEOUT =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.DEPLOYMENT_TIMEOUT, ModelType.LONG, true)
-                    .setXmlName(Attribute.DEPLOYMENT_TIMEOUT.getLocalName())
+                    .setXmlName(CommonAttributes.DEPLOYMENT_TIMEOUT)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode().set(600))
                     .build();
 
     protected static final SimpleAttributeDefinition RUNTIME_FAILURE_CAUSES_ROLLBACK =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK, ModelType.BOOLEAN, true)
-                    .setXmlName(Attribute.RUNTIME_FAILURE_CAUSES_ROLLBACK.getLocalName())
+                    .setXmlName(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode().set(false))
                     .build();
