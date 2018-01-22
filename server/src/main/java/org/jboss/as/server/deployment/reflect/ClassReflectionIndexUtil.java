@@ -23,9 +23,9 @@
 package org.jboss.as.server.deployment.reflect;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
@@ -52,7 +52,7 @@ public class ClassReflectionIndexUtil {
      */
     public static Method findMethod(final DeploymentReflectionIndex deploymentReflectionIndex, final Class<?> clazz, final MethodIdentifier methodIdentifier) {
         Class<?> c = clazz;
-        Set<Class<?>> interfaces = new HashSet<>();
+        List<Class<?>> interfaces = new ArrayList<>();
         while (c != null) {
             final ClassReflectionIndex index = deploymentReflectionIndex.getClassIndex(c);
             final Method method = index.getMethod(methodIdentifier);
@@ -72,7 +72,7 @@ public class ClassReflectionIndexUtil {
         return null;
     }
 
-    private static void addInterfaces(Class<?> c, Set<Class<?>> interfaces) {
+    private static void addInterfaces(Class<?> c, List<Class<?>> interfaces) {
         for(Class<?> i : c.getInterfaces()) {
             if(!interfaces.contains(i)) {
                 interfaces.add(i);
