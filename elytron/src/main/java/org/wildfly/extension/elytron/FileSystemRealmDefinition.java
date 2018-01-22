@@ -20,7 +20,6 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 
@@ -132,7 +131,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             final boolean encoded = ENCODED.resolveModelAttribute(context, model).asBoolean();
 
             final String path = PATH.resolveModelAttribute(context, model).asString();
-            final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+            final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
             final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
             final InjectedValue<NameRewriter> nameRewriterInjector = new InjectedValue<>();

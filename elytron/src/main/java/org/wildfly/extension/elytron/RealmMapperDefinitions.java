@@ -20,7 +20,6 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.RegexAttributeDefinitions.PATTERN_CAPTURE_GROUP;
 
 import java.util.HashMap;
@@ -145,7 +144,7 @@ class RealmMapperDefinitions {
             ServiceName realmMapperName = runtimeCapability.getCapabilityServiceName(RealmMapper.class);
 
             final String pattern = PATTERN_CAPTURE_GROUP.resolveModelAttribute(context, model).asString();
-            String delegateRealmMapper = asStringIfDefined(context, DELEGATE_REALM_MAPPER, model);
+            String delegateRealmMapper = DELEGATE_REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
 
             final InjectedValue<RealmMapper> delegateRealmMapperInjector = new InjectedValue<RealmMapper>();
 
@@ -223,7 +222,7 @@ class RealmMapperDefinitions {
                 realmRealmMap.put(s, realmMapList.require(s).asString());
             }
 
-            String delegateRealmMapper = asStringIfDefined(context, DELEGATE_REALM_MAPPER, model);
+            String delegateRealmMapper = DELEGATE_REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
 
             final InjectedValue<RealmMapper> delegateRealmMapperInjector = new InjectedValue<RealmMapper>();
 

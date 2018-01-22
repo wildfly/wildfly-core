@@ -23,8 +23,6 @@ import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_RUNTIME_CAPAB
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAMES;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringArrayIfDefined;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -136,9 +134,23 @@ class ProviderDefinitions {
 
             @Override
             protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String module = asStringIfDefined(context, MODULE, model);
-                final String[] classNames = asStringArrayIfDefined(context, CLASS_NAMES, model);
-                final String argument = asStringIfDefined(context, ARGUMENT, model);
+                final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
+
+                final String[] classNames;
+                ModelNode classNamesNode = CLASS_NAMES.resolveModelAttribute(context, model);
+                if (classNamesNode.isDefined()) {
+                    List<ModelNode> values = classNamesNode.asList();
+                    classNames = new String[values.size()];
+                    for (int i = 0; i < classNames.length; i++) {
+                        classNames[i] = values.get(i).asString();
+                    }
+                } else {
+                    classNames = null;
+                }
+
+                final String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
+                final String argument = ARGUMENT.resolveModelAttribute(context, model).asStringOrNull();
 
                 final Properties properties;
                 ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
@@ -150,9 +162,6 @@ class ProviderDefinitions {
                 } else {
                     properties = null;
                 }
-
-                String path = asStringIfDefined(context, PATH, model);
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
 

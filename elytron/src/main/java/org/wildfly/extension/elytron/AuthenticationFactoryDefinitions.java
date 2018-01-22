@@ -29,7 +29,6 @@ import static org.wildfly.extension.elytron.Capabilities.SASL_AUTHENTICATION_FAC
 import static org.wildfly.extension.elytron.Capabilities.SASL_SERVER_FACTORY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
 import org.wildfly.security.http.HttpConstants;
@@ -219,7 +218,7 @@ class AuthenticationFactoryDefinitions {
         }
         Set<String> mechanismNames = new LinkedHashSet<>();
         for (ModelNode current : mechanismConfiguration.asList()) {
-            final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, current);
+            final String mechanismName = MECHANISM_NAME.resolveModelAttribute(context, current).asStringOrNull();
             if (mechanismName == null) {
                 return Collections.emptySet();
             }
@@ -237,9 +236,9 @@ class AuthenticationFactoryDefinitions {
         List<ModelNode> mechanismConfigurations = mechanismConfiguration.asList();
         List<ResolvedMechanismConfiguration> resolvedMechanismConfigurations = new ArrayList<>(mechanismConfigurations.size());
         for (ModelNode currentMechanismConfiguration : mechanismConfigurations) {
-            final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, currentMechanismConfiguration);
-            final String hostName = asStringIfDefined(context, HOST_NAME, currentMechanismConfiguration);
-            final String protocol = asStringIfDefined(context, PROTOCOL, currentMechanismConfiguration);
+            final String mechanismName = MECHANISM_NAME.resolveModelAttribute(context, currentMechanismConfiguration).asStringOrNull();
+            final String hostName = HOST_NAME.resolveModelAttribute(context, currentMechanismConfiguration).asStringOrNull();
+            final String protocol = PROTOCOL.resolveModelAttribute(context, currentMechanismConfiguration).asStringOrNull();
 
             Predicate<MechanismInformation> selectionPredicate = null;
             if (mechanismName != null) {
@@ -322,7 +321,7 @@ class AuthenticationFactoryDefinitions {
     }
 
     private static void injectPrincipalTransformer(SimpleAttributeDefinition principalTransformerAttribute, ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model, Injector<PrincipalTransformer> principalTransformer) throws OperationFailedException {
-        String principalTransformerName = asStringIfDefined(context, principalTransformerAttribute, model);
+        String principalTransformerName = principalTransformerAttribute.resolveModelAttribute(context, model).asStringOrNull();
         if (principalTransformerName != null) {
             serviceBuilder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, principalTransformerName), PrincipalTransformer.class),
@@ -338,7 +337,7 @@ class AuthenticationFactoryDefinitions {
     }
 
     private static void injectSecurityFactory(SimpleAttributeDefinition securityFactoryAttribute, ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model, Injector<SecurityFactory> securityFactoryInjector) throws OperationFailedException {
-        String securityFactory = asStringIfDefined(context, securityFactoryAttribute, model);
+        String securityFactory = securityFactoryAttribute.resolveModelAttribute(context, model).asStringOrNull();
         if (securityFactory != null) {
             serviceBuilder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, securityFactory), SecurityFactory.class),
@@ -354,7 +353,7 @@ class AuthenticationFactoryDefinitions {
     }
 
     private static void injectRealmMapper(SimpleAttributeDefinition realmMapperAttribute, ServiceBuilder<?> serviceBuilder, OperationContext context, ModelNode model, Injector<RealmMapper> realmMapperInjector) throws OperationFailedException {
-        String realmMapper = asStringIfDefined(context, realmMapperAttribute, model);
+        String realmMapper = realmMapperAttribute.resolveModelAttribute(context, model).asStringOrNull();
         if (realmMapper != null) {
             serviceBuilder.addDependency(context.getCapabilityServiceName(
                     buildDynamicCapabilityName(REALM_MAPPER_CAPABILITY, realmMapper), RealmMapper.class),

@@ -30,8 +30,6 @@ import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asIntIfDefined;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
@@ -372,10 +370,10 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<KeyManager> getValueSupplier(ServiceBuilder<KeyManager> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
-                final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+                final String algorithmName = ALGORITHM.resolveModelAttribute(context, model).asStringOrNull();
+                final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
 
-                String providersName = asStringIfDefined(context, providersDefinition, model);
+                String providersName = providersDefinition.resolveModelAttribute(context, model).asStringOrNull();
                 final InjectedValue<Provider[]> providersInjector = new InjectedValue<>();
                 if (providersName != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
@@ -383,7 +381,7 @@ class SSLDefinitions {
                             Provider[].class, providersInjector);
                 }
 
-                final String keyStoreName = asStringIfDefined(context, keystoreDefinition, model);
+                final String keyStoreName = keystoreDefinition.resolveModelAttribute(context, model).asStringOrNull();
                 final InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
                 if (keyStoreName != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
@@ -391,7 +389,7 @@ class SSLDefinitions {
                             KeyStore.class, keyStoreInjector);
                 }
 
-                final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
                 final String algorithm = algorithmName != null ? algorithmName : KeyManagerFactory.getDefaultAlgorithm();
 
                 ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
@@ -515,10 +513,10 @@ class SSLDefinitions {
 
             @Override
             protected ValueSupplier<TrustManager> getValueSupplier(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String algorithmName = asStringIfDefined(context, ALGORITHM, model);
-                final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+                final String algorithmName = ALGORITHM.resolveModelAttribute(context, model).asStringOrNull();
+                final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
 
-                String providerLoader = asStringIfDefined(context, providersDefinition, model);
+                String providerLoader = providersDefinition.resolveModelAttribute(context, model).asStringOrNull();
                 final InjectedValue<Provider[]> providersInjector = new InjectedValue<>();
                 if (providerLoader != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
@@ -526,7 +524,7 @@ class SSLDefinitions {
                             Provider[].class, providersInjector);
                 }
 
-                final String keyStoreName = asStringIfDefined(context, keystoreDefinition, model);
+                final String keyStoreName = keystoreDefinition.resolveModelAttribute(context, model).asStringOrNull();
                 final InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
                 if (keyStoreName != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
@@ -534,7 +532,7 @@ class SSLDefinitions {
                             KeyStore.class, keyStoreInjector);
                 }
 
-                final String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+                final String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
                 final String algorithm = algorithmName != null ? algorithmName : TrustManagerFactory.getDefaultAlgorithm();
 
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
@@ -577,9 +575,9 @@ class SSLDefinitions {
             }
 
             private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode) throws OperationFailedException {
-                String crlPath = asStringIfDefined(context, PATH, crlNode);
-                String crlRelativeTo = asStringIfDefined(context, RELATIVE_TO, crlNode);
-                int certPath = asIntIfDefined(context, MAXIMUM_CERT_PATH, crlNode);
+                String crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
+                String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(context, crlNode).asStringOrNull();
+                int certPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, crlNode).asInt();
                 final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
 
                 if (crlPath != null) {
@@ -820,7 +818,7 @@ class SSLDefinitions {
     private static <T> InjectedValue<T> addDependency(String baseName, SimpleAttributeDefinition attribute,
             Class<T> type, ServiceBuilder<SSLContext> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
 
-        String dynamicNameElement = asStringIfDefined(context, attribute, model);
+        String dynamicNameElement = attribute.resolveModelAttribute(context, model).asStringOrNull();
         InjectedValue<T> injectedValue = new InjectedValue<>();
 
         if (dynamicNameElement != null) {
@@ -863,9 +861,9 @@ class SSLDefinitions {
                 final InjectedValue<RealmMapper> realmMapperInjector = addDependency(REALM_MAPPER_CAPABILITY, REALM_MAPPER, RealmMapper.class, serviceBuilder, context, model);
                 final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
 
-                final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+                final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
-                final String cipherSuiteFilter = asStringIfDefined(context, CIPHER_SUITE_FILTER, model);
+                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asStringOrNull();
                 final boolean wantClientAuth = WANT_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean needClientAuth = NEED_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean authenticationOptional = AUTHENTICATION_OPTIONAL.resolveModelAttribute(context, model).asBoolean();
@@ -967,9 +965,9 @@ class SSLDefinitions {
                 final InjectedValue<TrustManager> trustManagerInjector = addDependency(TRUST_MANAGER_CAPABILITY, TRUST_MANAGER, TrustManager.class, serviceBuilder, context, model);
                 final InjectedValue<Provider[]> providersInjector = addDependency(PROVIDERS_CAPABILITY, providersDefinition, Provider[].class, serviceBuilder, context, model);
 
-                final String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+                final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
-                final String cipherSuiteFilter = asStringIfDefined(context, CIPHER_SUITE_FILTER, model);
+                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asStringOrNull();
 
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());

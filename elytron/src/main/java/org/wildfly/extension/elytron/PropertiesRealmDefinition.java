@@ -20,7 +20,6 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
@@ -145,15 +144,15 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
             final String groupsAttribute = GROUPS_ATTRIBUTE.resolveModelAttribute(context, model).asString();
 
             ModelNode usersProperties = USERS_PROPERTIES.resolveModelAttribute(context, model);
-            usersPath = asStringIfDefined(context, PATH, usersProperties);
-            usersRelativeTo = asStringIfDefined(context, RELATIVE_TO, usersProperties);
-            digestRealmName = asStringIfDefined(context, DIGEST_REALM_NAME, usersProperties);
+            usersPath = PATH.resolveModelAttribute(context, usersProperties).asStringOrNull();
+            usersRelativeTo = RELATIVE_TO.resolveModelAttribute(context, usersProperties).asStringOrNull();
+            digestRealmName = DIGEST_REALM_NAME.resolveModelAttribute(context, usersProperties).asStringOrNull();
             plainText = PLAIN_TEXT.resolveModelAttribute(context, usersProperties).asBoolean();
 
             ModelNode groupsProperties = GROUPS_PROPERTIES.resolveModelAttribute(context, model);
             if (groupsProperties.isDefined()) {
-                groupsPath = asStringIfDefined(context, PATH, groupsProperties);
-                groupsRelativeTo = asStringIfDefined(context, RELATIVE_TO, groupsProperties);
+                groupsPath = PATH.resolveModelAttribute(context, groupsProperties).asStringOrNull();
+                groupsRelativeTo = RELATIVE_TO.resolveModelAttribute(context, groupsProperties).asStringOrNull();
             } else {
                 groupsPath = null;
                 groupsRelativeTo = null;

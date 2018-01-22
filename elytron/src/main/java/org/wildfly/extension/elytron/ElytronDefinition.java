@@ -30,7 +30,6 @@ import static org.wildfly.extension.elytron.Capabilities.ROLE_DECODER_RUNTIME_CA
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Provider;
 import java.util.List;
@@ -331,14 +330,14 @@ class ElytronDefinition extends SimpleResourceDefinition {
             ServiceBuilder<Void> builder = target.addService(ProviderRegistrationService.SERVICE_NAME, prs)
                 .setInitialMode(Mode.ACTIVE);
 
-            String initialProviders = asStringIfDefined(context, INITIAL_PROVIDERS, model);
+            String initialProviders = INITIAL_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             if (initialProviders != null) {
                 builder.addDependency(
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, initialProviders, Provider[].class),
                         Provider[].class, prs.getInitialProivders());
             }
 
-            String finalProviders = asStringIfDefined(context, FINAL_PROVIDERS, model);
+            String finalProviders = FINAL_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             if (finalProviders != null) {
                 builder.addDependency(
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, finalProviders, Provider[].class),

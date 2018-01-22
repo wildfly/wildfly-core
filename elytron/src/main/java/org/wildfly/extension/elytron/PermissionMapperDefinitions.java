@@ -21,7 +21,6 @@ import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_CAPAB
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Permissions;
 import java.util.ArrayList;
@@ -272,9 +271,9 @@ class PermissionMapperDefinitions {
                         if (permissionMapping.hasDefined(ElytronDescriptionConstants.PERMISSIONS)) {
                             for (ModelNode permission : permissionMapping.require(ElytronDescriptionConstants.PERMISSIONS).asList()) {
                                 permissions.add(new Permission(CLASS_NAME.resolveModelAttribute(context, permission).asString(),
-                                        asStringIfDefined(context, MODULE, permission),
-                                        asStringIfDefined(context, TARGET_NAME, permission),
-                                        asStringIfDefined(context, ACTION, permission)));
+                                        MODULE.resolveModelAttribute(context, permission).asStringOrNull(),
+                                        TARGET_NAME.resolveModelAttribute(context, permission).asStringOrNull(),
+                                        ACTION.resolveModelAttribute(context, permission).asStringOrNull()));
                             }
                         }
 
@@ -323,9 +322,9 @@ class PermissionMapperDefinitions {
                 if (model.hasDefined(ElytronDescriptionConstants.PERMISSIONS)) {
                     for (ModelNode permission : model.require(ElytronDescriptionConstants.PERMISSIONS).asList()) {
                         permissions.add(new Permission(CLASS_NAME.resolveModelAttribute(context, permission).asString(),
-                                asStringIfDefined(context, MODULE, permission),
-                                asStringIfDefined(context, TARGET_NAME, permission),
-                                asStringIfDefined(context, ACTION, permission)));
+                                MODULE.resolveModelAttribute(context, permission).asStringOrNull(),
+                                TARGET_NAME.resolveModelAttribute(context, permission).asStringOrNull(),
+                                ACTION.resolveModelAttribute(context, permission).asStringOrNull()));
                     }
                 }
 

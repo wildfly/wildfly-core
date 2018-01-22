@@ -23,7 +23,6 @@ import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REA
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -450,7 +449,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
         }
 
         private void configureDirContext(OperationContext context, ModelNode model, LdapSecurityRealmBuilder realmBuilder, ServiceBuilder<SecurityRealm> serviceBuilder) throws OperationFailedException {
-            String dirContextName = asStringIfDefined(context, DIR_CONTEXT, model);
+            String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
 
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(DIR_CONTEXT_CAPABILITY, dirContextName);
             ServiceName dirContextServiceName = context.getCapabilityServiceName(runtimeCapability, DirContextSupplier.class);

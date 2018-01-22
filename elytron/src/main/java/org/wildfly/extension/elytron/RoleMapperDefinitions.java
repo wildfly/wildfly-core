@@ -20,7 +20,6 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.util.HashSet;
 import java.util.List;
@@ -163,7 +162,7 @@ class RoleMapperDefinitions {
 
                 ServiceBuilder<RoleMapper> serviceBuilder = serviceTarget.addService(roleMapperName, roleMapperService);
 
-                String leftName = asStringIfDefined(context, LEFT, model);
+                String leftName = LEFT.resolveModelAttribute(context, model).asStringOrNull();
                 if (leftName != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
                             RuntimeCapability.buildDynamicCapabilityName(ROLE_MAPPER_CAPABILITY, leftName), RoleMapper.class),
@@ -172,7 +171,7 @@ class RoleMapperDefinitions {
                     leftRoleMapperInjector.inject(RoleMapper.IDENTITY_ROLE_MAPPER);
                 }
 
-                String rightName = asStringIfDefined(context, RIGHT, model);
+                String rightName = RIGHT.resolveModelAttribute(context, model).asStringOrNull();
                 if (rightName != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
                             RuntimeCapability.buildDynamicCapabilityName(ROLE_MAPPER_CAPABILITY, rightName), RoleMapper.class),

@@ -20,17 +20,10 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.util.List;
-
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -39,7 +32,6 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.deployment.AttachmentKey;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -127,46 +119,6 @@ public class ElytronExtension implements Extension {
     static <T> ServiceController<T> getRequiredService(ServiceRegistry serviceRegistry, ServiceName serviceName, Class<T> serviceType) {
         ServiceController<?> controller = serviceRegistry.getRequiredService(serviceName);
         return (ServiceController<T>) controller;
-    }
-
-    static String asStringIfDefined(OperationContext context, AttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asString();
-        }
-
-        return null;
-    }
-
-    static String[] asStringArrayIfDefined(OperationContext context, StringListAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode resolved = attributeDefinition.resolveModelAttribute(context, model);
-        if (resolved.isDefined()) {
-            List<ModelNode> values = resolved.asList();
-            String[] response = new String[values.size()];
-            for (int i = 0; i < response.length; i++) {
-                response[i] = values.get(i).asString();
-            }
-            return response;
-        }
-        return null;
-    }
-
-    static Double asDoubleIfDefined(OperationContext context, SimpleAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asDouble();
-        }
-
-        return null;
-    }
-
-    static int asIntIfDefined(OperationContext context, SimpleAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asInt();
-        }
-
-        return -1;
     }
 
 }

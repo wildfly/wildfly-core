@@ -19,7 +19,6 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OPTION;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
@@ -183,7 +182,7 @@ class KerberosSecurityFactoryDefinition {
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
                 final String path = PATH.resolveModelAttribute(context, model).asString();
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
