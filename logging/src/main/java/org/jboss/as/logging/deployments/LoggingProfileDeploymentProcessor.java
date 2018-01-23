@@ -66,21 +66,18 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
                 loggingConfigurationService = new LoggingConfigurationService(ConfigurationPersistence.getConfigurationPersistence(logContext), "profile-" + loggingProfile);
                 // Process sub-deployments
                 for (DeploymentUnit subDeployment : subDeployments) {
-                    // A sub-deployment must have a module to process
-                    if (subDeployment.hasAttachment(Attachments.MODULE)) {
-                        // Set the result to true if a logging profile was found
-                        if (subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
-                            processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
-                        }
-                        if (!hasRegisteredLogContext(subDeployment)) {
-                            final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
-                            LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT), loggingProfile);
-                            registerLogContext(subDeployment, subDeploymentModule, logContext);
-                        }
-                        // Add the parents service to the sub-deployment if the sub-deployment did not define it's own log context
-                        if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
-                            subDeployment.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
-                        }
+                    // Set the result to true if a logging profile was found
+                    if (subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
+                        processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
+                    }
+                    if (!hasRegisteredLogContext(subDeployment)) {
+                        final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
+                        LoggingLogger.ROOT_LOGGER.tracef("Registering log context '%s' on '%s' for profile '%s'", logContext, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT), loggingProfile);
+                        registerLogContext(subDeployment, subDeploymentModule, logContext);
+                    }
+                    // Add the parents service to the sub-deployment if the sub-deployment did not define it's own log context
+                    if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
+                        subDeployment.putAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY, loggingConfigurationService);
                     }
                 }
             } else {
@@ -89,8 +86,8 @@ public class LoggingProfileDeploymentProcessor extends AbstractLoggingDeployment
         } else {
             // No logging profile found, but the sub-deployments should be checked for logging profiles
             for (DeploymentUnit subDeployment : subDeployments) {
-                // A sub-deployment must have a root resource and a module to process
-                if (subDeployment.hasAttachment(Attachments.MODULE) && subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
+                // A sub-deployment must have a root resource to process
+                if (subDeployment.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
                     processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
                 }
             }
