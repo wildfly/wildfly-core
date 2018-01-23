@@ -49,7 +49,6 @@ import org.jboss.as.patching.installation.InstalledImage;
  * |   |   |       |-- .overlays (overlay directory)
  * |   |   |       |   |-- patch-base-1
  * |   |   |       |   `-- patch-base-2
- * |   |   |       `-- org/jboss/as/osgi
  * |   |   `-- add-ons
  * |   |       `-- def
  * |   |           `-- .overlays (overlay directory)
