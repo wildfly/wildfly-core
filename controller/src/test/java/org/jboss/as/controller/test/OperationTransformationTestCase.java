@@ -73,7 +73,6 @@ public class OperationTransformationTestCase {
         subsystems.add("test", "1.0.0");
         subsystems.add("modcluster", "1.1");
         subsystems.add("naming", "1.0");
-        subsystems.add("osgi", "1.0");
         subsystems.add("pojo", "1.0");
         subsystems.add("remoting", "1.1");
         subsystems.add("resource-adapters", "1.1");

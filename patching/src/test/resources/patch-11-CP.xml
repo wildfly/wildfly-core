@@ -68,12 +68,6 @@
             <removed name="org.jboss.xyz3" hash="1c2c3c4c"/>
         </modules>
 
-        <bundles>
-            <added name="org.jboss.osgi.xyz4" slot="prod" hash="1a2b3c4d"/>
-            <updated name="org.jboss.osgi.xyz5" hash="1a2a3a4a" new-hash="5a6a7a8a"/>
-            <removed name="org.jboss.osgi.xyz6" hash="1c2c3c4c"/>
-        </bundles>
-
         <misc-files>
             <added path="test/otherfile" hash="1a2b3c4d" />
             <added path="test/otherfile2" hash="5e6f7a" directory="true" />
@@ -92,12 +86,6 @@
             <updated name="org.jboss.def2" hash="1a2a3a4a" new-hash="5a6a7a8a"/>
             <removed name="org.jboss.def3" hash="1c2c3c4c"/>
         </modules>
-
-        <bundles>
-            <added name="org.jboss.osgi.def4" slot="prod" hash="1a2b3c4d"/>
-            <updated name="org.jboss.osgi.def5" hash="1a2a3a4a" new-hash="5a6a7a8a"/>
-            <removed name="org.jboss.osgi.def6" hash="1c2c3c4c"/>
-        </bundles>
 
         <misc-files>
             <added path="test/anotherfile" hash="1a2b3c4d" />
