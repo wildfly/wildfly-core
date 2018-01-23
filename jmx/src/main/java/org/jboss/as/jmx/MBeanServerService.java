@@ -42,7 +42,6 @@ import org.jboss.as.server.jmx.MBeanServerPlugin;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -96,21 +95,18 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         this.isMasterHc = isMasterHc;
     }
 
-    @SafeVarargs
     public static ServiceController<?> addService(final OperationContext context, final String resolvedDomainName, final String expressionsDomainName, final boolean legacyWithProperPropertyFormat,
                                                   final boolean coreMBeanSensitivity,
                                                   final ManagedAuditLogger auditLoggerInfo,
                                                   final JmxAuthorizer authorizer,
                                                   final Supplier<SecurityIdentity> securityIdentitySupplier,
                                                   final JmxEffect jmxEffect,
-                                                  final ProcessType processType, final boolean isMasterHc,
-                                                  final ServiceListener<? super PluggableMBeanServer>... listeners) {
+                                                  final ProcessType processType, final boolean isMasterHc) {
         final MBeanServerService service = new MBeanServerService(resolvedDomainName, expressionsDomainName, legacyWithProperPropertyFormat,
                 coreMBeanSensitivity, auditLoggerInfo, authorizer, securityIdentitySupplier, jmxEffect, processType, isMasterHc);
         final ServiceName modelControllerName = processType.isHostController() ?
                 DOMAIN_CONTROLLER_NAME : Services.JBOSS_SERVER_CONTROLLER;
         return context.getServiceTarget().addService(MBeanServerService.SERVICE_NAME, service)
-            .addListener(listeners)
             .setInitialMode(ServiceController.Mode.ACTIVE)
             .addDependency(modelControllerName, ModelController.class, service.modelControllerValue)
             .addDependency(context.getCapabilityServiceName("org.wildfly.management.notification-handler-registry", null), NotificationHandlerRegistry.class, service.notificationRegistryValue)
