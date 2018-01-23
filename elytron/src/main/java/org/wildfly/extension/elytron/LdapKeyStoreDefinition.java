@@ -22,7 +22,6 @@ import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
@@ -273,18 +272,18 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
 
-            String dirContextName = asStringIfDefined(context, DIR_CONTEXT, model);
-            String searchPath = asStringIfDefined(context, SEARCH_PATH, model);
-            String filterAlias = asStringIfDefined(context, FILTER_ALIAS, model);
-            String filterCertificate = asStringIfDefined(context, FILTER_CERTIFICATE, model);
-            String filterIterate = asStringIfDefined(context, FILTER_ITERATE, model);
-            String aliasAttribute = asStringIfDefined(context, ALIAS_ATTRIBUTE, model);
-            String certificateAttribute = asStringIfDefined(context, CERTIFICATE_ATTRIBUTE, model);
-            String certificateType = asStringIfDefined(context, CERTIFICATE_TYPE, model);
-            String certificateChainAttribute = asStringIfDefined(context, CERTIFICATE_CHAIN_ATTRIBUTE, model);
-            String certificateChainEncoding = asStringIfDefined(context, CERTIFICATE_CHAIN_ENCODING, model);
-            String keyAttribute = asStringIfDefined(context, KEY_ATTRIBUTE, model);
-            String keyType = asStringIfDefined(context, KEY_TYPE, model);
+            String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
+            String searchPath = SEARCH_PATH.resolveModelAttribute(context, model).asStringOrNull();
+            String filterAlias = FILTER_ALIAS.resolveModelAttribute(context, model).asStringOrNull();
+            String filterCertificate = FILTER_CERTIFICATE.resolveModelAttribute(context, model).asStringOrNull();
+            String filterIterate = FILTER_ITERATE.resolveModelAttribute(context, model).asStringOrNull();
+            String aliasAttribute = ALIAS_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateAttribute = CERTIFICATE_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateType = CERTIFICATE_TYPE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateChainAttribute = CERTIFICATE_CHAIN_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateChainEncoding = CERTIFICATE_CHAIN_ENCODING.resolveModelAttribute(context, model).asStringOrNull();
+            String keyAttribute = KEY_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String keyType = KEY_TYPE.resolveModelAttribute(context, model).asStringOrNull();
             LdapName createPathLdapName = null;
             String createRdn = null;
             Attributes createAttributes = null;
@@ -296,8 +295,8 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             ModelNode newNode = NewItemTemplateObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(context, model);
             if (newNode.isDefined()) {
 
-                String createPath = asStringIfDefined(context, NewItemTemplateObjectDefinition.NEW_ITEM_PATH, newNode);
-                createRdn = asStringIfDefined(context, NewItemTemplateObjectDefinition.NEW_ITEM_RDN, newNode);
+                String createPath = NewItemTemplateObjectDefinition.NEW_ITEM_PATH.resolveModelAttribute(context, newNode).asString();
+                createRdn = NewItemTemplateObjectDefinition.NEW_ITEM_RDN.resolveModelAttribute(context, newNode).asString();
                 if (createPath != null) {
                     try {
                         createPathLdapName = new LdapName(createPath);

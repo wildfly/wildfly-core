@@ -21,7 +21,6 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
@@ -121,8 +120,8 @@ class FilteringKeyStoreDefinition extends SimpleResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
 
-            String sourceKeyStoreName = asStringIfDefined(context, KEY_STORE, model);
-            String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+            String sourceKeyStoreName = KEY_STORE.resolveModelAttribute(context, model).asStringOrNull();
+            String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
 
             String sourceKeyStoreCapability = RuntimeCapability.buildDynamicCapabilityName(KEY_STORE_CAPABILITY, sourceKeyStoreName);
             ServiceName sourceKeyStoreServiceName = context.getCapabilityServiceName(sourceKeyStoreCapability, KeyStore.class);

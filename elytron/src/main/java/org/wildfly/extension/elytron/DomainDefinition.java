@@ -32,7 +32,6 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILI
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -239,13 +238,13 @@ class DomainDefinition extends SimpleResourceDefinition {
         String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asStringOrNull();
         ModelNode realms = REALMS.resolveModelAttribute(context, model);
 
-        String preRealmPrincipalTransformer = asStringIfDefined(context, PRE_REALM_PRINCIPAL_TRANSFORMER, model);
-        String postRealmPrincipalTransformer = asStringIfDefined(context, POST_REALM_PRINCIPAL_TRANSFORMER, model);
-        String principalDecoder = asStringIfDefined(context, PRINCIPAL_DECODER, model);
-        String permissionMapper = asStringIfDefined(context, PERMISSION_MAPPER, model);
-        String realmMapper = asStringIfDefined(context, REALM_MAPPER, model);
-        String roleMapper = asStringIfDefined(context, ROLE_MAPPER, model);
-        String securityEventListener = asStringIfDefined(context, SECURITY_EVENT_LISTENER, model);
+        String preRealmPrincipalTransformer = PRE_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+        String postRealmPrincipalTransformer = POST_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+        String principalDecoder = PRINCIPAL_DECODER.resolveModelAttribute(context, model).asStringOrNull();
+        String permissionMapper = PERMISSION_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String realmMapper = REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String roleMapper = ROLE_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String securityEventListener = SECURITY_EVENT_LISTENER.resolveModelAttribute(context, model).asStringOrNull();
 
         DomainService domain = new DomainService(defaultRealm, trustedSecurityDomain, identityOperator);
 

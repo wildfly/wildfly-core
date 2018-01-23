@@ -24,7 +24,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUD
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYSLOG_AUDIT_LOG;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
@@ -201,7 +200,7 @@ class AuditResourceDefinitions {
                 final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
 
                 final String path = PATH.resolveModelAttribute(context, model).asString();
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
@@ -257,7 +256,7 @@ class AuditResourceDefinitions {
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
 
                 final String path = PATH.resolveModelAttribute(context, model).asString();
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
@@ -320,7 +319,7 @@ class AuditResourceDefinitions {
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
 
                 final String path = PATH.resolveModelAttribute(context, model).asString();
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
@@ -391,7 +390,7 @@ class AuditResourceDefinitions {
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
 
                 final InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
-                String sslContextName = asStringIfDefined(context, SSL_CONTEXT, model);
+                String sslContextName = SSL_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
                 if (sslContextName != null) {
                     String sslCapability = RuntimeCapability.buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContextName);
                     ServiceName sslServiceName = context.getCapabilityServiceName(sslCapability, SSLContext.class);

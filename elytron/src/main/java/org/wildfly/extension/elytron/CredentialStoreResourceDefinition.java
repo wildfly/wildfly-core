@@ -22,7 +22,6 @@ import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABI
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
@@ -270,7 +269,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
             ModelNode model = resource.getModel();
-            String location = asStringIfDefined(context, LOCATION, model);
+            String location = LOCATION.resolveModelAttribute(context, model).asStringOrNull();
             boolean modifiable =  MODIFIABLE.resolveModelAttribute(context, model).asBoolean();
             boolean create = CREATE.resolveModelAttribute(context, model).asBoolean();
             final Map<String, String> implementationAttributes;
@@ -283,12 +282,12 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             } else {
                 implementationAttributes = null;
             }
-            String type = asStringIfDefined(context, TYPE, model);
-            String providers = asStringIfDefined(context, PROVIDERS, model);
-            String otherProviders = asStringIfDefined(context, OTHER_PROVIDERS, model);
-            String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+            String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
+            String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
+            String otherProviders = OTHER_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
+            String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
             String name = credentialStoreName(operation);
-            String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+            String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
             ServiceTarget serviceTarget = context.getServiceTarget();
 
             // ----------- credential store service ----------------
@@ -399,8 +398,8 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 case ElytronDescriptionConstants.ADD_ALIAS:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = asStringIfDefined(context, ENTRY_TYPE, operation);
-                        String secretValue = asStringIfDefined(context, SECRET_VALUE, operation);
+                        String entryType = ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                        String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
                         CredentialStore credentialStore = credentialStoreService.getValue();
                         if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
                             if (credentialStore.exists(alias, PasswordCredential.class)) {
@@ -442,8 +441,8 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 case ElytronDescriptionConstants.SET_SECRET:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = asStringIfDefined(context, ENTRY_TYPE, operation);
-                        String secretValue = asStringIfDefined(context, SECRET_VALUE, operation);
+                        String entryType = ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                        String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
                         CredentialStore credentialStore = credentialStoreService.getValue();
 
                         if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {

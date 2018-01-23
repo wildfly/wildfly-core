@@ -24,7 +24,6 @@ import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPAB
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.PATH;
@@ -240,17 +239,17 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
-            String providers = asStringIfDefined(context, PROVIDERS, model);
-            String providerName = asStringIfDefined(context, PROVIDER_NAME, model);
+            String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
+            String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
             String type = TYPE.resolveModelAttribute(context, model).asString();
-            String path = asStringIfDefined(context, PATH, model);
+            String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
             String relativeTo = null;
             boolean required;
-            String aliasFilter = asStringIfDefined(context, ALIAS_FILTER, model);
+            String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
 
             final KeyStoreService keyStoreService;
             if (path != null) {
-                relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
                 required = REQUIRED.resolveModelAttribute(context, model).asBoolean();
 
                 keyStoreService = KeyStoreService.createFileBasedKeyStoreService(providerName, type, relativeTo, path, required, aliasFilter);

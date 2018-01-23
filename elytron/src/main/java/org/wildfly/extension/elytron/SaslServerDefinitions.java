@@ -29,8 +29,6 @@ import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
-import static org.wildfly.extension.elytron.ElytronExtension.asDoubleIfDefined;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -232,8 +230,8 @@ class SaslServerDefinitions {
                     ServiceName saslServerFactoryName, ModelNode model) throws OperationFailedException {
 
                 final String saslServerFactory = SASL_SERVER_FACTORY.resolveModelAttribute(context, model).asString();
-                final String protocol = asStringIfDefined(context, PROTOCOL, model);
-                final String serverName = asStringIfDefined(context, SERVER_NAME, model);
+                final String protocol = PROTOCOL.resolveModelAttribute(context, model).asStringOrNull();
+                final String serverName = SERVER_NAME.resolveModelAttribute(context, model).asStringOrNull();
 
                 final Map<String, String> propertiesMap;
                 ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
@@ -252,11 +250,11 @@ class SaslServerDefinitions {
                     List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
                         Predicate<String> currentFilter = (String s) -> true;
-                        String predefinedFilter = asStringIfDefined(context, PREDEFINED_FILTER, current);
+                        String predefinedFilter = PREDEFINED_FILTER.resolveModelAttribute(context, current).asStringOrNull();
                         if (predefinedFilter != null) {
                             currentFilter = NamePredicate.valueOf(predefinedFilter).predicate;
                         } else {
-                            String patternFilter = asStringIfDefined(context, PATTERN_FILTER, current);
+                            String patternFilter = PATTERN_FILTER.resolveModelAttribute(context, current).asStringOrNull();
                             if (patternFilter != null) {
                                 final Pattern pattern = Pattern.compile(patternFilter);
                                 currentFilter = (String s) ->  pattern.matcher(s).find();
@@ -307,7 +305,7 @@ class SaslServerDefinitions {
             protected ServiceBuilder<SaslServerFactory> installService(OperationContext context,
                     ServiceName saslServerFactoryName, ModelNode model) throws OperationFailedException {
 
-                String providers = asStringIfDefined(context, PROVIDERS, model);
+                String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
 
                 final InjectedValue<Provider[]> providerInjector = new InjectedValue<Provider[]>();
                 final Supplier<Provider[]> providerSupplier = providers != null ? (providerInjector::getValue) : (Security::getProviders);
@@ -337,7 +335,7 @@ class SaslServerDefinitions {
             protected ValueSupplier<SaslServerFactory> getValueSupplier(OperationContext context, ModelNode model)
                     throws OperationFailedException {
 
-                final String module = asStringIfDefined(context, MODULE, model);
+                final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
 
                 return () -> getSaslServerFactory(module);
             }
@@ -371,9 +369,9 @@ class SaslServerDefinitions {
                 if (model.hasDefined(ElytronDescriptionConstants.FILTERS)) {
                     List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
-                        final String mechanismName = asStringIfDefined(context, MECHANISM_NAME, current);
+                        final String mechanismName = MECHANISM_NAME.resolveModelAttribute(context, current).asStringOrNull();
                         final String providerName = PROVIDER_NAME.resolveModelAttribute(context, current).asString();
-                        final Double providerVersion = asDoubleIfDefined(context, PROVIDER_VERSION, current);
+                        final Double providerVersion = PROVIDER_VERSION.resolveModelAttribute(context, current).asDoubleOrNull();
 
                         final Predicate<Double> versionPredicate;
                         if (providerVersion != null) {

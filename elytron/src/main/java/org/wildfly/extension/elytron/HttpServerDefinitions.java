@@ -27,7 +27,6 @@ import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.res
 import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ProviderUtil.isServiceTypeProvided;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
@@ -147,7 +146,7 @@ class HttpServerDefinitions {
                     List<ModelNode> nodes = model.require(ElytronDescriptionConstants.FILTERS).asList();
                     for (ModelNode current : nodes) {
                         Predicate<String> currentFilter = (String s) -> true;
-                        String patternFilter = asStringIfDefined(context, PATTERN_FILTER, current);
+                        String patternFilter = PATTERN_FILTER.resolveModelAttribute(context, current).asStringOrNull();
                         if (patternFilter != null) {
                             final Pattern pattern = Pattern.compile(patternFilter);
                             currentFilter = (String s) -> pattern.matcher(s).find();
@@ -186,7 +185,7 @@ class HttpServerDefinitions {
                     ServiceBuilder<HttpServerAuthenticationMechanismFactory> serviceBuilder, OperationContext context,
                     ModelNode model) throws OperationFailedException {
 
-                String providers = asStringIfDefined(context, PROVIDERS, model);
+                String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
                 final Supplier<Provider[]> providerSupplier;
                 if (providers != null) {
                     final InjectedValue<Provider[]> providersInjector = new InjectedValue<Provider[]>();
@@ -220,7 +219,7 @@ class HttpServerDefinitions {
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(
                     ServiceBuilder<HttpServerAuthenticationMechanismFactory> serviceBuilder, OperationContext context,
                     ModelNode model) throws OperationFailedException {
-                final String module = asStringIfDefined(context, MODULE, model);
+                final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
 
                 return () -> {
                     try {

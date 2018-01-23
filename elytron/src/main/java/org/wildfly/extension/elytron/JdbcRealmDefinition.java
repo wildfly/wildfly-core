@@ -25,7 +25,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLEAR_PA
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.InvalidKeyException;
@@ -123,8 +122,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
-            String algorithm = ElytronExtension.asStringIfDefined(context, ALGORITHM, propertyNode);
-            int password = ElytronExtension.asIntIfDefined(context, PASSWORD, propertyNode);
+            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper
                     .builder()
@@ -184,10 +183,10 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
-            String algorithm = ElytronExtension.asStringIfDefined(context, ALGORITHM, propertyNode);
-            int password = ElytronExtension.asIntIfDefined(context, PASSWORD, propertyNode);
-            int salt = ElytronExtension.asIntIfDefined(context, SALT, propertyNode);
-            int iterationCount = ElytronExtension.asIntIfDefined(context, ITERATION_COUNT, propertyNode);
+            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
@@ -253,9 +252,9 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
-            String algorithm = ElytronExtension.asStringIfDefined(context, ALGORITHM, propertyNode);
-            int password = ElytronExtension.asIntIfDefined(context, PASSWORD, propertyNode);
-            int salt = ElytronExtension.asIntIfDefined(context, SALT, propertyNode);
+            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
@@ -310,8 +309,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
-            String algorithm = ElytronExtension.asStringIfDefined(context, ALGORITHM, propertyNode);
-            int password = ElytronExtension.asIntIfDefined(context, PASSWORD, propertyNode);
+            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
@@ -372,10 +371,10 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
         @Override
         public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
-            String algorithm = ElytronExtension.asStringIfDefined(context, ALGORITHM, propertyNode);
-            int password = ElytronExtension.asIntIfDefined(context, PASSWORD, propertyNode);
-            int salt = ElytronExtension.asIntIfDefined(context, SALT, propertyNode);
-            int iterationCount = ElytronExtension.asIntIfDefined(context, ITERATION_COUNT, propertyNode);
+            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
@@ -508,12 +507,12 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, service);
 
             for (ModelNode query : principalQueries.asList()) {
-                String authenticationQuerySql = asStringIfDefined(context, PrincipalQueryAttributes.SQL, query);
+                String authenticationQuerySql = PrincipalQueryAttributes.SQL.resolveModelAttribute(context, query).asString();
                 QueryBuilder queryBuilder = builder.principalQuery(authenticationQuerySql)
                         .withMapper(resolveAttributeMappers(context, query))
                         .withMapper(resolveKeyMappers(context, query));
 
-                String dataSourceName = asStringIfDefined(context, PrincipalQueryAttributes.DATA_SOURCE, query);
+                String dataSourceName = PrincipalQueryAttributes.DATA_SOURCE.resolveModelAttribute(context, query).asString();
                 String capabilityName = Capabilities.DATA_SOURCE_CAPABILITY_NAME + "." + dataSourceName;
                 ServiceName dataSourceServiceName = context.getCapabilityServiceName(capabilityName, DataSource.class);
 

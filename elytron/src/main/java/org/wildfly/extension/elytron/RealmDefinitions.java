@@ -18,7 +18,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +75,7 @@ class RealmDefinitions {
                     OperationContext context, ModelNode model) throws OperationFailedException {
 
                 final String identity = IDENTITY.resolveModelAttribute(context, model).asString();
-                final String attributeName = asStringIfDefined(context, ATTRIBUTE_NAME, model);
+                final String attributeName = ATTRIBUTE_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> attributeValues = ATTRIBUTE_VALUES.unwrap(context, model);
 
                 return () -> {
