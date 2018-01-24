@@ -407,6 +407,8 @@ public class ReadlineConsole implements Console {
 
     private boolean isSystemTerminal;
 
+    private boolean forcePaging;
+
     ReadlineConsole(CommandContext cmdCtx, Settings settings) throws IOException {
         this.cmdCtx = cmdCtx;
         this.settings = settings;
@@ -694,7 +696,7 @@ public class ReadlineConsole implements Console {
     }
 
     private StringBuilder createCollector() {
-        if (!isSystemTerminal) {
+        if (!isPagingOutputEnabled()) {
             return null;
         }
         return new StringBuilder();
@@ -907,5 +909,21 @@ public class ReadlineConsole implements Console {
     @Override
     public void setPrompt(String prompt) {
         this.prompt = prompt;
+    }
+
+    /**
+     * Public for testing prupose only.
+     *
+     * @return
+     */
+    public boolean isPagingOutputEnabled() {
+        if (forcePaging) {
+            return true;
+        }
+        return isSystemTerminal;
+    }
+
+    public void forcePagingOutput(boolean forcePaging) {
+        this.forcePaging = forcePaging;
     }
 }
