@@ -49,7 +49,7 @@ public class PropertiesPatternMatchingTestCase {
     @Test
     public void testAllEntries() {
         String[] usernameParts = new String[] { "abc", "DEF", "\\\\", ",", "\\=", "@", "-", "012", ".", "/" };
-        String[] passwordParts = new String[] { "ghi", "JKL", "\\\\", "\\=", "345" };
+        String[] passwordParts = new String[] { "", ",", "ghi", "JKL", "\\\\", "\\=", "345" };
 
         for (int usernameStart = 0; usernameStart < usernameParts.length; usernameStart++) {
             for (int usernameMid = 0; usernameMid < usernameParts.length; usernameMid++) {
