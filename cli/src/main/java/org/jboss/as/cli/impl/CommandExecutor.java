@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.jboss.as.cli.CliConfig;
@@ -608,8 +609,14 @@ public class CommandExecutor {
     }
 
     private final CommandContext ctx;
-    private final ExecutorService executorService = Executors.newCachedThreadPool(
-            (r) -> new Thread(r, "CLI command executor"));
+    private final ExecutorService executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thr = new Thread(r, "CLI command executor");
+            thr.setDaemon(true);
+            return thr;
+        }
+    });
 
     private Future<?> handlerTask;
 
