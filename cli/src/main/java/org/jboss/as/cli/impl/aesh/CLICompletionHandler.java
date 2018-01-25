@@ -17,7 +17,6 @@ package org.jboss.as.cli.impl.aesh;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
 import org.aesh.complete.AeshCompleteOperation;
 import org.aesh.readline.completion.Completion;
 import org.aesh.readline.completion.CompletionHandler;
@@ -30,7 +29,7 @@ import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.cli.operation.impl.DefaultCallbackHandler;
 import org.jboss.as.cli.parsing.StateParser;
 import org.jboss.as.cli.parsing.operation.OperationFormat;
-import org.jboss.logmanager.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * The main entry point for completion. Whatever the type of command and
@@ -42,7 +41,7 @@ import org.jboss.logmanager.Logger;
 class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> implements Completion<AeshCompleteOperation>,
         CommandLineCompleter, Completer {
 
-    private static final Logger LOG = Logger.getLogger(CLICompletionHandler.class.getName());
+    private static final Logger LOG = Logger.getLogger(CLICompletionHandler.class);
 
     private final AeshCommands aeshCommands;
     private final CommandContextImpl ctx;
@@ -62,14 +61,9 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
     @Override
     public void complete(AeshCompleteOperation co) {
 
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Completing {0}", co.getBuffer());
-        }
+        LOG.debugf("Completing {0}", co.getBuffer());
         cliCompleter.complete(ctx, co, this);
-        if (LOG.isLoggable(Level.FINER)) {
-            LOG.log(Level.FINER, "Completion candidates {0}",
-                    co.getCompletionCandidates());
-        }
+        LOG.debugf("Completion candidates {0}", co.getCompletionCandidates());
     }
 
     @Override
