@@ -28,7 +28,10 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT
 
 import java.io.Console;
 import java.io.IOError;
+import java.io.IOException;
 import java.util.IllegalFormatException;
+import org.aesh.readline.Prompt;
+import org.aesh.readline.tty.terminal.TerminalConnection;
 
 /**
  * Describe the purpose
@@ -59,26 +62,34 @@ public class JavaConsole implements ConsoleWrapper {
 
     @Override
     public String readLine(String fmt, Object... args) throws IOError {
-        if (hasConsole()) {
-            return theConsole.readLine(fmt, args);
-        } else {
+        ReadLineHandler readLineHandler = new ReadLineHandler(new Prompt(String.format(fmt, args)));
+        return readInputLine(readLineHandler);
+    }
+
+    private String readInputLine(ReadLineHandler readLineHandler) {
+        try {
+            createTerminalConnection(readLineHandler);
+        } catch (IOException e) {
             throw ROOT_LOGGER.noConsoleAvailable();
         }
+
+        return readLineHandler.getLine();
+    }
+
+    protected void createTerminalConnection(ReadLineHandler readLineHandler) throws IOException {
+        //Side effect - this starts the new connection to terminal and asks user for input.
+        //This call will block this thread while it reads a line from user.
+        new TerminalConnection(readLineHandler);
     }
 
     @Override
     public char[] readPassword(String fmt, Object... args) throws IllegalFormatException, IOError {
-        if (hasConsole()) {
-            return theConsole.readPassword(fmt, args);
-        } else {
-            throw ROOT_LOGGER.noConsoleAvailable();
-        }
+        ReadLineHandler readLineHandler = new ReadLineHandler(new Prompt(String.format(fmt, args), Character.MIN_VALUE));
+        return readInputLine(readLineHandler).toCharArray();
     }
 
     @Override
     public boolean hasConsole() {
         return theConsole != null;
     }
-
-
 }

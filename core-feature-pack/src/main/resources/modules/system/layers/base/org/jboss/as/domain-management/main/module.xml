@@ -37,6 +37,7 @@
     </resources>
 
     <dependencies>
+        <module name="org.aesh"/>
         <module name="org.wildfly.openssl" />
         <module name="org.wildfly.common" />
         <module name="org.wildfly.security.elytron-private" />

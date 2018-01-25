@@ -72,6 +72,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-readline</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-standalone</artifactId>
             <scope>test</scope>
