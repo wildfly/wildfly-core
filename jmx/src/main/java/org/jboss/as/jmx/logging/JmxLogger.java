@@ -219,15 +219,15 @@ public interface JmxLogger extends BasicLogger {
     @Message(id = 10, value = "Could not set %s")
     ReflectionException cannotSetAttribute(@Cause Exception cause, String name);
 
-    /**
-     * Creates an exception indicating no description provider found for the address.
-     *
-     * @param address the address.
-     *
-     * @return an {@link InstanceNotFoundException} for the exception.
-     */
-    @Message(id = 11, value = "No description provider found for %s")
-    InstanceNotFoundException descriptionProviderNotFound(PathAddress address);
+//    /**
+//     * Creates an exception indicating no description provider found for the address.
+//     *
+//     * @param address the address.
+//     *
+//     * @return an {@link InstanceNotFoundException} for the exception.
+//     */
+//    @Message(id = 11, value = "No description provider found for %s")
+//    InstanceNotFoundException descriptionProviderNotFound(PathAddress address);
 
     /**
      * Creates an exception indicating the {@code name1} has a different length than {@code name2}.

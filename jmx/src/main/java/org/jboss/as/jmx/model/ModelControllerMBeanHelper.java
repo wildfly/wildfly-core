@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -58,12 +59,14 @@ import javax.management.QueryEval;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
@@ -73,6 +76,7 @@ import org.jboss.as.jmx.model.ChildAddOperationFinder.ChildAddOperationEntry;
 import org.jboss.as.jmx.model.ResourceAccessControlUtil.ResourceAccessControl;
 import org.jboss.as.jmx.model.RootResourceIterator.ResourceAction;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.wildfly.common.Assert;
 
 /**
@@ -80,6 +84,8 @@ import org.wildfly.common.Assert;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class ModelControllerMBeanHelper {
+
+    private static final Set<ModelType> COMPLEX_TYPES = Collections.unmodifiableSet(EnumSet.of(ModelType.LIST, ModelType.OBJECT, ModelType.PROPERTY));
 
     static final String CLASS_NAME = ModelController.class.getName();
     private static final String AUTHORIZED_ERROR = "WFLYCTL0313";
@@ -295,12 +301,8 @@ public class ModelControllerMBeanHelper {
 
     private Object getAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final String attribute, final ResourceAccessControl accessControl)  throws ReflectionException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
-        final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
-        if (provider == null) {
-            throw JmxLogger.ROOT_LOGGER.descriptionProviderNotFound(address);
-        }
-        final ModelNode description = provider.getModelDescription(null);
-        final String attributeName = findAttributeName(description.get(ATTRIBUTES), attribute);
+        final Map<String, AttributeAccess> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS);
+        final String attributeName = findAttributeName(attributes.keySet(), attribute);
 
         if (!accessControl.isReadableAttribute(attributeName)) {
             throw JmxLogger.ROOT_LOGGER.notAuthorizedToReadAttribute(attributeName);
@@ -316,8 +318,29 @@ public class ModelControllerMBeanHelper {
         if (error != null) {
             throw new AttributeNotFoundException(error);
         }
+        ModelNode attrDesc = getAttributeDescription(attributeName, registration, attributes);
+        return converters.fromModelNode(attrDesc, result.get(RESULT));
+    }
 
-        return converters.fromModelNode(description.require(ATTRIBUTES).require(attributeName), result.get(RESULT));
+    private ModelNode getAttributeDescription(String attributeName, ImmutableManagementResourceRegistration registration, Map<String, AttributeAccess> attributes) {
+        AttributeAccess aa = attributes.get(attributeName);
+        AttributeDefinition ad = aa.getAttributeDefinition();
+        ModelNode desc;
+        if (ad != null) {
+            if (!COMPLEX_TYPES.contains(ad.getType())) {
+                desc = ad.getNoTextDescription(false);
+            } else {
+                // the simple no-text description is not enough to get value-type; ask for the full desc
+                ModelNode wrapped = new ModelNode();
+                ad.addResourceAttributeDescription(wrapped, NonResolvingResourceDescriptionResolver.INSTANCE,
+                        null, NonResolvingResourceDescriptionResolver.INSTANCE.getResourceBundle(null));
+                desc = wrapped.get(ATTRIBUTES, attributeName);
+            }
+        } else {
+            // We shouldn't be getting here any more, but just in case
+            desc = registration.getModelDescription(PathAddress.EMPTY_ADDRESS).getModelDescription(null).get(ATTRIBUTES, attributeName);
+        }
+        return desc;
     }
 
 
@@ -356,12 +379,8 @@ public class ModelControllerMBeanHelper {
 
     private void setAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final Attribute attribute, ResourceAccessControl accessControl)  throws InvalidAttributeValueException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
-        final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
-        if (provider == null) {
-            throw JmxLogger.ROOT_LOGGER.descriptionProviderNotFound(address);
-        }
-        final ModelNode description = provider.getModelDescription(null);
-        final String attributeName = findAttributeName(description.get(ATTRIBUTES), attribute.getName());
+        final Map<String, AttributeAccess> attributes = registration.getAttributes(PathAddress.EMPTY_ADDRESS);
+        final String attributeName = findAttributeName(attributes.keySet(), attribute.getName());
 
         if (!mutabilityChecker.mutable(address)) {
             throw JmxLogger.ROOT_LOGGER.attributeNotWritable(attribute);
@@ -376,7 +395,8 @@ public class ModelControllerMBeanHelper {
         op.get(OP_ADDR).set(address.toModelNode());
         op.get(NAME).set(attributeName);
         try {
-            op.get(VALUE).set(converters.toModelNode(description.require(ATTRIBUTES).require(attributeName), attribute.getValue()));
+            ModelNode attrDesc = getAttributeDescription(attributeName, registration, attributes);
+            op.get(VALUE).set(converters.toModelNode(attrDesc, attribute.getValue()));
         } catch (ClassCastException e) {
             throw JmxLogger.ROOT_LOGGER.invalidAttributeType(e, attribute.getName());
         }
@@ -551,11 +571,11 @@ public class ModelControllerMBeanHelper {
         return null;
     }
 
-    private String findAttributeName(ModelNode attributes, String attributeName) throws AttributeNotFoundException{
-        if (attributes.hasDefined(attributeName)) {
+    private String findAttributeName(Set<String> attributes, String attributeName) throws AttributeNotFoundException{
+        if (attributes.contains(attributeName)) {
             return attributeName;
         }
-        for (String key : attributes.keys()) {
+        for (String key : attributes) {
             if (NameConverter.convertToCamelCase(key).equals(attributeName)) {
                 return key;
             }
