@@ -394,6 +394,7 @@ interface ElytronDescriptionConstants {
     String SASL_MECHANISM_SELECTOR = "sasl-mechanism-selector";
     String SASL_SERVER_FACTORIES = "sasl-server-factories";
     String SASL_SERVER_FACTORY = "sasl-server-factory";
+    String SCRAM_DIGEST = "scram-digest";
     String SCRAM_MAPPER = "scram-mapper";
     String SEARCH = "search";
     String SEARCH_BASE_DN = "search-base-dn";
