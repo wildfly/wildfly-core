@@ -153,15 +153,16 @@ public class MoreTestCase {
             checkWithRegex(window, morePattern);
             Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
 
-            // it sends key down to the console what should return only one new line
-            consoleWriter.print(Key.DOWN.getKeyValuesAsString());
-            Assert.assertFalse(consoleWriter.checkError());
-
-            window = queue.poll(10, TimeUnit.SECONDS);
-            Assert.assertNotNull(window);
-            checkWithRegex(window, morePattern);
-            // we expect 2 because on the second line there is --More(%)-- string
-            Assert.assertEquals(window,2, countLines(window));
+            // Testing of key down is blocked by https://issues.jboss.org/browse/WFCORE-3545
+//            // it sends key down to the console what should return only one new line
+//            consoleWriter.print(Key.DOWN.getKeyValuesAsString());
+//            Assert.assertFalse(consoleWriter.checkError());
+//
+//            window = queue.poll(10, TimeUnit.SECONDS);
+//            Assert.assertNotNull(window);
+//            checkWithRegex(window, morePattern);
+//            // we expect 2 because on the second line there is --More(%)-- string
+//            Assert.assertEquals(window,2, countLines(window));
 
             consoleWriter.print("q");
             Assert.assertFalse(consoleWriter.checkError());
