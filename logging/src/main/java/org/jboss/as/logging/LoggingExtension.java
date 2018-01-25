@@ -56,6 +56,7 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
+import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
@@ -299,6 +300,7 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(SyslogHandlerResourceDefinition.INSTANCE);
         registration.registerSubModel(PatternFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(CustomFormatterResourceDefinition.INSTANCE);
+        registration.registerSubModel(JsonFormatterResourceDefinition.INSTANCE);
 
         if (registerTransformers) {
             registerTransformers(subsystem,
@@ -314,23 +316,27 @@ public class LoggingExtension implements Extension {
                     customHandlerResourceDefinition,
                     SyslogHandlerResourceDefinition.INSTANCE,
                     PatternFormatterResourceDefinition.INSTANCE,
-                    CustomFormatterResourceDefinition.INSTANCE);
+                    CustomFormatterResourceDefinition.INSTANCE,
+                    JsonFormatterResourceDefinition.INSTANCE);
         }
     }
 
     private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_4_0_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_4_0_0, KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
         // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_4_0_0.getModelVersion(),
         }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
                 KnownModelVersion.VERSION_3_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_4_0_0.getModelVersion(),
         });
     }
 

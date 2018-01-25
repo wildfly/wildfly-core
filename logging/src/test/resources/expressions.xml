@@ -122,6 +122,19 @@
         <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
     </formatter>
 
+    <formatter name="JSON">
+        <json-formatter date-format="${test.date.format:yyyy-MM-dd'T'HH:mm:ssSSS}"
+                pretty-print="${test.pretty.print:false}" print-details="${test.print.details:false}"
+                zone-id="${test.date.format.zoneId:GMT}">
+            <exception-output-type value="${test.exception.output.type:detailed}"/>
+            <record-delimiter value="${test.record.delimiter:\n}"/>
+            <key-overrides exception-caused-by="${test.cause.key:caused-by}" record="${test.record.key:record"/>
+            <meta-data>
+                <property name="test" value="value"/>
+            </meta-data>
+        </json-formatter>
+    </formatter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 
