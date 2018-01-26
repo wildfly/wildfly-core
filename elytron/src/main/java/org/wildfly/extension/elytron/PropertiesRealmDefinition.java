@@ -21,7 +21,6 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -50,7 +49,6 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
@@ -65,6 +63,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.realm.LegacyPropertiesSecurityRealm;
@@ -80,7 +79,7 @@ import org.wildfly.security.evidence.Evidence;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class PropertiesRealmDefinition extends TrivialResourceDefinition {
+class PropertiesRealmDefinition {
 
     static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
             .setRequired(true)
@@ -237,16 +236,16 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     };
 
-    PropertiesRealmDefinition() {
-        super(ElytronDescriptionConstants.PROPERTIES_REALM, RESOURCE_RESOLVER, ADD, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY);
-    }
+    static ResourceDefinition create(boolean serverOrHostController) {
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.PROPERTIES_REALM)
+                .setResourceDescriptionResolver(RESOURCE_RESOLVER)
+                .setAddHandler(ADD)
+                .setAttributes(ATTRIBUTES)
+                .setRuntimeCapabilities(SECURITY_REALM_RUNTIME_CAPABILITY);
 
-    @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
-
-        if (isServerOrHostController(resourceRegistration)) {
-            resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
+        if (serverOrHostController) {
+            builder.addReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
 
                 @Override
                 void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
@@ -255,19 +254,16 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
                 }
             });
         }
-    }
 
-    @Override
-    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-
-        resourceRegistration.registerOperationHandler(LOAD, new PropertiesRuntimeHandler(true) {
+        builder.addOperation(LOAD, new PropertiesRuntimeHandler(true) {
 
             @Override
             void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
                 securityRealm.reload();
             }
         });
+
+        return builder.build();
     }
 
     abstract static class PropertiesRuntimeHandler extends ElytronRuntimeOnlyHandler {

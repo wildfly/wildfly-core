@@ -17,9 +17,17 @@
  */
 package org.wildfly.extension.elytron;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -33,13 +41,18 @@ import org.jboss.as.controller.registry.OperationEntry;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class TrivialResourceDefinition extends SimpleResourceDefinition {
+final class TrivialResourceDefinition extends SimpleResourceDefinition {
 
     private final String pathKey;
     private final RuntimeCapability<?> firstCapability;
     private final AttributeDefinition[] attributes;
+    private final Map<OperationDefinition, OperationStepHandler> operations;
+    private final Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes;
+    private final List<ResourceDefinition> children;
 
-    TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
+    private TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes,
+            Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes, Map<OperationDefinition, OperationStepHandler> operations, List<ResourceDefinition> children,
+            RuntimeCapability<?>[] runtimeCapabilities) {
         super(new Parameters(PathElement.pathElement(pathKey),
                 resourceDescriptionResolver)
             .setAddHandler(add)
@@ -51,10 +64,17 @@ class TrivialResourceDefinition extends SimpleResourceDefinition {
         this.pathKey = pathKey;
         this.firstCapability = runtimeCapabilities[0];
         this.attributes = attributes;
+        this.readOnlyAttributes = readOnlyAttributes;
+        this.operations = operations;
+        this.children = children;
+    }
+
+    TrivialResourceDefinition(String pathKey, ResourceDescriptionResolver resourceDescriptionResolver, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
+        this(pathKey, resourceDescriptionResolver, add, attributes, null, null, null, runtimeCapabilities);
     }
 
     TrivialResourceDefinition(String pathKey, AbstractAddStepHandler add, AttributeDefinition[] attributes, RuntimeCapability<?> ... runtimeCapabilities) {
-        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, attributes, runtimeCapabilities);
+        this(pathKey, ElytronExtension.getResourceDescriptionResolver(pathKey), add, attributes, null, null, null, runtimeCapabilities);
     }
 
     @Override
@@ -65,9 +85,117 @@ class TrivialResourceDefinition extends SimpleResourceDefinition {
                  resourceRegistration.registerReadWriteAttribute(current, null, writeHandler);
              }
          }
+
+         if (readOnlyAttributes != null) {
+             for (Entry<AttributeDefinition, OperationStepHandler> entry : readOnlyAttributes.entrySet()) {
+                 resourceRegistration.registerReadOnlyAttribute(entry.getKey(), entry.getValue());
+             }
+         }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration);
+
+        if (operations != null) {
+            for (Entry<OperationDefinition, OperationStepHandler> entry : operations.entrySet()) {
+                resourceRegistration.registerOperationHandler(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    @Override
+    public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+        if (children != null) {
+            for (ResourceDefinition child : children) {
+                resourceRegistration.registerSubModel(child);
+            }
+        }
     }
 
     public AttributeDefinition[] getAttributes() {
         return attributes;
+    }
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    static class Builder {
+
+        private String pathKey;
+        private ResourceDescriptionResolver resourceDescriptionResolver;
+        private AbstractAddStepHandler addHandler;
+        private AttributeDefinition[] attributes;
+        private Map<AttributeDefinition, OperationStepHandler> readOnlyAttributes;
+        private Map<OperationDefinition, OperationStepHandler> operations;
+        private RuntimeCapability<?>[] runtimeCapabilities;
+        private List<ResourceDefinition> children;
+
+        Builder() {}
+
+        Builder setPathKey(String pathKey) {
+            this.pathKey = pathKey;
+
+            return this;
+        }
+
+        Builder setResourceDescriptionResolver(ResourceDescriptionResolver resourceDescriptionResolver) {
+            this.resourceDescriptionResolver = resourceDescriptionResolver;
+
+            return this;
+        }
+
+        Builder setAddHandler(AbstractAddStepHandler addHandler) {
+            this.addHandler = addHandler;
+
+            return this;
+        }
+
+        Builder setAttributes(AttributeDefinition ... attributes) {
+            this.attributes = attributes;
+
+            return this;
+        }
+
+        Builder addReadOnlyAttribute(AttributeDefinition attribute, OperationStepHandler handler) {
+            if (readOnlyAttributes == null) {
+                readOnlyAttributes = new HashMap<>();
+            }
+            readOnlyAttributes.put(attribute, handler);
+
+            return this;
+        }
+
+        Builder addOperation(OperationDefinition operation, OperationStepHandler handler) {
+            if (operations == null) {
+                operations = new HashMap<>();
+            }
+            operations.put(operation, handler);
+
+            return this;
+        }
+
+        Builder setRuntimeCapabilities(RuntimeCapability<?> ... runtimeCapabilities) {
+            this.runtimeCapabilities = runtimeCapabilities;
+
+            return this;
+        }
+
+        Builder addChild(ResourceDefinition child) {
+            if (children == null) {
+                children = new ArrayList<>();
+            }
+
+            children.add(child);
+
+            return this;
+        }
+
+        ResourceDefinition build() {
+            ResourceDescriptionResolver resourceDescriptionResolver = this.resourceDescriptionResolver != null ? this.resourceDescriptionResolver : ElytronExtension.getResourceDescriptionResolver(pathKey);
+            return new TrivialResourceDefinition(pathKey, resourceDescriptionResolver, addHandler, attributes, readOnlyAttributes, operations, children, runtimeCapabilities);
+        }
+
     }
 }

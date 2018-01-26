@@ -24,7 +24,6 @@ import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLA
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.LOADED_PROVIDERS;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.populateProviders;
@@ -60,7 +59,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback;
@@ -77,6 +75,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionConsumer;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 
 
@@ -123,7 +122,7 @@ class ProviderDefinitions {
         return AGGREGATE_PROVIDERS;
     }
 
-    static ResourceDefinition getProviderLoaderDefinition() {
+    static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
         AbstractAddStepHandler add = new TrivialAddHandler<Provider[]>(Provider[].class, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
 
@@ -283,17 +282,17 @@ class ProviderDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.PROVIDER_LOADER, add, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.PROVIDER_LOADER)
+                .setAddHandler(add)
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(PROVIDERS_RUNTIME_CAPABILITY);
 
-            @Override
-            public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                super.registerAttributes(resourceRegistration);
+        if (serverOrHostController) {
+            builder.addReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
+        }
 
-                if (isServerOrHostController(resourceRegistration)) {
-                    resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
-                }
-            }
-        };
+        return builder.build();
     }
 
     private static Provider[] aggregate(Provider[] ... providers) {
