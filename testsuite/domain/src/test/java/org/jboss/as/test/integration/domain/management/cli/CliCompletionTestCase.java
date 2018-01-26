@@ -22,9 +22,15 @@
  */
 package org.jboss.as.test.integration.domain.management.cli;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.aesh.complete.AeshCompleteOperation;
 import org.aesh.readline.completion.Completion;
 import org.aesh.readline.terminal.formatting.TerminalString;
@@ -2511,6 +2517,7 @@ public class CliCompletionTestCase {
         }
     }
 
+
     /**
      * Legacy way of CLI completion
      */
@@ -2536,6 +2543,99 @@ public class CliCompletionTestCase {
         candidatesLists.add(candidates1);
         candidatesLists.add(candidates2);
         return candidatesLists;
+    }
+
+    @Test
+    public void testAfterPipeCommandCompletion() throws Exception {
+        String cmd = "echo /subsystem=elytron | l";
+        List<String> candidates = new ArrayList<>();
+        ctx.getDefaultCommandCompleter().complete(ctx,
+                cmd, cmd.length(), candidates);
+        assertFalse(candidates.toString(), candidates.isEmpty());
+        candidates = complete(ctx, cmd, null, 0);
+        assertFalse(candidates.toString(), candidates.isEmpty());
+    }
+
+    @Test
+    public void testAfterPipeOperationCompletition() throws Exception {
+        String cmd = "echo /subsystem=elytron | :";
+        List<String> candidates = new ArrayList<>();
+        ctx.getDefaultCommandCompleter().complete(ctx,
+                cmd, cmd.length(), candidates);
+        assertTrue(candidates.toString(), candidates.isEmpty());
+        candidates = complete(ctx, cmd, null, 0);
+        assertTrue(candidates.toString(), candidates.isEmpty());
+    }
+
+    @Test
+    public void testAppendCustomFileRelativeDirCompletition() throws Exception {
+        Path filePath = Files.createTempFile("tempFile", ".tmp");
+        String tempFileStringPath = filePath.getFileName().toString();
+        try {
+            ctx.handle("version >" + filePath.toString());
+            {
+                String cmd = "version >> " + filePath.getParent() + "/";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(tempFileStringPath));
+                candidates = complete(ctx, cmd, null, 0);
+                assertTrue(candidates.toString(), candidates.contains(tempFileStringPath));
+            }
+
+            {
+                String cmd = "version >> " + filePath.getParent() + "/";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains(tempFileStringPath));
+                candidates = complete(ctx, cmd, null, 0);
+                assertTrue(candidates.toString(), candidates.contains(tempFileStringPath));
+            }
+        } finally {
+            Files.delete(filePath);
+        }
+    }
+
+    @Test
+    public void testAppendCustomFileAbsoluteDirCompletition() throws Exception {
+        Path tempFile = Files.createTempFile("tempFile", ".tmp");
+        String tempFileStringPath = tempFile.toString();
+        try {
+            ctx.handle("version >" + tempFileStringPath);
+            List<String> paths = new ArrayList<>();
+            for (Path path: tempFile.toAbsolutePath()) {
+                paths.add(path.toFile().getName());
+            }
+
+            String cmd = "version >>";
+            String testPath = "";
+            List<String> candidates = new ArrayList<>();
+            for (int i = 0; i < paths.size(); i++) {
+                String p = paths.get(i);
+                testPath += "/" + p;
+                candidates = complete(ctx, cmd + testPath, null, 0);
+                if (i + 1 < paths.size()) {
+                    assertTrue(candidates.toString(), candidates.contains(p + "/"));
+                } else {
+                    assertTrue(candidates.toString(), candidates.contains(p));
+                }
+            }
+        } finally {
+            Files.delete(tempFile);
+        }
+    }
+
+    @Test
+    public void testGrepParametersCompletition() throws Exception {
+        Set<String> expectedParameters = new HashSet<>(Arrays.asList("--help", "--ignore-case"));
+        String cmd = "grep --";
+        List<String> candidates = new ArrayList<>();
+        ctx.getDefaultCommandCompleter().complete(ctx,
+                cmd, cmd.length(), candidates);
+        assertEquals(expectedParameters, candidates.stream().map(String::toString).collect(Collectors.toSet()));
+        candidates = complete(ctx, cmd, null, 0);
+        assertEquals(expectedParameters, candidates.stream().map(String::toString).collect(Collectors.toSet()));
     }
 
     // This completion is what aesh-readline completion is calling, so more
