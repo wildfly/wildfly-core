@@ -1,3 +1,18 @@
+/*
+Copyright 2018 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
 package org.jboss.as.test.integration.management.cli;
 
 import org.hamcrest.CoreMatchers;
@@ -9,8 +24,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +41,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author kanovotn@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
 public class FilePermissionTestCase {
 
     private static ByteArrayOutputStream cliOut;
@@ -74,6 +86,7 @@ public class FilePermissionTestCase {
     }
 
     @Test
+    @Ignore("Un-ignore when WFCORE-3559 is fixed")
     public void testFileDefaultPermissions() throws Exception {
         // This is unix test only
         if (!Util.isWindows()) {
@@ -84,7 +97,6 @@ public class FilePermissionTestCase {
             Path path = Paths.get(tmpFile);
 
             try {
-                ctx.connectController();
                 ctx.handle("echo \"aaa\" >> " + tmpFile);
 
                 Set<PosixFilePermission> set = Files.getPosixFilePermissions(path);
@@ -108,7 +120,6 @@ public class FilePermissionTestCase {
             Path path = Paths.get(tmpFile);
 
             try {
-                ctx.connectController();
                 ctx.handle("echo \"aaa\" >> " + tmpFile);
 
                 UserPrincipal userPrincipal = Files.getOwner(path);

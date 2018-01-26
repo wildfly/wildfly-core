@@ -1,3 +1,18 @@
+/*
+Copyright 2018 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
 package org.jboss.as.test.integration.management.cli;
 
 import org.jboss.as.cli.CommandContext;
@@ -7,8 +22,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -21,7 +34,6 @@ import java.nio.file.Paths;
 /**
  * @author kanovotn@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
 public class AppendTestCase {
     @Test
     public void testAppendNonExistingFile() throws Exception {
@@ -30,7 +42,6 @@ public class AppendTestCase {
         String fileName= "non-existing-file";
         Path path = Paths.get(fileName);
         try {
-            ctx.connectController();
             ctx.handle("version >> " + fileName);
             Assert.assertTrue("The file" + fileName + "doesn't contain expected content.",
                     checkFileContains(path, "Release: "));
@@ -57,7 +68,6 @@ public class AppendTestCase {
         writeTestFile(tempFile, "some content");
 
         try {
-            ctx.connectController();
             ctx.handle("echo First append >> " + tempFileStringPath);
             ctx.handle("echo Second append >> " + tempFileStringPath);
 
@@ -85,7 +95,6 @@ public class AppendTestCase {
         writeTestFile(tempFilePath, "some content");
 
         try {
-            ctx.connectController();
             ctx.handle("version >> " + tempFileStringPath);
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(Paths.get(tempFileStringPath), "some content"));
@@ -110,7 +119,6 @@ public class AppendTestCase {
         writeTestFile(tempFilePath, "some content");
 
         try {
-            ctx.connectController();
             ctx.handle("version >> " + tempFileStringPath);
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(Paths.get(tempFileStringPath), "some content"));
@@ -167,7 +175,6 @@ public class AppendTestCase {
         writeTestFile(tempFile, "some content");
 
         try {
-            ctx.connectController();
             ctx.handle(commandToAppend + " >> " + tempFileStringPath);
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(tempFile, "some content"));

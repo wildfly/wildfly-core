@@ -45,6 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -437,7 +438,7 @@ public class CliCompletionTestCase {
     }
 
     @Test
-    public void testAfterPipeOperationCompletition() throws Exception {
+    public void testAfterPipeOperationCompletion() throws Exception {
             String cmd = "echo /subsystem=elytron | :";
             List<String> candidates = new ArrayList<>();
             ctx.getDefaultCommandCompleter().complete(ctx,
@@ -448,13 +449,13 @@ public class CliCompletionTestCase {
     }
 
     @Test
-    public void testAppendCustomFileRelativeDirCompletition() throws Exception {
+    public void testAppendCustomFileRelativeDirCompletion() throws Exception {
         Path filePath = Files.createTempFile("tempFile", ".tmp");
         String tempFileStringPath = filePath.getFileName().toString();
         try {
             ctx.handle("version >" + filePath.toString());
             {
-                String cmd = "version >> " + filePath.getParent() + "/";
+                String cmd = "version >> " + filePath.getParent() + File.separator;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
@@ -464,7 +465,7 @@ public class CliCompletionTestCase {
             }
 
             {
-                String cmd = "version >> " + filePath.getParent() + "/";
+                String cmd = "version >> " + filePath.getParent() + File.separator;
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
@@ -478,7 +479,8 @@ public class CliCompletionTestCase {
     }
 
     @Test
-    public void testAppendCustomFileAbsoluteDirCompletition() throws Exception {
+    @Ignore("Un-ignore when WFCORE-3561 is fixed")
+    public void testAppendCustomFileAbsoluteDirCompletion() throws Exception {
         Path tempFile = Files.createTempFile("tempFile", ".tmp");
         String tempFileStringPath = tempFile.toString();
 
@@ -494,10 +496,10 @@ public class CliCompletionTestCase {
             List<String> candidates = new ArrayList<>();
             for (int i = 0; i < paths.size(); i++) {
                 String p = paths.get(i);
-                testPath += "/" + p;
+                testPath += File.separator + p;
                 candidates = complete(ctx, cmd + testPath, null);
                 if (i + 1 < paths.size()) {
-                    assertTrue(candidates.toString(), candidates.contains(p + "/"));
+                    assertTrue(candidates.toString(), candidates.contains(p + File.separator));
                 } else {
                     assertTrue(candidates.toString(), candidates.contains(p));
                 }
@@ -508,7 +510,7 @@ public class CliCompletionTestCase {
     }
 
     @Test
-    public void testGrepParametersCompletition() throws Exception {
+    public void testGrepParametersCompletion() throws Exception {
         Set<String> expectedParameters = new HashSet<>(Arrays.asList("--help", "--ignore-case"));
         String cmd = "grep --";
         List<String> candidates = new ArrayList<>();
