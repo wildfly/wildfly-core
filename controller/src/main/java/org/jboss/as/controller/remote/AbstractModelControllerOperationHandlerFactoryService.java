@@ -25,9 +25,8 @@ import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.security.PrivilegedAction;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -42,6 +41,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 
 /**
@@ -89,18 +89,29 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
         MGMT_OP_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
         responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutor.getValue());
 
-        final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
             public JBossThreadFactory run() {
                 return new JBossThreadFactory(new ThreadGroup("management-handler-thread"), Boolean.FALSE, null, "%G - %t", null, null);
             }
         });
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE,
-                600L, TimeUnit.SECONDS, workQueue,
+        if (EnhancedQueueExecutor.DISABLE_HINT) {
+            ThreadPoolExecutor executor = new ThreadPoolExecutor(POOL_CORE_SIZE, POOL_MAX_SIZE,
+                600L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(WORK_QUEUE_SIZE),
                 threadFactory);
-        // Allow the core threads to time out as well
-        executor.allowCoreThreadTimeOut(true);
-        this.clientRequestExecutor = executor;
+            // Allow the core threads to time out as well
+            executor.allowCoreThreadTimeOut(true);
+            this.clientRequestExecutor = executor;
+        } else {
+            this.clientRequestExecutor = new EnhancedQueueExecutor.Builder()
+            .setCorePoolSize(POOL_CORE_SIZE)
+            .setMaximumPoolSize(POOL_MAX_SIZE)
+            .setKeepAliveTime(600L, TimeUnit.SECONDS)
+            .setMaximumQueueSize(WORK_QUEUE_SIZE)
+            .setThreadFactory(threadFactory)
+            .allowCoreThreadTimeOut(true)
+            .build();
+        }
+
     }
 
     /** {@inheritDoc} */

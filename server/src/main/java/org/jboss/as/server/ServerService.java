@@ -138,6 +138,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -491,8 +492,17 @@ public final class ServerService extends AbstractControllerService {
 
         @Override
         public synchronized void start(StartContext context) throws StartException {
-            executorService = new ThreadPoolExecutor(getCorePoolSize(forDomain), Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
-                    new SynchronousQueue<Runnable>(), threadFactory);
+            if (EnhancedQueueExecutor.DISABLE_HINT) {
+                executorService = new ThreadPoolExecutor(getCorePoolSize(forDomain), Integer.MAX_VALUE, 20L, TimeUnit.SECONDS,
+                        new SynchronousQueue<Runnable>(), threadFactory);
+            } else {
+                executorService = new EnhancedQueueExecutor.Builder()
+                    .setCorePoolSize(getCorePoolSize(forDomain))
+                    .setMaximumPoolSize(1024)
+                    .setKeepAliveTime(20L, TimeUnit.SECONDS)
+                    .setThreadFactory(threadFactory)
+                    .build();
+            }
         }
 
         @Override

@@ -36,6 +36,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -84,6 +85,7 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
     private final InjectedValue<ExecutorService> injectedExecutor = new InjectedValue<>();
     private final ThreadGroup threadGroup;
     private ExecutorService executorService;
+    private volatile StopContext stopContext;
 
     @SuppressWarnings("deprecation")
     public static void install(ServiceTarget target, ThreadGroup threadGroup, ServiceName cleanupExecutor) {
@@ -106,10 +108,20 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
             }
         });
 
-        final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
         int poolSize = getPoolSize();
-        executorService = new ThreadPoolExecutor(poolSize, poolSize, 60L, TimeUnit.SECONDS,
-                workQueue, threadFactory);
+        if (EnhancedQueueExecutor.DISABLE_HINT) {
+            final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE);
+            executorService = new ThreadPoolExecutor(poolSize, poolSize, 60L, TimeUnit.SECONDS,
+                    workQueue, threadFactory);
+        } else {
+            executorService = new EnhancedQueueExecutor.Builder()
+                .setCorePoolSize(poolSize)
+                .setMaximumPoolSize(poolSize)
+                .setKeepAliveTime(60L, TimeUnit.SECONDS)
+                .setMaximumQueueSize(WORK_QUEUE_SIZE)
+                .setThreadFactory(threadFactory)
+                .build();
+        }
     }
 
     @Override

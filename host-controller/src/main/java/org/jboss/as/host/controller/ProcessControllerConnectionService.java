@@ -29,7 +29,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +46,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 
 /**
@@ -84,7 +86,18 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
                     return new JBossThreadFactory(new ThreadGroup("ProcessControllerConnection-thread"), Boolean.FALSE, null, "%G - %t", null, null);
                 }
             });
-            final ThreadPoolExecutor executorService = new ThreadPoolExecutor(THREAD_POOL_CORE_SIZE, THREAD_POOL_MAX_SIZE, 30L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(WORK_QUEUE_SIZE), threadFactory);
+            final ExecutorService executorService;
+            if (EnhancedQueueExecutor.DISABLE_HINT) {
+                executorService = new ThreadPoolExecutor(THREAD_POOL_CORE_SIZE, THREAD_POOL_MAX_SIZE, 30L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>(WORK_QUEUE_SIZE), threadFactory);
+            } else {
+                executorService = new EnhancedQueueExecutor.Builder()
+                    .setCorePoolSize(THREAD_POOL_CORE_SIZE)
+                    .setMaximumPoolSize(THREAD_POOL_MAX_SIZE)
+                    .setKeepAliveTime(30L, TimeUnit.MILLISECONDS)
+                    .setMaximumQueueSize(WORK_QUEUE_SIZE)
+                    .setThreadFactory(threadFactory)
+                    .build();
+            }
 
             final ProtocolClient.Configuration configuration = new ProtocolClient.Configuration();
             configuration.setReadExecutor(executorService);
