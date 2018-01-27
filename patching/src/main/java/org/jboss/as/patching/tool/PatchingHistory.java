@@ -43,6 +43,7 @@ import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.Patch.PatchType;
 import org.jboss.as.patching.metadata.PatchBuilder;
 import org.jboss.as.patching.metadata.PatchElement;
+import org.jboss.as.patching.metadata.PatchElementProvider;
 import org.jboss.as.patching.metadata.PatchXml;
 import org.jboss.as.patching.metadata.RollbackPatch;
 import org.jboss.as.patching.runner.PatchUtils;
@@ -64,6 +65,7 @@ public interface PatchingHistory {
         String getPatchId();
         Patch.PatchType getType();
         String getAppliedAt();
+        boolean isAgedOut();
 
         /**
          * Patch element ids by layer names they are applied to.
@@ -96,22 +98,34 @@ public interface PatchingHistory {
     }
 
     /**
-     * Returns the history as a list of ModelNode's
-     * Entry node has the following attributes:
-     * - patch-id - the id of the patch;
-     * - type - the type of the patch (cumulative or one-off);
-     * - applied-at - a timestamp the patch was applied at.
+     * Is equivalent to getHistory(false).
      *
      * @return  returns a list of entries representing basic info
      *          about the patches applied or an empty list if
      *          there is no patching information
      * @throws PatchingException  in case there was an error loading the history
      */
-    ModelNode getHistory() throws PatchingException;
+    default ModelNode getHistory() throws PatchingException {
+        return getHistory(false);
+    }
 
     /**
-     * Same as getHistory() but for the specified target,
-     * i.e. specific point.
+     * Returns the history as a list of ModelNode's
+     * Entry node has the following attributes:
+     * - patch-id - the id of the patch;
+     * - type - the type of the patch (cumulative or one-off);
+     * - applied-at - a timestamp the patch was applied at.
+     *
+     * @param excludeAgedOut  whether to exclude the aged out patches
+     * @return  returns a list of entries representing basic info
+     *          about the patches applied or an empty list if
+     *          there is no patching information
+     * @throws PatchingException  in case there was an error loading the history
+     */
+    ModelNode getHistory(boolean excludeAgedOut) throws PatchingException;
+
+    /**
+     * Is equivalent to getHistory(info, false)
      *
      * @param info  the point from which to load the history
      * @return  returns a list of entries representing basic info
@@ -119,42 +133,89 @@ public interface PatchingHistory {
      *          there is no patching information
      * @throws PatchingException  in case there was an error loading the history
      */
-    ModelNode getHistory(PatchableTarget.TargetInfo info) throws PatchingException;
+    default ModelNode getHistory(PatchableTarget.TargetInfo info) throws PatchingException {
+        return getHistory(info, false);
+    }
 
     /**
-     * Returns an iterator over the history.
+     * Same as getHistory() but for the specified target,
+     * i.e. specific point.
+     *
+     * @param info  the point from which to load the history
+     * @param excludeAgedOut  whether to exclude the aged out patches
+     * @return  returns a list of entries representing basic info
+     *          about the patches applied or an empty list if
+     *          there is no patching information
+     * @throws PatchingException  in case there was an error loading the history
+     */
+    ModelNode getHistory(PatchableTarget.TargetInfo info, boolean excludeAgedOut) throws PatchingException;
+
+    /**
+     * Is equivalent to iterator(false).
      *
      * @return  iterator over the patching history
      *
      * @throws PatchingException  in case there was an error loading the history
      */
-    Iterator iterator() throws PatchingException;
+    default Iterator iterator() throws PatchingException {
+        return iterator(false);
+    }
 
     /**
-     * Same as iterator() but starting from a specific point.
+     * Returns an iterator over the history.
+     *
+     * @param excludeAgedOut  whether to exclude the aged out patches
+     * @return  iterator over the patching history
+     *
+     * @throws PatchingException  in case there was an error loading the history
+     */
+    Iterator iterator(boolean excludeAgedOut) throws PatchingException;
+
+    /**
+     * Is equivalent to iterator(info, false).
      *
      * @param info  the point to start from
      * @return  iterator over the patching history
      * @throws PatchingException  in case there was an error loading the history
      */
-    Iterator iterator(final PatchableTarget.TargetInfo info) throws PatchingException;
+    default Iterator iterator(final PatchableTarget.TargetInfo info) throws PatchingException {
+        return iterator(info, false);
+    }
+
+    /**
+     * Same as iterator() but starting from a specific point.
+     *
+     * @param info  the point to start from
+     * @param excludeAgedOut  whether to exclude the aged out patches
+     * @return  iterator over the patching history
+     * @throws PatchingException  in case there was an error loading the history
+     */
+    Iterator iterator(final PatchableTarget.TargetInfo info, boolean excludeAgedOut) throws PatchingException;
 
     public class Factory {
 
         private Factory() {}
 
         public static ModelNode getHistory(InstalledIdentity installedImage, PatchableTarget.TargetInfo info) throws PatchingException {
+            return getHistory(installedImage, info, false);
+        }
+
+        public static ModelNode getHistory(InstalledIdentity installedImage, PatchableTarget.TargetInfo info, boolean excludeAgedOut) throws PatchingException {
             final ModelNode result = new ModelNode();
             result.setEmptyList();
-            fillHistoryIn(installedImage, info, result);
+            fillHistoryIn(installedImage, info, result, excludeAgedOut);
             return result;
         }
 
         public static Iterator iterator(final InstalledIdentity mgr, final PatchableTarget.TargetInfo info) {
+            return iterator(mgr, info, false);
+        }
+
+        public static Iterator iterator(final InstalledIdentity mgr, final PatchableTarget.TargetInfo info, boolean excludeAgedOut) {
             if(info == null) {
                 throw new IllegalArgumentException("target info is null");
             }
-            return new IteratorImpl(info, mgr);
+            return new IteratorImpl(info, mgr, excludeAgedOut);
         }
 
         public static PatchingHistory getHistory(final InstalledIdentity installedIdentity) {
@@ -165,31 +226,31 @@ public interface PatchingHistory {
             return new PatchingHistory() {
 
                 @Override
-                public ModelNode getHistory() throws PatchingException {
+                public ModelNode getHistory(boolean excludeAgedOut) throws PatchingException {
                     try {
-                        return getHistory(installedIdentity.getIdentity().loadTargetInfo());
+                        return getHistory(installedIdentity.getIdentity().loadTargetInfo(), excludeAgedOut);
                     } catch (IOException e) {
                         throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                     }
                 }
 
                 @Override
-                public ModelNode getHistory(TargetInfo info) throws PatchingException {
-                    return Factory.getHistory(installedIdentity, info);
+                public ModelNode getHistory(TargetInfo info, boolean excludeAgedOut) throws PatchingException {
+                    return Factory.getHistory(installedIdentity, info, excludeAgedOut);
                 }
 
                 @Override
-                public Iterator iterator() throws PatchingException {
+                public Iterator iterator(boolean excludeAgedOut) throws PatchingException {
                     try {
-                        return iterator(installedIdentity.getIdentity().loadTargetInfo());
+                        return iterator(installedIdentity.getIdentity().loadTargetInfo(), excludeAgedOut);
                     } catch (IOException e) {
                         throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
                     }
                 }
 
                 @Override
-                public Iterator iterator(TargetInfo info) throws PatchingException {
-                    return Factory.iterator(installedIdentity, info);
+                public Iterator iterator(TargetInfo info, boolean excludeAgedOut) throws PatchingException {
+                    return Factory.iterator(installedIdentity, info, excludeAgedOut);
                 }
             };
         }
@@ -210,39 +271,24 @@ public interface PatchingHistory {
                 this.currentInfo = info;
                 this.patchIndex = patchIndex;
             }
-
-            IteratorState(InstalledIdentity installedIdentity) throws PatchingException {
-                if(installedIdentity == null) {
-                    throw new IllegalArgumentException("Installation manager is null.");
-                }
-                try {
-                    this.currentInfo = installedIdentity.getIdentity().loadTargetInfo();
-                } catch (IOException e) {
-                    throw new PatchingException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()));
-                }
-                patchIndex = -1;
-            }
         }
 
         private static final class IteratorImpl extends IteratorState implements Iterator {
             private final InstalledIdentity mgr;
+            private final boolean excludeAgedOut;
 
-            private IteratorImpl(InstalledIdentity mgr) throws PatchingException {
-                super(mgr);
-                this.mgr = mgr;
-            }
-
-            private IteratorImpl(TargetInfo info, InstalledIdentity mgr) {
+            private IteratorImpl(TargetInfo info, InstalledIdentity mgr, boolean excludeAgedOut) {
                 super(info);
                 this.mgr = mgr;
+                this.excludeAgedOut = excludeAgedOut;
             }
 
             @Override
             public boolean hasNext() {
-                return hasNext(mgr, this);
+                return hasNext(this, this);
             }
 
-            private static boolean hasNext(InstalledIdentity installedIdentity, IteratorState state) {
+            private static boolean hasNext(IteratorImpl i, IteratorState state) {
                 // current info hasn't been initialized yet
                 if(state.patchIndex < 0) {
                     if(BASE.equals(state.currentInfo.getCumulativePatchID())) {
@@ -257,7 +303,7 @@ public interface PatchingHistory {
                 // one-offs + 1 means the cumulative patch has been returned as well
                 final int size = state.currentInfo.getPatchIDs().size();
                 if(state.patchIndex < size) {
-                    return existsOnDisk(installedIdentity, state.currentInfo.getPatchIDs().get(state.patchIndex));
+                    return existsOnDisk(i, state.currentInfo.getPatchIDs().get(state.patchIndex));
                 }
 
                 // see whether there is the next CP
@@ -268,14 +314,14 @@ public interface PatchingHistory {
 
                 // it's not the base yet and the cumulative has not been returned yet
                 if(state.patchIndex == size) {
-                    return existsOnDisk(installedIdentity, state.currentInfo.getCumulativePatchID());
+                    return existsOnDisk(i, state.currentInfo.getCumulativePatchID());
                 }
 
                 // if it's not BASE then it's a specific patch, so it actually
                 // means that there should more to iterate. But we rely on
                 // the presence of the patch directory and its rollback.xml.
 
-                File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(releaseID);
+                File patchHistoryDir = i.mgr.getInstalledImage().getPatchHistoryDir(releaseID);
                 if(patchHistoryDir.exists()) {
                     final File rollbackXml = new File(patchHistoryDir, "rollback.xml");
                     if(rollbackXml.exists()) {
@@ -287,11 +333,11 @@ public interface PatchingHistory {
                                 if(nextInfo.getPatchIDs().isEmpty()) {
                                     return false;
                                 }
-                            } else if(!existsOnDisk(installedIdentity, nextInfo.getCumulativePatchID())) {
+                            } else if(!existsOnDisk(i, nextInfo.getCumulativePatchID())) {
                                 return false;
                             }
                         } catch(Exception e) {
-                            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
+                            throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(i.mgr.getIdentity().getName()), e);
                         }
                         return true;
                     }
@@ -301,10 +347,10 @@ public interface PatchingHistory {
 
             @Override
             public Entry next() {
-                return next(mgr, this);
+                return next(this, this);
             }
 
-            private static Entry next(final InstalledIdentity installedIdentity, IteratorState state) {
+            private static Entry next(final IteratorImpl i, IteratorState state) {
 
                 String patchId = nextPatchIdForCurrentInfo(state);
                 if(patchId == null) { // current info is exhausted, try moving to the next CP
@@ -316,7 +362,7 @@ public interface PatchingHistory {
                             throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noMorePatches());
                         }
 
-                        final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(releaseID);
+                        final File patchHistoryDir = i.mgr.getInstalledImage().getPatchHistoryDir(releaseID);
                         if(patchHistoryDir.exists()) {
                             final File rollbackXml = new File(patchHistoryDir, "rollback.xml");
                             if(rollbackXml.exists()) {
@@ -327,7 +373,7 @@ public interface PatchingHistory {
                                     state.patchIndex = 0;
                                     state.type = ONE_OFF;
                                 } catch(Exception e) {
-                                    throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(installedIdentity.getIdentity().getName()), e);
+                                    throw new IllegalStateException(PatchLogger.ROOT_LOGGER.failedToLoadInfo(i.mgr.getIdentity().getName()), e);
                                 }
                             } else {
                                 throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.patchIsMissingFile(rollbackXml.getAbsolutePath()));
@@ -341,7 +387,7 @@ public interface PatchingHistory {
                     if(patchId == null) {
                         throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noMorePatches());
                     }
-                    assertExistsOnDisk(installedIdentity, patchId);
+                    assertExistsOnDisk(i, patchId);
                 }
 
                 final String entryPatchId = patchId;
@@ -352,6 +398,7 @@ public interface PatchingHistory {
                     Map<String,String> layerPatches;
                     Map<String,String> addOnPatches;
                     Patch patch;
+                    Boolean agedOut;
 
                     @Override
                     public String getPatchId() {
@@ -366,7 +413,7 @@ public interface PatchingHistory {
                     @Override
                     public String getAppliedAt() {
                         if(appliedAt == null) {
-                            final File patchHistoryDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entryPatchId);
+                            final File patchHistoryDir = i.mgr.getInstalledImage().getPatchHistoryDir(entryPatchId);
                             if(patchHistoryDir.exists()) {
                                 try {
                                     appliedAt = getAppliedAt(patchHistoryDir);
@@ -419,7 +466,7 @@ public interface PatchingHistory {
                     @Override
                     public Patch getMetadata() {
                         if(patch == null) {
-                            final File patchDir = installedIdentity.getInstalledImage().getPatchHistoryDir(entryPatchId);
+                            final File patchDir = i.mgr.getInstalledImage().getPatchHistoryDir(entryPatchId);
                             if(patchDir.exists()) {
                                 final File patchXml = new File(patchDir, "patch.xml");
                                 if(patchXml.exists()) {
@@ -427,11 +474,22 @@ public interface PatchingHistory {
                                         patch = ((PatchBuilder)PatchXml.parse(patchXml)).build();
                                     } catch (Exception e) {
                                         PatchLogger.ROOT_LOGGER.error(e.getLocalizedMessage(), e);
+                                        throw new IllegalStateException(patchXml + " is corrupted");
                                     }
                                 }
+                            } else {
+                                throw new IllegalStateException("Failed to locate patch " + entryPatchId + " in the history");
                             }
                         }
                         return patch;
+                    }
+
+                    @Override
+                    public boolean isAgedOut() {
+                        if (agedOut == null) {
+                            agedOut = Factory.isAgedOut(i.mgr, getMetadata());
+                        }
+                        return agedOut;
                     }
                 };
             }
@@ -445,17 +503,17 @@ public interface PatchingHistory {
                 throw new UnsupportedOperationException();
             }
 
-            private static boolean existsOnDisk(InstalledIdentity mgr, String id) {
+            private static boolean existsOnDisk(IteratorImpl i, String id) {
                 try {
-                    assertExistsOnDisk(mgr, id);
+                    assertExistsOnDisk(i, id);
                     return true;
                 } catch(NoSuchElementException e) {
                     return false;
                 }
             }
 
-            private static void assertExistsOnDisk(InstalledIdentity mgr, String id) throws NoSuchElementException {
-                final File historyDir = mgr.getInstalledImage().getPatchHistoryDir(id);
+            private static void assertExistsOnDisk(IteratorImpl i, String id) throws NoSuchElementException {
+                final File historyDir = i.mgr.getInstalledImage().getPatchHistoryDir(id);
                 if(!historyDir.exists()) {
                     throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noPatchHistory(historyDir.getAbsolutePath()));
                 }
@@ -473,10 +531,14 @@ public interface PatchingHistory {
                 if(!patchXml.exists()) {
                     throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.patchIsMissingFile(patchXml.getAbsolutePath()));
                 }
+                final Patch patchMetaData;
                 try {
-                    PatchXml.parse(patchXml);
+                    patchMetaData = PatchXml.parse(patchXml).resolvePatch(i.mgr.getIdentity().getName(), i.mgr.getIdentity().getVersion());
                 } catch (Exception e) {
                     throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.fileIsNotReadable(patchXml.getAbsolutePath() + ": " + e.getLocalizedMessage()));
+                }
+                if(i.excludeAgedOut && isAgedOut(i.mgr, patchMetaData)) {
+                    throw new NoSuchElementException("Patch " + patchMetaData.getPatchId() + " was aged out");
                 }
             }
 
@@ -504,13 +566,13 @@ public interface PatchingHistory {
             @Override
             public boolean hasNextCP() {
                 final IteratorState state = new IteratorState(currentInfo, patchIndex);
-                return nextCP(mgr, state) != null;
+                return nextCP(this, state) != null;
             }
 
             @Override
             public Entry nextCP() {
                 final IteratorState state = new IteratorState(currentInfo, patchIndex);
-                final Entry entry = nextCP(mgr, state);
+                final Entry entry = nextCP(this, state);
                 if(entry == null) {
                     throw new NoSuchElementException(PatchLogger.ROOT_LOGGER.noMorePatches());
                 }
@@ -520,9 +582,9 @@ public interface PatchingHistory {
                 return entry;
             }
 
-            private static Entry nextCP(InstalledIdentity mgr, IteratorState state) {
-                while(hasNext(mgr, state)) {
-                    final Entry entry = next(mgr, state);
+            private static Entry nextCP(IteratorImpl i, IteratorState state) {
+                while(hasNext(i, state)) {
+                    final Entry entry = next(i, state);
                     if(state.type == Patch.PatchType.CUMULATIVE) {
                         return entry;
                     }
@@ -531,26 +593,48 @@ public interface PatchingHistory {
             }
         }
 
+        private static boolean isAgedOut(InstalledIdentity installedIdentity, final Patch metadata) {
+            for (PatchElement pe : metadata.getElements()) {
+                final PatchElementProvider peProvider = pe.getProvider();
+                final PatchableTarget layer = peProvider.isAddOn() ? installedIdentity.getAddOn(peProvider.getName())
+                        : installedIdentity.getLayer(peProvider.getName());
+                if (layer == null) {
+                    // if an identity is missing a layer that means either it was re-configured and the layer
+                    // was removed
+                    // or the layer in the patch is optional and may be missing on the disk
+                    // we haven't had this case yet, not sure how critical this is to terminate the process of
+                    // cleaning up
+                    throw new IllegalStateException(PatchLogger.ROOT_LOGGER.layerNotFound(peProvider.getName()));
+                }
+                final File patchDir = layer.getDirectoryStructure().getModulePatchDirectory(pe.getId());
+                if (!patchDir.exists()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /**
          * Goes back in rollback history adding the patch id and it's application timestamp
          * to the resulting list.
          */
-        private static void fillHistoryIn(InstalledIdentity installedImage, PatchableTarget.TargetInfo info, ModelNode result) throws PatchingException {
-            final Iterator i = iterator(installedImage, info);
+        private static void fillHistoryIn(InstalledIdentity installedImage, PatchableTarget.TargetInfo info, ModelNode result, boolean excludeAgedOut) throws PatchingException {
+            final Iterator i = iterator(installedImage, info, excludeAgedOut);
             while(i.hasNext()) {
                 final Entry next = i.next();
-                fillHistoryIn(result, next.getType(), next.getPatchId(), next.getAppliedAt());
+                fillHistoryIn(result, next);
             }
         }
 
-        private static void fillHistoryIn(ModelNode result, PatchType type, String patchID, String appliedAt) throws PatchingException {
+        private static void fillHistoryIn(ModelNode result, Entry entry) throws PatchingException {
             ModelNode history = new ModelNode();
-            history.get(Constants.PATCH_ID).set(patchID);
-            history.get(Constants.TYPE).set(type.getName());
+            history.get(Constants.PATCH_ID).set(entry.getPatchId());
+            history.get(Constants.TYPE).set(entry.getType().getName());
             final ModelNode appliedAtNode = history.get(Constants.APPLIED_AT);
-            if(appliedAt != null) {
-                appliedAtNode.set(appliedAt);
+            if(entry.getAppliedAt() != null) {
+                appliedAtNode.set(entry.getAppliedAt());
             }
+            history.get(Constants.AGED_OUT).set(entry.isAgedOut());
             result.add(history);
         }
     }

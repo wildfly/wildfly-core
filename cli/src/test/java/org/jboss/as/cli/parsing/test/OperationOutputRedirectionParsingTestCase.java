@@ -59,7 +59,7 @@ public class OperationOutputRedirectionParsingTestCase extends BaseStateParserTe
         assertFalse(handler.isRequestComplete());
 
         assertEquals("read-resource", handler.getOperationName());
-        assertEquals("cli.log", handler.getOutputTarget());
+        assertTrue("No operator", handler.hasOperator());
     }
 
     @Test
@@ -81,6 +81,7 @@ public class OperationOutputRedirectionParsingTestCase extends BaseStateParserTe
         assertFalse(handler.isRequestComplete());
 
         assertEquals("read-resource", handler.getOperationName());
+        assertTrue("No operator", handler.hasOperator());
         assertEquals("cli.log", handler.getOutputTarget());
     }
 
@@ -103,6 +104,7 @@ public class OperationOutputRedirectionParsingTestCase extends BaseStateParserTe
         assertTrue(handler.isRequestComplete());
 
         assertEquals("read-resource", handler.getOperationName());
+        assertTrue("No operator", handler.hasOperator());
         assertEquals("cli.log", handler.getOutputTarget());
     }
 

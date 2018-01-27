@@ -76,6 +76,8 @@ import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
+ * WARNING: NO MORE IN USE, REPLACED BY PatchCommand.
+ *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2012 Red Hat Inc.
  */
 public class PatchHandler extends CommandHandlerWithHelp {
@@ -110,6 +112,8 @@ public class PatchHandler extends CommandHandlerWithHelp {
     private final ArgumentWithoutValue verbose;
 
     private final ArgumentWithoutValue streams;
+
+    private final ArgumentWithoutValue excludeAgedOut;
 
     /** whether the output should be displayed in a human friendly form or JSON - tools friendly */
     private final ArgumentWithoutValue jsonOutput;
@@ -304,6 +308,17 @@ public class PatchHandler extends CommandHandlerWithHelp {
         patchStream.addCantAppearAfter(streams);
         streams.addCantAppearAfter(patchId);
         patchId.addCantAppearAfter(streams);
+
+        excludeAgedOut = new ArgumentWithoutValue(this, "--exclude-aged-out") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (canOnlyAppearAfterActions(ctx, HISTORY)) {
+                    return super.canAppearNext(ctx);
+                }
+                return false;
+            }
+        };
+        excludeAgedOut.addRequiredPreceding(action);
     }
 
     private boolean canOnlyAppearAfterActions(CommandContext ctx, String... actions) {
@@ -639,7 +654,7 @@ public class PatchHandler extends CommandHandlerWithHelp {
             return builder;
         } else if (HISTORY.equals(action)) {
             final String patchStream = this.patchStream.getValue(args);
-            builder = PatchOperationBuilder.Factory.history(patchStream);
+            builder = PatchOperationBuilder.Factory.history(patchStream, excludeAgedOut.isPresent(args));
             return builder;
         } else {
             throw new CommandFormatException("Unrecognized action '" + action + "'");

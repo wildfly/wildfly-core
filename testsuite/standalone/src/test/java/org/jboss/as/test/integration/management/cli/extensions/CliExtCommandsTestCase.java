@@ -22,14 +22,16 @@
 
 package org.jboss.as.test.integration.management.cli.extensions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
 import javax.inject.Inject;
+import org.aesh.command.Command;
 
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
@@ -45,6 +47,7 @@ import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,27 +91,62 @@ public class CliExtCommandsTestCase {
         }
     }
 
+    /**
+     * Try to use legacy CLI command, CLI is not connected. Error message should be printed.
+     */
     @Test
-    public void testExtensionCommand() throws Exception {
+    public void testLegacyExtensionCommandNotConnected() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
         cli.executeNonInteractive();
-        assertNotEquals(0, cli.getProcessExitValue());
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'test-cli-ext-commands'"));
+    }
 
-        cli = new CliProcessWrapper()
+    /**
+     * Use legacy CLI command, CLI is connected. CLI command should work correctly.
+     */
+    @Test
+    public void testLegacyExtensionCommandConnected() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
         cli.executeNonInteractive();
-        assertEquals(0, cli.getProcessExitValue());
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommandHandler.OUTPUT));
+    }
 
-        // the output may contain other logs from the cli initialization
-        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().endsWith(CliExtCommandHandler.OUTPUT));
+    /**
+     * Try to use Aesh CLI command, CLI is not connected. Error message should be printed.
+     */
+    @Test
+    public void testAeshExtensionCommandNotConnected() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommand.NAME);
+        cli.executeNonInteractive();
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'useless'"));
+    }
+
+    /**
+     * Use Aesh CLI command, CLI is connected. CLI command should work correctly.
+     */
+    @Test
+    public void testAeshExtensionCommandConnected() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(CliExtCommand.NAME);
+        cli.executeNonInteractive();
+        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommand.OUTPUT));
     }
 
     @Test
-    public void testExtensionCommandHelp() throws IOException {
+    public void testExtensionLegacyCommandHelp() throws IOException {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
@@ -119,12 +157,25 @@ public class CliExtCommandsTestCase {
         assertTrue("Output: '" + cli.getOutput() + "'",cli.getOutput().trim().endsWith(CliExtCommandHandler.NAME + "--help"));
     }
 
+    @Test
+    public void testExtensionAeshCommandHelp() throws IOException {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
+                .addCliArgument(String.format("%s %s", "help", CliExtCommand.NAME));
+        cli.executeNonInteractive();
+
+        // the output may contain other logs from the cli initialization
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().contains("THIS IS A USELESS DESCRIPTION"));
+        assertTrue("Output: '" + cli.getOutput() + "'", cli.getOutput().trim().contains("THIS IS A USELESS OPTION DESCRIPTION"));
+    }
+
     private static void createTestModule() throws Exception {
         final File moduleXml = new File(CliExtCommandsTestCase.class.getResource(CliExtCommandsTestCase.class.getSimpleName() + "-module.xml").toURI());
         testModule = new TestModule(MODULE_NAME, moduleXml);
-
         final JavaArchive archive = testModule.addResource("test-cli-ext-commands-module.jar")
                 .addClass(CliExtCommandHandler.class)
+                .addClass(CliExtCommand.class)
                 .addClass(CliExtCommandHandlerProvider.class)
                 .addClass(CliExtCommandsExtension.class)
                 .addClass(CliExtCommandsParser.class)
@@ -142,8 +193,15 @@ public class CliExtCommandsTestCase {
         final ArchivePath cliCmdService = ArchivePaths.create(services, CommandHandlerProvider.class.getName());
         archive.addAsManifestResource(CliExtCommandHandler.class.getPackage(), CommandHandlerProvider.class.getName(), cliCmdService);
 
+        final ArchivePath cliAeshCmdService = ArchivePaths.create(services, Command.class.getName());
+        archive.addAsManifestResource(CliExtCommand.class.getPackage(), Command.class.getName(), cliAeshCmdService);
+
         final ArchivePath helpService = ArchivePaths.create(help, CliExtCommandHandler.NAME + ".txt");
         archive.addAsResource(CliExtCommandHandler.class.getPackage(), CliExtCommandHandler.NAME + ".txt", helpService);
+
+        final ArchivePath help2Service = ArchivePaths.create("/"
+                + CliExtCommand.class.getPackage().getName().replaceAll("\\.", "/"), "command_resources.properties");
+        archive.addAsResource(CliExtCommand.class.getPackage(), "command_resources.properties", help2Service);
 
         testModule.create(true);
     }

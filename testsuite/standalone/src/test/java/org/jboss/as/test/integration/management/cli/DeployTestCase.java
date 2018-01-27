@@ -43,8 +43,9 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.AfterClass;
-
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -108,6 +109,22 @@ public class DeployTestCase {
         cliTestAnotherWar.delete();
     }
 
+    @Before
+    public void beforeTest() throws Exception {
+        if (readDeploymentStatus(cliTestApp1War.getName())) {
+            ctx.handle("deployment disable " + cliTestApp1War.getName());
+        }
+        if (readDeploymentStatus(cliTestAnotherWar.getName())) {
+            ctx.handle("deployment disable " + cliTestAnotherWar.getName());
+        }
+        if (readDeploymentStatus(cliTestApp2War.getName())) {
+            ctx.handle("deployment disable " + cliTestApp2War.getName());
+        }
+        checkDeployment(cliTestApp1War.getName(), false);
+        checkDeployment(cliTestAnotherWar.getName(), false);
+        checkDeployment(cliTestApp2War.getName(), false);
+    }
+
     @Test
     public void testDeployAll() throws Exception {
         checkDeployment(cliTestApp1War.getName(), false);
@@ -115,6 +132,18 @@ public class DeployTestCase {
         checkDeployment(cliTestApp2War.getName(), false);
         // Deploy them all.
         ctx.handle("deploy --name=*");
+        checkDeployment(cliTestApp1War.getName(), true);
+        checkDeployment(cliTestAnotherWar.getName(), true);
+        checkDeployment(cliTestApp2War.getName(), true);
+
+        // Undeploy them all.
+        ctx.handle("deployment disable-all");
+        checkDeployment(cliTestApp1War.getName(), false);
+        checkDeployment(cliTestAnotherWar.getName(), false);
+        checkDeployment(cliTestApp2War.getName(), false);
+
+        // Deploy them all.
+        ctx.handle("deployment enable-all");
         checkDeployment(cliTestApp1War.getName(), true);
         checkDeployment(cliTestAnotherWar.getName(), true);
         checkDeployment(cliTestApp2War.getName(), true);
@@ -141,18 +170,21 @@ public class DeployTestCase {
             assertTrue(candidates.toString(), candidates.contains("* "));
             assertTrue(candidates.toString(), candidates.size() == 1);
         }
-
     }
 
     @Test
     public void testRedeploy() throws Exception {
-        boolean enabled = readDeploymentStatus(cliTestApp1War.getName());
+        redeploy("deploy --force", false);
+        redeploy("deploy --force", true);
+    }
+
+    private void redeploy(String cmd, boolean enabled) throws Exception {
         WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
         war.addAsWebResource(new StringAsset("Version0.1"), "page.html");
         cliTestApp1War.delete();
         new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
         {
-            ctx.handle("deploy --force " + cliTestApp1War.getAbsolutePath());
+            ctx.handle(cmd + " " + cliTestApp1War.getAbsolutePath());
             checkDeployment(cliTestApp1War.getName(), enabled);
         }
         String op;
@@ -163,14 +195,20 @@ public class DeployTestCase {
         }
         ctx.handle("/deployment=" + cliTestApp1War.getName() + ':'+op+"()");
         assertEquals(!enabled, readDeploymentStatus(cliTestApp1War.getName()));
-         war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
+        war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
         war.addAsWebResource(new StringAsset("Version0.2"), "page.html");
         cliTestApp1War.delete();
         new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
         {
-            ctx.handle("deploy --force " + cliTestApp1War.getAbsolutePath());
+            ctx.handle(cmd + " " + cliTestApp1War.getAbsolutePath());
             checkDeployment(cliTestApp1War.getName(), !enabled);
         }
+    }
+
+    @Test
+    public void testRedeploy2() throws Exception {
+        redeploy("deployment deploy-file --replace", false);
+        redeploy("deployment deploy-file --replace", true);
     }
 
     @Test
@@ -184,11 +222,32 @@ public class DeployTestCase {
     }
 
     @Test
+    public void testArchive2() throws Exception {
+        File cliFile = createCliArchive();
+        try {
+            ctx.handle("deployment deploy-cli-archive " + cliFile.getAbsolutePath());
+        } finally {
+            cliFile.delete();
+        }
+    }
+
+    @Test
     public void testArchiveWithTimeout() throws Exception {
         File cliFile = createCliArchive();
         try {
             ctx.handle("command-timeout set 2000");
             ctx.handle("deploy " + cliFile.getAbsolutePath());
+        } finally {
+            cliFile.delete();
+        }
+    }
+
+    @Test
+    public void testArchiveWithTimeout2() throws Exception {
+        File cliFile = createCliArchive();
+        try {
+            ctx.handle("command-timeout set 2000");
+            ctx.handle("deployment deploy-cli-archive " + cliFile.getAbsolutePath());
         } finally {
             cliFile.delete();
         }

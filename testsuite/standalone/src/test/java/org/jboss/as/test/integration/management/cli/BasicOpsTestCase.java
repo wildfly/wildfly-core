@@ -50,6 +50,18 @@ public class BasicOpsTestCase {
     }
 
     @Test
+    public void testConnectBind() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
+
+        assertFalse(cli.isConnected());
+        cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":"
+                + TestSuiteEnvironment.getServerPort() + " --bind=" + TestSuiteEnvironment.getServerAddress());
+        assertTrue(cli.isConnected());
+
+        cli.quit();
+    }
+
+    @Test
     public void testLs() throws Exception {
         CLIWrapper cli = new CLIWrapper(true);
         cli.sendLine("ls");
