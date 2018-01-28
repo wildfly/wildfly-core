@@ -13,22 +13,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package org.wildfly.core.cli.command.aesh;
+package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
-import java.io.IOException;
-import org.aesh.command.invocation.CommandInvocation;
-import org.aesh.readline.Prompt;
-import org.aesh.readline.completion.Completion;
+import org.aesh.command.CommandException;
 import org.jboss.as.cli.CommandContext;
 
 /**
- * CLI specific {@code CommandInvocation} that exposes
- * {@link org.jboss.as.cli.CommandContext}.
+ * An SSL Security builder that retrieves an existing KeyStore.
  *
  * @author jdenise@redhat.com
  */
-public interface CLICommandInvocation extends CommandInvocation {
-    CommandContext getCommandContext();
+public class KeyStoreNameSecurityBuilder extends SSLSecurityBuilder {
 
-    String inputLine(Prompt prompt, Completion completer) throws InterruptedException, IOException;
+    private final String name;
+
+    public KeyStoreNameSecurityBuilder(String name) throws CommandException {
+        this.name = name;
+    }
+
+    @Override
+    protected KeyStore buildKeyStore(CommandContext ctx, boolean buildRequest) throws Exception {
+        return ElytronUtil.getKeyStore(ctx, name);
+    }
+
+    @Override
+    protected void doFailureOccured(CommandContext ctx) {
+    }
+
 }

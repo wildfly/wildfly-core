@@ -32,6 +32,7 @@ import org.aesh.command.CommandRuntime;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.invocation.CommandInvocationConfiguration;
 import org.aesh.command.parser.CommandLineParserException;
+import org.aesh.readline.completion.Completion;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.impl.ReadlineConsole;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
@@ -121,7 +122,7 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
 
     @Override
     public String inputLine(Prompt prompt) throws InterruptedException {
-        return shell.readLine();
+        return shell.readLine(prompt);
     }
 
     @Override
@@ -156,6 +157,14 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public CommandInvocationConfiguration getConfiguration() {
         return config;
+    }
+
+    @Override
+    public String inputLine(Prompt prompt, Completion completer) throws InterruptedException, IOException {
+        if (console != null) {
+            return console.readLine(prompt, completer);
+        }
+        return null;
     }
 
 }

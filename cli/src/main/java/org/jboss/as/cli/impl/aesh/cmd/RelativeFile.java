@@ -13,22 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package org.wildfly.core.cli.command.aesh;
+package org.jboss.as.cli.impl.aesh.cmd;
 
-import java.io.IOException;
-import org.aesh.command.invocation.CommandInvocation;
-import org.aesh.readline.Prompt;
-import org.aesh.readline.completion.Completion;
-import org.jboss.as.cli.CommandContext;
+import java.io.File;
 
 /**
- * CLI specific {@code CommandInvocation} that exposes
- * {@link org.jboss.as.cli.CommandContext}.
+ * Use this type for file option that are bound to a relative-to option.
  *
  * @author jdenise@redhat.com
  */
-public interface CLICommandInvocation extends CommandInvocation {
-    CommandContext getCommandContext();
+public class RelativeFile extends File {
 
-    String inputLine(Prompt prompt, Completion completer) throws InterruptedException, IOException;
+    private final String originalPath;
+
+    public RelativeFile(String originalPath, File absolutePath) {
+        super(absolutePath.getAbsolutePath());
+        this.originalPath = originalPath;
+    }
+
+    public String getOriginalPath() {
+        return originalPath;
+    }
 }
