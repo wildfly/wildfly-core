@@ -349,7 +349,7 @@ final class LoggingOperations {
             if (submodel.hasDefined(CommonAttributes.FILTER.getName())) {
                 final String filterSpec = Filters.filterToFilterSpec(CommonAttributes.FILTER.resolveModelAttribute(context, submodel));
                 submodel.remove(CommonAttributes.FILTER.getName());
-                submodel.get(CommonAttributes.FILTER_SPEC.getName()).set(filterSpec);
+                submodel.get(CommonAttributes.FILTER_SPEC.getName()).set(filterSpec.isEmpty() ? new ModelNode() : new ModelNode(filterSpec));
             }
         }
 

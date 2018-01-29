@@ -192,4 +192,10 @@ public interface CliConfig {
      * @return The command timeout;
      */
     Integer getCommandTimeout();
+
+    /**
+     * Output JSON for DMR content.
+     * @return true is JSON output is expected, false if DMR string output is expected.
+     */
+    boolean isOutputJSON();
 }

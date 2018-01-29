@@ -27,6 +27,7 @@ import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
 import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -60,11 +61,13 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setRequired(false)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.NAME))
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SOCKET_BINDING = new SimpleAttributeDefinitionBuilder(CommonAttributes.SOCKET_BINDING, ModelType.STRING, false)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
             .setCapabilityReference(SOCKET_CAPABILITY_NAME, CONNECTOR_CAPABILITY)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(CommonAttributes.SECURITY_REALM, ModelType.STRING, true)
@@ -72,11 +75,13 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
             .addAccessConstraint(RemotingExtension.REMOTING_SECURITY_DEF)
             .setNullSignificant(true)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SASL_AUTHENTICATION_FACTORY = new SimpleAttributeDefinitionBuilder(ConnectorCommon.SASL_AUTHENTICATION_FACTORY)
             .setCapabilityReference(SASL_AUTHENTICATION_FACTORY_CAPABILITY, CONNECTOR_CAPABILITY)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.AUTHENTICATION_FACTORY_REF)
+            .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(CommonAttributes.SSL_CONTEXT, ModelType.STRING, true)
@@ -84,7 +89,11 @@ public class ConnectorResource extends SimpleResourceDefinition {
             .setNullSignificant(true)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, CONNECTOR_CAPABILITY)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SSL_REF)
+            .setRestartAllServices()
             .build();
+
+    static final AttributeDefinition[] ATTRIBUTES  = {AUTHENTICATION_PROVIDER, SOCKET_BINDING, SECURITY_REALM,
+            SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY, SSL_CONTEXT};
 
     static final ConnectorResource INSTANCE = new ConnectorResource();
 
@@ -97,15 +106,10 @@ public class ConnectorResource extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(AUTHENTICATION_PROVIDER,
-                SOCKET_BINDING, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL);
-        resourceRegistration.registerReadWriteAttribute(AUTHENTICATION_PROVIDER, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SOCKET_BINDING, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SECURITY_REALM, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SASL_AUTHENTICATION_FACTORY, null, writeHandler);
-        resourceRegistration.registerReadWriteAttribute(SSL_CONTEXT, null, writeHandler);
+        final OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(ATTRIBUTES);
+        for (AttributeDefinition ad : ATTRIBUTES) {
+            resourceRegistration.registerReadWriteAttribute(ad, null, writeHandler);
+        }
     }
 
 }

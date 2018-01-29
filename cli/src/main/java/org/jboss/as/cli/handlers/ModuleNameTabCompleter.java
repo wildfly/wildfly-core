@@ -71,7 +71,9 @@ public class ModuleNameTabCompleter {
 
         List<File> moduleTrees = findInitialModuleDirectories();
 
-        moduleTrees.forEach(f -> findSuggestion(f, f.getName(), userEntry, suggestions));
+        for (File f : moduleTrees) {
+            findSuggestion(f, f.getName(), userEntry, suggestions);
+        }
 
         return new ArrayList<>(suggestions);
     }

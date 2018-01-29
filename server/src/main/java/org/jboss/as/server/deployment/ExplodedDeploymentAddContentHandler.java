@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.ResultAction;
 import org.jboss.as.controller.OperationFailedException;
@@ -115,7 +115,11 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
                 throw createFailureException(e.toString());
             }
         }
-        final List<String> relativePaths = addedFiles.stream().map(ExplodedContent::getRelativePath).collect(Collectors.toList());
+        final List<String> relativePaths = new ArrayList<>();
+        for (ExplodedContent addedFile : addedFiles) {
+            String relativePath = addedFile.getRelativePath();
+            relativePaths.add(relativePath);
+        }
         contentItemNode.get(CONTENT_HASH.getName()).set(newHash);
         contentItemNode.get(CONTENT_ARCHIVE.getName()).set(false);
         if (!addedFiles.isEmpty() && ENABLED.resolveModelAttribute(context, deploymentResource.getModel()).asBoolean()) {

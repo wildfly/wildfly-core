@@ -78,10 +78,34 @@ public interface CommandContext {
     ParsedCommandLine getParsedCommandLine();
 
     /**
-     * Prints a string to the CLI's output.
+     * Prints a string to the CLI's output. Terminates the message by writing
+     * the line separator string.
+     *
      * @param message the message to print
      */
     void printLine(String message);
+
+    /**
+     * Prints a ModelNode according to the current configuration.
+     *
+     * @param node The ModelNode to print.
+     */
+    default void printDMR(ModelNode node) {
+        if (getConfig().isOutputJSON()) {
+            printLine(node.toJSONString(false));
+        } else {
+            printLine(node.toString());
+        }
+    }
+
+    /**
+     * Prints a string to the CLI's output.
+     *
+     * @param message the message to print
+     */
+    default void print(String message) {
+        printLine(message);
+    }
 
     /**
      * Prints a collection of strings as columns to the CLI's output.
@@ -209,6 +233,20 @@ public interface CommandContext {
      * @throws CommandLineException in case the attempt to connect failed
      */
     void connectController(String controller) throws CommandLineException;
+
+    /**
+     * Connects to the controller specified.
+     *
+     * If the controller is null then the default specified on starting the CLI
+     * will be used, if no controller was specified on start up then the default
+     * defined in the CLI configuration will be used, if no default is defined
+     * then a connection to remote+http://localhost:9990 will be used instead.
+     *
+     * @param controller the controller to connect to
+     * @param clientAddress the address the client will bind to
+     * @throws CommandLineException in case the attempt to connect failed
+     */
+    void connectController(String controller, String clientAddress) throws CommandLineException;
 
     /**
      * Connects the controller client using the host and the port.

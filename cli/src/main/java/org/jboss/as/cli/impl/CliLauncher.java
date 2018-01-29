@@ -38,8 +38,9 @@ import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
-import org.jboss.as.cli.handlers.VersionHandler;
+import org.jboss.as.cli.impl.aesh.HelpSupport;
 import org.jboss.as.protocol.StreamUtils;
+import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -48,10 +49,13 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class CliLauncher {
 
+    private static final Logger log = Logger.getLogger(CliLauncher.class);
+
     public static void main(String[] args) throws Exception {
         int exitCode = 0;
         CommandContext cmdCtx = null;
         boolean gui = false;
+        boolean help = false;
         final List<String> systemPropertyKeys = new ArrayList<>();
         try {
             String argError = null;
@@ -155,8 +159,12 @@ public class CliLauncher {
                     }
                 } else if (arg.equals("--no-local-auth")) {
                     ctxBuilder.setDisableLocalAuth(true);
+                } else if (arg.equals("--no-operation-validation")) {
+                    ctxBuilder.setValidateOperationRequests(false);
                 } else if (arg.equals("--echo-command")) {
                     ctxBuilder.setEchoCommand(true);
+                } else if (arg.equals("--output-json")) {
+                    ctxBuilder.setOutputJSON(true);
                 } else if (arg.startsWith("--command-timeout=")) {
                     ctxBuilder.
                             setCommandTimeout(Integer.parseInt(arg.substring(18)));
@@ -186,7 +194,8 @@ public class CliLauncher {
                 } else if(arg.startsWith("--bind=")) {
                     ctxBuilder.setClientBindAddress(arg.substring(7));
                 } else if (arg.equals("--help") || arg.equals("-h")) {
-                    commands = Collections.singletonList("help");
+                    help = true;
+                    break;
                 } else if (arg.startsWith("--properties=")) {
                     final String value  = arg.substring(13);
                     final File propertiesFile = new File(FilenameTabCompleter.expand(value));
@@ -257,9 +266,15 @@ public class CliLauncher {
                 return;
             }
 
+            if (help) {
+                cmdCtx = initCommandContext(ctxBuilder.build(), false);
+                HelpSupport.printHelp(cmdCtx);
+                return;
+            }
+
             if(version) {
                 cmdCtx = initCommandContext(ctxBuilder.build(), connect);
-                VersionHandler.INSTANCE.handle(cmdCtx);
+                cmdCtx.handle("version");
                 return;
             }
 
@@ -287,6 +302,7 @@ public class CliLauncher {
             cmdCtx.interact();
         } catch(Throwable t) {
             System.out.println(Util.getMessagesFromThrowable(t));
+            log.error("Error processing CLI", t);
             exitCode = 1;
         } finally {
             if((cmdCtx != null) && !gui) {

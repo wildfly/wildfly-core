@@ -23,7 +23,6 @@
 package org.jboss.as.controller.registry;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -179,10 +178,9 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
-        final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
-        AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_WRITE, storage, readHandler, writeHandler, definition, flags);
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
+        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
         if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
             throw alreadyRegistered("attribute", attributeName);
         }
@@ -190,10 +188,9 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
-        final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
         final String attributeName = definition.getName();
-        AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_ONLY, storage, readHandler, null, definition, flags);
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
+        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_ONLY, storage, readHandler, null, definition);
         if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
             throw alreadyRegistered("attribute", attributeName);
         }
@@ -206,7 +203,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
-        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
+        AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition);
         if (attributesUpdater.putIfAbsent(this, definition.getName(), aa) != null) {
             throw alreadyRegistered("attribute", definition.getName());
         }
@@ -292,6 +289,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         } else {
             final Map<String, AttributeAccess> snapshot = attributesUpdater.get(this);
             return snapshot.keySet();
+        }
+    }
+
+    @Override
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator) {
+        checkPermission();
+        if (iterator.hasNext()) {
+            return Collections.emptyMap();
+        } else {
+            return attributesUpdater.get(this);
         }
     }
 

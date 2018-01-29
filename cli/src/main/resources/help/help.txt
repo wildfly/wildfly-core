@@ -13,6 +13,8 @@ Usage:
                      [--timeout=timeout]
                      [--echo-command]
                      [--command-timeout=timeout]
+                     [--no-operation-validation]
+                     [--output-json]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -96,7 +98,13 @@ Usage:
  --command-timeout  - The maximum amount of seconds the CLI will wait for a 
                       command to complete.
 
-For a list of available commands execute
+ --output-json      - causes the CLI to display operation responses using JSON syntax.
+                      By default responses are displayed using DMR string syntax.
+
+ --no-operation-validation  - disable the pre validation of the operations from the CLI.
+                              Operations will be only validated by the server.
+
+For a list of available commands, once the CLI is started, execute:
 
   help --commands
 
@@ -111,17 +119,17 @@ Here are some of the most basic supported commands:
 
  cn (or cd)             - change the current node path to the argument;
  connect                - connect to the server or domain controller;
- deploy                 - deploy an application;
+ deployment             - application deployment related operations such as deploy/undeploy;
  help (or h)            - print this message;
  history                - print or disable/enable/clear the history expansion;
  ls                     - list the contents of the node path;
  pwn (or pwd)           - prints the current working node;
  quit (or q)            - quit the command line interface;
- undeploy               - undeploy an application;
  version                - prints the version and environment information.
 
-For a more detailed description of a specific command, execute the command with
-'--help' as the argument.
+For a more detailed description of a specific command, execute:
+
+  help <command name>
 
 Tab-completion is supported for the commands, just press the tab key to start.
 
@@ -134,6 +142,11 @@ e.g. /subsystem=undertow/listener=http:read-attribute(name=enabled)
 If the operation request doesn't require a node path then the request can start
 with ':' followed by an operation name and the property list if necessary ('/:'
 and './:' are also possible).
+
+In operation Tab-completion, required properties have a name terminated by the '*' character.
+This helps identify which are the properties that must be set in order to
+construct a valid operation. Furthermore, Tab-completion does not propose properties
+that are alternatives of properties already present in the operation.
 
 Whitespaces between the separators are insignificant.
 If the operation doesn't require arguments then the brackets '()' are optional.

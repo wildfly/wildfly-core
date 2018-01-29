@@ -23,10 +23,13 @@
 package org.jboss.as.controller.client.impl;
 
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
+import org.jboss.as.controller.client.logging.ControllerClientLogger;
+import org.wildfly.security.SecurityFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -42,19 +45,19 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
     private final int port;
     private final CallbackHandler handler;
     private final Map<String, String> saslOptions;
-    private final SSLContext sslContext;
+    private final SecurityFactory<SSLContext> sslContextFactory;
     private final ExecutorService executorService;
     private final String protocol;
     private final boolean shutdownExecutor;
     private final int connectionTimeout;
     private final URI authConfigUri;
 
-    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SSLContext sslContext, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol, String clientBindAddress, final URI authConfigUri) {
+    public ClientConfigurationImpl(String address, int port, CallbackHandler handler, Map<String, String> saslOptions, SecurityFactory<SSLContext> sslContextFactory, ExecutorService executorService, boolean shutdownExecutor, final int connectionTimeout, final String protocol, String clientBindAddress, final URI authConfigUri) {
         this.address = address;
         this.port = port;
         this.handler = handler;
         this.saslOptions = saslOptions;
-        this.sslContext = sslContext;
+        this.sslContextFactory = sslContextFactory;
         this.executorService = executorService;
         this.shutdownExecutor = shutdownExecutor;
         this.protocol = protocol;
@@ -91,7 +94,17 @@ public class ClientConfigurationImpl implements ModelControllerClientConfigurati
 
     @Override
     public SSLContext getSSLContext() {
-        return sslContext;
+        try {
+            return sslContextFactory != null ? sslContextFactory.create() : null;
+        } catch (GeneralSecurityException e) {
+            ControllerClientLogger.ROOT_LOGGER.trace("Unable to create SSLContext", e);
+            return null;
+        }
+    }
+
+    @Override
+    public SecurityFactory<SSLContext> getSslContextFactory() {
+        return sslContextFactory;
     }
 
     @Override

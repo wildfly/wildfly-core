@@ -23,8 +23,6 @@
 package org.jboss.as.cli.parsing.test;
 
 import java.io.File;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,12 +39,234 @@ import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  * @author Alexey Loubyansky
  */
 public class ValueTypeCompletionTestCase {
+
+    private static final String requires_alternatives1 = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"A\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"requires\" => [\n"
+            + "                            \"B\",\n"
+            + "                            \"C\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"B\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"C\",\n"
+            + "                            \"D\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"C\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"B\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"D\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"B\",\n"
+            + "                        ],\n"
+            + "                    },\n"
+            + "                    \"E\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => false\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
+    private static final String requiresInvalidAlternatives = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"A\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"B\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"B\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"A\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"C\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"requires\" => [\n"
+            + "                            \"A\"\n"
+            + "                        ],\n"
+            + "                        \"required\" => false,\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
+    private static final String requiresAlternatives = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"A\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"B\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"B\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"A\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"C\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"requires\" => [\n"
+            + "                            \"A\",\n"
+            + "                            \"B\"\n"
+            + "                        ],\n"
+            + "                        \"required\" => false,\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
+
+    private static final String requires_alternatives2 = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"A\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"requires\" => [\n"
+            + "                            \"B\",\n"
+            + "                            \"C\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"B\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"D\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"C\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => false,\n"
+            + "                    },\n"
+            + "                    \"D\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"B\",\n"
+            + "                        ],\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
+    private static final String required_alternatives = "{\n"
+            + "                \"type\" => OBJECT,\n"
+            + "                \"value-type\" => {\n"
+            + "                    \"module\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"load-services\",\n"
+            + "                            \"class-names\",\n"
+            + "                            \"path\",\n"
+            + "                            \"relative-to\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"load-services\" => {\n"
+            + "                        \"type\" => BOOLEAN,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"module\",\n"
+            + "                            \"class-names\",\n"
+            + "                            \"path\",\n"
+            + "                            \"relative-to\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"class-names\" => {\n"
+            + "                        \"type\" => LIST,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"value-type\" => STRING,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"module\",\n"
+            + "                            \"load-services\",\n"
+            + "                            \"path\",\n"
+            + "                            \"relative-to\"\n"
+            + "                        ]\n"
+            + "                    },\n"
+            + "                    \"path\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"alternatives\" => [\n"
+            + "                            \"module\",\n"
+            + "                            \"load-services\",\n"
+            + "                            \"property-list\",\n"
+            + "                            \"class-names\"\n"
+            + "                        ],\n"
+            + "                        \"requires\" => [\"relative-to\"]\n"
+            + "                    },\n"
+            + "                    \"relative-to\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"required\" => false,\n"
+            + "                        \"requires\" => [\"path\"],\n"
+            + "                    },\n"
+            + "                    \"recursive\" => {\n"
+            + "                        \"type\" => STRING,\n"
+            + "                        \"required\" => false,\n"
+            + "                    },\n"
+            + "                    \"property-list\" => {\n"
+            + "                        \"type\" => LIST,\n"
+            + "                        \"required\" => true,\n"
+            + "                        \"alternatives\" => [\"path\"],\n"
+            + "                        \"value-type\" => {\n"
+            + "                            \"name\" => {\n"
+            + "                                \"type\" => STRING,\n"
+            + "                                \"description\" => \"The key for the property to be set.\",\n"
+            + "                                \"expressions-allowed\" => true,\n"
+            + "                                \"required\" => true,\n"
+            + "                                \"nillable\" => false,\n"
+            + "                                \"min-length\" => 1L,\n"
+            + "                                \"max-length\" => 2147483647L\n"
+            + "                            },\n"
+            + "                            \"value\" => {\n"
+            + "                                \"type\" => STRING,\n"
+            + "                                \"description\" => \"The value of the property to be set.\",\n"
+            + "                                \"expressions-allowed\" => true,\n"
+            + "                                \"required\" => true,\n"
+            + "                                \"nillable\" => false,\n"
+            + "                                \"min-length\" => 1L,\n"
+            + "                                \"max-length\" => 2147483647L\n"
+            + "                            }\n"
+            + "                        }\n"
+            + "                    }\n"
+            + "                }\n"
+            + "            }";
+
+    private static final String capabilities_prop = "{\n"
+            + "            \"type\" => OBJECT,\n"
+            + "            \"value-type\" => {\n"
+            + "                \"prop1\" => {\n"
+            + "                      \"type\" => STRING,\n"
+            + "                      \"capability-reference\" => \"org.wildfly.security.role-mapper\"\n"
+            + "                },\n"
+            + "                \"prop2\" => {\n"
+            + "                      \"type\" => BOOLEAN\n"
+            + "                }\n"
+            + "            }\n"
+            + "        }";
 
     private static final String bytes_prop = "{\n"
             + "            \"type\" => OBJECT,\n"
@@ -170,9 +390,11 @@ public class ValueTypeCompletionTestCase {
             + "                                             },\n"
             + "                                             \"prop1_1_1_2\" => {\n"
             + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                                 \"required\" => false,\n"
             + "                                             },\n"
             + "                                             \"prop1_1_1_3\" => {\n"
             + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                                 \"required\" => false,\n"
             + "                                             }\n"
             + "                                         }\n"
             + "                                     },\n"
@@ -181,12 +403,15 @@ public class ValueTypeCompletionTestCase {
             + "                                         \"value-type\" => {\n"
             + "                                              \"prop1_1_2_1\" => {\n"
             + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                                 \"required\" => false,\n"
             + "                                             },\n"
             + "                                             \"prop1_1_2_2\" => {\n"
             + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                                 \"required\" => false,\n"
             + "                                             },\n"
             + "                                             \"prop1_1_2_3\" => {\n"
             + "                                                 \"type\" => BOOLEAN,\n"
+            + "                                                 \"required\" => false,\n"
             + "                                             }\n"
             + "                                         }\n"
             + "                                     }\n"
@@ -297,6 +522,7 @@ public class ValueTypeCompletionTestCase {
 "                \"value-type\" => {\n" +
 "                    \"principals\" => {\n" +
 "                        \"type\" => LIST,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"Principals to compare when mapping permissions, if the identities principal matches any one in the list it is a match.\",\n" +
 "                        \"expressions-allowed\" => true,\n" +
 "                        \"nillable\" => true,\n" +
@@ -304,6 +530,7 @@ public class ValueTypeCompletionTestCase {
 "                    },\n" +
 "                    \"roles\" => {\n" +
 "                        \"type\" => LIST,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"Roles to compare when mapping permissions, if the identity is a member of any one in the list it is a match.\",\n" +
 "                        \"expressions-allowed\" => true,\n" +
 "                        \"nillable\" => true,\n" +
@@ -311,12 +538,14 @@ public class ValueTypeCompletionTestCase {
 "                    },\n" +
 "                    \"permissions\" => {\n" +
 "                        \"type\" => LIST,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"The permissions to assign in the event of a match.\",\n" +
 "                        \"expressions-allowed\" => false,\n" +
 "                        \"nillable\" => false,\n" +
 "                        \"value-type\" => {\n" +
 "                            \"class-name\" => {\n" +
 "                                \"type\" => STRING,\n" +
+"                                \"required\" => false,\n" +
 "                                \"description\" => \"The fully qualified class name of the permission.\",\n" +
 "                                \"expressions-allowed\" => true,\n" +
 "                                \"nillable\" => false,\n" +
@@ -325,6 +554,7 @@ public class ValueTypeCompletionTestCase {
 "                            },\n" +
 "                            \"module\" => {\n" +
 "                                \"type\" => STRING,\n" +
+"                                \"required\" => false,\n" +
 "                                \"description\" => \"The module to use to load the permission.\",\n" +
 "                                \"expressions-allowed\" => true,\n" +
 "                                \"nillable\" => true,\n" +
@@ -333,6 +563,7 @@ public class ValueTypeCompletionTestCase {
 "                            },\n" +
 "                            \"target-name\" => {\n" +
 "                                \"type\" => STRING,\n" +
+"                                \"required\" => false,\n" +
 "                                \"description\" => \"The target name to pass to the permission as it is constructed.\",\n" +
 "                                \"expressions-allowed\" => true,\n" +
 "                                \"nillable\" => true,\n" +
@@ -341,6 +572,7 @@ public class ValueTypeCompletionTestCase {
 "                            },\n" +
 "                            \"action\" => {\n" +
 "                                \"type\" => STRING,\n" +
+"                                \"required\" => false,\n" +
 "                                \"description\" => \"The action to pass to the permission as it is constructed.\",\n" +
 "                                \"expressions-allowed\" => true,\n" +
 "                                \"nillable\" => true,\n" +
@@ -374,6 +606,7 @@ public class ValueTypeCompletionTestCase {
 "                \"value-type\" => {\n" +
 "                    \"type\" => {\n" +
 "                        \"type\" => STRING,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"The implementation class for a protocol, which determines protocol functionality.\",\n" +
 "                        \"expressions-allowed\" => true,\n" +
 "                        \"nillable\" => true,\n" +
@@ -382,6 +615,7 @@ public class ValueTypeCompletionTestCase {
 "                    },\n" +
 "                    \"socket-binding\" => {\n" +
 "                        \"type\" => STRING,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"Optional socket binding specification for this protocol layer, used to specify IP interfaces and ports for communication.\",\n" +
 "                        \"expressions-allowed\" => true,\n" +
 "                        \"nillable\" => true,\n" +
@@ -391,6 +625,7 @@ public class ValueTypeCompletionTestCase {
 "                    },\n" +
 "                    \"properties\" => {\n" +
 "                        \"type\" => OBJECT,\n" +
+"                        \"required\" => false,\n" +
 "                        \"description\" => \"Optional LIST parameter specifying the protocol list for the stack.\",\n" +
 "                        \"expressions-allowed\" => true,\n" +
 "                        \"nillable\" => true,\n" +
@@ -410,11 +645,13 @@ public class ValueTypeCompletionTestCase {
             "     \"code\" => {" +
             "        \"description\" => \"Class name of the module to be instantiated.\"," +
             "        \"type\" => BOOLEAN," +
+            "        \"required\" => false,\n" +
             "        \"nillable\" => false" +
             "     }," +
             "    \"flag\" => {" +
             "        \"description\" => \"The flag controls how the module participates in the overall procedure.\"," +
             "        \"type\" => STRING," +
+            "        \"required\" => false,\n" +
             "        \"nillable\" => false," +
             "        \"allowed\" => [" +
             "            \"required\"," +
@@ -425,11 +662,13 @@ public class ValueTypeCompletionTestCase {
             "    }," +
             "    \"module\" => {" +
             "        \"type\" => STRING," +
+            "        \"required\" => false,\n" +
             "        \"nillable\" => true," +
             "        \"description\" => \"Name of JBoss Module where the login module code is located.\"" +
             "    }," +
             "    \"module-options\" => {" +
             "        \"description\" => \"List of module options containing a name/value pair.\"," +
+            "        \"required\" => false,\n" +
             "        \"type\" => OBJECT," +
             "        \"value-type\" => STRING," +
             "        \"nillable\" => true" +
@@ -437,42 +676,51 @@ public class ValueTypeCompletionTestCase {
             "    \"aa\" => {" +
             "        \"description\" => \"smth\"," +
             "        \"type\" => OBJECT," +
+            "        \"required\" => false,\n" +
             "        \"value-type\" => {" +
             "            \"ab1\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => STRING," +
+            "                \"required\" => false,\n" +
             "            }," +
             "            \"ab2\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => STRING," +
+            "                \"required\" => false,\n" +
             "            }," +
             "            \"ac1\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => BOOLEAN," +
+            "                \"required\" => false,\n" +
             "            }" +
             "        }" +
             "    }," +
             "    \"bb\" => {" +
             "        \"description\" => \"smth\"," +
             "        \"type\" => LIST," +
+            "        \"required\" => false,\n" +
             "        \"value-type\" => {" +
             "            \"bb1\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => STRING," +
+            "                \"required\" => false,\n" +
             "            }," +
             "            \"bb2\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => STRING," +
+            "                \"required\" => false,\n" +
             "            }," +
             "            \"bc1\" => {" +
             "                \"description\" => \"smth\"," +
             "                \"type\" => STRING," +
+            "                \"required\" => false,\n" +
             "            }" +
             "        }" +
             "      }," +
             "    \"cc\" => {" +
             "        \"description\" => \"smth\"," +
             "        \"type\" => LIST," +
+            "        \"required\" => false,\n" +
             "        \"value-type\" => STRING" +
             "    }" +
             "  }" +
@@ -492,12 +740,14 @@ public class ValueTypeCompletionTestCase {
             + "                \"value-type\" => {\n"
             + "                    \"all\" => {\n"
             + "                        \"type\" => OBJECT,\n"
+            + "                        \"required\" => false,\n"
             + "                        \"description\" => \"A filter consisting of several filters in a chain.  If any filter finds the log message to be unloggable,the message will not be logged and subsequent filters will not be checked.\",\n"
             + "                        \"expressions-allowed\" => false,\n"
             + "                        \"nillable\" => true,\n"
             + "                        \"value-type\" => {\n"
             + "                            \"accept\" => {\n"
             + "                                \"type\" => BOOLEAN,\n"
+            + "                                \"required\" => false,\n"
             + "                                \"description\" => \"Accepts all log messages.\",\n"
             + "                                \"expressions-allowed\" => false,\n"
             + "                                \"nillable\" => true,\n"
@@ -505,6 +755,7 @@ public class ValueTypeCompletionTestCase {
             + "                            },\n"
             + "                            \"change-level\" => {\n"
             + "                                \"type\" => STRING,\n"
+            + "                                \"required\" => false,\n"
             + "                                \"description\" => \"A filter which modifies the log record with a new level if the nested filter evaluates true for that record.\",\n"
             + "                                \"expressions-allowed\" => false,\n"
             + "                                \"nillable\" => true,\n"
@@ -527,6 +778,7 @@ public class ValueTypeCompletionTestCase {
             + "                            },\n"
             + "                            \"deny\" => {\n"
             + "                                \"type\" => BOOLEAN,\n"
+            + "                                \"required\" => false,\n"
             + "                                \"description\" => \"Denys all log messages.\",\n"
             + "                                \"expressions-allowed\" => false,\n"
             + "                                \"nillable\" => true,\n"
@@ -534,6 +786,7 @@ public class ValueTypeCompletionTestCase {
             + "                            },\n"
             + "                            \"level\" => {\n"
             + "                                \"type\" => STRING,\n"
+            + "                                \"required\" => false,\n"
             + "                                \"description\" => \"A filter which excludes a message with the specified level.\",\n"
             + "                                \"expressions-allowed\" => true,\n"
             + "                                \"nillable\" => true,\n"
@@ -557,6 +810,7 @@ public class ValueTypeCompletionTestCase {
             + "                            },\n"
             + "                            \"level-range\" => {\n"
             + "                                \"type\" => OBJECT,\n"
+            + "                                \"required\" => false,\n"
             + "                                \"description\" => \"A filter which logs only messages that fall within a level range.\",\n"
             + "                                \"expressions-allowed\" => false,\n"
             + "                                \"nillable\" => true,\n"
@@ -625,6 +879,7 @@ public class ValueTypeCompletionTestCase {
             + "                    },"
             + "                    \"match\" => {\n"
             + "                         \"type\" => STRING,\n"
+            + "                         \"required\" => false,\n"
             + "                         \"description\" => \"A regular-expression-based filter. Used to exclude log records which match or don't match the expression. The regular expression is checked against the raw (unformatted) message.\",\n"
             + "                         \"expressions-allowed\" => false,\n"
             + "                         \"nillable\" => true,\n"
@@ -1119,13 +1374,20 @@ public class ValueTypeCompletionTestCase {
         try {
             CommandContext ctx = CommandContextFactory.getInstance().newCommandContext();
             ModelNode valueType = ModelNode.fromJSONString(VALUETYPE_WITH_FILES);
-            ValueTypeCompleter completer = new ValueTypeCompleter(valueType);
             {
                 List<String> candidates = new ArrayList<>();
                 String content = "{p1_a=" + radical;
                 new ValueTypeCompleter(valueType).complete(ctx, content, content.length() - 1, candidates);
                 assertTrue(candidates.size() == 1);
                 assertTrue(candidates.get(0).equals(f.getName()));
+            }
+
+            {
+                List<String> candidates = new ArrayList<>();
+                String content = "{p1_a=" + f.getName();
+                new ValueTypeCompleter(valueType).complete(ctx, content, content.length() - 1, candidates);
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.get(0).equals(","));
             }
 
             {
@@ -1576,6 +1838,42 @@ public class ValueTypeCompletionTestCase {
         }
 
     }
+
+    @Test
+    public void testCapabilities() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(capabilities_prop);
+        assertTrue(propDescr.isDefined());
+
+        final List<String> candidates = new ArrayList<>();
+        List<String> capabilities = new ArrayList<>();
+        CapabilityCompleterFactory factory = (OperationRequestAddress address, String staticPart) -> {
+            return new TestCapabilityReferenceCompleter(capabilities);
+        };
+        int i;
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "{prop1=", 0, candidates);
+        assertEquals(Arrays.asList(), candidates);
+        assertEquals(-1, i);
+
+        capabilities.add("coco");
+        capabilities.add("prefMapper001");
+        capabilities.add("prefMapper002");
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "{prop1=", 0, candidates);
+        assertEquals(capabilities, candidates);
+        assertEquals(7, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "{prop1=c", 0, candidates);
+        assertEquals(Arrays.asList("coco"), candidates);
+        assertEquals(7, i);
+
+        candidates.clear();
+        i = new ValueTypeCompleter(propDescr, factory).complete(null, "{prop1=coco", 0, candidates);
+        assertEquals(Arrays.asList(","), candidates);
+        assertEquals(11, i);
+    }
+
     @Test
     public void testListCapabilities() throws Exception {
         final ModelNode propDescr = ModelNode.fromString(role_mapper);
@@ -1744,5 +2042,228 @@ public class ValueTypeCompletionTestCase {
                 0, candidates);
         assertTrue(candidates.isEmpty());
         assertEquals(i, -1);
+    }
+
+    @Test
+    public void testRequired() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(required_alternatives);
+        assertTrue(propDescr.isDefined());
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{", 0, candidates);
+            assertEquals(Arrays.asList("class-names*", "load-services*", "module*",
+                    "path*", "property-list*", "recursive", "relative-to"), candidates);
+            assertEquals(i, 1);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{class-names=[toto,titi],", 0, candidates);
+            assertEquals(Arrays.asList("property-list*", "recursive"), candidates);
+            assertEquals(i, 25);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{class-names=[toto,titi],l", 0, candidates);
+            assertEquals(Arrays.asList("load-services"), candidates);
+            assertEquals(i, 25);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{path=toto,", 0, candidates);
+            assertEquals(Arrays.asList("recursive", "relative-to*"), candidates);
+            assertEquals(i, 11);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{property-list=[],", 0, candidates);
+            assertEquals(Arrays.asList("class-names*", "load-services*", "module*", "recursive"), candidates);
+            assertEquals(i, 18);
+        }
+
+    }
+
+    @Test
+    public void testRequiresNotHideMultipleNotRequiredAlternatives() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(requires_alternatives1);
+        assertTrue(propDescr.isDefined());
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{", 0, candidates);
+            assertEquals(Arrays.asList("A*", "B", "C",
+                    "D*", "E"), candidates);
+            assertEquals(i, 1);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,", 0, candidates);
+            assertEquals(Arrays.asList("B*", "C*",
+                    "D*", "E"), candidates);
+            assertEquals(i, 8);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,D=true,", 0, candidates);
+            assertEquals(Arrays.asList("C*", "E"), candidates);
+            assertEquals(i, 15);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,B=true,E=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+            assertEquals(i, 21);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,C=true,", 0, candidates);
+            assertEquals(Arrays.asList("D*", "E"), candidates);
+            assertEquals(i, 15);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,C=true,D=true,E=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+            assertEquals(i, 28);
+        }
+    }
+
+    @Test
+    public void testRequiresInvalidAlternatives() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(requiresInvalidAlternatives);
+        assertTrue(propDescr.isDefined());
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{", 0, candidates);
+            assertEquals(Arrays.asList("A*", "B*", "C"), candidates);
+            assertEquals(i, 1);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{B=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+            assertEquals(i, 7);
+        }
+    }
+
+    @Test
+    public void testRequiresAlternatives() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(requiresAlternatives);
+        assertTrue(propDescr.isDefined());
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{", 0, candidates);
+            assertEquals(Arrays.asList("A*", "B*", "C"), candidates);
+            assertEquals(i, 1);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{C=true,", 0, candidates);
+            assertEquals(Arrays.asList("A*", "B*"), candidates);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{C=true,A=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{C=true,B=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{B=true,", 0, candidates);
+            assertEquals(Arrays.asList("C"), candidates);
+            assertEquals(i, 8);
+        }
+    }
+
+    @Test
+    public void testRequiresHideSingleNotRequiredAlternatives() throws Exception {
+        final ModelNode propDescr = ModelNode.fromString(requires_alternatives2);
+        assertTrue(propDescr.isDefined());
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{", 0, candidates);
+            assertEquals(Arrays.asList("A*", "B", "C",
+                    "D*"), candidates);
+            assertEquals(i, 1);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,", 0, candidates);
+            assertEquals(Arrays.asList("B*", "C*"), candidates);
+            assertEquals(i, 8);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,B=true,", 0, candidates);
+            assertEquals(Arrays.asList("C"), candidates);
+            assertEquals(i, 15);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,C=true,", 0, candidates);
+            assertEquals(Arrays.asList("B"), candidates);
+            assertEquals(i, 15);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,B=true,C=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+            assertEquals(i, 21);
+        }
+
+        {
+            final List<String> candidates = new ArrayList<>();
+            int i = new ValueTypeCompleter(propDescr).complete(null,
+                    "{A=true,D=true,C=true", 0, candidates);
+            assertEquals(Arrays.asList("}"), candidates);
+            assertEquals(i, 21);
+        }
     }
 }

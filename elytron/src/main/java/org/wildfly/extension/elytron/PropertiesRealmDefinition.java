@@ -20,11 +20,9 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
-import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
@@ -51,7 +49,6 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
@@ -66,6 +63,7 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.realm.LegacyPropertiesSecurityRealm;
@@ -81,19 +79,19 @@ import org.wildfly.security.evidence.Evidence;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class PropertiesRealmDefinition extends TrivialResourceDefinition {
+class PropertiesRealmDefinition {
 
     static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
             .setRequired(true)
             .build();
 
-    static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition PLAIN_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PLAIN_TEXT, ModelType.BOOLEAN, true)
             .setDefaultValue(new ModelNode(false))
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
+    private static final SimpleAttributeDefinition DIGEST_REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIGEST_REALM_NAME, ModelType.STRING, true)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -114,19 +112,20 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
+    private static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.STRING)
         .setStorageRuntime()
         .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE, CASE_SENSITIVE };
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE };
 
     // Resource Resolver
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.PROPERTIES_REALM);
 
     // Operations
 
-    static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.LOAD, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition LOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.LOAD, RESOURCE_RESOLVER)
+            .setRuntimeOnly()
             .build();
 
     private static final AbstractAddStepHandler ADD = new TrivialAddHandler<SecurityRealm>(SecurityRealm.class, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY) {
@@ -144,15 +143,15 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
             final String groupsAttribute = GROUPS_ATTRIBUTE.resolveModelAttribute(context, model).asString();
 
             ModelNode usersProperties = USERS_PROPERTIES.resolveModelAttribute(context, model);
-            usersPath = asStringIfDefined(context, PATH, usersProperties);
-            usersRelativeTo = asStringIfDefined(context, RELATIVE_TO, usersProperties);
-            digestRealmName = asStringIfDefined(context, DIGEST_REALM_NAME, usersProperties);
+            usersPath = PATH.resolveModelAttribute(context, usersProperties).asStringOrNull();
+            usersRelativeTo = RELATIVE_TO.resolveModelAttribute(context, usersProperties).asStringOrNull();
+            digestRealmName = DIGEST_REALM_NAME.resolveModelAttribute(context, usersProperties).asStringOrNull();
             plainText = PLAIN_TEXT.resolveModelAttribute(context, usersProperties).asBoolean();
 
             ModelNode groupsProperties = GROUPS_PROPERTIES.resolveModelAttribute(context, model);
             if (groupsProperties.isDefined()) {
-                groupsPath = asStringIfDefined(context, PATH, groupsProperties);
-                groupsRelativeTo = asStringIfDefined(context, RELATIVE_TO, groupsProperties);
+                groupsPath = PATH.resolveModelAttribute(context, groupsProperties).asStringOrNull();
+                groupsRelativeTo = RELATIVE_TO.resolveModelAttribute(context, groupsProperties).asStringOrNull();
             } else {
                 groupsPath = null;
                 groupsRelativeTo = null;
@@ -200,7 +199,9 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
                 @Override
                 public void dispose() {
-                    callbackHandles.forEach(h -> h.remove());
+                    for (Handle h : callbackHandles) {
+                        h.remove();
+                    }
                 }
 
                 private File resolveFileLocation(String path, String relativeTo) {
@@ -235,35 +236,34 @@ class PropertiesRealmDefinition extends TrivialResourceDefinition {
 
     };
 
-    PropertiesRealmDefinition() {
-        super(ElytronDescriptionConstants.PROPERTIES_REALM, RESOURCE_RESOLVER, ADD, ATTRIBUTES, SECURITY_REALM_RUNTIME_CAPABILITY);
-    }
+    static ResourceDefinition create(boolean serverOrHostController) {
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.PROPERTIES_REALM)
+                .setResourceDescriptionResolver(RESOURCE_RESOLVER)
+                .setAddHandler(ADD)
+                .setAttributes(ATTRIBUTES)
+                .setRuntimeCapabilities(SECURITY_REALM_RUNTIME_CAPABILITY);
 
-    @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
+        if (serverOrHostController) {
+            builder.addReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
 
-        resourceRegistration.registerReadOnlyAttribute(SYNCHRONIZED, new PropertiesRuntimeHandler(false) {
+                @Override
+                void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
+                    SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
+                    context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
+                }
+            });
+        }
 
-            @Override
-            void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
-                SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
-                context.getResult().set(sdf.format(new Date(securityRealm.getLoadTime())));
-            }
-        });
-    }
-
-    @Override
-    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-
-        resourceRegistration.registerOperationHandler(LOAD, new PropertiesRuntimeHandler(true) {
+        builder.addOperation(LOAD, new PropertiesRuntimeHandler(true) {
 
             @Override
             void performRuntime(OperationContext context, RealmWrapper securityRealm) throws OperationFailedException {
                 securityRealm.reload();
             }
         });
+
+        return builder.build();
     }
 
     abstract static class PropertiesRuntimeHandler extends ElytronRuntimeOnlyHandler {

@@ -26,9 +26,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 
 import java.io.File;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.extension.ExtensionRegistry;
@@ -70,7 +72,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         if (runningModeControl.isReloaded()) {
             configurationFile.resetBootFile(runningModeControl.isUseCurrentConfig(), runningModeControl.getAndClearNewBootFileName());
         }
-        this.hostPersister = ConfigurationPersisterFactory.createHostXmlConfigurationPersister(configurationFile, environment, executorService, hostExtensionRegistry);
+        this.hostPersister = ConfigurationPersisterFactory.createHostXmlConfigurationPersister(configurationFile, environment, executorService, hostExtensionRegistry, hostControllerInfo);
     }
 
     public void initializeDomainConfigurationPersister(boolean slave) {
@@ -111,8 +113,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
                         runningModeControl.isUseCurrentDomainConfig(),
                         runningModeControl.getAndClearNewDomainBootFileName());
             }
-
-            domainPersister = ConfigurationPersisterFactory.createDomainXmlConfigurationPersister(domainConfigurationFile, executorService, extensionRegistry);
+            domainPersister = ConfigurationPersisterFactory.createDomainXmlConfigurationPersister(domainConfigurationFile, executorService, extensionRegistry, environment);
         }
         // Store this back to environment so mgmt api that exposes it can still work
         environment.setDomainConfigurationFile(domainConfigurationFile);
@@ -185,6 +186,24 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
 
     @Override
     public List<ModelNode> load() throws ConfigurationPersistenceException {
+        final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
+        final File bootFile = configurationFile.getBootFile();
+        final ConfigurationFile.InteractionPolicy policy = configurationFile.getInteractionPolicy();
+        final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+
+        if (bootFile.exists() && bootFile.length() == 0) { // empty config, by definition
+            return new ArrayList<>();
+        }
+
+        if (policy == ConfigurationFile.InteractionPolicy.NEW && (bootFile.exists() && bootFile.length() != 0)) {
+            throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteHostXmlWithEmpty(bootFile.getName());
+        }
+
+        // if we started with new / discard but now we're reloading, ignore it. Otherwise on a reload, we have no way to drop the --empty-host-config
+        // if we're loading a 0 byte file, treat this the same as booting with an emoty config
+        if (configurationFile.getBootFile().length() == 0 || (!runningModeControl.isReloaded() && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD))) {
+            return new ArrayList<>();
+        }
         return hostPersister.load();
     }
 
@@ -217,6 +236,11 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
     }
 
     @Override
+    public void registerSubsystemWriter(String name, Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
+        domainPersister.registerSubsystemWriter(name, writer);
+    }
+
+    @Override
     public void unregisterSubsystemWriter(String name) {
         domainPersister.unregisterSubsystemWriter(name);
     }
@@ -225,7 +249,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         final String defaultDomainConfig = WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_DEFAULT_CONFIG, "domain.xml");
         final String initialDomainConfig = environment.getInitialDomainConfig();
         return new ConfigurationFile(environment.getDomainConfigurationDir(), defaultDomainConfig,
-                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, initialDomainConfig == null);
+                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteractionPolicy());
     }
 
     private ConfigurationFile getBackupDomainConfigurationFile() {

@@ -28,7 +28,9 @@ import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -48,6 +50,13 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
     private HttpConnectorAdd() {
         super(HttpConnectorResource.CONNECTOR_REF, HttpConnectorResource.AUTHENTICATION_PROVIDER, HttpConnectorResource.SECURITY_REALM,
                 HttpConnectorResource.SASL_AUTHENTICATION_FACTORY, ConnectorCommon.SASL_PROTOCOL, ConnectorCommon.SERVER_NAME);
+    }
+
+    @Override
+    protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.populateModel(context, operation, resource);
+
+        context.addStep(operation, HttpConnectorValidationStep.INSTANCE, OperationContext.Stage.MODEL);
     }
 
     @Override
@@ -71,5 +80,41 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
         ModelNode saslAuthenticationFactoryModel = HttpConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, model);
         final String saslAuthenticationFactory = saslAuthenticationFactoryModel.isDefined() ? saslAuthenticationFactoryModel.asString() : null;
         RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, securityRealm, saslAuthenticationFactory);
+    }
+
+
+    /**
+     * Validates that there is no other listener with the same connector-ref
+     */
+    private static class HttpConnectorValidationStep implements OperationStepHandler {
+
+        private static HttpConnectorValidationStep INSTANCE = new HttpConnectorValidationStep();
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final PathAddress address = context.getCurrentAddress();
+            final String connectorName = address.getLastElement().getValue();
+
+            PathAddress parentAddress = address.getParent();
+            Resource parent = context.readResourceFromRoot(parentAddress, false);
+            Resource resource = context.readResourceFromRoot(address, false);
+            ModelNode resourceRef = resource.getModel().get(CommonAttributes.CONNECTOR_REF);
+            boolean listenerAlreadyExists = false;
+
+            for(Resource.ResourceEntry child: parent.getChildren(CommonAttributes.HTTP_CONNECTOR)) {
+                if(!connectorName.equals(child.getName())) {
+                    Resource childResource = context.readResourceFromRoot(PathAddress.pathAddress(parentAddress, child.getPathElement()), false);
+                    if(childResource.getModel().get(CommonAttributes.CONNECTOR_REF).equals(resourceRef)) {
+                        listenerAlreadyExists = true;
+                        break;
+                    }
+                }
+            }
+
+            if(listenerAlreadyExists) {
+                throw ControllerLogger.ROOT_LOGGER.alreadyDefinedAttribute(CommonAttributes.HTTP_CONNECTOR, resourceRef.asString(), CommonAttributes.CONNECTOR_REF);
+            }
+        }
+
     }
 }

@@ -21,13 +21,14 @@
  */
 package org.jboss.as.controller.registry;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationStepHandler;
 import org.wildfly.common.Assert;
 
@@ -41,7 +42,7 @@ public final class AttributeAccess {
     /**
      * Indicates how an attributed is accessed.
      */
-    public static enum AccessType {
+    public enum AccessType {
         /** A read-only attribute, which can be either {@code Storage.CONFIGURATION} or {@code Storage.RUNTIME} */
         READ_ONLY("read-only", false),
         /** A read-write attribute, which can be either {@code Storage.CONFIGURATION} or {@code Storage.RUNTIME} */
@@ -52,7 +53,7 @@ public final class AttributeAccess {
         private final String label;
         private final boolean writable;
 
-        private AccessType(final String label, final boolean writable) {
+        AccessType(final String label, final boolean writable) {
             this.label = label;
             this.writable = writable;
         }
@@ -89,7 +90,7 @@ public final class AttributeAccess {
     /**
      * Indicates whether an attribute is derived from the persistent configuration or is a purely runtime attribute.
      */
-    public static enum Storage {
+    public enum Storage {
         /**
          * An attribute whose value is stored in the persistent configuration.
          * The value may also be stored in runtime services.
@@ -103,7 +104,7 @@ public final class AttributeAccess {
 
         private final String label;
 
-        private Storage(final String label) {
+        Storage(final String label) {
             this.label = label;
         }
 
@@ -145,18 +146,43 @@ public final class AttributeAccess {
          * This flag can be used in conjunction with STORAGE_RUNTIME to specify that a runtime
          * attribute can work in the absence of runtime services.
          */
-         RUNTIME_SERVICE_NOT_REQUIRED
+        RUNTIME_SERVICE_NOT_REQUIRED,
+        /**
+         * Support for use of an expression for the value of this attribute is deprecated
+         * and may be removed in a future release.
+         */
+        EXPRESSIONS_DEPRECATED;
+
+        private static final Map<EnumSet<AttributeAccess.Flag>, Set<AttributeAccess.Flag>> flagSets = new ConcurrentHashMap<>(16);
+        public static Set<AttributeAccess.Flag> immutableSetOf(AttributeAccess.Flag... flags) {
+            if (flags == null || flags.length == 0) {
+                return Collections.emptySet();
+            }
+            EnumSet<AttributeAccess.Flag> baseSet;
+            if (flags.length == 1) {
+                baseSet = EnumSet.of(flags[0]);
+            } else {
+                baseSet = EnumSet.of(flags[0], flags);
+            }
+            Set<AttributeAccess.Flag> result = flagSets.get(baseSet);
+            if (result == null) {
+                Set<AttributeAccess.Flag> immutable = Collections.unmodifiableSet(baseSet);
+                Set<AttributeAccess.Flag> existing = flagSets.putIfAbsent(baseSet, immutable);
+                result = existing == null ? immutable : existing;
+            }
+
+            return result;
+        }
     }
 
     private final AccessType access;
     private final Storage storage;
     private final OperationStepHandler readHandler;
     private final OperationStepHandler writeHandler;
-    private final EnumSet<Flag> flags;
     private final AttributeDefinition definition;
 
     AttributeAccess(final AccessType access, final Storage storage, final OperationStepHandler readHandler,
-                    final OperationStepHandler writeHandler, AttributeDefinition definition, final EnumSet<Flag> flags) {
+                    final OperationStepHandler writeHandler, AttributeDefinition definition) {
         Assert.assertNotNull(access);
         Assert.assertNotNull(storage);
         this.access = access;
@@ -164,24 +190,11 @@ public final class AttributeAccess {
         this.writeHandler = writeHandler;
         this.storage = storage;
         this.definition = definition;
-        if (flags != null && flags.contains(Flag.ALIAS)) {
+        if (definition.getImmutableFlags().contains(Flag.ALIAS)) {
             Assert.checkNotNullParam("readHandler", readHandler);
         }
         if (access == AccessType.READ_WRITE) {
             Assert.checkNotNullParam("writeHandler", writeHandler);
-        }
-        this.flags = flags == null ? EnumSet.noneOf(Flag.class) : EnumSet.copyOf(flags);
-        switch (storage) {
-            case CONFIGURATION:
-                this.flags.add(Flag.STORAGE_CONFIGURATION);
-                this.flags.remove(Flag.STORAGE_RUNTIME);
-                break;
-            case RUNTIME:
-                this.flags.add(Flag.STORAGE_RUNTIME);
-                this.flags.remove(Flag.STORAGE_CONFIGURATION);
-                break;
-            default:
-                throw ControllerLogger.ROOT_LOGGER.unexpectedStorage(storage);
         }
     }
 
@@ -230,7 +243,7 @@ public final class AttributeAccess {
      * @return the flags. Will not return {@code null}
      */
     public Set<Flag> getFlags() {
-        return EnumSet.copyOf(flags);
+        return definition.getImmutableFlags();
     }
 
 }

@@ -38,7 +38,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
-import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
@@ -60,20 +59,20 @@ import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
-import org.wildfly.security.password.spec.OneTimePasswordSpec;
+import org.wildfly.security.password.spec.OneTimePasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.password.spec.SaltedPasswordAlgorithmSpec;
 
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
-import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
@@ -97,12 +96,14 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_SECURITY_REALM);
-        AddIdentityHandler.register(resourceRegistration, resolver);
-        RemoveIdentityHandler.register(resourceRegistration, resolver);
         ReadIdentityHandler.register(resourceRegistration, resolver);
-        AddIdentityAttributeHandler.register(resourceRegistration, resolver);
-        RemoveIdentityAttributeHandler.register(resourceRegistration, resolver);
-        SetPasswordHandler.register(resourceRegistration, resolver);
+        if (isServerOrHostController(resourceRegistration)) {
+            AddIdentityHandler.register(resourceRegistration, resolver);
+            RemoveIdentityHandler.register(resourceRegistration, resolver);
+            AddIdentityAttributeHandler.register(resourceRegistration, resolver);
+            RemoveIdentityAttributeHandler.register(resourceRegistration, resolver);
+            SetPasswordHandler.register(resourceRegistration, resolver);
+        }
     }
 
     static class AddIdentityHandler extends ElytronRuntimeOnlyHandler {
@@ -140,17 +141,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     identity.dispose();
                 }
             }
-        }
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            if (!CASE_SENSITIVE.resolveModelAttribute(context, context.readResourceFromRoot(context.getCurrentAddress(), false).getModel()).asBoolean(false)) {
-                String principalName = IDENTITY.resolveModelAttribute(context, operation).asString();
-                if (!principalName.equals(principalName.toLowerCase(Locale.ROOT))) {
-                    throw ElytronSubsystemMessages.ROOT_LOGGER.invalidUsername(principalName, context.getCurrentAddress().getLastElement().getValue());
-                }
-            }
-            super.execute(context, operation);
         }
     }
 
@@ -203,6 +193,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(IDENTITY)
                             .setRuntimeOnly()
+                            .setReadOnly()
                             .build(),
                     new ReadIdentityHandler());
         }
@@ -219,10 +210,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 result.get(ElytronDescriptionConstants.NAME).set(principalName);
 
                 ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
-                identity.getAttributes().entries().forEach(entry -> {
+                for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
-                    entry.forEach(entryNode::add);
-                });
+                    for (String s : entry) {
+                        entryNode.add(s);
+                    }
+                }
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotReadIdentity(principalName, e);
             }
@@ -268,7 +261,9 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             try {
                 Attributes attributes = new MapAttributes(authorizationIdentity.getAttributes());
                 String name = NAME.resolveModelAttribute(context, operation).asString();
-                VALUES.resolveModelAttribute(context, operation).asList().forEach(modelNode -> attributes.addLast(name, modelNode.asString()));
+                for (ModelNode modelNode : VALUES.resolveModelAttribute(context, operation).asList()) {
+                    attributes.addLast(name, modelNode.asString());
+                }
 
                 realmIdentity.setAttributes(attributes);
             } catch (RealmUnavailableException e) {
@@ -337,14 +332,14 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
     static class SetPasswordHandler extends ElytronRuntimeOnlyHandler {
 
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
+                .build();
+
         static class Bcrypt {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
                     .setDefaultValue(new ModelNode(BCryptPassword.ALGORITHM_BCRYPT))
                     .setValidator(new StringAllowedValuesValidator(BCryptPassword.ALGORITHM_BCRYPT))
-                    .build();
-
-            static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
                     .build();
 
             static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT, ModelType.INT, false)
@@ -366,10 +361,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .setValidator(new StringAllowedValuesValidator(ClearPassword.ALGORITHM_CLEAR))
                     .build();
 
-            static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .build();
-
-
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.CLEAR, PASSWORD)
                     .setRequired(false)
@@ -389,10 +380,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                             SimpleDigestPassword.ALGORITHM_SIMPLE_DIGEST_SHA_512
                     ))
                     .build();
-
-            static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .build();
-
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.SIMPLE_DIGEST, ALGORITHM, PASSWORD)
@@ -418,9 +405,6 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     ))
                     .build();
 
-            static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
-                    .build();
-
             static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT, ModelType.BYTES, false)
                     .build();
 
@@ -438,11 +422,9 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                             DigestPassword.ALGORITHM_DIGEST_MD5,
                             DigestPassword.ALGORITHM_DIGEST_SHA,
                             DigestPassword.ALGORITHM_DIGEST_SHA_256,
+                            DigestPassword.ALGORITHM_DIGEST_SHA_384,
                             DigestPassword.ALGORITHM_DIGEST_SHA_512
                     ))
-                    .build();
-
-            static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD, ModelType.STRING, false)
                     .build();
 
             static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
@@ -460,13 +442,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .setDefaultValue(new ModelNode(OneTimePassword.ALGORITHM_OTP_SHA1))
                     .setValidator(new StringAllowedValuesValidator(
                             OneTimePassword.ALGORITHM_OTP_MD5,
-                            OneTimePassword.ALGORITHM_OTP_SHA1
+                            OneTimePassword.ALGORITHM_OTP_SHA1,
+                            OneTimePassword.ALGORITHM_OTP_SHA_256,
+                            OneTimePassword.ALGORITHM_OTP_SHA_384,
+                            OneTimePassword.ALGORITHM_OTP_SHA_512
                     ))
                     .setAllowExpression(false)
-                    .build();
-
-            static final SimpleAttributeDefinition HASH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH, ModelType.STRING, false)
-                    .setAllowExpression(true)
                     .build();
 
             static final SimpleAttributeDefinition SEED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEED, ModelType.STRING, false)
@@ -478,7 +459,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                    ElytronDescriptionConstants.OTP, ALGORITHM, HASH, SEED, SEQUENCE)
+                    ElytronDescriptionConstants.OTP, ALGORITHM, PASSWORD, SEED, SEQUENCE)
                     .setAllowNull(true)
                     .build();
         }
@@ -533,37 +514,32 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             }
         }
 
-        private Password createPassword(final OperationContext parentContext, final String principalName, String passwordType, ModelNode passwordNode) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException {
-            String password;
+        private Password createPassword(final OperationContext parentContext, final String principalName, String passwordType, ModelNode passwordNode) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException  {
+            final String password = PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
             final PasswordSpec passwordSpec;
             final String algorithm;
 
             if (passwordType.equals(ElytronDescriptionConstants.BCRYPT)) {
-                password = Bcrypt.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 byte[] salt = Bcrypt.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 int iterationCount = Bcrypt.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt));
                 algorithm = Bcrypt.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.CLEAR)) {
-                password = Clear.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 passwordSpec = new ClearPasswordSpec(password.toCharArray());
                 algorithm = Clear.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.SIMPLE_DIGEST)) {
-                password = SimpleDigest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), null);
                 algorithm = SimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST)) {
-                password = SaltedSimpleDigest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 byte[] salt = SaltedSimpleDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 SaltedPasswordAlgorithmSpec spec = new SaltedPasswordAlgorithmSpec(salt);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec);
                 algorithm = SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.DIGEST)) {
-                password = Digest.PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
                 String realm = Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
                 algorithm = Digest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 DigestPasswordAlgorithmSpec dpas = new DigestPasswordAlgorithmSpec(principalName, realm);
@@ -571,10 +547,11 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
             } else if (passwordType.equals(ElytronDescriptionConstants.OTP)) {
                 algorithm = OTPassword.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
-                byte[] hash = OTPassword.HASH.resolveModelAttribute(parentContext, passwordNode).asBytes();
-                byte[] seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString().getBytes(StandardCharsets.US_ASCII);
                 int sequenceNumber = OTPassword.SEQUENCE.resolveModelAttribute(parentContext, passwordNode).asInt();
-                passwordSpec = new OneTimePasswordSpec(hash, seed, sequenceNumber);
+                String seed = OTPassword.SEED.resolveModelAttribute(parentContext, passwordNode).asString();
+
+                OneTimePasswordAlgorithmSpec otpSpec = new OneTimePasswordAlgorithmSpec(algorithm, seed, sequenceNumber);
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), otpSpec);
 
             } else {
                 throw ROOT_LOGGER.unexpectedPasswordType(passwordType);
@@ -597,7 +574,13 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
         RuntimeCapability<Void> runtimeCapability = MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(currentAddress.getLastElement().getValue());
         ServiceName realmName = runtimeCapability.getCapabilityServiceName();
         ServiceController<ModifiableSecurityRealm> serviceController = getRequiredService(serviceRegistry, realmName, ModifiableSecurityRealm.class);
-
+        if ( serviceController.getState() != ServiceController.State.UP ){
+            try {
+                serviceController.awaitValue(500, TimeUnit.MILLISECONDS);
+            } catch (IllegalStateException | InterruptedException | TimeoutException e) {
+                throw ROOT_LOGGER.requiredServiceNotUp(serviceController.getName(), serviceController.getState());
+            }
+        }
         return serviceController.getValue();
     }
 

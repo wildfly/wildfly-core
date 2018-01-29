@@ -256,7 +256,7 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
      * @return the service controller for the {@code Service<String>}
      */
     final ServiceController<?> addAbsolutePathService(final ServiceTarget serviceTarget, final String pathName, final String path) {
-        return AbsolutePathService.addService(pathName, path, serviceTarget, null);
+        return AbsolutePathService.addService(pathName, path, serviceTarget);
     }
 
     /**
@@ -275,7 +275,7 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
         if (possiblyAbsolute && AbstractPathService.isAbsoluteUnixOrWindowsPath(path)) {
             return addAbsolutePathService(serviceTarget, pathName, path);
         } else {
-            return RelativePathService.addService(AbstractPathService.pathNameOf(pathName), path, possiblyAbsolute, relativeTo, serviceTarget, null);
+            return RelativePathService.addService(AbstractPathService.pathNameOf(pathName), path, possiblyAbsolute, relativeTo, serviceTarget);
         }
     }
 

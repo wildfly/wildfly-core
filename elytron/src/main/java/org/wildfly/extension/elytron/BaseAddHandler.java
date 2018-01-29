@@ -80,7 +80,9 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
         super.recordCapabilitiesAndRequirements(context, operation, resource);
 
         final String pathValue = context.getCurrentAddressValue();
-        runtimeCapabilities.forEach(r -> context.registerAdditionalCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null));
+        for (RuntimeCapability r : runtimeCapabilities) {
+            context.registerAdditionalCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null);
+        }
     }
 
     /**

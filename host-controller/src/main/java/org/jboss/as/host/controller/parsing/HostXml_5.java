@@ -29,37 +29,25 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IS_DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
@@ -82,11 +70,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
@@ -96,9 +82,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.parsing.WriteUtils;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -109,8 +92,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
-import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
+import org.jboss.as.host.controller.operations.HostAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
@@ -122,19 +104,17 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 
 /**
- * A mapper between an AS server's configuration model and XML representations, particularly {@code host.xml}
+ * Parser for host controller configuration xml documents (e.g. host.xml) that use the urn:jboss:domain:5.0 schema.
  *
  * @author Brian Stansberry
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
+final class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
 
     private final AuditLogXml auditLogDelegate;
 
@@ -173,115 +153,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             }
         }
         throw unexpectedElement(reader);
-    }
-
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-
-        final ModelNode modelNode = context.getModelNode();
-
-        writer.writeStartDocument();
-        writer.writeStartElement(Element.HOST.getLocalName());
-
-        if (modelNode.hasDefined(NAME)) {
-            HostResourceDefinition.NAME.marshallAsAttribute(modelNode, writer);
-        }
-        if (modelNode.hasDefined(ORGANIZATION)) {
-            HostResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
-        }
-        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
-        writeNamespaces(writer, modelNode);
-        writeSchemaLocation(writer, modelNode);
-
-        WriteUtils.writeNewLine(writer);
-
-        if (modelNode.hasDefined(EXTENSION)) {
-            extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
-        }
-
-        if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
-            writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (modelNode.hasDefined(PATH)) {
-            writePaths(writer, modelNode.get(PATH), false);
-            WriteUtils.writeNewLine(writer);
-        }
-
-        boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
-        if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
-            writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (hasCoreServices) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this);
-            managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (modelNode.hasDefined(DOMAIN_CONTROLLER)) {
-            ModelNode ignoredResources = null;
-            ModelNode discoveryOptions = null;
-            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(IGNORED_RESOURCES)
-                    && modelNode.get(CORE_SERVICE, IGNORED_RESOURCES).hasDefined(IGNORED_RESOURCE_TYPE)) {
-                ignoredResources = modelNode.get(CORE_SERVICE, IGNORED_RESOURCES, IGNORED_RESOURCE_TYPE);
-            }
-            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(DISCOVERY_OPTIONS)
-                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(ModelDescriptionConstants.OPTIONS)) {
-                // List of discovery option types and names, in the order they were provided
-                discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, ModelDescriptionConstants.OPTIONS);
-            }
-            writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources, discoveryOptions);
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (modelNode.hasDefined(INTERFACE)) {
-            writeInterfaces(writer, modelNode.get(INTERFACE));
-            WriteUtils.writeNewLine(writer);
-        }
-        if (modelNode.hasDefined(JVM)) {
-            writer.writeStartElement(Element.JVMS.getLocalName());
-            ModelNode jvms = modelNode.get(JVM);
-            for (final String jvm : jvms.keys()) {
-                JvmXml.writeJVMElement(writer, jvm, jvms.get(jvm));
-            }
-            writer.writeEndElement();
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (modelNode.hasDefined(SERVER_CONFIG)) {
-            writer.writeStartElement(Element.SERVERS.getLocalName());
-            // Write the directory grouping
-            HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
-            writeServers(writer, modelNode.get(SERVER_CONFIG));
-            WriteUtils.writeNewLine(writer);
-            writer.writeEndElement();
-        } else if (modelNode.hasDefined(DIRECTORY_GROUPING)) {
-            // In case there are no servers defined, write an empty element, preserving the directory grouping
-            writer.writeEmptyElement(Element.SERVERS.getLocalName());
-            HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
-        }
-
-        writeHostProfile(writer, context);
-
-        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
-            Set<String> groups = modelNode.get(SOCKET_BINDING_GROUP).keys();
-            if (groups.size() > 1) {
-                throw ControllerLogger.ROOT_LOGGER.multipleModelNodes(SOCKET_BINDING_GROUP);
-            }
-            for (String group : groups) {
-                writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
-            }
-            WriteUtils.writeNewLine(writer);
-        }
-
-
-        writer.writeEndElement();
-        WriteUtils.writeNewLine(writer);
-        writer.writeEndDocument();
     }
 
     private void readHostElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
@@ -336,7 +207,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+        final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         setOrganization(address, list, organization);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
@@ -366,14 +237,14 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -660,7 +531,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
     /**
      * Add the operation to add the local host definition.
      */
-    private void addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
+    private ModelNode addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
 
         String resolvedHost =  hostName != null ? hostName : defaultHostControllerName;
 
@@ -668,20 +539,19 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         address.add(HOST, resolvedHost);
 
         // Add a step to setup the ManagementResourceRegistrations for the root host resource
-        final ModelNode hostAdd = new ModelNode();
-        hostAdd.get(OP).set(HostModelRegistrationHandler.OPERATION_NAME);
-        hostAdd.get(NAME).set(resolvedHost);
-        hostAdd.get(OP_ADDR).setEmptyList();
-
-        operationList.add(hostAdd);
+        final ModelNode hostAddOp = new ModelNode();
+        hostAddOp.get(OP).set(HostAddHandler.OPERATION_NAME);
+        hostAddOp.get(OP_ADDR).set(address);
+        operationList.add(hostAddOp);
 
         // Add a step to store the HC name
         ModelNode nameValue = hostName == null ? new ModelNode() : new ModelNode(hostName);
         final ModelNode writeName = Util.getWriteAttributeOperation(address, NAME, nameValue);
         operationList.add(writeName);
+        return hostAddOp;
     }
 
-    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final ModelNode hostAddOp)
             throws XMLStreamException {
 
         requireNoAttributes(reader);
@@ -698,6 +568,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasRemote) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.REMOTE.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(true);
                     parseLocalDomainController(reader, address, list);
                     hasLocal = true;
                     break;
@@ -708,8 +579,8 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasLocal) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.LOCAL.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(false);
                     parseRemoteDomainController(reader, address, list);
-
                     hasRemote = true;
                     break;
                 }
@@ -719,13 +590,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
         if (!hasLocal && !hasRemote) {
             throw ControllerLogger.ROOT_LOGGER.domainControllerMustBeDeclared(Element.REMOTE.getLocalName(), Element.LOCAL.getLocalName(), reader.getLocation());
-        }
-
-        if (hasLocal) {
-            final ModelNode update = new ModelNode();
-            update.get(OP_ADDR).set(address);
-            update.get(OP).set("write-local-domain-controller");
-            list.add(update);
         }
     }
 
@@ -754,7 +618,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseRemoteDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        boolean requireDiscoveryOptions = false;
+        boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
 
         requireDiscoveryOptions = parseRemoteDomainControllerAttributes(reader, address, list);
@@ -923,8 +787,8 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         list.add(op);
     }
 
-    protected void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
-            final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
+                                       final Set<String> discoveryOptionNames) throws XMLStreamException {
         requireNoAttributes(reader);
 
         // Handle elements
@@ -944,7 +808,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
+    private void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
 
         // OP_ADDR will be set after parsing the NAME attribute
         final ModelNode staticDiscoveryOptionAddress = address.clone();
@@ -992,7 +856,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         requireNoContent(reader);
     }
 
-    protected void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
 
         // Handle attributes
         final ModelNode addOp = parseDiscoveryOptionAttributes(reader, address, list, discoveryOptionNames);
@@ -1056,7 +920,7 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         return addOp;
     }
 
-    protected void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
+    private void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
         String propertyName = null;
         String propertyValue = null;
         EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);
@@ -1464,188 +1328,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    private void writeDomainController(final XMLExtendedStreamWriter writer, final ModelNode modelNode, ModelNode ignoredResources,
-            ModelNode discoveryOptions) throws XMLStreamException {
-        writer.writeStartElement(Element.DOMAIN_CONTROLLER.getLocalName());
-        if (modelNode.hasDefined(LOCAL)) {
-            if (discoveryOptions != null) {
-                writer.writeStartElement(Element.LOCAL.getLocalName());
-                writeDiscoveryOptions(writer, discoveryOptions);
-                writer.writeEndElement();
-            } else {
-                writer.writeEmptyElement(Element.LOCAL.getLocalName());
-            }
-        } else if (modelNode.hasDefined(REMOTE)) {
-            writer.writeStartElement(Element.REMOTE.getLocalName());
-            final ModelNode remote = modelNode.get(REMOTE);
-            RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.HOST.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.PORT.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.AUTHENTICATION_CONTEXT.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.SECURITY_REALM.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);
-            RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.marshallAsAttribute(remote, writer);
-
-            if (ignoredResources != null) {
-                writeIgnoredResources(writer, ignoredResources);
-            }
-            if (discoveryOptions != null) {
-                writeDiscoveryOptions(writer, discoveryOptions);
-            }
-            writer.writeEndElement();
-        }
-        writer.writeEndElement();
-    }
-
-    private void writeIgnoredResources(XMLExtendedStreamWriter writer, ModelNode ignoredTypes) throws XMLStreamException {
-        for (String ignoredName : ignoredTypes.keys()) {
-
-            ModelNode ignored = ignoredTypes.get(ignoredName);
-
-            ModelNode names = ignored.hasDefined(NAMES) ? ignored.get(NAMES) : null;
-            boolean hasNames = names != null && names.asInt() > 0;
-            if (hasNames) {
-                writer.writeStartElement(Element.IGNORED_RESOURCE.getLocalName());
-            } else {
-                writer.writeEmptyElement(Element.IGNORED_RESOURCE.getLocalName());
-            }
-
-            writer.writeAttribute(Attribute.TYPE.getLocalName(), ignoredName);
-            IgnoredDomainTypeResourceDefinition.WILDCARD.marshallAsAttribute(ignored, writer);
-
-            if (hasNames) {
-                for (ModelNode name : names.asList()) {
-                    writer.writeEmptyElement(Element.INSTANCE.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name.asString());
-                }
-                writer.writeEndElement();
-            }
-        }
-    }
-
-    private void writeDiscoveryOptions(XMLExtendedStreamWriter writer, ModelNode discoveryOptions) throws XMLStreamException {
-        writer.writeStartElement(Element.DISCOVERY_OPTIONS.getLocalName());
-        for (Property property : discoveryOptions.asPropertyList()) {
-            final String type = property.getName().equals(STATIC_DISCOVERY) ? STATIC_DISCOVERY : DISCOVERY_OPTION;
-            final Element element = Element.forName(type);
-            final String optionName = property.getValue().get(ModelDescriptionConstants.NAME).asString();
-
-            switch (element) {
-                case STATIC_DISCOVERY: {
-                    final ModelNode staticDiscoveryOption = property.getValue();
-                    writer.writeStartElement(element.getLocalName());
-                    WriteUtils.writeAttribute(writer, Attribute.NAME, optionName);
-                    StaticDiscoveryResourceDefinition.PROTOCOL.marshallAsAttribute(staticDiscoveryOption, writer);
-                    StaticDiscoveryResourceDefinition.HOST.marshallAsAttribute(staticDiscoveryOption, writer);
-                    StaticDiscoveryResourceDefinition.PORT.marshallAsAttribute(staticDiscoveryOption, writer);
-                    writer.writeEndElement();
-                    break;
-                }
-                case DISCOVERY_OPTION: {
-                    final ModelNode discoveryOption = property.getValue();
-                    writer.writeStartElement(element.getLocalName());
-                    WriteUtils.writeAttribute(writer, Attribute.NAME, optionName);
-                    DiscoveryOptionResourceDefinition.CODE.marshallAsAttribute(discoveryOption, writer);
-                    DiscoveryOptionResourceDefinition.MODULE.marshallAsAttribute(discoveryOption, writer);
-                    if (discoveryOption.hasDefined(PROPERTIES)) {
-                        writeDiscoveryOptionProperties(writer, discoveryOption.get(PROPERTIES));
-                    }
-                    writer.writeEndElement();
-                    break;
-                }
-                default:
-                    throw new RuntimeException(ControllerLogger.ROOT_LOGGER.unknownChildType(element.getLocalName()));
-            }
-        }
-        writer.writeEndElement();
-    }
-
-    private void writeDiscoveryOptionProperties(XMLExtendedStreamWriter writer, ModelNode discoveryOptionProperties) throws XMLStreamException {
-        for (String property : discoveryOptionProperties.keys()) {
-            writer.writeStartElement(Element.PROPERTY.getLocalName());
-            WriteUtils.writeAttribute(writer, Attribute.NAME, property);
-            WriteUtils.writeAttribute(writer, Attribute.VALUE, discoveryOptionProperties.get(property).asString());
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeServers(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
-
-        for (String serverName : modelNode.keys()) {
-            final ModelNode server = modelNode.get(serverName);
-
-            writer.writeStartElement(Element.SERVER.getLocalName());
-
-            WriteUtils.writeAttribute(writer, Attribute.NAME, serverName);
-            ServerConfigResourceDefinition.GROUP.marshallAsAttribute(server, writer);
-            ServerConfigResourceDefinition.AUTO_START.marshallAsAttribute(server, writer);
-            ServerConfigResourceDefinition.UPDATE_AUTO_START_WITH_SERVER_STATUS.marshallAsAttribute(server, writer);
-            if (server.hasDefined(PATH)) {
-                writePaths(writer, server.get(PATH), false);
-            }
-            if (server.hasDefined(SYSTEM_PROPERTY)) {
-                writeProperties(writer, server.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-            }
-            if (server.hasDefined(INTERFACE)) {
-                writeInterfaces(writer, server.get(INTERFACE));
-            }
-            if (server.hasDefined(JVM)) {
-                for (final Property jvm : server.get(JVM).asPropertyList()) {
-                    JvmXml.writeJVMElement(writer, jvm.getName(), jvm.getValue());
-                    break; // TODO just write the first !?
-                }
-            }
-            if (server.hasDefined(SOCKET_BINDING_GROUP) || server.hasDefined(SOCKET_BINDING_PORT_OFFSET) || server.hasDefined(SOCKET_BINDING_DEFAULT_INTERFACE)) {
-                writer.writeStartElement(Element.SOCKET_BINDINGS.getLocalName());
-                ServerConfigResourceDefinition.SOCKET_BINDING_GROUP.marshallAsAttribute(server, writer);
-                ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET.marshallAsAttribute(server, writer);
-                ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.marshallAsAttribute(server, writer);
-                writer.writeEndElement();
-            }
-            if (server.hasDefined(SSL, LOOPBACK)) {
-                ModelNode ssl = server.get(SSL, LOOPBACK);
-                writer.writeStartElement(Element.SSL.getLocalName());
-                SslLoopbackResourceDefinition.SSL_PROTOCOCOL.marshallAsAttribute(ssl, writer);
-                SslLoopbackResourceDefinition.TRUST_MANAGER_ALGORITHM.marshallAsAttribute(ssl, writer);
-                SslLoopbackResourceDefinition.TRUSTSTORE_TYPE.marshallAsAttribute(ssl, writer);
-                SslLoopbackResourceDefinition.TRUSTSTORE_PATH.marshallAsAttribute(ssl, writer);
-                SslLoopbackResourceDefinition.TRUSTSTORE_PASSWORD.marshallAsAttribute(ssl, writer);
-                writer.writeEndElement();
-            }
-
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeHostProfile(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-
-        final ModelNode profileNode = context.getModelNode();
-        // In case there are no subsystems defined
-        if (!profileNode.hasDefined(SUBSYSTEM)) {
-            return;
-        }
-
-        writer.writeStartElement(Element.PROFILE.getLocalName());
-        Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
-        if (subsystemNames.size() > 0) {
-            String defaultNamespace = writer.getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX);
-            for (String subsystemName : subsystemNames) {
-                try {
-                    ModelNode subsystem = profileNode.get(SUBSYSTEM, subsystemName);
-                    XMLElementWriter<SubsystemMarshallingContext> subsystemWriter = context.getSubsystemWriter(subsystemName);
-                    if (subsystemWriter != null) { // FIXME -- remove when extensions are doing the registration
-                        subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
-                    }
-                } finally {
-                    writer.setDefaultNamespace(defaultNamespace);
-                }
-            }
-        }
-        writer.writeEndElement();
-    }
-
     /*
      * ManagamentXmlDelegate Methods
      */
@@ -1687,62 +1369,6 @@ class HostXml_5 extends CommonXml implements ManagementXmlDelegate {
     public boolean parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)
             throws XMLStreamException {
         auditLogDelegate.parseAuditLog(reader, address, namespace, list);
-
-        return true;
-    }
-
-    @Override
-    public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
-        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        writer.writeEmptyElement(Element.SOCKET.getLocalName());
-        NativeManagementResourceDefinition.INTERFACE.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.NATIVE_PORT.marshallAsAttribute(protocol, writer);
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
-        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
-                HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
-        HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
-            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
-            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-            HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-        }
-
-        writer.writeEmptyElement(Element.SOCKET.getLocalName());
-        HttpManagementResourceDefinition.INTERFACE.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.HTTP_PORT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.HTTPS_PORT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURE_INTERFACE.marshallAsAttribute(protocol, writer);
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
-        auditLogDelegate.writeAuditLog(writer, auditLog);
 
         return true;
     }

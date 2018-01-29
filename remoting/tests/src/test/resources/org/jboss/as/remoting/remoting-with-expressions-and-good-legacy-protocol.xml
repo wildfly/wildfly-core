@@ -1,5 +1,5 @@
 <subsystem xmlns="urn:jboss:domain:remoting:3.0">
-   <endpoint/>
+   <endpoint sasl-protocol="remoting"/>
    <connector name="remoting-connector" socket-binding="remoting">
       <properties>
          <property name="c1" value="${connector.prop:connector one}"/>

@@ -30,12 +30,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
@@ -71,12 +71,12 @@ public class RemotingExtension implements Extension {
         return new StandardResourceDescriptionResolver(keyPrefix, RESOURCE_NAME, RemotingExtension.class.getClassLoader(), true, false);
     }
 
-    static final SensitivityClassification REMOTING_SECURITY =
+    private static final SensitivityClassification REMOTING_SECURITY =
             new SensitivityClassification(SUBSYSTEM_NAME, "remoting-security", false, true, true);
 
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 4;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 5;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -90,9 +90,11 @@ public class RemotingExtension implements Extension {
 
         // Register the remoting subsystem
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_VERSION);
-        registration.registerXMLElementWriter(RemotingSubsystemXMLPersister.INSTANCE);
+        registration.registerXMLElementWriter(RemotingSubsystemXMLPersister::new);
 
-        final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(new RemotingSubsystemRootResource());
+        final boolean forDomain = context.getType() == ExtensionContext.ContextType.DOMAIN;
+        final ResourceDefinition root = RemotingSubsystemRootResource.create(context.getProcessType(), forDomain);
+        final ManagementResourceRegistration subsystem = registration.registerSubsystemModel(root);
         subsystem.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, new DescribeHandler());
 
         subsystem.registerSubModel(RemotingEndpointResource.INSTANCE);
@@ -128,7 +130,9 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_2.getUriString(), RemotingSubsystem12Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser::new);
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser::new);
+        // For the current version we don't use a Supplier as we want its description initialized
+        // TODO if any new xsd versions are added, use a Supplier for the old version
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), new RemotingSubsystem40Parser());
 
         // For servers only as a migration aid we'll install io if it is missing.
         // It is invalid to do this on an HC as the HC needs to support profiles running legacy
@@ -205,29 +209,12 @@ public class RemotingExtension implements Extension {
         @Override
         protected void describe(OrderedChildTypesAttachment orderedChildTypesAttachment, Resource resource,
                                 ModelNode address, ModelNode result, ImmutableManagementResourceRegistration registration) {
-            // WFCORE-1354 only describe the configuration=endpoint resource if it has configuration;
-            // otherwise the equivalent config will be added by default. Doing this allows avoiding
-            // creation of a spurious requirement for the org.wildfly.io.worker.default capability during a
-            // profile clone op on an HC.
+            // Don't describe the configuration=endpoint resource. It's just an alias for
+            // a set of attributes on its parent and the parent description covers those.
 
-            boolean describe = true;
             PathElement pe = registration.getPathAddress().getLastElement();
-            if (pe.equals(RemotingEndpointResource.ENDPOINT_PATH))  {
-                describe = false;
-                if (resource != null) {
-                    ModelNode model = resource.getModel();
-                    if (model.isDefined()) {
-                        for (AttributeDefinition ad : RemotingEndpointResource.INSTANCE.getAttributes()) {
-                            if (model.hasDefined(ad.getName())) {
-                                describe = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (describe) {
-                super.describe(orderedChildTypesAttachment, resource, address, result, registration); //TODO implement describe
+            if (!pe.equals(RemotingEndpointResource.ENDPOINT_PATH)) {
+                super.describe(orderedChildTypesAttachment, resource, address, result, registration);
             }
         }
     }

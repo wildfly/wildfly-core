@@ -40,6 +40,10 @@ public class StringLengthValidator extends ModelTypeValidator implements MinMaxV
         this(min, Integer.MAX_VALUE, false, false);
     }
 
+    public StringLengthValidator(final int min, final int max) {
+        this(min, max, false, false);
+    }
+
     /**
      * Equivalent to {@code this(min, Integer.MAX_VALUE, nullable, false)}.
      * @param min the minimum length of the string

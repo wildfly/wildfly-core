@@ -101,8 +101,8 @@ public class DeploymentOverlayDefinition extends SimpleResourceDefinition {
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        operations.entrySet().forEach((operation) -> {
+        for (Entry<OperationDefinition, OperationStepHandler> operation : operations.entrySet()) {
             resourceRegistration.registerOperationHandler(operation.getKey(), operation.getValue());
-        });
+        }
     }
 }

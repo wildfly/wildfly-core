@@ -230,6 +230,11 @@ public class MockCommandContext implements CommandContext {
     }
 
     @Override
+    public void connectController(String controller, String clientAddress) throws CommandLineException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     @Deprecated
     public void connectController(String host, int port) throws CommandLineException {
         throw new UnsupportedOperationException();

@@ -65,6 +65,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xnio.FutureResult;
 import org.xnio.IoFuture;
+import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 /**
@@ -139,7 +140,7 @@ public class TransactionalProtocolClientTestCase {
         for(final Channel channel : channels) {
             channel.close();
         }
-        channelServer.close();
+        IoUtils.safeClose(channelServer);
         channelServer = null;
     }
 

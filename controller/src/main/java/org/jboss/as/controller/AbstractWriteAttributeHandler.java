@@ -99,11 +99,11 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
             context.addStep(operation, new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    final ModelNode resolvedValue = attributeDefinition != null ? attributeDefinition.resolveModelAttribute(context, submodel) : updatedValue.resolve();
+                    final ModelNode resolvedValue = attributeDefinition != null ? attributeDefinition.resolveModelAttribute(context, submodel) : context.resolveExpressions(updatedValue);
                     final HandbackHolder<T> handback = new HandbackHolder<T>();
                     final boolean reloadRequired = applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handback);
                     if (reloadRequired) {
-                        if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
+                        if (attributeDefinition != null && attributeDefinition.getImmutableFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
                             context.restartRequired();
                         }else{
                             context.reloadRequired();
@@ -113,11 +113,11 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
-                            ModelNode valueToRestore = currentValue.resolve();
-                            if (valueToRestore.isDefined() == false && defaultValue != null) {
-                                valueToRestore = defaultValue;
-                            }
                             try {
+                                ModelNode valueToRestore = context.resolveExpressions(currentValue);
+                                if (valueToRestore.isDefined() == false && defaultValue != null) {
+                                    valueToRestore = defaultValue;
+                                }
                                 revertUpdateToRuntime(context, operation, attributeName, valueToRestore, resolvedValue, handback.handback);
                             } catch (Exception e) {
                                 MGMT_OP_LOGGER.errorRevertingOperation(e, getClass().getSimpleName(),
@@ -125,7 +125,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                                         context.getCurrentAddress());
                             }
                             if (reloadRequired) {
-                                if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
+                                if (attributeDefinition != null && attributeDefinition.getImmutableFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
                                     context.revertRestartRequired();
                                 } else {
                                     context.revertReloadRequired();
@@ -146,7 +146,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      * @param context the context of the operation
      * @param operation the operation
      * @param attributeName the name of the attribute being modified
-     * @param resolvedValue the new value for the attribute, after {@link ModelNode#resolve()} has been called on it
+     * @param resolvedValue the new value for the attribute, after any {@link org.jboss.dmr.ValueExpression} has been resolved
      * @param currentValue the existing value for the attribute
      * @param handbackHolder holder for an arbitrary object to pass to
      *             {@link #revertUpdateToRuntime(OperationContext, ModelNode, String, ModelNode, ModelNode, Object)} if

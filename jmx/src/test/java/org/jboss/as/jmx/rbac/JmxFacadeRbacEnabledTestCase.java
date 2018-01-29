@@ -28,11 +28,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.Attribute;
@@ -99,9 +97,8 @@ import org.jboss.as.jmx.test.util.AbstractControllerTestBase;
 import org.jboss.as.server.jmx.PluggableMBeanServer;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -348,7 +345,11 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
                     Assert.assertTrue(names.contains(instance.getObjectName()));
                 }
                 int number = server.getMBeanCount();
-                Assert.assertEquals(names.size(), number);
+                if (standardRole == StandardRole.ADMINISTRATOR || standardRole == StandardRole.SUPERUSER) {
+                    Assert.assertEquals(names.toString(), names.size(), number);
+                } else {
+                    Assert.assertTrue(names.toString(), names.size() < number);
+                }
 
                 try {
                     server.getMBeanInfo(ONE_A_NAME);
@@ -813,14 +814,13 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
 
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
-        TestServiceListener listener = new TestServiceListener();
-        listener.reset(1);
+        StabilityMonitor monitor = new StabilityMonitor();
         getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
-                .addListener(listener)
+                .addMonitor(monitor)
                 .install();
 
         try {
-            listener.latch.await(10, TimeUnit.SECONDS);
+            monitor.awaitStability(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -951,25 +951,6 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
                 context.readResource(PathAddress.EMPTY_ADDRESS);
             } else {
                 context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-            }
-        }
-    }
-
-    private class TestServiceListener extends AbstractServiceListener<Object> {
-
-        volatile CountDownLatch latch;
-        Map<ServiceController.Transition, ServiceName> services = Collections.synchronizedMap(new LinkedHashMap<ServiceController.Transition, ServiceName>());
-
-
-        void reset(int count) {
-            latch = new CountDownLatch(count);
-            services.clear();
-        }
-
-        public void transition(ServiceController<? extends Object> controller, ServiceController.Transition transition) {
-            if (transition == ServiceController.Transition.STARTING_to_UP || transition == ServiceController.Transition.REMOVING_to_REMOVED) {
-                services.put(transition, controller.getName());
-                latch.countDown();
             }
         }
     }

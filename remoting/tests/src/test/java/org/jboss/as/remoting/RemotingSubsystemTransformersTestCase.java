@@ -33,10 +33,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_6_4_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_0_0;
 import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -45,7 +49,9 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.transform.OperationTransformer;
+import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
+import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
@@ -57,53 +63,23 @@ import org.junit.Test;
  */
 public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest {
 
+    private static final AttributeDefinition[] ENDPOINT_ATTRS = RemotingEndpointResource.ATTRIBUTES.values().toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.size()]);
+
     public RemotingSubsystemTransformersTestCase() {
         super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
     }
 
-    @Test
-    public void testTransformersEAP620() throws Exception {
-        testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_2_0);
-    }
-
-    @Test
-    public void testTransformersEAP630() throws Exception {
-        testTransformers_1_3_0(ModelTestControllerVersion.EAP_6_3_0);
-    }
-
-    private void testTransformers_1_3_0(ModelTestControllerVersion controllerVersion) throws Exception {
-        KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION)
-                .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
-        ModelVersion oldVersion = ModelVersion.create(1, 3, 0);
-
-
-        // Add legacy subsystems
-        builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
-                .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion())
-                .skipReverseControllerCheck();
-        //.configureReverseControllerCheck(createAdditionalInitialization(), null);
-        KernelServices mainServices = builder.build();
-        assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
-        assertNotNull(legacyServices);
-        assertTrue(legacyServices.isSuccessfulBoot());
-
-        checkSubsystemModelTransformation(mainServices, oldVersion, null, false);
-        checkRejectOutboundConnectionProtocolNotRemote(mainServices, oldVersion, CommonAttributes.REMOTE_OUTBOUND_CONNECTION, "remote-conn1");
-        checkRejectHttpConnector(mainServices, oldVersion);
-        checkRejectEndpointConfiguration(mainServices, oldVersion);
-    }
 
     @Test
     public void testTransformersEAP640() throws Exception {
         KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION)
-                .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
-        ModelVersion oldVersion = ModelVersion.create(1, 4, 0);
-
+                .setSubsystemXmlResource("remoting-transformers.xml");
 
         ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_6_4_0;
+        ModelVersion oldVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
+
         // Add legacy subsystems
-        builder.createLegacyKernelServicesBuilder(null, controllerVersion, oldVersion)
+        builder.createLegacyKernelServicesBuilder(null, controllerVersion)
                 .addMavenResourceURL("org.jboss.as:jboss-as-remoting:" + controllerVersion.getMavenGavVersion())
                 .skipReverseControllerCheck();
         //.configureReverseControllerCheck(createAdditionalInitialization(), null);
@@ -124,15 +100,13 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
     public void testTransformersEAP700() throws Exception {
         KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION)
                 .setSubsystemXmlResource("remoting-with-expressions-and-good-legacy-protocol.xml");
-        ModelVersion oldVersion = ModelVersion.create(3, 0, 0);
-
-
         ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_7_0_0;
+
+        ModelVersion oldVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
         // Add legacy subsystems
-        builder.createLegacyKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION, controllerVersion, oldVersion)
+        builder.createLegacyKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION, controllerVersion)
                 .addMavenResourceURL("org.wildfly.core:wildfly-remoting:" + controllerVersion.getCoreVersion())
-                .skipReverseControllerCheck();
-        //.configureReverseControllerCheck(createAdditionalInitialization(), null);
+                .configureReverseControllerCheck(DEFAULT_ADDITIONAL_INITIALIZATION, null);
         KernelServices mainServices = builder.build();
         assertTrue(mainServices.isSuccessfulBoot());
         KernelServices legacyServices = mainServices.getLegacyServices(oldVersion);
@@ -141,6 +115,79 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
 
         checkSubsystemModelTransformation(mainServices, oldVersion, null, false);
     }
+
+    @Test
+    public void testRejectingTransformersEAP_7_0_0() throws Exception {
+        testRejectingTransformers(EAP_7_0_0, EAP_7_0_0.getSubsystemModelVersion(getMainSubsystemName()));
+    }
+
+    @Test
+    public void testRejectingTransformersEAP_6_4_0() throws Exception {
+        testRejectingTransformers64(EAP_6_4_0);
+    }
+
+    private void testRejectingTransformers64(ModelTestControllerVersion controllerVersion) throws Exception {
+        ModelVersion targetModelVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
+        //Boot up empty controllers with the resources needed for the ops coming from the xml to work
+        KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION);
+        builder.createLegacyKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION, controllerVersion, targetModelVersion)
+                .addMavenResourceURL(controllerVersion.getMavenGav("remoting", true))
+                .dontPersistXml();
+
+        KernelServices mainServices = builder.build();
+        assertTrue(mainServices.isSuccessfulBoot());
+        assertTrue(mainServices.getLegacyServices(targetModelVersion).isSuccessfulBoot());
+
+        List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
+        PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, targetModelVersion, ops, new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress,
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ENDPOINT_ATTRS))
+                .addFailedAttribute(subsystemAddress.append(RemotingEndpointResource.ENDPOINT_PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ENDPOINT_ATTRS))
+                .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(
+                                ConnectorCommon.SASL_AUTHENTICATION_FACTORY,
+                                ConnectorResource.SSL_CONTEXT
+                        )
+                )
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH).append(PropertyResource.PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH).append(SaslResource.SASL_CONFIG_PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH).append(SaslResource.SASL_CONFIG_PATH).append(PropertyResource.PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH).append(SaslResource.SASL_CONFIG_PATH).append(SaslPolicyResource.SASL_POLICY_CONFIG_PATH), FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(subsystemAddress.append(RemoteOutboundConnectionResourceDefinition.ADDRESS),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ConnectorCommon.SASL_AUTHENTICATION_FACTORY))
+        );
+    }
+
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, ModelVersion messagingVersion) throws Exception {
+        //Boot up empty controllers with the resources needed for the ops coming from the xml to work
+        KernelServicesBuilder builder = createKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION);
+        builder.createLegacyKernelServicesBuilder(DEFAULT_ADDITIONAL_INITIALIZATION, controllerVersion, messagingVersion)
+                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-remoting:" + controllerVersion.getCoreVersion())
+                .dontPersistXml();
+
+        KernelServices mainServices = builder.build();
+        assertTrue(mainServices.isSuccessfulBoot());
+        assertTrue(mainServices.getLegacyServices(messagingVersion).isSuccessfulBoot());
+
+        List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
+        PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, messagingVersion, ops, new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(
+                                ConnectorCommon.SASL_AUTHENTICATION_FACTORY,
+                                ConnectorResource.SSL_CONTEXT
+                        )
+                )
+                .addFailedAttribute(subsystemAddress.append(HttpConnectorResource.PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ConnectorCommon.SASL_AUTHENTICATION_FACTORY))
+                .addFailedAttribute(subsystemAddress.append(RemoteOutboundConnectionResourceDefinition.ADDRESS),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ConnectorCommon.SASL_AUTHENTICATION_FACTORY))
+        );
+    }
+
 
     private void checkRejectOutboundConnectionProtocolNotRemote(KernelServices mainServices, ModelVersion version, String type, String name) throws OperationFailedException {
         ModelNode operation = new ModelNode();
@@ -186,7 +233,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         operation.get(OP).set(UNDEFINE_ATTRIBUTE_OPERATION);
         ModelNode address = operation.get(OP_ADDR);
         address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
-        for (AttributeDefinition ad : RemotingSubsystemRootResource.ATTRIBUTES) {
+        for (AttributeDefinition ad : RemotingSubsystemRootResource.LEGACY_ATTRIBUTES) {
             operation.get(NAME).set(ad.getName());
             ModelNode mainResult = mainServices.executeOperation(operation);
             assertEquals(mainResult.toJSONString(true), SUCCESS, mainResult.get(OUTCOME).asString());
@@ -198,7 +245,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         address.add(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
         address.add(RemotingEndpointResource.ENDPOINT_PATH.getKey(), RemotingEndpointResource.ENDPOINT_PATH.getValue());
         operation.get(OP_ADDR).set(address);
-        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES) {
+        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
             ModelNode dflt = ad.getDefaultValue();
             if (dflt != null) {
                 operation.get(ad.getName()).set(dflt);

@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:1.0">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <providers>
         <provider-loader name="custom-loader" />
     </providers>
@@ -54,7 +54,7 @@
         </client-ssl-contexts>
     </tls>
     <credential-stores>
-        <credential-store name="credstore1" case-sensitive="true">
+        <credential-store name="credstore1">
             <credential-reference store="mystore" alias="the-alias"/>
         </credential-store>
     </credential-stores>

@@ -28,14 +28,11 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.io.Closeable;
 import java.io.File;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Set;
-import java.util.logging.Handler;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.logging.Target;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logging.BasicLogger;
@@ -56,6 +53,7 @@ import org.jboss.logmanager.LogContext;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings("DefaultAnnotationParam")
 @MessageLogger(projectCode = "WFLYLOG", length = 4)
 public interface LoggingLogger extends BasicLogger {
 
@@ -66,31 +64,31 @@ public interface LoggingLogger extends BasicLogger {
 
     // id = 1, value = "%s caught exception attempting to revert operation %s at address %s" -- now unused
 
-    /**
-     * Logs a warning message indicating an error occurred trying to set the property, represented by the
-     * {@code propertyName} parameter, on the handler class, represented by the {@code className} parameter.
-     *
-     * @param cause        the cause of the error.
-     * @param propertyName the name of the property.
-     * @param className    the name of the class.
-     */
-    @LogMessage(level = WARN)
-    @Message(id = 2, value = "An error occurred trying to set the property '%s' on handler '%s'.")
-    void errorSettingProperty(@Cause Throwable cause, String propertyName, String className);
+//    /**
+//     * Logs a warning message indicating an error occurred trying to set the property, represented by the
+//     * {@code propertyName} parameter, on the handler class, represented by the {@code className} parameter.
+//     *
+//     * @param cause        the cause of the error.
+//     * @param propertyName the name of the property.
+//     * @param className    the name of the class.
+//     */
+//    @LogMessage(level = WARN)
+//    @Message(id = 2, value = "An error occurred trying to set the property '%s' on handler '%s'.")
+//    void errorSettingProperty(@Cause Throwable cause, String propertyName, String className);
 
     // id = 3, value = "Removing bootstrap log handlers" -- now unused
     // id = 4, value = "Restored bootstrap log handlers" -- now unused
 
-    /**
-     * Logs a warning message indicating an unknown property, represented by the {@code propertyName} parameter, for
-     * the class represented by the {@code className} parameter.
-     *
-     * @param propertyName the name of the property.
-     * @param className    the name of the class.
-     */
-    @LogMessage(level = WARN)
-    @Message(id = 5, value = "Unknown property '%s' for '%s'.")
-    void unknownProperty(String propertyName, String className);
+//    /**
+//     * Logs a warning message indicating an unknown property, represented by the {@code propertyName} parameter, for
+//     * the class represented by the {@code className} parameter.
+//     *
+//     * @param propertyName the name of the property.
+//     * @param className    the name of the class.
+//     */
+//    @LogMessage(level = WARN)
+//    @Message(id = 5, value = "Unknown property '%s' for '%s'.")
+//    void unknownProperty(String propertyName, String className);
 
     /**
      * Logs an error message indicating to failure to close the resource represented by the {@code closeable}
@@ -116,12 +114,12 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 8, value = "The path manager service does not appear to be started. Any changes may be lost as a result of this.")
     String pathManagerServiceNotStarted();
 
-    /**
-     * Logs a warning message indicating filters are not currently supported for log4j appenders.
-     */
-    @LogMessage(level = WARN)
-    @Message(id = 9, value = "Filters are not currently supported for log4j appenders.")
-    void filterNotSupported();
+//    /**
+//     * Logs a warning message indicating filters are not currently supported for log4j appenders.
+//     */
+//    @LogMessage(level = WARN)
+//    @Message(id = 9, value = "Filters are not currently supported for log4j appenders.")
+//    void filterNotSupported();
 
     /**
      * Logs a warning message indicating the deployment specified a logging profile, but the logging profile was not
@@ -205,30 +203,30 @@ public interface LoggingLogger extends BasicLogger {
     void perLoggingDeploymentIgnored(String propertyName, String attributeName, String deploymentName);
 
 
-    /**
-     * Creates an exception indicating the class, represented by the {@code className} parameter, cannot be accessed.
-     *
-     * @param cause     the cause of the error.
-     * @param className the name of the class.
-     *
-     * @return the message.
-     */
-    @Message(id = 17, value = "Could not access %s.")
-    String cannotAccessClass(@Cause Throwable cause, String className);
+//    /**
+//     * Creates an exception indicating the class, represented by the {@code className} parameter, cannot be accessed.
+//     *
+//     * @param cause     the cause of the error.
+//     * @param className the name of the class.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 17, value = "Could not access %s.")
+//    String cannotAccessClass(@Cause Throwable cause, String className);
 
-    /**
-     * Creates an exception indicating the class, represented by the {@code className} parameter, could not be
-     * instantiated.
-     *
-     * @param cause       the cause of the error
-     * @param className   the name of the class
-     * @param description a description
-     * @param name        the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 18, value = "Failed to instantiate class '%s' for %s '%s'")
-    IllegalArgumentException cannotInstantiateClass(@Cause Throwable cause, String className, String description, String name);
+//    /**
+//     * Creates an exception indicating the class, represented by the {@code className} parameter, could not be
+//     * instantiated.
+//     *
+//     * @param cause       the cause of the error
+//     * @param className   the name of the class
+//     * @param description a description
+//     * @param name        the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 18, value = "Failed to instantiate class '%s' for %s '%s'")
+//    IllegalArgumentException cannotInstantiateClass(@Cause Throwable cause, String className, String description, String name);
 
     /**
      * Creates an exception indicating a failure to load the module.
@@ -243,16 +241,16 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 19, value = "Failed to load module '%s' for %s '%s'")
     IllegalArgumentException cannotLoadModule(@Cause Throwable cause, String moduleName, String description, String name);
 
-    /**
-     * A message indicating the handler, represented by the {@code handlerName} parameter could not be unassigned as it
-     * was not assigned.
-     *
-     * @param handlerName the handler name.
-     *
-     * @return the message.
-     */
-    @Message(id = 20, value = "Can not unassign handler. Handler %s is not assigned.")
-    String cannotUnassignHandler(String handlerName);
+//    /**
+//     * A message indicating the handler, represented by the {@code handlerName} parameter could not be unassigned as it
+//     * was not assigned.
+//     *
+//     * @param handlerName the handler name.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 20, value = "Can not unassign handler. Handler %s is not assigned.")
+//    String cannotUnassignHandler(String handlerName);
 
     /**
      * Creates an exception indicating the class, represented by the {@code className} parameter, could not be found.
@@ -265,16 +263,16 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 21, value = "Class '%s' could not be found.")
     String classNotFound(@Cause Throwable cause, String className);
 
-    /**
-     * A message indicating the handler encoding failed to set.
-     *
-     * @param cause    the cause of the error
-     * @param encoding the encoding
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 22, value = "The encoding value '%s' is invalid.")
-    IllegalArgumentException failedToSetHandlerEncoding(@Cause Throwable cause, String encoding);
+//    /**
+//     * A message indicating the handler encoding failed to set.
+//     *
+//     * @param cause    the cause of the error
+//     * @param encoding the encoding
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 22, value = "The encoding value '%s' is invalid.")
+//    IllegalArgumentException failedToSetHandlerEncoding(@Cause Throwable cause, String encoding);
 
     /**
      * A message indicating the handler, represented by the {@code name} parameter, is already assigned.
@@ -286,15 +284,15 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 23, value = "Handler %s is already assigned.")
     String handlerAlreadyDefined(String name);
 
-    /**
-     * A message indicating the handler, represented by the {@code name} parameter, was not found.
-     *
-     * @param name the handler name
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 24, value = "Handler %s not found.")
-    IllegalArgumentException handlerNotFound(String name);
+//    /**
+//     * A message indicating the handler, represented by the {@code name} parameter, was not found.
+//     *
+//     * @param name the handler name
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 24, value = "Handler %s not found.")
+//    IllegalArgumentException handlerNotFound(String name);
 
     /**
      * A message indicating the filter is invalid.
@@ -336,51 +334,51 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 28, value = "Invalid size %s")
     String invalidSize(String size);
 
-    /**
-     * A message indicating the target name value is invalid.
-     *
-     * @param targets a collection of valid target names.
-     *
-     * @return the message.
-     */
-    @Message(id = 29, value = "Invalid value for target name. Valid names include: %s")
-    String invalidTargetName(EnumSet<Target> targets);
+//    /**
+//     * A message indicating the target name value is invalid.
+//     *
+//     * @param targets a collection of valid target names.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 29, value = "Invalid value for target name. Valid names include: %s")
+//    String invalidTargetName(EnumSet<Target> targets);
 
     // id = 30, value = "'%s' is not a valid %s." -- now unused
 
-    /**
-     * A message indicating the value type key, represented by the {@code kry} parameter, is invalid.
-     *
-     * @param key           the key.
-     * @param allowedValues a collection of allowed values.
-     *
-     * @return the message.
-     */
-    @Message(id = 31, value = "Value type key '%s' is invalid. Valid value type keys are; %s")
-    String invalidValueTypeKey(String key, Collection<String> allowedValues);
+//    /**
+//     * A message indicating the value type key, represented by the {@code kry} parameter, is invalid.
+//     *
+//     * @param key           the key.
+//     * @param allowedValues a collection of allowed values.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 31, value = "Value type key '%s' is invalid. Valid value type keys are; %s")
+//    String invalidValueTypeKey(String key, Collection<String> allowedValues);
 
-    /**
-     * A message indicating the required nested filter element is missing.
-     *
-     * @return the message.
-     */
-    @Message(id = 32, value = "Missing required nested filter element")
-    String missingRequiredNestedFilterElement();
+//    /**
+//     * A message indicating the required nested filter element is missing.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 32, value = "Missing required nested filter element")
+//    String missingRequiredNestedFilterElement();
 
     // id = 33, value = "Service not started" -- now unused
 
-    /**
-     * Creates an exception indicating an unknown parameter type, represented by the {@code type} parameter, for the
-     * property represented by the {@code propertyName} parameter on the class.
-     *
-     * @param type         the parameter type.
-     * @param propertyName the name of the property.
-     * @param clazz        the class the property with the type could not found on.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 34, value = "Unknown parameter type (%s) for property '%s' on '%s'")
-    IllegalArgumentException unknownParameterType(Class<?> type, String propertyName, Class<?> clazz);
+//    /**
+//     * Creates an exception indicating an unknown parameter type, represented by the {@code type} parameter, for the
+//     * property represented by the {@code propertyName} parameter on the class.
+//     *
+//     * @param type         the parameter type.
+//     * @param propertyName the name of the property.
+//     * @param clazz        the class the property with the type could not found on.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 34, value = "Unknown parameter type (%s) for property '%s' on '%s'")
+//    IllegalArgumentException unknownParameterType(Class<?> type, String propertyName, Class<?> clazz);
 
     /**
      * A message indicating the logger, represented by the {@code name} parameter was not found.
@@ -408,16 +406,16 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 39, value = "An absolute path (%s) cannot be specified for relative-to.")
     String invalidRelativeTo(String relativeTo);
 
-    /**
-     * A message indicating an absolute path cannot be used when a relative-to path is being used.
-     *
-     * @param relativeTo the relative path.
-     * @param path       absolute path.
-     *
-     * @return the message.
-     */
-    @Message(id = 40, value = "An absolute path (%2$s) cannot be used when a relative-to path (%1$s) is being used.")
-    String invalidPath(String relativeTo, String path);
+//    /**
+//     * A message indicating an absolute path cannot be used when a relative-to path is being used.
+//     *
+//     * @param relativeTo the relative path.
+//     * @param path       absolute path.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 40, value = "An absolute path (%2$s) cannot be used when a relative-to path (%1$s) is being used.")
+//    String invalidPath(String relativeTo, String path);
 
     /**
      * A message indicating a suffix is invalid.
@@ -491,16 +489,16 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 47, value = "The handler is closed, cannot publish to a closed handler")
     IllegalStateException handlerClosed();
 
-    /**
-     * An exception indicating a property cannot be set on a closed handler.
-     *
-     * @param name  the name of the property
-     * @param value the value of the property
-     *
-     * @return an {@link IllegalStateException} for the error
-     */
-    @Message(id = Message.INHERIT, value = "Cannot set property '%s' on a closed handler with value '%s'.")
-    IllegalStateException handlerClosed(String name, String value);
+//    /**
+//     * An exception indicating a property cannot be set on a closed handler.
+//     *
+//     * @param name  the name of the property
+//     * @param value the value of the property
+//     *
+//     * @return an {@link IllegalStateException} for the error
+//     */
+//    @Message(id = Message.INHERIT, value = "Cannot set property '%s' on a closed handler with value '%s'.")
+//    IllegalStateException handlerClosed(String name, String value);
 
     /**
      * A message indicating the handler configuration could not be found.
@@ -544,105 +542,105 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 51, value = "Failed to write configuration file %s")
     RuntimeException failedToWriteConfigurationFile(@Cause Throwable e, File fileName);
 
-    /**
-     * Creates an exception indicating a failure was detected while performing a rollback.
-     *
-     * @param cause the cause of the failure
-     *
-     * @return an {@link RuntimeException} for the error
-     */
-    @Message(id = 52, value = "A failure was detecting while performing a rollback.")
-    RuntimeException rollbackFailure(@Cause Throwable cause);
+//    /**
+//     * Creates an exception indicating a failure was detected while performing a rollback.
+//     *
+//     * @param cause the cause of the failure
+//     *
+//     * @return an {@link RuntimeException} for the error
+//     */
+//    @Message(id = 52, value = "A failure was detecting while performing a rollback.")
+//    RuntimeException rollbackFailure(@Cause Throwable cause);
 
     // id = 53; redundant parameter null check message
 
-    /**
-     * Creates an exception indicating a failure to load the class.
-     *
-     * @param cause       the cause of the error
-     * @param className   the name of the class that could not be loaded
-     * @param description a description
-     * @param name        the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 54, value = "Failed to load class '%s' for %s '%s'")
-    IllegalArgumentException failedToLoadClass(@Cause Throwable cause, String className, String description, String name);
+//    /**
+//     * Creates an exception indicating a failure to load the class.
+//     *
+//     * @param cause       the cause of the error
+//     * @param className   the name of the class that could not be loaded
+//     * @param description a description
+//     * @param name        the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 54, value = "Failed to load class '%s' for %s '%s'")
+//    IllegalArgumentException failedToLoadClass(@Cause Throwable cause, String className, String description, String name);
 
-    /**
-     * Creates an exception indicating no property with the name, represented by the {@code propertyName} parameter,
-     * was found on the type.
-     *
-     * @param propertyName the name of the property
-     * @param description  a description
-     * @param name         the name of the configuration
-     * @param type         the type the property does not exist on
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 55, value = "No property named '%s' for %s '%s\' of type '%s'")
-    IllegalArgumentException invalidProperty(String propertyName, String description, String name, Class<?> type);
+//    /**
+//     * Creates an exception indicating no property with the name, represented by the {@code propertyName} parameter,
+//     * was found on the type.
+//     *
+//     * @param propertyName the name of the property
+//     * @param description  a description
+//     * @param name         the name of the configuration
+//     * @param type         the type the property does not exist on
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 55, value = "No property named '%s' for %s '%s\' of type '%s'")
+//    IllegalArgumentException invalidProperty(String propertyName, String description, String name, Class<?> type);
 
-    /**
-     * Creates an exception indicating a failure to locate the constructor.
-     *
-     * @param cause       the cause of the error
-     * @param className   the name of the class that could not be loaded
-     * @param description a description
-     * @param name        the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 56, value = "Failed to locate constructor in class \"%s\" for %s \"%s\"")
-    IllegalArgumentException failedToLocateConstructor(@Cause Throwable cause, String className, String description, String name);
+//    /**
+//     * Creates an exception indicating a failure to locate the constructor.
+//     *
+//     * @param cause       the cause of the error
+//     * @param className   the name of the class that could not be loaded
+//     * @param description a description
+//     * @param name        the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 56, value = "Failed to locate constructor in class \"%s\" for %s \"%s\"")
+//    IllegalArgumentException failedToLocateConstructor(@Cause Throwable cause, String className, String description, String name);
 
-    /**
-     * Creates an exception indicating the property cannot be set as it's been removed.
-     *
-     * @param propertyName the name of the property that cannot be set
-     * @param description  a description
-     * @param name         the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 57, value = "Cannot set property '%s' on %s '%s' (removed)")
-    IllegalArgumentException cannotSetRemovedProperty(String propertyName, String description, String name);
+//    /**
+//     * Creates an exception indicating the property cannot be set as it's been removed.
+//     *
+//     * @param propertyName the name of the property that cannot be set
+//     * @param description  a description
+//     * @param name         the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 57, value = "Cannot set property '%s' on %s '%s' (removed)")
+//    IllegalArgumentException cannotSetRemovedProperty(String propertyName, String description, String name);
 
-    /**
-     * Creates an exception indicating the property has no setter method.
-     *
-     * @param propertyName the name of the property that cannot be set
-     * @param description  a description
-     * @param name         the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 58, value = "No property '%s' setter found for %s '%s'")
-    IllegalArgumentException propertySetterNotFound(String propertyName, String description, String name);
+//    /**
+//     * Creates an exception indicating the property has no setter method.
+//     *
+//     * @param propertyName the name of the property that cannot be set
+//     * @param description  a description
+//     * @param name         the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 58, value = "No property '%s' setter found for %s '%s'")
+//    IllegalArgumentException propertySetterNotFound(String propertyName, String description, String name);
 
-    /**
-     * Creates an exception indicating the property type could not be determined.
-     *
-     * @param propertyName the name of the property that cannot be set
-     * @param description  a description
-     * @param name         the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 59, value = "No property '%s' type could be determined for %s '%s'")
-    IllegalArgumentException propertyTypeNotFound(String propertyName, String description, String name);
+//    /**
+//     * Creates an exception indicating the property type could not be determined.
+//     *
+//     * @param propertyName the name of the property that cannot be set
+//     * @param description  a description
+//     * @param name         the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 59, value = "No property '%s' type could be determined for %s '%s'")
+//    IllegalArgumentException propertyTypeNotFound(String propertyName, String description, String name);
 
-    /**
-     * Creates an exception indicating the property could not be removed as it's already been removed
-     *
-     * @param propertyName the name of the property that cannot be set
-     * @param description  a description
-     * @param name         the name of the configuration
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 60, value = "Cannot remove property '%s' on %s '%s' (removed)")
-    IllegalArgumentException propertyAlreadyRemoved(String propertyName, String description, String name);
+//    /**
+//     * Creates an exception indicating the property could not be removed as it's already been removed
+//     *
+//     * @param propertyName the name of the property that cannot be set
+//     * @param description  a description
+//     * @param name         the name of the configuration
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 60, value = "Cannot remove property '%s' on %s '%s' (removed)")
+//    IllegalArgumentException propertyAlreadyRemoved(String propertyName, String description, String name);
 
     /**
      * Creates an exception indicating the formatter could not be found.
@@ -654,86 +652,86 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 61, value = "Formatter '%s' is not found")
     String formatterNotFound(String name);
 
-    /**
-     * Creates an exception indicating the character set is not supported.
-     *
-     * @param encoding the character set
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 62, value = "Unsupported character set '%s'")
-    IllegalArgumentException unsupportedCharSet(String encoding);
+//    /**
+//     * Creates an exception indicating the character set is not supported.
+//     *
+//     * @param encoding the character set
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 62, value = "Unsupported character set '%s'")
+//    IllegalArgumentException unsupportedCharSet(String encoding);
 
-    /**
-     * Creates an exception indicating the error manager could not be found.
-     *
-     * @param name the name of the error manager
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 63, value = "Error manager '%s' is not found")
-    IllegalArgumentException errorManagerNotFound(String name);
+//    /**
+//     * Creates an exception indicating the error manager could not be found.
+//     *
+//     * @param name the name of the error manager
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 63, value = "Error manager '%s' is not found")
+//    IllegalArgumentException errorManagerNotFound(String name);
 
-    /**
-     * Creates an exception indicating the handler does not support nested handlers.
-     *
-     * @param handlerClass the handler class
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 64, value = "Nested handlers not supported for handler %s")
-    IllegalArgumentException nestedHandlersNotSupported(Class<? extends Handler> handlerClass);
+//    /**
+//     * Creates an exception indicating the handler does not support nested handlers.
+//     *
+//     * @param handlerClass the handler class
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 64, value = "Nested handlers not supported for handler %s")
+//    IllegalArgumentException nestedHandlersNotSupported(Class<? extends Handler> handlerClass);
 
-    /**
-     * Creates an exception indicating the logger already exists.
-     *
-     * @param name the name of the logger
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 65, value = "Logger '%s' already exists")
-    IllegalArgumentException loggerAlreadyExists(String name);
+//    /**
+//     * Creates an exception indicating the logger already exists.
+//     *
+//     * @param name the name of the logger
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 65, value = "Logger '%s' already exists")
+//    IllegalArgumentException loggerAlreadyExists(String name);
 
-    /**
-     * Creates an exception indicating the formatter already exists.
-     *
-     * @param name the name of the formatter
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 66, value = "Formatter '%s' already exists")
-    IllegalArgumentException formatterAlreadyExists(String name);
+//    /**
+//     * Creates an exception indicating the formatter already exists.
+//     *
+//     * @param name the name of the formatter
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 66, value = "Formatter '%s' already exists")
+//    IllegalArgumentException formatterAlreadyExists(String name);
 
-    /**
-     * Creates an exception indicating the filter already exists.
-     *
-     * @param name the name of the filter
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 67, value = "Filter '%s' already exists")
-    IllegalArgumentException filterAlreadyExists(String name);
+//    /**
+//     * Creates an exception indicating the filter already exists.
+//     *
+//     * @param name the name of the filter
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 67, value = "Filter '%s' already exists")
+//    IllegalArgumentException filterAlreadyExists(String name);
 
-    /**
-     * Creates an exception indicating the error manager already exists.
-     *
-     * @param name the name of the error manager
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 68, value = "ErrorManager '%s' already exists")
-    IllegalArgumentException errorManagerAlreadyExists(String name);
+//    /**
+//     * Creates an exception indicating the error manager already exists.
+//     *
+//     * @param name the name of the error manager
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 68, value = "ErrorManager '%s' already exists")
+//    IllegalArgumentException errorManagerAlreadyExists(String name);
 
-    /**
-     * Creates an exception indicating {@code null} cannot be assigned to a primitive property.
-     *
-     * @param name the name of the property
-     * @param type the type
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 69, value = "Cannot assign null value to primitive property '%s' of %s")
-    IllegalArgumentException cannotAssignNullToPrimitive(String name, Class<?> type);
+//    /**
+//     * Creates an exception indicating {@code null} cannot be assigned to a primitive property.
+//     *
+//     * @param name the name of the property
+//     * @param type the type
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 69, value = "Cannot assign null value to primitive property '%s' of %s")
+//    IllegalArgumentException cannotAssignNullToPrimitive(String name, Class<?> type);
 
     /**
      * Creates an exception indicating the filter expression string is truncated.
@@ -806,13 +804,13 @@ public interface LoggingLogger extends BasicLogger {
     @Message(id = 76, value = "Unexpected end of filter expression")
     IllegalArgumentException unexpectedEnd();
 
-    /**
-     * Creates an exception indicating extra data was found in the filter expression.
-     *
-     * @return an {@link IllegalArgumentException} for the error
-     */
-    @Message(id = 77, value = "Extra data after filter expression")
-    IllegalArgumentException extraData();
+//    /**
+//     * Creates an exception indicating extra data was found in the filter expression.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error
+//     */
+//    @Message(id = 77, value = "Extra data after filter expression")
+//    IllegalArgumentException extraData();
 
     /**
      * Logs a warning message indicating the {@link org.jboss.logmanager.LogManager} is required and the logging

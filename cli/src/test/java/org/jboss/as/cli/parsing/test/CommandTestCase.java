@@ -44,7 +44,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command");
         assertEquals("some-command", cmd.getOperationName());
         assertFalse(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertFalse(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -57,7 +57,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command ");
         assertEquals("some-command", cmd.getOperationName());
         assertFalse(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertTrue(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -71,7 +71,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command arg-value");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertFalse(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -88,7 +88,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command arg-value ");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertTrue(cmd.endsOnPropertySeparator());
@@ -105,7 +105,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command --arg-name");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertFalse(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -123,7 +123,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command --arg-name ");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertTrue(cmd.endsOnPropertySeparator());
@@ -141,7 +141,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command --arg-name=");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -159,7 +159,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command --arg-name=value");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertFalse(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertFalse(cmd.endsOnPropertySeparator());
@@ -177,7 +177,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("some-command --arg-name=value ");
         assertEquals("some-command", cmd.getOperationName());
         assertTrue(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
         assertTrue(cmd.endsOnPropertySeparator());
@@ -195,7 +195,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("");
         assertFalse(cmd.hasOperationName());
         assertFalse(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertFalse(cmd.endsOnSeparator());
         assertFalse(cmd.endsOnAddressOperationNameSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
@@ -212,7 +212,7 @@ public class CommandTestCase {
         DefaultCallbackHandler cmd = parse("   ");
         assertFalse(cmd.hasOperationName());
         assertFalse(cmd.hasProperties());
-        assertNull(cmd.getOutputTarget());
+        assertFalse(cmd.hasOperator());
         assertTrue(cmd.endsOnSeparator());
         assertTrue(cmd.endsOnAddressOperationNameSeparator());
         assertFalse(cmd.endsOnPropertyListStart());
@@ -238,7 +238,43 @@ public class CommandTestCase {
         assertEquals(1, otherArgs.size());
         assertEquals("value1", otherArgs.get(0));
 
-        assertEquals("command.log", cmd.getOutputTarget());
+        assertTrue("command.log", cmd.hasOperator());
+    }
+
+    @Test
+    public void testCommandWithArgsAndAppendTarget() throws Exception {
+
+        DefaultCallbackHandler cmd = parse(" some-command --name=value --name1 value1 >> command.log");
+        assertEquals("some-command", cmd.getOperationName());
+        assertTrue(cmd.hasProperties());
+        assertTrue(cmd.hasProperty("--name"));
+        assertEquals("value", cmd.getPropertyValue("--name"));
+        assertTrue(cmd.hasProperty("--name1"));
+        assertTrue(cmd.getPropertyValue("--name1").equals("true"));
+
+        List<String> otherArgs = cmd.getOtherProperties();
+        assertEquals(1, otherArgs.size());
+        assertEquals("value1", otherArgs.get(0));
+
+        assertTrue("No operator", cmd.hasOperator());
+    }
+
+    @Test
+    public void testCommandWithArgsAndPipe() throws Exception {
+
+        DefaultCallbackHandler cmd = parse(" some-command --name=value --name1 value1 | grep ");
+        assertEquals("some-command", cmd.getOperationName());
+        assertTrue(cmd.hasProperties());
+        assertTrue(cmd.hasProperty("--name"));
+        assertEquals("value", cmd.getPropertyValue("--name"));
+        assertTrue(cmd.hasProperty("--name1"));
+        assertTrue(cmd.getPropertyValue("--name1").equals("true"));
+
+        List<String> otherArgs = cmd.getOtherProperties();
+        assertEquals(1, otherArgs.size());
+        assertEquals("value1", otherArgs.get(0));
+
+        assertTrue("No operator", cmd.hasOperator());
     }
 
     @Test

@@ -23,7 +23,9 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -141,13 +143,17 @@ public class LdapCacheServiceMockTest {
     }
 
     private LdapSearcherCache<LdapEntry, String> startService(CacheMode mode, boolean cacheFailures, int size) throws StartException {
+        return startService(mode,cacheFailures, size, 30);
+    }
+
+    private LdapSearcherCache<LdapEntry, String> startService(CacheMode mode, boolean cacheFailures, int size, int evictionTimeout) throws StartException {
         LdapCacheService<LdapEntry, String> service;
         switch (mode) {
             case BY_ACCESS:
-                service = LdapCacheService.createByAccessCacheService(userSearcher, 30, cacheFailures, size);
+                service = LdapCacheService.createByAccessCacheService(userSearcher, evictionTimeout, cacheFailures, size);
                 break;
             default:
-                service = LdapCacheService.createBySearchCacheService(userSearcher, 30, cacheFailures, size);
+                service = LdapCacheService.createBySearchCacheService(userSearcher, evictionTimeout, cacheFailures, size);
                 break;
         }
         service.start(null);
@@ -207,6 +213,67 @@ public class LdapCacheServiceMockTest {
         cache.search(null, USER_01);
 
         verify(userSearcher, times(calls)).search(anyObject(), anyObject());
+    }
+
+    /**
+     * Test of timeout evictions for cacheByAccessTime.
+     *
+     * Timeout in cache is set to 2 seconds. size is 2. Search for user01 followed by user02 should hit the ldap.
+     * Repeated read of user01 should not hit ldap instead for user02 it shoud ht ldap.
+     *
+     * Last 4 calls test also size of cache.
+     *
+     */
+    @Test
+    public void testTimeoutsByAccessTime() throws StartException, IOException, NamingException, InterruptedException, ExecutionException {
+        int timeout = 2;
+
+        LdapSearcherCache<LdapEntry, String> cache = startService(CacheMode.BY_ACCESS, true, 2, timeout);
+
+        //call to ldap should be expected (1)
+        cache.search(null, USER_01);
+        verify(userSearcher, times(1)).search(any(LdapConnectionHandler.class), anyString());
+
+        //call to ldap should be expected (2)
+        cache.search(null, USER_02);
+        verify(userSearcher, times(2)).search(any(LdapConnectionHandler.class), anyString());
+
+        //call to ldap should not be expected (2)
+        Thread.sleep(1000);
+        cache.search(null, USER_01);
+        verify(userSearcher, times(2)).search(any(LdapConnectionHandler.class), anyString());
+
+        //call to ldap should not be expected (2)
+        Thread.sleep(1000);
+        cache.search(null, USER_01);
+
+        //call to ldap should not be expected (2)
+        verify(userSearcher, times(2)).search(any(LdapConnectionHandler.class), anyString());//should not be expected (2)
+        Thread.sleep(1000);
+        cache.search(null, USER_01);
+        verify(userSearcher, times(2)).search(any(LdapConnectionHandler.class), anyString());
+
+        //call to ldap should be expected (3)
+        Thread.sleep(1000);
+        cache.search(null, USER_02);
+        verify(userSearcher, times(3)).search(any(LdapConnectionHandler.class), anyString());
+
+
+        Thread.sleep(timeout * 1000);
+
+
+        //call to ldap should be expected (4)
+        cache.search(null, USER_01);
+        verify(userSearcher, times(4)).search(any(LdapConnectionHandler.class), anyString());
+        //call to ldap should be expected (5)
+        cache.search(null, USER_02);
+        verify(userSearcher, times(5)).search(any(LdapConnectionHandler.class), anyString());
+        //call to ldap should be expected (6)
+        cache.search(null, USER_03);
+        verify(userSearcher, times(6)).search(any(LdapConnectionHandler.class), anyString());
+        //call to ldap should be expected (7)
+        cache.search(null, USER_01);
+        verify(userSearcher, times(7)).search(any(LdapConnectionHandler.class), anyString());
     }
 
 

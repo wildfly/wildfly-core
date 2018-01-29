@@ -21,7 +21,6 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -125,7 +124,7 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
             RuntimeCapability<?> primaryCapability = runtimeCapabilities[0];
             ServiceName primaryServiceName = toServiceName(primaryCapability, address);
 
-            final String module = asStringIfDefined(context, MODULE, model);
+            final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
             final String className = CLASS_NAME.resolveModelAttribute(context, model).asString();
 
             final Map<String, String> configurationMap;

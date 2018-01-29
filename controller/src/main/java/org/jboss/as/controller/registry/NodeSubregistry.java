@@ -23,6 +23,7 @@
 package org.jboss.as.controller.registry;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -310,6 +311,31 @@ final class NodeSubregistry {
             result = searchControl.getWildCardRegistry().getAttributeAccess(searchControl.getIterator(), attributeName);
         }
 
+        return result;
+    }
+
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator, final String child){
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        // First search the wildcard child, then if there is a non-wildcard child search it
+        // Non-wildcard goes second so its description overwrites in case of duplicates
+
+        Map<String, AttributeAccess> result = null;
+        if (searchControl.getWildCardRegistry() != null) {
+            result = searchControl.getWildCardRegistry().getAttributes(searchControl.getIterator());
+        }
+
+        if (searchControl.getSpecifiedRegistry() != null) {
+            final Map<String, AttributeAccess> specifiedChildren = searchControl.getSpecifiedRegistry().getAttributes(searchControl.getIterator());
+            if (result == null) {
+                result = specifiedChildren;
+            } else if (specifiedChildren != null) {
+                // Merge
+                result = new HashMap<String, AttributeAccess>(result);
+                result.putAll(specifiedChildren);
+            }
+        }
         return result;
     }
 

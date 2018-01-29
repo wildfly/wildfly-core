@@ -18,42 +18,20 @@
 
 package org.wildfly.extension.elytron;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CACHING_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_MODIFIABLE_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.IDENTITY_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_REALMS;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TOKEN_REALM;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
-
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
+import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes;
 
 /**
  * A parser for the security realm definition.
- * <p>
- * <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ *
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author Tomaz Cerar
  */
 class RealmParser {
 
@@ -80,7 +58,6 @@ class RealmParser {
             .build();
     private final PersistentResourceXMLDescription propertiesRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM), null)
             .addAttributes(PropertiesRealmDefinition.GROUPS_ATTRIBUTE)
-            .addAttribute(RealmDefinitions.CASE_SENSITIVE)
             .addAttribute(PropertiesRealmDefinition.USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .addAttribute(PropertiesRealmDefinition.GROUPS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .build();
@@ -98,11 +75,11 @@ class RealmParser {
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)
             .build();
 
-   /* final PersistentResourceXMLDescription realmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_REALMS, "ignored"), null)
-            .setNoAddOperation(true)
+    final PersistentResourceXMLDescription realmParser = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
             .addChild(aggregateRealmParser)
             .addChild(customRealmParser)
             .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
             .addChild(jdbcRealmParser)
             .addChild(keyStoreRealmParser)
             .addChild(propertiesRealmParser)
@@ -110,85 +87,12 @@ class RealmParser {
             .addChild(fileSystemRealmDescription)
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
-            .build();*/
+            .build();
 
 
-    void readRealms(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
-            throws XMLStreamException {
-        //realmParser.parse(reader, parentAddress, operations);
-        requireNoAttributes(reader);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            switch (localName) {
-                case AGGREGATE_REALM:
-                    aggregateRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case CUSTOM_REALM:
-                    customRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case CUSTOM_MODIFIABLE_REALM:
-                    customModifiableRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case JDBC_REALM:
-                    jdbcRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case IDENTITY_REALM:
-                    identityRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case KEY_STORE_REALM:
-                    keyStoreRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case PROPERTIES_REALM:
-                    propertiesRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case LDAP_REALM:
-                    ldapRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case FILESYSTEM_REALM:
-                    fileSystemRealmDescription.parse(reader, parentAddress, operations);
-                    break;
-                case TOKEN_REALM:
-                    tokenRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                case CACHING_REALM:
-                    cachingRealmParser.parse(reader, parentAddress, operations);
-                    break;
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-
-    void writeRealms(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (shouldWrite(subsystem) == false) {
-            return;
-        }
-
-        writer.writeStartElement(SECURITY_REALMS);
-
-        aggregateRealmParser.persist(writer, subsystem);
-        customRealmParser.persist(writer, subsystem);
-        customModifiableRealmParser.persist(writer, subsystem);
-        identityRealmParser.persist(writer, subsystem);
-        jdbcRealmParser.persist(writer, subsystem);
-        keyStoreRealmParser.persist(writer, subsystem);
-        propertiesRealmParser.persist(writer, subsystem);
-        ldapRealmParser.persist(writer, subsystem);
-        fileSystemRealmDescription.persist(writer, subsystem);
-        tokenRealmParser.persist(writer, subsystem);
-        cachingRealmParser.persist(writer, subsystem);
-
-        writer.writeEndElement();
-    }
-
-    private boolean shouldWrite(ModelNode subsystem) {
-        return subsystem.hasDefined(AGGREGATE_REALM) || subsystem.hasDefined(CUSTOM_REALM)
-                || subsystem.hasDefined(CUSTOM_MODIFIABLE_REALM) || subsystem.hasDefined(JDBC_REALM)
-                || subsystem.hasDefined(IDENTITY_REALM) || subsystem.hasDefined(KEY_STORE_REALM)
-                || subsystem.hasDefined(PROPERTIES_REALM) || subsystem.hasDefined(LDAP_REALM)
-                || subsystem.hasDefined(FILESYSTEM_REALM) || subsystem.hasDefined(TOKEN_REALM);
+    RealmParser() {
 
     }
+
+
 }

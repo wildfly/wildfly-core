@@ -270,8 +270,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     @Deprecated
     public static final String JBOSS_PERSIST_SERVER_CONFIG = "jboss.server.persist.config";
 
-    protected static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
-    protected static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
+    public static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
+    public static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
 
     /** Properties that cannot be set via {@link #systemPropertyUpdated(String, String)} */
     private static final Set<String> ILLEGAL_PROPERTIES = new HashSet<String>(Arrays.asList(DOMAIN_BASE_DIR,

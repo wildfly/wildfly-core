@@ -87,7 +87,9 @@ class LoggerResourceDefinition extends SimpleResourceDefinition {
             @Override
             protected void updateModel(final LoggerConfiguration configuration, final ModelNode model) {
                 final ModelNode handlers = model.setEmptyList();
-                configuration.getHandlerNames().forEach(handlers::add);
+                for (String s : configuration.getHandlerNames()) {
+                    handlers.add(s);
+                }
             }
         });
         resourceRegistration.registerReadOnlyAttribute(USE_PARENT_HANDLERS, new LoggerConfigurationReadStepHandler() {

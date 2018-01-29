@@ -553,6 +553,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     public void stop(final StopContext context) {
         capabilityRegistry.clear();
         capabilityRegistry.publish();
+        ServiceNameFactory.clearCache();
         controller = null;
         processState.setStopping();
         Runnable r = new Runnable() {

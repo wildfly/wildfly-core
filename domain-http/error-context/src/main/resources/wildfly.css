@@ -20,46 +20,69 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 */
 
+html {
+    color: #222;
+    font-family: "Open Sans", Geneva, Verdana, Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+::-moz-selection {
+    background: #b3d4fc;
+    text-shadow: none;
+}
+
+::selection {
+    background: #b3d4fc;
+    text-shadow: none;
+}
+
 body {
-	background-image:url(bkg.gif);
-	background-repeat: repeat-x;
-	color: #5B5B5B;
-	font-family: "Lucida Sans Unicode", "Lucida Grande", Geneva, Verdana, Arial, sans-serif;
-	margin-top: 100px;
-	text-align:center;
+    background: url(bkg.gif) repeat-x;
+    color: #5B5B5B;
+    margin-top: 100px;
+    text-align: center;
 }
-.wrapper {
-	margin-left: auto;
-	margin-right:auto;
-	width:50em;
-	text-align: left;
-}
-a {
-	text-decoration: none;
-	color: #5e8a9a;
-}
+
 h1 {
-	padding-top: 20px;
-	color: #7b1e1e;
+    padding-top: 20px;
+    color: #7b1e1e;
 }
+
+a {
+    text-decoration: none;
+    color: #5e8a9a;
+}
+
 a:hover {
-	text-decoration: underline;
-	color: #8ec6d9;
+    text-decoration: underline;
+    color: #8ec6d9;
 }
+
+img {
+    border: 0;
+}
+
+code {
+    background-color: rgba(27, 31, 35, 0.05);
+    border-radius: 3px;
+    font-family: Consolas, Menlo, Courier, monospace;
+    font-size: 90%;
+    padding: 0.2em;
+}
+
+.wrapper {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50em;
+    text-align: left;
+}
+
 .content {
-    margin:0;
+    margin: 0;
     padding: 0;
 }
-.dualbrand {
-	padding-top: 20px;
-}
-.logo{
+
+.logo {
     margin-bottom: 10px;
-}
-.note {
-	font-size: 8pt;
-	color: #aaaaaa;
-}
-img{
-    border: 0;
 }

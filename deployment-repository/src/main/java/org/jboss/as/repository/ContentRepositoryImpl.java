@@ -47,19 +47,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
-import org.jboss.msc.service.Service;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
 import static org.jboss.as.repository.PathUtil.unzip;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 
 /**
@@ -67,7 +64,7 @@ import org.wildfly.common.Assert;
  *
  * @author John Bailey
  */
-public class ContentRepositoryImpl implements ContentRepository, Service<ContentRepository> {
+public class ContentRepositoryImpl implements ContentRepository {
 
     protected static final String CONTENT = "content";
     private final File repoRoot;
@@ -78,6 +75,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
     private final Map<String, Long> obsoleteContents = new HashMap<>();
     private final long obsolescenceTimeout;
     private final long lockTimeout;
+    private volatile boolean readWrite = false;
 
     protected ContentRepositoryImpl(final File repoRoot, final File tmpRoot, long obsolescenceTimeout, long lockTimeout) {
         Assert.checkNotNullParam("repoRoot", repoRoot);
@@ -105,6 +103,16 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
         } else if (!directory.mkdirs()) {
             throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotCreateDirectory(null, directory.getAbsolutePath());
         }
+    }
+
+    @Override
+    public void readWrite() {
+        this.readWrite = true;
+    }
+
+    @Override
+    public void readOnly() {
+        this.readWrite = false;
     }
 
     @Override
@@ -153,6 +161,9 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
 
     @Override
     public void addContentReference(ContentReference reference) {
+        if(!this.readWrite) {
+            return;
+        }
         synchronized (contentHashReferences) {
             Set<ContentReference> references = contentHashReferences.get(reference.getHexHash());
             if (references == null) {
@@ -262,6 +273,9 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
 
     @Override
     public void removeContent(ContentReference reference) {
+        if(!this.readWrite) {
+            return;
+        }
         synchronized (contentHashReferences) {
             final Set<ContentReference> references = contentHashReferences.get(reference.getHexHash());
             if (references != null) {
@@ -279,7 +293,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
             contentPath = getDeploymentContentFile(reference.getHash(), false);
         }
         try {
-            if (HashUtil.isEachHexHashInTable(reference.getHexHash())) { //Otherwise this is not a deployment content
+            if (HashUtil.isEachHexHashInTable(reference.getHexHash()) && this.readWrite) { //Otherwise this is not a deployment content
                 if(!lock(reference.getHash())) {
                     DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(DeploymentRepositoryLogger.ROOT_LOGGER.errorLockingDeployment(), contentPath.toString());
                     return;
@@ -323,12 +337,18 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
      */
     @Override
     public Map<String, Set<String>> cleanObsoleteContent() {
+        if(!readWrite) {
+            return Collections.emptyMap();
+        }
         Map<String, Set<String>> cleanedContents = new HashMap<>(2);
         cleanedContents.put(MARKED_CONTENT, new HashSet<>());
         cleanedContents.put(DELETED_CONTENT, new HashSet<>());
         synchronized (contentHashReferences) {
             for (ContentReference fsContent : listLocalContents()) {
-                if (!contentHashReferences.containsKey(fsContent.getHexHash())) { //We have no refrence to this content
+                if (!readWrite) {
+                    return Collections.emptyMap();
+                }
+                if (!contentHashReferences.containsKey(fsContent.getHexHash())) { //We have no reference to this content
                     if (markAsObsolete(fsContent)) {
                         cleanedContents.get(DELETED_CONTENT).add(fsContent.getContentIdentifier());
                     } else {
@@ -428,7 +448,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
         Path contentPath = getDeploymentContentFile(deploymentHash);
         Path sourcePath = resolveSecurely(contentPath, relativePath);
         try {
-            if (Files.exists(contentPath) && Files.isDirectory(contentPath)) {
+            if (Files.exists(contentPath) && Files.isDirectory(contentPath) && this.readWrite) {
                 Path tmp = createTempDirectory(repoRoot.toPath(), CONTENT);
                 Path contentDir = tmp.resolve(CONTENT);
                 copyRecursively(contentPath, contentDir, true);
@@ -588,7 +608,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
     public byte[] addContentToExploded(byte[] deploymentHash, List<ExplodedContent> addFiles, boolean overwrite) throws ExplodedContentException {
         Path contentPath = getDeploymentContentFile(deploymentHash);
         try {
-            if (Files.exists(contentPath) && Files.isDirectory(contentPath)) {
+            if (Files.exists(contentPath) && Files.isDirectory(contentPath) && this.readWrite) {
                 Path tmp = createTempDirectory(repoRoot.toPath(), CONTENT);
                 Path contentDir = tmp.resolve(CONTENT);
                 copyRecursively(contentPath, contentDir, overwrite);
@@ -638,7 +658,7 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
     public byte[] removeContentFromExploded(byte[] deploymentHash, List<String> paths) throws ExplodedContentException {
         Path contentPath = getDeploymentContentFile(deploymentHash);
         try {
-            if (Files.exists(contentPath) && Files.isDirectory(contentPath)) {
+            if (Files.exists(contentPath) && Files.isDirectory(contentPath) && this.readWrite) {
                 Path tmp = createTempDirectory(repoRoot.toPath(), CONTENT);
                 Path contentDir = tmp.resolve(CONTENT).toAbsolutePath();
                 copyRecursively(contentPath, contentDir, false);
@@ -669,20 +689,5 @@ public class ContentRepositoryImpl implements ContentRepository, Service<Content
             DeploymentRepositoryLogger.ROOT_LOGGER.warn(ex);
             throw DeploymentRepositoryLogger.ROOT_LOGGER.errorUpdatingDeployment(ex);
         }
-    }
-
-    @Override
-    public void start(StartContext context) throws StartException {
-        DeploymentRepositoryLogger.ROOT_LOGGER.debugf("%s started", ContentRepository.class.getSimpleName());
-    }
-
-    @Override
-    public void stop(StopContext context) {
-        DeploymentRepositoryLogger.ROOT_LOGGER.debugf("%s stopped", ContentRepository.class.getSimpleName());
-    }
-
-    @Override
-    public ContentRepository getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 }

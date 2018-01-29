@@ -24,6 +24,7 @@ package org.jboss.as.cli;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  *
@@ -35,7 +36,7 @@ public final class Attachments {
 
     private final boolean immutable;
     private final List<String> paths = new ArrayList<>();
-
+    private final List<Consumer<Attachments>> listeners = new ArrayList<>();
     private Attachments(boolean immutable) {
         this.immutable = immutable;
     }
@@ -55,5 +56,15 @@ public final class Attachments {
 
     public List<String> getAttachedFiles() {
         return Collections.unmodifiableList(paths);
+    }
+
+    public void addConsumer(Consumer<Attachments> listener) {
+        listeners.add(listener);
+    }
+
+    public void done() {
+        for (Consumer<Attachments> l : listeners) {
+            l.accept(this);
+        }
     }
 }

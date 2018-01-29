@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.cli.CommandLineFormat;
+import org.jboss.as.cli.parsing.StateParser.SubstitutedLine;
 
 
 /**
@@ -43,6 +44,8 @@ public interface ParsedCommandLine {
      * (of commands, variables, system properties, etc) performed
      */
     String getSubstitutedLine();
+
+    SubstitutedLine getSubstitutions();
 
     boolean isRequestComplete();
 
@@ -92,6 +95,12 @@ public interface ParsedCommandLine {
 
     int getLastChunkIndex();
 
+    int getLastSeparatorOriginalIndex();
+
+    int getLastChunkOriginalIndex();
+
+    int getOriginalOffset(int offset);
+
     String getLastParsedPropertyName();
 
     String getLastParsedPropertyValue();
@@ -109,4 +118,6 @@ public interface ParsedCommandLine {
     ParsedOperationRequestHeader getLastHeader();
 
     CommandLineFormat getFormat();
+
+    boolean hasOperator();
 }

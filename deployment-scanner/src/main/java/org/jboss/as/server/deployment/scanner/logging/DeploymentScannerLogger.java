@@ -22,20 +22,20 @@
 
 package org.jboss.as.server.deployment.scanner.logging;
 
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
+
 import java.io.File;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
-
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.WARN;
 
 
 /**
@@ -249,13 +249,13 @@ public interface DeploymentScannerLogger extends BasicLogger {
             "server deployment list by another management tool. Marker file %s is being added to record this fact.")
     void scannerDeploymentRemovedButNotByScanner(String deploymentName, File marker);
 
-    /**
-     * A message indicating the subsystem cannot be removed while there are still scanners configured.
-     *
-     * @return the message.
-     */
-    @Message(id = 20, value = "Cannot remove subsystem while it still has scanners configured. Remove all scanners first.")
-    String cannotRemoveSubsystem();
+//    /**
+//     * A message indicating the subsystem cannot be removed while there are still scanners configured.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 20, value = "Cannot remove subsystem while it still has scanners configured. Remove all scanners first.")
+//    String cannotRemoveSubsystem();
 
     /**
      * A message indicating the deployment content, represented by the {@code file} parameter, appears to be incomplete
@@ -282,25 +282,25 @@ public interface DeploymentScannerLogger extends BasicLogger {
             "the deployment.")
     String deploymentTimeout(long timeout);
 
-    /**
-     * Creates an exception indicating the directory, represented by the {@code path} parameter, does not exist.
-     *
-     * @param path the path of the directory.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 23, value = "%s does not exist")
-    IllegalArgumentException directoryDoesNotExist(String path);
+//    /**
+//     * Creates an exception indicating the directory, represented by the {@code path} parameter, does not exist.
+//     *
+//     * @param path the path of the directory.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 23, value = "%s does not exist")
+//    IllegalArgumentException directoryDoesNotExist(String path);
 
-    /**
-     * Creates an exception indicating the directory, represented by the {@code path} parameter, is not writable.
-     *
-     * @param path the path of the directory.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 24, value = "%s is not writable")
-    IllegalArgumentException directoryNotWritable(String path);
+//    /**
+//     * Creates an exception indicating the directory, represented by the {@code path} parameter, is not writable.
+//     *
+//     * @param path the path of the directory.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 24, value = "%s is not writable")
+//    IllegalArgumentException directoryNotWritable(String path);
 
     /**
      * A message indicating the file, represented by the {@code fileName} parameter, cannot be scanned because it does
@@ -324,15 +324,15 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @Message(id = 26, value = "File %s cannot be scanned because it uses the currently unsupported ZIP64 format")
     String invalidZip64FileFormat(String fileName);
 
-    /**
-     * Creates an exception indicating the {@code path} is not a directory.
-     *
-     * @param path the path name.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 27, value = "%s is not a directory")
-    IllegalArgumentException notADirectory(String path);
+//    /**
+//     * Creates an exception indicating the {@code path} is not a directory.
+//     *
+//     * @param path the path name.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 27, value = "%s is not a directory")
+//    IllegalArgumentException notADirectory(String path);
 
     // id = 28; redundant parameter null check message
 
@@ -344,13 +344,13 @@ public interface DeploymentScannerLogger extends BasicLogger {
     @Message(id = Message.NONE, value = " A previous version of this content was deployed and remains deployed.")
     String previousContentDeployed();
 
-    /**
-     * A message indicating the scanner has not been configured.
-     *
-     * @return the message.
-     */
-    @Message(id = 29, value = "scanner not configured")
-    String scannerNotConfigured();
+//    /**
+//     * A message indicating the scanner has not been configured.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 29, value = "scanner not configured")
+//    String scannerNotConfigured();
 
     /**
      * A message indicating the file was configured for auto-deploy but could not be safely auto-deployed.
@@ -384,8 +384,8 @@ public interface DeploymentScannerLogger extends BasicLogger {
      * Logs an informational message indicating scan found an invalid XML file which means either is incompletly copied or just wrong.
      *
      * @param name the name of the file.
-     * @param lineNumber
-     * @param columnNumber
+     * @param lineNumber the line number where the malformed content was detected
+     * @param columnNumber the column where the malformed content was detected
      * @return the message
      */
     @Message(id = 35, value = "Scan found %s which is not well-formed at lineNumber: %s, columnNumber: %s. Either the file was incompletely copied at the time of the scanning or it is just wrong.")

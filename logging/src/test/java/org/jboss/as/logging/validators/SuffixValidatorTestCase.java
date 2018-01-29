@@ -42,11 +42,13 @@ public class SuffixValidatorTestCase {
             // no-op
         }
         try {
-            validator.validateParameter("suffix", new ModelNode("this is a bad pattern"));
+            //invalid pattern with one single quote
+            validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'custom suffix"));
             Assert.assertTrue("The model should be invalid", false);
         } catch (OperationFailedException e) {
             // no-op
         }
-        validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd"));
+        //valid pattern with custom suffix
+        validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'custom suffix'"));
     }
 }

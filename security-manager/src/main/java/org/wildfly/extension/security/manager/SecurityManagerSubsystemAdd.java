@@ -42,7 +42,6 @@ import java.util.List;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.AbstractDeploymentChainStep;
@@ -81,30 +80,8 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
     protected void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model)
             throws OperationFailedException {
 
-        // This needs to run after all child resources so that they can detect a fresh state
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
-                ModelNode node = Resource.Tools.readModel(resource);
-                installProcessors(context, node);
-                // Rollback handled by the parent step
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-            }
-        }, OperationContext.Stage.RUNTIME);
-    }
-
-    /**
-     * Retrieves the permissions configured in the security manager subsystem and installs the DUPs that parse and validate
-     * the deployment permissions.
-     *
-     * @param context a reference to the {@link OperationContext}.
-     * @param node the {@link ModelNode} that contains all the configured permissions be added.
-     * @throws OperationFailedException if an error occurs while processing the permissions specified in the subsystem.
-     */
-    protected void installProcessors(final OperationContext context, final ModelNode node)
-            throws OperationFailedException {
-
+        final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final ModelNode node = Resource.Tools.readModel(resource);
         // get the minimum set of deployment permissions.
         final ModelNode deploymentPermissionsModel = node.get(DEPLOYMENT_PERMISSIONS_PATH.getKeyValuePair());
         final ModelNode minimumPermissionsNode = MINIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
@@ -148,7 +125,7 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
      * @return a {@link List} containing the retrieved permissions. They are wrapped as {@link PermissionFactory} instances.
      * @throws OperationFailedException if an error occurs while retrieving the security permissions.
      */
-    protected List<PermissionFactory> retrievePermissionSet(final OperationContext context, final ModelNode node) throws OperationFailedException {
+    private List<PermissionFactory> retrievePermissionSet(final OperationContext context, final ModelNode node) throws OperationFailedException {
 
         final List<PermissionFactory> permissions = new ArrayList<>();
 

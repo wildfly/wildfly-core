@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.5" name="org.jboss.as.cli">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.cli">
     <properties>
         <property name="jboss.api" value="private"/>
         <property name="jboss.require-java-version" value="1.8"/>
@@ -49,7 +49,7 @@
         <module name="org.codehaus.woodstox" services="import"/>
         <!-- END JAXP default dependencies -->
 
-        <module name="org.jboss.aesh"/>
+        <module name="org.aesh" export="true"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.as.controller-client"/>
         <module name="org.jboss.as.protocol"/>

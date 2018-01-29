@@ -24,12 +24,12 @@ package org.jboss.as.logging;
 
 import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
-import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 
 import java.util.Locale;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -43,7 +43,6 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.resolvers.OverflowActionResolver;
 import org.jboss.dmr.ModelNode;
@@ -127,14 +126,6 @@ class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
 
     @Override
     protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_1_3_0: {
-                // These attributes at some point made it on the resource model, but should have never been there. They
-                // are not used by the handler and not persisted to the XML. Discarding them should have no effect.
-                resourceBuilder.getAttributeBuilder().setDiscard(DiscardAttributeChecker.ALWAYS, FORMATTER, ENCODING).end();
-                loggingProfileBuilder.getAttributeBuilder().setDiscard(DiscardAttributeChecker.ALWAYS, FORMATTER, ENCODING).end();
-                break;
-            }
-        }
+        // do nothing by default
     }
 }

@@ -32,19 +32,12 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 class RequestControllerSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
-    static final RequestControllerSubsystemParser_1_0 INSTANCE = new RequestControllerSubsystemParser_1_0();
-
-    private final PersistentResourceXMLDescription xmlDescription;
-
-    private RequestControllerSubsystemParser_1_0() {
-        xmlDescription = builder(RequestControllerRootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
-                .addAttributes(RequestControllerRootDefinition.MAX_REQUESTS, RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS)
-                .build();
-    }
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return xmlDescription;
+        return builder(RequestControllerRootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
+                .addAttributes(RequestControllerRootDefinition.MAX_REQUESTS, RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS)
+                .build();
     }
 }
 

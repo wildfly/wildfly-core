@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContext.Scope;
+import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandLineRedirection;
 import org.jboss.as.cli.batch.BatchManager;
@@ -77,6 +78,9 @@ class TryCatchFinallyControlFlow implements CommandLineRedirection {
             }
 
             final String cmd = line.getOperationName();
+            if ("try".equals(cmd)) {
+                throw new CommandFormatException("try is not allowed while in try block");
+            }
             if("catch".equals(cmd) || "finally".equals(cmd) || "end-try".equals(cmd)) {
                 registration.handle(line);
             } else {

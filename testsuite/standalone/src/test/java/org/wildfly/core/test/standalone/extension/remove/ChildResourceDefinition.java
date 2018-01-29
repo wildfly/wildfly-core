@@ -24,10 +24,12 @@
 
 package org.wildfly.core.test.standalone.extension.remove;
 
+import java.util.Collections;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -43,10 +45,11 @@ import org.jboss.dmr.ModelType;
 public class ChildResourceDefinition extends SimpleResourceDefinition {
     private static final SimpleAttributeDefinition CHILD_ATTRIBUTE = new SimpleAttributeDefinitionBuilder("child-attr", ModelType.STRING, true).build();
 
-    public ChildResourceDefinition() {
-        super(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver(),
-                new AddChildHandler(),
-                ModelOnlyRemoveStepHandler.INSTANCE
+    ChildResourceDefinition() {
+        super(new Parameters(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver())
+                .setAddHandler(new AddChildHandler())
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setIncorporatingCapabilities(Collections.singleton(RootResourceDefinition.CAPABILITY))
         );
     }
 

@@ -22,7 +22,10 @@
 package org.jboss.as.cli.parsing;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -43,37 +46,85 @@ public class StateParser {
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public String parse(String str, ParsingStateCallbackHandler callbackHandler) throws CommandFormatException {
         return parse(str, callbackHandler, initialState);
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static String parse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState) throws CommandFormatException {
-        return parse(str, callbackHandler, initialState, true);
+        return parseLine(str, callbackHandler, initialState).getSubstitued();
     }
 
     /**
-     * Returns the string which was actually parsed with all the substitutions performed
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
+     */
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, true);
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandContext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
      */
     public static String parse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState, boolean strict) throws CommandFormatException {
-        return parse(str, callbackHandler, initialState, strict, null);
+        return parseLine(str, callbackHandler, initialState, strict).getSubstitued();
     }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed. NB: No CommandCOntext being provided, variables can't be
+     * resolved. variables should be already resolved when calling this parse
+     * method.
+     */
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState, boolean strict) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, strict, null);
+    }
+
+    /**
+     * Returns the string which was actually parsed with all the substitutions
+     * performed
+     */
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState, CommandContext ctx) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, true, ctx);
+    }
+
 
     /**
      * Returns the string which was actually parsed with all the substitutions performed
      */
     public static String parse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
             boolean strict, CommandContext ctx) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, strict, ctx).getSubstitued();
+    }
+
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
+            boolean strict, CommandContext ctx) throws CommandFormatException {
+        return parseLine(str, callbackHandler, initialState, strict, false, ctx);
+    }
+
+    public static SubstitutedLine parseLine(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
+            boolean strict, boolean disableResolutionException, CommandContext ctx) throws CommandFormatException {
 
         try {
-            return doParse(str, callbackHandler, initialState, strict, ctx);
-        } catch(CommandFormatException e) {
+            return doParse(str, callbackHandler, initialState, strict, disableResolutionException, ctx);
+        } catch (CommandFormatException e) {
             throw e;
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             throw new CommandFormatException("Failed to parse '" + str + "'", t);
         }
     }
@@ -81,19 +132,11 @@ public class StateParser {
     /**
      * Returns the string which was actually parsed with all the substitutions performed
      */
-    protected static String doParse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
-            boolean strict) throws CommandFormatException {
-        return doParse(str, callbackHandler, initialState, strict, null);
-    }
-
-    /**
-     * Returns the string which was actually parsed with all the substitutions performed
-     */
-    protected static String doParse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
-            boolean strict, CommandContext cmdCtx) throws CommandFormatException {
+    protected static SubstitutedLine doParse(String str, ParsingStateCallbackHandler callbackHandler, ParsingState initialState,
+            boolean strict, boolean disableResolutionException, CommandContext cmdCtx) throws CommandFormatException {
 
         if (str == null || str.isEmpty()) {
-            return str;
+            return new SubstitutedLine(str);
         }
 
         ParsingContextImpl ctx = new ParsingContextImpl();
@@ -102,8 +145,86 @@ public class StateParser {
         ctx.input = str;
         ctx.strict = strict;
         ctx.cmdCtx = cmdCtx;
+        ctx.disableResolutionException = disableResolutionException;
 
-        return ctx.parse();
+        ctx.substitued.substitued = ctx.parse();
+        return ctx.substitued;
+    }
+
+    public static class SubstitutedLine {
+
+        private final List<Substitution> substitutions = new ArrayList<>();
+        private String substitued;
+        private int currentOriginalIndex;
+
+        SubstitutedLine() {
+        }
+
+        SubstitutedLine(String str) {
+            substitued = str;
+        }
+
+        public String getSubstitued() {
+            return substitued;
+        }
+
+        public List<Substitution> getSubstitions() {
+            return Collections.unmodifiableList(substitutions);
+        }
+
+        public int getOriginalOffset(int substituedOffset) {
+            if (substitutions.isEmpty()) {
+                return substituedOffset;
+            }
+            int delta = 0;
+            for (Substitution sub : getSubstitions()) {
+                if (sub.substitutionIndex > substituedOffset) {
+                    break;
+                } else {
+                    delta += sub.original.length() - sub.substitution.length();
+                }
+            }
+            return substituedOffset + delta;
+        }
+
+        public int getSubstitutedOffset(int originalOffset) {
+            if (substitutions.isEmpty()) {
+                return originalOffset;
+            }
+            int delta = 0;
+            for (Substitution sub : getSubstitions()) {
+                if (sub.substitutionIndex > originalOffset) {
+                    break;
+                } else {
+                    delta += sub.substitution.length() - sub.original.length();
+                }
+            }
+            return originalOffset + delta;
+        }
+
+        private void add(String original, String substitution, int location) {
+            //compute original index;
+            int orig = location - currentOriginalIndex;
+            currentOriginalIndex += substitution.length() - original.length();
+            substitutions.add(new Substitution(original, substitution, location, orig));
+        }
+
+    }
+
+    public static class Substitution {
+
+        private final String original;
+        private final String substitution;
+        private final int substitutionIndex;
+        private final int originalIndex;
+
+        private Substitution(String original, String substitution, int substitutionIndex, int originalIndex) {
+            this.original = original;
+            this.substitution = substitution;
+            this.substitutionIndex = substitutionIndex;
+            this.originalIndex = originalIndex;
+        }
+
     }
 
     static class ParsingContextImpl implements ParsingContext {
@@ -117,9 +238,10 @@ public class StateParser {
         ParsingStateCallbackHandler callbackHandler;
         ParsingState initialState;
         boolean strict;
+        boolean disableResolutionException;
         CommandFormatException error;
         CommandContext cmdCtx;
-
+        private final SubstitutedLine substitued = new SubstitutedLine();
         private final Deque<Character> lookFor = new ArrayDeque<Character>();
         /** to not meet the same character at the same position multiple times */
         int lastMetLookForIndex = -1;
@@ -237,10 +359,11 @@ public class StateParser {
             final String name = input.substring(location+1, endIndex);
             final String value = cmdCtx == null ? null : cmdCtx.getVariable(name);
             if(value == null) {
-                if (exceptionIfNotResolved) {
+                if (exceptionIfNotResolved && !disableResolutionException) {
                     throw new UnresolvedVariableException(name, "Unrecognized variable " + name);
                 }
             } else {
+                substitued.add("$" + name, value, location);
                 StringBuilder buf = new StringBuilder(input.length() - name.length() + value.length());
                 buf.append(input.substring(0, location)).append(value);
                 if (endIndex < input.length()) {

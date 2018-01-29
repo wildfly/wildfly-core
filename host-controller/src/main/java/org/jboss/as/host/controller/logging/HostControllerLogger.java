@@ -31,21 +31,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
+
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.jvm.JvmType;
 import org.jboss.as.protocol.mgmt.RequestProcessingException;
-import org.jboss.as.server.ServerState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
@@ -61,6 +59,7 @@ import org.jboss.remoting3.Channel;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings("DefaultAnnotationParam")
 @MessageLogger(projectCode = "WFLYHC", length = 4)
 public interface HostControllerLogger extends BasicLogger {
 
@@ -109,16 +108,16 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 3, value = "Creating http management service using network interface (%s) port (%d) securePort (%d)")
     void creatingHttpManagementService(String interfaceName, int port, int securePort);
 
-    /**
-     * Logs a warning message indicating an error retrieving domain model from the remote domain controller.
-     *
-     * @param hostName     the name of the host.
-     * @param port         the port number.
-     * @param errorMessage the error message.
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 4, value = "Error retrieving domain model from remote domain controller %s:%d: %s")
-    void errorRetrievingDomainModel(String hostName, int port, String errorMessage);
+//    /**
+//     * Logs a warning message indicating an error retrieving domain model from the remote domain controller.
+//     *
+//     * @param hostName     the name of the host.
+//     * @param port         the port number.
+//     * @param errorMessage the error message.
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 4, value = "Error retrieving domain model from remote domain controller %s:%d: %s")
+//    void errorRetrievingDomainModel(String hostName, int port, String errorMessage);
 
     /**
      * Logs a warning message indicating the existing server is already defined with a different state.
@@ -130,25 +129,25 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 5, value = "Existing server [%s] with status: %s")
     void existingServerWithState(String serverName, ServerStatus state);
 
-    /**
-     * Logs an error message indicating a failure to create a server process.
-     *
-     * @param cause      the cause of the error.
-     * @param serverName the server name that failed.
-     */
-    @LogMessage(level = Level.ERROR)
-    @Message(id = 6, value = "Failed to create server process %s")
-    void failedToCreateServerProcess(@Cause Throwable cause, String serverName);
+//    /**
+//     * Logs an error message indicating a failure to create a server process.
+//     *
+//     * @param cause      the cause of the error.
+//     * @param serverName the server name that failed.
+//     */
+//    @LogMessage(level = Level.ERROR)
+//    @Message(id = 6, value = "Failed to create server process %s")
+//    void failedToCreateServerProcess(@Cause Throwable cause, String serverName);
 
-    /**
-     * Logs an error message indicating a failure to send a reconnect message to the server.
-     *
-     * @param cause      the cause of the error.
-     * @param serverName the server name.
-     */
-    @LogMessage(level = Level.ERROR)
-    @Message(id = 7, value = "Failed to send reconnect message to server %s")
-    void failedToSendReconnect(@Cause Throwable cause, String serverName);
+//    /**
+//     * Logs an error message indicating a failure to send a reconnect message to the server.
+//     *
+//     * @param cause      the cause of the error.
+//     * @param serverName the server name.
+//     */
+//    @LogMessage(level = Level.ERROR)
+//    @Message(id = 7, value = "Failed to send reconnect message to server %s")
+//    void failedToSendReconnect(@Cause Throwable cause, String serverName);
 
     /**
      * Logs an error message indicating a failure to start the server, represented by the {@code serverName} parameter.
@@ -170,14 +169,14 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 9, value = "Failed to stop server (%s)")
     void failedToStopServer(@Cause Throwable cause, String serverName);
 
-    /**
-     * Logs a warning message indicating graceful shutdown of servers is not supported.
-     *
-     * @param serverName the name fo the server.
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 10, value = "Graceful shutdown of server %s was requested but is not presently supported. Falling back to rapid shutdown.")
-    void gracefulShutdownNotSupported(String serverName);
+//    /**
+//     * Logs a warning message indicating graceful shutdown of servers is not supported.
+//     *
+//     * @param serverName the name fo the server.
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 10, value = "Graceful shutdown of server %s was requested but is not presently supported. Falling back to rapid shutdown.")
+//    void gracefulShutdownNotSupported(String serverName);
 
     /**
      * Logs a warning message indicating {@literal <permgen>} is being ignored.
@@ -235,9 +234,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 16, value = "Ignoring <option value=\"%s\" for jvm '%s' since '%s' was set")
     void optionAlreadySet(String option, String jvm, String element);
 
-    /**
-     * Logs an informational message indicating a reconnection to master.
-     */
+//    /**
+//     * Logs an informational message indicating a reconnection to master.
+//     */
 //    @LogMessage(level = Level.INFO)
 //    @Message(id = 17, value = "Reconnected to master")
 //    void reconnectedToMaster();
@@ -282,15 +281,15 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 21, value = "Server [%s] connected using connection [%s]")
     void serverConnected(String name, Channel channel);
 
-    /**
-     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
-     * communication did not complete.
-     *
-     * @param cause the cause of the error.
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 22, value = "Graceful shutdown of the handler used for messages from other Host Controllers did not cleanly complete but shutdown of the underlying communication channel is proceeding")
-    void serviceShutdownIncomplete(@Cause Throwable cause);
+//    /**
+//     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
+//     * communication did not complete.
+//     *
+//     * @param cause the cause of the error.
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 22, value = "Graceful shutdown of the handler used for messages from other Host Controllers did not cleanly complete but shutdown of the underlying communication channel is proceeding")
+//    void serviceShutdownIncomplete(@Cause Throwable cause);
 
     /**
      * Logs an informational message indicating the server is starting.
@@ -310,16 +309,16 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 24, value = "Stopping server %s")
     void stoppingServer(String serverName);
 
-    /**
-     * Logs a warning message indicating the server is not in the expected state.
-     *
-     * @param serverName the name of the server.
-     * @param expected   the expected state.
-     * @param current    the current state.
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 25, value = "Server %s is not in the expected %s state: %s")
-    void unexpectedServerState(String serverName, ServerState expected, ServerState current);
+//    /**
+//     * Logs a warning message indicating the server is not in the expected state.
+//     *
+//     * @param serverName the name of the server.
+//     * @param expected   the expected state.
+//     * @param current    the current state.
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 25, value = "Server %s is not in the expected %s state: %s")
+//    void unexpectedServerState(String serverName, ServerState expected, ServerState current);
 
     /**
      * Logs an informational message indicating the host has been unregistered as a remote slave.
@@ -340,12 +339,12 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 27, value = "Unregistering server %s")
     void unregisteringServer(String name);
 
-    /**
-     * Informal log message indicating the local host registered at the remote domain controller.
-     */
-    @LogMessage(level = INFO)
-    @Message(id = 28, value =  "Registered at domain controller")
-    void registeredAtRemoteHostController();
+//    /**
+//     * Informal log message indicating the local host registered at the remote domain controller.
+//     */
+//    @LogMessage(level = INFO)
+//    @Message(id = 28, value =  "Registered at domain controller")
+//    void registeredAtRemoteHostController();
 
     /**
      * Informal log message indicating the local host unregistered at the remote domain controller.
@@ -362,9 +361,9 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 31, value = "Cannot load the domain model using --backup")
     void invalidRemoteBackupPersisterState();
 
-    @LogMessage(level = Level.WARN)
-    @Message(id = 32, value = "Cannot store the domain model using --cached-dc")
-    void invalidCachedPersisterState();
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 32, value = "Cannot store the domain model using --cached-dc")
+//    void invalidCachedPersisterState();
 
     @LogMessage(level = Level.ERROR)
     @Message(id = 33, value = "Caught exception during boot")
@@ -377,15 +376,15 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 35, value = "Installation of the domain-wide configuration has failed. Because the running mode of this Host Controller is ADMIN_ONLY boot has been allowed to proceed. If ADMIN_ONLY mode were not in effect the process would be terminated due to a critical boot failure.")
     void reportAdminOnlyDomainXmlFailure();
 
-    /**
-     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
-     * communication did not complete within the given timeout period.
-     *
-     * @param timeout the timeout, in ms.
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 36, value = "Graceful shutdown of the handler used for messages from other Host Controllers did not complete within [%d] ms but shutdown of the underlying communication channel is proceeding")
-    void gracefulManagementChannelHandlerShutdownTimedOut(int timeout);
+//    /**
+//     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
+//     * communication did not complete within the given timeout period.
+//     *
+//     * @param timeout the timeout, in ms.
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 36, value = "Graceful shutdown of the handler used for messages from other Host Controllers did not complete within [%d] ms but shutdown of the underlying communication channel is proceeding")
+//    void gracefulManagementChannelHandlerShutdownTimedOut(int timeout);
 
     @LogMessage(level = INFO)
     @Message(id = 37, value="The master host controller has been restarted. Re-registering this slave host controller with the new master.")
@@ -597,15 +596,15 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 59, value = "Failed to read authentication key: %s")
     String failedToReadAuthenticationKey(Throwable cause);
 
-    /**
-     * Creates an exception indicating there is already a connection for the host.
-     *
-     * @param hostName the name of the host.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 60, value = "Already have a connection for host %s")
-    IllegalArgumentException hostNameAlreadyConnected(String hostName);
+//    /**
+//     * Creates an exception indicating there is already a connection for the host.
+//     *
+//     * @param hostName the name of the host.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 60, value = "Already have a connection for host %s")
+//    IllegalArgumentException hostNameAlreadyConnected(String hostName);
 
     /**
      * Creates an exception indicating the information provided could be not used to generate a hash.
@@ -703,24 +702,24 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 68, value = "Must call %s before persisting the domain model")
     IllegalStateException mustInvokeBeforePersisting(String methodName);
 
-    /**
-     * Creates an exception indicating there is no channel for the host.
-     *
-     * @param hostName the name of the host.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 69, value = "No channel for host %s")
-    IllegalArgumentException noChannelForHost(String hostName);
+//    /**
+//     * Creates an exception indicating there is no channel for the host.
+//     *
+//     * @param hostName the name of the host.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 69, value = "No channel for host %s")
+//    IllegalArgumentException noChannelForHost(String hostName);
 
-    /**
-     * Creates an exception indicating a host connecting to a remove domain controller must have its name attribute
-     * set.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 70, value = "A host connecting to a remote domain controller must have its name attribute set")
-    IllegalArgumentException noNameAttributeOnHost();
+//    /**
+//     * Creates an exception indicating a host connecting to a remove domain controller must have its name attribute
+//     * set.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 70, value = "A host connecting to a remote domain controller must have its name attribute set")
+//    IllegalArgumentException noNameAttributeOnHost();
 
     /**
      * Creates an exception indicating there is no server inventory.
@@ -730,45 +729,45 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 71, value = "No server inventory")
     IllegalStateException noServerInventory();
 
-    /**
-     * Creates an exception indicating the property already exists.
-     *
-     * @param name the name of the property.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 72, value = "Property %s already exists")
-    IllegalArgumentException propertyAlreadyExists(String name);
+//    /**
+//     * Creates an exception indicating the property already exists.
+//     *
+//     * @param name the name of the property.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 72, value = "Property %s already exists")
+//    IllegalArgumentException propertyAlreadyExists(String name);
 
-    /**
-     * Creates an exception indicating the property does not exist.
-     *
-     * @param name the name of the property.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 73, value = "Property %s does not exist")
-    IllegalArgumentException propertyNotFound(String name);
+//    /**
+//     * Creates an exception indicating the property does not exist.
+//     *
+//     * @param name the name of the property.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 73, value = "Property %s does not exist")
+//    IllegalArgumentException propertyNotFound(String name);
 
-    /**
-     * Creates an exception indicating the value for the property is {@code null}.
-     *
-     * @param name the name of the property.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 74, value = "Value for property %s is null")
-    IllegalArgumentException propertyValueNull(String name);
+//    /**
+//     * Creates an exception indicating the value for the property is {@code null}.
+//     *
+//     * @param name the name of the property.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 74, value = "Value for property %s is null")
+//    IllegalArgumentException propertyValueNull(String name);
 
-    /**
-     * Creates an exception indicating the property has a {@code null} value.
-     *
-     * @param name the name of the property.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 75, value = "Property %s has a null value")
-    IllegalStateException propertyValueHasNullValue(String name);
+//    /**
+//     * Creates an exception indicating the property has a {@code null} value.
+//     *
+//     * @param name the name of the property.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 75, value = "Property %s has a null value")
+//    IllegalStateException propertyValueHasNullValue(String name);
 
     // id = 76; redundant parameter null check message
 
@@ -834,15 +833,15 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 82, value = "Included socket binding group %s is not defined")
     IllegalStateException undefinedSocketBindingGroup(String name);
 
-    /**
-     * Creates an exception indicating the service state was unexpected.
-     *
-     * @param state the unexpected state.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 83, value = "Unexpected state %s")
-    IllegalStateException unexpectedState(ServerState state);
+//    /**
+//     * Creates an exception indicating the service state was unexpected.
+//     *
+//     * @param state the unexpected state.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 83, value = "Unexpected state %s")
+//    IllegalStateException unexpectedState(ServerState state);
 
     /**
      * Creates an exception indicating the {@code value} for the {@code name} is unknown.
@@ -867,15 +866,15 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 85, value = "Value for %s is not a known host -- %s. %s")
     String unknownHostValue(String name, Object value, String usageNote);
 
-    /**
-     * Creates an exception indicating the type is unrecognized.
-     *
-     * @param type the unrecognized type.
-     *
-     * @return an {@link IOException} for the error.
-     */
-    @Message(id = 86, value = "unrecognized type %s")
-    IOException unrecognizedType(byte type);
+//    /**
+//     * Creates an exception indicating the type is unrecognized.
+//     *
+//     * @param type the unrecognized type.
+//     *
+//     * @return an {@link IOException} for the error.
+//     */
+//    @Message(id = 86, value = "unrecognized type %s")
+//    IOException unrecognizedType(byte type);
 
     /**
      * Creates an exception indication that the host controller was already shutdown.
@@ -884,25 +883,25 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 87, value = "Host-Controller is already shutdown.")
     IllegalStateException hostAlreadyShutdown();
 
-    /**
-     * Creates an exception indicating no server group could be found with the given name
-     *
-     * @param groupName the group name
-     *
-     * @return an {@link OperationFailedException} for the error.
-     */
-    @Message(id = 88, value = "No server-group called: %s")
-    OperationFailedException noServerGroupCalled(String groupName);
+//    /**
+//     * Creates an exception indicating no server group could be found with the given name
+//     *
+//     * @param groupName the group name
+//     *
+//     * @return an {@link OperationFailedException} for the error.
+//     */
+//    @Message(id = 88, value = "No server-group called: %s")
+//    OperationFailedException noServerGroupCalled(String groupName);
 
-    /**
-     * Creates an exception indicating no server group could be found with the given name
-     *
-     * @param groupName the socket binding group name
-     *
-     * @return an {@link OperationFailedException} for the error.
-     */
-    @Message(id = 89, value = "No socket-binding-group called: %s")
-    OperationFailedException noSocketBindingGroupCalled(String groupName);
+//    /**
+//     * Creates an exception indicating no server group could be found with the given name
+//     *
+//     * @param groupName the socket binding group name
+//     *
+//     * @return an {@link OperationFailedException} for the error.
+//     */
+//    @Message(id = 89, value = "No socket-binding-group called: %s")
+//    OperationFailedException noSocketBindingGroupCalled(String groupName);
 
     @Message(id = 90, value = "HostControllerEnvironment does not support system property updates")
     UnsupportedOperationException hostControllerSystemPropertyUpdateNotSupported();
@@ -978,8 +977,8 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 111, value = "Option '%s' already exists")
     IllegalStateException jvmOptionAlreadyExists(String option);
 
-    @Message(id = 112, value = "Environment variable '%s' already exists")
-    IllegalStateException envVariableAlreadyExists(String var);
+//    @Message(id = 112, value = "Environment variable '%s' already exists")
+//    IllegalStateException envVariableAlreadyExists(String var);
 
     @Message(id = 113, value="Host controller management version %s.%s is too old, Only %s.%s or higher are supported")
     OperationFailedException unsupportedManagementVersionForHost(int major, int minor, int minMajor, int minMinor);
@@ -1064,23 +1063,23 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id=134, value="Cannot instantiate discovery option class '%s': %s")
     IllegalStateException cannotInstantiateDiscoveryOptionClass(String className, String message);
 
-    /**
-     * Logs a warning message indicating that the slave host controller could not
-     * connect to the remote domain controller and that another discovery option
-     * will be tried.
-     *
-     * @param e the cause of the error.
-     */
+//    /**
+//     * Logs a warning message indicating that the slave host controller could not
+//     * connect to the remote domain controller and that another discovery option
+//     * will be tried.
+//     *
+//     * @param e the cause of the error.
+//     */
 //    @LogMessage(level = Level.WARN)
 //    @Message(id=135, value = "Could not connect to master. Trying another domain controller discovery option. Error was: %s")
 //    void tryingAnotherDiscoveryOption(Exception e);
 
-    /**
-     * Logs a warning message indicating that the slave host controller could not
-     * connect to the remote domain controller and that there are no discovery options left.
-     *
-     * @param e the cause of the error.
-     */
+//    /**
+//     * Logs a warning message indicating that the slave host controller could not
+//     * connect to the remote domain controller and that there are no discovery options left.
+//     *
+//     * @param e the cause of the error.
+//     */
 //    @LogMessage(level = Level.WARN)
 //    @Message(id=136, value = "Could not connect to master. No domain controller discovery options left. Error was: %s")
 //    void noDiscoveryOptionsLeft(Exception e);
@@ -1106,14 +1105,14 @@ public interface HostControllerLogger extends BasicLogger {
     void cannotRemoveS3File(Exception e);
 
     // Is not used any more
-    @Message(id=139, value="Invalid value for %s. Must only contain all of the existing discovery options")
-    OperationFailedException invalidDiscoveryOptionsOrdering(String name);
+//    @Message(id=139, value="Invalid value for %s. Must only contain all of the existing discovery options")
+//    OperationFailedException invalidDiscoveryOptionsOrdering(String name);
 
     @Message(id=140, value="Can't execute transactional operation '%s' from slave controller")
     IllegalStateException cannotExecuteTransactionalOperationFromSlave(String operationName);
 
-    @Message(id=141, value="There is no resource called %s")
-    OperationFailedException noResourceFor(PathAddress address);
+//    @Message(id=141, value="There is no resource called %s")
+//    OperationFailedException noResourceFor(PathAddress address);
 
     @LogMessage(level = Level.ERROR)
     @Message(id=142, value = "Failed to apply domain-wide configuration from master host controller")
@@ -1198,18 +1197,18 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 153, value = "Channel closed")
     IOException channelClosed();
 
-    @Message( id = 154, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
-    OperationFailedException noSecurityRealmForSsl();
+//    @Message( id = 154, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
+//    OperationFailedException noSecurityRealmForSsl();
 
-    /**
-     * @param jvmVersion version that jvm returned
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 155, value = "JVM version '%s' unknown, unpredicted behavior may occur")
-    void jvmVersionUnknown(String jvmVersion);
+//    /**
+//     * @param jvmVersion version that jvm returned
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 155, value = "JVM version '%s' unknown, unpredicted behavior may occur")
+//    void jvmVersionUnknown(String jvmVersion);
 
-    @Message(id = 156, value = "failed to resolve interface %s")
-    OperationFailedException failedToResolveInterface(String name);
+//    @Message(id = 156, value = "failed to resolve interface %s")
+//    OperationFailedException failedToResolveInterface(String name);
 
     @Message( id = 157, value = "Could not create domain auto-start directory: %s")
     IllegalStateException couldNotCreateDomainAutoStartDirectory(Path file, @Cause Throwable cause);
@@ -1224,8 +1223,8 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 160, value = "Could not read or create the domain UUID in file: %s")
     IllegalStateException couldNotObtainDomainUuid(@Cause Throwable cause, Path file);
 
-    @Message(id = 161, value = "Model references of type '%s' are missing: %s")
-    OperationFailedException missingReferences(String type, Set<String> missing);
+//    @Message(id = 161, value = "Model references of type '%s' are missing: %s")
+//    OperationFailedException missingReferences(String type, Set<String> missing);
 
     @Message(id = 162, value = "The binding name '%s' in socket binding group '%s' is not unique. Names must be unique across socket-binding, local-destination-outbound-socket-binding and remote-destination-outbound-socket-binding")
     OperationFailedException bindingNameNotUnique(String name, String groupName);
@@ -1272,8 +1271,8 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 175, value = "domain-config '%s' specified for reload could not be found")
     OperationFailedException domainConfigForReloadNotFound(String serverConfig);
 
-    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
-    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
+//    @Message(id = 176, value = "The deprecated parameter %s has been set in addition to the current parameter %s but with different values")
+//    OperationFailedException deprecatedAndCurrentParameterMismatch(String deprecated, String current);
 
     @LogMessage(level = WARN)
     @Message(id = 177, value = "No security realm defined for native management service; all access will be unrestricted.")
@@ -1400,5 +1399,20 @@ public interface HostControllerLogger extends BasicLogger {
     @LogMessage(level = Level.ERROR)
     @Message(id = 205, value = "An error occurred setting the -Dlogging.configuration property for server %s. Configuration path %s")
     void failedToSetLoggingConfiguration(@Cause Throwable cause, String serverName, File path);
+
+    @Message(id = 206, value = "File %s already exists, you must use --remove-existing-domain-config to overwrite existing files.")
+    IllegalStateException cannotOverwriteDomainXmlWithEmpty(String filename);
+
+    @Message(id = 207, value = "File %s already exists, you must use --remove-existing-host-config to overwrite existing files.")
+    IllegalStateException cannotOverwriteHostXmlWithEmpty(String filename);
+
+    @Message(id = 208, value = "A host (%s) has already been registered. You must shutdown this host before adding a new one.")
+    OperationFailedException cannotAddHostAlreadyRegistered(String existingName);
+
+    @Message(id = 209, value = "Host name may not be null.")
+    OperationFailedException nullHostName();
+
+    @Message(id = 210, value = "A slave host controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
+    OperationFailedException cannotAddSlaveHostAfterBoot();
 
 }

@@ -22,11 +22,17 @@
 
 package org.jboss.as.controller;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -231,7 +237,7 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
 
 
     public static final class Builder extends ListAttributeDefinition.Builder<Builder, ObjectListAttributeDefinition> {
-        private final ObjectTypeAttributeDefinition valueType;
+        private ObjectTypeAttributeDefinition valueType;
 
         public Builder(final String name, final ObjectTypeAttributeDefinition valueType) {
             super(name);
@@ -241,11 +247,31 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             setAttributeMarshaller(AttributeMarshaller.OBJECT_LIST_MARSHALLER);
         }
 
+        public Builder(ObjectListAttributeDefinition basis) {
+            super(basis);
+            this.valueType = basis.valueType;
+        }
+
+        public Builder setValueType(ObjectTypeAttributeDefinition valueType) {
+            this.valueType = valueType;
+            return this;
+        }
+
         public static Builder of(final String name, final ObjectTypeAttributeDefinition valueType) {
             return new Builder(name, valueType);
         }
 
         public ObjectListAttributeDefinition build() {
+            List<AccessConstraintDefinition> valueConstraints = valueType.getAccessConstraints();
+            if (!valueConstraints.isEmpty()) {
+                Set<AccessConstraintDefinition> acdSet = new LinkedHashSet<>();
+                AccessConstraintDefinition[] curAcds = getAccessConstraints();
+                if (curAcds != null && curAcds.length > 0) {
+                    Collections.addAll(acdSet, curAcds);
+                }
+                acdSet.addAll(valueConstraints);
+                setAccessConstraints(acdSet.toArray(new AccessConstraintDefinition[acdSet.size()]));
+            }
             return new ObjectListAttributeDefinition(this);
         }
 

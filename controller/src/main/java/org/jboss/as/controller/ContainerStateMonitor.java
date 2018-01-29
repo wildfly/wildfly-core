@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -46,7 +45,7 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-final class ContainerStateMonitor extends AbstractServiceListener<Object> {
+final class ContainerStateMonitor {
 
     private final ServiceRegistry serviceRegistry;
     private final StabilityMonitor monitor = new StabilityMonitor();
@@ -74,10 +73,8 @@ final class ContainerStateMonitor extends AbstractServiceListener<Object> {
         }
     }
 
-    @Override
-    public void listenerAdded(final ServiceController<?> controller) {
-        monitor.addController(controller);
-        controller.removeListener(this);
+    StabilityMonitor getStabilityMonitor() {
+        return monitor;
     }
 
     /**

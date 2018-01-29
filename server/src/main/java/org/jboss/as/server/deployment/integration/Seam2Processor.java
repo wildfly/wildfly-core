@@ -74,7 +74,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
     public static final String[] SEAM_FILES = new String[] { SEAM_PROPERTIES, SEAM_PROPERTIES_META_INF,
             SEAM_PROPERTIES_WEB_INF, SEAM_COMPONENTS_META_INF, SEAM_COMPONENTS_WEB_INF };
 
-    public static final String SEAM_INT_JAR = "jboss-seam-int.jar";
+    public static final String SEAM_INT_JAR = "jboss-seam-int-jbossas.jar";
     public static final ModuleIdentifier EXT_CONTENT_MODULE = ModuleIdentifier.create("org.jboss.integration.ext-content");
     public static final ModuleIdentifier VFS_MODULE = ModuleIdentifier.create("org.jboss.vfs");
 

@@ -109,7 +109,7 @@ public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeH
     }
 
     @Override
-    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, Void handback) {
+    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, Void handback) throws OperationFailedException {
         // no-op
     }
 }

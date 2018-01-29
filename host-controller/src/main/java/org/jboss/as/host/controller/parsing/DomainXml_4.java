@@ -72,7 +72,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
@@ -87,7 +86,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A mapper between an AS server's configuration model and XML representations, particularly {@code domain.xml}.
@@ -95,7 +93,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
+final class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
 
@@ -126,12 +124,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         throw unexpectedElement(reader);
     }
 
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        throw new UnsupportedOperationException();
-    }
-
-    void readDomainElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -154,7 +147,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -190,7 +183,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
         if (element == Element.MANAGEMENT_CLIENT_CONTENT) {
             parseManagementClientContent(reader, address, namespace, list);
-            element = nextElement(reader, namespace);
+            nextElement(reader, namespace);
         } else if (element == null) {
             // Always add op(s) to set up management-client-content resources
             initializeRolloutPlans(address, list);
@@ -199,7 +192,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void readDomainElementAttributes(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElementAttributes(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
@@ -245,8 +238,8 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address,
-            final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
+    private void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address,
+                                                final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
         HashSet<String> uniqueGroupNames = new HashSet<>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
@@ -264,8 +257,8 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
     }
 
 
-    void parseSocketBindingGroup(final XMLExtendedStreamReader reader, final Set<String> interfaces,
-                                 final ModelNode address, final List<ModelNode> updates, HashSet<String> uniqueGroupNames) throws XMLStreamException {
+    private void parseSocketBindingGroup(final XMLExtendedStreamReader reader, final Set<String> interfaces,
+                                         final ModelNode address, final List<ModelNode> updates, HashSet<String> uniqueGroupNames) throws XMLStreamException {
         // both outbound-socket-bindings and socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -353,7 +346,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();
@@ -458,7 +451,7 @@ class DomainXml_4 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();

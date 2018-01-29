@@ -37,6 +37,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -240,14 +242,17 @@ public class ControllerInitializer {
 
         rootResource.getModel().get(INTERFACE);
         rootResource.getModel().get(SOCKET_BINDING_GROUP);
-        ManagementResourceRegistration interfaces = rootRegistration.registerSubModel(new InterfaceDefinition(
-                SpecifiedInterfaceAddHandler.INSTANCE,
-                SpecifiedInterfaceRemoveHandler.INSTANCE,
-                true,
-                false
-        ));
-        /*interfaces.registerOperationHandler(SpecifiedInterfaceAddHandler.OPERATION_NAME, SpecifiedInterfaceAddHandler.INSTANCE, new DefaultResourceAddDescriptionProvider(interfaces, CommonDescriptions.getResourceDescriptionResolver()), false);
-        interfaces.registerOperationHandler(SpecifiedInterfaceRemoveHandler.OPERATION_NAME, SpecifiedInterfaceRemoveHandler.INSTANCE, new DefaultResourceRemoveDescriptionProvider(CommonDescriptions.getResourceDescriptionResolver()), false);*/
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+        try {
+             //= lookup.findConstructor(InterfaceDefinition.class, MethodType.methodType(void.class, InterfaceAddHandler.class, OperationStepHandler.class, boolean.class, boolean.class));
+            MethodHandle handle = lookup.unreflectConstructor(InterfaceDefinition.class.getConstructors()[0]);
+            InterfaceDefinition id = (InterfaceDefinition)handle.invoke(SpecifiedInterfaceAddHandler.INSTANCE,
+                            SpecifiedInterfaceRemoveHandler.INSTANCE, true, false);
+            rootRegistration.registerSubModel(id);
+        } catch (Throwable e) {
+            throw new RuntimeException("Could not register interface definition", e);
+        }
 
         //TODO socket-binding-group currently lives in controller and the child RDs live in server so they currently need passing in from here
         rootRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);

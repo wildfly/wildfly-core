@@ -483,7 +483,8 @@
         <xs:sequence>
             <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListener" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="file-audit-log" type="fileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="rotating-file-audit-log" type="rotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="periodic-rotating-file-audit-log" type="periodicRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="size-rotating-file-audit-log" type="sizeRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="syslog-audit-log" type="syslogAuditLogType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
@@ -578,7 +579,7 @@
                 <xs:attribute name="synchronized" type="xs:boolean" default="true">
                     <xs:annotation>
                         <xs:documentation>
-                            Should all audit events be immediately synchronised to disk?
+                            Whether every event should be immediately synchronised to disk.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -593,68 +594,62 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="rotatingFileAuditLogType">
+    <xs:complexType name="periodicRotatingFileAuditLogType">
         <xs:annotation>
             <xs:documentation>
-                An audit log definition for persisting an audit log to a local files with log rotation.
+                An audit log definition for persisting an audit log to a local file rotating the log after a time period
+                derived from the given suffix string, which should be in a format understood by java.time.format.DateTimeFormatter.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="auditLogType">
-                <xs:attribute name="path" type="xs:string" use="required">
+            <xs:extension base="fileAuditLogType">
+                <xs:attribute name="suffix" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The path to write the audit log to.
+                            The suffix string in a format which can be understood by java.time.format.DateTimeFormatter.
+                            The period of the rotation is automatically calculated based on the suffix.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="relative-to" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>
-                            A reference to a previously defined path that the path of the audit log is
-                            relative to.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="synchronized" type="xs:boolean" default="true">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Should all audit events be immediately synchronised to disk?
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="format" default="SIMPLE" type="formatType">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The format to use to log the event.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="max-backup-index" default="0" type="xs:long">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="sizeRotatingFileAuditLogType">
+        <xs:annotation>
+            <xs:documentation>
+                An audit log definition for persisting an audit log to a local file rotating the log after the
+                size of the file grows beyond a certain point and keeping a fixed number of backups.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="fileAuditLogType">
+                <xs:attribute name="max-backup-index" default="1" type="xs:long" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             The maximum number of files to backup when rotating.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="rotate-on-boot" type="xs:boolean" default="false">
+                <xs:attribute name="rotate-on-boot" type="xs:boolean" default="false" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             Whether the file should be rotated before the a new file is set.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="rotate-size" default="0" type="xs:long">
+                <xs:attribute name="rotate-size" default="10m" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
                             The log file size the file should rotate at.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="suffix" type="xs:string">
+                <xs:attribute name="suffix" type="xs:string" use="optional">
                     <xs:annotation>
                         <xs:documentation>
-                            Format of date used as suffix of log file names in java.text.SimpleDateFormat format.
+                            Format of date used as suffix of log file names in java.time.format.DateTimeFormatter.
+                            The suffix does not play a role in determining when the file should be rotated.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1012,21 +1007,21 @@
                 <xs:attribute name="identity" type="xs:string" use="required">
                     <xs:annotation>
                         <xs:documentation>
-                            The name of the identity.
+                            The name of the identity available from the security realm.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="attribute-name" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
-                            The name of an attribute to associate with the identity.
+                            The name of the attribute associated with this identity.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
                 <xs:attribute name="attribute-values" type="stringListType">
                     <xs:annotation>
                         <xs:documentation>
-                            The values to associate with the identities attribute.
+                            The values associated with the identity attributes.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1045,13 +1040,6 @@
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
                 </xs:sequence>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1080,7 +1068,7 @@
         <xs:attribute name="data-source" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The name of the datasource used to connecto to the database.
+                    The name of the datasource used to connect to the database.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1340,13 +1328,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1404,13 +1385,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1446,13 +1420,6 @@
                     <xs:annotation>
                         <xs:documentation>
                             Should direct verification in this realm to allow login attempt with blank password?
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1492,13 +1459,6 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1506,7 +1466,7 @@
     <xs:complexType name="tokenRealmType">
         <xs:annotation>
             <xs:documentation>
-                Realm definition for a token realm where authenticaton and authorization are handled by
+                Realm definition for a token realm where authentication and authorization are handled by
                 a given token validator.
             </xs:documentation>
         </xs:annotation>
@@ -1520,13 +1480,6 @@
                     <xs:annotation>
                         <xs:documentation>
                             The name of the claim that should be used to obtain the principal's name. Defaults to 'username'.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Indicates that the realm is case sensitive and should then allow for upper case in user names.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -1575,13 +1528,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="oauth2IntrospectionTokenRealmValidatorType">
@@ -1622,13 +1568,6 @@
             <xs:annotation>
                 <xs:documentation>
                     A policy that defines how host names should be verified when using HTTPS. Allowed values: "ANY".
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Indicates that the realm is case sensitive and should then allow for upper case in user names.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1733,14 +1672,14 @@
         <xs:attribute name="connection-timeout" type="xs:integer" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The timeout for connecting to the LDAP server in miliseconds.
+                    The timeout for connecting to the LDAP server in milliseconds.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="read-timeout" type="xs:integer" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The read timeout for an LDAP operation in miliseconds.
+                    The read timeout for an LDAP operation in milliseconds.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1817,11 +1756,11 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="filter-name" type="xs:string" use="optional" default="(rdn-identifier={0})">
+        <xs:attribute name="filter-name" type="xs:string" use="optional" default="(rdn_identifier={0})">
             <xs:annotation>
                 <xs:documentation>
                     The LDAP filter for getting identity by name.
-                    The string "{0}" will by replaced by searched identity name.
+                    The string "{0}" will be replaced by searched identity name and the "rdn_identifier" will be the value of the attribute "rdn-identifier".
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1926,7 +1865,7 @@
     <xs:complexType name="userPasswordMapperType">
         <xs:annotation>
             <xs:documentation>
-                The configuration used to map a specific LDAP attribute (userPassword usualy) as an identity password credential.
+                The configuration used to map a specific LDAP attribute (userPassword usually) as an identity password credential.
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="from" type="xs:string" use="required">
@@ -1968,7 +1907,7 @@
         <xs:attribute name="hash-from" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    The name of the LDAP attribute to map to an OTP credential hash function.
+                    The name of the LDAP attribute to map to a Base64 encoded OTP credential hash.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2654,7 +2593,7 @@
                 <xs:attribute name="maximum-segments" type="xs:int" default="2147483647">
                     <xs:annotation>
                         <xs:documentation>
-                            The maximum number of occurences of the attribute to map.
+                            The maximum number of occurrences of the attribute to map.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2662,6 +2601,13 @@
                     <xs:annotation>
                         <xs:documentation>
                             When set to true, the attribute values will be processed and returned in reverse order.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="convert" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If the Principal is not already an X500Principal should conversion be attempted?
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -2725,7 +2671,7 @@
                 <xs:attribute name="replace-all" type="xs:boolean" default="false">
                     <xs:annotation>
                         <xs:documentation>
-                            Should all occurences be replaced or just the first?
+                            Should all occurrences be replaced or just the first?
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3285,7 +3231,7 @@
                 <xs:documentation>
                     This configuration will only apply when the host name specified is provided by the mechanism.
 
-                    If this attribute is omited then this will match any host name.
+                    If this attribute is omitted then this will match any host name.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3294,7 +3240,7 @@
                 <xs:documentation>
                     This configuration will only apply when the protocol specified is provided by the mechanism.
 
-                    If this attributed is omited then this will match any protocol.
+                    If this attributed is omitted then this will match any protocol.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -3719,7 +3665,7 @@
                 <xs:attribute name="protocol" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
-                            Override the protocol specifed when creating a SASL mechanism.
+                            Override the protocol specified when creating a SASL mechanism.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3832,7 +3778,7 @@
 
                             When set to false all provider loaded mechanisms are enabled unless matched.
 
-                            Any mechansims from a factory not loaded by a Provider are unaffected.
+                            Any mechanisms from a factory not loaded by a Provider are unaffected.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3855,7 +3801,7 @@
     <xs:complexType name="providerSaslServerFactoryType">
         <xs:annotation>
             <xs:documentation>
-                A SaslServerFactory definition that searches an array of Provider instances for all availabel SaslServerFactories.
+                A SaslServerFactory definition that searches an array of Provider instances for all available SaslServerFactories.
             </xs:documentation>
         </xs:annotation>
         <xs:complexContent>
@@ -4514,30 +4460,31 @@
                     <xs:attribute name="time-limit" type="xs:integer" use="optional" default="10000">
                         <xs:annotation>
                             <xs:documentation>
-                                The time limit for LDAP search in miliseconds.
+                                The time limit for LDAP search in milliseconds.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias-attribute={0})">
+                    <xs:attribute name="filter-alias" type="xs:string" use="optional" default="(alias_attribute={0})">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by alias.
-                                The string "{0}" will by replaced by searched alias.
+                                The string "{0}" will be replaced by the searched alias and the "alias_attribute" value will be the value of the attribute "alias-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate-attribute={0})">
+                    <xs:attribute name="filter-certificate" type="xs:string" use="optional" default="(certificate_attribute={0})">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by certificate.
-                                The string "{0}" will by replaced by searched encoded certificate.
+                                The string "{0}" will be replaced by searched encoded certificate and the "certificate_attribute" will be the value of the attribute "certificate-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
-                    <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias-attribute=*)">
+                    <xs:attribute name="filter-iterate" type="xs:string" use="optional" default="(alias_attribute=*)">
                         <xs:annotation>
                             <xs:documentation>
                                 The LDAP filter, which will be used to obtain keystore item by certificate.
+                                The "alias_attribute" will be the value of the attribute "alias-attribute".
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
@@ -4733,13 +4680,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="case-sensitive" type="xs:boolean" use="optional" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Case sensitivity of the credential store. If case insensitive only lower case names are allowed for aliases.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
         <xs:attribute name="location" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -4911,7 +4851,7 @@
             <xs:element name="jacc-policy" type="jaccPolicyType" minOccurs="0" />
             <xs:element name="custom-policy" type="customPolicyType" minOccurs="0" />
         </xs:choice>
-        <xs:attribute name="default-policy" type="xs:string" use="optional">
+        <xs:attribute name="default-policy" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
                     The name of a default policy provider.

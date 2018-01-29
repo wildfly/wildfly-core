@@ -22,12 +22,15 @@
 
 package org.jboss.as.domain.controller.transformers;
 
-import org.jboss.as.controller.ModelVersion;
+
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilder;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
+
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 
@@ -38,19 +41,29 @@ import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
  */
 class ServerGroupTransformers {
 
-    public static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(ServerGroupResourceDefinition.PATH, currentVersion);
+    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
+        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(ServerGroupResourceDefinition.PATH);
 
         //////////////////////////////////
         //The EAP/AS 7.x chains
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_1_8)
+
+        // kill-servers and destroy-servers are rejected since 5.0 and below
+        ResourceTransformationDescriptionBuilder currentTo50 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_5_0);
+        DomainServerLifecycleHandlers.registerKillDestroyTransformers(currentTo50);
+
+        // The use of default-interface attribute in socket-binding-group is rejected since 1.8 and below
+        ResourceTransformationDescriptionBuilder builder20to18 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_2_0, KernelAPIVersion.VERSION_1_8)
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .end();
-        DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
-        JvmTransformers.registerTransformers2_1_AndBelow(builder);
-        DeploymentOverlayTransformers.registerServerGroupTransformers1_6_AndBelow(builder);
+
+        //suspend and resume servers are rejected since 1.8 and below
+        DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder20to18);
+
+        // The use of launch-command is rejected since 2.1 and below
+        ResourceTransformationDescriptionBuilder builder30To21 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_3_0, KernelAPIVersion.VERSION_2_1);
+        JvmTransformers.registerTransformers2_1_AndBelow(builder30To21);
 
         return chainedBuilder;
     }

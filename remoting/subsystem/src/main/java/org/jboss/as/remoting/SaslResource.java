@@ -31,9 +31,7 @@ import static org.jboss.as.remoting.CommonAttributes.SECURITY;
 import static org.jboss.as.remoting.CommonAttributes.SERVER_AUTH;
 import static org.jboss.as.remoting.CommonAttributes.STRENGTH;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -43,8 +41,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
-import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
+import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -66,12 +63,12 @@ class SaslResource extends ConnectorChildResource {
     static final AttributeDefinition QOP_ATTRIBUTE = new StringListAttributeDefinition.Builder(QOP)
             .setRequired(false)
             .setAttributeMarshaller(new SaslAttributeMarshaller(Element.QOP))
-            .setElementValidator(QopParameterValidation.INSTANCE)
+            .setElementValidator(EnumValidator.create(SaslQop.class, SaslQop.values()))
             .build();
     static final AttributeDefinition STRENGTH_ATTRIBUTE = new StringListAttributeDefinition.Builder(STRENGTH)
             .setRequired(false)
             .setAttributeMarshaller(new SaslAttributeMarshaller(Element.STRENGTH))
-            .setElementValidator(StrengthParameterValidation.INSTANCE)
+            .setElementValidator(EnumValidator.create(SaslStrength.class, SaslStrength.values()))
             .build();
     static final SimpleAttributeDefinition SERVER_AUTH_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(SERVER_AUTH, ModelType.BOOLEAN)
             .setDefaultValue(new ModelNode(false))
@@ -137,38 +134,5 @@ class SaslResource extends ConnectorChildResource {
             }
         }
 
-    }
-
-    private abstract static class SaslEnumValidator extends StringLengthValidator implements AllowedValuesValidator {
-        final List<ModelNode> allowedValues = new ArrayList<ModelNode>();
-
-        SaslEnumValidator(Enum<?>[] src, boolean toLowerCase) {
-            super(1);
-            for (Enum<?> e : src) {
-                allowedValues.add(new ModelNode().set(toLowerCase ? e.name().toLowerCase(Locale.ENGLISH) : e.name()));
-            }
-        }
-
-        @Override
-        public List<ModelNode> getAllowedValues() {
-            return allowedValues;
-        }
-
-    }
-
-    private static class QopParameterValidation extends SaslEnumValidator implements AllowedValuesValidator {
-        static final QopParameterValidation INSTANCE = new QopParameterValidation();
-
-        public QopParameterValidation() {
-            super(SaslQop.values(), false);
-        }
-    }
-
-    private static class StrengthParameterValidation extends SaslEnumValidator implements AllowedValuesValidator {
-        static final StrengthParameterValidation INSTANCE = new StrengthParameterValidation();
-
-        public StrengthParameterValidation() {
-            super(SaslStrength.values(), true);
-        }
     }
 }

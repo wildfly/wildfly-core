@@ -97,10 +97,10 @@ public final class ProcessController {
         final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
         new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
         String authKey = Base64.getEncoder().encodeToString(authBytes);
-        addProcess(processName, authKey, command, env, workingDirectory, isPrivileged, respawn);
+        addProcess(processName, -1, authKey, command, env, workingDirectory, isPrivileged, respawn);
     }
 
-    public void addProcess(final String processName, final String authKey, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
+    public void addProcess(final String processName, int id, final String authKey, final List<String> command, final Map<String, String> env, final String workingDirectory, final boolean isPrivileged, final boolean respawn) {
         for (String s : command) {
             if (s == null) {
                 throw ProcessLogger.ROOT_LOGGER.nullCommandComponent();
@@ -116,7 +116,7 @@ public final class ProcessController {
                 // ignore
                 return;
             }
-            final ManagedProcess process = new ManagedProcess(processName, command, env, workingDirectory, lock, this, authKey, isPrivileged, respawn);
+            final ManagedProcess process = new ManagedProcess(processName, id, command, env, workingDirectory, lock, this, authKey, isPrivileged, respawn);
             processes.put(processName, process);
             processesByKey.put(new Key(authKey.getBytes(Charset.forName("US-ASCII"))), process);
             processAdded(processName);

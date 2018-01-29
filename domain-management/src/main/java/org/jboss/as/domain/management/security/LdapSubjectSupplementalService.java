@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 import javax.naming.NamingException;
 import javax.security.auth.Subject;
@@ -160,8 +159,17 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             Set<RealmUser> users = subject.getPrincipals(RealmUser.class);
             Set<Principal> principals = subject.getPrincipals();
 
-            principals.addAll(ldapGroupSearcher.loadGroups(users.stream().map(RealmUser::getName).collect(Collectors.toSet()))
-                    .stream().map(s -> new RealmGroup(realmName, s)).collect(Collectors.toSet()));
+            Set<RealmGroup> set = new HashSet<>();
+            Set<String> result = new HashSet<>();
+            for (RealmUser user : users) {
+                String name = user.getName();
+                result.add(name);
+            }
+            for (String s : ldapGroupSearcher.loadGroups(result)) {
+                RealmGroup realmGroup = new RealmGroup(realmName, s);
+                set.add(realmGroup);
+            }
+            principals.addAll(set);
 
         }
 

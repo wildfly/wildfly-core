@@ -25,6 +25,7 @@
 package org.jboss.as.controller;
 
 
+import java.util.Collections;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -151,6 +152,26 @@ public abstract class AttributeParser {
             }
         }
     };
+
+    static class WrappedSimpleAttributeParser extends AttributeParser {
+
+            @Override
+            public boolean isParseAsElement() {
+                return true;
+            }
+
+            @Override
+            public void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
+                assert attribute instanceof SimpleAttributeDefinition;
+                if (operation.hasDefined(attribute.getName())) {
+                    throw ParseUtils.unexpectedElement(reader);
+                } else if (attribute.getXmlName().equals(reader.getLocalName())) {
+                    ((SimpleAttributeDefinition) attribute).parseAndSetParameter(reader.getElementText(), operation, reader);
+                } else {
+                    throw ParseUtils.unexpectedElement(reader, Collections.singleton(attribute.getXmlName()));
+                }
+            }
+        }
 
     public static final class DiscardOldDefaultValueParser extends AttributeParser{
         private final String value;

@@ -24,17 +24,15 @@ package org.jboss.as.threads;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
@@ -120,11 +118,11 @@ interface ThreadsLogger extends BasicLogger {
     @Message(id = 21, value = "Failed to locate executor service '%s'")
     OperationFailedException threadPoolServiceNotFoundForMetrics(ServiceName serviceName);
 
-    @Message(id = 22, value = "Attribute %s expects values of type %s but got %s of type %s")
-    OperationFailedException invalidKeepAliveType(String parameterName, ModelType objectType, ModelNode value, ModelType valueType);
+//    @Message(id = 22, value = "Attribute %s expects values of type %s but got %s of type %s")
+//    OperationFailedException invalidKeepAliveType(String parameterName, ModelType objectType, ModelNode value, ModelType valueType);
 
-    @Message(id = 23, value = "Attribute %s expects values consisting of '%s' and '%s' but the new value consists of %s")
-    OperationFailedException invalidKeepAliveKeys(String parameterName, String time, String unit, Set<String> keys);
+//    @Message(id = 23, value = "Attribute %s expects values consisting of '%s' and '%s' but the new value consists of %s")
+//    OperationFailedException invalidKeepAliveKeys(String parameterName, String time, String unit, Set<String> keys);
 
     @Message(id = 24, value = "Missing '%s' for parameter '%s'")
     OperationFailedException missingKeepAliveTime(String time, String parameterName);

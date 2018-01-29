@@ -102,7 +102,7 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
     }
 
     public CallbackHandler getCallbackHandler(Map<String, Object> sharedState) {
-        return new LocalCallbackHander(sharedState);
+        return new LocalCallbackHandler(sharedState);
     }
 
     @Override
@@ -225,11 +225,11 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
      * CallbackHandler Method
      */
 
-    private final class LocalCallbackHander implements CallbackHandler {
+    private final class LocalCallbackHandler implements CallbackHandler {
 
         private final Map<String, Object> sharedState;
 
-        private LocalCallbackHander(final Map<String, Object> sharedState) {
+        private LocalCallbackHandler(final Map<String, Object> sharedState) {
             this.sharedState = sharedState;
         }
 

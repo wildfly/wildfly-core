@@ -154,7 +154,7 @@ class HostControllerConnection extends FutureManagementChannel {
         }
         // Update the configuration with the new credentials
         final ProtocolConnectionConfiguration config = ProtocolConnectionConfiguration.copy(configuration);
-        //config.setCallbackHandler(createClientCallbackHandler(userName, authKey));
+        config.setCallbackHandler(createClientCallbackHandler(userName, authKey));
         config.setUri(reconnectUri);
         this.configuration = config;
 

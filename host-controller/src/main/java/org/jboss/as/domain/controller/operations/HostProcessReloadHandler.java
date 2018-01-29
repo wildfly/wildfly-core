@@ -125,6 +125,9 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
         final boolean useCurrentDomainConfig = hostControllerInfo.isMasterDomainController() && USE_CURRENT_DOMAIN_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
         final String domainConfig = hostControllerInfo.isMasterDomainController() && operation.hasDefined(DOMAIN_CONFIG.getName()) ? DOMAIN_CONFIG.resolveModelAttribute(context, operation).asString() : null;
         final String hostConfig = operation.hasDefined(HOST_CONFIG.getName()) ? HOST_CONFIG.resolveModelAttribute(context, operation).asString() : null;
+        // we use the same name as the current one on a reload. If a host has been added with a specific name, it stays with that name until it is stopped and reloaded
+        // from the persistent config.
+        final String hostName = context.getCurrentAddress().getLastElement().getValue();
         if (operation.hasDefined(USE_CURRENT_DOMAIN_CONFIG.getName()) && domainConfig != null) {
             throw HostControllerLogger.ROOT_LOGGER.cannotBothHaveFalseUseCurrentDomainConfigAndDomainConfig();
         }
@@ -153,6 +156,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                 runningModeControl.setUseCurrentDomainConfig(useCurrentDomainConfig);
                 runningModeControl.setNewDomainBootFileName(domainConfig);
                 runningModeControl.setNewBootFileName(hostConfig);
+                runningModeControl.setReloadHostName(hostName);
             }
         };
     }

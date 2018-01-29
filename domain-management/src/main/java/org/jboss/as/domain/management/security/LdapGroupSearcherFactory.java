@@ -364,6 +364,8 @@ public class LdapGroupSearcherFactory {
                                 groupLoadHandler = groupLoadHandler.findForReferral(groupReferralAddress);
                                 if (groupLoadHandler == null) {
                                     SECURITY_LOGGER.tracef("Unable to follow referral to '%s'", fullUri);
+                                    //exception is propagated to avoid nullPointerException in next iteration
+                                    throw e;
                                 }
                                 retry = true;
                             } catch (URISyntaxException ue) {

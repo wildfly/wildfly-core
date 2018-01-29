@@ -106,6 +106,16 @@ public abstract class CapabilityResolutionContext {
     }
 
     /**
+     * Update this context content with the source context.
+     *
+     * @param source The context to copy.
+     */
+    protected void copy(CapabilityResolutionContext source) {
+        reset();
+        contextAttachments.putAll(source.contextAttachments);
+    }
+
+    /**
      * An attachment key instance.
      *
      * @param <T> the attachment value type

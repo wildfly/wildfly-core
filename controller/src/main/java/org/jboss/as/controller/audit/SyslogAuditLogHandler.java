@@ -196,6 +196,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                 }
             }
         } catch (Exception ex) {
+            ControllerLogger.ROOT_LOGGER.errorObtainingPassword(ex, ex.getMessage());
             return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();
         }
         return pwd == null ? EMPTY_PASSWORD : pwd.toCharArray();

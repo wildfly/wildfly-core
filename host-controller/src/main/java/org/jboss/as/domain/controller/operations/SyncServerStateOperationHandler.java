@@ -21,7 +21,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import static org.jboss.as.domain.management.ModelDescriptionConstants.NAME;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -106,7 +105,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
                                 new ManagedServerBootCmdFactory(serverName, endRoot, endHostModel,
                                         parameters.getHostControllerEnvironment(),
                                         parameters.getDomainController().getExpressionResolver(), false).createConfiguration();
-                        if (startConfig == null || !startConfig.getServerLaunchCommand().equals(endConfig.getServerLaunchCommand())) {
+                        if (startConfig == null || !startConfig.getServerLaunchCommand(false).equals(endConfig.getServerLaunchCommand(false))) {
                             servers.put(serverName, SyncServerResultAction.RESTART_REQUIRED);
                         }
                     }
@@ -197,8 +196,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
             // look up the attribute name we're writing, and check the flags to see if we need restart.
             final String attributeName = operation.get(NAME).asString();
             // look up if the attribute requires restart / reload
-            final EnumSet<AttributeAccess.Flag> flags = registration.getAttributeAccess(address, attributeName).getAttributeDefinition().getFlags();
-            if (flags.contains(AttributeAccess.Flag.RESTART_JVM)) {
+            if (registration.getAttributeAccess(address, attributeName).getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
                 restart = true;
             }
         } else { // all other ops

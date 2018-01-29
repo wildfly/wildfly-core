@@ -22,7 +22,7 @@ import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
+import static org.wildfly.extension.elytron.CommonAttributes.PROPERTIES;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.Properties;
@@ -37,7 +37,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -135,10 +134,6 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
-            .setRestartAllServices()
-            .build();
-
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODULE, ModelType.STRING, true)
             .setAllowExpression(true)
             .setRestartAllServices()
@@ -167,7 +162,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
 
         String url = URL.resolveModelAttribute(context, model).asString();
         String authenticationLevel = AUTHENTICATION_LEVEL.resolveModelAttribute(context, model).asString();
-        String principal = asStringIfDefined(context, PRINCIPAL, model);
+        String principal = PRINCIPAL.resolveModelAttribute(context, model).asStringOrNull();
         String moduleName = null;
         if(model.hasDefined(MODULE.getName()))
             moduleName = MODULE.resolveModelAttribute(context, model).asString();
@@ -244,7 +239,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
             TrivialService<DirContextSupplier> service = new TrivialService<>(obtainDirContextSupplier(context, model, credentialSourceSupplierInjector, authenticationContextInjector, sslContextInjector));
             ServiceBuilder<DirContextSupplier> serviceBuilder = context.getServiceTarget().addService(serviceName, service);
 
-            String sslContextName = asStringIfDefined(context, SSL_CONTEXT, model);
+            String sslContextName = SSL_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
             if (sslContextName != null) {
                 String sslCapability = RuntimeCapability.buildDynamicCapabilityName(SSL_CONTEXT_CAPABILITY, sslContextName);
                 ServiceName sslServiceName = context.getCapabilityServiceName(sslCapability, SSLContext.class);
@@ -255,7 +250,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
                 credentialSourceSupplierInjector.inject(CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, model, serviceBuilder));
             }
 
-            String authenticationContextName = asStringIfDefined(context, AUTHENTICATION_CONTEXT, model);
+            String authenticationContextName = AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
             if (authenticationContextName != null) {
                 String acCapability = RuntimeCapability.buildDynamicCapabilityName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContextName);
                 ServiceName acServiceName = context.getCapabilityServiceName(acCapability, AuthenticationContext.class);

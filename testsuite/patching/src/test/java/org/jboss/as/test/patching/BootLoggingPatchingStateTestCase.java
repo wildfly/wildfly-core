@@ -33,10 +33,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.cli.CommandContext;
@@ -137,45 +135,31 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
     }
 
     private void assertLoggedState(PatchingState... states) throws Exception {
-        final List<String> messages = readLoggedPatchingStates();
-        Assert.assertEquals(states.length, messages.size());
-        final Set<String> expected;
-        if(states.length == 1) {
-            expected = Collections.singleton(states[0].getMessage());
-        } else {
-            expected = new HashSet<String>(states.length);
-            for(PatchingState state : states) {
-                expected.add(state.getMessage());
-            }
-        }
-        Assert.assertTrue(expected.containsAll(messages));
-    }
-
-    protected List<String> readLoggedPatchingStates() throws Exception {
         startController();
         try {
             final String patchingCode = "WFLYPAT0050";
-            List<String> lines = Collections.emptyList();
+            final Set<String> messages = new HashSet<>();
             try (BufferedReader reader = getOutputReader()) {
-                String line = reader.readLine();
-                while (line != null) {
-                    int i = line.indexOf(patchingCode);
-                    if (i > 0) {
-                        final String message = line.substring(i + patchingCode.length() + 2);
-                        switch (lines.size()) {
-                            case 0:
-                                lines = Collections.singletonList(message);
-                                break;
-                            case 1:
-                                lines = new ArrayList<String>(lines);
-                            default:
-                                lines.add(message);
-                        }
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains(patchingCode)) {
+                        messages.add(line);
                     }
-                    line = reader.readLine();
                 }
             }
-            return lines;
+            Assert.assertEquals(states.length, messages.size());
+
+            // Check each state to ensure it was logged
+            for (PatchingState state : states) {
+                boolean matched = false;
+                for (String message : messages) {
+                    if (message.contains(state.getCp()) && message.contains(state.getStream()) && message.contains(state.getOneOffs())) {
+                        matched = true;
+                        break;
+                    }
+                }
+                Assert.assertTrue("Could not match state " + state + " to messages: " + messages, matched);
+            }
         } finally {
             stopController();
         }
@@ -192,7 +176,7 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
         } catch (Exception e) {
             throw e;
         } finally {
-           stopController();
+            stopController();
         }
     }
 
@@ -223,9 +207,12 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
             this.oneOffs = oneOffs;
         }
 
-        String getMessage() {
-            final StringBuilder buf = new StringBuilder(stream).append(" cumulative patch ID is: ")
-                    .append(cp == null ? "base" : cp).append(", one-off patches include: ");
+        String getCp() {
+            return cp == null ? "base" : cp;
+        }
+
+        String getOneOffs() {
+            final StringBuilder buf = new StringBuilder();
             if (oneOffs.length == 0) {
                 buf.append("none");
             } else {
@@ -237,6 +224,18 @@ public class BootLoggingPatchingStateTestCase extends AbstractPatchingTestCase {
                 }
             }
             return buf.toString();
+        }
+
+        String getStream() {
+            return stream;
+        }
+
+        @Override
+        public String toString() {
+            return "PatchingState(stream=" + stream
+                    + ", cp=" + cp
+                    + ", oneOffs=" + (oneOffs == null ? "null" : Arrays.toString(oneOffs))
+                    + ")";
         }
     }
 }

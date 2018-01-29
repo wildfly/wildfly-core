@@ -21,7 +21,11 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.OperationContext.Stage;
@@ -35,70 +39,103 @@ import org.jboss.dmr.ModelNode;
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
  */
-class ValidateModelStepHandler implements OperationStepHandler {
-    private static volatile ValidateModelStepHandler INSTANCE;
+final class ValidateModelStepHandler implements OperationStepHandler {
 
+    static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
+
+    private final ManagementModel managementModel;
+    private final Set<PathAddress> toValidate;
     private final OperationStepHandler extraValidationStepHandler;
 
-    private ValidateModelStepHandler(OperationStepHandler extraValidationStepHandler) {
+    ValidateModelStepHandler(final ManagementModel managementModel,
+                             final Set<PathAddress> toValidate,
+                             final OperationStepHandler extraValidationStepHandler) {
+        this.managementModel = managementModel;
+        this.toValidate = new HashSet<>(toValidate);
         this.extraValidationStepHandler = extraValidationStepHandler;
-    }
-
-    static ValidateModelStepHandler getInstance(OperationStepHandler extraValidationStepHandler) {
-        if (INSTANCE == null) {
-            synchronized (ValidateModelStepHandler.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new ValidateModelStepHandler(extraValidationStepHandler);
-                }
-            }
-        }
-        return INSTANCE;
     }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final Resource resource = loadResource(context);
-        if (resource == null) {
+        final Map<PathAddress, ResAndReg> resolved = new HashMap<>();
+        for (PathAddress pa : toValidate) {
+            validateAddress(context, pa, resolved);
+        }
+    }
+
+    private void validateAddress(final OperationContext context,
+                                 final PathAddress address,
+                                 final Map<PathAddress, ResAndReg> resolved) throws OperationFailedException {
+        final ResAndReg resAndReg = loadResource(address, resolved);
+        if (resAndReg == null || resAndReg.resource == null) {
             return;
         }
 
         if (extraValidationStepHandler != null) {
-            context.addStep(operation, extraValidationStepHandler, Stage.MODEL);
+            ModelNode op = Util.createOperation(ValidateModelStepHandler.INTERNAL_MODEL_VALIDATION_NAME, address);
+            context.addStep(op, extraValidationStepHandler, Stage.MODEL);
         }
 
-        final ModelNode model = resource.getModel();
-        final ImmutableManagementResourceRegistration resourceRegistration = context.getResourceRegistration();
-        final Set<String> attributeNames = resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
-        for (final String attributeName : attributeNames) {
-            final boolean has = model.hasDefined(attributeName);
-            final AttributeAccess access = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName);
+        final ModelNode model = resAndReg.resource.getModel();
+        final Set<String> definedKeys;
+        if (model.isDefined()) {
+            final Set<String> keys = model.keys();
+            definedKeys = new HashSet<>(keys.size());
+            for (String key : keys) {
+                if (model.hasDefined(key)) {
+                    definedKeys.add(key);
+                }
+            }
+        } else {
+            definedKeys = Collections.emptySet();
+        }
+
+        final Map<String, AttributeAccess> attributes = resAndReg.reg.getAttributes(PathAddress.EMPTY_ADDRESS);
+        for (final Map.Entry<String, AttributeAccess> entry : attributes.entrySet()) {
+            final AttributeAccess access = entry.getValue();
             if (access.getStorageType() != AttributeAccess.Storage.CONFIGURATION){
                 continue;
             }
+            String attributeName = entry.getKey();
             final AttributeDefinition attr = access.getAttributeDefinition();
-            if (!has && isRequired(attr, model)) {
-                attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
-                    @Override
-                    public void throwError() throws OperationFailedException {
-                        throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
-                    }});
-            }
-            if (!has) {
+            if (!definedKeys.contains(attributeName)) {
+                if (isRequired(attr, definedKeys)) {
+                    attemptReadMissingAttributeValueFromHandler(context, address, access, attributeName,
+                        new ErrorHandler() {
+                            @Override
+                            public void throwError() throws OperationFailedException {
+                                    String[] alternatives = attr.getAlternatives();
+                                    if (alternatives == null) {
+                                        throw ControllerLogger.ROOT_LOGGER.required(attributeName);
+                                    } else {
+                                        Set<String> requiredAlternatives = new HashSet<>();
+                                        for (int i = 0; i < alternatives.length; i++) {
+                                            AttributeDefinition requiredAttr = getAttributeDefinition(alternatives[i], attributes);
+                                            if (requiredAttr != null && requiredAttr.isRequired() && !requiredAttr.isResourceOnly()) {
+                                                requiredAlternatives.add(alternatives[i]);
+                                            }
+                                        }
+                                        throw ControllerLogger.ROOT_LOGGER.requiredWithAlternatives(attributeName, requiredAlternatives);
+                                    }
+                        }}
+                    );
+                }
+                // no error means undefined is ok and there's nothing more to check for this one
                 continue;
             }
 
             String[] requires = attr.getRequires();
             if (requires != null) {
                 for (final String required : requires) {
-                    if (!model.hasDefined(required)) {
+                    if (!definedKeys.contains(required)) {
                         // Check for alternatives that are in the same set of 'requires'
-                        AttributeDefinition requiredAttr = getAttributeDefinition(required, resourceRegistration);
+                        AttributeDefinition requiredAttr = getAttributeDefinition(required, attributes);
                         if (requiredAttr == null) {
                             // Coding mistake in the attr AD. Don't mess up the user; just debug log
-                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
+                            ControllerLogger.ROOT_LOGGER.debugf("AttributeDefinition for %s required by %s is null",
                                     required, attributeName);
-                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), model)) {
-                            attemptReadMissingAttributeValueFromHandler(context, access, attributeName, new ErrorHandler() {
+                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), definedKeys)) {
+                            attemptReadMissingAttributeValueFromHandler(context, address, access, attributeName, new ErrorHandler() {
                                 @Override
                                 public void throwError() throws OperationFailedException {
                                     throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(required, attr.getName());
@@ -109,7 +146,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
                 }
             }
 
-            if (!isAllowed(attr, model)) {
+            if (!isAllowed(attr, definedKeys)) {
                 //TODO should really use attemptReadMissingAttributeValueFromHandler() to make this totally good, but the
                 //overhead might be bigger than is worth at the moment since we would have to invoke the extra steps for
                 //every single attribute not found (and not found should be the normal).
@@ -117,7 +154,7 @@ class ValidateModelStepHandler implements OperationStepHandler {
                 StringBuilder sb = null;
                 if (alts != null) {
                     for (String alt : alts) {
-                        if (model.hasDefined(alt)) {
+                        if (definedKeys.contains(alt)) {
                             if (sb == null) {
                                 sb = new StringBuilder();
                             } else {
@@ -133,11 +170,10 @@ class ValidateModelStepHandler implements OperationStepHandler {
             handleObjectAttributes(model, attr, attributeName);
 
         }
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
-    private static AttributeDefinition getAttributeDefinition(String name, ImmutableManagementResourceRegistration resourceRegistration) {
-        AttributeAccess aa = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name);
+    private static AttributeDefinition getAttributeDefinition(String name, final Map<String, AttributeAccess> attributes) {
+        AttributeAccess aa = attributes.get(name);
         return aa == null ? null : aa.getAttributeDefinition();
     }
 
@@ -150,13 +186,13 @@ class ValidateModelStepHandler implements OperationStepHandler {
         return null;
     }
 
-    private void attemptReadMissingAttributeValueFromHandler(final OperationContext context, final AttributeAccess attributeAccess,
-            final String attributeName, final ErrorHandler errorHandler) throws OperationFailedException {
+    private void attemptReadMissingAttributeValueFromHandler(final OperationContext context, final PathAddress address,
+            final AttributeAccess attributeAccess, final String attributeName, final ErrorHandler errorHandler) throws OperationFailedException {
         OperationStepHandler handler = attributeAccess.getReadHandler();
         if (handler == null) {
             errorHandler.throwError();
         } else {
-            final ModelNode readAttr = Util.getReadAttributeOperation(context.getCurrentAddress(), attributeName);
+            final ModelNode readAttr = Util.getReadAttributeOperation(address, attributeName);
 
             //Do a read-attribute as an immediate step
             final ModelNode resultHolder = new ModelNode();
@@ -194,49 +230,71 @@ class ValidateModelStepHandler implements OperationStepHandler {
         }
     }
 
-    private void validateNestedAttributes(ModelNode subModel, ObjectTypeAttributeDefinition attr, String absoluteParentName) throws OperationFailedException {
+    private void validateNestedAttributes(final ModelNode subModel, final ObjectTypeAttributeDefinition attr,
+                                          final String absoluteParentName) throws OperationFailedException {
         if (!subModel.isDefined()) {
             return;
+        }
+
+        final Set<String> keys = subModel.keys();
+        final Set<String> definedKeys = new HashSet<>(keys.size());
+        for (String key : keys) {
+            if (subModel.hasDefined(key)) {
+                definedKeys.add(key);
+            }
         }
         AttributeDefinition[] subAttrs = attr.getValueTypes();
         for (AttributeDefinition subAttr : subAttrs) {
             String subAttributeName = subAttr.getName();
             String absoluteName = absoluteParentName + "." + subAttributeName;
-            if (!subModel.hasDefined(subAttributeName) && isRequired(subAttr, subModel)) {
-                throw new OperationFailedException(ControllerLogger.MGMT_OP_LOGGER.required(subAttributeName));
-            }
-            if (!subModel.hasDefined(subAttributeName)) {
+            if (!definedKeys.contains(subAttributeName)) {
+                if (isRequired(subAttr, definedKeys)) {
+                    String[] alternatives = attr.getAlternatives();
+                    if (alternatives == null) {
+                        throw ControllerLogger.ROOT_LOGGER.required(subAttributeName);
+                    } else {
+                        Set<String> requiredAlternatives = new HashSet<>();
+                        for (int i = 0; i < alternatives.length; i++) {
+                            AttributeDefinition requiredAttr = getAttributeDefinition(alternatives[i], subAttrs);
+                            if (requiredAttr != null && requiredAttr.isRequired() && !requiredAttr.isResourceOnly()) {
+                                requiredAlternatives.add(alternatives[i]);
+                            }
+                        }
+                        throw ControllerLogger.ROOT_LOGGER.requiredWithAlternatives(subAttributeName, requiredAlternatives);
+                    }
+                }
+                // else undefined is ok and there's nothing more to check for this one
                 continue;
             }
             String[] requires = subAttr.getRequires();
             if (requires != null) {
                 for (final String required : requires) {
-                    if (!subModel.hasDefined(required)) {
+                    if (!definedKeys.contains(required)) {
                         // Check for alternatives that are in the same set of 'requires'
                         AttributeDefinition requiredAttr = getAttributeDefinition(required, subAttrs);
                         if (requiredAttr == null) {
                             // Coding mistake in the subAttr AD. Don't mess up the user; just debug log
-                            ControllerLogger.MGMT_OP_LOGGER.debugf("AttributeDefinition for %s required by %s of %s is null",
+                            ControllerLogger.ROOT_LOGGER.debugf("AttributeDefinition for %s required by %s of %s is null",
                                     required, subAttributeName, absoluteParentName);
-                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), subModel)) {
-                            throw ControllerLogger.MGMT_OP_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
+                        } else if (!hasAlternative(getRelevantAlteratives(requiredAttr.getAlternatives(), requires), definedKeys)) {
+                            throw ControllerLogger.ROOT_LOGGER.requiredAttributeNotSet(absoluteParentName + "." + required, absoluteName);
                         }
                     }
                 }
             }
 
-            if (!isAllowed(subAttr, subModel)) {
+            if (!isAllowed(subAttr, definedKeys)) {
                 String[] alts = subAttr.getAlternatives();
                 StringBuilder sb = null;
                 if (alts != null) {
                     for (String alt : alts) {
-                        if (subModel.hasDefined(alt)) {
+                        if (definedKeys.contains(alt)) {
                             if (sb == null) {
                                 sb = new StringBuilder();
                             } else {
                                 sb.append(", ");
                             }
-                            sb.append(absoluteParentName + "." + alt);
+                            sb.append(absoluteParentName).append(".").append(alt);
                         }
                     }
                 }
@@ -247,15 +305,15 @@ class ValidateModelStepHandler implements OperationStepHandler {
         }
     }
 
-    private boolean isRequired(final AttributeDefinition def, final ModelNode model) {
-        return def.isRequired() && !def.isResourceOnly() && !hasAlternative(def.getAlternatives(), model);
+    private boolean isRequired(final AttributeDefinition def, final Set<String> definedKeys) {
+        return def.isRequired() && !def.isResourceOnly() && !hasAlternative(def.getAlternatives(), definedKeys);
     }
 
-    private boolean isAllowed(final AttributeDefinition def, final ModelNode model) {
+    private boolean isAllowed(final AttributeDefinition def, final Set<String> definedKeys) {
         final String[] alternatives = def.getAlternatives();
         if (alternatives != null) {
             for (final String alternative : alternatives) {
-                if (model.hasDefined(alternative)) {
+                if (definedKeys.contains(alternative)) {
                     return false;
                 }
             }
@@ -263,10 +321,10 @@ class ValidateModelStepHandler implements OperationStepHandler {
         return true;
     }
 
-    private boolean hasAlternative(final String[] alternatives, ModelNode operationObject) {
+    private boolean hasAlternative(final String[] alternatives, Set<String> definedKeys) {
         if (alternatives != null) {
             for (final String alternative : alternatives) {
-                if (operationObject.hasDefined(alternative)) {
+                if (definedKeys.contains(alternative)) {
                     return true;
                 }
             }
@@ -290,29 +348,60 @@ class ValidateModelStepHandler implements OperationStepHandler {
         return result.size() == 0 ? null : result.toArray(new String[result.size()]);
     }
 
-    private Resource loadResource(OperationContext context) {
-        final PathAddress address = context.getCurrentAddress();
+    private ResAndReg loadResource(final PathAddress address,
+                                   final Map<PathAddress, ResAndReg> resolved) {
+        ResAndReg resAndReg = resolved.get(PathAddress.EMPTY_ADDRESS);
+        if (resAndReg == null) {
+            final ImmutableManagementResourceRegistration mrr = managementModel.getRootResourceRegistration();
+            Resource resource = managementModel.getRootResource();
+            resAndReg = new ResAndReg(resource, mrr);
+            resolved.put(PathAddress.EMPTY_ADDRESS, resAndReg);
+        }
         PathAddress current = PathAddress.EMPTY_ADDRESS;
-        final ImmutableManagementResourceRegistration mrr = context.getRootResourceRegistration();
-        Resource resource = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
+        Resource resource = resAndReg.resource;
+        ImmutableManagementResourceRegistration mrr = resAndReg.reg;
         for (PathElement element : address) {
-            if (resource.isRuntime()){
+            if (resource == null || resource.isRuntime()){
                 return null;
             }
             current = current.append(element);
-            final ImmutableManagementResourceRegistration subMrr = mrr.getSubModel(current);
-            if (subMrr == null || subMrr.isRuntimeOnly() || subMrr.isRemote()) {
+            resAndReg = resolved.get(current);
+            final ImmutableManagementResourceRegistration subMrr;
+            if (resAndReg != null) {
+                subMrr = resAndReg.reg;
+            } else {
+                subMrr = mrr.getSubModel(current);
+            }
+            if (subMrr == null || subMrr.isRuntimeOnly() || subMrr.isRemote() || !resource.hasChild(element)) {
+                if (resAndReg == null) {
+                    // Save the MRR
+                    resAndReg = new ResAndReg(null, subMrr);
+                    resolved.put(current, resAndReg);
+                }
                 return null;
             }
-            if (!resource.hasChild(element)) {
-                return null;
+            if (resAndReg != null) {
+                resource = resAndReg.resource;
+            } else {
+                resource =  resource.getChild(element);
+                resAndReg = new ResAndReg(resource, subMrr);
+                resolved.put(current, resAndReg);
             }
-            resource = context.readResourceFromRoot(current, false);
         }
         if (resource.isRuntime()) {
             return null;
         }
-        return resource;
+        return resAndReg;
+    }
+
+    private static class ResAndReg {
+        private final Resource resource;
+        private final ImmutableManagementResourceRegistration reg;
+
+        private ResAndReg(Resource resource, ImmutableManagementResourceRegistration reg) {
+            this.resource = resource;
+            this.reg = reg;
+        }
     }
 
     private interface ErrorHandler {

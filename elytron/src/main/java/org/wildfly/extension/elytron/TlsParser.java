@@ -18,9 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERING_KEY_STORE;
@@ -34,18 +32,11 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_S
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TLS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGERS;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
-import java.util.List;
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder;
 import org.jboss.as.controller.security.CredentialReference;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A parser for the TLS related definitions.
@@ -54,18 +45,16 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Tomaz Cerar
  */
 class TlsParser {
-    private PersistentResourceXMLDescription keyManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_MANAGER))
-            .setXmlWrapperElement("key-managers")
+    private PersistentResourceXMLBuilder keyManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_MANAGER))
+            .setXmlWrapperElement(KEY_MANAGERS)
             .addAttribute(SSLDefinitions.ALGORITHM)
             .addAttribute(SSLDefinitions.KEYSTORE)
             .addAttribute(SSLDefinitions.ALIAS_FILTER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
-            .addAttribute(CredentialReference.getAttributeDefinition())
-            .build();
+            .addAttribute(CredentialReference.getAttributeDefinition());
 
-    private PersistentResourceXMLDescription keyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_STORE))
-            //.setXmlWrapperElement("key-stores")
+    private PersistentResourceXMLBuilder keyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_STORE))
             .addAttribute(KeyStoreDefinition.TYPE)
             .addAttribute(KeyStoreDefinition.PROVIDER_NAME)
             .addAttribute(KeyStoreDefinition.PROVIDERS)
@@ -74,10 +63,9 @@ class TlsParser {
             .addAttribute(KeyStoreDefinition.REQUIRED)
             .addAttribute(FileAttributeDefinitions.PATH)
             .addAttribute(FileAttributeDefinitions.RELATIVE_TO)
-            .addAttribute(CredentialReference.getAttributeDefinition())
-            .build();
+            .addAttribute(CredentialReference.getAttributeDefinition());
 
-    private PersistentResourceXMLDescription ldapKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(LDAP_KEY_STORE))
+    private PersistentResourceXMLBuilder ldapKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(LDAP_KEY_STORE))
             .addAttribute(LdapKeyStoreDefinition.DIR_CONTEXT)
             .addAttribute(LdapKeyStoreDefinition.SEARCH_PATH)
             .addAttribute(LdapKeyStoreDefinition.SEARCH_RECURSIVE)
@@ -94,26 +82,23 @@ class TlsParser {
             .addAttribute(LdapKeyStoreDefinition.CERTIFICATE_CHAIN_ENCODING)
             .addAttribute(LdapKeyStoreDefinition.KEY_ATTRIBUTE)
             .addAttribute(LdapKeyStoreDefinition.KEY_TYPE)
+            .setMarshallDefaultValues(true);
 
-            .build();
-
-    private PersistentResourceXMLDescription trustManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
-            .setXmlWrapperElement("trust-managers")
+    private PersistentResourceXMLBuilder trustManagerParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
+            .setXmlWrapperElement(TRUST_MANAGERS)
             .addAttribute(SSLDefinitions.ALGORITHM)
             .addAttribute(SSLDefinitions.KEYSTORE)
             .addAttribute(SSLDefinitions.ALIAS_FILTER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
-            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST)
-            .build();
+            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST);
 
-    private PersistentResourceXMLDescription filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
+    private PersistentResourceXMLBuilder filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
             .addAttribute(FilteringKeyStoreDefinition.KEY_STORE)
-            .addAttribute(FilteringKeyStoreDefinition.ALIAS_FILTER)
-            .build();
+            .addAttribute(FilteringKeyStoreDefinition.ALIAS_FILTER);
 
-    private PersistentResourceXMLDescription serverSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_CONTEXT))
-            .setXmlWrapperElement("server-ssl-contexts")
+    private PersistentResourceXMLBuilder serverSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_CONTEXT))
+            .setXmlWrapperElement(SERVER_SSL_CONTEXTS)
             .setMarshallDefaultValues(true)
             .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
             .addAttribute(SSLDefinitions.CIPHER_SUITE_FILTER)
@@ -132,10 +117,9 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PRE_REALM_PRINCIPAL_TRANSFORMER)
             .addAttribute(SSLDefinitions.POST_REALM_PRINCIPAL_TRANSFORMER)
             .addAttribute(SSLDefinitions.FINAL_PRINCIPAL_TRANSFORMER)
-            .addAttribute(SSLDefinitions.REALM_MAPPER)
-            .build();
+            .addAttribute(SSLDefinitions.REALM_MAPPER);
 
-    private PersistentResourceXMLDescription clientSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
+    private PersistentResourceXMLBuilder clientSslContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CLIENT_SSL_CONTEXT))
             .setXmlWrapperElement(CLIENT_SSL_CONTEXTS)
             .addAttribute(SSLDefinitions.SECURITY_DOMAIN)
             .addAttribute(SSLDefinitions.CIPHER_SUITE_FILTER)
@@ -150,111 +134,19 @@ class TlsParser {
             .addAttribute(SSLDefinitions.KEY_MANAGER)
             .addAttribute(SSLDefinitions.TRUST_MANAGER)
             .addAttribute(SSLDefinitions.PROVIDERS)
-            .addAttribute(SSLDefinitions.PROVIDER_NAME)
+            .addAttribute(SSLDefinitions.PROVIDER_NAME);
+
+    final PersistentResourceXMLDescription tlsParser = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+
+            )
+            .addChild(keyManagerParser)
+            .addChild(trustManagerParser)
+            .addChild(serverSslContextParser)
+            .addChild(clientSslContextParser)
             .build();
 
-    void readTls(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
-        requireNoAttributes(reader);
-        boolean keyManagersFound = false;
-        boolean keyStoresFound = false;
-        boolean trustManagersFound = false;
-        boolean serverSSLContextsFound = false;
-        boolean clientSSLContextsFound = false;
-
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            if (KEY_MANAGERS.equals(localName) && keyManagersFound == false) {
-                keyManagersFound = true;
-                readWithWrapper(parentAddress, reader, operations, keyManagerParser);
-            } else if (KEY_STORES.equals(localName) && keyStoresFound == false) {
-                keyStoresFound = true;
-                readKeyStores(parentAddress, reader, operations);
-            } else if (TRUST_MANAGERS.equals(localName) && trustManagersFound == false) {
-                trustManagersFound = true;
-                readWithWrapper(parentAddress, reader, operations, trustManagerParser);
-            } else if (SERVER_SSL_CONTEXTS.equals(localName) && serverSSLContextsFound == false) {
-                serverSSLContextsFound = true;
-                readWithWrapper(parentAddress, reader, operations, serverSslContextParser);
-            } else if (CLIENT_SSL_CONTEXTS.equals(localName) && clientSSLContextsFound == false) {
-                clientSSLContextsFound = true;
-                readWithWrapper(parentAddress, reader, operations, clientSslContextParser);
-            } else {
-                throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    private void readWithWrapper(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations, PersistentResourceXMLDescription parser) throws XMLStreamException {
-        requireNoAttributes(reader);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            if (parser.getPathElement().getKey().equals(localName)) {
-                parser.parse(reader, parentAddress, operations);
-            } else {
-                throw unexpectedElement(reader);
-            }
-        }
-    }
-
-
-    private void readKeyStores(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations) throws XMLStreamException {
-        requireNoAttributes(reader);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            if (KEY_STORE.equals(localName)) {
-                keyStoreParser.parse(reader, parentAddress, operations);
-            } else if (LDAP_KEY_STORE.equals(localName)) {
-                ldapKeyStoreParser.parse(reader, parentAddress, operations);
-            } else if (FILTERING_KEY_STORE.equals(localName)) {
-                filteringKeyStoreParser.parse(reader, parentAddress, operations);
-            } else {
-                throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    private void startTLS(boolean started, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (started == false) {
-            writer.writeStartElement(TLS);
-        }
-    }
-
-    void writeTLS(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        boolean tlsStarted = false;
-
-        tlsStarted = tlsStarted | writeKeyStores(tlsStarted, subsystem, writer);
-        tlsStarted = tlsStarted | writeElement(tlsStarted, subsystem, writer, keyManagerParser);
-        tlsStarted = tlsStarted | writeElement(tlsStarted, subsystem, writer, trustManagerParser);
-        tlsStarted = tlsStarted | writeElement(tlsStarted, subsystem, writer, serverSslContextParser);
-        tlsStarted = tlsStarted | writeElement(tlsStarted, subsystem, writer, clientSslContextParser);
-
-        if (tlsStarted) {
-            writer.writeEndElement();
-        }
-    }
-
-    private boolean writeElement(boolean started, ModelNode subsystem, XMLExtendedStreamWriter writer, PersistentResourceXMLDescription parser) throws XMLStreamException {
-        if (subsystem.hasDefined(parser.getPathElement().getKey())) {
-            startTLS(started, writer);
-            parser.persist(writer, subsystem);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean writeKeyStores(boolean started, ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(KEY_STORE) || subsystem.hasDefined(LDAP_KEY_STORE) || subsystem.hasDefined(FILTERING_KEY_STORE)) {
-            startTLS(started, writer);
-            writer.writeStartElement(KEY_STORES);
-            keyStoreParser.persist(writer, subsystem);
-            ldapKeyStoreParser.persist(writer, subsystem);
-            filteringKeyStoreParser.persist(writer, subsystem);
-            writer.writeEndElement(); // end of KEY_STORES
-            return true;
-        }
-        return false;
-    }
 }

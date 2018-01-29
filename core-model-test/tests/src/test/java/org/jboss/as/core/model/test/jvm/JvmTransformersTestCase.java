@@ -41,8 +41,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -182,7 +184,15 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
             if (!isIgnoredResourceListAvailableAtRegistration()) {
                 modelNode.get(SERVER_GROUP, "test", JVM, "full").remove(LAUNCH_COMMAND.getName());
             }
-            return isFailExpressions() ? modelNode.resolve() : modelNode;
+            return isFailExpressions() ? resolve(modelNode) : modelNode;
         }
     };
+
+    private static ModelNode resolve(ModelNode unresolved) {
+        try {
+            return ExpressionResolver.TEST_RESOLVER.resolveExpressions(unresolved);
+        } catch (OperationFailedException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
 }

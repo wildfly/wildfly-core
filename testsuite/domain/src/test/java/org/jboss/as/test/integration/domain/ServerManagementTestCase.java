@@ -30,10 +30,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -61,6 +63,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
+import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.LAUNCH_TYPE;
+import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.PROCESS_STATE;
+import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.getServerConfigAddress;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.startServer;
@@ -102,19 +107,40 @@ public class ServerManagementTestCase {
     private static final PathAddress newServerConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "new-server");
     // (host=slave),(server=new-server)
     private static final PathAddress newRunningServerAddress = PathAddress.pathAddress("host", "slave").append("server", "new-server");
+    private static final String EXCLUDED_FROM_HOST_PROP = "WFCORE-2526.from.host";
+    private static final String EXCLUDED_FROM_CONFIG_PROP = "WFCORE-2526.from.config";
+    private static final String INCLUDED_FROM_HOST_PROP = "WFCORE-2526.ok.from.host";
+
+    private static final ModelNode existentServer = new ModelNode();
+    private static final String MAIN_ONE = "main-one";
+    private static final ModelNode nonExistentServer = new ModelNode();
+    private static final String NON_EXISTENT = "non-existent";
 
     static {
         // (host=slave)
-        slave.add("host", "slave");
+        slave.add(HOST, "slave");
         // (host=master),(server-config=main-one)
-        mainOne.add("host", "master");
-        mainOne.add("server-config", "main-one");
+        mainOne.add(HOST, MASTER);
+        mainOne.add(SERVER_CONFIG, MAIN_ONE);
+
+        // (host=master),(server=main-one)
+        existentServer.add(HOST, MASTER);
+        existentServer.add(SERVER, MAIN_ONE);
+
+        // (host=master),(server=non-existent)
+        nonExistentServer.add(HOST, MASTER);
+        nonExistentServer.add(SERVER, NON_EXISTENT);
     }
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml"));
+        DomainTestSupport.Configuration config =  DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
+                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml");
+        // Props for WFCORE-2526 testing
+        config.getSlaveConfiguration().addHostCommandLineProperty("-Djboss.host.server-excluded-properties="+EXCLUDED_FROM_HOST_PROP+"," +EXCLUDED_FROM_CONFIG_PROP);
+        config.getSlaveConfiguration().addHostCommandLineProperty("-D" + EXCLUDED_FROM_HOST_PROP + "=host");
+        config.getSlaveConfiguration().addHostCommandLineProperty("-D" + INCLUDED_FROM_HOST_PROP + "=ok");
+        testSupport = DomainTestSupport.createAndStartSupport(config);
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
@@ -193,6 +219,9 @@ public class ServerManagementTestCase {
     public void testAddAndRemoveServer() throws Exception {
         final DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
 
+        Assert.assertFalse(exists(client, newServerConfigAddress));
+        Assert.assertFalse(exists(client, newRunningServerAddress));
+
         final ModelNode addServer = new ModelNode();
         addServer.get(OP).set(ADD);
         addServer.get(OP_ADDR).set(newServerConfigAddress.toModelNode());
@@ -201,13 +230,18 @@ public class ServerManagementTestCase {
         addServer.get(SOCKET_BINDING_PORT_OFFSET).set(650);
         addServer.get(AUTO_START).set(false);
 
-        Assert.assertFalse(exists(client, newServerConfigAddress));
-        Assert.assertFalse(exists(client, newRunningServerAddress));
-
         ModelNode result = client.execute(addServer);
         client.execute(Util.createAddOperation(newServerConfigAddress.append("jvm", "default")));
 
         DomainTestSupport.validateResponse(result, false);
+
+        // Stick a WFCORE-2526 test in here since we are starting a server
+        // Setup bits ---
+        ModelNode sysPropAdd = Util.createAddOperation(newServerConfigAddress.append("system-property", EXCLUDED_FROM_CONFIG_PROP));
+        sysPropAdd.get("value").set("config");
+        result = client.execute(sysPropAdd);
+        DomainTestSupport.validateResponse(result, false);
+        // -- end setup bits
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
@@ -217,6 +251,21 @@ public class ServerManagementTestCase {
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
+
+        // Stick a WFCORE-2526 test in here since we have started a server
+        // test bits ---
+        // The HC VM has IN/EXCLUDED_FROM_HOST_PROP since we passed them in setupDomain but it doesn't have EXCLUDED_FROM_CONFIG_PROP
+        // The server sees EXCLUDED_FROM_CONFIG_PROP because it's in its server-config and WFCORE-2526 doesn't override that
+        // The server sees INCLUDED_FROM_HOST_PROP because setupDomain didn't configure it as excluded
+        ModelNode hostProperties = readSystemProperties(client, newRunningServerAddress.getParent());
+        ModelNode serverProperties = readSystemProperties(client, newRunningServerAddress);
+        checkProcessSystemProperty(hostProperties, EXCLUDED_FROM_HOST_PROP, "host");
+        checkProcessSystemProperty(hostProperties, INCLUDED_FROM_HOST_PROP, "ok");
+        checkProcessSystemProperty(hostProperties, EXCLUDED_FROM_CONFIG_PROP, null);
+        checkProcessSystemProperty(serverProperties, EXCLUDED_FROM_HOST_PROP, null);
+        checkProcessSystemProperty(serverProperties, INCLUDED_FROM_HOST_PROP, "ok");
+        checkProcessSystemProperty(serverProperties, EXCLUDED_FROM_CONFIG_PROP, "config");
+        // -- end test bits
 
         final ModelNode stopServer = new ModelNode();
         stopServer.get(OP).set("stop");
@@ -238,6 +287,24 @@ public class ServerManagementTestCase {
 
         Assert.assertFalse(exists(client, newServerConfigAddress));
         Assert.assertFalse(exists(client, newRunningServerAddress));
+    }
+
+    private ModelNode readSystemProperties(DomainClient client, PathAddress parent) throws IOException {
+        PathAddress addr = parent.append("core-service", "platform-mbean").append("type", "runtime");
+        ModelNode op = Util.getReadAttributeOperation(addr, "system-properties");
+        ModelNode response = client.execute(op);
+        ModelNode result = DomainTestSupport.validateResponse(response, true);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(response.toString(), ModelType.OBJECT, result.getType());
+        return result;
+    }
+
+    private void checkProcessSystemProperty(ModelNode properties, String prop, String expectedValue) {
+        if (expectedValue == null) {
+            Assert.assertFalse(prop + " should not be defined", properties.hasDefined(prop));
+        } else {
+            Assert.assertEquals("Wrong value for " + prop, expectedValue, properties.get(prop).asString());
+        }
     }
 
     @Test
@@ -591,6 +658,38 @@ public class ServerManagementTestCase {
         } finally {
             DomainTestUtils.executeForResult(Util.createRemoveOperation(root1), masterClient);
         }
+    }
+
+    @Test
+    public void testServerBootState() throws IOException {
+        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        // (host=master),(server=main-one)
+        operation.get(OP_ADDR).set(existentServer);
+
+        operation.get(NAME).set(LAUNCH_TYPE);
+        ModelNode status = DomainTestSupport.validateResponse(client.execute(operation));
+        Assert.assertEquals("DOMAIN", status.asString());
+        operation.get(NAME).set(PROCESS_STATE);
+        status = DomainTestSupport.validateResponse(client.execute(operation));
+        Assert.assertEquals("running", status.asString());
+        operation.get(NAME).set(RUNTIME_CONFIGURATION_STATE);
+        status = DomainTestSupport.validateResponse(client.execute(operation));
+        Assert.assertEquals("ok", status.asString());
+
+        // (host=master),(server=non-existent)
+        operation.get(OP_ADDR).set(nonExistentServer);
+
+        operation.get(NAME).set(LAUNCH_TYPE);
+        ModelNode result = client.execute(operation);
+        Assert.assertEquals(result.get(FAILURE_DESCRIPTION).asString(), FAILED, result.get(OUTCOME).asString());
+        operation.get(NAME).set(PROCESS_STATE);
+        result = client.execute(operation);
+        Assert.assertEquals(result.get(FAILURE_DESCRIPTION).asString(), FAILED, result.get(OUTCOME).asString());
+        operation.get(NAME).set(RUNTIME_CONFIGURATION_STATE);
+        result = client.execute(operation);
+        Assert.assertEquals(result.get(FAILURE_DESCRIPTION).asString(), FAILED, result.get(OUTCOME).asString());
     }
 
     private void removeProfileAndSubsystems(final DomainClient client, String profileName) throws Exception {

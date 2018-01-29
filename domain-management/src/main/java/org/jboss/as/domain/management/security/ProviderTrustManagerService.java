@@ -32,6 +32,7 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.security.EmptyProvider;
 
 /**
  * Extension of {@link AbstractTrustManagerService} to load the KeyStore using a specified provider.
@@ -54,7 +55,9 @@ public class ProviderTrustManagerService extends AbstractTrustManagerService {
 
         try {
             KeyStore theKeyStore = KeyStore.getInstance(provider);
-            theKeyStore.load(null, resolvePassword());
+            synchronized (EmptyProvider.getInstance()) {
+                theKeyStore.load(null, resolvePassword());
+            }
             this.theKeyStore = theKeyStore;
         } catch (KeyStoreException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);

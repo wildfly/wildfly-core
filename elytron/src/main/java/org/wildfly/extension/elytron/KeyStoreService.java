@@ -47,6 +47,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.keystore.AliasFilter;
@@ -134,7 +135,13 @@ class KeyStoreService implements ModifiableKeyStoreService {
                         type, provider, path, resolvedPath, password != null, aliasFilter
                 );
 
-                keyStore.load(is, password);
+                if (is != null) {
+                    keyStore.load(is, password);
+                } else {
+                    synchronized (EmptyProvider.getInstance()) {
+                        keyStore.load(null, password);
+                    }
+                }
                 checkCertificatesValidity(keyStore);
             }
 
@@ -248,7 +255,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
     void save() throws OperationFailedException {
         if (resolvedPath == null) {
-            throw ROOT_LOGGER.cantSaveWithoutFile();
+            throw ROOT_LOGGER.cantSaveWithoutFile(path);
         }
         ROOT_LOGGER.tracef("saving KeyStore to the file [%s]", resolvedPath);
         try (FileOutputStream fos = new FileOutputStream(resolvedPath)) {

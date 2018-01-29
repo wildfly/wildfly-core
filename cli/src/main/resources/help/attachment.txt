@@ -20,4 +20,7 @@ OPTIONS
  --file          - optional, the path of file used to save the attachments.
 
  --overwrite     - optional, used when saving to a file. Will make the received 
-                   file to overwrite existing file. 
+                   file to overwrite existing file.
+
+ --createDirs     - optional, used when saving to a file. Will create the intermediate path
+                    to the received file avoiding failure if those directories don't exist.

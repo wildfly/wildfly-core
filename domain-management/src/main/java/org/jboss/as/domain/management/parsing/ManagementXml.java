@@ -38,34 +38,30 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public abstract class ManagementXml {
+public interface ManagementXml {
 
-    public static ManagementXml newInstance(Namespace namespace, ManagementXmlDelegate delegate) {
+    static ManagementXml newInstance(Namespace namespace, ManagementXmlDelegate delegate, boolean domainConfiguration) {
         switch (namespace.getMajorVersion()) {
             case 1:
             case 2:
             case 3:
-                return new ManagementXml_Legacy(namespace, delegate);
+                return new ManagementXml_Legacy(namespace, delegate, domainConfiguration);
             case 4:
-                return new ManagementXml_4(namespace, delegate);
+                return new ManagementXml_4(namespace, delegate, domainConfiguration);
             default:
-                return new ManagementXml_5(namespace, delegate);
+                return new ManagementXml_5(namespace, delegate, domainConfiguration);
         }
-    }
-
-    ManagementXml() {
     }
 
     // TODO - The problem is that it is version dependent but it would be nicer to not have processing instructions and find a
     // better way to decide if a native interface is required.
 
-    public abstract void parseManagement(final XMLExtendedStreamReader reader, final ModelNode address,
-            final List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException;
+    void parseManagement(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list, boolean requireNativeInterface) throws XMLStreamException;
 
     // TODO - Writing should be based on what is actually in the model, the delegate should be the final check if interfaces are
     // really disallowed.
 
-    public abstract void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management,
-            boolean allowInterfaces) throws XMLStreamException;
-
+    default void writeManagement(XMLExtendedStreamWriter writer, ModelNode management, boolean allowInterfaces) throws XMLStreamException {
+        throw new UnsupportedOperationException();
+    }
 }

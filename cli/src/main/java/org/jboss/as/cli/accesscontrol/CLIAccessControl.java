@@ -50,27 +50,25 @@ public class CLIAccessControl {
         }
 
         if(!accessControl.has(Util.DEFAULT)) {
-            log.warn("access-control is missing defaults: " + accessControl);
+            log.warnf("access-control is missing defaults: %s", accessControl);
             return false;
         }
 
         final ModelNode defaults = accessControl.get(Util.DEFAULT);
         if(!defaults.has(Util.OPERATIONS)) {
-            log.warn("access-control/default is missing operations: " + defaults);
+            log.warnf("access-control/default is missing operations: %s", defaults);
             return false;
         }
 
         final ModelNode operations = defaults.get(Util.OPERATIONS);
         if(!operations.has(operation)) {
-            if(log.isTraceEnabled()) {
-                log.trace("The operation is missing in the description: " + operation);
-            }
+            log.tracef("The operation is missing in the description: %s", operation);
             return false;
         }
 
         final ModelNode opAC = operations.get(operation);
         if(!opAC.has(Util.EXECUTE)) {
-            log.warn("'execute' is missing for " + operation + " in " + accessControl);
+            log.warnf("'execute' is missing for %s in %s", operation, accessControl);
             return false;
         }
 
@@ -112,23 +110,23 @@ public class CLIAccessControl {
         try {
             response = client.execute(request);
         } catch (Exception e) {
-            log.warn("Failed to execute " + Util.READ_RESOURCE_DESCRIPTION, e);
+            log.warnf(e, "Failed to execute %s", Util.READ_RESOURCE_DESCRIPTION);
             return null;
         }
 
         if (!Util.isSuccess(response)) {
-            log.debug("Failed to execute " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            log.debugf("Failed to execute %s:%s", Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 
         if(!response.has(Util.RESULT)) {
-            log.warn("Response is missing result for " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            log.warnf("Response is missing result for %s:%s", Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 
         final ModelNode result = response.get(Util.RESULT);
         if(!result.has(Util.ACCESS_CONTROL)) {
-            log.warn("Result is missing access-control for " + Util.READ_RESOURCE_DESCRIPTION + ": " + response);
+            log.warnf("Result is missing access-control for %s:%s", Util.READ_RESOURCE_DESCRIPTION, response);
             return null;
         }
 

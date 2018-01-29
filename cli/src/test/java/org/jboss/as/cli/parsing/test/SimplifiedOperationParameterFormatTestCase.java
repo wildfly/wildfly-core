@@ -68,9 +68,9 @@ public class SimplifiedOperationParameterFormatTestCase {
     }
 
     protected void assertEquivalent(String dmrParams, String simplifiedParams) throws Exception {
-        handler.parseOperation(rootAddr, ":test(test=" + dmrParams + ")");
+        handler.parseOperation(rootAddr, ":test(test=" + dmrParams + ")", ctx);
         final ModelNode dmrReq = handler.toOperationRequest(ctx);
-        handler.parseOperation(rootAddr, ":test(test=" + simplifiedParams + ")");
+        handler.parseOperation(rootAddr, ":test(test=" + simplifiedParams + ")", ctx);
         final ModelNode simplifiedReq = handler.toOperationRequest(ctx);
         assertEquals(dmrReq, simplifiedReq);
     }

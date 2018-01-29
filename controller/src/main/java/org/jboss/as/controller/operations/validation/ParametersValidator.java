@@ -58,20 +58,11 @@ public class ParametersValidator implements ParameterValidator {
     @SuppressWarnings("deprecation")
     @Deprecated
     public void validateResolved(ModelNode operation) throws OperationFailedException {
-        for (Map.Entry<String, ParameterValidator> entry : validators.entrySet()) {
-            String paramName = entry.getKey();
-            ModelNode paramVal = operation.has(paramName) ? operation.get(paramName) : new ModelNode();
-            entry.getValue().validateResolvedParameter(paramName, paramVal);
-        }
+        validate(operation);
     }
 
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         ParameterValidator parameterValidator = validators.get(parameterName);
         if (parameterValidator != null) parameterValidator.validateParameter(parameterName, value);
-    }
-
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        ParameterValidator parameterValidator = validators.get(parameterName);
-        if (parameterValidator != null) parameterValidator.validateResolvedParameter(parameterName, value);
     }
 }

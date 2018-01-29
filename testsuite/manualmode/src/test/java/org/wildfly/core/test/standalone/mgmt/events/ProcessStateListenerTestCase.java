@@ -380,7 +380,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             forceRestartRequired();
             // remove listener with timeout
             controller.getClient().executeForResult(Util.createRemoveOperation(TIMEOUT_LISTENER_ADDRESS));
-            assertLogContains("The process state listener timeout-listener took to much time to complete.");
+            assertLogContains("WFLYCM0004");
 
             // should be empty as change RUNNING -> RESTART_REQUIRED shouldn't be logged due to timeout
             RuntimeConfigurationStateChanges timeoutRuntimeConfigChanges = new RuntimeConfigurationStateChanges(timeoutRuntimeConfigurationStateChangeFile);

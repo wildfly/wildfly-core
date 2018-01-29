@@ -1,7 +1,9 @@
 SYNOPSIS
 
    embed-host-controller [-c=config_file || --domain-config=domain_config_file]
-                         [--host-config=host_config_file]
+                         [--empty-domain-config] [--remove-empty-domain-config]
+                         [--host-config=host_config_file] [--empty-host-config]
+                         [--remove-existing-host-config]
                          [--jboss-home=rootdir] [--stdout=discard|echo]
 
 DESCRIPTION
@@ -57,3 +59,23 @@ ARGUMENTS
                      will return as soon as the embedded server has
                      reached the point in its boot where it is
                      manageable by the CLI.
+
+ --empty-host-config  - Start the embedded host controller with an empty host
+                        configuration (host.xml). A host controller may be added
+                     using the /host=NewHostControllerName:add() operation.
+                     Configuration will be persisted when changes are made.
+
+ --empty-domain-config  - Start the embedded host controller with an empty
+                          domain configuration (domain.xml). Configuration
+                     changes made will be persisted.
+
+ --remove-existing-host-config  - When --empty-host-config is used, and the
+                                  host configuration file already exists, allow
+                     the existing file to be removed and replaced with an empty
+                     one.
+
+ --remove-existing-domain-config  - When --empty-domain-config is used, and the
+                                    domain configuration file already exists,
+                     allow the existing domain configuration file to be removed
+                     and replace with an empty one. [May only be used in
+                     conjunction with --empty-domain-config.]

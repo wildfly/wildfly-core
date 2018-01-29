@@ -39,6 +39,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.EnvironmentNameReader;
+import org.jboss.msc.service.StabilityMonitor;
 
 /**
  * An extension of {@link AbstractControllerTestBase} which ensures the core
@@ -89,14 +90,13 @@ public class ManagementControllerTestBase extends AbstractControllerTestBase {
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        TestServiceListener listener = new TestServiceListener();
-        listener.reset(1);
+        StabilityMonitor monitor = new StabilityMonitor();
         getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
-                .addListener(listener)
+                .addMonitor(monitor)
                 .install();
 
         try {
-            listener.latch.await(10, TimeUnit.SECONDS);
+            monitor.awaitStability(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

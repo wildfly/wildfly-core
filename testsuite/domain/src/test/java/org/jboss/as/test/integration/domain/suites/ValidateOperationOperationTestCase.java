@@ -65,6 +65,7 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
 
     @AfterClass
     public static void afterClass() throws IOException {
+        DomainTestSuite.stopSupport();
         client.close();
         client = null;
     }

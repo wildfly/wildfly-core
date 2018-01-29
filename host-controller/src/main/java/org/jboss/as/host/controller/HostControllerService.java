@@ -66,6 +66,7 @@ import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.msc.value.Value;
 import org.jboss.threads.AsyncFuture;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 
 /**
@@ -236,10 +237,19 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
 
         @Override
         public synchronized void start(final StartContext context) throws StartException {
-            executorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+            if (EnhancedQueueExecutor.DISABLE_HINT) {
+                executorService = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
                     5L, TimeUnit.SECONDS,
                     new SynchronousQueue<Runnable>(),
                     threadFactory);
+            } else {
+                executorService = new EnhancedQueueExecutor.Builder()
+                    .setCorePoolSize(1)
+                    .setMaximumPoolSize(4096)
+                    .setKeepAliveTime(5L, TimeUnit.SECONDS)
+                    .setThreadFactory(threadFactory)
+                    .build();
+            }
         }
 
         @Override

@@ -8,11 +8,11 @@ import org.jboss.as.controller.ModelVersion;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 enum KnownModelVersion {
-    VERSION_1_3_0(ModelVersion.create(1, 3, 0), true),
-    VERSION_1_4_0(ModelVersion.create(1, 4, 0), true),
-    VERSION_1_5_0(ModelVersion.create(1, 5, 0), true),
+    VERSION_1_5_0(ModelVersion.create(1, 5, 0), true), // EAP 6.4
     VERSION_2_0_0(ModelVersion.create(2, 0, 0), true),
     VERSION_3_0_0(ModelVersion.create(3, 0, 0), false),
+    VERSION_4_0_0(ModelVersion.create(4, 0, 0), false),
+    VERSION_5_0_0(ModelVersion.create(5, 0, 0), false),
     ;
     private final ModelVersion modelVersion;
     private final boolean hasTransformers;

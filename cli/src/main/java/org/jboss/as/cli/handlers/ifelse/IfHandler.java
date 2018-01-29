@@ -68,23 +68,23 @@ public class IfHandler extends CommandHandlerWithHelp {
                         return -1;
                     }
 
-                    final String originalLine = args.getOriginalLine();
+                    final String substitutedLine = args.getSubstitutedLine();
                     String conditionStr;
                     try {
                         conditionStr = condition.getValue(args, true);
                     } catch (CommandFormatException e) {
                         return -1;
                     }
-                    int i = originalLine.indexOf(conditionStr);
+                    int i = substitutedLine.indexOf(conditionStr);
                     if(i < 0) {
                         return -1;
                     }
-                    i = originalLine.indexOf("of ", i + conditionStr.length());
+                    i = substitutedLine.indexOf("of ", i + conditionStr.length());
                     if(i < 0) {
                         return -1;
                     }
 
-                    final String cmd = originalLine.substring(i + 3);
+                    final String cmd = substitutedLine.substring(i + 3);
 /*                    final DefaultCallbackHandler parsedLine = new DefaultCallbackHandler();
                     try {
                         parsedLine.parse(ctx.getCurrentNodePath(), cmd);
@@ -100,9 +100,9 @@ public class IfHandler extends CommandHandlerWithHelp {
 
                     // escaping index correction
                     int escapeCorrection = 0;
-                    int start = originalLine.length() - 1 - buffer.length();
+                    int start = substitutedLine.length() - 1 - buffer.length();
                     while(start - escapeCorrection >= 0) {
-                        final char ch = originalLine.charAt(start - escapeCorrection);
+                        final char ch = substitutedLine.charAt(start - escapeCorrection);
                         if(Character.isWhitespace(ch) || ch == '=') {
                             break;
                         }

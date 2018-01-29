@@ -15,6 +15,11 @@
  */
 package org.jboss.as.host.controller;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.jboss.as.host.controller.HostControllerEnvironment.HOME_DIR;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -27,12 +32,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
+
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
-import static org.jboss.as.host.controller.HostControllerEnvironment.HOME_DIR;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -119,9 +121,11 @@ public class ManagedServerBootCmdFactoryTestCase {
     public void testGetServerLaunchCommand() throws UnknownHostException {
         System.out.println("getServerLaunchCommand");
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
-        List<String> result = instance.getServerLaunchCommand();
+        List<String> result = instance.getServerLaunchCommand(true);
         Assert.assertThat(result.size(), is(notNullValue()));
-        Assert.assertThat(result.size(), is(15));
+        Assert.assertThat(result.size(), is(16));
+        boolean sawDServer = false;
+        boolean sawDpcid = false;
         for (String arg : result) {
             if (arg.startsWith("-Djboss.server.log.dir")) {
                 Assert.assertThat(arg, is(not("-Djboss.server.log.dir=/tmp/")));
@@ -129,7 +133,13 @@ public class ManagedServerBootCmdFactoryTestCase {
                 Assert.assertThat(arg, is(not("-Djboss.server.temp.dir=/tmp/")));
             } else if (arg.startsWith("-Djboss.domain.log.dir")) {
                 Assert.assertThat(arg, is("-Djboss.domain.log.dir=/tmp/"));
+            } else if (arg.equals("-D[" + ManagedServer.getServerProcessName("test-server") + "]")) {
+                sawDServer = true;
+            } else if (arg.startsWith("-D[pcid:") && arg.endsWith("]")) {
+                sawDpcid = true;
             }
         }
+        Assert.assertTrue(sawDServer);
+        Assert.assertTrue(sawDpcid);
     }
 }

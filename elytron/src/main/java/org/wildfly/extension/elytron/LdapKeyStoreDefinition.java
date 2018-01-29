@@ -22,8 +22,8 @@ import static org.wildfly.extension.elytron.Capabilities.DIR_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -95,6 +95,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setXmlName("recursive")
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode(true))
             .build();
 
     static final SimpleAttributeDefinition SEARCH_TIME_LIMIT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_TIME_LIMIT, ModelType.INT, true)
@@ -102,6 +103,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setXmlName("time-limit")
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode(10000))
             .build();
 
     static final SimpleAttributeDefinition FILTER_ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FILTER_ALIAS, ModelType.STRING, true)
@@ -156,47 +158,54 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("cn"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("usercertificate"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("X.509"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("userSMIMECertificate"))
             .build();
 
     static final SimpleAttributeDefinition CERTIFICATE_CHAIN_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_CHAIN_ENCODING, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("PKCS7"))
             .build();
 
     static final SimpleAttributeDefinition KEY_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_ATTRIBUTE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("userPKCS12"))
             .build();
 
     static final SimpleAttributeDefinition KEY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_TYPE, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.ATTRIBUTE_MAPPING)
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setDefaultValue(new ModelNode("PKCS12"))
             .build();
 
-    static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_KEY_STORE);
+    private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.LDAP_KEY_STORE);
 
-    static final SimpleAttributeDefinition SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SIZE, ModelType.INT)
+    private static final SimpleAttributeDefinition SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SIZE, ModelType.INT)
             .setStorageRuntime()
             .build();
 
@@ -229,26 +238,28 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
         }
 
-        resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName keyStoreName = LDAP_KEY_STORE_UTIL.serviceName(operation);
-                ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(STATE, new ElytronRuntimeOnlyHandler() {
+                @Override
+                protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceName keyStoreName = LDAP_KEY_STORE_UTIL.serviceName(operation);
+                    ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(keyStoreName);
 
-                populateResponse(context.getResult(), serviceController);
-            }
-        });
-
-        resourceRegistration.registerReadOnlyAttribute(SIZE, new LdapKeyStoreRuntimeOnlyHandler(false) {
-            @Override
-            protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, LdapKeyStoreService keyStoreService) throws OperationFailedException {
-                try {
-                    result.set(keyStoreService.getValue().size());
-                } catch (KeyStoreException e) {
-                    throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    populateResponse(context.getResult(), serviceController);
                 }
-            }
-        });
+            });
+
+            resourceRegistration.registerReadOnlyAttribute(SIZE, new LdapKeyStoreRuntimeOnlyHandler(false) {
+                @Override
+                protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, LdapKeyStoreService keyStoreService) throws OperationFailedException {
+                    try {
+                        result.set(keyStoreService.getValue().size());
+                    } catch (KeyStoreException e) {
+                        throw ROOT_LOGGER.unableToAccessKeyStore(e);
+                    }
+                }
+            });
+        }
     }
 
     private static class KeyStoreAddHandler extends BaseAddHandler {
@@ -261,27 +272,31 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
 
-            String dirContextName = asStringIfDefined(context, DIR_CONTEXT, model);
-            String searchPath = asStringIfDefined(context, SEARCH_PATH, model);
-            String filterAlias = asStringIfDefined(context, FILTER_ALIAS, model);
-            String filterCertificate = asStringIfDefined(context, FILTER_CERTIFICATE, model);
-            String filterIterate = asStringIfDefined(context, FILTER_ITERATE, model);
-            String aliasAttribute = asStringIfDefined(context, ALIAS_ATTRIBUTE, model);
-            String certificateAttribute = asStringIfDefined(context, CERTIFICATE_ATTRIBUTE, model);
-            String certificateType = asStringIfDefined(context, CERTIFICATE_TYPE, model);
-            String certificateChainAttribute = asStringIfDefined(context, CERTIFICATE_CHAIN_ATTRIBUTE, model);
-            String certificateChainEncoding = asStringIfDefined(context, CERTIFICATE_CHAIN_ENCODING, model);
-            String keyAttribute = asStringIfDefined(context, KEY_ATTRIBUTE, model);
-            String keyType = asStringIfDefined(context, KEY_TYPE, model);
+            String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
+            String searchPath = SEARCH_PATH.resolveModelAttribute(context, model).asStringOrNull();
+            String filterAlias = FILTER_ALIAS.resolveModelAttribute(context, model).asStringOrNull();
+            String filterCertificate = FILTER_CERTIFICATE.resolveModelAttribute(context, model).asStringOrNull();
+            String filterIterate = FILTER_ITERATE.resolveModelAttribute(context, model).asStringOrNull();
+            String aliasAttribute = ALIAS_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateAttribute = CERTIFICATE_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateType = CERTIFICATE_TYPE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateChainAttribute = CERTIFICATE_CHAIN_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String certificateChainEncoding = CERTIFICATE_CHAIN_ENCODING.resolveModelAttribute(context, model).asStringOrNull();
+            String keyAttribute = KEY_ATTRIBUTE.resolveModelAttribute(context, model).asStringOrNull();
+            String keyType = KEY_TYPE.resolveModelAttribute(context, model).asStringOrNull();
             LdapName createPathLdapName = null;
             String createRdn = null;
             Attributes createAttributes = null;
 
+            if (filterAlias == null) filterAlias = "(" + aliasAttribute + "={0})";
+            if (filterCertificate == null) filterCertificate = "(" + certificateAttribute + "={0})";
+            if (filterIterate == null) filterIterate = "(" + aliasAttribute + "=*)";
+
             ModelNode newNode = NewItemTemplateObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(context, model);
             if (newNode.isDefined()) {
 
-                String createPath = asStringIfDefined(context, NewItemTemplateObjectDefinition.NEW_ITEM_PATH, newNode);
-                createRdn = asStringIfDefined(context, NewItemTemplateObjectDefinition.NEW_ITEM_RDN, newNode);
+                String createPath = NewItemTemplateObjectDefinition.NEW_ITEM_PATH.resolveModelAttribute(context, newNode).asString();
+                createRdn = NewItemTemplateObjectDefinition.NEW_ITEM_RDN.resolveModelAttribute(context, newNode).asString();
                 if (createPath != null) {
                     try {
                         createPathLdapName = new LdapName(createPath);

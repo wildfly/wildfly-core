@@ -58,8 +58,7 @@ public class CliExtCommandHandler extends CommandHandlerWithHelp {
         ClassLoader cl = WildFlySecurityManager.getClassLoaderPrivileged(CliExtCommandHandler.class);
         InputStream helpInput = cl.getResourceAsStream(filename);
         if (helpInput != null) {
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput, StandardCharsets.UTF_8))){
-                System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(helpInput, StandardCharsets.UTF_8))) {
                 HelpFormatter.format(ctx, reader);
             } catch (java.io.IOException e) {
                 throw new CommandFormatException("Failed to read help/help.txt: " + e.getLocalizedMessage());

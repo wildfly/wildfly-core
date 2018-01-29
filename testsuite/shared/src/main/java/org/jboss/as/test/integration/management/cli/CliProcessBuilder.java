@@ -52,7 +52,6 @@ abstract class CliProcessBuilder{
         String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
         cliCommandBuilder = CliCommandBuilder.of(jbossDist);
         cliCommandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
-        //cliCommandBuilder.addJavaOption("-Daesh.ansi=false");
     }
 
     public CliProcessWrapper addCliArgument(String argument){
@@ -87,8 +86,6 @@ abstract class CliProcessBuilder{
         // the process to attach to a waiting debugger listening on the specified port.
         // If uncommented during normal testing, causes all sorts of failures.
         //cliCommandBuilder.addJavaOption("-agentlib:jdwp=transport=dt_socket,server=n,address=localhost.localdomain:8765,suspend=y");
-
-        cliCommandBuilder.addJavaOption("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal");
 
         if (cliConfigFile != null) {
             cliCommandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigFile);

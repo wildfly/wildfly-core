@@ -38,9 +38,4 @@ public class PathAddressValidator implements ParameterValidator {
             throw ControllerLogger.MGMT_OP_LOGGER.invalidAddressFormat(value);
         }
     }
-
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        validateParameter(parameterName, value.resolve());
-    }
 }

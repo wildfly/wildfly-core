@@ -47,7 +47,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossExecutors;
-import org.wildfly.extension.core.management.client.Process.Type;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -115,7 +114,7 @@ final class BootstrapImpl implements Bootstrap {
         RunningStateJmx.registerMBean(
                 controlledProcessStateService, suspendController,
                 configuration.getRunningModeControl(),
-                Type.from(ServerService.getProcessType(configuration.getServerEnvironment()).name()));
+                configuration.getServerEnvironment().getLaunchType() != ServerEnvironment.LaunchType.APPCLIENT);
         final Service<?> applicationServerService = new ApplicationServerService(extraServices, configuration, processState, suspendController);
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();

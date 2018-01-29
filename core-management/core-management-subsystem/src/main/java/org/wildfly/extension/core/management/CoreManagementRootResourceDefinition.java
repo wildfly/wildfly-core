@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
@@ -42,7 +43,7 @@ class CoreManagementRootResourceDefinition extends PersistentResourceDefinition 
     CoreManagementRootResourceDefinition() {
         super(CoreManagementExtension.SUBSYSTEM_PATH,
                 CoreManagementExtension.getResourceDescriptionResolver(),
-                CoreManagementRootResourceAdd.INSTANCE,
+                new AbstractAddStepHandler(),
                 ReloadRequiredRemoveStepHandler.INSTANCE);
     }
 

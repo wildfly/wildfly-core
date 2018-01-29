@@ -32,12 +32,12 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILI
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -91,6 +91,7 @@ import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
+import org.wildfly.security.authz.Attributes;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
@@ -105,9 +106,8 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, null, SecurityRealm.class);
 
-    static final SimpleAttributeDefinition DEFAULT_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_REALM, ModelType.STRING, false)
+    static final SimpleAttributeDefinition DEFAULT_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_REALM, ModelType.STRING, true)
          .setAllowExpression(false)
-         .setMinSize(1)
          .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
          .build();
 
@@ -168,8 +168,8 @@ class DomainDefinition extends SimpleResourceDefinition {
         .build();
 
     static final ObjectListAttributeDefinition REALMS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.REALMS, REALM)
-        .setMinSize(1)
-        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setRequired(false)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
@@ -235,16 +235,16 @@ class DomainDefinition extends SimpleResourceDefinition {
             Predicate<SecurityDomain> trustedSecurityDomain, UnaryOperator<SecurityIdentity> identityOperator) throws OperationFailedException {
         ServiceTarget serviceTarget = context.getServiceTarget();
 
-        String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asString();
-        List<ModelNode> realms = REALMS.resolveModelAttribute(context, model).asList();
+        String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asStringOrNull();
+        ModelNode realms = REALMS.resolveModelAttribute(context, model);
 
-        String preRealmPrincipalTransformer = asStringIfDefined(context, PRE_REALM_PRINCIPAL_TRANSFORMER, model);
-        String postRealmPrincipalTransformer = asStringIfDefined(context, POST_REALM_PRINCIPAL_TRANSFORMER, model);
-        String principalDecoder = asStringIfDefined(context, PRINCIPAL_DECODER, model);
-        String permissionMapper = asStringIfDefined(context, PERMISSION_MAPPER, model);
-        String realmMapper = asStringIfDefined(context, REALM_MAPPER, model);
-        String roleMapper = asStringIfDefined(context, ROLE_MAPPER, model);
-        String securityEventListener = asStringIfDefined(context, SECURITY_EVENT_LISTENER, model);
+        String preRealmPrincipalTransformer = PRE_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+        String postRealmPrincipalTransformer = POST_REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+        String principalDecoder = PRINCIPAL_DECODER.resolveModelAttribute(context, model).asStringOrNull();
+        String permissionMapper = PERMISSION_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String realmMapper = REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String roleMapper = ROLE_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String securityEventListener = SECURITY_EVENT_LISTENER.resolveModelAttribute(context, model).asStringOrNull();
 
         DomainService domain = new DomainService(defaultRealm, trustedSecurityDomain, identityOperator);
 
@@ -285,26 +285,28 @@ class DomainDefinition extends SimpleResourceDefinition {
                     SecurityEventListener.class, domain.getSecurityEventListenerInjector());
         }
 
-        for (ModelNode current : realms) {
-            String realmName = REALM_NAME.resolveModelAttribute(context, current).asString();
-            String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
-            ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
+        if (realms.isDefined()) {
+            for (ModelNode current : realms.asList()) {
+                String realmName = REALM_NAME.resolveModelAttribute(context, current).asString();
+                String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(SECURITY_REALM_CAPABILITY, realmName);
+                ServiceName realmServiceName = context.getCapabilityServiceName(runtimeCapability, SecurityRealm.class);
 
-            RealmDependency realmDependency = domain.createRealmDependency(realmName);
-            REALM_SERVICE_UTIL.addInjection(domainBuilder, realmDependency.getSecurityRealmInjector() , realmServiceName);
+                RealmDependency realmDependency = domain.createRealmDependency(realmName);
+                REALM_SERVICE_UTIL.addInjection(domainBuilder, realmDependency.getSecurityRealmInjector(), realmServiceName);
 
-            String principalTransformer = asStringIfDefined(context, REALM_PRINCIPAL_TRANSFORMER, current);
-            if (principalTransformer != null) {
-                Injector<PrincipalTransformer> principalTransformerInjector = realmDependency.getPrincipalTransformerInjector(principalTransformer);
-                injectPrincipalTransformer(principalTransformer, context, domainBuilder, principalTransformerInjector);
-            }
-            String realmRoleMapper = asStringIfDefined(context, ROLE_MAPPER, current);
-            if (realmRoleMapper != null) {
-                injectRoleMapper(realmRoleMapper, context, domainBuilder, realmDependency.getRoleMapperInjector(realmRoleMapper));
-            }
-            String realmRoleDecoder = asStringIfDefined(context, REALM_ROLE_DECODER, current);
-            if (realmRoleDecoder != null) {
-                injectRoleDecoder(realmRoleDecoder, context, domainBuilder, realmDependency.getRoleDecoderInjector(realmRoleDecoder));
+                String principalTransformer = REALM_PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, current).asStringOrNull();
+                if (principalTransformer != null) {
+                    Injector<PrincipalTransformer> principalTransformerInjector = realmDependency.getPrincipalTransformerInjector(principalTransformer);
+                    injectPrincipalTransformer(principalTransformer, context, domainBuilder, principalTransformerInjector);
+                }
+                String realmRoleMapper = ROLE_MAPPER.resolveModelAttribute(context, current).asStringOrNull();
+                if (realmRoleMapper != null) {
+                    injectRoleMapper(realmRoleMapper, context, domainBuilder, realmDependency.getRoleMapperInjector(realmRoleMapper));
+                }
+                String realmRoleDecoder = REALM_ROLE_DECODER.resolveModelAttribute(context, current).asStringOrNull();
+                if (realmRoleDecoder != null) {
+                    injectRoleDecoder(realmRoleDecoder, context, domainBuilder, realmDependency.getRoleDecoderInjector(realmRoleDecoder));
+                }
             }
         }
 
@@ -334,8 +336,12 @@ class DomainDefinition extends SimpleResourceDefinition {
 
             @Override
             public SecurityDomain get() throws StartException {
-                trustedSecurityDomainInjectors.forEach(i -> trustedSecurityDomains.add(i.getValue()));
-                outflowSecurityDomainInjectors.forEach(i -> outflowSecurityDomains.add(i.getValue()));
+                for (InjectedValue<SecurityDomain> trustedSecurityDomainInjector : trustedSecurityDomainInjectors) {
+                    trustedSecurityDomains.add(trustedSecurityDomainInjector.getValue());
+                }
+                for (InjectedValue<SecurityDomain> i : outflowSecurityDomainInjectors) {
+                    outflowSecurityDomains.add(i.getValue());
+                }
                 return securityDomain.getValue();
             }
 
@@ -398,7 +404,7 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
         List<SecurityIdentity> outflowIdentities = new ArrayList<>(outflowDomains.size());
-        outflowDomains.forEach(d -> {
+        for (SecurityDomain d : outflowDomains) {
             ServerAuthenticationContext sac = d.createNewAuthenticationContext();
             try {
                 if (sac.importIdentity(identity)) {
@@ -409,7 +415,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.unableToPerformOutflow(identity.getPrincipal().getName(), e);
             }
-        });
+        }
 
         return outflowIdentities.toArray(new SecurityIdentity[outflowIdentities.size()]);
     }
@@ -536,20 +542,20 @@ class DomainDefinition extends SimpleResourceDefinition {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
 
-
-            List<ModelNode> realms = REALMS.resolveModelAttribute(context, model).asList();
+            ModelNode realmsNode = REALMS.resolveModelAttribute(context, model);
+            List<ModelNode> realms = realmsNode.isDefined() ? realmsNode.asList() : Collections.emptyList();
 
             Set<String> realmNames = new HashSet<>(realms.size());
 
             for(ModelNode realm : realms) {
                 String realmName = REALM_NAME.resolveModelAttribute(context, realm).asString();
-                if (realmNames.add(realmName) == false) {
+                if (! realmNames.add(realmName)) {
                     throw ROOT_LOGGER.realmRefererencedTwice(realmName);
                 }
             }
 
-            String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asString();
-            if (realmNames.contains(defaultRealm) == false) {
+            String defaultRealm = DomainDefinition.DEFAULT_REALM.resolveModelAttribute(context, model).asStringOrNull();
+            if (defaultRealm != null && ! realmNames.contains(defaultRealm)) {
                 StringBuilder realmsStringBuilder = new StringBuilder();
                 for(String currentRealm : realmNames) {
                     if (realmsStringBuilder.length() != 0) realmsStringBuilder.append(", ");
@@ -571,6 +577,7 @@ class DomainDefinition extends SimpleResourceDefinition {
                     new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_IDENTITY, descriptionResolver)
                             .setParameters(NAME)
                             .setRuntimeOnly()
+                            .setReadOnly()
                             .build(),
                     new ReadSecurityDomainIdentityHandler());
         }
@@ -610,13 +617,17 @@ class DomainDefinition extends SimpleResourceDefinition {
 
                 ModelNode attributesNode = result.get(ElytronDescriptionConstants.ATTRIBUTES);
 
-                identity.getAttributes().entries().forEach(entry -> {
+                for (Attributes.Entry entry : identity.getAttributes().entries()) {
                     ModelNode entryNode = attributesNode.get(entry.getKey()).setEmptyList();
-                    entry.forEach(entryNode::add);
-                });
+                    for (String s : entry) {
+                        entryNode.add(s);
+                    }
+                }
 
                 ModelNode rolesNode = result.get(ElytronDescriptionConstants.ROLES);
-                identity.getRoles().forEach(rolesNode::add);
+                for (String s : identity.getRoles()) {
+                    rolesNode.add(s);
+                }
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotReadIdentity(principalName, domainServiceName, e);
             }

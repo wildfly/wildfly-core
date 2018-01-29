@@ -37,7 +37,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 
 /**
- * Scope in which a {@link org.jboss.as.controller.capability.AbstractCapability capability} is available.
+ * Scope in which a {@link org.jboss.as.controller.capability.Capability capability} is available.
  * <p>
  * The {@link #GLOBAL} scope can be used for most cases. A Host Controller will use a different implementation
  * of this interface for capabilities that are limited to some subset of the domain-wide model, e.g. a single

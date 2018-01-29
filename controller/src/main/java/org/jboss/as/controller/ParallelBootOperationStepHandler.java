@@ -109,7 +109,13 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             throw ControllerLogger.ROOT_LOGGER.fullServerBootRequired(getClass());
         }
 
+        if (!(context instanceof OperationContextImpl)) {
+            throw ControllerLogger.ROOT_LOGGER.operationContextIsNotAbstractOperationContext();
+        }
+
         long start = System.currentTimeMillis();
+
+        final OperationContextImpl primaryContext = (OperationContextImpl) context;
 
         // Make sure the lock has been taken
         context.getResourceRegistrationForUpdate();
@@ -122,11 +128,12 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         final CountDownLatch preparedLatch = new CountDownLatch(opsBySubsystem.size());
         final CountDownLatch committedLatch = new CountDownLatch(1);
         final CountDownLatch completeLatch = new CountDownLatch(opsBySubsystem.size());
-        final Thread controllingThread = Thread.currentThread();
 
-        if (!(context instanceof AbstractOperationContext)) {
-            throw ControllerLogger.ROOT_LOGGER.operationContextIsNotAbstractOperationContext();
-        }
+        // TODO Elytron - We probably need a way to stop repeating this.
+        final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
+                .setDefaultRealmName("Empty")
+                .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
+                .build();
 
         for (Map.Entry<String, List<ParsedBootOp>> entry : opsBySubsystem.entrySet()) {
             String subsystemName = entry.getKey();
@@ -137,8 +144,11 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             transactionControls.put(entry.getKey(), txControl);
 
             // Execute the subsystem's ops in another thread
-            ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (OperationContextImpl)context, txControl,
-                    subsystemRuntimeOps, controllingThread, controller, operationId);
+            List<ParsedBootOp> bootOps = entry.getValue();
+            ParallelBootOperationContext pboc = bootOps.size() == 0
+                    ? null
+                    : createOperationContext(primaryContext, bootSecurityDomain, txControl, subsystemRuntimeOps);
+            ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.MODEL, txControl, pboc);
             executor.execute(subsystemTask);
         }
 
@@ -172,7 +182,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             }
 
             // Add step to execute all the runtime ops recorded by the other subsystem tasks
-            context.addStep(getRuntimeStep(runtimeOpsBySubsystem), OperationContext.Stage.RUNTIME);
+            context.addStep(getRuntimeStep(runtimeOpsBySubsystem, bootSecurityDomain), OperationContext.Stage.RUNTIME);
 
         } catch (InterruptedException e) {
             context.getFailureDescription().set(new ModelNode().set(ControllerLogger.ROOT_LOGGER.subsystemBootInterrupted()));
@@ -201,6 +211,15 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             }
         });
 
+    }
+
+    private ParallelBootOperationContext createOperationContext(final OperationContextImpl primaryContext,
+                                                                final SecurityDomain bootSecurityDomain,
+                                                                final ParallelBootTransactionControl txControl,
+                                                                final List<ParsedBootOp> runtimeOps) {
+        return new ParallelBootOperationContext(txControl, processState,
+                primaryContext, runtimeOps, controller, operationId, controller.getAuditLogger(),
+                extraValidationStepHandler, bootSecurityDomain::getAnonymousSecurityIdentity);
     }
 
     private void checkForSubsystemFailures(OperationContext context, Map<String, ParallelBootTransactionControl> transactionControls, OperationContext.Stage stage) {
@@ -248,13 +267,19 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         committedLatch.countDown();
     }
 
-    private OperationStepHandler getRuntimeStep(final Map<String, List<ParsedBootOp>> runtimeOpsBySubsystem) {
+    private OperationStepHandler getRuntimeStep(final Map<String, List<ParsedBootOp>> runtimeOpsBySubsystem, final SecurityDomain bootSecurityDomain) {
 
         return new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
                 long start = System.currentTimeMillis();
+
+                if (!(context instanceof OperationContextImpl)) {
+                    throw ControllerLogger.ROOT_LOGGER.operationContextIsNotAbstractOperationContext();
+                }
+                OperationContextImpl primaryContext = (OperationContextImpl) context;
+
                 // make sure the registry lock is held
                 context.getServiceRegistry(true);
 
@@ -263,12 +288,6 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 final CountDownLatch preparedLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
                 final CountDownLatch committedLatch = new CountDownLatch(1);
                 final CountDownLatch completeLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
-                final Thread controllingThread = Thread.currentThread();
-
-                if (!(context instanceof AbstractOperationContext)) {
-                    throw ControllerLogger.ROOT_LOGGER.operationContextIsNotAbstractOperationContext();
-                }
-
 
                 for (Map.Entry<String, List<ParsedBootOp>> entry : runtimeOpsBySubsystem.entrySet()) {
                     String subsystemName = entry.getKey();
@@ -276,7 +295,11 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     transactionControls.put(subsystemName, txControl);
 
                     // Execute the subsystem's ops in another thread
-                    ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, entry.getValue(), (OperationContextImpl)context, txControl, null, controllingThread, controller, operationId);
+                    List<ParsedBootOp> bootOps = entry.getValue();
+                    ParallelBootOperationContext pboc = bootOps.size() == 0
+                        ? null
+                        : createOperationContext(primaryContext, bootSecurityDomain, txControl, null);
+                    ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.RUNTIME, txControl, pboc);
                     executor.execute(subsystemTask);
                 }
 
@@ -322,45 +345,28 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
         private final String subsystemName;
         private final List<ParsedBootOp> bootOperations;
-        private final OperationContextImpl primaryContext;
         private final OperationContext.Stage executionStage;
         private final ParallelBootTransactionControl transactionControl;
-        private final List<ParsedBootOp> runtimeOps;
-        private final Thread controllingThread;
-        private final ModelControllerImpl controller;
-        private final int lockId;
+        private final ParallelBootOperationContext pboc;
 
-        public ParallelBootTask(final String subsystemName,
-                                final List<ParsedBootOp> bootOperations,
-                                final OperationContextImpl primaryContext,
-                                final ParallelBootTransactionControl transactionControl,
-                                final List<ParsedBootOp> runtimeOps,
-                                final Thread controllingThread,
-                                final ModelControllerImpl controller,
-                                final int lockId) {
+        ParallelBootTask(final String subsystemName,
+                         final List<ParsedBootOp> bootOperations,
+                         final OperationContext.Stage executionStage,
+                         final ParallelBootTransactionControl transactionControl,
+                         final ParallelBootOperationContext pboc) {
+            assert bootOperations != null || pboc != null;
             this.subsystemName = subsystemName;
             this.bootOperations = bootOperations;
-            this.primaryContext = primaryContext;
-            this.executionStage = primaryContext.getCurrentStage();
+            this.executionStage = executionStage;
             this.transactionControl = transactionControl;
-            this.runtimeOps = runtimeOps;
-            this.controllingThread = controllingThread;
-            this.controller = controller;
-            this.lockId = lockId;
+            this.pboc = pboc;
         }
 
         @Override
         public void run() {
-            boolean interrupted = false;
-            ParallelBootOperationContext operationContext = null;
             try {
-                // TODO Elytron - We probably need a way to stop repeating this.
-                final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
-                        .setDefaultRealmName("Empty")
-                        .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
-                        .build();
 
-                if(bootOperations == null || bootOperations.isEmpty()) {
+                if (pboc == null) {
                     transactionControl.operationPrepared(new ModelController.OperationTransaction() {
                         @Override
                         public void commit() {}
@@ -370,17 +376,13 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     }, new ModelNode());
                     return;
                 }
-
-                operationContext = new ParallelBootOperationContext(transactionControl, processState,
-                        primaryContext, runtimeOps, controllingThread, controller, lockId, controller.getAuditLogger(),
-                        controller.getManagementModel().getRootResource(), extraValidationStepHandler, bootSecurityDomain::getAnonymousSecurityIdentity);
+                pboc.setControllingThread();
                 for (ParsedBootOp op : bootOperations) {
                     final OperationStepHandler osh = op.handler == null ? rootRegistration.getOperationHandler(op.address, op.operationName) : op.handler;
-                    operationContext.addStep(op.response, op.operation, osh, executionStage);
+                    pboc.addStep(op.response, op.operation, osh, executionStage);
                 }
-                operationContext.executeOperation();
-            } catch (Throwable t) {
-                interrupted = (t instanceof InterruptedException);
+                pboc.executeOperation();
+            } catch (RuntimeException | Error t) {
                 MGMT_OP_LOGGER.failedSubsystemBootOperations(t, subsystemName);
                 if (!transactionControl.signalled) {
                     ModelNode failure = new ModelNode();
@@ -391,10 +393,12 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             } finally {
                 if (!transactionControl.signalled) {
 
-                    for (ParsedBootOp op : bootOperations) {
-                        if (op.response.hasDefined(ModelDescriptionConstants.SUCCESS) && !op.response.get(ModelDescriptionConstants.SUCCESS).asBoolean()) {
-                            transactionControl.operationFailed(op.response);
-                            break;
+                    if (bootOperations != null) {
+                        for (ParsedBootOp op : bootOperations) {
+                            if (op.response.hasDefined(ModelDescriptionConstants.SUCCESS) && !op.response.get(ModelDescriptionConstants.SUCCESS).asBoolean()) {
+                                transactionControl.operationFailed(op.response);
+                                break;
+                            }
                         }
                     }
                     if (!transactionControl.signalled) {
@@ -407,12 +411,8 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     transactionControl.operationCompleted(transactionControl.response);
                 }
 
-                if (operationContext != null) {
-                    operationContext.close();
-                }
-
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
+                if (pboc != null) {
+                    pboc.close();
                 }
 
             }
@@ -428,7 +428,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         private ModelController.OperationTransaction transaction;
         private boolean signalled;
 
-        public ParallelBootTransactionControl(CountDownLatch preparedLatch, CountDownLatch committedLatch, CountDownLatch completeLatch) {
+        ParallelBootTransactionControl(CountDownLatch preparedLatch, CountDownLatch committedLatch, CountDownLatch completeLatch) {
             this.preparedLatch = preparedLatch;
             this.committedLatch = committedLatch;
             this.completeLatch = completeLatch;

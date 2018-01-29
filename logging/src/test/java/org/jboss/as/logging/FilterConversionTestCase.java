@@ -22,13 +22,15 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.jboss.logmanager.Level;
 import org.junit.Test;
 
@@ -67,6 +69,23 @@ public class FilterConversionTestCase {
         levelRangeFilter.get(CommonAttributes.LEVEL_RANGE_LEGACY.getName(), CommonAttributes.MAX_LEVEL.getName()).set(Level.FATAL.getName());
         levelRangeFilter.protect();
         MAP.put("levelRange(INFO,FATAL]", levelRangeFilter);
+
+        final ModelNode anyUndefinedChangedLevel = new ModelNode().setEmptyObject();
+        final ModelNode any = anyUndefinedChangedLevel.get(CommonAttributes.ANY.getName());
+        any.get(CommonAttributes.MATCH.getName()).set("WFLY.*");
+        any.get(CommonAttributes.CHANGE_LEVEL.getName());
+        any.get(CommonAttributes.ACCEPT.getName()).set(true);
+        any.get(CommonAttributes.DENY.getName());
+        anyUndefinedChangedLevel.protect();
+        MAP.put("any(match(\"WFLY.*\"),accept)", anyUndefinedChangedLevel);
+
+        final ModelNode allUndefinedReplace = new ModelNode().setEmptyObject();
+        final ModelNode all = allUndefinedReplace.get(CommonAttributes.ALL.getName());
+        all.get(CommonAttributes.REPLACE.getName());
+        all.get(CommonAttributes.MATCH.getName()).set("WFLY.*");
+        all.get(CommonAttributes.DENY.getName());
+        allUndefinedReplace.protect();
+        MAP.put("all(match(\"WFLY.*\"))", allUndefinedReplace);
     }
 
     @Test
@@ -82,11 +101,38 @@ public class FilterConversionTestCase {
     @Test
     public void testFilterSpecToFilter() throws Exception {
         for (Map.Entry<String, ModelNode> entry : MAP.entrySet()) {
-            final ModelNode expectedValue = entry.getValue();
+            final ModelNode expectedValue = removeUndefined(entry.getValue().clone());
             final String filterSpec = entry.getKey();
             final ModelNode filter = Filters.filterSpecToFilter(filterSpec);
 
             ModelTestUtils.compare(expectedValue, filter);
         }
+    }
+
+    /**
+     * Removes undefined attributes from the model.
+     *
+     * @param model the model to remove undefined attributes from
+     *
+     * @return the new model
+     */
+    static ModelNode removeUndefined(final ModelNode model) {
+        final ModelNode result = new ModelNode();
+        if (model.getType() == ModelType.OBJECT) {
+            for (Property property : model.asPropertyList()) {
+                final ModelNode value = property.getValue();
+                if (value.isDefined()) {
+                    if (value.getType() == ModelType.OBJECT) {
+                        final ModelNode m = removeUndefined(property.getValue());
+                        if (m.isDefined()) {
+                            result.get(property.getName()).set(m);
+                        }
+                    } else {
+                        result.get(property.getName()).set(value);
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

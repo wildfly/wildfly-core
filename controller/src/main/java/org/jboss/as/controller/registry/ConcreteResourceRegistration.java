@@ -27,7 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -262,7 +261,18 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
             if (subregistry != null) {
                 //we remove also children, effectively doing recursive delete
-                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address));
+                // WFCORE-3410 -- do not call the getChildAddresses(PathAddress) variant
+                // that results in querying (and thus read locking) nodes above
+                // this one as that can lead to deadlocks.
+                // Reading from the root would allow the call to find addresses
+                // associated with a wildcard registration for which this MRR
+                // is an override (if it is such an MRR.) But, we only end up
+                // reading our own subregistry to find the MRR
+                // to invoke the recursive delete on anyway, and an override MRR
+                // trying to somehow remove children from the related wildcard MRR
+                // would be wrong, so there's no point reading from the root to
+                // find those kinds of addresses.
+                Set<PathElement> childAddresses = getChildAddresses(PathAddress.pathAddress(address).iterator());
                 if (childAddresses != null) {
                     ManagementResourceRegistration registration = subregistry.getResourceRegistration(PathAddress.EMPTY_ADDRESS.iterator(), address.getValue());
                     if(!registration.isAlias()) {
@@ -399,9 +409,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (!isAttributeRegistrationAllowed(definition)) {
             return;
         }
-        final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
-        AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition, flags);
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+        AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
         storeAttribute(definition, aa);
     }
 
@@ -412,9 +421,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (!isAttributeRegistrationAllowed(definition)) {
             return;
         }
-        final EnumSet<AttributeAccess.Flag> flags = definition.getFlags();
-        AttributeAccess.Storage storage = (flags != null && flags.contains(AttributeAccess.Flag.STORAGE_RUNTIME)) ? Storage.RUNTIME : Storage.CONFIGURATION;
-        AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition, flags);
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+        AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
         storeAttribute(definition, aa);
     }
 
@@ -476,7 +484,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         assert assertMetricValues(definition); //The real message will be in an assertion thrown by assertMetricValues
         checkPermission();
         if (isAttributeRegistrationAllowed(definition) && !isProfileResource()) {
-            AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition, definition.getFlags());
+            AttributeAccess aa = new AttributeAccess(AccessType.METRIC, AttributeAccess.Storage.RUNTIME, metricHandler, null, definition);
             storeAttribute(definition, aa);
         }
     }
@@ -487,11 +495,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
      * {@link AttributeAccess.Flag#RUNTIME_SERVICE_NOT_REQUIRED}, they are registered regardless of the process type.
      */
     private boolean isAttributeRegistrationAllowed(AttributeDefinition definition) {
-        boolean runtime = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
+        boolean runtime = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
         if (!runtime) {
             return true;
         }
-        boolean runtimeServiceNotRequired = definition.getFlags().contains(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
+        boolean runtimeServiceNotRequired = definition.getImmutableFlags().contains(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
         if (runtimeServiceNotRequired) {
             return true;
         }
@@ -781,6 +789,23 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
                 return attributes.get(attributeName);
             } finally {
                 readLock.unlock();
+            }
+        }
+    }
+
+    @Override
+    Map<String, AttributeAccess> getAttributes(final ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptyMap();
+            }
+            return subregistry.getAttributes(iterator, next.getValue());
+        } else {
+            checkPermission();
+            synchronized (this) {
+                return new HashMap<>(attributes);
             }
         }
     }

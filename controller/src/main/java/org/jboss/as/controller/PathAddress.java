@@ -451,6 +451,49 @@ public class PathAddress implements Iterable<PathElement> {
         return toString('/');
     }
 
+    /**
+     * Check if this path matches the address path.
+     * An address matches this address if its path elements match or are valid
+     * multi targets for this path elements. Addresses that are equal are matching.
+     *
+     * @param address The path to check against this path. If null, this method
+     * returns false.
+     * @return true if the provided path matches, false otherwise.
+     */
+    public boolean matches(PathAddress address) {
+        if (address == null) {
+            return false;
+        }
+        if (equals(address)) {
+            return true;
+        }
+        if (size() != address.size()) {
+            return false;
+        }
+        for (int i = 0; i < size(); i++) {
+            PathElement pe = getElement(i);
+            PathElement other = address.getElement(i);
+            if (!pe.matches(other)) {
+                // Could be a multiTarget with segments
+                if (pe.isMultiTarget() && !pe.isWildcard()) {
+                    boolean matched = false;
+                    for (String segment : pe.getSegments()) {
+                        if (segment.equals(other.getValue())) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private String toString(char keyValSeparator) {
         if (pathAddressList.size() == 0) {
             return "/";

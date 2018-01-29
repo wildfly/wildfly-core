@@ -38,7 +38,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -53,7 +52,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-@Ignore("WFCORE-2883 Un-ignore it when CLI relies on aesh-readline. Root cause is random failures due to aesh/CLI close sequence.")
 public class RemoveManagementRealmTestCase {
 
     private String removeLocalAuthCommand = "/core-service=management/security-realm=ManagementRealm/authentication=local:remove";

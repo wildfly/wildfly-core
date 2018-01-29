@@ -169,11 +169,24 @@ public class PathElement {
 
     /**
      * Determine whether the given property matches this element.
+     * A property matches this element when property name and this key are equal,
+     * values are equal or this element value is a wildcard.
      * @param property the property to check
      * @return {@code true} if the property matches
      */
     public boolean matches(Property property) {
         return property.getName().equals(key) && (value == WILDCARD_VALUE || property.getValue().asString().equals(value));
+    }
+
+    /**
+     * Determine whether the given element matches this element.
+     * An element matches this element when keys are equal, values are equal
+     * or this element value is a wildcard.
+     * @param pe the element to check
+     * @return {@code true} if the element matches
+     */
+    public boolean matches(PathElement pe) {
+        return pe.key.equals(key) && (isWildcard() || pe.value.equals(value));
     }
 
     /**

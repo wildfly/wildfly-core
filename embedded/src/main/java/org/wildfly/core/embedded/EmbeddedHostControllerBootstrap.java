@@ -33,7 +33,6 @@ import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
-import org.wildfly.extension.core.management.client.Process.Type;
 
 /**
  * Bootstrap of the Embedded HostController process.
@@ -64,7 +63,7 @@ public class EmbeddedHostControllerBootstrap {
             ServiceTarget target = serviceContainer.subTarget();
 
             final ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(target, processState).getValue();
-            RunningStateJmx.registerMBean(controlledProcessStateService, null, runningModeControl, Type.from(environment.getProcessType().name()));
+            RunningStateJmx.registerMBean(controlledProcessStateService, null, runningModeControl, false);
             final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
             target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
             return futureContainer;

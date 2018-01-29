@@ -32,6 +32,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.dmr.ModelNode;
@@ -96,13 +98,21 @@ public class ModelTestOperationValidatorFilter implements Serializable {
                 if (entry.action == Action.NOCHECK) {
                     return null;
                 } else if (entry.action == Action.RESOLVE){
-                    op = op.resolve();
+                    op = resolve(op);
                 } else if (entry.operationFixer != null){
                     op = entry.operationFixer.fixOperation(op);
                 }
             }
         }
         return op;
+    }
+
+    private static ModelNode resolve(ModelNode unresolved) {
+        try {
+            return ExpressionResolver.TEST_RESOLVER.resolveExpressions(unresolved);
+        } catch (OperationFailedException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private boolean nameMatch(String opName, OperationEntry entry) {

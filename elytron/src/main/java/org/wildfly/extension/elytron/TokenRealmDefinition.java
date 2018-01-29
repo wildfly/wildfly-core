@@ -26,8 +26,6 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JWT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OAUTH2_INTROSPECTION;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
-import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.AUDIENCE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.CERTIFICATE;
 import static org.wildfly.extension.elytron.TokenRealmDefinition.JwtValidatorAttributes.ISSUER;
@@ -195,7 +193,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PRINCIPAL_CLAIM, JwtValidatorAttributes.JWT_VALIDATOR, OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR, CASE_SENSITIVE};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PRINCIPAL_CLAIM, JwtValidatorAttributes.JWT_VALIDATOR, OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -221,8 +219,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(new HashSet<>(Arrays.asList(new RuntimeCapability[]{
-                    MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY})), ATTRIBUTES);
+            super(new HashSet<>(Arrays.asList(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)), ATTRIBUTES);
         }
 
         @Override
@@ -239,10 +236,10 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 ModelNode jwtValidatorNode = JwtValidatorAttributes.JWT_VALIDATOR.resolveModelAttribute(context, operation);
                 String[] issuer = asStringArrayIfDefined(context, ISSUER, jwtValidatorNode);
                 String[] audience = asStringArrayIfDefined(context, AUDIENCE, jwtValidatorNode);
-                String publicKey = ElytronExtension.asStringIfDefined(context, PUBLIC_KEY, jwtValidatorNode);
+                String publicKey = PUBLIC_KEY.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
                 InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
-                String keyStoreName = asStringIfDefined(context, KEY_STORE, jwtValidatorNode);
-                String certificateAlias = asStringIfDefined(context, CERTIFICATE, jwtValidatorNode);
+                String keyStoreName = KEY_STORE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
+                String certificateAlias = CERTIFICATE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
 
                 service = new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {
                     @Override
@@ -288,7 +285,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 });
 
                 ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(mainServiceName, service);
-                String keyStore = asStringIfDefined(context, KEY_STORE, jwtValidatorNode);
+                String keyStore = KEY_STORE.resolveModelAttribute(context, jwtValidatorNode).asStringOrNull();
 
                 if (keyStore != null) {
                     serviceBuilder.addDependency(context.getCapabilityServiceName(
@@ -299,11 +296,11 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 serviceBuilder.addAliases(aliasServiceName).install();
             } else if (operation.hasDefined(OAUTH2_INTROSPECTION)) {
                 ModelNode oAuth2IntrospectionNode = OAuth2IntrospectionValidatorAttributes.OAUTH2_INTROSPECTION_VALIDATOR.resolveModelAttribute(context, operation);
-                String clientId = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.CLIENT_ID, oAuth2IntrospectionNode);
-                String clientSecret = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.CLIENT_SECRET, oAuth2IntrospectionNode);
-                String introspectionUrl = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.INTROSPECTION_URL, oAuth2IntrospectionNode);
-                String sslContextRef = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.SSL_CONTEXT, oAuth2IntrospectionNode);
-                String hostNameVerificationPolicy = ElytronExtension.asStringIfDefined(context, OAuth2IntrospectionValidatorAttributes.HOSTNAME_VERIFICATION_POLICY, oAuth2IntrospectionNode);
+                String clientId = OAuth2IntrospectionValidatorAttributes.CLIENT_ID.resolveModelAttribute(context, oAuth2IntrospectionNode).asString();
+                String clientSecret = OAuth2IntrospectionValidatorAttributes.CLIENT_SECRET.resolveModelAttribute(context, oAuth2IntrospectionNode).asString();
+                String introspectionUrl = OAuth2IntrospectionValidatorAttributes.INTROSPECTION_URL.resolveModelAttribute(context, oAuth2IntrospectionNode).asString();
+                String sslContextRef = OAuth2IntrospectionValidatorAttributes.SSL_CONTEXT.resolveModelAttribute(context, oAuth2IntrospectionNode).asStringOrNull();
+                String hostNameVerificationPolicy = OAuth2IntrospectionValidatorAttributes.HOSTNAME_VERIFICATION_POLICY.resolveModelAttribute(context, oAuth2IntrospectionNode).asStringOrNull();
                 InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
 
                 service = new TrivialService<>(new TrivialService.ValueSupplier<SecurityRealm>() {

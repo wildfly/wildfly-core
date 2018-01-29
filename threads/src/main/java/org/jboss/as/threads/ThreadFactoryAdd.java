@@ -55,10 +55,12 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         ModelNode priorityModelNode = PoolAttributeDefinitions.PRIORITY.resolveModelAttribute(context, model);
+        ModelNode groupNameModelNode = PoolAttributeDefinitions.GROUP_NAME.resolveModelAttribute(context, model);
+        ModelNode threadNamePatternModelNode = PoolAttributeDefinitions.THREAD_NAME_PATTERN.resolveModelAttribute(context, model);
 
-        final String threadNamePattern = PoolAttributeDefinitions.THREAD_NAME_PATTERN.resolveModelAttribute(context, model).asString();
+        final String threadNamePattern = threadNamePatternModelNode.isDefined() ? threadNamePatternModelNode.asString() : null;
         final Integer priority = priorityModelNode.isDefined() ? new Integer(priorityModelNode.asInt()) : null;
-        final String groupName = PoolAttributeDefinitions.GROUP_NAME.resolveModelAttribute(context, model).asString();
+        final String groupName = groupNameModelNode.isDefined() ? groupNameModelNode.asString() : null;
 
         final String name = context.getCurrentAddressValue();
 

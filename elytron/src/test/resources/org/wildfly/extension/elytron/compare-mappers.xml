@@ -1,0 +1,88 @@
+<subsystem xmlns="urn:wildfly:elytron:2.0">
+    <mappers>
+        <custom-permission-mapper name="CustomPermissionMapper" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
+        <custom-permission-mapper name="CustomPermissionMapper2" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
+        <logical-permission-mapper name="LogicalPermissionMapper" logical-operation="unless" left="CustomPermissionMapper" right="CustomPermissionMapper2" />
+        <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
+            <permission-mapping>
+                <principal name="John"/>
+                <principal name="Joe"/>
+                <role name="User"/>
+                <role name="Administrator"/>
+                <permission class-name="a.b.MyPermission" />
+                <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
+            </permission-mapping>
+            <permission-mapping>
+                <principal name="John Doe"/>
+                <permission class-name="a.b.JohnPermission" />
+            </permission-mapping>
+            <permission-mapping>
+                <principal name="User"/>
+                <permission class-name="a.b.UserPermission" />
+            </permission-mapping>
+            <permission-mapping match-all="true"/>
+        </simple-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission class-name="a.b.UserPermission" />
+        </constant-permission-mapper>
+
+        <aggregate-principal-decoder name="AggregatePrincipalDecoder">
+            <principal-decoder name="CustomPrincipalDecoderOne" />
+            <principal-decoder name="CustomPrincipalDecoderTwo" />
+        </aggregate-principal-decoder>
+        <concatenating-principal-decoder name="ConcatenatingPrincipalDecoder" joiner=",">
+            <principal-decoder name="AggregatePrincipalDecoder" />
+            <principal-decoder name="X500PrincipalDecoderOne" />
+            <principal-decoder name="CustomPrincipalDecoderOne" />
+        </concatenating-principal-decoder>
+        <concatenating-principal-decoder name="ConcatenatingPrincipalDecoderTwo" joiner=",">
+            <principal-decoder name="ConcatenatingPrincipalDecoder" />
+            <principal-decoder name="ConstantPrincipalDecoder" />
+        </concatenating-principal-decoder>
+        <constant-principal-decoder name="ConstantPrincipalDecoder" constant="constant" />
+        <custom-principal-decoder name="CustomPrincipalDecoderOne" class-name="org.wildfly.elytron.CustomPrincipalDecoder" module="i.j" />
+        <custom-principal-decoder name="CustomPrincipalDecoderTwo" class-name="org.wildfly.elytron.CustomPrincipalDecoder" module="i.j" />
+        <x500-attribute-principal-decoder name="X500PrincipalDecoderOne" oid="2.5.4.3" joiner="," maximum-segments="6" />
+        <x500-attribute-principal-decoder name="X500PrincipalDecoderTwo" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" />
+        <x500-attribute-principal-decoder name="X500PrincipalDecoderThree" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" convert="true" required-oids="2.5.4.3 2.5.4.11"/>
+
+        <aggregate-principal-transformer name="AggregateOne">
+            <principal-transformer name="CustomOne" />
+            <principal-transformer name="RegexOne" />
+            <principal-transformer name="RegexTwo" />
+        </aggregate-principal-transformer>
+        <chained-principal-transformer name="ChainedNameRewriter">
+            <principal-transformer name="CustomOne" />
+            <principal-transformer name="AggregateOne" />
+        </chained-principal-transformer>
+        <constant-principal-transformer name="ConstantOne" constant="constant" />
+        <custom-principal-transformer name="CustomOne" class-name="org.wildfly.elytron.CustomRewriter" module="a.b" />
+        <regex-principal-transformer name="RegexOne" pattern=".?" replacement="X" replace-all="true" />
+        <regex-validating-principal-transformer name="RegexTwo" pattern="p*" match="false" />
+        <regex-validating-principal-transformer name="RegexThree" pattern="p*" />
+
+        <constant-realm-mapper name="local" realm-name="local" />
+        <custom-realm-mapper name="CustomRealmOne" class-name="org.wildfly.elytron.CustomRealmMapper" module="c.d" />
+        <simple-regex-realm-mapper name="SimpleOne" pattern="(.?)" delegate-realm-mapper="CustomRealmOne" />
+        <mapped-regex-realm-mapper name="MappedOne" pattern="(.?)" delegate-realm-mapper="SimpleOne">
+            <realm-mapping from="a" to="b" />
+            <realm-mapping from="c" to="d" />
+        </mapped-regex-realm-mapper>
+
+        <custom-role-decoder name="CustomDecoderOne" class-name="org.wildfly.elytron.CustomRoleDecoder" module="f.g" />
+        <simple-role-decoder name="SimpleRoleDecoder" attribute="groups" />
+
+        <add-prefix-role-mapper name="AddPrefix" prefix="p" />
+        <add-suffix-role-mapper name="AddSuffix" suffix="s" />
+        <aggregate-role-mapper name="AggregateRoleMapper">
+            <role-mapper name="AddPrefix" />
+            <role-mapper name="AddSuffix" />
+        </aggregate-role-mapper>
+        <constant-role-mapper name="ConstantRoles">
+            <role name="JBoss Admin" />
+            <role name="Manager" />
+        </constant-role-mapper>
+        <custom-role-mapper name="CustomRoleOne" class-name="org.wildfly.elytron.CustomRoleMapper" module="i.j" />
+        <logical-role-mapper name="AdditionalRoles" logical-operation="and" left="ConstantRoles" right="CustomRoleOne" />
+    </mappers>
+</subsystem>

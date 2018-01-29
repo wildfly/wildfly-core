@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import io.undertow.attribute.ExchangeAttributes;
 import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.PredicateHandler;
@@ -182,7 +183,7 @@ public enum ConsoleMode {
                     .setCachable(Predicates.<HttpServerExchange>falsePredicate());
 
             //we also need to setup the default resource redirect
-            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(CONTEXT + resource), handler);
+            PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(ExchangeAttributes.constant(CONTEXT + resource)), handler);
             return new ResourceHandlerDefinition(CONTEXT, resource, predicateHandler);
         }
 
@@ -192,6 +193,10 @@ public enum ConsoleMode {
         }
 
         static ResourceHandlerDefinition createNoConsoleForAdminMode(String slot) throws ModuleLoadException {
+            // Even though we are not going to use the console in admin-only, try and load
+            // its module so we react properly if it's not even present.
+            ConsoleHandler.findConsoleClassLoader(Module.getCallerModuleLoader(), slot);
+            // If we got here we have a console module, so now we can set up a temporary redirect
             return createConsoleHandler(slot, NO_CONSOLE_FOR_ADMIN_MODE);
         }
 

@@ -52,16 +52,16 @@ import org.junit.Test;
  */
 public class DeployAllDomainTestCase {
 
-    private static File cliTestApp1War;
-    private static File cliTestApp2War;
-    private static File cliTestAnotherWar;
-    private static File cliTestAppEar;
+    protected static File cliTestApp1War;
+    protected static File cliTestApp2War;
+    protected static File cliTestAnotherWar;
+    protected static File cliTestAppEar;
 
-    private static String sgOne;
-    private static String sgTwo;
+    protected static String sgOne;
+    protected static String sgTwo;
 
-    private CommandContext ctx;
-    private static DomainTestSupport testSupport;
+    protected CommandContext ctx;
+    protected static DomainTestSupport testSupport;
 
     @BeforeClass
     public static void before() throws Exception {
@@ -155,6 +155,22 @@ public class DeployAllDomainTestCase {
         checkDeployment(sgTwo, cliTestApp2War.getName(), true);
         checkDeployment(sgTwo, cliTestAppEar.getName(), true);
 
+        ctx.handle("deployment disable-all --all-relevant-server-groups");
+
+        checkDeployment(sgOne, cliTestApp1War.getName(), false);
+        checkDeployment(sgOne, cliTestAnotherWar.getName(), false);
+        checkDeployment(sgOne, cliTestAppEar.getName(), false);
+
+        checkDeployment(sgTwo, cliTestApp2War.getName(), false);
+        checkDeployment(sgTwo, cliTestAppEar.getName(), false);
+        // Deploy them all.
+        ctx.handle("deployment enable-all --server-groups=" + sgTwo + ',' + sgOne);
+        checkDeployment(sgOne, cliTestApp1War.getName(), true);
+        checkDeployment(sgOne, cliTestAnotherWar.getName(), true);
+        checkDeployment(sgOne, cliTestAppEar.getName(), true);
+
+        checkDeployment(sgTwo, cliTestApp2War.getName(), true);
+        checkDeployment(sgTwo, cliTestAppEar.getName(), true);
     }
 
     private void checkDeployment(String serverGroup, String name, boolean enabled) throws CommandFormatException, IOException {

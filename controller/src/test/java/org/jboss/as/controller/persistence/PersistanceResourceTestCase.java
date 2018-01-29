@@ -51,7 +51,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
@@ -726,10 +725,16 @@ public class PersistanceResourceTestCase {
     }
 
     private Set<AclEntryPermission> getOwnerPermissions(Collection<AclEntry> entries, UserPrincipal owner) {
-        return entries.stream()
-                .filter(aclEntry -> aclEntry.principal().equals(owner))
-                .map(AclEntry::permissions)
-                .flatMap(Set::stream).collect(Collectors.toSet());
+        Set<AclEntryPermission> set = new HashSet<>();
+        for (AclEntry aclEntry : entries) {
+            if (aclEntry.principal().equals(owner)) {
+                Set<AclEntryPermission> permissions = aclEntry.permissions();
+                for (AclEntryPermission aclEntryPermission : permissions) {
+                    set.add(aclEntryPermission);
+                }
+            }
+        }
+        return set;
     }
 
     @Test

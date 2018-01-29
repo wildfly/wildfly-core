@@ -22,15 +22,9 @@
 
 package org.jboss.as.process.logging;
 
-import org.jboss.as.process.CommandLineConstants;
-import org.jboss.logging.BasicLogger;
-import org.jboss.logging.annotations.Cause;
-import org.jboss.logging.annotations.LogMessage;
-import org.jboss.logging.Logger;
-import org.jboss.logging.annotations.Message;
-import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.Unmarshaller;
+import static org.jboss.logging.Logger.Level.ERROR;
+import static org.jboss.logging.Logger.Level.INFO;
+import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -38,9 +32,15 @@ import java.io.UTFDataFormatException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.WARN;
+import org.jboss.as.process.CommandLineConstants;
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.Unmarshaller;
 
 /**
  * Date: 29.06.2011
@@ -161,7 +161,7 @@ public interface ProcessLogger extends BasicLogger {
      */
     @LogMessage(level = ERROR)
     @Message(id = 9, value = "Failed to start process '%s'")
-    void failedToStartProcess(String processName);
+    void failedToStartProcess(@Cause Throwable cause, String processName);
 
     /**
      * Logs an error message indicating a failure to write a message to the connection.
@@ -489,13 +489,13 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 25, value = "Authentication key must be 24 bytes long")
     IllegalArgumentException invalidAuthKeyLen();
 
-    /**
-     * Creates an exception indicating the command must have at least one entry.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 26, value = "cmd must have at least one entry")
-    IllegalArgumentException invalidCommandLen();
+//    /**
+//     * Creates an exception indicating the command must have at least one entry.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 26, value = "cmd must have at least one entry")
+//    IllegalArgumentException invalidCommandLen();
 
     /**
      * Creates an exception indicating the Java home directory does not exist.
@@ -799,4 +799,24 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 62, value = "Writes are already shut down")
     IOException writesAlreadyShutdown();
 
+    @LogMessage(level = INFO)
+    @Message(id = 63, value = "Process '%s' did not complete normal stop within %d ms; attempting to kill process using OS calls")
+    void attemptingToKillProcess(String process, long timeout);
+
+    @LogMessage(level = INFO)
+    @Message(id = 64, value = "Cannot locate process '%s' -- could not find the 'jps' command")
+    void jpsCommandNotFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 65, value = "No process identifiable as '%s' could be found")
+    void processNotFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 66, value = "Multiple processes identifiable as '%s' found; OS level kill cannot be safely performed")
+    void multipleProcessesFound(String process);
+
+    @LogMessage(level = INFO)
+    @Message(id = 67, value = "Process '%s' did not complete normal stop within %d ms; attempting to destroy process " +
+            "using java.lang.Process.destroyForcibly()")
+    void destroyingProcess(String process, long timeout);
 }

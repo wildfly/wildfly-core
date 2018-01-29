@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,4 +80,48 @@ public class PropertyPatternTestCase {
         assertTrue(propertiesLoad.getDisabledUserNames().contains("Guillaume.Grossetie"));
         propertiesLoad.stop(null);
     }
+
+    @Test
+    public void testLoadEnabledDisabledUsersAfterUpdate() throws IOException, StartException {
+        File usersPropertyFile = File.createTempFile("User", null);
+        usersPropertyFile.deleteOnExit();
+        List<String> content = Arrays.asList(
+                "#user1=123",
+                "user2=456",
+                "# Comment",
+                "#user3=789",
+                "# Another comment",
+                "user4=012"
+        );
+        PrintWriter writer = new PrintWriter(usersPropertyFile, "UTF-8");
+        try {
+            for (String line : content) {
+                writer.println(line);
+            }
+        } finally {
+            writer.close();
+        }
+
+        // make some updates
+        UserPropertiesFileLoader loader = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
+        loader.start(null);
+        Properties props = loader.getProperties();
+        props.put("newUser", "newPassword");
+        props.remove("user4");
+        loader.persistProperties();
+        loader.stop(null);
+
+        // reload the file and make sure everything is there
+        UserPropertiesFileLoader loader2 = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
+        loader2.start(null);
+        assertEquals(2, loader2.getEnabledUserNames().size());
+        assertEquals(2, loader2.getDisabledUserNames().size());
+        assertEquals(4, loader2.getUserNames().size());
+        assertTrue(loader2.getEnabledUserNames().contains("user2"));
+        assertTrue(loader2.getEnabledUserNames().contains("newUser"));
+        assertTrue(loader2.getDisabledUserNames().contains("user1"));
+        assertTrue(loader2.getDisabledUserNames().contains("user3"));
+        loader2.stop(null);
+    }
+
 }

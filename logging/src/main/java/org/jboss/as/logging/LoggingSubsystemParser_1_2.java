@@ -23,6 +23,7 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.controller.parsing.ParseUtils.duplicateNamedElement;
+import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
@@ -30,9 +31,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
-import static org.jboss.as.logging.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.ASYNC_HANDLER;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
@@ -69,8 +67,6 @@ import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SERVER_ADDRES
 import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_FORMATTER;
 import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_HANDLER;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -78,20 +74,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
-import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
 
     LoggingSubsystemParser_1_2() {
         //
@@ -171,7 +166,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
     }
 
 
-    private static void parseLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -236,7 +232,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseAsyncHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseAsyncHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -310,7 +307,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseRootLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations) throws XMLStreamException {
+    @Override
+    void parseRootLoggerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations) throws XMLStreamException {
         // No attributes
         if (reader.getAttributeCount() > 0) {
             throw unexpectedAttribute(reader, 0);
@@ -344,7 +342,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseConsoleHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseConsoleHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -419,7 +418,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -502,7 +502,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseCustomHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseCustomHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -579,7 +580,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parsePeriodicRotatingFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parsePeriodicRotatingFileHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -665,7 +667,8 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseSizeRotatingHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    @Override
+    void parseSizeRotatingHandlerElement(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -752,7 +755,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseSyslogHandler(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
+    void parseSyslogHandler(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> operations, final Set<String> names) throws XMLStreamException {
         final ModelNode operation = Util.createAddOperation();
         // Attributes
         String name = null;
@@ -843,76 +846,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         operations.add(operation);
     }
 
-    private static void parseFileElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
-        final EnumSet<Attribute> required = EnumSet.of(Attribute.PATH);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case PATH: {
-                    PATH.parseAndSetParameter(value, operation, reader);
-                    break;
-                }
-                case RELATIVE_TO: {
-                    RELATIVE_TO.parseAndSetParameter(value, operation, reader);
-                    break;
-                }
-                default: {
-                    throw unexpectedAttribute(reader, i);
-                }
-            }
-        }
-        requireNoContent(reader);
-    }
-
-    private static void parseHandlerFormatterElement(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
-        if (reader.getAttributeCount() > 0) {
-            throw unexpectedAttribute(reader, 0);
-        }
-        boolean formatterDefined = false;
-        while (reader.nextTag() != END_ELEMENT) {
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case PATTERN_FORMATTER: {
-                    if (formatterDefined) {
-                        throw unexpectedElement(reader);
-                    }
-                    requireSingleAttribute(reader, PatternFormatterResourceDefinition.PATTERN.getName());
-                    formatterDefined = true;
-                    FORMATTER.parseAndSetParameter(readStringAttributeElement(reader, PatternFormatterResourceDefinition.PATTERN.getName()), operation, reader);
-                    break;
-                }
-                default: {
-                    throw unexpectedElement(reader);
-                }
-            }
-        }
-    }
-
-    private static void parseHandlersElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
-        // No attributes
-        if (reader.getAttributeCount() > 0) {
-            throw unexpectedAttribute(reader, 0);
-        }
-
-        // Elements
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case HANDLER: {
-                    operation.add(readNameAttribute(reader));
-                    break;
-                }
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    static void parseLoggingProfilesElement(final XMLExtendedStreamReader reader, final List<ModelNode> operations) throws XMLStreamException {
+    void parseLoggingProfilesElement(final XMLExtendedStreamReader reader, final List<ModelNode> operations) throws XMLStreamException {
         final Set<String> profileNames = new HashSet<>();
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -929,7 +863,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser implements XMLSt
         }
     }
 
-    static void parseLoggingProfileElement(final XMLExtendedStreamReader reader, final List<ModelNode> operations, final Set<String> profileNames) throws XMLStreamException {
+    void parseLoggingProfileElement(final XMLExtendedStreamReader reader, final List<ModelNode> operations, final Set<String> profileNames) throws XMLStreamException {
         // Attributes
         String name = null;
         final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME);

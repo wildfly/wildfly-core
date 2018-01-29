@@ -22,7 +22,6 @@
 
 package org.jboss.as.controller.operations.validation;
 
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,14 +56,6 @@ public class ObjectTypeValidator extends ModelTypeValidator implements AllowedVa
     public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
-            for (String key : value.keys()) {
-                if (!allowedValues.containsKey(key)) {
-                    // TODO see description of WFCORE-2249. Rejecting extra data is
-                    // not the standard behavior across WildFly management, but since
-                    // we've been doing it here for a long time we'll continue for now
-                    throw ROOT_LOGGER.invalidKeyForObjectType(key, parameterName);
-                }
-            }
             for (AttributeDefinition ad : allowedValues.values()) {
                 String key = ad.getName();
                 // Don't modify the value by calls to get(), because that's best in general.

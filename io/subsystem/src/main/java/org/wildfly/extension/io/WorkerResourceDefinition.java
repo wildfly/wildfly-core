@@ -63,6 +63,7 @@ import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.Option;
 import org.xnio.Options;
 import org.xnio.XnioWorker;
+import org.xnio.management.XnioServerMXBean;
 import org.xnio.management.XnioWorkerMXBean;
 
 /**
@@ -112,6 +113,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).setStorageRuntime()
             .setUndefinedMetricValue(new ModelNode(0)).build();
     private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime()
+            .setUndefinedMetricValue(new ModelNode(0)).build();
+    private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).setStorageRuntime()
             .setUndefinedMetricValue(new ModelNode(0)).build();
 
 
@@ -189,6 +192,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         resourceRegistration.registerMetric(MAX_WORKER_POOL_SIZE, metricsHandler);
         resourceRegistration.registerMetric(IO_THREAD_COUNT, metricsHandler);
         resourceRegistration.registerMetric(QUEUE_SIZE, metricsHandler);
+        resourceRegistration.registerMetric(BUSY_WORKER_THREAD_COUNT, metricsHandler);
     }
 
     @Override
@@ -332,6 +336,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             return new ModelNode(metric.getIoThreadCount());
         } else if (QUEUE_SIZE.getName().equals(attributeName)) {
             return new ModelNode(metric.getWorkerQueueSize());
+        } else if (BUSY_WORKER_THREAD_COUNT.getName().equals(attributeName)) {
+            return new ModelNode(metric.getBusyWorkerThreadCount());
         } else {
             throw new OperationFailedException(IOLogger.ROOT_LOGGER.noMetrics());
         }
@@ -368,7 +374,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                         return Collections.emptySet();
                     }
                     Set<String> res = new LinkedHashSet<>();
-                    metrics.getServerMXBeans().forEach(serverMXBean -> res.add(serverMXBean.getBindAddress()));
+                    for (XnioServerMXBean serverMXBean : metrics.getServerMXBeans()) {
+                        res.add(serverMXBean.getBindAddress());
+                    }
                     return res;
                 }
 

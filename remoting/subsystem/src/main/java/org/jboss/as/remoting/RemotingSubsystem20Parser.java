@@ -38,14 +38,17 @@ import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.remoting.logging.RemotingLogger;
@@ -61,12 +64,6 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * @author Tomaz Cerar
  */
 class RemotingSubsystem20Parser extends RemotingSubsystem11Parser implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
-
-    static final PersistentResourceXMLDescription ENDPOINT_PARSER = PersistentResourceXMLDescription.builder(RemotingEndpointResource.INSTANCE.getPathElement())
-            .addAttributes(RemotingEndpointResource.WORKER, RemotingEndpointResource.SEND_BUFFER_SIZE, RemotingEndpointResource.RECEIVE_BUFFER_SIZE, RemotingEndpointResource.BUFFER_REGION_SIZE, RemotingEndpointResource.TRANSMIT_WINDOW_SIZE, RemotingEndpointResource.RECEIVE_WINDOW_SIZE,
-                    RemotingEndpointResource.MAX_OUTBOUND_CHANNELS, RemotingEndpointResource.MAX_INBOUND_CHANNELS, RemotingEndpointResource.AUTHORIZE_ID, RemotingEndpointResource.AUTHORIZE_ID, RemotingEndpointResource.AUTH_REALM, RemotingEndpointResource.AUTHENTICATION_RETRIES, RemotingEndpointResource.MAX_OUTBOUND_MESSAGES,
-                    RemotingEndpointResource.MAX_INBOUND_MESSAGES, RemotingEndpointResource.HEARTBEAT_INTERVAL, RemotingEndpointResource.MAX_INBOUND_MESSAGE_SIZE, RemotingEndpointResource.MAX_OUTBOUND_MESSAGE_SIZE, RemotingEndpointResource.SERVER_NAME, RemotingEndpointResource.SASL_PROTOCOL)
-            .build();
 
     @Override
     public void readElement(XMLExtendedStreamReader reader, List<ModelNode> list) throws XMLStreamException {
@@ -96,7 +93,7 @@ class RemotingSubsystem20Parser extends RemotingSubsystem11Parser implements XML
                     if (doneWorkerThreadPool) {
                         throw workerThreadPoolEndpointChoiceRequired(reader);
                     }
-                    ENDPOINT_PARSER.parse(reader, PathAddress.pathAddress(address), list);
+                    parseEndpoint(reader, subsystem);
                     foundEndpoint = true;
                     break;
                 case CONNECTOR: {
@@ -126,6 +123,23 @@ class RemotingSubsystem20Parser extends RemotingSubsystem11Parser implements XML
                 RemotingLogger.ROOT_LOGGER.workerThreadsEndpointConfigurationChoiceRequired(
                         Element.WORKER_THREAD_POOL.getLocalName(), Element.ENDPOINT.getLocalName()
                 ), reader.getLocation());
+    }
+
+    private void parseEndpoint(final XMLExtendedStreamReader reader, final ModelNode subsystemAdd) throws XMLStreamException {
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String attributeName = reader.getAttributeLocalName(i);
+            String value = reader.getAttributeValue(i);
+            if (RemotingEndpointResource.ATTRIBUTES.containsKey(attributeName)) {
+                AttributeDefinition def = RemotingEndpointResource.ATTRIBUTES.get(attributeName);
+                AttributeParser parser = def.getParser();
+                assert parser != null;
+                parser.parseAndSetParameter(def, value, subsystemAdd, reader);
+            } else {
+                Set<String> possible = new LinkedHashSet<>(RemotingEndpointResource.ATTRIBUTES.keySet());
+                throw ParseUtils.unexpectedAttribute(reader, i, possible);
+            }
+        }
+        ParseUtils.requireNoContent(reader);
     }
 
     void parseRemoteOutboundConnection(final XMLExtendedStreamReader reader, final ModelNode parentAddress, final List<ModelNode> operations) throws XMLStreamException {

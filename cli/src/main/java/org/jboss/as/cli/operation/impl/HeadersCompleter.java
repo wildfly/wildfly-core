@@ -54,7 +54,7 @@ public class HeadersCompleter implements CommandLineCompleter {
             return 0;
         }
         try {
-            handler.parseOperation(null, buffer);
+            handler.parseOperation(null, buffer, ctx);
         } catch (CommandFormatException e) {
             //e.printStackTrace();
             return -1;

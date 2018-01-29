@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Deque;
 import java.util.Map;
 
+import io.undertow.attribute.ExchangeAttributes;
 import io.undertow.io.IoCallback;
 import io.undertow.io.Sender;
 import io.undertow.server.HttpServerExchange;
@@ -220,7 +221,7 @@ public class DomainUtil {
         // avoid clickjacking attacks: console must not be included in (i)frames
         SetHeaderHandler frameHandler = new SetHeaderHandler(handler, "X-Frame-Options", "SAMEORIGIN");
         // we also need to setup the default resource redirect
-        PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(context + DEFAULT_RESOURCE), frameHandler);
+        PredicateHandler predicateHandler = new PredicateHandler(path("/"), new RedirectHandler(ExchangeAttributes.constant(context + DEFAULT_RESOURCE)), frameHandler);
         return new ResourceHandlerDefinition(context, DEFAULT_RESOURCE, predicateHandler);
     }
 

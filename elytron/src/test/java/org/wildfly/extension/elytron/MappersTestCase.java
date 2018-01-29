@@ -56,7 +56,6 @@ public class MappersTestCase extends AbstractSubsystemBaseTest {
         Assert.assertEquals("beta", transformer.apply(new NamePrincipal("beta@wildfly.org")).getName()); // remove server part
         Assert.assertEquals("gamma@example.com", transformer.apply(new NamePrincipal("gamma@example.com")).getName()); // keep
         Assert.assertEquals(null, transformer.apply(new NamePrincipal("invalid"))); // not an e-mail address
-        Assert.assertEquals(null, transformer.apply(new NamePrincipal(null)));
         Assert.assertEquals(null, transformer.apply(null));
     }
 }

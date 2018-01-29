@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hamcrest.CoreMatchers;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
@@ -225,10 +226,12 @@ public class JmxControlledStateNotificationsInStaticModuleTestCase {
                         Pair<String, String> transition = configurationStateTransitions.get(i);
                         errorCollector.checkThat("Transition " + i + ": " + list.get(i),
                                 list.get(i),
-                                containsString(
-                                        "jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from '"
-                                                + transition.getLeft() + "' to '" + transition.getRight()
-                                                + "'"));
+                                CoreMatchers.allOf(
+                                        containsString("jboss.root:type=state"),
+                                        containsString("RuntimeConfigurationState"),
+                                        containsString(transition.getLeft()),
+                                        containsString(transition.getRight())
+                                ));
                     }
                 });
                 readAndCheckFile(JMX_FACADE_RUNNING, list -> {
@@ -238,10 +241,12 @@ public class JmxControlledStateNotificationsInStaticModuleTestCase {
                         Pair<String, String> transition = runningStateTransitions.get(i);
                         errorCollector.checkThat("Transition " + i + ": " + list.get(i),
                                 list.get(i),
-                                containsString(
-                                        "jboss.root:type=state The attribute 'RunningState' has changed from '"
-                                                + transition.getLeft() + "' to '" + transition.getRight()
-                                                + "'"));
+                                CoreMatchers.allOf(
+                                        containsString("jboss.root:type=state"),
+                                        containsString("RunningState"),
+                                        containsString(transition.getLeft()),
+                                        containsString(transition.getRight())
+                                ));
                     }
                 });
                 break;

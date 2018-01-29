@@ -35,31 +35,26 @@ import static org.jboss.as.controller.parsing.ParseUtils.duplicateNamedElement;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
-
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.parsing.Attribute;
-import org.jboss.as.controller.parsing.Element;
-import org.jboss.as.controller.parsing.Namespace;
-import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.Collections;
+import java.util.List;
+
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
+import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.InMemoryAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinition;
 import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerResourceDefinition;
@@ -68,19 +63,22 @@ import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinit
 import org.jboss.as.domain.management.audit.SyslogAuditLogProtocolResourceDefinition;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.security.KeystoreAttributes;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * @author Tomas Hofman (thofman@redhat.com)
  */
-public class AuditLogXml_5 extends AuditLogXml {
+final class AuditLogXml_5 implements AuditLogXml {
     final boolean host;
 
-    public AuditLogXml_5(boolean host) {
+    AuditLogXml_5(boolean host) {
         this.host = host;
     }
 
-    protected void parseFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         // added ROTATE_AT_STARTUP attribute
 
         final ModelNode add = Util.createAddOperation();
@@ -126,7 +124,7 @@ public class AuditLogXml_5 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    protected void writeFileAuditLogHandler(XMLExtendedStreamWriter writer, ModelNode auditLog, String name) throws XMLStreamException {
+    private void writeFileAuditLogHandler(XMLExtendedStreamWriter writer, ModelNode auditLog, String name) throws XMLStreamException {
         // added ROTATE_AT_STARTUP attribute
 
         if (auditLog.hasDefined(ModelDescriptionConstants.FILE_HANDLER, name)) {
@@ -192,7 +190,7 @@ public class AuditLogXml_5 extends AuditLogXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
             case JSON_FORMATTER:{
-                parseFileAuditLogFormatter(reader, address, expectedNs, list);
+                parseFileAuditLogFormatter(reader, address, list);
                 break;
             }
             default:
@@ -201,7 +199,7 @@ public class AuditLogXml_5 extends AuditLogXml {
         }
     }
 
-    private void parseFileAuditLogFormatter(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseFileAuditLogFormatter(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -261,17 +259,17 @@ public class AuditLogXml_5 extends AuditLogXml {
                 if(configurationChangesConfigured) {
                     throw unexpectedElement(reader);
                 }
-                parseConfigurationChangesAuditLogHandler(reader, address, expectedNs, list);
+                parseConfigurationChangesAuditLogHandler(reader, address, list);
                 configurationChangesConfigured = true;
                 break;
             case FILE_HANDLER:
-                parseFileAuditLogHandler(reader, address, expectedNs, list);
+                parseFileAuditLogHandler(reader, address, list);
                 break;
             case PERIODIC_ROTATING_FILE_HANDLER:
-                parsePeriodicRotatingFileAuditLogHandler(reader, address, expectedNs, list);
+                parsePeriodicRotatingFileAuditLogHandler(reader, address, list);
                 break;
             case SIZE_ROTATING_FILE_HANDLER:
-                parseSizeRotatingFileAuditLogHandler(reader, address, expectedNs, list);
+                parseSizeRotatingFileAuditLogHandler(reader, address, list);
                 break;
             case SYSLOG_HANDLER:
                 parseSyslogAuditLogHandler(reader, address, expectedNs, list);
@@ -282,7 +280,7 @@ public class AuditLogXml_5 extends AuditLogXml {
         }
     }
 
-    private void parseConfigurationChangesAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseConfigurationChangesAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -309,7 +307,7 @@ public class AuditLogXml_5 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parseSizeRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseSizeRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -349,7 +347,7 @@ public class AuditLogXml_5 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parsePeriodicRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parsePeriodicRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();

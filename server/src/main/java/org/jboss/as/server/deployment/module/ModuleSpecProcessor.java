@@ -75,15 +75,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
-
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         if (deploymentUnit.hasAttachment(Attachments.MODULE))
             return;
-
-        // No {@link ModuleSpec} creation for OSGi deployments
-        if (deploymentUnit.hasAttachment(Attachments.OSGI_MANIFEST))
-            return;
-
         deployModuleSpec(phaseContext);
     }
 
@@ -97,7 +91,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     private void deployModuleSpec(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
 
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        final DeploymentUnit topLevelDeployment = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
+        final DeploymentUnit parentDeployment = deploymentUnit.getParent();
 
         final ResourceRoot mainRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
         if (mainRoot == null)
@@ -116,15 +110,23 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             }
         }
 
+        final List<ResourceRoot> parentResourceRoots = new ArrayList<>();
+        if (parentDeployment != null) {
+            final List<ResourceRoot> additionalParentRoots = parentDeployment.getAttachmentList(Attachments.RESOURCE_ROOTS);
+            for (final ResourceRoot additionalParentRoot : additionalParentRoots) {
+                if (ModuleRootMarker.isModuleRoot(additionalParentRoot) && !SubDeploymentMarker.isSubDeployment(additionalParentRoot)) {
+                    parentResourceRoots.add(additionalParentRoot);
+                }
+            }
+        }
+
         final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
         if (moduleIdentifier == null) {
             throw ServerLogger.ROOT_LOGGER.noModuleIdentifier(deploymentUnit.getName());
         }
 
-        final List<AdditionalModuleSpecification> additionalModules = topLevelDeployment.getAttachmentList(Attachments.ADDITIONAL_MODULES);
-
         // create the module service and set it to attach to the deployment in the next phase
-        final ServiceName moduleServiceName = createModuleService(phaseContext, deploymentUnit, resourceRoots, moduleSpec, moduleIdentifier);
+        final ServiceName moduleServiceName = createModuleService(phaseContext, deploymentUnit, resourceRoots, parentResourceRoots, moduleSpec, moduleIdentifier);
         phaseContext.addDeploymentDependency(moduleServiceName, Attachments.MODULE);
 
         for (final DeploymentUnit subDeployment : deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS)) {
@@ -134,15 +136,15 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             }
         }
 
-        if (deploymentUnit.getParent() != null) {
-            //they have already been added by the parent
-            return;
-        }
-        for (final AdditionalModuleSpecification module : additionalModules) {
-            addAllDependenciesAndPermissions(moduleSpec, module);
-            List<ResourceRoot> roots = module.getResourceRoots();
-            ServiceName serviceName = createModuleService(phaseContext, deploymentUnit, roots, module, module.getModuleIdentifier());
-            phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, serviceName);
+        if (parentDeployment == null) {
+            //only top level deployment adds additional modules
+            final List<AdditionalModuleSpecification> additionalModules = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_MODULES);
+            for (final AdditionalModuleSpecification module : additionalModules) {
+                addAllDependenciesAndPermissions(moduleSpec, module);
+                List<ResourceRoot> roots = module.getResourceRoots();
+                ServiceName serviceName = createModuleService(phaseContext, deploymentUnit, roots, parentResourceRoots, module, module.getModuleIdentifier());
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, serviceName);
+            }
         }
     }
 
@@ -204,8 +206,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     }
 
     private ServiceName createModuleService(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
-                                            final List<ResourceRoot> resourceRoots, final ModuleSpecification moduleSpecification,
-                                            final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
+                                            final List<ResourceRoot> resourceRoots, final List<ResourceRoot> parentResourceRoots,
+                                            final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
         logger.debugf("Creating module: %s", moduleIdentifier);
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         for (final DependencySpec dep : moduleSpecification.getModuleSystemDependencies()) {
@@ -246,6 +248,17 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             permFactories.add(new ImmediatePermissionFactory(e.nextElement()));
         }
         // TODO: servlet context temp dir FilePermission
+
+        // add file permissions for parent roots
+        for (ResourceRoot additionalParentRoot : parentResourceRoots) {
+            final VirtualFile root = additionalParentRoot.getRoot();
+            // start with the root
+            permFactories.add(new ImmediatePermissionFactory(
+                    new VirtualFilePermission(root.getPathName(), VirtualFilePermission.FLAG_READ)));
+            // also include all children, recursively
+            permFactories.add(new ImmediatePermissionFactory(
+                    new VirtualFilePermission(root.getChild("-").getPathName(), VirtualFilePermission.FLAG_READ)));
+        }
 
         FactoryPermissionCollection permissionCollection = new FactoryPermissionCollection(permFactories.toArray(new PermissionFactory[permFactories.size()]));
 

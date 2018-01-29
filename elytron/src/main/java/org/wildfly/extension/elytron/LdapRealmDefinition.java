@@ -23,7 +23,6 @@ import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REA
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -283,7 +282,9 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             if (serialNumberFrom.isDefined()) b.addSerialNumberCertificateVerifier(serialNumberFrom.asString());
 
             ModelNode subjectDnFrom = SUBJECT_DN_FROM.resolveModelAttribute(context, model);
-            b.addSubjectDnCertificateVerifier(subjectDnFrom.asString());
+            if (subjectDnFrom.isDefined()) {
+                b.addSubjectDnCertificateVerifier(subjectDnFrom.asString());
+            }
 
             b.build();
         }
@@ -417,8 +418,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(new HashSet<>(Arrays.asList(new RuntimeCapability[]{
-                    MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY})), ATTRIBUTES);
+            super(new HashSet<>(Arrays.asList(MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY)), ATTRIBUTES);
         }
 
         @Override
@@ -449,7 +449,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
         }
 
         private void configureDirContext(OperationContext context, ModelNode model, LdapSecurityRealmBuilder realmBuilder, ServiceBuilder<SecurityRealm> serviceBuilder) throws OperationFailedException {
-            String dirContextName = asStringIfDefined(context, DIR_CONTEXT, model);
+            String dirContextName = DIR_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
 
             String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(DIR_CONTEXT_CAPABILITY, dirContextName);
             ServiceName dirContextServiceName = context.getCapabilityServiceName(runtimeCapability, DirContextSupplier.class);

@@ -33,6 +33,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.domain.controller.DomainController;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
@@ -59,6 +60,7 @@ class ServerInventoryService implements Service<ServerInventory> {
     private final InjectedValue<ProcessControllerConnectionService> client = new InjectedValue<ProcessControllerConnectionService>();
     private final InjectedValue<NetworkInterfaceBinding> interfaceBinding = new InjectedValue<NetworkInterfaceBinding>();
     private final InjectedValue<ServerInventoryCallbackService> serverCallback = new InjectedValue<ServerInventoryCallbackService>();
+    private final InjectedValue<DomainManagedServerCallbackHandler> domainServerCallback = new InjectedValue<DomainManagedServerCallbackHandler>();
     private final DomainController domainController;
     private final HostControllerEnvironment environment;
     private final HostRunningModeControl runningModeControl;
@@ -92,6 +94,7 @@ class ServerInventoryService implements Service<ServerInventory> {
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, inventory.getClient())
                 .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceBinding), NetworkInterfaceBinding.class, inventory.interfaceBinding)
                 .addDependency(ServerInventoryCallbackService.SERVICE_NAME, ServerInventoryCallbackService.class, inventory.serverCallback)
+                .addDependency(DomainManagedServerCallbackHandler.SERVICE_NAME, DomainManagedServerCallbackHandler.class, inventory.domainServerCallback)
                 .addDependency(ManagementChannelRegistryService.SERVICE_NAME)
                 .install();
         return inventory.futureInventory;
@@ -107,6 +110,9 @@ class ServerInventoryService implements Service<ServerInventory> {
             serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry);
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
+            if (domainServerCallback != null && domainServerCallback.getValue() != null) {
+                domainServerCallback.getValue().getServerCallbackHandlerInjector().inject(serverInventory.getServerCallbackHandler());
+            }
             futureInventory.setInventory(serverInventory);
         } catch (Exception e) {
             futureInventory.setFailure(e);

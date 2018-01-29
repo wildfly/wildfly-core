@@ -117,6 +117,10 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void beforeClass() throws Exception {
 
+        // Initialize the log manager before the STDIO context is initialized. This ensures that any capturing of the
+        // standard output streams in the log manager is done before they are replaced by the stdio context.
+        Class.forName("org.jboss.logmanager.LogManager", true, CLIEmbedServerTestCase.class.getClassLoader());
+
         CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties", "logging.properties.backup", false);
 
         // Set up ability to manipulate stdout

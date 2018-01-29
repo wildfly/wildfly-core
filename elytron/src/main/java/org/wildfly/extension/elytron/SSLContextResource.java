@@ -20,8 +20,8 @@ package org.wildfly.extension.elytron;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSessionContext;
@@ -103,14 +103,24 @@ class SSLContextResource extends DelegatingResource {
         SSLContext sslContext;
         if (ElytronDescriptionConstants.SSL_SESSION.equals(childType) && (sslContext = getSSLContext(sslContextServiceController)) != null) {
             SSLSessionContext sslSessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
-            return Collections.list(sslSessionContext.getIds()).stream().map((byte[] b) -> ByteIterator.ofBytes(b).hexEncode(true).drainToString()).collect(Collectors.toSet());
+            Set<String> set = new HashSet<>();
+            for (byte[] b : Collections.list(sslSessionContext.getIds())) {
+                String s = ByteIterator.ofBytes(b).hexEncode(true).drainToString();
+                set.add(s);
+            }
+            return set;
         }
         return Collections.emptySet();
     }
 
     @Override
     public Set<ResourceEntry> getChildren(String childType) {
-        return getChildrenNames(childType).stream().map((String s) -> new PlaceholderResource.PlaceholderResourceEntry(ElytronDescriptionConstants.SSL_SESSION, s)).collect(Collectors.toSet());
+        Set<ResourceEntry> set = new HashSet<>();
+        for (String s : getChildrenNames(childType)) {
+            PlaceholderResource.PlaceholderResourceEntry placeholderResourceEntry = new PlaceholderResource.PlaceholderResourceEntry(ElytronDescriptionConstants.SSL_SESSION, s);
+            set.add(placeholderResourceEntry);
+        }
+        return set;
     }
 
     @Override

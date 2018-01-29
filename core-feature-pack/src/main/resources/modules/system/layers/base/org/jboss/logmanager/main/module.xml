@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.5" name="org.jboss.logmanager">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.logmanager" version="${org.jboss.logmanager:jboss-logmanager}">
     <resources>
         <artifact name="${org.jboss.logmanager:jboss-logmanager}"/>
     </resources>
@@ -30,5 +30,6 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.jboss.modules"/>
+        <module name="org.wildfly.common"/>
     </dependencies>
 </module>

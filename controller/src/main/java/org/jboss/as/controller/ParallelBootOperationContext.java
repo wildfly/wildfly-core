@@ -57,24 +57,27 @@ class ParallelBootOperationContext extends AbstractOperationContext {
 
     private final OperationContextImpl primaryContext;
     private final List<ParsedBootOp> runtimeOps;
-
+    private final Thread controllingThread;
     private Step lockStep;
     private final int operationId;
     private final ModelControllerImpl controller;
 
     ParallelBootOperationContext(final ModelController.OperationTransactionControl transactionControl,
                                  final ControlledProcessState processState, final OperationContextImpl primaryContext,
-                                 final List<ParsedBootOp> runtimeOps, final Thread controllingThread,
+                                 final List<ParsedBootOp> runtimeOps,
                                  final ModelControllerImpl controller, final int operationId, final AuditLogger auditLogger,
-                                 final Resource model, final OperationStepHandler extraValidationStepHandler, final Supplier<SecurityIdentity> securityIdentitySupplier) {
+                                 final OperationStepHandler extraValidationStepHandler, final Supplier<SecurityIdentity> securityIdentitySupplier) {
         super(primaryContext.getProcessType(), primaryContext.getRunningMode(), transactionControl, processState, true, auditLogger,
                 controller.getNotificationSupport(), controller, true, extraValidationStepHandler, null, securityIdentitySupplier);
         this.primaryContext = primaryContext;
         this.runtimeOps = runtimeOps;
-        AbstractOperationContext.controllingThread.set(controllingThread);
-        //
         this.controller = controller;
         this.operationId = operationId;
+        this.controllingThread = Thread.currentThread();
+    }
+
+    void setControllingThread() {
+        AbstractOperationContext.controllingThread.set(controllingThread);
     }
 
     void close() {
@@ -107,22 +110,19 @@ class ParallelBootOperationContext extends AbstractOperationContext {
 
     @Override
     public void addStep(ModelNode response, ModelNode operation, OperationStepHandler step, Stage stage) throws IllegalArgumentException {
-        switch (stage) {
-            case MODEL:
+        if (stage == Stage.MODEL) {
+            super.addStep(response, operation, step, stage);
+        } else if (stage == Stage.RUNTIME) {
+            if (runtimeOps != null) {
+                // Cache for use by the runtime step from ParallelBootOperationStepHandler
+                ParsedBootOp parsedOp = new ParsedBootOp(operation, step, response);
+                runtimeOps.add(parsedOp);
+            } else {
                 super.addStep(response, operation, step, stage);
-                break;
-            case RUNTIME:
-                if (runtimeOps != null) {
-                    // Cache for use by the runtime step from ParallelBootOperationStepHandler
-                    ParsedBootOp parsedOp = new ParsedBootOp(operation, step, response);
-                    runtimeOps.add(parsedOp);
-                } else {
-                    super.addStep(response, operation, step, stage);
-                }
-                break;
-            default:
-                // Handle VERIFY in the primary context, after parallel work is done
-                primaryContext.addStep(response, operation, step, stage);
+            }
+        } else {
+            // Handle VERIFY in the primary context, after parallel work is done
+            primaryContext.addStep(response, operation, step, stage);
         }
     }
 

@@ -42,6 +42,7 @@ import org.jboss.logging.Logger;
 public class DeploymentItemCompleter implements CommandLineCompleter {
 
     private final OperationRequestAddress address;
+    private final Logger log = Logger.getLogger(DeploymentItemCompleter.class);
 
     public DeploymentItemCompleter(OperationRequestAddress address) {
         this.address = address;
@@ -110,12 +111,10 @@ public class DeploymentItemCompleter implements CommandLineCompleter {
                     }
                 }
             } else {
-                Logger.getLogger(DeploymentItemCompleter.class).
-                        debug("Invalid response getting candidates");
+                log.debug("Invalid response getting candidates");
             }
         } catch (OperationFormatException | IOException ex) {
-            Logger.getLogger(DeploymentItemCompleter.class).
-                    debug("Exception getting candidates", ex);
+            log.debug("Exception getting candidates", ex);
         }
     }
 

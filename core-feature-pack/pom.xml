@@ -30,13 +30,17 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Beta27-SNAPSHOT</version>
+        <version>4.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack</artifactId>
 
     <name>WildFly: Core Feature Pack</name>
     <packaging>pom</packaging>
+
+    <properties>
+        <license.directory>${project.build.directory}/${project.build.finalName}/content/docs/licenses</license.directory>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -118,7 +122,17 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.aesh</groupId>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-readline</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.aesh</groupId>
+            <artifactId>aesh-extensions</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
         </dependency>
 
@@ -483,7 +497,7 @@
     </dependencies>
 
     <build>
-        <finalName>${server.output.dir.prefix}-core-feature-pack-${project.version}</finalName>
+        <finalName>${server.output.dir.prefix}-feature-pack-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -522,7 +536,7 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
-                            <finalName>${server.output.dir.prefix}-core-feature-pack-${project.version}</finalName>
+                            <finalName>${server.output.dir.prefix}-feature-pack-${project.version}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>target/</outputDirectory>
                             <workDirectory>target/assembly/work</workDirectory>
@@ -535,6 +549,116 @@
     </build>
 
     <profiles>
+
+        <profile>
+            <id>update-licenses-xml</id>
+            <activation>
+                <property>
+                    <name>!skip-update-licenses-xml</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-licenses-xml</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${license.directory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/license</directory>
+                                            <includes>
+                                                <include>*licenses.xml</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.wildfly.maven.plugins</groupId>
+                        <artifactId>licenses-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>update-licenses-xml</id>
+                                <goals>
+                                    <goal>insert-versions</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+                                    <licensesOutputDirectory>${license.directory}</licensesOutputDirectory>
+                                    <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
+                                    <excludedScopes>system,provided</excludedScopes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>generate-licenses-html</id>
+            <activation>
+                <property>
+                    <name>!skip-generate-licenses-html</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <version>1.0.1</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>generate-licenses-html</id>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${license.directory}</dir>
+                                            <includes>
+                                                <include>*licenses.xml</include>
+                                            </includes>
+                                            <stylesheet>src/main/resources/content/docs/licenses/licenses.xsl</stylesheet>
+                                            <outputDir>${license.directory}</outputDir>
+                                            <fileMappers>
+                                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FileExtensionMapper">
+                                                    <targetExtension>.html</targetExtension>
+                                                </fileMapper>
+                                            </fileMappers>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>version</name>
+                                                    <value>${project.version}</value>
+                                                </parameter>
+                                            </parameters>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>enforce</id>
             <activation>

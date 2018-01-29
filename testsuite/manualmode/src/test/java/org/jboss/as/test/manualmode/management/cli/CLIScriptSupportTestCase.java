@@ -115,8 +115,8 @@ public class CLIScriptSupportTestCase {
     @Test
     public void testBatch() {
         serverController.start();
+        CLI cli = CLI.newInstance();
         try {
-            CLI cli = CLI.newInstance();
             cli.connect(serverController.getClient().getMgmtAddress(),
                     serverController.getClient().getMgmtPort(), null, null);
             addProperty(cli, "prop1", "prop1_a");
@@ -129,6 +129,9 @@ public class CLIScriptSupportTestCase {
             assertEquals("prop1_b", readProperty(cli, "prop1"));
             assertEquals("prop2_b", readProperty(cli, "prop2"));
         } finally {
+            removeProperty(cli, "prop1");
+            removeProperty(cli, "prop2");
+            cli.terminate();
             serverController.stop();
         }
     }
@@ -160,6 +163,10 @@ public class CLIScriptSupportTestCase {
         Result res = cli.cmd("/system-property=" + name
                 + ":read-attribute(name=value)");
         return res.getResponse().get("result").asString();
+    }
+
+    private static void removeProperty(CLI cli, String name) {
+        cli.cmd("/system-property=" + name + ":remove");
     }
 
     private static void writeProperty(CLI cli, String name, String value) {

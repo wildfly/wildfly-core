@@ -28,13 +28,12 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public class ThreadsParser2_0 extends PersistentResourceXMLParser {
-    static final ThreadsParser2_0 INSTANCE = new ThreadsParser2_0();
 
     public static final PersistentResourceXMLBuilder THREAD_FACTORY_PARSER = getThreadFactoryParser(ThreadFactoryResourceDefinition.DEFAULT_INSTANCE);
 
 
     @SuppressWarnings("deprecation")
-    private static final PersistentResourceXMLDescription xmlDescription = builder(new ThreadSubsystemResourceDefinition(false), Namespace.CURRENT.getUriString())
+    private final PersistentResourceXMLDescription xmlDescription = builder(new ThreadSubsystemResourceDefinition(false), Namespace.CURRENT.getUriString())
             .addChild(THREAD_FACTORY_PARSER)
             .addChild(getUnboundedQueueThreadPoolParser(UnboundedQueueThreadPoolResourceDefinition.create(false)))
             .addChild(getBoundedQueueThreadPoolParser(BoundedQueueThreadPoolResourceDefinition.create(false, false)))

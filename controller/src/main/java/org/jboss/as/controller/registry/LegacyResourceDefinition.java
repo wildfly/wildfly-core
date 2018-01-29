@@ -60,7 +60,7 @@ public class LegacyResourceDefinition implements ResourceDefinition {
                 String name = property.getName();
                 SimpleAttributeDefinition def = SimpleAttributeDefinitionBuilder.create(name, property.getValue()).build();
                 this.attributes.put(name, new AttributeAccess(
-                        AttributeAccess.AccessType.READ_ONLY, AttributeAccess.Storage.CONFIGURATION, null, null, def, null)
+                        AttributeAccess.AccessType.READ_ONLY, AttributeAccess.Storage.CONFIGURATION, null, null, def)
                 );
             }
         }

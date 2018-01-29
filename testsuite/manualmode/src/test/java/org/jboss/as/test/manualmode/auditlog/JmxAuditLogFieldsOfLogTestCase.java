@@ -57,7 +57,7 @@ public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCa
         connection = setupAndGetConnection();
         makeOneLog();
         Assert.assertTrue(Files.exists(FILE));
-        List<ModelNode> logs = readFile(1);
+        List<ModelNode> logs = readFile(1, true);
         ModelNode log = logs.get(0);
         Assert.assertEquals("jmx", log.get("type").asString());
         Assert.assertEquals("true", log.get("r/o").asString());

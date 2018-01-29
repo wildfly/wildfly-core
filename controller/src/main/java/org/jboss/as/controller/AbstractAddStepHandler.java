@@ -301,18 +301,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
     }
 
     /**
-     * <strong>Deprecated</strong>. Has no effect unless a subclass somehow makes use of it.
-     *
-     * @return  {@code true}
-     *
-     * @deprecated has no effect
-     */
-    @Deprecated
-    protected boolean requiresRuntimeVerification() {
-        return true;
-    }
-
-    /**
      * Make any runtime changes necessary to effect the changes indicated by the given {@code operation}. Executes
      * after {@link #populateModel(org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}, so the given {@code resource}
      * parameter will reflect any changes made in that method. This method is
@@ -344,13 +332,6 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * invoked during {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME}. Subclasses that wish to make
      * changes to runtime services should override this method or the
      * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)} variant.
-     * <p>
-     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
-     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, ServiceVerificationHandler, java.util.List)}
-     * method. It then does nothing with the objects referenced by the {@code verificationHandler} and
-     * {@code controllers} parameters passed to that method. Subclasses that overrode that method are encouraged to
-     * instead override this one or the {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * variant. <strong>Subclasses that override this method should not call{@code super.performRuntime(...)}.</strong>
      *
      * @param context  the operation context
      * @param operation the operation being executed
@@ -358,36 +339,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      *
      * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
      */
-    @SuppressWarnings("deprecation")
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        performRuntime(context, operation, model, ServiceVerificationHandler.INSTANCE, new ArrayList<ServiceController<?>>());
-
-        // Don't bother adding the SVH, as it does nothing.
-        // Just invoke requiresRuntimeVerification() on the extremely remote chance some subclass
-        // is somehow expecting the call
-        requiresRuntimeVerification();
-    }
-
-    /**
-     * <strong>Deprecated</strong>. Subclasses should instead override
-     * {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * or {@link #performRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode)}.
-     * <p>
-     * This default implementation does nothing.
-     *
-     * @param context  the operation context
-     * @param operation the operation being executed
-     * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param verificationHandler not used; service verification is performed automatically
-     * @param newControllers not used; removal of added services during rollback is performed automatically.
-     * @throws OperationFailedException if {@code operation} is invalid or updating the runtime otherwise fails
-     *
-     * @deprecated instead override one of the non-deprecated overloaded variants
-     */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model,
-                                  final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
     }
 
     /**

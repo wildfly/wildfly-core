@@ -82,6 +82,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -380,7 +382,7 @@ public class BasicOperationsUnitTestCase {
     }
 
     @Test
-    public void testHttpSocketBinding() throws IOException {
+    public void testHttpSocketBinding() throws IOException, OperationFailedException {
         final ModelNode address = new ModelNode();
         address.add("socket-binding-group", "*");
         address.add("socket-binding", "management-http");
@@ -396,7 +398,7 @@ public class BasicOperationsUnitTestCase {
         final List<ModelNode> steps = getSteps(result.get(RESULT));
         assertEquals(1, steps.size());
         final ModelNode httpBinding = steps.get(0);
-        assertEquals(9990, httpBinding.get(RESULT, "port").resolve().asInt());
+        assertEquals(9990, ExpressionResolver.TEST_RESOLVER.resolveExpressions(httpBinding.get(RESULT, "port")).asInt());
 
     }
 

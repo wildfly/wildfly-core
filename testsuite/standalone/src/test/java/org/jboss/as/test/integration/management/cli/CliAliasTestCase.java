@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 public class CliAliasTestCase {
 
     private static final String VALID_ALIAS_NAME = "DEBUG123_ALIAS";
-    private static final String VALID_ALIAS_COMMAND = "'/subsystem=undertow:read-resource'";
+    private static final String VALID_ALIAS_COMMAND = "'/subsystem=io:read-resource'";
 
     @Rule
     public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
@@ -64,7 +64,6 @@ public class CliAliasTestCase {
     @Test
     public void testValidAliasCommandInteractive() throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -105,7 +104,6 @@ public class CliAliasTestCase {
         final String INVALID_ALIAS_NAME = "TMP-DEBUG123-INVALID456-ALIAS789"; //does not match [a-zA-Z0-9_]+ regex
         final String INVALID_ALIAS_COMMAND = "'/subsystem=notfound:invalid-command'";
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -144,7 +142,6 @@ public class CliAliasTestCase {
             fail(ex.getLocalizedMessage());
         }
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -171,7 +168,6 @@ public class CliAliasTestCase {
     public void testAliasPersistence() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {
@@ -196,7 +192,6 @@ public class CliAliasTestCase {
     public void testAliasPersistenceCtrlC() throws Exception {
         final File aliasFile = temporaryUserHome.newFile(".aesh_aliases");
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addCliArgument("-Daesh.terminal=org.jboss.aesh.terminal.TestTerminal")
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
                 .addCliArgument("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
         try {

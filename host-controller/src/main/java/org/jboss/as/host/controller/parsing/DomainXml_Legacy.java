@@ -69,7 +69,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -81,7 +80,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A mapper between an AS server's configuration model and XML representations, particularly {@code domain.xml}.
@@ -89,7 +87,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
+final class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
 
@@ -138,12 +136,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        throw new UnsupportedOperationException();
-    }
-
-    void readDomainElement1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -194,7 +187,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         initializeRolloutPlans(address, list);
     }
 
-    void readDomainElement1_1(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement1_1(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -249,7 +242,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void readDomainElement1_3(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement1_3(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -304,7 +297,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void readDomainElement1_4(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement1_4(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -363,7 +356,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void readDomainElement2_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElement2_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
         parseNamespaces(reader, address, list);
 
@@ -386,7 +379,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, true);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, namespace);
         }
@@ -427,7 +420,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void readDomainElementAttributes_1_0(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElementAttributes_1_0(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             switch (Namespace.forUri(reader.getAttributeNamespace(i))) {
@@ -453,11 +446,11 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void readDomainElementAttributes_1_1(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElementAttributes_1_1(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         readDomainElementAttributes_1_0(reader, address, list);
     }
 
-    protected void readDomainElementAttributes_1_3(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
+    private void readDomainElementAttributes_1_3(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             Namespace ns = Namespace.forUri(reader.getAttributeNamespace(i));
@@ -494,7 +487,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
+    private void parseDomainSocketBindingGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> interfaces) throws XMLStreamException {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
@@ -519,8 +512,8 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseSocketBindingGroup_1_0(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
-            final List<ModelNode> updates) throws XMLStreamException {
+    private void parseSocketBindingGroup_1_0(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
+                                             final List<ModelNode> updates) throws XMLStreamException {
         // unique socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -576,8 +569,8 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseSocketBindingGroup_1_1(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
-            final List<ModelNode> updates) throws XMLStreamException {
+    private void parseSocketBindingGroup_1_1(final XMLExtendedStreamReader reader, final Set<String> interfaces, final ModelNode address,
+                                             final List<ModelNode> updates) throws XMLStreamException {
         // both outbound-socket-bindings and socket-binding names
         final Set<String> uniqueBindingNames = new HashSet<String>();
 
@@ -640,7 +633,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseServerGroups(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();
@@ -750,7 +743,7 @@ class DomainXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
+    private void parseProfiles(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         requireNoAttributes(reader);
 
         final Set<String> names = new HashSet<String>();

@@ -18,7 +18,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ResourceDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.dmr.ModelNode;
@@ -67,12 +65,6 @@ class RealmDefinitions {
             .setRestartAllServices()
             .build();
 
-    public static final SimpleAttributeDefinition CASE_SENSITIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CASE_SENSITIVE, ModelType.BOOLEAN, true)
-            .setAllowExpression(false)
-            .setDefaultValue(new ModelNode(false))
-            .setRestartAllServices()
-            .build();
-
     static AttributeDefinition[] IDENTITY_REALM_ATTRIBUTES = { IDENTITY, ATTRIBUTE_NAME, ATTRIBUTE_VALUES };
 
     static ResourceDefinition getIdentityRealmDefinition() {
@@ -83,7 +75,7 @@ class RealmDefinitions {
                     OperationContext context, ModelNode model) throws OperationFailedException {
 
                 final String identity = IDENTITY.resolveModelAttribute(context, model).asString();
-                final String attributeName = asStringIfDefined(context, ATTRIBUTE_NAME, model);
+                final String attributeName = ATTRIBUTE_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> attributeValues = ATTRIBUTE_VALUES.unwrap(context, model);
 
                 return () -> {

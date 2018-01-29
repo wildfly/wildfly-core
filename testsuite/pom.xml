@@ -57,7 +57,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Beta27-SNAPSHOT</version>
+        <version>4.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testsuite</artifactId>
@@ -77,8 +77,6 @@
     <!-- Global testsuite system properties defaults. -->
 
     <properties>
-
-	<version.org.wildfly.plugin>1.2.0.Alpha4</version.org.wildfly.plugin>
         <!-- Current module's directory. Will automatically pick up sub-module's basedir. -->
         <jbossas.ts.submodule.dir>${basedir}</jbossas.ts.submodule.dir>
         <!-- Integration module's directory. To be overriden in sub-modules. -->

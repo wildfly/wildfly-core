@@ -23,6 +23,7 @@ package org.wildfly.core.test.standalone.extension.remove;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
@@ -34,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import java.io.IOException;
@@ -43,7 +45,9 @@ import javax.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
@@ -51,12 +55,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 @RunWith(WildflyTestRunner.class)
+@ServerSetup(ServerReload.SetupTask.class)
 public class ExtensionRemoveTestCase {
 
     private static final String MODULE_NAME = "extensionremovemodule";
@@ -102,18 +108,16 @@ public class ExtensionRemoveTestCase {
             Assert.assertTrue(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
             Assert.assertTrue(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
 
-            //Remove subsystem
-            executeOperation(client, REMOVE, PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), PathElement.pathElement("child", "one")), false);
-            executeOperation(client, REMOVE, PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME)), false);
-            Assert.assertTrue(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
-            Assert.assertTrue(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
-            Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
-
-            //Remove extension
-            executeOperation(client, REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, MODULE_NAME)), false);
-            Assert.assertFalse(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
-            Assert.assertFalse(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
-            Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
+            //Remove subsystem and extension. Do it in a composite as a WFCORE-3385 check
+        ModelNode op = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode steps = op.get(STEPS);
+        steps.add(Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME)));
+        steps.add(Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(EXTENSION, MODULE_NAME)));
+        ModelNode response = client.execute(op);
+        Assert.assertEquals(response.toString(), "success", response.get(OUTCOME).asString());
+        Assert.assertFalse(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
+        Assert.assertFalse(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
+        Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
 
     }
 
@@ -130,10 +134,9 @@ public class ExtensionRemoveTestCase {
         Assert.assertFalse(readResource(client).get(EXTENSION, MODULE_NAME).isDefined());
         Assert.assertFalse(readResourceDescription(client).get(CHILDREN, SUBSYSTEM, MODEL_DESCRIPTION, TestExtension.SUBSYSTEM_NAME).isDefined());
         Assert.assertFalse(readResource(client).get(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME).isDefined());
-
     }
 
-    private ModelNode executeOperation(ModelControllerClient client, String name, PathAddress address, boolean fail) throws IOException {
+    private void executeOperation(ModelControllerClient client, String name, PathAddress address, boolean fail) throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set(name);
         op.get(OP_ADDR).set(address.toModelNode());
@@ -146,8 +149,6 @@ public class ExtensionRemoveTestCase {
             Assert.assertEquals("failed", result.get(OUTCOME).asString());
             Assert.assertTrue(result.get(FAILURE_DESCRIPTION).isDefined());
         }
-
-        return result.get(RESULT);
     }
 
     private ModelNode readResourceDescription(ModelControllerClient client) throws IOException {

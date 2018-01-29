@@ -41,8 +41,9 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private final ControlledProcessState processState;
     private final HostControllerEnvironment hostEnvironment;
 
-    private final String localHostName;
-    private volatile boolean master;
+    private String localHostName;
+    // defaulted to true for booting with empty configs.
+    private volatile boolean master = true;
     private volatile String nativeManagementInterface;
     private volatile int nativeManagementPort;
 
@@ -56,6 +57,7 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     private volatile String httpManagementSecureInterface;
     private volatile int httpManagementSecurePort;
     private volatile AdminOnlyDomainConfigPolicy adminOnlyDomainConfigPolicy = AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG;
+    private volatile boolean overrideLocalHostName = false;
 
     /** Constructor solely for test cases */
     public LocalHostControllerInfoImpl(final ControlledProcessState processState, final String localHostName) {
@@ -67,12 +69,23 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
     public LocalHostControllerInfoImpl(final ControlledProcessState processState, final HostControllerEnvironment hostEnvironment) {
         this.processState = processState;
         this.hostEnvironment = hostEnvironment;
-        this.localHostName = null;
+        this.localHostName = hostEnvironment.getRunningModeControl().getReloadHostName();
+        if (localHostName != null)
+            overrideLocalHostName = true;
     }
 
     @Override
     public String getLocalHostName() {
+        // this is to allow host persistence to work when booting with an empty host.xml
+        if (overrideLocalHostName) {
+            return localHostName;
+        }
         return hostEnvironment == null ? localHostName : hostEnvironment.getHostControllerName();
+    }
+
+    void setLocalHostName(final String hostName) {
+        this.overrideLocalHostName = true;
+        this.localHostName = hostName;
     }
 
     @Override

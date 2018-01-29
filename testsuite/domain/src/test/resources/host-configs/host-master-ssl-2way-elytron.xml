@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host name="master" xmlns="urn:jboss:domain:5.0">
+<host name="master" xmlns="urn:jboss:domain:6.0">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -200,12 +200,12 @@
                     </key-store>
                 </key-stores>
                 <key-managers>
-                    <key-manager name="twoWayKM" algorithm="SunX509" key-store="twoWayKS">
+                    <key-manager name="twoWayKM" key-store="twoWayKS">
                         <credential-reference clear-text="123456"/>
                     </key-manager>
                 </key-managers>
                 <trust-managers>
-                    <trust-manager name="twoWayTM" algorithm="SunX509" key-store="twoWayTS"/>
+                    <trust-manager name="twoWayTM" key-store="twoWayTS"/>
                 </trust-managers>
                 <server-ssl-contexts>
                     <server-ssl-context name="twoWaySSC" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" key-manager="twoWayKM" trust-manager="twoWayTM"/>

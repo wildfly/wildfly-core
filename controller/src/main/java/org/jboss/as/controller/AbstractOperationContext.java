@@ -122,8 +122,6 @@ abstract class AbstractOperationContext implements OperationContext {
 
     static final ThreadLocal<Thread> controllingThread = new ThreadLocal<Thread>();
 
-    private static final String INTERNAL_MODEL_VALIDATION_NAME = "internal-model-validation";
-
     /** Thread that initiated execution of the overall operation for which this context is the whole or a part */
     final Thread initiatingThread;
     private final EnumMap<Stage, Deque<Step>> steps;
@@ -329,8 +327,12 @@ abstract class AbstractOperationContext implements OperationContext {
             throw ControllerLogger.ROOT_LOGGER.invalidStepStage();
         }
         final PathAddress stepAddress = address != null ? address : PathAddress.pathAddress(operation.get(OP_ADDR));
+
+        // Ignore runtime ops against profile resources on an HC
         if (stage == Stage.RUNTIME && !processType.isServer() && stepAddress.size() > 1 && PROFILE.equals(stepAddress.getElement(0).getKey())) {
-            throw ControllerLogger.ROOT_LOGGER.invalidStage(stage, processType);
+            // Log this as it means we have an incorrect OSH
+            ControllerLogger.ROOT_LOGGER.invalidRuntimeStageForProfile(operation.get(OP).asString(), stepAddress.toCLIStyleString(), stage, processType);
+            return;
         }
 
         if (!booting && activeStep != null) {
@@ -757,15 +759,17 @@ abstract class AbstractOperationContext implements OperationContext {
             return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
         }
         ImmutableManagementResourceRegistration mrr = step.getManagementResourceRegistration(getManagementModel());
-        if (mrr.isRuntimeOnly()) {
-            return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
-        }
-        String opName = step.operationDefinition != null ? step.operationDefinition.getName() : null;
-        if ((WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) && step.operation.hasDefined(NAME)) {
-            String attrName = step.operation.get(NAME).asString();
-            AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
-            if (aa != null && aa.getStorageType() == AttributeAccess.Storage.RUNTIME) {
+        if (mrr != null) {
+            if (mrr.isRuntimeOnly()) {
                 return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+            }
+            String opName = step.operationDefinition != null ? step.operationDefinition.getName() : null;
+            if ((WRITE_ATTRIBUTE_OPERATION.equals(opName) || UNDEFINE_ATTRIBUTE_OPERATION.equals(opName)) && step.operation.hasDefined(NAME)) {
+                String attrName = step.operation.get(NAME).asString();
+                AttributeAccess aa = mrr.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attrName);
+                if (aa != null && aa.getStorageType() == AttributeAccess.Storage.RUNTIME) {
+                    return RuntimeCapabilityRegistry.RuntimeStatus.NORMAL;
+                }
             }
         }
         return getStepCapabilityStatus(step);
@@ -1270,10 +1274,9 @@ abstract class AbstractOperationContext implements OperationContext {
             if (modifiedResourcesForModelValidation.size() == 0) {
                 return false;
             }
-            for (PathAddress address : modifiedResourcesForModelValidation) {
-                ModelNode op = Util.createOperation(INTERNAL_MODEL_VALIDATION_NAME, address);
-                addStep(op, ValidateModelStepHandler.getInstance(extraValidationStepHandler), Stage.MODEL);
-            }
+            ModelNode op = Util.createOperation(ValidateModelStepHandler.INTERNAL_MODEL_VALIDATION_NAME, PathAddress.EMPTY_ADDRESS);
+            addStep(op, new ValidateModelStepHandler(getManagementModel(), modifiedResourcesForModelValidation,
+                    extraValidationStepHandler), Stage.MODEL);
             modifiedResourcesForModelValidation.clear();
         }
         return true;
@@ -1354,7 +1357,7 @@ abstract class AbstractOperationContext implements OperationContext {
 
             if (!executed) {
                 if (addedServices == null || !addedServices.contains(service.getName())) {
-                    service.addListener(getServiceVerificationHelper());
+                    getServiceVerificationHelper().getMonitor().addController(service);
                 } // else we already handled this when it was added
 
             } // else this is rollback stuff we ignore

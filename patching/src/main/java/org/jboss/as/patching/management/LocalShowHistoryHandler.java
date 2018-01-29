@@ -43,9 +43,10 @@ public final class LocalShowHistoryHandler extends PatchStreamResourceOperationS
     @Override
     protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 
+        final boolean excludeAgedOut = PatchResourceDefinition.EXCLUDE_AGEDOUT.resolveModelAttribute(context, operation).asBoolean();
         try {
             final PatchableTarget.TargetInfo info = installedIdentity.getIdentity().loadTargetInfo();
-            final ModelNode result =  PatchingHistory.Factory.getHistory(installedIdentity, info);
+            final ModelNode result =  PatchingHistory.Factory.getHistory(installedIdentity, info, excludeAgedOut);
             context.getResult().set(result);
         } catch (Throwable t) {
             PatchLogger.ROOT_LOGGER.debugf(t, "failed to get history");

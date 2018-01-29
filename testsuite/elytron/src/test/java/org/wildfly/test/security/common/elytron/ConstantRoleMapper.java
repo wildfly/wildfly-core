@@ -26,7 +26,7 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Configuration for constant-permission-mapper Elytron resource.
+ * Configuration for constant-role-mapper Elytron resource.
  *
  * @author Josef Cacek
  */

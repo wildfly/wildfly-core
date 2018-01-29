@@ -18,6 +18,7 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 
 import java.util.function.Function;
 
@@ -55,7 +56,9 @@ class AvailableMechanismsRuntimeResource extends DelegatingResourceDefinition {
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
 
-        resourceRegistration.registerReadOnlyAttribute(AVAILABLE_MECHANISMS, new AvailableMechanismsHandler());
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerReadOnlyAttribute(AVAILABLE_MECHANISMS, new AvailableMechanismsHandler());
+        }
     }
 
     private class AvailableMechanismsHandler extends ElytronRuntimeOnlyHandler {

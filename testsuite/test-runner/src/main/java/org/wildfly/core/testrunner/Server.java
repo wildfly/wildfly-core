@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -198,24 +199,6 @@ public class Server {
         }
         try {
             if (process != null) {
-                Thread shutdown = new Thread(() -> {
-                    long timeout = System.currentTimeMillis() + (stopTimeout * 1000);
-                    while (process != null && System.currentTimeMillis() < timeout) {
-                        try {
-                            process.exitValue();
-                            process = null;
-                        } catch (IllegalThreadStateException e) {
-
-                        }
-                    }
-
-                    // The process hasn't shutdown within 60 seconds. Terminate forcibly.
-                    if (process != null) {
-                        process.destroy();
-                    }
-                });
-                shutdown.start();
-
                 try {
                     // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
                     client.getControllerClient().executeAsync(Operations.createOperation("shutdown"), null);
@@ -223,12 +206,14 @@ public class Server {
                     //ignore as this can only fail if shutdown is already in progress
                 }
 
-                if (process != null) {
+
+                if (!process.waitFor(stopTimeout, TimeUnit.SECONDS)) {
+                    // The process hasn't shutdown within the specified timeout. Terminate forcibly.
+                    process.destroy();
                     process.waitFor();
-                    process = null;
                 }
 
-                shutdown.interrupt();
+                process = null;
             }
         } catch (Exception e) {
             try {

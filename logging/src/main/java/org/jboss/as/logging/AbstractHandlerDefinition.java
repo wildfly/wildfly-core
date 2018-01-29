@@ -32,6 +32,7 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.NAME;
 
 import java.util.logging.Handler;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -47,8 +48,6 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
-import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.logmanager.PropertySorter;
 import org.jboss.dmr.ModelNode;
@@ -232,21 +231,6 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
             final PathElement pathElement = getPathElement();
             final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
             final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-            switch (modelVersion) {
-                case VERSION_1_3_0: {
-                    resourceBuilder
-                            .getAttributeBuilder()
-                            .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
-                            .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                            .end();
-                    loggingProfileResourceBuilder
-                            .getAttributeBuilder()
-                            .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
-                            .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                            .end();
-                    break;
-                }
-            }
             registerResourceTransformers(modelVersion, resourceBuilder, loggingProfileResourceBuilder);
         }
     }

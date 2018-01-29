@@ -111,7 +111,6 @@ import org.jboss.as.domain.management.security.UserSearchResourceDefintion;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 
 /**
@@ -123,15 +122,17 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-class ManagementXml_4 extends ManagementXml {
+final class ManagementXml_4 implements ManagementXml {
 
     private final Namespace namespace;
     private final ManagementXmlDelegate delegate;
+    private final boolean domainConfiguration;
 
 
-    ManagementXml_4(final Namespace namespace, final ManagementXmlDelegate delegate) {
+    ManagementXml_4(final Namespace namespace, final ManagementXmlDelegate delegate, boolean domainConfiguration) {
         this.namespace = namespace;
         this.delegate = delegate;
+        this.domainConfiguration = domainConfiguration;
     }
 
     @Override
@@ -145,56 +146,68 @@ class ManagementXml_4 extends ManagementXml {
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, namespace);
             final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case SECURITY_REALMS: {
-                    if (++securityRealmsCount > 1) {
-                        throw unexpectedElement(reader);
-                    }
-                    if (delegate.parseSecurityRealms(reader, managementAddress, list) == false) {
-                        parseSecurityRealms(reader, managementAddress, list);
-                    }
 
-                    break;
-                }
-                case OUTBOUND_CONNECTIONS: {
-                    if (++connectionsCount > 1) {
-                        throw unexpectedElement(reader);
-                    }
-                    if (delegate.parseOutboundConnections(reader, managementAddress, list) == false) {
-                        parseOutboundConnections(reader, managementAddress, list);
-                    }
-
-                    break;
-                }
-                case MANAGEMENT_INTERFACES: {
-                    if (++managementInterfacesCount > 1) {
-                        throw unexpectedElement(reader);
-                    }
-
-                    if (delegate.parseManagementInterfaces(reader, managementAddress, list) == false) {
-                        throw unexpectedElement(reader);
-                    }
-
-                    break;
-                }
-                case AUDIT_LOG: {
-                    if (delegate.parseAuditLog(reader, managementAddress, list) == false) {
-                        throw unexpectedElement(reader);
-                    }
-                    break;
-                }
-                case ACCESS_CONTROL: {
+            // https://issues.jboss.org/browse/WFCORE-3123
+            if (domainConfiguration) {
+                if (element == Element.ACCESS_CONTROL) {
                     if (delegate.parseAccessControl(reader, managementAddress, list) == false) {
                         throw unexpectedElement(reader);
                     }
-                    break;
-                }
-                case CONFIGURATION_CHANGES: {
-                    parseConfigurationChanges(reader, managementAddress, list);
-                    break;
-                }
-                default: {
+                } else {
                     throw unexpectedElement(reader);
+                }
+            } else {
+                switch (element) {
+                    case SECURITY_REALMS: {
+                        if (++securityRealmsCount > 1) {
+                            throw unexpectedElement(reader);
+                        }
+                        if (delegate.parseSecurityRealms(reader, managementAddress, list) == false) {
+                            parseSecurityRealms(reader, managementAddress, list);
+                        }
+
+                        break;
+                    }
+                    case OUTBOUND_CONNECTIONS: {
+                        if (++connectionsCount > 1) {
+                            throw unexpectedElement(reader);
+                        }
+                        if (delegate.parseOutboundConnections(reader, managementAddress, list) == false) {
+                            parseOutboundConnections(reader, managementAddress, list);
+                        }
+
+                        break;
+                    }
+                    case MANAGEMENT_INTERFACES: {
+                        if (++managementInterfacesCount > 1) {
+                            throw unexpectedElement(reader);
+                        }
+
+                        if (delegate.parseManagementInterfaces(reader, managementAddress, list) == false) {
+                            throw unexpectedElement(reader);
+                        }
+
+                        break;
+                    }
+                    case AUDIT_LOG: {
+                        if (delegate.parseAuditLog(reader, managementAddress, list) == false) {
+                            throw unexpectedElement(reader);
+                        }
+                        break;
+                    }
+                    case ACCESS_CONTROL: {
+                        if (delegate.parseAccessControl(reader, managementAddress, list) == false) {
+                            throw unexpectedElement(reader);
+                        }
+                        break;
+                    }
+                    case CONFIGURATION_CHANGES: {
+                        parseConfigurationChanges(reader, managementAddress, list);
+                        break;
+                    }
+                    default: {
+                        throw unexpectedElement(reader);
+                    }
                 }
             }
         }
@@ -1835,12 +1848,6 @@ class ManagementXml_4 extends ManagementXml {
         }
 
         requireNoContent(reader);
-    }
-
-    @Override
-    public void writeManagement(final XMLExtendedStreamWriter writer, final ModelNode management, boolean allowInterfaces)
-            throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
 }

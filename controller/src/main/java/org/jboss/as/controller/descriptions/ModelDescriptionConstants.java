@@ -140,6 +140,7 @@ public class ModelDescriptionConstants {
     public static final String DESCRIPTION = "description";
     public static final String DETAILS = "details";
     public static final String DESTINATION_ADDRESS = "destination-address";
+    public static final String DESTROY_SERVERS = "destroy-servers";
     public static final String DESTINATION_PORT = "destination-port";
     public static final String DIRECTORY = "directory";
     public static final String DIRECTORY_GROUPING = "directory-grouping";
@@ -250,6 +251,7 @@ public class ModelDescriptionConstants {
     public static final String INITIAL_SERVER_GROUPS = "initial-server-groups";
     public static final String INPUT_STREAM_INDEX = "input-stream-index";
     public static final String INTERFACE = "interface";
+    public static final String IS_DOMAIN_CONTROLLER = "is-domain-controller";
     public static final String ITERATIVE = "iterative";
     public static final String JSON_FORMATTER = "json-formatter";
     public static final String JVM = "jvm";
@@ -260,6 +262,7 @@ public class ModelDescriptionConstants {
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
     public static final String KEYTAB = "keytab";
+    public static final String KILL_SERVERS = "kill-servers";
     public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
@@ -326,6 +329,7 @@ public class ModelDescriptionConstants {
     public static final String ORGANIZATION = "organization";
     public static final String OPERATION_DATE = "operation-date";
     public static final String OPERATION_HEADERS = "operation-headers";
+    public static final String OPERATION_ID = "operation-id";
     public static final String OPERATION_NAME = "operation-name";
     public static final String OPERATIONS = "operations";
     public static final String OPTIONS = "options";
@@ -341,6 +345,7 @@ public class ModelDescriptionConstants {
     public static final String PATHS = "paths";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
+    public static final String PERSIST_NAME = "persist-name";
     public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";

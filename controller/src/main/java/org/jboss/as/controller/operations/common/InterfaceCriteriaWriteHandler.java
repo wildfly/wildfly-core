@@ -105,7 +105,7 @@ public final class InterfaceCriteriaWriteHandler implements OperationStepHandler
                 final String attributeName = definition.getName();
                 final boolean has = model.hasDefined(attributeName);
                 if(! has && isRequired(definition, model)) {
-                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.required(attributeName));
+                    throw ControllerLogger.ROOT_LOGGER.required(attributeName);
                 }
                 if(has) {
                     // Just ignore 'false'

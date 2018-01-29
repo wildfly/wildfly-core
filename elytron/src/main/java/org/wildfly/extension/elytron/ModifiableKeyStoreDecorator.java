@@ -26,6 +26,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -51,6 +52,7 @@ import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions
 import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions.writeCertificates;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 /**
@@ -75,17 +77,24 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.MODIFIABLE_KEY_STORE);
         ReadAliasesHandler.register(resourceRegistration, resolver);
         ReadAliasHandler.register(resourceRegistration, resolver);
-        RemoveAliasHandler.register(resourceRegistration, resolver);
 
-        // Create Key Pair / Certificate
-        // Create CSR
-        // Import certificate
+        if (isServerOrHostController(resourceRegistration)) { // server-only operations
+            RemoveAliasHandler.register(resourceRegistration, resolver);
+
+            // Create Key Pair / Certificate
+            // Create CSR
+            // Import certificate
+        }
     }
 
     static class ReadAliasesHandler extends ElytronRuntimeOnlyHandler {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver), new ReadAliasesHandler());
+            SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver)
+                    .setReadOnly()
+                    .setRuntimeOnly()
+                    .build();
+            resourceRegistration.registerOperationHandler(READ_ALIASES, new ReadAliasesHandler());
         }
 
         @Override
@@ -111,7 +120,12 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver, ALIAS), new ReadAliasHandler());
+            SimpleOperationDefinition READ_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver)
+                    .setParameters(ALIAS)
+                    .setReadOnly()
+                    .setRuntimeOnly()
+                    .build();
+            resourceRegistration.registerOperationHandler(READ_ALIAS, new ReadAliasHandler());
         }
 
         @Override
@@ -171,7 +185,11 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.REMOVE_ALIAS, descriptionResolver, ALIAS), new RemoveAliasHandler());
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, descriptionResolver)
+                        .setParameters(ALIAS)
+                        .setRuntimeOnly()
+                        .build()
+                    , new RemoveAliasHandler());
         }
 
         @Override

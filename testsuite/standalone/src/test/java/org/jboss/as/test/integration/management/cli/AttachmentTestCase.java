@@ -24,8 +24,11 @@ package org.jboss.as.test.integration.management.cli;
 import java.io.File;
 import java.nio.file.Files;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.nio.file.Path;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -104,6 +107,30 @@ public class AttachmentTestCase {
             assertFalse(f2.exists());
         } finally {
             f.delete();
+            cli.quit();
+        }
+    }
+
+    @Test
+    public void testCreateDirectories() throws Exception {
+        CLIWrapper cli = new CLIWrapper(true);
+        Path dir = new File(System.currentTimeMillis() + "attachment").toPath();
+        Path f = dir.resolve(System.currentTimeMillis() + "attachment.log");
+        assertFalse(Files.exists(dir));
+        assertFalse(Files.exists(f));
+        try {
+            assertFalse(cli.sendLine("attachment save --operation=/subsystem=logging/log-file=server.log:"
+                    + "read-attribute(name=stream) --file=" + f.toAbsolutePath(), true));
+            assertFalse(Files.exists(dir));
+            assertFalse(Files.exists(f));
+            cli.sendLine("attachment save --createDirs --operation=/subsystem=logging/log-file=server.log:"
+                    + "read-attribute(name=stream) --file=" + f.toAbsolutePath());
+            assertTrue(Files.exists(dir));
+            assertTrue(Files.exists(f));
+            assertTrue(Files.size(f) > 0L);
+        } finally {
+            Files.deleteIfExists(f);
+            Files.deleteIfExists(dir);
             cli.quit();
         }
     }

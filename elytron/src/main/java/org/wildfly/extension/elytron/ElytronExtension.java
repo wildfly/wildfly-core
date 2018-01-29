@@ -20,24 +20,18 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.util.List;
-
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.server.deployment.AttachmentKey;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -52,9 +46,12 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 public class ElytronExtension implements Extension {
 
     /**
-     * The name space used for the {@code subsystem} element
+     * The name spaces used for the {@code subsystem} element
      */
-    public static final String NAMESPACE = "urn:wildfly:elytron:1.0";
+    static final String NAMESPACE_1_0 = "urn:wildfly:elytron:1.0";
+    static final String NAMESPACE_1_1 = "urn:wildfly:elytron:1.1";
+    static final String NAMESPACE_1_2 = "urn:wildfly:elytron:1.2";
+    static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
 
     /**
      * The name of our subsystem within the model.
@@ -66,16 +63,13 @@ public class ElytronExtension implements Extension {
      */
     public static final AttachmentKey<AuthenticationContext> AUTHENTICATION_CONTEXT_KEY = AttachmentKey.create(AuthenticationContext.class);
 
-    static final ModelVersion ELYTRON_1_0_0 = ModelVersion.create(1);
+    static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
+    private static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_1_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_2_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
-    /**
-     * The parser used for parsing our subsystem
-     */
-    private final ElytronSubsystemParser parser = new ElytronSubsystemParser();
 
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = ElytronExtension.class.getPackage().getName() + ".LocalDescriptions";
@@ -92,9 +86,20 @@ public class ElytronExtension implements Extension {
         return new StandardResourceDescriptionResolver(sb.toString(), RESOURCE_NAME, ElytronExtension.class.getClassLoader(), true, false);
     }
 
+    /**
+     * Gets whether the given {@code resourceRegistration} is for a server, or if not,
+     * is not for a resource in the {@code profile} resource tree.
+     */
+    static boolean isServerOrHostController(ImmutableManagementResourceRegistration resourceRegistration) {
+        return resourceRegistration.getProcessType().isServer() || !ModelDescriptionConstants.PROFILE.equals(resourceRegistration.getPathAddress().getElement(0).getKey());
+    }
+
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, parser);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_0, () -> new ElytronSubsystemParser1_0());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_1, () -> new ElytronSubsystemParser1_1());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, () -> new ElytronSubsystemParser1_2());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, () -> new ElytronSubsystemParser2_0());
     }
 
     @Override
@@ -107,53 +112,13 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(parser);
+        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser2_0());
     }
 
     @SuppressWarnings("unchecked")
     static <T> ServiceController<T> getRequiredService(ServiceRegistry serviceRegistry, ServiceName serviceName, Class<T> serviceType) {
         ServiceController<?> controller = serviceRegistry.getRequiredService(serviceName);
         return (ServiceController<T>) controller;
-    }
-
-    static String asStringIfDefined(OperationContext context, AttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asString();
-        }
-
-        return null;
-    }
-
-    static String[] asStringArrayIfDefined(OperationContext context, StringListAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode resolved = attributeDefinition.resolveModelAttribute(context, model);
-        if (resolved.isDefined()) {
-            List<ModelNode> values = resolved.asList();
-            String[] response = new String[values.size()];
-            for (int i = 0; i < response.length; i++) {
-                response[i] = values.get(i).asString();
-            }
-            return response;
-        }
-        return null;
-    }
-
-    static Double asDoubleIfDefined(OperationContext context, SimpleAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asDouble();
-        }
-
-        return null;
-    }
-
-    static int asIntIfDefined(OperationContext context, SimpleAttributeDefinition attributeDefinition, ModelNode model) throws OperationFailedException {
-        ModelNode value = attributeDefinition.resolveModelAttribute(context, model);
-        if (value.isDefined()) {
-            return value.asInt();
-        }
-
-        return -1;
     }
 
 }

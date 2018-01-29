@@ -26,13 +26,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 
 import java.io.File;
-import java.util.List;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
@@ -51,18 +49,12 @@ public class RelativePathService extends AbstractPathService {
 
     public static ServiceController<String> addService(final String name, final String relativePath,
             final String relativeTo, final ServiceTarget serviceTarget) {
-        return addService(pathNameOf(name), relativePath, false, relativeTo, serviceTarget, null);
-    }
-
-    public static ServiceController<String> addService(final String name, final String relativePath,
-            final String relativeTo, final ServiceTarget serviceTarget, final List<ServiceController<?>> newControllers,
-            final ServiceListener... listeners) {
-        return addService(pathNameOf(name), relativePath, false, relativeTo, serviceTarget, newControllers, listeners);
+        return addService(pathNameOf(name), relativePath, false, relativeTo, serviceTarget);
     }
 
     public static ServiceController<String> addService(final ServiceName name, final String relativePath,
             final String relativeTo, final ServiceTarget serviceTarget) {
-        return addService(name, relativePath, false, relativeTo, serviceTarget, null);
+        return addService(name, relativePath, false, relativeTo, serviceTarget);
     }
 
     /**
@@ -75,39 +67,26 @@ public class RelativePathService extends AbstractPathService {
      *                         {@code relativeTo} parameter ignored
      * @param relativeTo the name of the path that {@code path} may be relative to
      * @param serviceTarget the {@link ServiceTarget} to use to install the service
-     * @param newControllers list of service controllers that are being installed as part of the operation that has
-     *                       led to this invocation. May be {@code null}. If not {@code null} the returned
-     *                       ServiceController will be added to this list
-     * @param listeners listeners to add to the service. May be {@code null}
      * @return the ServiceController for the path service
      */
     public static ServiceController<String> addService(final ServiceName name, final String path,
-                                                       boolean possiblyAbsolute, final String relativeTo, final ServiceTarget serviceTarget, final List<ServiceController<?>> newControllers,
-                                                       final ServiceListener... listeners) {
+                                                       boolean possiblyAbsolute, final String relativeTo, final ServiceTarget serviceTarget) {
 
         if (possiblyAbsolute && isAbsoluteUnixOrWindowsPath(path)) {
-            return AbsolutePathService.addService(name, path, serviceTarget, newControllers, listeners);
+            return AbsolutePathService.addService(name, path, serviceTarget);
         }
 
         RelativePathService service = new RelativePathService(path);
         ServiceBuilder<String> builder =  serviceTarget.addService(name, service)
             .addDependency(pathNameOf(relativeTo), String.class, service.injectedPath);
-        if (listeners != null) {
-            for (ServiceListener listener : listeners) {
-                builder.addListener(listener);
-            }
-        }
         ServiceController<String> svc = builder.install();
-        if (newControllers != null) {
-            newControllers.add(svc);
-        }
         return svc;
     }
 
     public static void addService(final ServiceName name, final ModelNode element, final ServiceTarget serviceTarget) {
         final String relativePath = element.require(PATH).asString();
         final String relativeTo = element.require(RELATIVE_TO).asString();
-        addService(name, relativePath, false, relativeTo, serviceTarget, null);
+        addService(name, relativePath, false, relativeTo, serviceTarget);
     }
 
     static String convertPath(String relativePath) {

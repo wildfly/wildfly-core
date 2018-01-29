@@ -22,12 +22,11 @@
 
 package org.jboss.as.controller;
 
-import java.nio.file.FileSystems;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,7 +39,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -60,7 +58,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.ServiceName;
 
 /**
- * Registry of {@link org.jboss.as.controller.capability.AbstractCapability capabilities} available in the system.
+ * Registry of {@link org.jboss.as.controller.capability.Capability capabilities} available in the system.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
@@ -68,7 +66,9 @@ import org.jboss.msc.service.ServiceName;
 public final class CapabilityRegistry implements ImmutableCapabilityRegistry, PossibleCapabilityRegistry, RuntimeCapabilityRegistry {
 
     private final Map<CapabilityId, RuntimeCapabilityRegistration> capabilities = new HashMap<>();
+    private final Map<CapabilityId, RuntimeCapabilityRegistration> pendingRemoveCapabilities = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirements = new HashMap<>();
+    private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> pendingRemoveRequirements = new HashMap<>();
     private final Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> runtimeOnlyRequirements = new HashMap<>();
     private final boolean forServer;
     private final Set<CapabilityScope> knownContexts;
@@ -138,7 +138,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
     /**
      * Registers a capability with the system. Any
-     * {@link org.jboss.as.controller.capability.AbstractCapability#getRequirements() requirements}
+     * {@link org.jboss.as.controller.capability.Capability#getRequirements() requirements}
      * associated with the capability will be recorded as requirements.
      *
      * @param capabilityRegistration the capability. Cannot be {@code null}
@@ -268,18 +268,24 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             if (candidate != null) {
                 RegistrationPoint rp = new RegistrationPoint(registrationPoint, null);
                 if (candidate.removeRegistrationPoint(rp)) {
+
+                    Map<String, RuntimeRequirementRegistration> removedRequirements = null;
                     if (candidate.getRegistrationPointCount() == 0) {
                         removed = capabilities.remove(capabilityId);
-                        requirements.remove(capabilityId);
+                        removedRequirements = requirements.remove(capabilityId);
                         runtimeOnlyRequirements.remove(capabilityId);
                     } else {
                         // There are still registration points for this capability.
                         // So just remove the requirements for this registration point
                         Map<String, RuntimeRequirementRegistration> candidateRequirements = requirements.get(capabilityId);
                         if (candidateRequirements != null) {
+                            removedRequirements = new HashMap<>(candidateRequirements.size());
                             // Iterate over array to avoid ConcurrentModificationException
                             for (String req : candidateRequirements.keySet().toArray(new String[candidateRequirements.size()])) {
-                                removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, scope, rp), false);
+                                RuntimeRequirementRegistration removedReqReg = removeRequirement(new RuntimeRequirementRegistration(req, capabilityName, scope, rp), false);
+                                if (removedReqReg != null) {
+                                    removedRequirements.put(req, removedReqReg);
+                                }
                             }
                         }
                         candidateRequirements = runtimeOnlyRequirements.get(capabilityId);
@@ -290,6 +296,19 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                             }
                         }
                     }
+
+                    // Remember this removed cap for use by getRuntimeStatus until we are published or rolled back
+                    RuntimeCapabilityRegistration removeReg = pendingRemoveCapabilities.get(capabilityId);
+                    if (removeReg == null) {
+                        removeReg = new RuntimeCapabilityRegistration(candidate.getCapability(), candidate.getCapabilityScope(), rp);
+                        pendingRemoveCapabilities.put(capabilityId, removeReg);
+                    } else {
+                        removeReg.addRegistrationPoint(rp);
+                    }
+                    if (removedRequirements != null) {
+                        pendingRemoveRequirements.put(capabilityId, removedRequirements);
+                    }
+
                 }
             }
 
@@ -302,16 +321,17 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
-    private void removeRequirement(RuntimeRequirementRegistration requirementRegistration, boolean optional) {
+    private RuntimeRequirementRegistration removeRequirement(RuntimeRequirementRegistration requirementRegistration, boolean optional) {
         assert writeLock.isHeldByCurrentThread();
         Map<CapabilityId, Map<String, RuntimeRequirementRegistration>> requirementMap = optional ? runtimeOnlyRequirements : requirements;
         Map<String, RuntimeRequirementRegistration> dependents = requirementMap.get(requirementRegistration.getDependentId());
+        RuntimeRequirementRegistration result = null;
         if (dependents != null) {
             RuntimeRequirementRegistration rrr = dependents.get(requirementRegistration.getRequiredName());
             if (rrr != null) {
                 rrr.removeRegistrationPoint(requirementRegistration.getOldestRegistrationPoint());
                 if (rrr.getRegistrationPointCount() == 0) {
-                    dependents.remove(requirementRegistration.getRequiredName());
+                    result = dependents.remove(requirementRegistration.getRequiredName());
                 }
                 if (dependents.size() == 0) {
                     requirementMap.remove(requirementRegistration.getDependentId());
@@ -319,6 +339,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 modified = true;
             }
         }
+        return result;
     }
 
     @Override
@@ -356,16 +377,39 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         // internals, but oh well.
         assert id.getScope().equals(CapabilityScope.GLOBAL) || id.getScope().getName().equals(HOST);
 
-        if (restartCapabilities.contains(id)) {
+        boolean hasRestart = !restartCapabilities.isEmpty();
+        if (hasRestart && restartCapabilities.contains(id)) {
             return RuntimeStatus.RESTART_REQUIRED;
         }
-        if (reloadCapabilities.contains(id)) {
-            return RuntimeStatus.RELOAD_REQUIRED;
-        }
-        examined.add(id);
+        if (!hasRestart) {
+            if (reloadCapabilities.contains(id)) {
+                return RuntimeStatus.RELOAD_REQUIRED;
+            }
+            examined.add(id);
+        } // else defer reload-required check until after we search requirements for restart-required
 
         Map<String, RuntimeRequirementRegistration> dependents = requirements.get(id);
-        return getDependentCapabilityStatus(dependents, id, examined);
+        RuntimeStatus result = getDependentCapabilityStatus(dependents, id, examined);
+        // TODO we could also check runtimeOnlyRequirements but it's not clear that's meaningful
+        // If the non-normal runtime-only req has had its cap removed, a RUNTIME step for the dependent
+        // will not see it any more and won't try and integrate. If the req is reload-required but
+        // its cap still is registered, the RUNTIME step for the dependent will integrate with
+        // whatever services it registered before it went reload-required, which seems ok
+
+        if (result != RuntimeStatus.RESTART_REQUIRED) {
+            // Check pending remove requirements
+            dependents = pendingRemoveRequirements.get(id);
+            RuntimeStatus pending = getDependentCapabilityStatus(dependents, id, examined);
+            if (pending != RuntimeStatus.NORMAL) {
+                result = pending;
+            }
+        }
+
+        // We've checked dependents; if we didn't already check this cap for reload-required
+        if (result == RuntimeStatus.NORMAL && hasRestart && reloadCapabilities.contains(id)) {
+            result = RuntimeStatus.RELOAD_REQUIRED;
+        }
+        return result;
     }
 
     private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, CapabilityId requiror, Set<CapabilityId> examined) {
@@ -419,7 +463,11 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         while (result == null) {
 
             // Track the names of any incorporating capabilities associated with this address
-            Set<RuntimeCapability> incorporating = curReg.getIncorporatingCapabilities();
+            // WFCORE-3385 If curReg is null, that means the entire extension has been dropped, which means any
+            // parent resource that provides caps incorporated by this one must be getting removed too, so we
+            // bypass the 'incorporatingCapabilities' stuff here and just leave the cap cleanup to the op
+            // removing the parent. Use Collections.emptySet() as that's the "don't look higher" signal.
+            Set<RuntimeCapability> incorporating = curReg != null ? curReg.getIncorporatingCapabilities() : Collections.emptySet();
             Set<String> incorporatingDynamic = null;
             Set<String> incorporatingFull = null;
             if (incorporating != null && !incorporating.isEmpty()) {
@@ -440,29 +488,32 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
             // TODO this is inefficient. But it's only called for post-boot write ops
             // when the process is already reload-required
-            for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : capabilities.entrySet()) {
-                boolean checkIncorporating = false;
-                if (incorporatingFull != null) {
-                    checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
-                }
-                if (!checkIncorporating && incorporatingDynamic != null) {
-                    String name = entry.getKey().getName();
-                    int lastDot = name.lastIndexOf('.');
-                    if (lastDot > 0) {
-                        String baseName = name.substring(0, lastDot);
-                        checkIncorporating = incorporatingDynamic.contains(baseName);
+            for (Map<CapabilityId, RuntimeCapabilityRegistration> map : Arrays.asList(capabilities, pendingRemoveCapabilities)) {
+
+                for (Map.Entry<CapabilityId, RuntimeCapabilityRegistration> entry : map.entrySet()) {
+                    boolean checkIncorporating = false;
+                    if (incorporatingFull != null) {
+                        checkIncorporating = incorporatingFull.contains(entry.getKey().getName());
                     }
-                }
-                for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
-                    PathAddress pointAddress = point.getAddress();
-                    if (curAddress.equals(pointAddress)
-                            || (checkIncorporating && curAddress.size() > pointAddress.size()
-                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
-                        if (result == null) {
-                            result = new HashSet<>();
+                    if (!checkIncorporating && incorporatingDynamic != null) {
+                        String name = entry.getKey().getName();
+                        int lastDot = name.lastIndexOf('.');
+                        if (lastDot > 0) {
+                            String baseName = name.substring(0, lastDot);
+                            checkIncorporating = incorporatingDynamic.contains(baseName);
                         }
-                        result.add(entry.getKey());
-                        break;
+                    }
+                    for (RegistrationPoint point : entry.getValue().getRegistrationPoints()) {
+                        PathAddress pointAddress = point.getAddress();
+                        if (curAddress.equals(pointAddress)
+                                || (checkIncorporating && curAddress.size() > pointAddress.size()
+                                && pointAddress.equals(curAddress.subAddress(0, pointAddress.size())))) {
+                            if (result == null) {
+                                result = new HashSet<>();
+                            }
+                            result.add(entry.getKey());
+                            break;
+                        }
                     }
                 }
             }
@@ -488,7 +539,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                 if (addrSize > 1 && !SUBSYSTEM.equals(curAddress.getLastElement().getKey())
                         && !(addrSize == 2 && HOST.equals(curAddress.getElement(0).getKey()))) {
                     curAddress = curAddress.getParent();
-                    curReg = curReg.getParent();
+                    // TODO once we have better WFCORE-3385 test coverage, just assert curReg != null;
+                    curReg = curReg != null ? curReg.getParent() : null;
                     // loop continues
                 } else {
                     result = Collections.emptySet();
@@ -636,10 +688,29 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         Set<PathAddress> result = new LinkedHashSet<>();
         readLock.lock();
         try {
-            capabilityId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
-            CapabilityRegistration<?> reg =  possibleCapabilities.get(capabilityId);
+            final CapabilityId capId = capabilityId.getScope() == CapabilityScope.GLOBAL ? capabilityId : new CapabilityId(capabilityId.getName(), CapabilityScope.GLOBAL); //possible registry is only in global scope
+            CapabilityRegistration<?> reg =  possibleCapabilities.get(capId);
             if (reg != null) {
-                result.addAll(reg.getRegistrationPoints().stream().map(RegistrationPoint::getAddress).collect(Collectors.toList()));
+                List<PathAddress> list = new ArrayList<>();
+                for (RegistrationPoint registrationPoint : reg.getRegistrationPoints()) {
+                    PathAddress address = registrationPoint.getAddress();
+                    list.add(address);
+                }
+                result.addAll(list);
+            } else {
+                List<PathAddress> list = new ArrayList<>();
+                for (CapabilityRegistration<?> registration : possibleCapabilities.values()) {
+                    if (registration.getCapability().isDynamicallyNamed()
+                        && registration.getCapabilityScope().equals(capId.getScope())
+                        && capId.getName().startsWith(registration.getCapabilityName())) {
+                        Set<RegistrationPoint> registrationPoints = registration.getRegistrationPoints();
+                        for (RegistrationPoint registrationPoint : registrationPoints) {
+                            PathAddress address = registrationPoint.getAddress();
+                            list.add(address);
+                        }
+                    }
+                }
+                result.addAll(list);
             }
 
         } finally {
@@ -677,6 +748,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             try {
                 publishedFullRegistry.clear(true);
                 copy(this, publishedFullRegistry);
+                pendingRemoveCapabilities.clear();
+                pendingRemoveRequirements.clear();
                 modified = false;
             } finally {
                 publishedFullRegistry.writeLock.unlock();
@@ -720,9 +793,9 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
     private void copy(CapabilityRegistry source, CapabilityRegistry target) {
         assert target.writeLock.isHeldByCurrentThread();
         copyCapabilities(source.capabilities, target.capabilities);
-        source.possibleCapabilities.entrySet().stream().forEach(entry -> {
+        for (Map.Entry<CapabilityId, CapabilityRegistration<?>> entry : source.possibleCapabilities.entrySet()) {
             target.possibleCapabilities.put(entry.getKey(), new CapabilityRegistration<>(entry.getValue()));
-        });
+        }
         copyRequirements(source.requirements, target.requirements);
         copyRequirements(source.runtimeOnlyRequirements, target.runtimeOnlyRequirements);
         target.reloadCapabilities.addAll(source.reloadCapabilities);
@@ -730,6 +803,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         if (!forServer) {
             target.knownContexts.addAll(source.knownContexts);
         }
+        target.resolutionContext.copy(source.resolutionContext);
     }
 
     /**
@@ -743,8 +817,10 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         writeLock.lock();
         try {
             capabilities.clear();
+            pendingRemoveCapabilities.clear();
             possibleCapabilities.clear();
             requirements.clear();
+            pendingRemoveRequirements.clear();
             runtimeOnlyRequirements.clear();
             reloadCapabilities.clear();
             if (restartRequired) {
@@ -919,41 +995,51 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
 
         // Retrieve all the provider points that matching capabilities
-        // must be compliant with. Each ProviderPoint is converted onto a
-        // PathMatcher that is used to filter-in/out the capabilities.
+        // must be compliant with.
 
         //For possible capabilities it is always global.
         CapabilityId id = new CapabilityId(referencedCapability,
                 CapabilityScope.GLOBAL);
-        List<PathMatcher> matchers = getPossibleProviderPoints(id).stream().
-                map((possiblePoint) -> FileSystems.getDefault().getPathMatcher("glob:"
-                        + possiblePoint.toPathStyleString())).collect(Collectors.toList());
+        Set<PathAddress> possibleProviders = new HashSet<>(getPossibleProviderPoints(id));
         // Any dynamic capability registered to the root address matches (e.g. hardcoded path capabilities)
-        matchers.add(FileSystems.getDefault().getPathMatcher("glob:/"));
+        possibleProviders.add(PathAddress.EMPTY_ADDRESS);
 
-        // Filter the streams of capabilities to extract matching ones
-        return getCapabilities().stream().
-                // Keep capability that matches at least one of the registration point
-                filter((registration) -> registration.getRegistrationPoints().stream().
-                        map((rp) -> Paths.get(rp.getAddress().toPathStyleString())).
-                        filter((path) -> matchers.stream().anyMatch((matcher) -> matcher.matches(path))).
-                        count() > 0).
-                // Keep capability that can be reached from the provided scope
-                filter((registration) -> hasCapability(registration.getCapabilityName(), dependentScope)).
-                // Remove static name
-                filter((registration) -> !registration.getCapabilityName().equals(referencedCapability)).
-                // remove aliases
-                filter((registration) -> registration.getCapabilityName().startsWith(referencedCapability)).
-                // Finally convert remaining capabilities onto capability dynamic name.
-                map((registration) -> registration.getCapabilityName().
-                        substring(registration.getCapabilityName().lastIndexOf(".") + 1) //WFCORE-2690 we need something better for multiple dynamic parts
-                ).
-                collect(Collectors.toSet());
+        Set<String> capabilityNames = new HashSet<>();
+        for (CapabilityRegistration<?> registration : getCapabilities()) {
+            // Capability with matching name and that can be reached from the provided scope
+            if (!registration.getCapabilityName().equals(referencedCapability)
+                    && registration.getCapabilityName().startsWith(referencedCapability)
+                    && hasCapability(registration.getCapabilityName(), dependentScope)) {
+                // Keep only capabilities that match at least one of the registration point
+                for (RegistrationPoint regPoint : registration.getRegistrationPoints()) {
+                    boolean found = false;
+                    for (PathAddress pattern : possibleProviders) {
+                        if (pattern.matches(regPoint.getAddress())) {
+                            //WFCORE-2690 we need something better for multiple dynamic parts
+                            capabilityNames.add(registration.getCapabilityName().
+                                    substring(registration.getCapabilityName().lastIndexOf(".") + 1));
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        break;
+                    }
+                }
+            }
+        }
+        return capabilityNames;
     }
 
     private static class ResolutionContextImpl extends CapabilityResolutionContext {
         private boolean resolutionComplete;
         private Resource rootResource;
+
+        private void copy(ResolutionContextImpl source) {
+            super.copy(source);
+            rootResource = source.rootResource;
+            resolutionComplete = source.resolutionComplete;
+        }
 
         @Override
         public Resource getResourceRoot() {

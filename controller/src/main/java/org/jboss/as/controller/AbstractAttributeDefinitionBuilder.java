@@ -138,7 +138,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         List<AccessConstraintDefinition> acl = basis.getAccessConstraints();
         this.accessConstraints = acl.toArray(new AccessConstraintDefinition[acl.size()]);
         this.parser = basis.getParser();
-        Set<AttributeAccess.Flag> basisFlags = basis.getFlags();
+        Set<AttributeAccess.Flag> basisFlags = basis.getImmutableFlags();
         this.flags = basisFlags.toArray(new AttributeAccess.Flag[basisFlags.size()]);
         if (basis.getAllowedValues().size() > 0) {
             List<ModelNode> basisAllowedValues = basis.getAllowedValues();
@@ -334,6 +334,51 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
+     * Removes {@link AttributeDefinition#getAlternatives() names of alternative attributes} from the set of those that should not
+     * be defined if this attribute is defined.
+     * @param alternatives the attribute names
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public final BUILDER removeAlternatives(String... alternatives) {
+        if (this.alternatives == null) {
+            return (BUILDER) this;
+        } else {
+            for (String alternative : alternatives) {
+                if (isAlternativePresent(alternative)) {
+                    int length = this.alternatives.length;
+                    String[] newAlternatives = new String[length - 1];
+                    int k = 0;
+                    for (String alt : this.alternatives) {
+                        if (!alt.equals(alternative)) {
+                            newAlternatives[k] = alt;
+                            k++;
+                        }
+                    }
+                    this.alternatives = newAlternatives;
+                }
+            }
+        }
+        return (BUILDER) this;
+    }
+
+    /**
+     * Checks if an alternative has been recorded in {@link AttributeDefinition#getAlternatives() names of alternative attributes}
+     * @param alternative the alternative
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    private boolean isAlternativePresent(final String alternative) {
+        if (alternatives == null) {
+            return false;
+        }
+        for (String alt : alternatives) {
+            if (alt.equals(alternative)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Adds {@link AttributeDefinition#getArbitraryDescriptors() arbitrary descriptor}.
      * @param arbitraryDescriptor the arbitrary descriptor name.
      * @param value the value of the arbitrary descriptor.
@@ -401,20 +446,16 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         if (!isFlagPresent(flag)) {
             return (BUILDER) this; //if not present no need to remove
         }
-        if (flags != null && flags.length > 0) {
-            final int length = flags.length;
-            final AttributeAccess.Flag[] newFlags = new AttributeAccess.Flag[length - 1];
-            int k = 0;
-            for (AttributeAccess.Flag flag1 : flags) {
-                if (flag1 != flag) {
-                    newFlags[k] = flag1;
-                    k++;
-                }
-            }
-            if (k != length - 1) {
-                flags = newFlags;
+        final int length = flags.length;
+        final AttributeAccess.Flag[] newFlags = new AttributeAccess.Flag[length - 1];
+        int k = 0;
+        for (AttributeAccess.Flag flag1 : flags) {
+            if (flag1 != flag) {
+                newFlags[k] = flag1;
+                k++;
             }
         }
+        flags = newFlags;
         return (BUILDER) this;
     }
 
@@ -585,6 +626,16 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     public BUILDER setDeprecated(ModelVersion since, boolean notificationUseful) {
         this.deprecated = new DeprecationData(since, notificationUseful);
         return (BUILDER) this;
+    }
+
+    /**
+     * Marks that support for use of an expression for the attribute's value is deprecated and
+     * may be removed in a future release.
+     *
+     * @return a builder that can be used to continue building the attribute definition
+     */
+    public final BUILDER setExpressionsDeprecated() {
+        return addFlag(AttributeAccess.Flag.EXPRESSIONS_DEPRECATED);
     }
 
     /**

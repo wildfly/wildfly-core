@@ -36,6 +36,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.CapabilityReferenceCompleter;
+import org.jboss.as.cli.operation.impl.DefaultOperationCandidatesProvider.PropertyVisibility;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.parsing.CharacterHandler;
 import org.jboss.as.cli.parsing.DefaultParsingState;
@@ -48,8 +49,8 @@ import org.jboss.as.cli.parsing.WordCharacterHandler;
 import org.jboss.as.cli.parsing.arguments.ArgumentValueState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Logger.Level;
 
 /**
  * @author Alexey Loubyansky
@@ -379,9 +380,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         try {
             handler = parse(buffer);
         } catch (CommandFormatException e) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, e.getLocalizedMessage(), e);
-            }
+            LOG.warn(e.getLocalizedMessage(), e);
             return -1;
         }
         try {
@@ -392,9 +391,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             candidates.addAll(foundCandidates);
             return handler.getCompletionIndex();
         } catch (RuntimeException ex) {
-            if (LOG.isEnabled(Level.WARN)) {
-                LOG.log(Level.WARN, ex.getLocalizedMessage(), ex);
-            }
+            LOG.warn(ex.getLocalizedMessage(), ex);
             return -1;
         }
     }
@@ -445,6 +442,13 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             this.logging = logging;
         }
 
+        /**
+         * Returns the list of candidates implied by metadata.
+         * @param propType
+         * @param path
+         * @return List of candidates, null means no candidates, empty candidates
+         * means complete.
+         */
         private List<String> getCandidatesFromMetadata(ModelNode propType,
                 String path) {
             List<String> candidates = null;
@@ -453,6 +457,26 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 CommandLineCompleter completer = FilenameTabCompleter.newCompleter(ctx);
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
+
+                if (candidates.isEmpty()) {
+                    return null;
+                }
+                // Completer returns the last path item.
+                // If equals to path, means that it is complete.
+                if (candidates.size() == 1) {
+                    String candidate = candidates.get(0);
+                    int sepIndex = path.lastIndexOf(File.separator);
+                    String lastPath = path;
+                    if (sepIndex >= 0 && sepIndex < path.length() - 1) {
+                        lastPath = path.substring(sepIndex + 1);
+                    }
+                    if (candidate.equals(lastPath)) {
+                        // return empty candidates
+                        candidates.clear();
+                        return candidates;
+                    }
+                }
+
                 // candidates only contain the last part of a path.
                 // We need to keep the radical and do the replacement after it
                 // valLength is used when computing the replacement index.
@@ -479,12 +503,27 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         = new DeploymentItemCompleter(address);
                 candidates = new ArrayList<>();
                 valLength = completer.complete(ctx, path, offset, candidates);
+                if (candidates.isEmpty()) {
+                    return null;
+                }
             } else if (propType.has(Util.CAPABILITY_REFERENCE)) {
                 CapabilityReferenceCompleter completer
                         = factory.newCompleter(address,
                                 propType.get(Util.CAPABILITY_REFERENCE).asString());
                 candidates = new ArrayList<>();
                 completer.complete(ctx, path, offset, candidates);
+                if (candidates.isEmpty()) {
+                    return null;
+                }
+                if(candidates.size() == 1) {
+                    String candidate = candidates.get(0);
+                    // That is complete
+                    if (candidate.equals(path)) {
+                        // return empty candidates
+                        candidates.clear();
+                        return candidates;
+                    }
+                }
             }
             return candidates;
         }
@@ -555,12 +594,32 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             // Retrieve the last property (if any)
             Instance.Property last = currentInstance.getLastProperty();
 
+            Set<String> presentProperties = new HashSet<>();
+            for (Instance.Property p : currentInstance.properties) {
+                if (p.value != null) {
+                    presentProperties.add(p.name);
+                }
+            }
+            // The user typed the start of a property name
+            String nameChunk = null;
+            if (last != null) {
+                if (!lastEnteredState.equals(EqualsState.ID)) {
+                    if (last.value == null) {
+                        nameChunk = last.name;
+                    }
+                }
+            }
+            List<Property> properties = isObject(propType)
+                    ? propType.asPropertyList() : Collections.emptyList();
+            PropertyVisibility visibility = new PropertyVisibility(properties,
+                    presentProperties, nameChunk);
+
             // On list separator, or when no property exists,
             // complete with the next item in the list or the next property
             // inside an Object
             if (lastEnteredState.equals(ListItemSeparatorState.ID)
                     || last == null) {
-                return completeNewProperty(propType);
+                return completeNewProperty(propType, visibility);
             }
 
             // At this point, we have a property that is not terminated.
@@ -593,7 +652,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 // If the value is complete, we could return '}' or ','if the object is
                 // complete.
                 if (complete) {
-                    return getCompletedValueCandidates(propType);
+                    return getCompletedValueCandidates(propType, visibility);
                 } else {
                     return candidates;
                 }
@@ -608,12 +667,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                         return Collections.emptyList();
                     }
                     if (last.value.isComplete()) { // a property of type List or Object that is complete
-                        return getCompletedValueCandidates(propType);
+                        return getCompletedValueCandidates(propType, visibility);
                     } else {
                         List<String> candidates = new ArrayList<>();
                         boolean complete = getSimpleValues(propType, last.name, last.value.asString(), candidates);
                         if (complete) {
-                            return getCompletedValueCandidates(propType);
+                            return getCompletedValueCandidates(propType, visibility);
                         } else {
                             return candidates;
                         }
@@ -660,11 +719,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 if (!isObject(propType)) {
                     return Collections.<String>emptyList();
                 }
-                for (String p : propType.keys()) {
-                    if (p.startsWith(last.name) && !currentInstance.contains(p)) {
-                        candidates.add(p);
-                    }
-                }
+                visibility.addCandidates(candidates);
+
                 // Inline the equals.
                 if (candidates.size() == 1) {
                     if (last.name.equals(candidates.get(0))) {
@@ -720,20 +776,15 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             return candidates;
         }
 
-        private List<String> getCompletedValueCandidates(ModelNode propType) {
+        private List<String> getCompletedValueCandidates(ModelNode propType, PropertyVisibility visibility) {
             // In this case we need to reach the end of the stream and add separator.
             valLength = buffer.length() - lastStateIndex;
             // Do we have some properties to propose?
             if (propType.getType() == ModelType.OBJECT) {
-                final List<String> props = new ArrayList<>(propType.keys());
-                // Remove the properties already present
-                for (Instance.Property p : currentInstance.properties) {
-                    props.remove(p.name);
-                }
-                if (props.isEmpty()) {
-                    return Collections.singletonList("}");
-                } else {
+                if (visibility.hasMore()) {
                     return Collections.singletonList(",");
+                } else {
+                    return Collections.singletonList("}");
                 }
             } else {
                 return Collections.emptyList();
@@ -763,6 +814,10 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                     List<String> c = getCandidatesFromMetadata(propType,
                             radical);
                     if (c != null) {
+                        if (c.isEmpty()) {
+                            // means complete.
+                            return true;
+                        }
                         candidates.addAll(c);
                     }
                     return false;
@@ -786,7 +841,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         }
 
         // Completion for a new property
-        private Collection<String> completeNewProperty(ModelNode propType) {
+        private Collection<String> completeNewProperty(ModelNode propType,
+                PropertyVisibility visibility) {
             if (currentInstance instanceof ListInstance) {
                 // This is inside a list
                 try {
@@ -835,15 +891,12 @@ public class ValueTypeCompleter implements CommandLineCompleter {
                 // or a Map<String, 'propType'>;
                 if (propType.getType() == ModelType.OBJECT) {
                     // This is inside an instance.
-                    final List<String> candidates = new ArrayList<>(propType.keys());
-                    // Remove the properties already present
-                    for (Instance.Property p : currentInstance.properties) {
-                        candidates.remove(p.name);
-                    }
-                    if (candidates.isEmpty()) {
+                    // Retrieve all required.
+                    final List<String> candidates = new ArrayList<>();
+                    if (propType.keys().isEmpty()) {
                         candidates.add("}");
                     } else {
-                        Collections.sort(candidates);
+                        visibility.addCandidates(candidates);
                     }
                     return candidates;
                 } else {

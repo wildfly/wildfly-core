@@ -44,7 +44,7 @@ public final class EndpointConfigFactory {
         OptionMap.Builder builder = OptionMap.builder()
         .set(Options.TCP_NODELAY, Boolean.TRUE)
         .set(Options.REUSE_ADDRESSES, true)
-        .addAll(OptionList.resolveOptions(resolver, model, RemotingEndpointResource.OPTIONS));
+        .addAll(OptionList.resolveOptions(resolver, model, RemotingSubsystemRootResource.OPTIONS));
 
         return builder.getMap();
     }

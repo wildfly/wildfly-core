@@ -38,11 +38,13 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -91,13 +93,23 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             "jboss.server.management.uuid",
             "jboss.server.persist.config"));
 
+    private static final Random random = new Random();
     private static final ModelNode EMPTY = new ModelNode();
     static {
         EMPTY.setEmptyList();
         EMPTY.protect();
     }
+    private static final String EXCLUDED_PROPERTIES_PROP = "jboss.host.server-excluded-properties";
+    private static Set<String> getExcludedHostProperties() {
+        String excluded = System.getProperty(EXCLUDED_PROPERTIES_PROP);
+        if (excluded == null || excluded.length() == 0) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(Arrays.asList(excluded.split(",")));
+    }
 
     private final String serverName;
+    private final int processId = Math.abs(random.nextInt());
     private final ModelNode domainModel;
     private final ModelNode hostModel;
     private final ModelNode serverModel;
@@ -245,7 +257,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
     /** {@inheritDoc} */
     @Override
-    public List<String> getServerLaunchCommand() {
+    public List<String> getServerLaunchCommand(boolean includeProcessId) {
         final List<String> command = new ArrayList<String>();
 
         if (jvmElement.getLaunchCommand() != null) {
@@ -258,14 +270,21 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
 
+        if (includeProcessId) {
+            command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
+        }
+
         JvmOptionsBuilderFactory.getInstance().addOptions(jvmElement, command);
 
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
+        Set<String> excludedHostProperties = getExcludedHostProperties();
         for (Map.Entry<String, String> hostProp : environment.getHostSystemProperties().entrySet()) {
-            if (!bootTimeProperties.containsKey(hostProp.getKey())
-                    && ! SERVER_CONFIGURATION_PROPERTIES.contains(hostProp.getKey())) {
-                bootTimeProperties.put(hostProp.getKey(), hostProp.getValue());
+            String propName = hostProp.getKey();
+            if (!bootTimeProperties.containsKey(propName)
+                    && ! SERVER_CONFIGURATION_PROPERTIES.contains(propName)
+                    && !excludedHostProperties.contains(propName)) {
+                bootTimeProperties.put(propName, hostProp.getValue());
             }
         }
         for (Entry<String, String> entry : bootTimeProperties.entrySet()) {
@@ -389,6 +408,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     @Override
     public boolean isSuspended() {
         return suspend;
+    }
+
+    @Override
+    public int getServerProcessId() {
+        return processId;
     }
 
     private String getJavaCommand() {

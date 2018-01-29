@@ -22,12 +22,14 @@
 
 package org.jboss.as.domain.controller.transformers;
 
-import org.jboss.as.controller.ModelVersion;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilder;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createBuilderFromCurrent;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.createChainFromCurrent;
+
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.access.AccessConstraintResources;
@@ -46,19 +48,19 @@ class ManagementTransformers {
         // prevent instantiation
     }
 
-    static ChainedTransformationDescriptionBuilder buildTransformerChain(ModelVersion currentVersion) {
+    static ChainedTransformationDescriptionBuilder buildTransformerChain() {
         // Discard the domain level core-service=management resource and its children unless RBAC is enabled
         // Configuring rbac details is OK (i.e. discarable), so long as the provider is not enabled
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedInstance(CoreManagementResourceDefinition.PATH_ELEMENT, currentVersion);
+        ChainedTransformationDescriptionBuilder chainedBuilder = createChainFromCurrent(CoreManagementResourceDefinition.PATH_ELEMENT);
 
-        ResourceTransformationDescriptionBuilder builder18To17 = chainedBuilder.createBuilder(DomainTransformers.VERSION_1_8, DomainTransformers.VERSION_1_7);
+        ResourceTransformationDescriptionBuilder builder18To17 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_1_8, KernelAPIVersion.VERSION_1_7);
         builder18To17.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
                 .addChildResource(AccessConstraintResources.SENSITIVITY_PATH_ELEMENT)
                 .addChildResource(SensitivityClassificationTypeResourceDefinition.PATH_ELEMENT)
                 .discardChildResource(PathElement.pathElement(SensitivityResourceDefinition.PATH_ELEMENT.getKey(), SensitivityClassification.SERVER_SSL.getName()))
                 .build();
 
-        ResourceTransformationDescriptionBuilder builderCurrentTo41 = chainedBuilder.createBuilder(currentVersion, DomainTransformers.VERSION_4_1);
+        ResourceTransformationDescriptionBuilder builderCurrentTo41 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_4_1);
         ResourceTransformationDescriptionBuilder childResource = builderCurrentTo41.addChildResource(AccessAuthorizationResourceDefinition.PATH_ELEMENT)
                 .addChildResource(AccessConstraintResources.SENSITIVITY_PATH_ELEMENT)
                 .addChildResource(SensitivityClassificationTypeResourceDefinition.PATH_ELEMENT);

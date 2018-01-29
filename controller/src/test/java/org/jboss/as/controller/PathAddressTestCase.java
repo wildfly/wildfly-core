@@ -182,4 +182,35 @@ public class PathAddressTestCase {
             assertThat(ex.getMessage(), containsString(wrongAddress));
         }
     }
+
+    @Test
+    public void testMatchingPaths() throws OperationFailedException {
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=*").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=*/ext=*").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto/ext=foo")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=toto/ext=foo").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto/ext=foo")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=*/ext=foo").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto/ext=foo")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=[toto1,toto2]/ext=foo").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto1/ext=foo")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=[toto1,toto2]/ext=foo").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto2/ext=foo")));
+        Assert.assertTrue(PathAddress.parseCLIStyleAddress("/subsystem=[toto1,toto2]/ext=[foo1,foo2]").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto2/ext=foo2")));
+
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsys=*").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto")));
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsystem=*").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto/ext=foo")));
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsystem=*/ext=*").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto")));
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsystem=*/ext=*").matches(
+                null));
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsystem=[toto1,toto2]/ext=foo").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto3/ext=foo")));
+        Assert.assertFalse(PathAddress.parseCLIStyleAddress("/subsystem=[toto1,toto2]/ext=[foo1,foo2]").matches(
+                PathAddress.parseCLIStyleAddress("/subsystem=toto2/ext=foo3")));
+    }
 }

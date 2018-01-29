@@ -97,8 +97,6 @@ public class PatchStreamsUnitTestCase extends PatchInfoTestBase {
         moduleBDir = createModule("layerB");
         moduleCDir = createModule("layerC");
 
-        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        System.setProperty("aesh.terminal", "org.jboss.aesh.terminal.TestTerminal");
         cli = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
 
         final ModelControllerClient client = ModelControllerClient.Factory.create(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort());

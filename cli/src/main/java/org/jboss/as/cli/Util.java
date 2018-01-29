@@ -74,6 +74,7 @@ public class Util {
     public static final String ADDRESS = "address";
     public static final String ALLOWED = "allowed";
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
+    public static final String ALTERNATIVES = "alternatives";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
@@ -163,6 +164,7 @@ public class Util {
     public static final String REPLY_PROPERTIES = "reply-properties";
     public static final String REQUEST_PROPERTIES = "request-properties";
     public static final String REQUIRED = "required";
+    public static final String REQUIRES = "requires";
     public static final String RESOLVE_EXPRESSIONS = "resolve-expressions";
     public static final String RESPONSE_HEADERS = "response-headers";
     public static final String RESTART = "restart";
@@ -566,7 +568,7 @@ public class Util {
                 }
             }
         } catch (Exception e) {
-            LOG.debug("Got exception retrieving deployment runtime names " + e);
+            LOG.debug("Got exception retrieving deployment runtime names", e);
         }
         return names;
     }
@@ -673,6 +675,29 @@ public class Util {
         try {
             builder.setOperationName(Util.READ_CHILDREN_NAMES);
             builder.addProperty(Util.CHILD_TYPE, Util.SERVER_GROUP);
+            request = builder.buildRequest();
+        } catch (OperationFormatException e) {
+            throw new IllegalStateException("Failed to build operation", e);
+        }
+
+        try {
+            ModelNode outcome = client.execute(request);
+            if (isSuccess(outcome)) {
+                return getList(outcome);
+            }
+        } catch (Exception e) {
+        }
+
+        return Collections.emptyList();
+    }
+
+    public static List<String> getHosts(ModelControllerClient client) {
+
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        final ModelNode request;
+        try {
+            builder.setOperationName(Util.READ_CHILDREN_NAMES);
+            builder.addProperty(Util.CHILD_TYPE, Util.HOST);
             request = builder.buildRequest();
         } catch (OperationFormatException e) {
             throw new IllegalStateException("Failed to build operation", e);

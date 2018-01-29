@@ -24,49 +24,38 @@
 
 package org.jboss.as.remoting;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 
 /**
+ * Add handler that adds a placeholder resource if not present, but otherwise just converts
+ * any parameter values into write-attribute ops against the parent.
+ *
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
+ * @author Brian Stansberry
  */
-public class RemotingEndpointAdd extends AbstractAddStepHandler {
-
-    public RemotingEndpointAdd() {
-        super(RemotingEndpointResource.INSTANCE.getAttributes());
-    }
+class RemotingEndpointAdd extends ModelOnlyAddStepHandler {
 
     @Override
     protected Resource createResource(OperationContext context) {
-        // If the resource is already there but empty, just use it
+        // If the resource is already there, just use it
         // We do this because RemotingSubsystemAdd/WorkerThreadPoolVsEndpointHandler will end up adding a resource if
         // one isn't added in the same op. So if a user adds one in a separate op, we're forgiving about it.
         // Mostly we do this to allow transformers tests to pass which call ModelTestUtils.checkFailedTransformedBootOperations
         // which calls this OSH in a separate op from the one that calls RemotingSubystemAdd
         try {
-            Resource existing = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-            ModelNode existingModel = existing.getModel();
-            if (!existingModel.isDefined()) {
-                return existing;
-            } else {
-                boolean undefined = true;
-                for (Property prop : existingModel.asPropertyList()) {
-                    if (prop.getValue().isDefined()) {
-                        undefined = false;
-                        break;
-                    }
-                }
-                if (undefined) {
-                    return existing;
-                }
-            }
+            return context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         } catch (Resource.NoSuchResourceException ignored) {
             //
         }
@@ -75,54 +64,27 @@ public class RemotingEndpointAdd extends AbstractAddStepHandler {
 
     @Override
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        super.populateModel(context, operation, resource);
 
-        PathAddress pa = context.getCurrentAddress();
-        context.addStep(Util.createOperation("validate-endpoint", pa.getParent()),
-                WorkerThreadPoolVsEndpointHandler.INSTANCE, OperationContext.Stage.MODEL);
-    }
-
-    @Override
-    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-
-        if (!context.isBooting()) {
-            // During boot WorkerThreadPoolVsEndpointHandler registered a requirement for the default xnio worker
-            // We no longer require that as we have new configuration.
-            RemotingEndpointResource.WORKER.removeCapabilityRequirements(context, resource, new ModelNode()); // use an undefined value and WORKER will use its default
-        }
-
-        super.recordCapabilitiesAndRequirements(context, operation, resource);
-    }
-
-    @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        if (context.getAttachment(RemotingSubsystemAdd.RUNTIME_KEY) == null) {
-            // We're not running in the same op set as RemotingSubsystemAdd
-            // See if the config has changed from the default; if so reload is needed
-            boolean reload = false;
-            for (AttributeDefinition ad : RemotingEndpointResource.INSTANCE.getAttributes()) {
-                ModelNode node = model.get(ad.getName());
-                if (node.isDefined()) {
-                    ModelNode deflt = ad.getDefaultValue();
-                    if (!node.equals(deflt)) {
-                        reload = true;
-                        break;
-                    }
+        // For any attribute where the value in 'operation' differs from the model in the
+        // parent resource, add an immediate 'write-attribute' step against the parent
+        PathAddress parentAddress = context.getCurrentAddress().getParent();
+        ModelNode parentModel = context.readResourceFromRoot(parentAddress, false).getModel();
+        OperationStepHandler writeHandler = null;
+        ModelNode baseWriteOp = null;
+        for (AttributeDefinition ad : RemotingEndpointResource.ATTRIBUTES.values()) {
+            String attr = ad.getName();
+            ModelNode parentVal = parentModel.get(attr);
+            ModelNode opVal = operation.has(attr) ? operation.get(attr) : new ModelNode();
+            if (!parentVal.equals(opVal)) {
+                if (writeHandler == null) {
+                    writeHandler = context.getRootResourceRegistration().getOperationHandler(parentAddress, WRITE_ATTRIBUTE_OPERATION);
+                    baseWriteOp = Util.createEmptyOperation(WRITE_ATTRIBUTE_OPERATION, parentAddress);
                 }
+                ModelNode writeOp = baseWriteOp.clone();
+                writeOp.get(NAME).set(attr);
+                writeOp.get(VALUE).set(opVal);
+                context.addStep(writeOp, writeHandler, OperationContext.Stage.MODEL, true);
             }
-            if (reload) {
-                context.reloadRequired();
-                // Signal rollbackRuntime
-                context.attach(RemotingSubsystemAdd.RUNTIME_KEY, Boolean.TRUE);
-            }
-        }
-    }
-
-    @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-        Boolean revert = context.getAttachment(RemotingSubsystemAdd.RUNTIME_KEY);
-        if (revert != null && revert.booleanValue()) {
-            context.revertReloadRequired();
         }
     }
 }

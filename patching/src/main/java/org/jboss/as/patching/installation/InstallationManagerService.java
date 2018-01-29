@@ -65,7 +65,7 @@ public class InstallationManagerService implements Service<InstallationManager> 
             final File cleanupMaker = new File(manager.getInstalledImage().getInstallationMetadata(), "cleanup-patching-dirs");
             boolean cleanup = cleanupMaker.exists();
             for(InstalledIdentity installedIdentity : manager.getInstalledIdentities()) {
-                final Identity identity = manager.getDefaultIdentity().getIdentity();
+                final Identity identity = installedIdentity.getIdentity();
                 final TargetInfo patchingInfo = identity.loadTargetInfo();
                 final StringBuilder buf = new StringBuilder();
                 for(String id : patchingInfo.getPatchIDs()) {

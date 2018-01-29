@@ -48,7 +48,7 @@ import org.junit.Test;
 public class SimpleListAttributeDefinitionUnitTestCase {
 
     @Test
-    public void testExpressions() throws OperationFailedException {
+    public void testExpressions() throws OperationFailedException, XMLStreamException {
 
         AttributeDefinition ad = SimpleAttributeDefinitionBuilder.create("x", ModelType.INT).setAllowExpression(true).build();
         SimpleListAttributeDefinition ld = SimpleListAttributeDefinition.Builder.of("test", ad)
@@ -67,6 +67,30 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         ld.validateAndSet(op, model);
         Assert.assertEquals(op.get("test").get(0), model.get("test").get(0));
         Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(1).asString())), model.get("test").get(1));
+
+        ModelNode resolved = ld.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, model);
+        Assert.assertTrue(resolved.toString(), resolved.isDefined());
+        Assert.assertEquals(resolved.toString(), 2, resolved.get(0).asInt());
+        Assert.assertEquals(resolved.toString(), 1, resolved.get(1).asInt());
+
+        // Check an expression passed in that resolves to what a list would look like in the xml
+        System.setProperty("WFCORE-3448", "2 1");
+        op = new ModelNode();
+        ld.getParser().parseAndSetParameter(ld, "${WFCORE-3448}", op, null);
+
+        Assert.assertEquals(op.toString(), "${WFCORE-3448}", op.get("test").get(0).asExpression().getExpressionString());
+
+        validated = ld.validateOperation(op);
+        Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(0).asString())), validated.get(0));
+
+        model = new ModelNode();
+        ld.validateAndSet(op, model);
+        Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(0).asString())), model.get("test").get(0));
+
+        resolved = ld.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, model);
+        Assert.assertTrue(resolved.toString(), resolved.isDefined());
+        Assert.assertEquals(resolved.toString(), 2, resolved.get(0).asInt());
+        Assert.assertEquals(resolved.toString(), 1, resolved.get(1).asInt());
 
         ad = SimpleAttributeDefinitionBuilder.create("x", ModelType.PROPERTY).setAllowExpression(true).build();
         ld = SimpleListAttributeDefinition.Builder.of("test", ad)

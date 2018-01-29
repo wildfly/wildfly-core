@@ -60,13 +60,14 @@ public class SecurityManagerExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(Constants.SUBSYSTEM_NAME, CURRENT_MODEL_VERSION);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(SecurityManagerRootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(new SecurityManagerSubsystemParser_3_0());
+        subsystem.registerXMLElementWriter(SecurityManagerSubsystemParser_1_0::new);
     }
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(Constants.SUBSYSTEM_NAME, Namespace.SECURITY_MANAGER_1_0.getUriString(), SecurityManagerSubsystemParser_1_0::new);
-        context.setSubsystemXmlMapping(Constants.SUBSYSTEM_NAME, Namespace.SECURITY_MANAGER_3_0.getUriString(), SecurityManagerSubsystemParser_3_0::new);
+        // For the current version we don't use a Supplier as we want its description initialized
+        // TODO if any new xsd versions are added, use a Supplier for the old version
+        context.setSubsystemXmlMapping(Constants.SUBSYSTEM_NAME, Namespace.SECURITY_MANAGER_1_0.getUriString(), new SecurityManagerSubsystemParser_1_0());
     }
 
 

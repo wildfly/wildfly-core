@@ -183,6 +183,14 @@ public interface ImmutableManagementResourceRegistration {
     Set<String> getAttributeNames(PathAddress address);
 
     /**
+     * Get the information about all attributes for a node.
+     * @param address the address, relative to this node
+     * @return the attribute information, in a map keyed by attribute name. If there are none an empty map is returned
+     * @throws SecurityException if the caller does not have {@link #ACCESS_PERMISSION}
+     */
+    Map<String, AttributeAccess> getAttributes(final PathAddress address);
+
+    /**
      * Gets the information on how to read from or write to the given attribute.
      *
      * @param address the address of the resource

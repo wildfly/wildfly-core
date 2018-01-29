@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.logging;
 
+import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
@@ -35,7 +36,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
 
@@ -66,7 +66,6 @@ import org.jboss.logging.annotations.Param;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
 import org.jboss.vfs.VirtualFile;
@@ -75,6 +74,7 @@ import org.jboss.vfs.VirtualFile;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author Mike M. Clark
  */
+@SuppressWarnings("deprecation")
 @MessageLogger(projectCode = "WFLYSRV", length = 4)
 public interface ServerLogger extends BasicLogger {
 
@@ -263,9 +263,9 @@ public interface ServerLogger extends BasicLogger {
     // @Message(id = 32, value = "Deployment '%s' has failed services and services missing dependencies%n    Failed services: %s%n    Missing dependencies: %s")
     // void deploymentHasMissingAndFailedServices(String deployment, String failures, String missing);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 33, value = "%s caught exception attempting to revert operation %s at address %s")
-    void caughtExceptionRevertingOperation(@Cause Exception cause, String handler, String operation, PathAddress address);
+//    @LogMessage(level = ERROR)
+//    @Message(id = 33, value = "%s caught exception attempting to revert operation %s at address %s")
+//    void caughtExceptionRevertingOperation(@Cause Exception cause, String handler, String operation, PathAddress address);
 
     @LogMessage(level = WARN)
     @Message(id = 34, value = "No security realm or sasl server authentication defined for native management service; all access will be unrestricted.")
@@ -275,17 +275,17 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 35, value = "No security realm or http server authentication defined for http management service; all access will be unrestricted.")
     void httpManagementInterfaceIsUnsecured();
 
-    @LogMessage(level = INFO)
-    @Message(id = 36, value = "Creating http management service using network interface (%s) and port (%d)")
-    void creatingHttpManagementServiceOnPort(String interfaceName, int port);
+//    @LogMessage(level = INFO)
+//    @Message(id = 36, value = "Creating http management service using network interface (%s) and port (%d)")
+//    void creatingHttpManagementServiceOnPort(String interfaceName, int port);
 
-    @LogMessage(level = INFO)
-    @Message(id = 37, value = "Creating http management service using network interface (%s) and secure port (%d)")
-    void creatingHttpManagementServiceOnSecurePort(String interfaceName, int securePort);
+//    @LogMessage(level = INFO)
+//    @Message(id = 37, value = "Creating http management service using network interface (%s) and secure port (%d)")
+//    void creatingHttpManagementServiceOnSecurePort(String interfaceName, int securePort);
 
-    @LogMessage(level = INFO)
-    @Message(id = 38, value = "Creating http management service using network interface (%s), port (%d) and secure port (%d)")
-    void creatingHttpManagementServiceOnPortAndSecurePort(String interfaceName, int port, int securePort);
+//    @LogMessage(level = INFO)
+//    @Message(id = 38, value = "Creating http management service using network interface (%s), port (%d) and secure port (%d)")
+//    void creatingHttpManagementServiceOnPortAndSecurePort(String interfaceName, int port, int securePort);
 
     @LogMessage(level = INFO)
     @Message(id = 39, value = "Creating http management service using socket-binding (%s)")
@@ -307,9 +307,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 43, value = "Deployment unit processor %s unexpectedly threw an exception during undeploy phase %s of %s")
     void caughtExceptionUndeploying(@Cause Throwable cause, DeploymentUnitProcessor dup, Phase phase, DeploymentUnit unit);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 44, value = "Module %s will not have it's annotations processed as no %s file was found in the deployment. Please generate this file using the Jandex ant task.")
-    void noCompositeIndex(ModuleIdentifier identifier, String indexLocation);
+//    @LogMessage(level = ERROR)
+//    @Message(id = 44, value = "Module %s will not have it's annotations processed as no %s file was found in the deployment. Please generate this file using the Jandex ant task.")
+//    void noCompositeIndex(ModuleIdentifier identifier, String indexLocation);
 
     @LogMessage(level = WARN)
     @Message(id = 45, value = "Extension %s is missing the required manifest attribute %s-%s (skipping extension)")
@@ -425,9 +425,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 68, value = "No deployment overlay content with hash %s is available in the deployment content repository for deployment %s at location %s. Because this Host Controller is booting in ADMIN-ONLY mode, boot will be allowed to proceed to provide administrators an opportunity to correct this problem. If this Host Controller were not in ADMIN-ONLY mode this would be a fatal boot failure.")
     void reportAdminOnlyMissingDeploymentOverlayContent(String contentHash, String deploymentName, String contentName);
 
-    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 69, value = "Defer %s for %s making it %s")
-    void infoDeferDeploymentPhase(Phase phase, String deploymentName, Mode mode);
+    //@LogMessage(level = Logger.Level.INFO)
+    //@Message(id = 69, value = "Defer %s for %s making it %s")
+    //void infoDeferDeploymentPhase(Phase phase, String deploymentName, Mode mode);
 
     @LogMessage(level = Logger.Level.INFO)
     @Message(id = 70, value = "Deployment restart detected for deployment %s, performing full redeploy instead.")
@@ -437,11 +437,11 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 71, value = "The operating system has limited the number of open files to %d for this process; a value of at least 4096 is recommended")
     void fdTooLow(long fdCount);
 
-    /**
-     * Instructions for the usage of standalone.sh.
-     *
-     * @return the message.
-     */
+//    /**
+//     * Instructions for the usage of standalone.sh.
+//     *
+//     * @return the message.
+//     */
     // @Message(id = Message.NONE, value = "Usage: ./standalone.sh [args...]%nwhere args include:")
     // String argUsage();
 
@@ -624,21 +624,21 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 76, value = "Error initializing vault --  %s")
     VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
 
-    /**
-     * Creates an error message indicating that connecting to the HC failed.
-     *
-     * @param e the problem
-     * @return a StartException
-     */
+//    /**
+//     * Creates an error message indicating that connecting to the HC failed.
+//     *
+//     * @param e the problem
+//     * @return a StartException
+//     */
     // @Message(id = 77, value = "Failed to connect to the host-controller")
     // StartException failedToConnectToHC(@Param Exception e);
 
-    /**
-     * Creates an error message indicating that the operation connecting to the
-     * HC got cancelled before it could complete.
-     *
-     * @return a StartException
-     */
+//    /**
+//     * Creates an error message indicating that the operation connecting to the
+//     * HC got cancelled before it could complete.
+//     *
+//     * @return a StartException
+//     */
     // @Message(id = 78, value = "Connection request to the host-controller was cancelled")
     // StartException cancelledHCConnect();
 
@@ -676,14 +676,14 @@ public interface ServerLogger extends BasicLogger {
     // @Message(id = 89, value = "%n        %s is missing: %s")
     // String missingDependencies(ServiceName dependentService, String missingDependencies);
 
-    @Message(id = 90, value = "%s is required")
-    OperationFailedException attributeIsRequired(String attribute);
+//    @Message(id = 90, value = "%s is required")
+//    OperationFailedException attributeIsRequired(String attribute);
 
-    @Message(id = 91, value = "%s is not allowed when %s are present")
-    OperationFailedException attributeNotAllowedWhenAlternativeIsPresent(String attribute, List<String> alternatives);
+//    @Message(id = 91, value = "%s is not allowed when %s are present")
+//    OperationFailedException attributeNotAllowedWhenAlternativeIsPresent(String attribute, List<String> alternatives);
 
-    @Message(id = 92, value = "%s is invalid")
-    OperationFailedException attributeIsInvalid(String attribute);
+//    @Message(id = 92, value = "%s is invalid")
+//    OperationFailedException attributeIsInvalid(String attribute);
 
     @Message(id = 93, value = "Caught IOException reading uploaded deployment content")
     OperationFailedException caughtIOExceptionUploadingContent(@Cause IOException cause);
@@ -753,10 +753,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 113, value = "Failed to create temp file provider")
     StartException failedCreatingTempProvider(@Cause Throwable cause);
 
-    @Message(id = 114, value = "%s cannot be defined when either %s or %s is also defined")
-    OperationFailedException illegalCombinationOfHttpManagementInterfaceConfigurations(String interfaceAttr,
-                                                                                       String socketBindingAttr,
-                                                                                       String secureSocketBindingAttr);
+//    @Message(id = 114, value = "%s cannot be defined when either %s or %s is also defined")
+//    OperationFailedException illegalCombinationOfHttpManagementInterfaceConfigurations(String interfaceAttr,
+//                                                                                       String socketBindingAttr,
+//                                                                                       String secureSocketBindingAttr);
 
     @Message(id = 115, value = "System property %s cannot be set via the xml configuration file or from a management client; " +
             "it's value must be known at initial process start so it can only set from the commmand line")
@@ -859,8 +859,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 141, value = "Cannot start server")
     IllegalStateException cannotStartServer(@Cause Exception e);
 
-    @Message(id = 142, value = "Naming context has not been set")
-    IllegalStateException namingContextHasNotBeenSet();
+//    @Message(id = 142, value = "Naming context has not been set")
+//    IllegalStateException namingContextHasNotBeenSet();
 
     @Message(id = 143, value = "No directory called '%s' exists under '%s'")
     IllegalArgumentException embeddedServerDirectoryNotFound(String relativePath, String homePath);
@@ -973,14 +973,14 @@ public interface ServerLogger extends BasicLogger {
     //@Message(id = 180, value = "Timeout waiting for module service: %s")
     //ModuleLoadException timeoutWaitingForModuleService(ModuleIdentifier module);
 
-    @Message(id = 181, value = "%s cannot be defined when %s is also defined")
-    OperationFailedException conflictingConfigs(String choice, String alternative);
+//    @Message(id = 181, value = "%s cannot be defined when %s is also defined")
+//    OperationFailedException conflictingConfigs(String choice, String alternative);
 
-    @Message(id = 182, value = "This operation is for internal use only")
-    OperationFailedException internalUseOnly();
+//    @Message(id = 182, value = "This operation is for internal use only")
+//    OperationFailedException internalUseOnly();
 
-    @Message(id = 183, value = "Was not able to get root resource")
-    RuntimeException cannotGetRootResource();
+//    @Message(id = 183, value = "Was not able to get root resource")
+//    RuntimeException cannotGetRootResource();
 
     // @Message(id = 184, value = "Failed to resolve expression: %s")
     // IllegalStateException failedToResolveExpression(String expression);
@@ -1078,8 +1078,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 213, value = "Failed to connect to host-controller, retrying.")
     void failedToConnectToHostController();
 
-    @Message( id = 214, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
-    OperationFailedException noSecurityRealmForSsl();
+//    @Message( id = 214, value = "For a secure port to be enabled for the HTTP management interface a security realm to supply the SSLContext must be specified.")
+//    OperationFailedException noSecurityRealmForSsl();
 
     @LogMessage(level = ERROR)
     @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
@@ -1121,20 +1121,20 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 224, value="Could not mount overlay %s as parent %s is not a directory")
     void couldNotMountOverlay(String path, VirtualFile parent);
 
-    @Message(id = 225, value="Unable to create temporary directory")
-    RuntimeException unableToCreateSelfContainedDir();
+//    @Message(id = 225, value="Unable to create temporary directory")
+//    RuntimeException unableToCreateSelfContainedDir();
 
-    /**
-     * Creates a {@link RuntimeException}
-     * @param e the underlying exception
-     * @return
-     */
-    @Message(id = 226, value = "Runtime Exception:")
-    RuntimeException runtimeException(@Cause Throwable e);
+//    /**
+//     * Creates a {@link RuntimeException}
+//     * @param e the underlying exception
+//     * @return
+//     */
+//    @Message(id = 226, value = "Runtime Exception:")
+//    RuntimeException runtimeException(@Cause Throwable e);
 
     /**
      * Create a {@link org.jboss.as.server.services.security.VaultReaderException} to indicate there was an exception while reading from the vault
-     * @param t underlying exception
+     * @param e underlying exception
      * @return {@link org.jboss.as.server.services.security.VaultReaderException}
      */
     @Message(id = 227, value = "Security exception accessing the vault")
@@ -1152,7 +1152,7 @@ public interface ServerLogger extends BasicLogger {
      * Log an error to indicate that the vault is not initialized. This previously was used
      * to create an exception but has been converted to a log message meant to be logged once.
      */
-    @LogMessage(level = ERROR)
+    @LogMessage(level = DEBUG)
     @Message(id = 230, value = "Vault is not initialized; resolution of vault expressions is not possible")
     void vaultNotInitializedException();
 
@@ -1241,8 +1241,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 255, value = "Cannot read content from an unmanaged deployment")
     OperationFailedException cannotReadContentFromUnmanagedDeployment();
 
-    @Message(id = 256, value = "Cannot read content from an unexploded deployment")
-    OperationFailedException cannotReadContentFromUnexplodedDeployment();
+//    @Message(id = 256, value = "Cannot read content from an unexploded deployment")
+//    OperationFailedException cannotReadContentFromUnexplodedDeployment();
 
     @Message(id = 257, value = "Required system property '%s' not set")
     IllegalArgumentException requiredSystemPropertyMissing(String propName);

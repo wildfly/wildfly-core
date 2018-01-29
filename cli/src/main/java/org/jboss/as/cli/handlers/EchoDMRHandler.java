@@ -42,10 +42,10 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                 @Override
                 public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
 
-                    final String originalLine = ctx.getParsedCommandLine().getOriginalLine();
+                    final String substituedLine = ctx.getParsedCommandLine().getSubstitutedLine();
                     boolean skipWS;
                     int wordCount;
-                    if(Character.isWhitespace(originalLine.charAt(0))) {
+                    if(Character.isWhitespace(substituedLine.charAt(0))) {
                         skipWS = true;
                         wordCount = 0;
                     } else {
@@ -53,16 +53,16 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                         wordCount = 1;
                     }
                     int cmdStart = 1;
-                    while(cmdStart < originalLine.length()) {
+                    while(cmdStart < substituedLine.length()) {
                         if(skipWS) {
-                            if(!Character.isWhitespace(originalLine.charAt(cmdStart))) {
+                            if(!Character.isWhitespace(substituedLine.charAt(cmdStart))) {
                                 skipWS = false;
                                 ++wordCount;
                                 if(wordCount == 2) {
                                     break;
                                 }
                             }
-                        } else if(Character.isWhitespace(originalLine.charAt(cmdStart))) {
+                        } else if(Character.isWhitespace(substituedLine.charAt(cmdStart))) {
                             skipWS = true;
                         }
                         ++cmdStart;
@@ -74,7 +74,7 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                     } else if(wordCount != 2) {
                         return -1;
                     } else {
-                        cmd = originalLine.substring(cmdStart);
+                        cmd = substituedLine.substring(cmdStart);
                     }
 
                     int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
@@ -84,9 +84,9 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
 
                     // escaping index correction
                     int escapeCorrection = 0;
-                    int start = originalLine.length() - 1 - buffer.length();
+                    int start = substituedLine.length() - 1 - buffer.length();
                     while(start - escapeCorrection >= 0) {
-                        final char ch = originalLine.charAt(start - escapeCorrection);
+                        final char ch = substituedLine.charAt(start - escapeCorrection);
                         if(Character.isWhitespace(ch) || ch == '=') {
                             break;
                         }
@@ -112,6 +112,6 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
         if(argsStr == null) {
             throw new CommandFormatException("Missing the command or operation to translate to DMR.");
         }
-        ctx.printLine(ctx.buildRequest(argsStr).toString());
+        ctx.printDMR(ctx.buildRequest(argsStr));
     }
 }

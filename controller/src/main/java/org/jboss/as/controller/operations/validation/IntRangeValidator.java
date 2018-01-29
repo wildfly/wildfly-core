@@ -36,6 +36,10 @@ public class IntRangeValidator extends ModelTypeValidator implements MinMaxValid
         this(min, Integer.MAX_VALUE, false, false);
     }
 
+    public IntRangeValidator(final int min, final int max) {
+        this(min, max, false, false);
+    }
+
     public IntRangeValidator(final int min, final boolean nullable) {
         this(min, Integer.MAX_VALUE, nullable, false);
     }

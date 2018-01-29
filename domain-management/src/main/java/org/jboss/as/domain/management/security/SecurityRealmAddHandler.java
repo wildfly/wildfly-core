@@ -65,6 +65,7 @@ import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 
 import org.jboss.as.controller.OperationContext;
@@ -88,6 +89,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
@@ -160,11 +162,17 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             addPlugInLoaderService(realmName, plugIns, serviceTarget);
         }
         InjectedSetValue<CallbackHandlerService> injectorSet = securityRealmService.getCallbackHandlerService();
+
+        if (! context.getProcessType().isServer()) {
+            addDomainManagedServersService(context, realmName, serviceTarget, realmBuilder, injectorSet.injector());
+        }
+
         if (authentication != null) {
             // Authentication can have a truststore defined at the same time as a username/password based mechanism.
             //
             // In this case it is expected certificate based authentication will first occur with a fallback to username/password
             // based authentication.
+
             if (authentication.hasDefined(TRUSTSTORE)) {
                 authTruststore = authentication.require(TRUSTSTORE);
                 addClientCertService(realmName, serviceTarget, realmBuilder, injectorSet.injector());
@@ -373,6 +381,15 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                 .install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName);
+    }
+
+    private void addDomainManagedServersService(OperationContext context, String realmName, ServiceTarget serviceTarget,
+                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+        final ServiceRegistry registry = context.getServiceRegistry(false);
+        ServiceController serviceController = registry.getService(DomainManagedServerCallbackHandler.SERVICE_NAME);
+        if (serviceController != null) {
+            CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, DomainManagedServerCallbackHandler.SERVICE_NAME);
+        }
     }
 
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,

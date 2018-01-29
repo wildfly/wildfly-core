@@ -66,9 +66,6 @@ public class CastAttributeOperationTestCase extends AbstractControllerTestBase {
         public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         }
 
-        @Override
-        public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        }
     };
 
     private static final String BOOLEAN_ATT_NAME = "boolean-att";

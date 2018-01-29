@@ -35,13 +35,15 @@ import java.net.UnknownHostException;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.controller.client.impl.ClientConfigurationImpl;
+import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.security.SecurityFactory;
 
 /**
  * The configuration used to create the {@code ModelControllerClient}.
@@ -95,8 +97,18 @@ public interface ModelControllerClientConfiguration extends Closeable {
      * Get the SSLContext.
      *
      * @return the SSLContext.
+     * @deprecated Use {@link ModelControllerClientConfiguration#getSslContextFactory()}
      */
+    @Deprecated
     SSLContext getSSLContext();
+
+
+    /**
+     * Get the factory to access the SSLContext.
+     *
+     * @return the factory to access the SSLContext.
+     */
+    SecurityFactory<SSLContext> getSslContextFactory();
 
     /**
      * Get the executor service used for the controller client.
@@ -117,7 +129,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
      *
      * @return the location to the authentication configuration file or {@code null} to use auto
      * discovery
+     * @deprecated this may be removed in a future release in favor of creating an
+     *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
+     *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
      */
+    @Deprecated
     default URI getAuthenticationConfigUri() {
         return null;
     }
@@ -128,7 +144,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
         private int port;
         private CallbackHandler handler;
         private Map<String, String> saslOptions;
-        private SSLContext sslContext;
+        private SecurityFactory<SSLContext> sslContextFactory;
         private String protocol;
         private int connectionTimeout = 0;
         private URI authConfigUri;
@@ -195,8 +211,18 @@ public interface ModelControllerClientConfiguration extends Closeable {
          * @param sslContext the SSL context
          * @return a builder to allow continued configuration
          */
-        public Builder setSslContext(SSLContext sslContext) {
-            this.sslContext = sslContext;
+        public Builder setSslContext(final SSLContext sslContext) {
+            this.sslContextFactory = () -> sslContext;
+            return this;
+        }
+
+        /**
+         * Sets the SSLContext factory to obtain the SSLContext from for the remote connection
+         * @param sslContextFactory the SSLContext factory
+         * @return a builder to allow continued configuration
+         */
+        public Builder setSslContextFactory(SecurityFactory<SSLContext> sslContextFactory) {
+            this.sslContextFactory = sslContextFactory;
             return this;
         }
 
@@ -227,7 +253,11 @@ public interface ModelControllerClientConfiguration extends Closeable {
          * @param authConfigUri the location to the authentication configuration file or {@code null} to use auto
          *                      discovery
          * @return a builder to allow continued configuration
+         * @deprecated this may be removed in a future release in favor of creating an
+         *              {@link org.wildfly.security.auth.client.AuthenticationContext} and using a
+         *              {@link org.jboss.as.controller.client.helpers.ContextualModelControllerClient}
          */
+        @Deprecated
         public Builder setAuthenticationConfigUri(final URI authConfigUri) {
             this.authConfigUri = authConfigUri;
             return this;
@@ -239,7 +269,7 @@ public interface ModelControllerClientConfiguration extends Closeable {
          * @return the configuration
          */
         public ModelControllerClientConfiguration build() {
-           return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContext,
+           return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContextFactory,
                    Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress, authConfigUri);
         }
 
@@ -261,7 +291,15 @@ public interface ModelControllerClientConfiguration extends Closeable {
                     return new JBossThreadFactory(defaultThreadGroup, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
                 }
             });
-            return new ThreadPoolExecutor(2, getSystemProperty("org.jboss.as.controller.client.max-threads", 6), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+            final int maxThreads = getSystemProperty("org.jboss.as.controller.client.max-threads", 6);
+            return EnhancedQueueExecutor.DISABLE_HINT ?
+                new ThreadPoolExecutor(2, maxThreads, 60, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), threadFactory) :
+                new EnhancedQueueExecutor.Builder()
+                    .setCorePoolSize(2)
+                    .setMaximumPoolSize(maxThreads)
+                    .setKeepAliveTime(60, TimeUnit.SECONDS)
+                    .setThreadFactory(threadFactory)
+                    .build();
         }
 
         private static int getSystemProperty(final String name, final int defaultValue) {

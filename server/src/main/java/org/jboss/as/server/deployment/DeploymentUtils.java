@@ -31,7 +31,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.controller.HashUtil;
 
 import org.jboss.as.controller.registry.Resource;
@@ -89,11 +88,6 @@ public final class DeploymentUtils {
         return unit;
     }
 
-    public static boolean skipRepeatedActivation(DeploymentUnit unit, int maxValue) {
-        AtomicInteger count = unit.getAttachment(Attachments.DEFERRED_ACTIVATION_COUNT);
-        return count != null && count.get() > maxValue;
-    }
-
     public static ServiceName getDeploymentUnitPhaseServiceName(final DeploymentUnit depUnit, final Phase phase) {
         DeploymentUnit parent = depUnit.getParent();
         if (parent == null) {
@@ -101,16 +95,6 @@ public final class DeploymentUtils {
         } else {
             return Services.deploymentUnitName(parent.getName(), depUnit.getName(), phase);
         }
-    }
-
-    public static void addDeferredModule(DeploymentUnit depUnit) {
-        DeploymentUnit topUnit = getTopDeploymentUnit(depUnit);
-        topUnit.addToAttachmentList(Attachments.DEFERRED_MODULES, depUnit.getName());
-    }
-
-    public static List<String> getDeferredModules(DeploymentUnit depUnit) {
-        DeploymentUnit topUnit = getTopDeploymentUnit(depUnit);
-        return topUnit.getAttachmentList(Attachments.DEFERRED_MODULES);
     }
 
     public static List<byte[]> getDeploymentHash(Resource deployment) {

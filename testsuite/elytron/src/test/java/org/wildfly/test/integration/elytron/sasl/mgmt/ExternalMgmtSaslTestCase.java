@@ -16,6 +16,7 @@
 
 package org.wildfly.test.integration.elytron.sasl.mgmt;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.test.integration.security.common.SecurityTestConstants.KEYSTORE_PASSWORD;
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.CONNECTION_TIMEOUT_IN_MS;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.PORT_NATIVE;
+import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.assertAuthenticationFails;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.assertWhoAmI;
 import static org.wildfly.test.integration.elytron.sasl.mgmt.AbstractMgmtSaslTestBase.executeWhoAmI;
 
@@ -34,7 +36,9 @@ import java.net.ConnectException;
 import java.nio.file.Files;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -44,6 +48,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.security.sasl.Sasl;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -133,6 +138,57 @@ public class ExternalMgmtSaslTestCase {
     }
 
     /**
+     * Tests SASL mechanism filtering through policy properties which are matched by EXTERNAL mechanism.
+     *
+     * @see <a href="https://issues.jboss.org/browse/ELY-982">ELY-982</a>
+     */
+    @Test
+    public void testMatchingFilteringProperties() throws Exception {
+        Map<String, String> mechanismProperties = new HashMap<>();
+        mechanismProperties.put(Sasl.POLICY_NOPLAINTEXT, "true");
+        mechanismProperties.put(Sasl.POLICY_NOACTIVE, "true");
+        mechanismProperties.put(Sasl.POLICY_NODICTIONARY, "true");
+        AuthenticationConfiguration authCfg = AuthenticationConfiguration.empty()
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(MECHANISM))
+                .useMechanismProperties(mechanismProperties);
+
+        SecurityFactory<SSLContext> ssl = new SSLContextBuilder().setClientMode(true)
+                .setKeyManager(getKeyManager(CLIENT_KEYSTORE_FILE)).setTrustManager(getTrustManager()).build();
+        AuthenticationContext.empty().with(MatchRule.ALL, authCfg).withSsl(MatchRule.ALL, ssl)
+                .run(() -> assertWhoAmI("client"));
+    }
+
+    /**
+     * Tests SASL mechanism filtering through policy properties which are not matched by EXTERNAL mechanism.
+     *
+     * @see <a href="https://issues.jboss.org/browse/ELY-982">ELY-982</a>
+     */
+    @Test
+    public void testUnmatchingFilteringProperties() throws Exception {
+        assertUnmatchingFilteringPropertyFails(Sasl.POLICY_FORWARD_SECRECY);
+        assertUnmatchingFilteringPropertyFails(Sasl.POLICY_PASS_CREDENTIALS);
+        assertUnmatchingFilteringPropertyFails(Sasl.POLICY_NOANONYMOUS);
+    }
+
+    /**
+     * @param policyProperty
+     * @throws Exception
+     */
+    private void assertUnmatchingFilteringPropertyFails(String policyProperty) throws Exception {
+        Map<String, String> mechanismProperties = new HashMap<>();
+        mechanismProperties.put(policyProperty, "true");
+        AuthenticationConfiguration authCfg = AuthenticationConfiguration.empty()
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(MECHANISM))
+                .useMechanismProperties(mechanismProperties);
+
+        SecurityFactory<SSLContext> ssl = new SSLContextBuilder().setClientMode(true)
+                .setKeyManager(getKeyManager(CLIENT_KEYSTORE_FILE)).setTrustManager(getTrustManager()).build();
+        AuthenticationContext.empty().with(MatchRule.ALL, authCfg).withSsl(MatchRule.ALL, ssl)
+                .run(() -> assertAuthenticationFails(
+                        String.format("The EXTERNAL SASL mechanism should not be selected, when property %s is true.", policyProperty)));
+    }
+
+    /**
      * Tests that client with wrong (untrusted) certificate is not able to execute operation on server through the mechanism.
      */
     @Test
@@ -159,7 +215,7 @@ public class ExternalMgmtSaslTestCase {
             assertThat("ConnectionException was expected as a cause when certificate authentication fails", cause,
                     is(instanceOf(ConnectException.class)));
             assertThat("SSLException was expected as the second cause when certificate authentication fails", cause.getCause(),
-                    is(instanceOf(SSLException.class)));
+                    anyOf(is(instanceOf(SSLException.class)), is(instanceOf(IOException.class)))); // JDK-8172163: IOException: Broken pipe needs to be accepted too
         }
     }
 
@@ -223,7 +279,8 @@ public class ExternalMgmtSaslTestCase {
                     .withPermissions(PermissionRef.fromPermission(new LoginPermission())).build());
 
             // KeyStores
-            final SimpleKeyStore.Builder ksCommon = SimpleKeyStore.builder().withType("JKS").withCredentialReference(credentialReference);
+            final SimpleKeyStore.Builder ksCommon = SimpleKeyStore.builder().withType("JKS")
+                    .withCredentialReference(credentialReference);
             elements.add(ksCommon.withName("server-keystore")
                     .withPath(CliPath.builder().withPath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build());
             elements.add(ksCommon.withName("server-truststore")
@@ -239,7 +296,7 @@ public class ExternalMgmtSaslTestCase {
             elements.add(KeyStoreRealm.builder().withName(NAME).withKeyStore("server-truststore").build());
 
             // Mappers
-            elements.add(X500AttributePrincipalDecoder.builder().withName(NAME).withAttributeName("CN")
+            elements.add(X500AttributePrincipalDecoder.builder().withName(NAME + "Decoder").withAttributeName("CN")
                     .withMaximumSegments(1).build());
 
             // Transformer
@@ -247,7 +304,7 @@ public class ExternalMgmtSaslTestCase {
 
             // Domain
             elements.add(SimpleSecurityDomain.builder().withName(NAME).withDefaultRealm(NAME).withPermissionMapper(NAME)
-                    .withPrincipalDecoder(NAME)
+                    .withPrincipalDecoder(NAME + "Decoder")
                     .withRealms(SecurityDomainRealm.builder().withRealm(NAME).withPrincipalTransformer(NAME).build()).build());
             elements.add(new ConfigurableElement() {
                 @Override

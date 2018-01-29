@@ -22,13 +22,14 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.5" name="org.wildfly.security.elytron">
+<module xmlns="urn:jboss:module:1.6" name="org.wildfly.security.elytron">
 
     <dependencies>
         <module name="org.wildfly.security.elytron-private" services="export" export="true">
             <exports>
                 <include-set>
                     <path name="org/wildfly/security"/>
+                    <path name="org/wildfly/security/asn1"/>
                     <path name="org/wildfly/security/auth"/>
                     <path name="org/wildfly/security/auth/callback"/>
                     <path name="org/wildfly/security/auth/client"/>
@@ -53,8 +54,12 @@
                     <path name="org/wildfly/security/permission"/>
                     <path name="org/wildfly/security/sasl/util"/>
                     <path name="org/wildfly/security/ssl"/>
+                    <path name="org/wildfly/security/x500"/>
+                    <path name="org/wildfly/security/x500/cert"/>
                 </include-set>
             </exports>
         </module>
+        <module name="org.wildfly.common" export="true" />
+        <module name="org.wildfly.client.config" export="true"/>
     </dependencies>
 </module>

@@ -35,6 +35,18 @@ import org.jboss.as.controller.services.path.PathManager;
 public interface ExtensionContext {
 
     /**
+     * The various types of contexts in which an {@link Extension} can be asked to initialize.
+     */
+    enum ContextType {
+        /** The {@code Extension} will be used to extend the functionality of a server instance */
+        SERVER,
+        /** The {@code Extension} will be for use in domain-wide profiles managed by a Host Controller.*/
+        DOMAIN,
+        /** The {@code Extension} will be used to extend the functionality of a Host Controller */
+        HOST_CONTROLLER
+    }
+
+    /**
      * Convenience variant of {@link #registerSubsystem(String, int, int, int)} that uses {@code 0}
      * as the {@code microVersion}.
      *
@@ -134,6 +146,12 @@ public interface ExtensionContext {
     SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated);
 
     /**
+     * Gets the type of this context.
+     * @return the context type. Will not be {@code null}
+     */
+    ContextType getType();
+
+    /**
      * Gets the type of the current process.
      * @return the current process type. Will not be {@code null}
      */
@@ -144,6 +162,8 @@ public interface ExtensionContext {
      * @return the current running mode. Will not be {@code null}
      */
     RunningMode getRunningMode();
+
+
 
     /**
      * Gets whether it is valid for the extension to register resources, attributes or operations that do not

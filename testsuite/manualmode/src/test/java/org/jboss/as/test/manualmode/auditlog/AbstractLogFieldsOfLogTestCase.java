@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -117,7 +118,7 @@ abstract class AbstractLogFieldsOfLogTestCase {
         }
     }
 
-    List<ModelNode> readFile(int expectedRecords) throws IOException {
+    List<ModelNode> readFile(int expectedRecords, boolean trimModulesLoaderUnregister) throws IOException {
         List<ModelNode> list = new ArrayList<ModelNode>();
         final BufferedReader reader = Files.newBufferedReader(FILE, StandardCharsets.UTF_8);
         try {
@@ -141,8 +142,28 @@ abstract class AbstractLogFieldsOfLogTestCase {
         } finally {
             IoUtils.safeClose(reader);
         }
+        if (trimModulesLoaderUnregister) {
+            for (Iterator<ModelNode> it = list.iterator() ; it.hasNext() ; ) {
+                ModelNode log = it.next();
+                if (isJmxAuditLogRecord(log)) {
+                    //See https://issues.jboss.org/browse/WFCORE-2997 for why we remove this
+                     it.remove();
+                }
+            }
+        }
         Assert.assertEquals(list.toString(), expectedRecords, list.size());
         return list;
+    }
+
+    boolean isJmxAuditLogRecord(ModelNode record) {
+        final String type = record.get("type").asString();
+        if (type.equals("jmx") && record.get("method").asString().equals("unregisterMBean")) {
+            List<ModelNode> params = record.get("params").asList();
+            if (params.size() == 1 && params.get(0).asString().contains("jboss.modules:type=ModuleLoader,name=ServiceModuleLoader-")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static ModelNode executeForSuccess(final ModelControllerClient client, final Operation op) throws IOException {

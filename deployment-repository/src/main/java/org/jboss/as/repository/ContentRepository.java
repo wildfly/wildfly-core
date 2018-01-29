@@ -153,6 +153,12 @@ public interface ContentRepository {
         return Collections.emptyList();
     }
 
+    default void readWrite() {
+    }
+
+    default void readOnly() {
+    }
+
     /**
      * Clean content that is not referenced from the repository.
      *
@@ -176,8 +182,11 @@ public interface ContentRepository {
         }
 
         public static void addService(final ServiceTarget serviceTarget, final File repoRoot, final File tmpRoot) {
-            ContentRepositoryImpl contentRepository = new ContentRepositoryImpl(repoRoot, tmpRoot, OBSOLETE_CONTENT_TIMEOUT, LOCK_TIMEOUT);
-            serviceTarget.addService(SERVICE_NAME, contentRepository).install();
+            addService(serviceTarget, new ContentRepositoryImpl(repoRoot, tmpRoot, OBSOLETE_CONTENT_TIMEOUT, LOCK_TIMEOUT));
+        }
+
+        public static void addService(final ServiceTarget serviceTarget, final ContentRepository contentRepository) {
+            serviceTarget.addService(SERVICE_NAME,new ContentRepositoryService(contentRepository)).install();
         }
 
         public static ContentRepository create(final File repoRoot) {
@@ -189,7 +198,7 @@ public interface ContentRepository {
         }
 
         static ContentRepository create(final File repoRoot, final File tmpRoot, long timeout) {
-            return new ContentRepositoryImpl(repoRoot, tmpRoot, timeout, LOCK_TIMEOUT);
+            return create(repoRoot, tmpRoot, timeout, LOCK_TIMEOUT);
         }
 
         static ContentRepository create(final File repoRoot, final File tmpRoot, long timeout, long lock) {

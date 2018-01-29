@@ -33,7 +33,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -59,7 +59,7 @@ import org.wildfly.security.cache.LRURealmIdentityCache;
 import org.wildfly.security.cache.RealmIdentityCache;
 
 /**
- * A {@link ResourceDefinition} for a {@link SecruityRealm} which enables caching to another realm.
+ * A {@link ResourceDefinition} for a {@link SecurityRealm} which enables caching to another realm.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -169,7 +169,10 @@ class CachingRealmDefinition extends SimpleResourceDefinition {
     private static class ClearCacheHandler extends ElytronRuntimeOnlyHandler {
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
-            resourceRegistration.registerOperationHandler(new SimpleOperationDefinition(ElytronDescriptionConstants.CLEAR_CACHE, descriptionResolver), new CachingRealmDefinition.ClearCacheHandler());
+            resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.CLEAR_CACHE, descriptionResolver)
+                        .setRuntimeOnly()
+                        .build()
+                    , new CachingRealmDefinition.ClearCacheHandler());
         }
 
         private ClearCacheHandler() {

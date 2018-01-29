@@ -26,11 +26,15 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.logging.deployments.LoggingConfigurationService;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.logging.logging.LoggingLogger;
+import org.jboss.as.server.deployment.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -41,7 +45,7 @@ abstract class LoggingConfigurationReadStepHandler implements OperationStepHandl
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         LogContextConfiguration configuration = null;
         // Lookup the service
-        final ServiceController<?> controller = context.getServiceRegistry(false).getService(LoggingConfigurationService.forDeployment(context.getCurrentAddress()));
+        final ServiceController<?> controller = context.getServiceRegistry(false).getService(getServiceName(context));
         if (controller != null) {
             configuration = (LogContextConfiguration) controller.getValue();
         }
@@ -72,7 +76,9 @@ abstract class LoggingConfigurationReadStepHandler implements OperationStepHandl
      * @param model         the model to update
      */
     static void addProperties(final PropertyConfigurable configuration, final ModelNode model) {
-        configuration.getPropertyNames().forEach(name -> setModelValue(model.get(name), configuration.getPropertyValueString(name)));
+        for (String name : configuration.getPropertyNames()) {
+            setModelValue(model.get(name), configuration.getPropertyValueString(name));
+        }
     }
 
     /**
@@ -97,5 +103,37 @@ abstract class LoggingConfigurationReadStepHandler implements OperationStepHandl
         if (value != null) {
             model.set(value);
         }
+    }
+
+    private static ServiceName getServiceName(final OperationContext context) {
+        String deploymentName = null;
+        String subdeploymentName = null;
+        final PathAddress address = context.getCurrentAddress();
+        for (PathElement element : address) {
+            if (ModelDescriptionConstants.DEPLOYMENT.equals(element.getKey())) {
+                deploymentName = getRuntimeName(context, element);
+                //deploymentName = element.getValue();
+            } else if (ModelDescriptionConstants.SUBDEPLOYMENT.endsWith(element.getKey())) {
+                subdeploymentName = element.getValue();
+            }
+        }
+        if (deploymentName == null) {
+            throw LoggingLogger.ROOT_LOGGER.deploymentNameNotFound(address);
+        }
+        final ServiceName result;
+        if (subdeploymentName == null) {
+            result = Services.deploymentUnitName(deploymentName);
+        } else {
+            result = Services.deploymentUnitName(deploymentName, subdeploymentName);
+        }
+        return result.append("logging", "configuration");
+    }
+
+    private static String getRuntimeName(final OperationContext context, final PathElement element) {
+        final ModelNode deploymentModel = context.readResourceFromRoot(PathAddress.pathAddress(element), false).getModel();
+        if (!deploymentModel.hasDefined(ModelDescriptionConstants.RUNTIME_NAME)) {
+            throw LoggingLogger.ROOT_LOGGER.deploymentNameNotFound(context.getCurrentAddress());
+        }
+        return deploymentModel.get(ModelDescriptionConstants.RUNTIME_NAME).asString();
     }
 }

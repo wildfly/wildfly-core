@@ -18,10 +18,12 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
 
 import java.security.AccessController;
@@ -31,9 +33,7 @@ import java.security.PrivilegedAction;
 import java.security.acl.Group;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -44,11 +44,12 @@ import javax.security.jacc.PolicyContextHandler;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
@@ -56,7 +57,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -75,6 +75,7 @@ import org.jboss.security.SecurityConstants;
 import org.jboss.security.auth.callback.CallbackHandlerPolicyContextHandler;
 import org.jboss.security.jacc.SubjectPolicyContextHandler;
 import org.wildfly.common.Assert;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -96,20 +97,27 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 class PolicyDefinitions {
 
-    private static final String DEFAULT_POLICY_NAME = "policy";
-
     // providers
-    static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING, true)
-            .setDefaultValue(new ModelNode(DEFAULT_POLICY_NAME))
-            .setAllowExpression(false)
+
+    static final SimpleAttributeDefinition RESOURCE_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING)
             .setMinSize(1)
-            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition DEFAULT_POLICY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_POLICY, ModelType.STRING)
+            .setRequired(false)
+            .setCorrector(new ParameterCorrector() {
+                @Override
+                public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+                    // Just discard the value as it's unused and we don't want to fool people
+                    // by storing it
+                    return new ModelNode();
+                }
+            })
+            .setDeprecated(ElytronExtension.ELYTRON_1_2_0)
             .build();
 
     static class JaccPolicyDefinition {
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
-                .setMinSize(1)
-                .build();
+        static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition POLICY_PROVIDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POLICY, ModelType.STRING, true)
                 .setDefaultValue(new ModelNode(JaccDelegatingPolicy.class.getName()))
                 .setMinSize(1)
@@ -119,36 +127,52 @@ class PolicyDefinitions {
                 .setMinSize(1)
                 .build();
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
-        static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(JACC_POLICY, NAME, POLICY_PROVIDER, CONFIGURATION_FACTORY, MODULE).build();
-        static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(JACC_POLICY, POLICY)
-                .setMinSize(1)
-                .setRequired(false)
+        static final ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(JACC_POLICY, POLICY_PROVIDER, CONFIGURATION_FACTORY, MODULE)
+                .setRequired(true)
+                .setAlternatives(CUSTOM_POLICY)
+                .setCorrector(ListToObjectCorrector.INSTANCE)
                 .build();
     }
 
     static class CustomPolicyDefinition {
-        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
-                .setMinSize(1)
-                .build();
+        static final SimpleAttributeDefinition NAME = RESOURCE_NAME; // TODO Remove this once PolicyParser is deleted
         static final SimpleAttributeDefinition CLASS_NAME = ClassLoadingAttributeDefinitions.CLASS_NAME;
         static final SimpleAttributeDefinition MODULE = ClassLoadingAttributeDefinitions.MODULE;
-        static ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, NAME, CLASS_NAME, MODULE).build();
-        static final ObjectListAttributeDefinition POLICIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, POLICY)
-                .setRequired(false)
+        static final ObjectTypeAttributeDefinition POLICY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CUSTOM_POLICY, CLASS_NAME, MODULE)
+                .setRequired(true)
+                .setAlternatives(JACC_POLICY)
+                .setCorrector(ListToObjectCorrector.INSTANCE)
                 .build();
     }
 
     static ResourceDefinition getPolicy() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] {DEFAULT_POLICY, JaccPolicyDefinition.POLICIES, CustomPolicyDefinition.POLICIES};
+        AttributeDefinition[] attributes = new AttributeDefinition[] {DEFAULT_POLICY, JaccPolicyDefinition.POLICY, CustomPolicyDefinition.POLICY};
         AbstractAddStepHandler add = new BaseAddHandler(POLICY_RUNTIME_CAPABILITY, attributes) {
+
+            @Override
+            protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                super.populateModel(context, operation, resource);
+                // default-policy is legacy cruft. We support setting it so legacy scripts don't fail,
+                // but discard the value so we don't report garbage in read-resource etc
+                resource.getModel().get(DEFAULT_POLICY.getName()).clear();
+            }
+
+            @Override
+            protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                super.recordCapabilitiesAndRequirements(context, operation, resource);
+                if (resource.getModel().hasDefined(JACC_POLICY)) {
+                    context.registerCapability(JACC_POLICY_RUNTIME_CAPABILITY);
+                }
+            }
+
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-                String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
+
                 ServiceName serviceName = POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName(Policy.class);
                 InjectedValue<Supplier<Policy>> policyProviderInjector = new InjectedValue<>();
                 ServiceTarget serviceTarget = context.getServiceTarget();
                 ServiceBuilder<Policy> serviceBuilder = serviceTarget.addService(serviceName, createPolicyService(policyProviderInjector));
-                Supplier<Policy> policySupplier = getPolicyProvider(context, model, defaultPolicy, serviceBuilder);
+                Supplier<Policy> policySupplier = getPolicyProvider(context, model, serviceBuilder);
 
                 policyProviderInjector.setValue(() -> policySupplier);
 
@@ -170,17 +194,17 @@ class PolicyDefinitions {
                         policy = injector.getValue().get();
 
                         try {
-                            setPolicy((Policy) policy);
+                            setPolicy(policy);
                             policy.refresh();
                         } catch (Exception cause) {
-                            setPolicy((Policy) delegated);
-                            throw new RuntimeException("Failed to set policy [" + policy + "]", cause);
+                            setPolicy(delegated);
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, cause);
                         }
                     }
 
                     @Override
                     public void stop(StopContext context) {
-                        setPolicy((Policy) delegated);
+                        setPolicy(delegated);
                     }
 
                     @Override
@@ -197,7 +221,7 @@ class PolicyDefinitions {
                     }
 
                     private PrivilegedAction<Void> setPolicyAction(Policy policy) {
-                        return (PrivilegedAction<Void>) () -> {
+                        return () -> {
                             Policy.setPolicy(policy);
                             return null;
                         };
@@ -212,7 +236,7 @@ class PolicyDefinitions {
                     }
 
                     private PrivilegedAction<Policy> getPolicyAction() {
-                        return (PrivilegedAction<Policy>) Policy::getPolicy;
+                        return Policy::getPolicy;
                     }
                 };
             }
@@ -221,224 +245,201 @@ class PolicyDefinitions {
         return new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement(POLICY),
                 ElytronExtension.getResourceDescriptionResolver(POLICY))
                 .setAddHandler(add)
-                .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .setRemoveHandler(new ReloadRequiredRemoveStepHandler() {
+                    @Override
+                    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                        super.recordCapabilitiesAndRequirements(context, operation, resource);
+                        context.deregisterCapability(JACC_POLICY_CAPABILITY); // even if it wasn't registered, deregistering is ok
+                    }
+                })
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
-                .setCapabilities(POLICY_RUNTIME_CAPABILITY)) {
+                .setCapabilities(POLICY_RUNTIME_CAPABILITY)
+                .setMaxOccurs(1)) {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
                     @Override
-                    protected void validateUpdatedModel(OperationContext context, Resource resource) throws OperationFailedException {
-                        ModelNode model = resource.getModel();
-                        String defaultPolicy = context.getCurrentAddress().getLastElement().getValue();
-
-                        if (model.hasDefined(ElytronDescriptionConstants.DEFAULT_POLICY)) {
-                            defaultPolicy = ElytronExtension.asStringIfDefined(context, DEFAULT_POLICY, model);
+                    protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
+                        super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);
+                        if (JACC_POLICY.equals(attributeDefinition.getName())) {
+                            if (!newValue.isDefined()) {
+                                context.deregisterCapability(JACC_POLICY_CAPABILITY);  // even if it wasn't registered, deregistering is ok
+                            } else if (!oldValue.isDefined()) {
+                                // Defined now but wasn't before; register
+                                context.registerCapability(JACC_POLICY_RUNTIME_CAPABILITY);
+                            }
                         }
-
-                        getPolicyProvider(context, model, defaultPolicy, null);
                     }
                 };
                 for (AttributeDefinition current : attributes) {
-                    resourceRegistration.registerReadWriteAttribute(current, null, write);
+                    if (current != DEFAULT_POLICY) {
+                        resourceRegistration.registerReadWriteAttribute(current, null, write);
+                    } else {
+                        resourceRegistration.registerReadWriteAttribute(current, null,
+                                new ModelOnlyWriteAttributeHandler(DEFAULT_POLICY));
+                    }
                 }
             }
         };
 
     }
 
-    private static Supplier<Policy> getPolicyProvider(OperationContext context, ModelNode model, String defaultPolicy, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
-        Map<String, Supplier<Policy>> policies = new HashMap<>();
-
-        policies.computeIfAbsent(defaultPolicy, name -> {
-            try {
-                return configureJaccPolicy(context, model, name, serviceBuilder);
-            } catch (OperationFailedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        policies.computeIfAbsent(defaultPolicy, name -> {
-            try {
-                return configureCustomPolicies(context, model, name);
-            } catch (OperationFailedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        if (policies.isEmpty()) {
-            throw new OperationFailedException("Could find policy provider with name [" + defaultPolicy + "]");
+    private static Supplier<Policy> getPolicyProvider(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
+        Supplier<Policy> result = configureJaccPolicy(context, model, serviceBuilder);
+        if (result == null) {
+            result = configureCustomPolicy(context, model);
         }
-
-        return policies.get(defaultPolicy);
+        return result;
     }
 
-    private static Supplier<Policy> configureCustomPolicies(OperationContext context, ModelNode model, String defaultPolicy) throws OperationFailedException {
-        ModelNode customPolicies = model.get(CUSTOM_POLICY);
+    private static Supplier<Policy> configureCustomPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
+        ModelNode policyModel = model.get(CUSTOM_POLICY);
 
-        if (customPolicies.isDefined()) {
-            for (ModelNode policyModel : customPolicies.asList()) {
-                String name = ElytronExtension.asStringIfDefined(context, CustomPolicyDefinition.NAME, policyModel);
+        if (policyModel.isDefined()) {
+            String className = CustomPolicyDefinition.CLASS_NAME.resolveModelAttribute(context, policyModel).asString();
+            String module = CustomPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-                if (!defaultPolicy.equals(name)) {
-                    continue;
-                }
-
-                String className = ElytronExtension.asStringIfDefined(context, CustomPolicyDefinition.CLASS_NAME, policyModel);
-                String module = ElytronExtension.asStringIfDefined(context, CustomPolicyDefinition.MODULE, policyModel);
-
-                return (Supplier<Policy>) () -> newPolicy(className, module);
-            }
+            return () -> newPolicy(className, module);
         }
 
         return null;
     }
 
-    private static Supplier<Policy> configureJaccPolicy(OperationContext context, ModelNode model, String defaultPolicy, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
-        ModelNode jaccPolicies = model.get(JACC_POLICY);
+    private static Supplier<Policy> configureJaccPolicy(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
+        ModelNode policyModel = model.get(JACC_POLICY);
 
-        if (jaccPolicies.isDefined()) {
-            for (ModelNode policyModel : jaccPolicies.asList()) {
-                String name = ElytronExtension.asStringIfDefined(context, JaccPolicyDefinition.NAME, policyModel);
+        if (policyModel.isDefined()) {
+            String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
+            String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
+            String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-                if (!defaultPolicy.equals(name)) {
-                    continue;
-                }
+            serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
 
-                String policyProvider = ElytronExtension.asStringIfDefined(context, JaccPolicyDefinition.POLICY_PROVIDER, policyModel);
-                String configurationFactory = ElytronExtension.asStringIfDefined(context, JaccPolicyDefinition.CONFIGURATION_FACTORY, policyModel);
-                String module = ElytronExtension.asStringIfDefined(context, JaccPolicyDefinition.MODULE, policyModel);
-
-                if (serviceBuilder != null) {
-                    serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
-                }
-
-                return new Supplier<Policy>() {
-                    @Override
-                    public Policy get() {
-                        if (configurationFactory != null) {
-                            if (WildFlySecurityManager.isChecking()) {
-                                AccessController.doPrivileged(setConfigurationProviderSystemProperty());
-                            } else {
-                                setConfigurationProviderSystemProperty().run();
-                            }
+            return new Supplier<Policy>() {
+                @Override
+                public Policy get() {
+                    if (configurationFactory != null) {
+                        if (WildFlySecurityManager.isChecking()) {
+                            AccessController.doPrivileged(setConfigurationProviderSystemProperty());
+                        } else {
+                            setConfigurationProviderSystemProperty().run();
                         }
-
-                        Policy policy = newPolicy(policyProvider, module);
-
-                        try {
-                            PolicyContext.registerHandler(SecurityConstants.SUBJECT_CONTEXT_KEY, createSubjectPolicyContextHandler(), true);
-                            PolicyContext.registerHandler(SecurityConstants.CALLBACK_HANDLER_KEY, createCallbackHandlerContextHandler(), true);
-                            PolicyContext.registerHandler(SecurityIdentity.class.getName(), createSecurityIdentityContextHandler(), true);
-                        } catch (PolicyContextException cause) {
-                            throw new RuntimeException("Failed to register policy context handlers.", cause);
-                        }
-
-                        return policy;
                     }
 
-                    private PrivilegedAction<Void> setConfigurationProviderSystemProperty() {
-                        return () -> {
-                            if (WildFlySecurityManager.isChecking()) {
-                                WildFlySecurityManager.setPropertyPrivileged("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
-                            } else {
-                                System.setProperty("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
+                    Policy policy = newPolicy(policyProvider, module);
+
+                    try {
+                        PolicyContext.registerHandler(SecurityConstants.SUBJECT_CONTEXT_KEY, createSubjectPolicyContextHandler(), true);
+                        PolicyContext.registerHandler(SecurityConstants.CALLBACK_HANDLER_KEY, createCallbackHandlerContextHandler(), true);
+                        PolicyContext.registerHandler(SecurityIdentity.class.getName(), createSecurityIdentityContextHandler(), true);
+                    } catch (PolicyContextException cause) {
+                        throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
+                    }
+
+                    return policy;
+                }
+
+                private PrivilegedAction<Void> setConfigurationProviderSystemProperty() {
+                    return () -> {
+                        if (WildFlySecurityManager.isChecking()) {
+                            WildFlySecurityManager.setPropertyPrivileged("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
+                        } else {
+                            System.setProperty("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
+                        }
+                        return null;
+                    };
+                }
+
+                private PolicyContextHandler createSecurityIdentityContextHandler() {
+                    return new PolicyContextHandler() {
+                        final String KEY = SecurityIdentity.class.getName();
+
+                        @Override
+                        public Object getContext(String key, Object data) throws PolicyContextException {
+                            if (supports(key)) {
+                                SecurityDomain securityDomain = SecurityDomain.getCurrent();
+
+                                if (securityDomain == null) {
+                                    return null;
+                                }
+
+                                SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();
+
+                                if (securityIdentity != null) {
+                                    return securityIdentity;
+                                }
                             }
+
                             return null;
-                        };
-                    }
+                        }
 
-                    private PolicyContextHandler createSecurityIdentityContextHandler() {
-                        return new PolicyContextHandler() {
-                            final String KEY = SecurityIdentity.class.getName();
+                        @Override
+                        public String[] getKeys() throws PolicyContextException {
+                            return new String[]{KEY};
+                        }
 
-                            @Override
-                            public Object getContext(String key, Object data) throws PolicyContextException {
-                                if (supports(key)) {
-                                    SecurityDomain securityDomain = SecurityDomain.getCurrent();
+                        @Override
+                        public boolean supports(String key) throws PolicyContextException {
+                            return getKeys()[0].equalsIgnoreCase(key);
+                        }
+                    };
+                }
 
-                                    if (securityDomain == null) {
-                                        return null;
-                                    }
+                private PolicyContextHandler createCallbackHandlerContextHandler() {
+                    return new PolicyContextHandler() {
+                        // in case applications are using legacy (PicketBox) security infrastructure
+                        CallbackHandlerPolicyContextHandler legacy = new CallbackHandlerPolicyContextHandler();
 
-                                    SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();
+                        @Override
+                        public Object getContext(String key, Object data) throws PolicyContextException {
+                            return legacy.getContext(key, data);
+                        }
 
-                                    if (securityIdentity != null) {
-                                        return securityIdentity;
-                                    }
+                        @Override
+                        public String[] getKeys() throws PolicyContextException {
+                            return legacy.getKeys();
+                        }
+
+                        @Override
+                        public boolean supports(String key) throws PolicyContextException {
+                            return legacy.supports(key);
+                        }
+                    };
+                }
+
+                private PolicyContextHandler createSubjectPolicyContextHandler() {
+                    return new PolicyContextHandler() {
+                        // in case applications are using legacy (PicketBox) security infrastructure
+                        SubjectPolicyContextHandler legacy = new SubjectPolicyContextHandler();
+
+                        @Override
+                        public Object getContext(String key, Object data) throws PolicyContextException {
+                            if (supports(key)) {
+                                SecurityIdentity securityIdentity = (SecurityIdentity) PolicyContext.getContext(SecurityIdentity.class.getName());
+
+                                if (securityIdentity == null) {
+                                    return legacy.getContext(key, data);
                                 }
 
-                                return null;
+                                return SubjectUtil.fromSecurityIdentity(securityIdentity);
                             }
 
-                            @Override
-                            public String[] getKeys() throws PolicyContextException {
-                                return new String[]{KEY};
-                            }
+                            return null;
+                        }
 
-                            @Override
-                            public boolean supports(String key) throws PolicyContextException {
-                                return getKeys()[0].equalsIgnoreCase(key);
-                            }
-                        };
-                    }
+                        @Override
+                        public String[] getKeys() throws PolicyContextException {
+                            return legacy.getKeys();
+                        }
 
-                    private PolicyContextHandler createCallbackHandlerContextHandler() {
-                        return new PolicyContextHandler() {
-                            // in case applications are using legacy (PicketBox) security infrastructure
-                            CallbackHandlerPolicyContextHandler legacy = new CallbackHandlerPolicyContextHandler();
-
-                            @Override
-                            public Object getContext(String key, Object data) throws PolicyContextException {
-                                return legacy.getContext(key, data);
-                            }
-
-                            @Override
-                            public String[] getKeys() throws PolicyContextException {
-                                return legacy.getKeys();
-                            }
-
-                            @Override
-                            public boolean supports(String key) throws PolicyContextException {
-                                return legacy.supports(key);
-                            }
-                        };
-                    }
-
-                    private PolicyContextHandler createSubjectPolicyContextHandler() {
-                        return new PolicyContextHandler() {
-                            // in case applications are using legacy (PicketBox) security infrastructure
-                            SubjectPolicyContextHandler legacy = new SubjectPolicyContextHandler();
-
-                            @Override
-                            public Object getContext(String key, Object data) throws PolicyContextException {
-                                if (supports(key)) {
-                                    SecurityIdentity securityIdentity = (SecurityIdentity) PolicyContext.getContext(SecurityIdentity.class.getName());
-
-                                    if (securityIdentity == null) {
-                                        return legacy.getContext(key, data);
-                                    }
-
-                                    return SubjectUtil.fromSecurityIdentity(securityIdentity);
-                                }
-
-                                return null;
-                            }
-
-                            @Override
-                            public String[] getKeys() throws PolicyContextException {
-                                return legacy.getKeys();
-                            }
-
-                            @Override
-                            public boolean supports(String key) throws PolicyContextException {
-                                return legacy.supports(key);
-                            }
-                        };
-                    }
-                };
-            }
+                        @Override
+                        public boolean supports(String key) throws PolicyContextException {
+                            return legacy.supports(key);
+                        }
+                    };
+                }
+            };
         }
 
         return null;
@@ -450,7 +451,7 @@ class PolicyDefinitions {
             Object policy = classLoader.loadClass(className).newInstance();
             return Policy.class.cast(policy);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create policy [" + className + "]", e);
+            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
         }
     }
 
@@ -467,7 +468,7 @@ class PolicyDefinitions {
          * @param securityIdentity the {@link SecurityIdentity} to be converted.
          * @return the constructed {@link Subject} instance.
          */
-        public static Subject fromSecurityIdentity(final SecurityIdentity securityIdentity) {
+        static Subject fromSecurityIdentity(final SecurityIdentity securityIdentity) {
             Assert.checkNotNullParam("securityIdentity", securityIdentity);
             Subject subject = new Subject();
             subject.getPrincipals().add(securityIdentity.getPrincipal());
@@ -569,6 +570,27 @@ class PolicyDefinitions {
             public boolean isMember(Principal principal) {
                 return this.principals.contains(principal);
             }
+        }
+    }
+
+    // The jacc-policy and custom-policy attributes used to be LIST of OBJECT
+    // in some early WF Core 3.0.x releases. In case people submit such lists,
+    // if they only have 1 element, correct to just use that element. If they
+    // have multiple elements we can't tell here which is wanted, so don't
+    // correct and it will fail validation.
+    private static class ListToObjectCorrector implements ParameterCorrector {
+        private static final ListToObjectCorrector INSTANCE = new ListToObjectCorrector();
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            ModelNode result = newValue;
+            if (newValue.getType() == ModelType.LIST && newValue.asInt() == 1) {
+                // extract the single element
+                result = newValue.get(0);
+                if (result.has(NAME)) {
+                    result.remove(NAME);
+                }
+            }
+            return result;
         }
     }
 }

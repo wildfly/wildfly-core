@@ -70,6 +70,9 @@ public class PropertiesFileLoader {
      * <ul>
      * <li>{@code #username=password}</li>
      * <li>{@code username=password}</li>
+     * <li>{@code #username=group1,group2,...}</li>
+     * <li>{@code username=group1,group2,...}</li>
+     * <li>{@code username=} (no group)</li>
      * </ul>
      *
      * The regular expression is used to obtain 2 capturing groups, {@code group(1)} is used to obtain the username,
@@ -97,7 +100,7 @@ public class PropertiesFileLoader {
      *
      * Note: Possessive quantifiers are used here as without them invalid test strings become a serious performance burden.
      */
-    public static final Pattern PROPERTY_PATTERN = Pattern.compile("#?+((?:[,.\\-@/a-zA-Z0-9]++|(?:\\\\[=\\\\])++)++)=(.++)");
+    public static final Pattern PROPERTY_PATTERN = Pattern.compile("#?+((?:[,.\\-@/a-zA-Z0-9]++|(?:\\\\[=\\\\])++)++)=(.*+)");
     public static final String DISABLE_SUFFIX_KEY = "!disable";
 
     private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
@@ -232,6 +235,9 @@ public class PropertiesFileLoader {
                             writeProperty(bw, key, matcher.group(2));
                             toSave.remove(key);
                             toSave.remove(key + DISABLE_SUFFIX_KEY);
+                        } else if (trimmed.startsWith(COMMENT_PREFIX)) {
+                            // disabled user
+                            write(bw, line, true);
                         }
                     } else {
                         write(bw, line, true);

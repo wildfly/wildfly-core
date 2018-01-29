@@ -86,6 +86,8 @@ public class EmbeddedProcessFactory {
 
     private static final String JBOSS_MODULES_DIR_NAME = "modules";
 
+    private static final String HOST_FACTORY = "org.wildfly.core.embedded.EmbeddedHostControllerFactory";
+    private static final String SERVER_FACTORY = "org.wildfly.core.embedded.EmbeddedStandaloneServerFactory";
     /**
      * Valid types of embedded managed processes.
      */
@@ -169,10 +171,10 @@ public class EmbeddedProcessFactory {
         final Class<?> embeddedServerFactoryClass;
         final Class<?> standaloneServerClass;
         try {
-            embeddedServerFactoryClass = embeddedModuleCL.loadClass(EmbeddedStandaloneServerFactory.class.getName());
+            embeddedServerFactoryClass = embeddedModuleCL.loadClass(SERVER_FACTORY);
             standaloneServerClass = embeddedModuleCL.loadClass(StandaloneServer.class.getName());
         } catch (final ClassNotFoundException cnfe) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedStandaloneServerFactory.class.getName());
+            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, SERVER_FACTORY);
         }
 
         // Get a handle to the method which will create the server
@@ -243,10 +245,10 @@ public class EmbeddedProcessFactory {
         final Class<?> embeddedHostControllerFactoryClass;
         final Class<?> hostControllerClass;
         try {
-            embeddedHostControllerFactoryClass = embeddedModuleCL.loadClass(EmbeddedHostControllerFactory.class.getName());
+            embeddedHostControllerFactoryClass = embeddedModuleCL.loadClass(HOST_FACTORY);
             hostControllerClass = embeddedModuleCL.loadClass(HostController.class.getName());
         } catch (final ClassNotFoundException cnfe) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, EmbeddedHostControllerFactory.class.getName());
+            throw EmbeddedLogger.ROOT_LOGGER.cannotLoadEmbeddedServerFactory(cnfe, HOST_FACTORY);
         }
 
         // Get a handle to the method which will create the server

@@ -1,19 +1,26 @@
-<subsystem xmlns="urn:wildfly:elytron:1.0">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <mappers>
         <custom-permission-mapper name="CustomPermissionMapper" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <custom-permission-mapper name="CustomPermissionMapper2" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <logical-permission-mapper name="LogicalPermissionMapper" logical-operation="unless" left="CustomPermissionMapper" right="CustomPermissionMapper2" />
         <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
-            <permission-mapping principals="John Joe" roles="User Administrator">
+            <permission-mapping>
+                <principal name="John"/>
+                <principal name="Joe"/>
+                <role name="User"/>
+                <role name="Administrator"/>
                 <permission class-name="a.b.MyPermission" />
                 <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
             </permission-mapping>
-            <permission-mapping principals="John">
+            <permission-mapping match-all="false">
+                <principal name="John Doe"/>
                 <permission class-name="a.b.JohnPermission" />
             </permission-mapping>
-            <permission-mapping principals="User">
+            <permission-mapping>
+                <principal name="User"/>
                 <permission class-name="a.b.UserPermission" />
             </permission-mapping>
+            <permission-mapping match-all="true"/>
         </simple-permission-mapper>
         <constant-permission-mapper name="ConstantPermissionMapper">
             <permission class-name="a.b.UserPermission" />
@@ -37,7 +44,7 @@
         <custom-principal-decoder name="CustomPrincipalDecoderTwo" class-name="org.wildfly.elytron.CustomPrincipalDecoder" module="i.j" />
         <x500-attribute-principal-decoder name="X500PrincipalDecoderOne" oid="2.5.4.3" joiner="," maximum-segments="6" />
         <x500-attribute-principal-decoder name="X500PrincipalDecoderTwo" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" />
-        <x500-attribute-principal-decoder name="X500PrincipalDecoderThree" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" required-oids="2.5.4.3 2.5.4.11"/>
+        <x500-attribute-principal-decoder name="X500PrincipalDecoderThree" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" convert="true" required-oids="2.5.4.3 2.5.4.11"/>
 
         <aggregate-principal-transformer name="AggregateOne">
             <principal-transformer name="CustomOne" />
@@ -61,10 +68,10 @@
             <realm-mapping from="a" to="b" />
             <realm-mapping from="c" to="d" />
         </mapped-regex-realm-mapper>
-        
+
         <custom-role-decoder name="CustomDecoderOne" class-name="org.wildfly.elytron.CustomRoleDecoder" module="f.g" />
         <simple-role-decoder name="SimpleRoleDecoder" attribute="groups" />
-        
+
         <add-prefix-role-mapper name="AddPrefix" prefix="p" />
         <add-suffix-role-mapper name="AddSuffix" suffix="s" />
         <aggregate-role-mapper name="AggregateRoleMapper">

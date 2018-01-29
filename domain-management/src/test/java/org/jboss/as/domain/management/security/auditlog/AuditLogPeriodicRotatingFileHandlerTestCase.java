@@ -22,12 +22,14 @@
 
 package org.jboss.as.domain.management.security.auditlog;
 
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.audit.AuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.FileAuditLogHandlerResourceDefinition;
 import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinition;
 import org.jboss.as.domain.management.audit.PeriodicRotatingFileAuditLogHandlerResourceDefinition;
+import org.jboss.as.domain.management.audit.validators.SuffixValidator;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Before;
@@ -375,4 +377,23 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
         executeForResult(op);
     }
 
+    @Test
+    public void testSuffixValidator() throws Exception {
+        final SuffixValidator validator = new SuffixValidator();
+        try {
+            validator.validateParameter("suffix", new ModelNode("s"));
+            Assert.assertTrue("The model should be invalid", false);
+        } catch (OperationFailedException e) {
+            // no-op
+        }
+        try {
+            //invalid pattern with one single quote
+            validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'custom suffix"));
+            Assert.assertTrue("The model should be invalid", false);
+        } catch (OperationFailedException e) {
+            // no-op
+        }
+        //valid pattern with custom suffix
+        validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'custom suffix'"));
+    }
 }

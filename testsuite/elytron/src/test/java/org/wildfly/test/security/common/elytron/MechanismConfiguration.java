@@ -34,12 +34,14 @@ public class MechanismConfiguration extends AbstractMechanismConfiguration {
     private final String hostName;
     private final String protocol;
     private final List<MechanismRealmConfiguration> mechanismRealmConfigurations;
+    private final String credentialSecurityFactory;
 
     private MechanismConfiguration(Builder builder) {
         super(builder);
         this.mechanismName = builder.mechanismName;
         this.hostName = builder.hostName;
         this.protocol = builder.protocol;
+        this.credentialSecurityFactory = builder.credentialSecurityFactory;
         this.mechanismRealmConfigurations = new ArrayList<>(builder.mechanismRealmConfigurations);
     }
 
@@ -74,6 +76,7 @@ public class MechanismConfiguration extends AbstractMechanismConfiguration {
         setIfNotNull(node, "mechanism-name", mechanismName);
         setIfNotNull(node, "host-name", hostName);
         setIfNotNull(node, "protocol", protocol);
+        setIfNotNull(node, "credential-security-factory", credentialSecurityFactory);
         if (!mechanismRealmConfigurations.isEmpty()) {
             ModelNode confs = node.get("mechanism-realm-configurations");
             for (MechanismRealmConfiguration conf:mechanismRealmConfigurations) {
@@ -90,6 +93,7 @@ public class MechanismConfiguration extends AbstractMechanismConfiguration {
         private String mechanismName;
         private String hostName;
         private String protocol;
+        private String credentialSecurityFactory;
         private List<MechanismRealmConfiguration> mechanismRealmConfigurations = new ArrayList<>();
 
         private Builder() {
@@ -107,6 +111,11 @@ public class MechanismConfiguration extends AbstractMechanismConfiguration {
 
         public Builder withProtocol(String protocol) {
             this.protocol = protocol;
+            return this;
+        }
+
+        public Builder withCredentialSecurityFactory(String credentialSecurityFactory) {
+            this.credentialSecurityFactory = credentialSecurityFactory;
             return this;
         }
 

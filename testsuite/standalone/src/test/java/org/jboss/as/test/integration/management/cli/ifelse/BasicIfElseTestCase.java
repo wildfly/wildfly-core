@@ -24,6 +24,7 @@ package org.jboss.as.test.integration.management.cli.ifelse;
 import static org.junit.Assert.assertEquals;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,6 +67,28 @@ public class BasicIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handleSafe(this.getRemovePropertyReq("match-test-values"));
             ctx.terminateSession();
             cliOut.reset();
+        }
+    }
+
+    @Test
+    public void testIfInsideIf() throws Exception {
+        final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        boolean failed = false;
+        try {
+            ctx.connectController();
+            ctx.handle("if result.value==\"true\" of " + this.getReadPropertyReq());
+            ctx.handle("if result.value==\"true\" of " + this.getReadPropertyReq());
+        } catch (CommandFormatException ex) {
+            failed = true;
+        } finally {
+            try {
+                if (!failed) {
+                    throw new Exception("if inside if should have failed");
+                }
+            } finally {
+                ctx.terminateSession();
+                cliOut.reset();
+            }
         }
     }
 

@@ -23,8 +23,6 @@ import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_RUNTIME_CAPAB
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAMES;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringArrayIfDefined;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.LOADED_PROVIDERS;
@@ -43,9 +41,12 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
@@ -58,7 +59,6 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback;
@@ -75,6 +75,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionConsumer;
+import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 
 
@@ -121,7 +122,7 @@ class ProviderDefinitions {
         return AGGREGATE_PROVIDERS;
     }
 
-    static ResourceDefinition getProviderLoaderDefinition() {
+    static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
         AbstractAddStepHandler add = new TrivialAddHandler<Provider[]>(Provider[].class, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
 
@@ -131,22 +132,35 @@ class ProviderDefinitions {
             }
 
             @Override
-            protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder,OperationContext context, ModelNode model) throws OperationFailedException {
-                final String module = asStringIfDefined(context, MODULE, model);
-                final String[] classNames = asStringArrayIfDefined(context, CLASS_NAMES, model);
-                final String argument = asStringIfDefined(context, ARGUMENT, model);
+            protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
+                final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
+
+                final String[] classNames;
+                ModelNode classNamesNode = CLASS_NAMES.resolveModelAttribute(context, model);
+                if (classNamesNode.isDefined()) {
+                    List<ModelNode> values = classNamesNode.asList();
+                    classNames = new String[values.size()];
+                    for (int i = 0; i < classNames.length; i++) {
+                        classNames[i] = values.get(i).asString();
+                    }
+                } else {
+                    classNames = null;
+                }
+
+                final String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
+                final String argument = ARGUMENT.resolveModelAttribute(context, model).asStringOrNull();
 
                 final Properties properties;
                 ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
                 if (configuration.isDefined()) {
                     properties = new Properties();
-                    configuration.keys().forEach((String s) -> properties.setProperty(s, configuration.require(s).asString()));
+                    for (String s : configuration.keys()) {
+                        properties.setProperty(s, configuration.require(s).asString());
+                    }
                 } else {
                     properties = null;
                 }
-
-                String path = asStringIfDefined(context, PATH, model);
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
 
@@ -185,7 +199,7 @@ class ProviderDefinitions {
                                         // Try and find a constructor that takes an input stream and use it - or use default constructor and enable deferred initialisation.
                                         try {
                                             Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(InputStream.class));
-                                            constructor.newInstance(new Object[] { configSupplier.get() });
+                                            loadedProviders.add(constructor.newInstance(new Object[] { configSupplier.get() }));
                                         } catch (NoSuchMethodException ignored) {
                                             Provider provider = providerClazz.newInstance();
                                             loadedProviders.add(provider);
@@ -196,14 +210,22 @@ class ProviderDefinitions {
                                     }
                                 }
                             } else {
+                                //todo look into why we get also system / jdk providers here, it slows down boot
                                 loadedProviders = new ArrayList<>();
                                 ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
-                                loader.forEach(p -> {
-                                    if (configSupplier != null) {
-                                        deferred.add(p::load);
+                                Iterator<Provider> iterator = loader.iterator();
+                                for (; ; ) {
+                                    try {
+                                        if (!(iterator.hasNext())) { break; }
+                                        final Provider p = iterator.next();
+                                        if (configSupplier != null) {
+                                            deferred.add(p::load);
+                                        }
+                                        loadedProviders.add(p);
+                                    } catch (ServiceConfigurationError | RuntimeException e) {
+                                        ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
                                     }
-                                    loadedProviders.add(p);
-                                });
+                                }
                             }
 
                             for (ExceptionConsumer<InputStream, IOException> current : deferred) {
@@ -211,7 +233,11 @@ class ProviderDefinitions {
                                 current.accept(configSupplier.get());
                             }
 
-                            return loadedProviders.toArray(new Provider[loadedProviders.size()]);
+                            Provider[] providers = loadedProviders.toArray(new Provider[loadedProviders.size()]);
+                            if (ROOT_LOGGER.isTraceEnabled()) {
+                                ROOT_LOGGER.tracef("Loaded providers %s", Arrays.toString(providers));
+                            }
+                            return providers;
                         } catch (PrivilegedActionException e) {
                             throw new StartException(e.getCause());
                         } catch (Exception e) {
@@ -256,15 +282,17 @@ class ProviderDefinitions {
             }
         };
 
-        return new TrivialResourceDefinition(ElytronDescriptionConstants.PROVIDER_LOADER, add, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
+        Builder builder = TrivialResourceDefinition.builder()
+                .setPathKey(ElytronDescriptionConstants.PROVIDER_LOADER)
+                .setAddHandler(add)
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(PROVIDERS_RUNTIME_CAPABILITY);
 
-            @Override
-            public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-                super.registerAttributes(resourceRegistration);
+        if (serverOrHostController) {
+            builder.addReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
+        }
 
-                resourceRegistration.registerReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
-            }
-        };
+        return builder.build();
     }
 
     private static Provider[] aggregate(Provider[] ... providers) {

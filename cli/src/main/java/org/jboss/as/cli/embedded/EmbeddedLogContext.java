@@ -124,17 +124,29 @@ class EmbeddedLogContext {
     private static void clearLogContext(final LogContextConfiguration logContextConfiguration) {
         try {
             // Remove all the handlers
-            logContextConfiguration.getHandlerNames().forEach(logContextConfiguration::removeHandlerConfiguration);
+            for (String s5 : logContextConfiguration.getHandlerNames()) {
+                logContextConfiguration.removeHandlerConfiguration(s5);
+            }
             // Remove all the formatters
-            logContextConfiguration.getFormatterNames().forEach(logContextConfiguration::removeFormatterConfiguration);
+            for (String s4 : logContextConfiguration.getFormatterNames()) {
+                logContextConfiguration.removeFormatterConfiguration(s4);
+            }
             // Remove all the error managers
-            logContextConfiguration.getErrorManagerNames().forEach(logContextConfiguration::removeErrorManagerConfiguration);
+            for (String s3 : logContextConfiguration.getErrorManagerNames()) {
+                logContextConfiguration.removeErrorManagerConfiguration(s3);
+            }
             // Remove all the POJO's
-            logContextConfiguration.getPojoNames().forEach(logContextConfiguration::removePojoConfiguration);
+            for (String s2 : logContextConfiguration.getPojoNames()) {
+                logContextConfiguration.removePojoConfiguration(s2);
+            }
             // Remove all the loggers
-            logContextConfiguration.getLoggerNames().forEach(logContextConfiguration::removeLoggerConfiguration);
+            for (String s1 : logContextConfiguration.getLoggerNames()) {
+                logContextConfiguration.removeLoggerConfiguration(s1);
+            }
             // Remove all the filters
-            logContextConfiguration.getFilterNames().forEach(logContextConfiguration::removeFilterConfiguration);
+            for (String s : logContextConfiguration.getFilterNames()) {
+                logContextConfiguration.removeFilterConfiguration(s);
+            }
             logContextConfiguration.commit();
         } finally {
             logContextConfiguration.forget();

@@ -72,10 +72,6 @@ public final class DiscoveryExtension implements Extension {
 
     static final RuntimeCapability<?> DISCOVERY_PROVIDER_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(DISCOVERY_PROVIDER_CAPABILITY, true).setServiceType(DiscoveryProvider.class).build();
 
-    // fields
-
-    private final DiscoverySubsystemParser parser = new DiscoverySubsystemParser();
-
     /**
      * Construct a new instance.
      */
@@ -86,7 +82,7 @@ public final class DiscoveryExtension implements Extension {
     public void initialize(final ExtensionContext context) {
         final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 0));
         subsystemRegistration.setHostCapable();
-        subsystemRegistration.registerXMLElementWriter(parser);
+        subsystemRegistration.registerXMLElementWriter(DiscoverySubsystemParser::new);
 
         final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(DiscoverySubsystemDefinition.getInstance());
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
@@ -94,7 +90,9 @@ public final class DiscoveryExtension implements Extension {
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, parser);
+        // For the current version we don't use a Supplier as we want its description initialized
+        // TODO if any new xsd versions are added, use a Supplier for the old version
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, new DiscoverySubsystemParser());
     }
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {

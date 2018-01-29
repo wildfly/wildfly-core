@@ -72,12 +72,11 @@ import org.wildfly.common.cpu.ProcessorInfo;
  */
 public final class ThreadsParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>,XMLElementWriter<SubsystemMarshallingContext> {
 
-    static final ThreadsParser INSTANCE = new ThreadsParser();
-
     private static final String SUBSYSTEM_NAME = "threads";
 
+    @Deprecated
     public static ThreadsParser getInstance() {
-        return INSTANCE;
+        return new ThreadsParser();
     }
 
     @Override

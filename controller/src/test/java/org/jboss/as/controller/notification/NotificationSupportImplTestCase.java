@@ -37,7 +37,6 @@ import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.registry.NotificationHandlerRegistration;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -57,15 +56,6 @@ public class NotificationSupportImplTestCase {
     @Test
     public void testNotificationOrderingWithoutExecutor() throws Exception {
         doNotificationOrdering(null);
-    }
-
-    @Ignore
-    @Test
-    public void doManyNotificationOrderingWithExecutor() throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(12);
-        for (int i = 0; i < 100000; i++) {
-            doNotificationOrdering(executor);
-        }
     }
 
     private void  doNotificationOrdering(ExecutorService executor) throws Exception {

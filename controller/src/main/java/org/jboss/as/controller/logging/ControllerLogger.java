@@ -60,10 +60,8 @@ import org.jboss.as.controller.interfaces.InterfaceCriteria;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.protocol.mgmt.RequestProcessingException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logging.BasicLogger;
@@ -84,6 +82,7 @@ import org.jboss.msc.service.StartException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings({"DefaultAnnotationParam", "deprecation"})
 @MessageLogger(projectCode = "WFLYCTL", length = 4)
 public interface ControllerLogger extends BasicLogger {
 
@@ -240,14 +239,14 @@ public interface ControllerLogger extends BasicLogger {
             "use '%3$s'")
     void invalidWildcardAddress(String address, String inetAddress, String anyAddress);
 
-    /**
-     * Logs an error message indicating no handler for the step operation, represented by the {@code stepOpName}
-     * parameter, at {@code address}.
-     *
-     * @param stepOpName the step operation name.
-     * @param address    the address
-     * @deprecated use {@link #noSuchResourceType(PathAddress)} or {@link #noHandlerForOperation(String, PathAddress)}
-     */
+//    /**
+//     * Logs an error message indicating no handler for the step operation, represented by the {@code stepOpName}
+//     * parameter, at {@code address}.
+//     *
+//     * @param stepOpName the step operation name.
+//     * @param address    the address
+//     * @deprecated use {@link #noSuchResourceType(PathAddress)} or {@link #noHandlerForOperation(String, PathAddress)}
+//     */
 //    @LogMessage(level = ERROR)
 //    @Message(id = 12, value = "No handler for %s at address %s")
 //    void noHandler(String stepOpName, PathAddress address);
@@ -317,14 +316,14 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 17, value = "Operation (%s) failed - address: (%s) - failure description: %s")
     void operationFailedOnClientError(ModelNode op, ModelNode opAddress, ModelNode failureDescription);
 
-    /**
-     * Logs an error indicating that createWrapper should be called
-     *
-     * @param name the subsystem name
-     */
-    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 18, value = "A subsystem '%s' was registered without calling ExtensionContext.createTracker(). The subsystems are registered normally but won't be cleaned up when the extension is removed.")
-    void registerSubsystemNoWrapper(String name);
+//    /**
+//     * Logs an error indicating that createWrapper should be called
+//     *
+//     * @param name the subsystem name
+//     */
+//    @LogMessage(level = Logger.Level.WARN)
+//    @Message(id = 18, value = "A subsystem '%s' was registered without calling ExtensionContext.createTracker(). The subsystems are registered normally but won't be cleaned up when the extension is removed.")
+//    void registerSubsystemNoWrapper(String name);
 
     /**
      * Logs a warning message indicating graceful shutdown of native management request handling
@@ -393,25 +392,25 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 24, value = "Could not read target definition!")
     void cannotReadTargetDefinition(@Cause Throwable cause);
 
-    /**
-     * Logs an error message indicating a failure to transform.
-     *
-     * @param cause the cause of the error.
-     */
-    @LogMessage(level = Level.ERROR)
-    @Message(id = 25, value = "Could not transform")
-    void cannotTransform(@Cause Throwable cause);
-
-    /**
-     * Logs a warning message indicating the there is not transformer for the subsystem.
-     *
-     * @param subsystemName the subsystem name
-     * @param major         the major version
-     * @param minor         the minor version
-     */
-    @LogMessage(level = Level.WARN)
-    @Message(id = 26, value = "We have no transformer for subsystem: %s-%d.%d model transfer can break!")
-    void transformerNotFound(String subsystemName, int major, int minor);
+//    /**
+//     * Logs an error message indicating a failure to transform.
+//     *
+//     * @param cause the cause of the error.
+//     */
+//    @LogMessage(level = Level.ERROR)
+//    @Message(id = 25, value = "Could not transform")
+//    void cannotTransform(@Cause Throwable cause);
+//
+//    /**
+//     * Logs a warning message indicating the there is not transformer for the subsystem.
+//     *
+//     * @param subsystemName the subsystem name
+//     * @param major         the major version
+//     * @param minor         the minor version
+//     */
+//    @LogMessage(level = Level.WARN)
+//    @Message(id = 26, value = "We have no transformer for subsystem: %s-%d.%d model transfer can break!")
+//    void transformerNotFound(String subsystemName, int major, int minor);
 
     /**
      * Logs a warning message indicating that an operation was interrupted before service stability was reached
@@ -422,7 +421,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @LogMessage(level = Level.INFO)
     @Message(id = 28, value = "Attribute '%s' in the resource at address '%s' is deprecated, and may be removed in " +
-            "future version. See the attribute description in the output of the read-resource-description operation " +
+            "a future version. See the attribute description in the output of the read-resource-description operation " +
             "to learn more about the deprecation.")
     void attributeDeprecated(String name, String address);
 
@@ -495,17 +494,17 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 39, value = "%s already defined")
     XMLStreamException alreadyDefined(String name, @Param Location location);
 
-    /**
-     * Creates an exception indicating the {@code value} has already been declared.
-     *
-     * @param name     the attribute name.
-     * @param value    the value that has already been declared.
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 40, value = "%s %s already declared")
-    XMLStreamException alreadyDeclared(String name, String value, @Param Location location);
+//    /**
+//     * Creates an exception indicating the {@code value} has already been declared.
+//     *
+//     * @param name     the attribute name.
+//     * @param value    the value that has already been declared.
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 40, value = "%s %s already declared")
+//    XMLStreamException alreadyDeclared(String name, String value, @Param Location location);
 
     /**
      * Creates an exception indicating the {@code value} has already been declared.
@@ -575,24 +574,24 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 45, value = "Ambiguous name '%s' in %s: %s")
     IllegalArgumentException ambiguousName(String prefix, String dir, Collection<String> files);
 
-    /**
-     * Creates an exception indicating a thread was interrupted waiting for a response for asynch operation.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 46, value = "Thread was interrupted waiting for a response for asynch operation")
-    RequestProcessingException asynchOperationThreadInterrupted();
-
-    /**
-     * Creates an exception indicating no asynch request with the batch id, represented by the {@code batchId}
-     * parameter.
-     *
-     * @param batchId the batch id.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 47, value = "No asynch request with batch id %d")
-    RequestProcessingException asynchRequestNotFound(int batchId);
+//    /**
+//     * Creates an exception indicating a thread was interrupted waiting for a response for asynch operation.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 46, value = "Thread was interrupted waiting for a response for asynch operation")
+//    RequestProcessingException asynchOperationThreadInterrupted();
+//
+//    /**
+//     * Creates an exception indicating no asynch request with the batch id, represented by the {@code batchId}
+//     * parameter.
+//     *
+//     * @param batchId the batch id.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 47, value = "No asynch request with batch id %d")
+//    RequestProcessingException asynchRequestNotFound(int batchId);
 
     /**
      * A message indicating the attribute, represented by the {@code attributeName} parameter, is not writable.
@@ -604,17 +603,17 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 48, value = "Attribute %s is not writable")
     String attributeNotWritable(String attributeName);
 
-    /**
-     * A message indicating the attribute, represented by the {@code attributeName} parameter, is a registered child of
-     * the resource.
-     *
-     * @param attributeName the name of the attribute.
-     * @param resource      the resource the attribute is a child of.
-     *
-     * @return the message.
-     */
-    @Message(id = 49, value = "'%s' is a registered child of resource (%s)")
-    String attributeRegisteredOnResource(String attributeName, ModelNode resource);
+//    /**
+//     * A message indicating the attribute, represented by the {@code attributeName} parameter, is a registered child of
+//     * the resource.
+//     *
+//     * @param attributeName the name of the attribute.
+//     * @param resource      the resource the attribute is a child of.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 49, value = "'%s' is a registered child of resource (%s)")
+//    String attributeRegisteredOnResource(String attributeName, ModelNode resource);
 
     /**
      * Creates an exception indicating the inability to determine a default name based on the local host name.
@@ -728,13 +727,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 60, value = "Could not get canonical file for main file: %s")
     IllegalStateException canonicalMainFileNotFound(@Cause Throwable cause, File file);
 
-    /**
-     * A message indicating the channel is closed.
-     *
-     * @return the message.
-     */
-    @Message(id = 61, value = "Channel closed")
-    String channelClosed();
+//    /**
+//     * A message indicating the channel is closed.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 61, value = "Channel closed")
+//    String channelClosed();
 
     /**
      * A message indicating the composite operation failed and was rolled back.
@@ -865,15 +864,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 73, value = "An element of this type named '%s' has already been declared")
     XMLStreamException duplicateNamedElement(String name, @Param Location location);
 
-    /**
-     * Creates an exception indicating a duplicate profile was included.
-     *
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 74, value = "Duplicate profile included")
-    XMLStreamException duplicateProfile(@Param Location location);
+//    /**
+//     * Creates an exception indicating a duplicate profile was included.
+//     *
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 74, value = "Duplicate profile included")
+//    XMLStreamException duplicateProfile(@Param Location location);
 
     /**
      * Creates an exception indicating the resource is a duplicate.
@@ -895,25 +894,25 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 76, value = "Duplicate resource type %s")
     IllegalStateException duplicateResourceType(String type);
 
-    /**
-     * A message indicating the element, represented by the {@code name} parameter, is not supported the file,
-     * represented by the {@code file} parameter.
-     *
-     * @param name     the name of the element.
-     * @param fileName the file name.
-     *
-     * @return the message.
-     */
-    @Message(id = 77, value = "Element %s is not supported in a %s file")
-    String elementNotSupported(String name, String fileName);
+//    /**
+//     * A message indicating the element, represented by the {@code name} parameter, is not supported the file,
+//     * represented by the {@code file} parameter.
+//     *
+//     * @param name     the name of the element.
+//     * @param fileName the file name.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 77, value = "Element %s is not supported in a %s file")
+//    String elementNotSupported(String name, String fileName);
 
-    /**
-     * A message indicating an error waiting for Tx commit/rollback.
-     *
-     * @return the message.
-     */
-    @Message(id = 78, value = "Error waiting for Tx commit/rollback")
-    String errorWaitingForTransaction();
+//    /**
+//     * A message indicating an error waiting for Tx commit/rollback.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 78, value = "Error waiting for Tx commit/rollback")
+//    String errorWaitingForTransaction();
 
     /**
      * Creates an exception indicating a failure to initialize the module.
@@ -1009,15 +1008,15 @@ public interface ControllerLogger extends BasicLogger {
     String failedToPersistConfigurationChange(String cause);
 
 
-    /**
-     * Creates an exception indicating a failure to store the configuration.
-     *
-     * @param cause the cause of the error.
-     *
-     * @return a {@link ConfigurationPersistenceException} for the error.
-     */
-    @Message(id = 87, value = "Failed to store configuration")
-    ConfigurationPersistenceException failedToStoreConfiguration(@Cause Throwable cause);
+//    /**
+//     * Creates an exception indicating a failure to store the configuration.
+//     *
+//     * @param cause the cause of the error.
+//     *
+//     * @return a {@link ConfigurationPersistenceException} for the error.
+//     */
+//    @Message(id = 87, value = "Failed to store configuration")
+//    ConfigurationPersistenceException failedToStoreConfiguration(@Cause Throwable cause);
 
     /**
      * Creates an exception indicating a failure to take a snapshot of the file, represented by the {@code file}
@@ -1074,15 +1073,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 92, value = "%s cannot be used except in a full server boot")
     IllegalStateException fullServerBootRequired(Class<?> clazz);
 
-    /**
-     * A message indicating that no included group with the name, represented by the {@code name} parameter, was found.
-     *
-     * @param name the name of the group.
-     *
-     * @return the message.
-     */
-    @Message(id = 93, value = "No included group with name %s found")
-    String groupNotFound(String name);
+//    /**
+//     * A message indicating that no included group with the name, represented by the {@code name} parameter, was found.
+//     *
+//     * @param name the name of the group.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 93, value = "No included group with name %s found")
+//    String groupNotFound(String name);
 
     /**
      * A message indicating the interface criteria must be of the type represented by the {@code valueType} parameter.
@@ -1128,13 +1127,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 97, value = "Wrong type for '%s'. Expected %s but was %s")
     OperationFailedException incorrectType(String name, Collection<ModelType> validTypes, ModelType invalidType);
 
-    /**
-     * A message indicating interrupted while waiting for request.
-     *
-     * @return the message.
-     */
-    @Message(id = 98, value = "Interrupted while waiting for request")
-    String interruptedWaitingForRequest();
+//    /**
+//     * A message indicating interrupted while waiting for request.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 98, value = "Interrupted while waiting for request")
+//    String interruptedWaitingForRequest();
 
     /**
      * A message indicating the {@code name} is invalid.
@@ -1466,13 +1465,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 124, value = "Invalid step stage specified")
     IllegalArgumentException invalidStepStage();
 
-    /**
-     * Creates an exception indicating an invalid step stage for this context type.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 125, value = "Invalid step stage for this context type")
-    IllegalArgumentException invalidStepStageForContext();
+//    /**
+//     * Creates an exception indicating an invalid step stage for this context type.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 125, value = "Invalid step stage for this context type")
+//    IllegalArgumentException invalidStepStageForContext();
 
     /**
      * Creates an exception indicating the table cannot have a negative size.
@@ -1516,31 +1515,31 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 129, value = "Invalid value %s for %s; legal values are %s")
     String invalidValue(String value, String name, Collection<?> validValues);
 
-    /**
-     * Creates an exception indicating the {@code value} for the {@code name} must be greater than the minimum value,
-     * represented by the {@code minValue} parameter.
-     *
-     * @param name     the name for the value that cannot be negative.
-     * @param value    the invalid value.
-     * @param minValue the minimum value.
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 130, value = "Illegal '%s' value %s -- must be greater than %s")
-    XMLStreamException invalidValueGreaterThan(String name, int value, int minValue, @Param Location location);
+//    /**
+//     * Creates an exception indicating the {@code value} for the {@code name} must be greater than the minimum value,
+//     * represented by the {@code minValue} parameter.
+//     *
+//     * @param name     the name for the value that cannot be negative.
+//     * @param value    the invalid value.
+//     * @param minValue the minimum value.
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 130, value = "Illegal '%s' value %s -- must be greater than %s")
+//    XMLStreamException invalidValueGreaterThan(String name, int value, int minValue, @Param Location location);
 
-    /**
-     * Creates an exception indicating the {@code value} for the {@code name} cannot be negative.
-     *
-     * @param name     the name for the value that cannot be negative.
-     * @param value    the invalid value.
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 131, value = "Illegal '%s' value %s -- cannot be negative")
-    XMLStreamException invalidValueNegative(String name, int value, @Param Location location);
+//    /**
+//     * Creates an exception indicating the {@code value} for the {@code name} cannot be negative.
+//     *
+//     * @param name     the name for the value that cannot be negative.
+//     * @param value    the invalid value.
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 131, value = "Illegal '%s' value %s -- cannot be negative")
+//    XMLStreamException invalidValueNegative(String name, int value, @Param Location location);
 
     /**
      * Creates an exception indicating there must be one of the elements, represented by the {@code sb} parameter,
@@ -1638,38 +1637,38 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 140, value = "Nested %s not allowed")
     String nestedElementNotAllowed(Element element);
 
-    /**
-     * Creates an exception indicating no active request was found for handling the report represented by the {@code id}
-     * parameter.
-     *
-     * @param id the batch id.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 141, value = "No active request found for handling report %d")
-    RequestProcessingException noActiveRequestForHandlingReport(int id);
+//    /**
+//     * Creates an exception indicating no active request was found for handling the report represented by the {@code id}
+//     * parameter.
+//     *
+//     * @param id the batch id.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 141, value = "No active request found for handling report %d")
+//    RequestProcessingException noActiveRequestForHandlingReport(int id);
 
-    /**
-     * Creates an exception indicating no active request was found for proxy control represented by the {@code id}
-     * parameter.
-     *
-     * @param id the batch id.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 142, value = "No active request found for proxy operation control %d")
-    RequestProcessingException noActiveRequestForProxyOperation(int id);
+//    /**
+//     * Creates an exception indicating no active request was found for proxy control represented by the {@code id}
+//     * parameter.
+//     *
+//     * @param id the batch id.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 142, value = "No active request found for proxy operation control %d")
+//    RequestProcessingException noActiveRequestForProxyOperation(int id);
 
-    /**
-     * Creates an exception indicating no active request was found for reading the inputstream report represented by
-     * the {@code id} parameter.
-     *
-     * @param id the batch id.
-     *
-     * @return a {@link IOException} for the error.
-     */
-    @Message(id = 143, value = "No active request found for reading inputstream report %d")
-    IOException noActiveRequestForReadingInputStreamReport(int id);
+//    /**
+//     * Creates an exception indicating no active request was found for reading the inputstream report represented by
+//     * the {@code id} parameter.
+//     *
+//     * @param id the batch id.
+//     *
+//     * @return a {@link IOException} for the error.
+//     */
+//    @Message(id = 143, value = "No active request found for reading inputstream report %d")
+//    IOException noActiveRequestForReadingInputStreamReport(int id);
 
     /**
      * Creates an exception indicating there is no active step.
@@ -1679,27 +1678,27 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 144, value = "No active step")
     IllegalStateException noActiveStep();
 
-    /**
-     * Creates an exception indicating no active transaction found for the {@code id}.
-     *
-     * @param id the id.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 145, value = "No active tx found for id %d")
-    RuntimeException noActiveTransaction(int id);
+//    /**
+//     * Creates an exception indicating no active transaction found for the {@code id}.
+//     *
+//     * @param id the id.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 145, value = "No active tx found for id %d")
+//    RuntimeException noActiveTransaction(int id);
 
-    /**
-     * A message indicating there is no child registry for the child, represented by the {@code childType} and
-     * {@code child} parameters.
-     *
-     * @param childType the child type.
-     * @param child     the child.
-     *
-     * @return the message.
-     */
-    @Message(id = 146, value = "No child registry for (%s, %s)")
-    String noChildRegistry(String childType, String child);
+//    /**
+//     * A message indicating there is no child registry for the child, represented by the {@code childType} and
+//     * {@code child} parameters.
+//     *
+//     * @param childType the child type.
+//     * @param child     the child.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 146, value = "No child registry for (%s, %s)")
+//    String noChildRegistry(String childType, String child);
 
     /**
      * Creates an exception indicating no child type for the {@code name}.
@@ -1711,17 +1710,17 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 147, value = "No child type %s")
     OperationFailedRuntimeException noChildType(String name);
 
-    /*
-     * A message indicating no handler for the step operation, represented by the {@code stepOpName} parameter, at
-     * {@code address}.
-     *
-     * @param stepOpName the step operation name.
-     * @param address    the address.
-     *
-     * @return the message
-     *
-     * @deprecated use {@link #noSuchResourceType(PathAddress)} or {@link #noHandlerForOperation(String, PathAddress)}
-     */
+//    /*
+//     * A message indicating no handler for the step operation, represented by the {@code stepOpName} parameter, at
+//     * {@code address}.
+//     *
+//     * @param stepOpName the step operation name.
+//     * @param address    the address.
+//     *
+//     * @return the message
+//     *
+//     * @deprecated use {@link #noSuchResourceType(PathAddress)} or {@link #noHandlerForOperation(String, PathAddress)}
+//     */
 //    @Message(id = 148, value = "No handler for %s at address %s")
 //    String noHandler(String stepOpName, PathAddress address);
 
@@ -1741,16 +1740,16 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 150, value = "No operation handler")
     String noOperationHandler();
 
-    /**
-     * Creates an exception indicating a node is already registered at the location.
-     *
-     * @param location the location the node is registered at.
-     * @param value    the node value.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 151, value = "A node is already registered at '%s%s)'")
-    IllegalArgumentException nodeAlreadyRegistered(String location, String value);
+//    /**
+//     * Creates an exception indicating a node is already registered at the location.
+//     *
+//     * @param location the location the node is registered at.
+//     * @param value    the node value.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 151, value = "A node is already registered at '%s%s)'")
+//    IllegalArgumentException nodeAlreadyRegistered(String location, String value);
 
     /**
      * Creates an exception indicating the {@code path} is not a directory.
@@ -1822,13 +1821,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 158, value = "Operation handler failed: %s")
     String operationHandlerFailed(String msg);
 
-    /**
-     * A message indicating the operation handler failed to complete.
-     *
-     * @return the message.
-     */
-    @Message(id = 159, value = "Operation handler failed to complete")
-    String operationHandlerFailedToComplete();
+//    /**
+//     * A message indicating the operation handler failed to complete.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 159, value = "Operation handler failed to complete")
+//    String operationHandlerFailedToComplete();
 
     /**
      * A message indicating the operation is rolling back.
@@ -1859,16 +1858,16 @@ public interface ControllerLogger extends BasicLogger {
     String operationNotRegistered(String op, PathAddress address);
 
 
-    /**
-     * Creates an exception indicating an operation reply value type description is required but was not implemented
-     * for the operation represented by the {@code operationName} parameter.
-     *
-     * @param operationName the name of the operation that requires the reply value type description.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 163, value = "An operation reply value type description is required but was not implemented for operation %s")
-    IllegalStateException operationReplyValueTypeRequired(String operationName);
+//    /**
+//     * Creates an exception indicating an operation reply value type description is required but was not implemented
+//     * for the operation represented by the {@code operationName} parameter.
+//     *
+//     * @param operationName the name of the operation that requires the reply value type description.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 163, value = "An operation reply value type description is required but was not implemented for operation %s")
+//    IllegalStateException operationReplyValueTypeRequired(String operationName);
 
     /**
      * A message indicating there was a parsing problem.
@@ -1890,34 +1889,33 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 165, value = "No configuration persister was injected")
     StartException persisterNotInjected();
 
-    /**
-     * Creates an exception indicating the thread was interrupted waiting for the operation to prepare/fail.
-     *
-     * @return a {@link RequestProcessingException} for the error.
-     */
-    @Message(id = 166, value = "Thread was interrupted waiting for the operation to prepare/fail")
-    RequestProcessingException prepareFailThreadInterrupted();
+//    /**
+//     * Creates an exception indicating the thread was interrupted waiting for the operation to prepare/fail.
+//     *
+//     * @return a {@link RequestProcessingException} for the error.
+//     */
+//    @Message(id = 166, value = "Thread was interrupted waiting for the operation to prepare/fail")
+//    RequestProcessingException prepareFailThreadInterrupted();
 
-    /**
-     * Creates an exception indicating the profile has no subsystem configurations.
-     *
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    //No longer used
-    //@Message(id = 167, value = "Profile has no subsystem configurations")
-    //XMLStreamException profileHasNoSubsystems(@Param Location location);
+//    /**
+//     * Creates an exception indicating the profile has no subsystem configurations.
+//     *
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 167, value = "Profile has no subsystem configurations")
+//    XMLStreamException profileHasNoSubsystems(@Param Location location);
 
-    /**
-     * Creates an exception indicating no profile found for inclusion.
-     *
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 168, value = "No profile found for inclusion")
-    XMLStreamException profileNotFound(@Param Location location);
+//    /**
+//     * Creates an exception indicating no profile found for inclusion.
+//     *
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 168, value = "No profile found for inclusion")
+//    XMLStreamException profileNotFound(@Param Location location);
 
     /**
      * Creates an exception indicating the proxy handler is already registered at the location.
@@ -1929,14 +1927,14 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 169, value = "A proxy handler is already registered at location '%s'")
     IllegalArgumentException proxyHandlerAlreadyRegistered(String location);
 
-    /**
-     * Creates an exception indicating a thread was interrupted waiting to read attachment input stream from a remote
-     * caller.
-     *
-     * @return a {@link RuntimeException} for the error.
-     */
-    @Message(id = 170, value = "Thread was interrupted waiting to read attachment input stream from remote caller")
-    RuntimeException remoteCallerThreadInterrupted();
+//    /**
+//     * Creates an exception indicating a thread was interrupted waiting to read attachment input stream from a remote
+//     * caller.
+//     *
+//     * @return a {@link RuntimeException} for the error.
+//     */
+//    @Message(id = 170, value = "Thread was interrupted waiting to read attachment input stream from remote caller")
+//    RuntimeException remoteCallerThreadInterrupted();
 
     /**
      * A message indicating that removing services has lead to unsatisfied dependencies.
@@ -1968,7 +1966,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 172, value = "%s is required")
-    String required(String name);
+    OperationFailedException required(String name);
 
     /**
      * Creates an exception indicating the {@code name} is reserved.
@@ -1981,15 +1979,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 173, value = "%s is reserved")
     XMLStreamException reserved(String name, @Param Location location);
 
-    /**
-     * A message indicating a resource does not exist.
-     *
-     * @param resource the resource.
-     *
-     * @return the message.
-     */
-    @Message(id = 174, value = "Resource does not exist: %s")
-    String resourceNotFound(ModelNode resource);
+//    /**
+//     * A message indicating a resource does not exist.
+//     *
+//     * @param resource the resource.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 174, value = "Resource does not exist: %s")
+//    String resourceNotFound(ModelNode resource);
 
     /**
      * Creates an exception indicating a resource does not exist.
@@ -2164,15 +2162,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 188, value = "Stage %s is already complete")
     IllegalStateException stageAlreadyComplete(OperationContext.Stage stage);
 
-    /**
-     * A message indicating the step handler failed after completion.
-     *
-     * @param handler the handler that failed.
-     *
-     * @return the message.
-     */
-    @Message(id = 189, value = "Step handler %s failed after completion")
-    String stepHandlerFailed(OperationStepHandler handler);
+//    /**
+//     * A message indicating the step handler failed after completion.
+//     *
+//     * @param handler the handler that failed.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 189, value = "Step handler %s failed after completion")
+//    String stepHandlerFailed(OperationStepHandler handler);
 
     /**
      * A message indicating the step handler for the operation failed handling operation rollback.
@@ -2230,15 +2228,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 195, value = "Interrupted awaiting transaction commit or rollback")
     RuntimeException transactionInterrupted();
 
-    /**
-     * Creates an exception indicating a timeout occurred waiting for the transaction.
-     *
-     * @param type the transaction type.
-     *
-     * @return a {@link RuntimeException} for the error.
-     */
-    @Message(id = 196, value = "A timeout occurred waiting for the transaction to %s")
-    RuntimeException transactionTimeout(String type);
+//    /**
+//     * Creates an exception indicating a timeout occurred waiting for the transaction.
+//     *
+//     * @param type the transaction type.
+//     *
+//     * @return a {@link RuntimeException} for the error.
+//     */
+//    @Message(id = 196, value = "A timeout occurred waiting for the transaction to %s")
+//    RuntimeException transactionTimeout(String type);
 
     /**
      * Creates an exception indicating an unexpected attribute, represented by the {@code name} parameter, was
@@ -2276,15 +2274,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 199, value = "Unexpected end of element '%s' encountered")
     XMLStreamException unexpectedEndElement(QName name, @Param Location location);
 
-    /**
-     * Creates an exception indicating the {@code storage} was unexpected.
-     *
-     * @param storage the storage that was unexpected.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 200, value = "Unexpected storage %s")
-    IllegalStateException unexpectedStorage(AttributeAccess.Storage storage);
+//    /**
+//     * Creates an exception indicating the {@code storage} was unexpected.
+//     *
+//     * @param storage the storage that was unexpected.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 200, value = "Unexpected storage %s")
+//    IllegalStateException unexpectedStorage(AttributeAccess.Storage storage);
 
     /**
      * A message indicating the attribute, represented by the {@code name} parameter, is unknown.
@@ -2419,15 +2417,15 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 212, value = "Duplicate resource %s")
     OperationFailedRuntimeException duplicateResourceAddress(PathAddress address);
 
-    /**
-     * Creates an exception indicating a resource cannot be removed due to the existence of child resources.
-     *
-     * @param children the address elements for the children.
-     *
-     * @return an {@link OperationFailedException} for the error.
-     */
-    @Message(id = 213, value = "Cannot remove resource before removing child resources %s")
-    OperationFailedException cannotRemoveResourceWithChildren(List<PathElement> children);
+//    /**
+//     * Creates an exception indicating a resource cannot be removed due to the existence of child resources.
+//     *
+//     * @param children the address elements for the children.
+//     *
+//     * @return an {@link OperationFailedException} for the error.
+//     */
+//    @Message(id = 213, value = "Cannot remove resource before removing child resources %s")
+//    OperationFailedException cannotRemoveResourceWithChildren(List<PathElement> children);
 
     /**
      * Creates an exception indicating the canonical file for the main file could not be found.
@@ -2804,8 +2802,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 251, value = "Can't have both loopback and inet-address criteria")
     String cantHaveBothLoopbackAndInetAddressCriteria();
 
-    @Message(id = 252, value = "Can't have both link-local and inet-address criteria")
-    String cantHaveBothLinkLocalAndInetAddressCriteria();
+//    @Message(id = 252, value = "Can't have both link-local and inet-address criteria")
+//    String cantHaveBothLinkLocalAndInetAddressCriteria();
 
     @Message(id = 253, value = "Can't have same criteria for both not and inclusion %s")
     String cantHaveSameCriteriaForBothNotAndInclusion(InterfaceCriteria interfaceCriteria);
@@ -2813,8 +2811,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 254, value = "Invalid value '%s' for attribute '%s' -- no interface configuration with that name exists")
     OperationFailedException nonexistentInterface(String attributeValue, String attributeName);
 
-    @Message(id = 255, value = "%s is empty")
-    IllegalArgumentException emptyVar(String name);
+//    @Message(id = 255, value = "%s is empty")
+//    IllegalArgumentException emptyVar(String name);
 
     @Message(id = 256, value = "Could not find a path called '%s'")
     IllegalArgumentException pathEntryNotFound(String pathName);
@@ -2825,8 +2823,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 258, value="There is already a path entry called: '%s'")
     IllegalArgumentException pathEntryAlreadyExists(String pathName);
 
-    @Message(id = 259, value="Could not find relativeTo path '%s' for relative path '%s'")
-    IllegalStateException pathEntryNotFoundForRelativePath(String relativePath, String pathName);
+//    @Message(id = 259, value="Could not find relativeTo path '%s' for relative path '%s'")
+//    IllegalStateException pathEntryNotFoundForRelativePath(String relativePath, String pathName);
 
     @Message(id = 260, value="Invalid relativePath value '%s'")
     IllegalArgumentException invalidRelativePathValue(String relativePath);
@@ -2875,8 +2873,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 269, value = "Invalid locale format:  %s")
     String invalidLocaleString(String unparsed);
 
-    @Message(id = 270, value = "<one or more transitive dependencies>")
-    String transitiveDependencies();
+//    @Message(id = 270, value = "<one or more transitive dependencies>")
+//    String transitiveDependencies();
 
     /**
      * Creates a message indicating the operation is cancelled.
@@ -2909,8 +2907,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 277, value = "An alias is already registered at location '%s'")
     IllegalArgumentException aliasAlreadyRegistered(String location);
 
-    @Message(id = 278, value = "Expected an address under '%s', was '%s'")
-    IllegalArgumentException badAliasConvertAddress(PathAddress aliasAddress, PathAddress actual);
+//    @Message(id = 278, value = "Expected an address under '%s', was '%s'")
+//    IllegalArgumentException badAliasConvertAddress(PathAddress aliasAddress, PathAddress actual);
 
     @Message(id = 279, value = "Alias target address not found: %s")
     IllegalArgumentException aliasTargetResourceRegistrationNotFound(PathAddress targetAddress);
@@ -3025,8 +3023,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 307, value = "We are trying to read data from the master host controller, which is currently busy executing another set of operations. This is a temporary situation, please retry")
     String cannotGetControllerLock();
 
-    @Message(id = 308, value = "Cannot configure an interface to use 'any-ipv6-address' when system property java.net.preferIPv4Stack is true")
-    StartException invalidAnyIPv6();
+//    @Message(id = 308, value = "Cannot configure an interface to use 'any-ipv6-address' when system property java.net.preferIPv4Stack is true")
+//    StartException invalidAnyIPv6();
 
     @Message(id = 309, value = "Legacy extension '%s' is not supported on servers running this version. The extension " +
             "is only supported for use by hosts running a previous release in a mixed-version managed domain")
@@ -3303,8 +3301,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 389, value = "Could not create an empty configuration at file %s as there is an existing non-empty configuration there")
     IllegalStateException rejectEmptyConfig(String absolutePath);
 
-    @Message(id = 390, value = "An invalid key '%s' has been supplied for parameter '%s'")
-    OperationFailedException invalidKeyForObjectType(String key, String parameter);
+//    @Message(id = 390, value = "An invalid key '%s' has been supplied for parameter '%s'")
+//    OperationFailedException invalidKeyForObjectType(String key, String parameter);
 
     @Message(id = 391, value = "Could not resolve attribute expression: '%s', invalid index '%d'")
     OperationFailedException couldNotResolveExpressionIndex(String attributeExpression, int index);
@@ -3320,7 +3318,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @LogMessage(level = Level.INFO)
     @Message(id = 395, value = "Operation %s against the resource at address %s is deprecated, and it might be removed in " +
-            "future version. See the the output of the read-operation-description operation" +
+            "future version. See the the output of the read-operation-description operation " +
             "to learn more about the deprecation.")
     void operationDeprecated(String name, String address);
 
@@ -3496,4 +3494,28 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = Level.WARN)
     @Message(id = 442, value = "Error stopping server")
     void errorStoppingServer(@Cause Exception cause);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 443, value = "Error getting the password from the supplier %s")
+    void errorObtainingPassword(@Cause Exception cause, String message);
+
+    @LogMessage(level = Level.INFO)  // use INFO -- DEBUG is too low as there's a bug here and we want to know;
+                                     // WARN is too high as it likely does not harm the end user and the user can't do anything about it
+    @Message(id = 444, value = "The handler for operation '%s' at address '%s' attempted to add a stage %s step. " +
+            "This is not valid for a 'profile' resource on process type %s so this step will not be executed.")
+    void invalidRuntimeStageForProfile(String operation, String address, OperationContext.Stage stage, ProcessType processType);
+
+    @Message(id = 445, value = "%s with value '%s' in attribute %s is already defined")
+    OperationFailedException alreadyDefinedAttribute(String resource, String value, String attribute);
+
+    @Message(id = 446, value = "%s or alternative(s) %s is required")
+    OperationFailedException requiredWithAlternatives(String name, Set<String> alternatives);
+
+    @LogMessage(level = Level.WARN)
+    @Message(id = 447, value = "Attribute '%s' in the resource at address '%s' has been configured with an expression, " +
+            "but support for use of expressions in this attribute's value may be removed in a future version. This " +
+            "attribute configures whether a capability that can be required by other parts of the configuration is present " +
+            "or itself configures a requirement for a capability provided by another part of the configuration. " +
+            "Full support for this kind of configuration cannot be provided when an expression is used.")
+    void attributeExpressionDeprecated(String name, String address);
 }

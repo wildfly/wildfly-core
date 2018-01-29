@@ -43,6 +43,10 @@ GREP="grep"
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
 
+# tell linux glibc how many memory pools can be created that are used by malloc
+MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-1}"
+export MALLOC_ARENA_MAX
+
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
 darwin=false;

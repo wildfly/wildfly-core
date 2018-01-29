@@ -23,17 +23,17 @@ package org.jboss.as.domain.management.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_CERT_STORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROTOCOL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.parsing.ParseUtils.duplicateNamedElement;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.Collections;
 import java.util.List;
@@ -58,22 +58,16 @@ import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinit
 import org.jboss.as.domain.management.audit.SyslogAuditLogProtocolResourceDefinition;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class AuditLogXml_4 extends AuditLogXml {
+final class AuditLogXml_4 implements AuditLogXml {
     final boolean host;
 
-    public AuditLogXml_4(boolean host) {
+    AuditLogXml_4(boolean host) {
         this.host = host;
     }
 
@@ -127,7 +121,7 @@ public class AuditLogXml_4 extends AuditLogXml {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
             case JSON_FORMATTER:{
-                parseFileAuditLogFormatter(reader, address, expectedNs, list);
+                parseFileAuditLogFormatter(reader, address, list);
                 break;
             }
             default:
@@ -136,7 +130,7 @@ public class AuditLogXml_4 extends AuditLogXml {
         }
     }
 
-    private void parseFileAuditLogFormatter(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseFileAuditLogFormatter(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -196,17 +190,17 @@ public class AuditLogXml_4 extends AuditLogXml {
                 if(configurationChangesConfigured) {
                     throw unexpectedElement(reader);
                 }
-                parseConfigurationChangesAuditLogHandler(reader, address, expectedNs, list);
+                parseConfigurationChangesAuditLogHandler(reader, address, list);
                 configurationChangesConfigured = true;
                 break;
             case FILE_HANDLER:
-                parseFileAuditLogHandler(reader, address, expectedNs, list);
+                parseFileAuditLogHandler(reader, address, list);
                 break;
             case PERIODIC_ROTATING_FILE_HANDLER:
-                parsePeriodicRotatingFileAuditLogHandler(reader, address, expectedNs, list);
+                parsePeriodicRotatingFileAuditLogHandler(reader, address, list);
                 break;
             case SIZE_ROTATING_FILE_HANDLER:
-                parseSizeRotatingFileAuditLogHandler(reader, address, expectedNs, list);
+                parseSizeRotatingFileAuditLogHandler(reader, address, list);
                 break;
             case SYSLOG_HANDLER:
                 parseSyslogAuditLogHandler(reader, address, expectedNs, list);
@@ -217,7 +211,7 @@ public class AuditLogXml_4 extends AuditLogXml {
         }
     }
 
-    private void parseConfigurationChangesAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseConfigurationChangesAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -244,7 +238,7 @@ public class AuditLogXml_4 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    protected void parseFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -284,7 +278,7 @@ public class AuditLogXml_4 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parseSizeRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parseSizeRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -324,7 +318,7 @@ public class AuditLogXml_4 extends AuditLogXml {
         requireNoContent(reader);
     }
 
-    private void parsePeriodicRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
+    private void parsePeriodicRotatingFileAuditLogHandler(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
         final ModelNode add = Util.createAddOperation();
         list.add(add);
         final int count = reader.getAttributeCount();
@@ -494,7 +488,7 @@ public class AuditLogXml_4 extends AuditLogXml {
                         throw duplicateNamedElement(reader, Element.TRUSTSTORE.getLocalName());
                     }
                     seenTrustStore = true;
-                    parseSyslogTlsKeystore(reader, protocolAddress, expectedNs, list, SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.TRUSTSTORE_ELEMENT, false);
+                    parseSyslogTlsKeystore(reader, protocolAddress, list, SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.TRUSTSTORE_ELEMENT, false);
                     break;
                 }
                 case CLIENT_CERT_STORE : {
@@ -502,7 +496,7 @@ public class AuditLogXml_4 extends AuditLogXml {
                         throw duplicateNamedElement(reader, Element.CLIENT_CERT_STORE.getLocalName());
                     }
                     seenClientCertStore = true;
-                    parseSyslogTlsKeystore(reader, protocolAddress, expectedNs, list, SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.CLIENT_CERT_ELEMENT, true);
+                    parseSyslogTlsKeystore(reader, protocolAddress, list, SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.CLIENT_CERT_ELEMENT, true);
                     break;
                 }
                 default:
@@ -511,7 +505,7 @@ public class AuditLogXml_4 extends AuditLogXml {
             }
         }
     }
-    private void parseSyslogTlsKeystore(final XMLExtendedStreamReader reader, final PathAddress address, final Namespace expectedNs, final List<ModelNode> list, final PathElement storeAddress, final boolean hasKeyPassword) throws XMLStreamException {
+    private void parseSyslogTlsKeystore(final XMLExtendedStreamReader reader, final PathAddress address, final List<ModelNode> list, final PathElement storeAddress, final boolean hasKeyPassword) throws XMLStreamException {
         ModelNode add = Util.createAddOperation(address.append(storeAddress));
         list.add(add);
         final int tcpCount = reader.getAttributeCount();
@@ -637,177 +631,6 @@ public class AuditLogXml_4 extends AuditLogXml {
             default:
                 throw unexpectedElement(reader);
             }
-        }
-    }
-
-    @Override
-    public void writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
-        writer.writeStartElement(Element.AUDIT_LOG.getLocalName());
-
-        if (auditLog.hasDefined(ModelDescriptionConstants.JSON_FORMATTER) && auditLog.get(ModelDescriptionConstants.JSON_FORMATTER).keys().size() > 0) {
-            writer.writeStartElement(Element.FORMATTERS.getLocalName());
-            for (Property prop : auditLog.get(ModelDescriptionConstants.JSON_FORMATTER).asPropertyList()) {
-                writer.writeStartElement(Element.JSON_FORMATTER.getLocalName());
-                writer.writeAttribute(Attribute.NAME.getLocalName(), prop.getName());
-                JsonAuditLogFormatterResourceDefinition.COMPACT.marshallAsAttribute(prop.getValue(), writer);
-                JsonAuditLogFormatterResourceDefinition.DATE_FORMAT.marshallAsAttribute(prop.getValue(), writer);
-                JsonAuditLogFormatterResourceDefinition.DATE_SEPARATOR.marshallAsAttribute(prop.getValue(), writer);
-                JsonAuditLogFormatterResourceDefinition.ESCAPE_CONTROL_CHARACTERS.marshallAsAttribute(prop.getValue(), writer);
-                JsonAuditLogFormatterResourceDefinition.ESCAPE_NEW_LINE.marshallAsAttribute(prop.getValue(), writer);
-                JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.marshallAsAttribute(prop.getValue(), writer);
-                writer.writeEndElement();
-            }
-            writer.writeEndElement();
-        }
-
-
-        if ((auditLog.hasDefined(ModelDescriptionConstants.FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.FILE_HANDLER).keys().size() > 0) ||
-                (auditLog.hasDefined(ModelDescriptionConstants.SYSLOG_HANDLER) && auditLog.get(ModelDescriptionConstants.SYSLOG_HANDLER).keys().size() > 0) ||
-                (auditLog.hasDefined(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER).keys().size() > 0) ||
-                (auditLog.hasDefined(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER) && auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER).keys().size() > 0) ||
-                (auditLog.hasDefined(ModelDescriptionConstants.IN_MEMORY_HANDLER) && !auditLog.get(ModelDescriptionConstants.IN_MEMORY_HANDLER).keys().isEmpty())) {
-            writer.writeStartElement(Element.HANDLERS.getLocalName());
-            if (auditLog.hasDefined(ModelDescriptionConstants.FILE_HANDLER)) {
-                for (String name : auditLog.get(ModelDescriptionConstants.FILE_HANDLER).keys()) {
-                    writeFileAuditLogHandler(writer, auditLog, name);
-                }
-            }
-            if (auditLog.hasDefined(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER)) {
-                for (String name : auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER).keys()) {
-                    writer.writeStartElement(Element.PERIODIC_ROTATING_FILE_HANDLER.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-                    ModelNode handler = auditLog.get(ModelDescriptionConstants.PERIODIC_ROTATING_FILE_HANDLER, name);
-                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
-                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
-                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
-                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
-                    PeriodicRotatingFileAuditLogHandlerResourceDefinition.SUFFIX.marshallAsAttribute(handler, writer);
-                    writer.writeEndElement();
-                }
-            }
-            if (auditLog.hasDefined(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER)) {
-                for (String name : auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER).keys()) {
-                    writer.writeStartElement(Element.SIZE_ROTATING_FILE_HANDLER.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-                    ModelNode handler = auditLog.get(ModelDescriptionConstants.SIZE_ROTATING_FILE_HANDLER, name);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.ROTATE_SIZE.marshallAsAttribute(handler, writer);
-                    SizeRotatingFileAuditLogHandlerResourceDefinition.MAX_BACKUP_INDEX.marshallAsAttribute(handler, writer);
-                    writer.writeEndElement();
-                }
-            }
-            if (auditLog.hasDefined(ModelDescriptionConstants.SYSLOG_HANDLER)) {
-                for (String name : auditLog.get(ModelDescriptionConstants.SYSLOG_HANDLER).keys()) {
-                    writer.writeStartElement(Element.SYSLOG_HANDLER.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-                    ModelNode handler = auditLog.get(ModelDescriptionConstants.SYSLOG_HANDLER, name);
-                    SyslogAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.SYSLOG_FORMAT.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.MAX_LENGTH.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.TRUNCATE.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.FACILITY.marshallAsAttribute(handler, writer);
-                    SyslogAuditLogHandlerResourceDefinition.APP_NAME.marshallAsAttribute(handler, writer);
-                    if (handler.hasDefined(PROTOCOL)) {
-                        writeAuditLogSyslogProtocol(writer, handler.get(PROTOCOL));
-                    }
-                    writer.writeEndElement();
-                }
-            }
-            if (auditLog.hasDefined(ModelDescriptionConstants.IN_MEMORY_HANDLER)) {
-                for (String name : auditLog.get(ModelDescriptionConstants.IN_MEMORY_HANDLER).keys()) {
-                    writer.writeStartElement(Element.IN_MEMORY_HANDLER.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-                    ModelNode handler = auditLog.get(ModelDescriptionConstants.IN_MEMORY_HANDLER, name);
-                    InMemoryAuditLogHandlerResourceDefinition.MAX_OPERATION_COUNT.marshallAsAttribute(handler, writer);
-                    writer.writeEndElement();
-                }
-            }
-            writer.writeEndElement();
-        }
-        writeAuditLogger(writer, auditLog, Element.LOGGER.getLocalName());
-        writeAuditLogger(writer, auditLog, Element.SERVER_LOGGER.getLocalName());
-        writer.writeEndElement();
-    }
-
-    private void writeAuditLogger(XMLExtendedStreamWriter writer, ModelNode auditLog, String element) throws XMLStreamException {
-        if (auditLog.hasDefined(element) && auditLog.get(element).hasDefined(ModelDescriptionConstants.AUDIT_LOG)){
-            ModelNode config = auditLog.get(element, ModelDescriptionConstants.AUDIT_LOG);
-            writer.writeStartElement(element);
-            AuditLogLoggerResourceDefinition.LOG_BOOT.marshallAsAttribute(config, writer);
-            AuditLogLoggerResourceDefinition.LOG_READ_ONLY.marshallAsAttribute(config, writer);
-            AuditLogLoggerResourceDefinition.ENABLED.marshallAsAttribute(config, writer);
-            if (config.hasDefined(ModelDescriptionConstants.HANDLER) && config.get(ModelDescriptionConstants.HANDLER).keys().size() > 0) {
-                writer.writeStartElement(Element.HANDLERS.getLocalName());
-                for (String name : config.get(ModelDescriptionConstants.HANDLER).keys()) {
-                    writer.writeStartElement(Element.HANDLER.getLocalName());
-                    writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-                    writer.writeEndElement();
-                }
-                writer.writeEndElement();
-            }
-
-            writer.writeEndElement();
-        }
-    }
-
-
-    private void writeAuditLogSyslogProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-        String type = protocol.keys().iterator().next();
-        ModelNode protocolContents = protocol.get(type);
-        if (type.equals(ModelDescriptionConstants.UDP)) {
-            writer.writeStartElement(type);
-            SyslogAuditLogProtocolResourceDefinition.Udp.HOST.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Udp.PORT.marshallAsAttribute(protocolContents, writer);
-            writer.writeEndElement();
-        } else if (type.equals(ModelDescriptionConstants.TCP)) {
-            writer.writeStartElement(type);
-            SyslogAuditLogProtocolResourceDefinition.Tcp.HOST.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tcp.PORT.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tcp.MESSAGE_TRANSFER.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tcp.RECONNECT_TIMEOUT.marshallAsAttribute(protocolContents, writer);
-            writer.writeEndElement();
-        } else if (type.equals(ModelDescriptionConstants.TLS)) {
-            writer.writeStartElement(type);
-            SyslogAuditLogProtocolResourceDefinition.Tls.HOST.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tls.PORT.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tls.MESSAGE_TRANSFER.marshallAsAttribute(protocolContents, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tcp.RECONNECT_TIMEOUT.marshallAsAttribute(protocolContents, writer);
-
-            if (protocolContents.hasDefined(AUTHENTICATION)) {
-                writeAuditLogSyslogTlsProtocolKeyStore(writer, protocolContents.get(AUTHENTICATION), TRUSTSTORE);
-                writeAuditLogSyslogTlsProtocolKeyStore(writer, protocolContents.get(AUTHENTICATION), CLIENT_CERT_STORE);
-            }
-
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeAuditLogSyslogTlsProtocolKeyStore(XMLExtendedStreamWriter writer, ModelNode keystoreParent, String name) throws XMLStreamException {
-        if (keystoreParent.hasDefined(name)) {
-            ModelNode keystore = keystoreParent.get(name);
-            writer.writeStartElement(name);
-            SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.KEYSTORE_PATH.marshallAsAttribute(keystore, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.KEYSTORE_RELATIVE_TO.marshallAsAttribute(keystore, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.KEYSTORE_PASSWORD.marshallAsAttribute(keystore, writer);
-            SyslogAuditLogProtocolResourceDefinition.Tls.TlsKeyStore.KEY_PASSWORD.marshallAsAttribute(keystore, writer);
-            writer.writeEndElement();
-        }
-    }
-
-    protected void writeFileAuditLogHandler(XMLExtendedStreamWriter writer, ModelNode auditLog, String name) throws XMLStreamException {
-        if (auditLog.hasDefined(Attribute.NAME.getLocalName(), name)) {
-            writer.writeStartElement(Element.FILE_HANDLER.getLocalName());
-            writer.writeAttribute(Attribute.NAME.getLocalName(), name);
-            ModelNode handler = auditLog.get(ModelDescriptionConstants.FILE_HANDLER, name);
-            FileAuditLogHandlerResourceDefinition.FORMATTER.marshallAsAttribute(handler, writer);
-            FileAuditLogHandlerResourceDefinition.MAX_FAILURE_COUNT.marshallAsAttribute(handler, writer);
-            FileAuditLogHandlerResourceDefinition.PATH.marshallAsAttribute(handler, writer);
-            FileAuditLogHandlerResourceDefinition.RELATIVE_TO.marshallAsAttribute(handler, writer);
-            writer.writeEndElement();
         }
     }
 }

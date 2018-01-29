@@ -43,14 +43,16 @@ import org.jboss.dmr.ModelType;
  */
 public class SimpleOperationDefinition extends OperationDefinition {
 
-    final ResourceDescriptionResolver resolver;
-    final ResourceDescriptionResolver attributeResolver;
+    private final ResourceDescriptionResolver resolver;
+    private final ResourceDescriptionResolver attributeResolver;
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
     @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver) {
         this(name, resolver, EnumSet.noneOf(OperationEntry.Flag.class));
     }
 
+    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
     @SuppressWarnings("deprecation")
     public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, AttributeDefinition... parameters) {
         this(name, resolver, OperationEntry.EntryType.PUBLIC, EnumSet.noneOf(OperationEntry.Flag.class), parameters);

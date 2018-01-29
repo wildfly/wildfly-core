@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.immutableSetOf;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -32,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -80,7 +83,7 @@ public abstract class AttributeDefinition {
     private final ModelNode[] allowedValues;
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
-    private final EnumSet<AttributeAccess.Flag> flags;
+    private final Set<AttributeAccess.Flag> flags;
     protected final AttributeMarshaller attributeMarshaller;
     private final boolean resourceOnly;
     private final DeprecationData deprecationData;
@@ -107,24 +110,7 @@ public abstract class AttributeDefinition {
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
                 toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
-                toCopy.getUndefinedMetricValue(), wrapFlags(toCopy.getFlags()));
-    }
-
-    /**
-     * @deprecated use {@link AbstractAttributeDefinitionBuilder}
-     */
-    @Deprecated
-    protected AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
-                                  final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                  final ParameterCorrector valueCorrector, final ParameterValidator validator,
-                                  boolean validateNull, final String[] alternatives, final String[] requires, AttributeMarshaller attributeMarshaller,
-                                  boolean resourceOnly, DeprecationData deprecationData, final AccessConstraintDefinition[] accessConstraints,
-                                  Boolean nilSignificant, AttributeParser parser, final AttributeAccess.Flag... flags) {
-
-        this(name, xmlName, defaultValue, type, allowNull, allowExpression, measurementUnit, valueCorrector,
-                wrapValidator(validator, allowNull, alternatives, allowExpression, type, null, null), validateNull, alternatives, requires,
-                attributeMarshaller, resourceOnly, deprecationData, wrapConstraints(accessConstraints),
-                nilSignificant, parser, null, null, null, null, null, wrapFlags(flags));
+                toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
     }
 
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
@@ -133,7 +119,7 @@ public abstract class AttributeDefinition {
                                 final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
-                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final EnumSet<AttributeAccess.Flag> flags) {
+                                ModelNode[] allowedValues, final Map<String, ModelNode> arbitraryDescriptors, final ModelNode undefinedMetricValue, final Set<AttributeAccess.Flag> flags) {
 
         this.name = name;
         this.xmlName = xmlName == null ? name : xmlName;
@@ -221,16 +207,6 @@ public abstract class AttributeDefinition {
             return Collections.<AccessConstraintDefinition>emptyList();
         } else {
             return Collections.unmodifiableList(Arrays.asList(accessConstraints));
-        }
-    }
-
-    private static EnumSet<AttributeAccess.Flag> wrapFlags(AttributeAccess.Flag[] flags) {
-        if (flags == null || flags.length == 0) {
-            return EnumSet.noneOf(AttributeAccess.Flag.class);
-        } else if (flags.length == 1) {
-            return EnumSet.of(flags[0]);
-        } else {
-            return EnumSet.of(flags[0], flags);
         }
     }
 
@@ -430,13 +406,28 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * Gets any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used to indicate special
-     * characteristics of the attribute
+     * Gets a set of any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used
+     * to indicate special characteristics of the attribute
      *
      * @return the flags. Will not be {@code null} but may be empty.
+     *
+     * @deprecated In the next release, the return type of this method will become simply {@code Set} and the returned object will be immutable, so any callers should update their code to reflect that
      */
+    @Deprecated
     public EnumSet<AttributeAccess.Flag> getFlags() {
-        return EnumSet.copyOf(flags);
+        if (flags.isEmpty()) {
+            return EnumSet.noneOf(AttributeAccess.Flag.class);
+        }
+        AttributeAccess.Flag[] array = flags.toArray(new AttributeAccess.Flag[flags.size()]);
+        return array.length == 1 ? EnumSet.of(array[0]) : EnumSet.of(array[0], array);
+    }
+
+    /**
+     * Provides an immutable variant of the set returned by {@link #getFlags()}.
+     * @deprecated for internal use only; will be dropped when the semantic of {@link #getFlags()} is changed to return an immutable {@code Set}*/
+    @Deprecated
+    public Set<AttributeAccess.Flag> getImmutableFlags() {
+        return flags;
     }
 
     /**
@@ -515,6 +506,11 @@ public abstract class AttributeDefinition {
             operationObject.get(name).set(correctedValue);
         }
         ModelNode node = validateOperation(operationObject, true);
+        if (node.getType() == ModelType.EXPRESSION
+                && (referenceRecorder != null || flags.contains(AttributeAccess.Flag.EXPRESSIONS_DEPRECATED))) {
+            ControllerLogger.DEPRECATED_LOGGER.attributeExpressionDeprecated(getName(),
+                PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
+        }
         model.get(name).set(node);
     }
 
@@ -662,8 +658,23 @@ public abstract class AttributeDefinition {
         if (!node.isDefined() && defaultValue != null && defaultValue.isDefined()) {
             node.set(defaultValue);
         }
-        final ModelNode resolved = resolver.resolveExpressions(node);
+        ModelNode resolved = resolver.resolveExpressions(node);
+        resolved = parseResolvedValue(value, resolved);
         validator.validateParameter(name, resolved);
+        return resolved;
+    }
+
+    /**
+     * "Parse", if appropriate, an attribute value that may have been resolved by the expression resolver into
+     * a different form, returning that new form, or returning {@code resolved} unchanged if no conversion
+     * is appropriate. The default implementation does the latter.
+     *
+     * @param original the original value of the attribute before any resolution work was done
+     * @param resolved the value of the attribute following resolution work
+     *
+     * @return the new form of the value or {@code resolved} itself, unchanged
+     */
+    ModelNode parseResolvedValue(ModelNode original, ModelNode resolved) {
         return resolved;
     }
 

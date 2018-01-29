@@ -19,7 +19,6 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.OPTION;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
@@ -57,7 +56,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
-import org.wildfly.security.asn1.OidsUtil;
+import org.wildfly.security.asn1.util.OidsUtil;
 import org.wildfly.security.auth.util.GSSCredentialSecurityFactory;
 
 /**
@@ -89,6 +88,11 @@ class KerberosSecurityFactoryDefinition {
         .setDefaultValue(new ModelNode(GSSCredential.INDEFINITE_LIFETIME))
         .setRestartAllServices()
         .build();
+
+    static final SimpleAttributeDefinition FAIL_CACHE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FAIL_CACHE, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
 
     static final SimpleAttributeDefinition SERVER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SERVER, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
@@ -150,7 +154,7 @@ class KerberosSecurityFactoryDefinition {
             .build();
 
     static ResourceDefinition getKerberosSecurityFactoryDefinition() {
-        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
+        final AttributeDefinition[] attributes = new AttributeDefinition[] { PRINCIPAL, RELATIVE_TO, PATH,  MINIMUM_REMAINING_LIFETIME, REQUEST_LIFETIME, FAIL_CACHE, SERVER, OBTAIN_KERBEROS_TICKET, DEBUG, MECHANISM_NAMES, MECHANISM_OIDS, WRAP_GSS_CREDENTIAL, REQUIRED, OPTIONS };
         TrivialAddHandler<CredentialSecurityFactory> add = new TrivialAddHandler<CredentialSecurityFactory>(CredentialSecurityFactory.class, attributes, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY) {
 
             @Override
@@ -158,6 +162,7 @@ class KerberosSecurityFactoryDefinition {
                 final String principal = PRINCIPAL.resolveModelAttribute(context, model).asString();
                 final int minimumRemainingLifetime = MINIMUM_REMAINING_LIFETIME.resolveModelAttribute(context, model).asInt();
                 final int requestLifetime = REQUEST_LIFETIME.resolveModelAttribute(context, model).asInt();
+                final int failCache = FAIL_CACHE.resolveModelAttribute(context, model).asInt(0);
                 final boolean server = SERVER.resolveModelAttribute(context, model).asBoolean();
                 final boolean obtainKerberosTicket = OBTAIN_KERBEROS_TICKET.resolveModelAttribute(context, model).asBoolean();
                 final boolean debug = DEBUG.resolveModelAttribute(context, model).asBoolean();
@@ -177,7 +182,7 @@ class KerberosSecurityFactoryDefinition {
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<>();
                 final String path = PATH.resolveModelAttribute(context, model).asString();
-                final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
@@ -208,13 +213,16 @@ class KerberosSecurityFactoryDefinition {
                         .setKeyTab(resolvedPath)
                         .setMinimumRemainingLifetime(minimumRemainingLifetime)
                         .setRequestLifetime(requestLifetime)
+                        .setFailCache(failCache)
                         .setIsServer(server)
                         .setObtainKerberosTicket(obtainKerberosTicket)
                         .setDebug(debug)
                         .setWrapGssCredential(wrapGssCredential)
                         .setCheckKeyTab(required)
                         .setOptions(options);
-                    mechanismOids.forEach(builder::addMechanismOid);
+                    for (Oid mechanismOid : mechanismOids) {
+                        builder.addMechanismOid(mechanismOid);
+                    }
 
                     try {
                         return CredentialSecurityFactory.from(builder.build());

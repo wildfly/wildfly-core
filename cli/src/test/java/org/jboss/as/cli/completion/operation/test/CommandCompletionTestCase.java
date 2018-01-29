@@ -80,7 +80,7 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidates() {
         // usual case, test cursor is next to "operation-p", it should find 2 candidates
-        List<String> candidates = fetchCandidates(OPERATION, OPERATION.length(), false);
+        List<String> candidates = fetchCandidates(OPERATION, OPERATION.length(), false).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION3, OPERATION2), candidates);
     }
@@ -88,7 +88,7 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesCursorMoveLeft() {
         // test cursor moves to left next to "operation", it should find 3 candidates
-        List<String> candidates = fetchCandidates(OPERATION, 9, false);
+        List<String> candidates = fetchCandidates(OPERATION, 9, false).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION1, OPERATION3, OPERATION2), candidates);
     }
@@ -96,7 +96,7 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesCursorMoveRight() {
         // test cursor moves to way right to "operation-p", it should find 2 candidates
-        List<String> candidates = fetchCandidates(OPERATION, OPERATION.length() + 10, false);
+        List<String> candidates = fetchCandidates(OPERATION, OPERATION.length() + 10, false).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION3, OPERATION2), candidates);
     }
@@ -104,7 +104,7 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesWithMultipleLines() {
         // test cursor moves to new line in multiples lines context, it should find 2 candidates
-        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 6, true);
+        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 6, true).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION3, OPERATION2), candidates);
     }
@@ -112,7 +112,7 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesWithMultipleLinesCursorMoveLeft() {
         // test cursor moves to left in multiples lines context, it should find 3 candidates
-        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 1, true);
+        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 1, true).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION1, OPERATION3, OPERATION2), candidates);
     }
@@ -120,25 +120,66 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesWithMultipleLinesCursorMoveRight() {
         // test cursor moves to left in multiples lines context, it should find 2 candidates
-        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, OPERATION_MULTILINES_FULL.length() + 10, true);
+        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, OPERATION_MULTILINES_FULL.length() + 10, true).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION3, OPERATION2), candidates);
     }
 
-    protected List<String> fetchCandidates(String buffer, int cursor, boolean multiLines) {
+    @Test
+    public void testTrailingSpacesAtEnd() {
+        //spaces plus common prefix - ":   operation-p[TAB]"
+        String prefix = ":   ";
+        String buffer = prefix + OPERATION.substring(1);
+        FetchResult result = fetchCandidates(buffer, buffer.length(), false);
+        assertNotNull(result.getCandidates());
+        assertEquals(Arrays.asList(OPERATION3, OPERATION2), result.getCandidates());
+        assertEquals(prefix.length(), result.getPosition());
+    }
+
+    @Test
+    public void testTrailingSpacesWithSuffix() {
+        //operation - prefix - non empty string = ":   operation-p[TAB]()"
+        String prefix = ":   ";
+        String buffer = prefix + OPERATION.substring(1) + "()";
+        FetchResult result = fetchCandidates(buffer, buffer.length() - 2, false);
+        assertNotNull(result.getCandidates());
+        assertEquals(Arrays.asList(OPERATION3, OPERATION2), result.getCandidates());
+        assertEquals(prefix.length(), result.getPosition());
+    }
+
+    protected FetchResult fetchCandidates(String buffer, int cursor, boolean multiLines) {
         ArrayList<String> candidates = new ArrayList<String>();
+        int position = 0;
         try {
             ctx.parseCommandLine(buffer, false);
         } catch (CommandFormatException e) {
-            return Collections.emptyList();
+            return new FetchResult(Collections.emptyList(), 0);
         }
         if (multiLines) {
-            cmdCompleter.complete(ctx, OPERATION_MULTILINES_NEWLINE, cursor, candidates);
+            position = cmdCompleter.complete(ctx, OPERATION_MULTILINES_NEWLINE, cursor, candidates);
         } else {
-            cmdCompleter.complete(ctx, buffer, cursor, candidates);
+            position = cmdCompleter.complete(ctx, buffer, cursor, candidates);
         }
 
-        return candidates;
+        return new FetchResult(candidates, position);
+    }
+
+    private static class FetchResult {
+        private final List<String> candidates;
+        private final int position;
+
+        public FetchResult(List<String> candidates, int position) {
+            this.candidates = candidates;
+            this.position = position;
+        }
+
+        public List<String> getCandidates() {
+            return candidates;
+        }
+
+        public int getPosition() {
+            return position;
+        }
     }
 
 }

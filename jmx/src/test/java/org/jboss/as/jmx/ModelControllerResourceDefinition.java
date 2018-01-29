@@ -54,6 +54,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -209,7 +210,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         final SimpleAttributeDefinition param4 = new SimpleAttributeDefinitionBuilder("param4", ModelType.INT)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode(6))
-                        //.setValidator(new IntRangeValidator(5,10,true,false)) //todo expressions & min/max dont match well WFLY-3500
+                .setValidator(new IntRangeValidator(5,10))
                 .setAllowExpression(allowExpressions)
                 .build();
 
@@ -244,8 +245,8 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             invoked = true;
-            long l = operation.get("param1").resolve().asLong() + context.readResource(PathAddress.EMPTY_ADDRESS).getModel().get("int").asInt() + operation.get("param3", "test").resolve().asInt();
-            context.getResult().set(operation.get("param2").resolve().asList().get(0).asString() + l);
+            long l = context.resolveExpressions(operation.get("param1")).asLong() + context.readResource(PathAddress.EMPTY_ADDRESS).getModel().get("int").asInt() + context.resolveExpressions(operation.get("param3", "test")).asInt();
+            context.getResult().set(context.resolveExpressions(operation.get("param2")).asList().get(0).asString() + l);
         }
 
         private static class IntAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator{

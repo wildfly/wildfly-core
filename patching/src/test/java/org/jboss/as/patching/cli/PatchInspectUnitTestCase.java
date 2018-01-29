@@ -77,8 +77,6 @@ public class PatchInspectUnitTestCase extends AbstractTaskTestCase {
     @Before
     public void before() throws Exception {
         bytesOs = new ByteArrayOutputStream();
-        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        System.setProperty("aesh.terminal","org.jboss.aesh.terminal.TestTerminal");
         ctx = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
     }
 

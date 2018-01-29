@@ -42,7 +42,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
@@ -132,8 +132,8 @@ public class WildcardReadResourceUnitTestCase extends AbstractControllerTestBase
         GlobalOperationHandlers.registerGlobalOperations(root, processType);
         root.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        root.registerOperationHandler(new SimpleOperationDefinition("setup",
-                new NonResolvingResourceDescriptionResolver()), new OperationStepHandler() {
+        root.registerOperationHandler(SimpleOperationDefinitionBuilder.of("setup",
+                new NonResolvingResourceDescriptionResolver()).build(), new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 

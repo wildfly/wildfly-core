@@ -42,7 +42,6 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.junit.Assume;
 import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
@@ -65,6 +64,7 @@ import org.wildfly.test.security.common.elytron.SimpleSecurityDomain;
 import org.wildfly.test.security.common.elytron.SimpleSecurityDomain.SecurityDomainRealm;
 import org.wildfly.test.security.common.other.SimpleMgmtNativeInterface;
 import org.wildfly.test.security.common.other.SimpleSocketBinding;
+import org.wildfly.test.security.common.other.TrustedDomainsConfigurator;
 
 /**
  * Parent class for management interface SASL tests.
@@ -85,6 +85,7 @@ public abstract class AbstractMgmtSaslTestBase {
     protected static final String DIGEST_ALGORITHM_MD5 = "digest-md5";
     protected static final String DIGEST_ALGORITHM_SHA = "digest-sha";
     protected static final String DIGEST_ALGORITHM_SHA256 = "digest-sha-256";
+    protected static final String DIGEST_ALGORITHM_SHA384 = "digest-sha-384";
     protected static final String DIGEST_ALGORITHM_SHA512 = "digest-sha-512";
 
     protected static final int CONNECTION_TIMEOUT_IN_MS = TimeoutUtil.adjust(6 * 1000);
@@ -125,11 +126,10 @@ public abstract class AbstractMgmtSaslTestBase {
             LOGGER.info("We don't test ANONYMOUS mechanism with wrong user credentials.");
             return;
         }
-        Assume.assumeFalse("ELY-1203 - Skipping PLAIN mechanism.", "PLAIN".equals(mechanismName));
 
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
-                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName))
-                .useName(USERNAME).usePassword("wrongPassword").useProviders(() -> new Provider[] { PROVIDER_ELYTRON });
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName)).useName(USERNAME)
+                .usePassword("wrongPassword").useProviders(() -> new Provider[] { PROVIDER_ELYTRON });
         AuthenticationContext.empty().with(MatchRule.ALL, authnCfg).run(() -> assertAuthenticationFails());
     }
 
@@ -157,12 +157,12 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherMechsFail() throws Exception {
-        Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256",
-                "DIGEST-SHA-512", "PLAIN", "SCRAM-SHA-1", "JBOSS-LOCAL-USER").forEach(s -> {
-                    if (!getMechanism().equals(s)) {
-                        assertMechFails(s);
-                    }
-                });
+        for (String s : Arrays.asList("ANONYMOUS", "", "1" + getMechanism(), getMechanism() + "1", "DIGEST-MD5", "DIGEST-SHA", "DIGEST-SHA-256", "DIGEST-SHA-384",
+            "DIGEST-SHA-512", "PLAIN", "SCRAM-SHA-1", "JBOSS-LOCAL-USER")) {
+            if (! getMechanism().equals(s)) {
+                assertMechFails(s);
+            }
+        }
     }
 
     /**
@@ -171,12 +171,12 @@ public abstract class AbstractMgmtSaslTestBase {
      */
     @Test
     public void testOtherDigestMechsFail() throws Exception {
-        Arrays.asList("MD5", "SHA", "SHA-256", "SHA-512").forEach(s -> {
+        for (String s : Arrays.asList("MD5", "SHA", "SHA-256", "SHA-384", "SHA-512")) {
             final String mech = "DIGEST-" + s;
-            if (!getMechanism().equals(mech)) {
+            if (! getMechanism().equals(mech)) {
                 assertDigestMechFails(mech, mech.toLowerCase(Locale.ROOT));
             }
-        });
+        }
     }
 
     /**
@@ -190,7 +190,17 @@ public abstract class AbstractMgmtSaslTestBase {
      * Asserts that execution of :whoami operation fail (custom message is used).
      */
     protected static void assertAuthenticationFails(String message) {
+        assertAuthenticationFails(message, null);
+    }
+
+    /**
+     * Asserts that execution of :whoami operation fail (custom message is used).
+     */
+    protected static void assertAuthenticationFails(String message, Class<? extends Exception> clazz) {
         final long startTime = System.currentTimeMillis();
+        if (clazz == null) {
+            clazz = SaslException.class;
+        }
         try {
             executeWhoAmI();
             fail(message);
@@ -200,8 +210,8 @@ public abstract class AbstractMgmtSaslTestBase {
             Throwable cause = e.getCause();
             assertThat("ConnectionException was expected as a cause when SASL authentication fails", cause,
                     is(instanceOf(ConnectException.class)));
-            assertThat("SaslException was expected as the second cause when SASL authentication fails", cause.getCause(),
-                    is(instanceOf(SaslException.class)));
+            assertThat("An unexpected second Exception cause came when authentication failed", cause.getCause(),
+                    is(instanceOf(clazz)));
         }
     }
 
@@ -238,8 +248,7 @@ public abstract class AbstractMgmtSaslTestBase {
 
     protected AuthenticationContext createValidConfigForMechanism(String mechanismName, String username) {
         AuthenticationConfiguration authnCfg = AuthenticationConfiguration.empty()
-                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName))
-                .useDefaultProviders();
+                .setSaslMechanismSelector(SaslMechanismSelector.fromString(mechanismName));
         if ("ANONYMOUS".equals(mechanismName)) {
             authnCfg = authnCfg.useAnonymous();
         } else if ("OAUTHBEARER".equals(mechanismName)) {
@@ -308,6 +317,8 @@ public abstract class AbstractMgmtSaslTestBase {
                 .withRealms(SecurityDomainRealm.builder().withRealm(NAME).build(),
                         SecurityDomainRealm.builder().withRealm("JWT").build())
                 .withRoleMapper(NAME).build());
+        elements.add(
+                TrustedDomainsConfigurator.builder().withName("ManagementDomain").withTrustedSecurityDomains(NAME).build());
 
         elements.add(new ConfigurableElement() {
 
@@ -321,27 +332,22 @@ public abstract class AbstractMgmtSaslTestBase {
 
             @Override
             public void create(ModelControllerClient client, CLIWrapper cli) throws Exception {
-                cli.sendLine(String.format(
-                        "/subsystem=elytron/security-domain=ManagementDomain:write-attribute(name=trusted-security-domains, value=[%s])",
-                        NAME));
-
                 // identities with digested PWD
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_MD5);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA256);
+                addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA384);
                 addUserWithDigestPass(cli, DIGEST_ALGORITHM_SHA512);
             }
 
             @Override
             public void remove(ModelControllerClient client, CLIWrapper cli) throws Exception {
-                cli.sendLine(
-                        "/subsystem=elytron/security-domain=ManagementDomain:undefine-attribute(name=trusted-security-domains)");
                 // no need to remove identities, they'll be resolved with removing the FS realm
             }
 
             @Override
             public String getName() {
-                return "domain-trust-and-identities";
+                return "identities-with-digest-passwords";
             }
         });
 

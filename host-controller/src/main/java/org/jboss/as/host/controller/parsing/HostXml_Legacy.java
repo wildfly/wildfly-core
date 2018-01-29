@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGNORED_RESOURCE_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IS_DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -82,7 +83,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -93,7 +93,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
+import org.jboss.as.host.controller.operations.HostAddHandler;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
@@ -105,7 +105,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 
 /**
@@ -115,7 +114,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
+final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
     private final AuditLogXml auditLogDelegate;
 
@@ -162,12 +161,6 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             }
             throw unexpectedElement(reader);
         }
-    }
-
-    @Override
-    public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-        throw new UnsupportedOperationException();
     }
 
     private void readHostElement_1_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
@@ -218,7 +211,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+         final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -241,12 +234,12 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
 
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this);
+            ManagementXml managementXml = ManagementXml.newInstance(DOMAIN_1_0, this, false);
             managementXml.parseManagement(reader, address, list, false);
             element = nextElement(reader, DOMAIN_1_0);
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, DOMAIN_1_0);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -316,7 +309,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+        final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -341,14 +334,14 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -426,7 +419,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
 
         // The following also updates the address parameter so this address can be used for future operations
         // in the context of this host.
-        addLocalHost(address, list, hostName);
+        final ModelNode hostAddOp = addLocalHost(address, list, hostName);
         // The namespace operations were created before the host name was known, the address can now be updated
         // to the local host specific address.
         for (ModelNode operation : namespaceOperations) {
@@ -455,14 +448,14 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {
-            ManagementXml managementXml = ManagementXml.newInstance(namespace, this);
+            ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, true);
             element = nextElement(reader, namespace);
         } else {
             throw missingRequiredElement(reader, EnumSet.of(Element.MANAGEMENT));
         }
         if (element == Element.DOMAIN_CONTROLLER) {
-            parseDomainController(reader, address, list);
+            parseDomainController(reader, address, list, hostAddOp);
             element = nextElement(reader, namespace);
         }
         final Set<String> interfaceNames = new HashSet<String>();
@@ -982,7 +975,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     /**
      * Add the operation to add the local host definition.
      */
-    private void addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
+    private ModelNode addLocalHost(final ModelNode address, final List<ModelNode> operationList, final String hostName) {
 
         String resolvedHost =  hostName != null ? hostName : defaultHostControllerName;
 
@@ -990,20 +983,20 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         address.add(HOST, resolvedHost);
 
         // Add a step to setup the ManagementResourceRegistrations for the root host resource
-        final ModelNode hostAdd = new ModelNode();
-        hostAdd.get(OP).set(HostModelRegistrationHandler.OPERATION_NAME);
-        hostAdd.get(NAME).set(resolvedHost);
-        hostAdd.get(OP_ADDR).setEmptyList();
+        final ModelNode hostAddOp = new ModelNode();
+        hostAddOp.get(OP).set(HostAddHandler.OPERATION_NAME);
+        hostAddOp.get(OP_ADDR).set(address);
 
-        operationList.add(hostAdd);
+        operationList.add(hostAddOp);
 
         // Add a step to store the HC name
         ModelNode nameValue = hostName == null ? new ModelNode() : new ModelNode(hostName);
         final ModelNode writeName = Util.getWriteAttributeOperation(address, NAME, nameValue);
         operationList.add(writeName);
+        return hostAddOp;
     }
 
-    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
+    private void parseDomainController(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final ModelNode hostAddOp)
             throws XMLStreamException {
 
         requireNoAttributes(reader);
@@ -1020,6 +1013,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasRemote) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.REMOTE.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(true);
                     switch (namespace.getMajorVersion()) {
                         case 1:
                             requireNoAttributes(reader);
@@ -1038,6 +1032,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                     } else if (hasLocal) {
                         throw ControllerLogger.ROOT_LOGGER.childAlreadyDeclared(Element.LOCAL.getLocalName(), Element.DOMAIN_CONTROLLER.getLocalName(), reader.getLocation());
                     }
+                    hostAddOp.get(IS_DOMAIN_CONTROLLER).set(false);
                     switch (namespace) {
                         case DOMAIN_1_0:
                             parseRemoteDomainController1_0(reader, address, list);
@@ -1061,7 +1056,6 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                             }
                             break;
                     }
-
                     hasRemote = true;
                     break;
                 }
@@ -1071,13 +1065,6 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
         if (!hasLocal && !hasRemote) {
             throw ControllerLogger.ROOT_LOGGER.domainControllerMustBeDeclared(Element.REMOTE.getLocalName(), Element.LOCAL.getLocalName(), reader.getLocation());
-        }
-
-        if (hasLocal) {
-            final ModelNode update = new ModelNode();
-            update.get(OP_ADDR).set(address);
-            update.get(OP).set("write-local-domain-controller");
-            list.add(update);
         }
     }
 
@@ -1156,7 +1143,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseRemoteDomainController_1_6(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        boolean requireDiscoveryOptions = false;
+        boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
 
         requireDiscoveryOptions = parseRemoteDomainControllerAttributes_1_5(reader, address, list, true);
@@ -1195,7 +1182,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
     }
 
     private void parseRemoteDomainController_2_0(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
-        boolean requireDiscoveryOptions = false;
+        boolean requireDiscoveryOptions;
         boolean hasDiscoveryOptions = false;
         if (namespace.getMajorVersion()< 3) {
             requireDiscoveryOptions = parseRemoteDomainControllerAttributes_2_0(reader, address, list);
@@ -1630,8 +1617,8 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         list.add(op);
     }
 
-    protected void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
-            final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOptions(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames,
+                                       final Set<String> discoveryOptionNames) throws XMLStreamException {
         requireNoAttributes(reader);
 
         // Handle elements
@@ -1651,7 +1638,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
-    protected void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
+    private void parseStaticDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> staticDiscoveryOptionNames) throws XMLStreamException {
 
         // OP_ADDR will be set after parsing the NAME attribute
         final ModelNode staticDiscoveryOptionAddress = address.clone();
@@ -1703,7 +1690,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         requireNoContent(reader);
     }
 
-    protected void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
+    private void parseDiscoveryOption(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list, final Set<String> discoveryOptionNames) throws XMLStreamException {
 
         // Handle attributes
         final ModelNode addOp = parseDiscoveryOptionAttributes(reader, address, list, discoveryOptionNames);
@@ -1767,7 +1754,7 @@ class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
         return addOp;
     }
 
-    protected void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
+    private void parseDiscoveryOptionProperty(XMLExtendedStreamReader reader, ModelNode discoveryOptionProperties) throws XMLStreamException {
         String propertyName = null;
         String propertyValue = null;
         EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);

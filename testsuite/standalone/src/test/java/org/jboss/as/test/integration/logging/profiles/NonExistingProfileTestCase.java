@@ -54,7 +54,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
 
     private static final String LOG_FILE_NAME = "non-existing-profile-test.log";
-    private static final String RUNTIME_NAME = "test-logging.jar";
     private static final Path loggingTestLog = Paths.get(resolveRelativePath("jboss.server.log.dir"), LOG_FILE_NAME);
 
     static class NonExistingProfileTestCaseSetup implements ServerSetupTask {
@@ -101,12 +100,12 @@ public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
 
     @BeforeClass
     public static void deploy() throws Exception {
-        deploy(createDeployment(Collections.singletonMap("Logging-Profile", "non-existing-profile")), RUNTIME_NAME);
+        deploy(createDeployment(Collections.singletonMap("Logging-Profile", "non-existing-profile")), DEPLOYMENT_NAME);
     }
 
     @AfterClass
     public static void undeploy() throws Exception {
-        undeploy("test-logging.jar");
+        undeploy(DEPLOYMENT_NAME);
     }
 
     @Test
@@ -147,7 +146,7 @@ public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
     @Test
     public void testDeploymentConfigurationResource() throws Exception {
         // Get the resulting model
-        final ModelNode loggingConfiguration = readDeploymentResource(RUNTIME_NAME, "default");
+        final ModelNode loggingConfiguration = readDeploymentResource(DEPLOYMENT_NAME, "default");
 
         Assert.assertTrue("No logging subsystem resource found on the deployment", loggingConfiguration.isDefined());
 

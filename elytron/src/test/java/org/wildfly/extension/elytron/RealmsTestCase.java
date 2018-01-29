@@ -164,7 +164,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         credentials.add(new PasswordCredential(factory.generatePassword(spec)));
 
         PasswordFactory factoryOtp = PasswordFactory.getInstance(OneTimePassword.ALGORITHM_OTP_SHA1);
-        KeySpec specOtp = new OneTimePasswordSpec(new byte[]{0x12}, new byte[]{0x34}, 56789);
+        KeySpec specOtp = new OneTimePasswordSpec(new byte[]{0x12}, "4", 56789);
         credentials.add(new PasswordCredential(factoryOtp.generatePassword(specOtp)));
 
         identity1.setCredentials(credentials);
@@ -180,7 +180,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         // obtain OTP
         OneTimePassword otp = identity2.getCredential(PasswordCredential.class, OneTimePassword.ALGORITHM_OTP_SHA1).getPassword(OneTimePassword.class);
         Assert.assertArrayEquals(new byte[]{0x12}, otp.getHash());
-        Assert.assertArrayEquals(new byte[]{0x34}, otp.getSeed());
+        Assert.assertEquals("4", otp.getSeed());
         Assert.assertEquals(56789, otp.getSequenceNumber());
         identity2.dispose();
 

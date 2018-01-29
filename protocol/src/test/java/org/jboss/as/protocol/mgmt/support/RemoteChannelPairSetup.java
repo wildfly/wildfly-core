@@ -133,7 +133,7 @@ public class RemoteChannelPairSetup implements RemotingChannelPairSetup {
     }
 
     public void shutdownRemoting() throws IOException, InterruptedException {
-        channelServer.close();
+        IoUtils.safeClose(channelServer);
         executorService.shutdown();
         executorService.awaitTermination(1L, TimeUnit.DAYS);
         executorService.shutdownNow();

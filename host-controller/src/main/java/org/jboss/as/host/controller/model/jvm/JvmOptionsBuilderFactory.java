@@ -185,7 +185,7 @@ public class JvmOptionsBuilderFactory {
 
         @Override
         boolean checkAdditionalJvmOption(String option) {
-            if (JVM_MAJOR_VERSION==9){
+            if (JVM_MAJOR_VERSION >= 9 ) {//when java 11 comes, make sure this params are still fine.
                 return true; //all params are fine
             }else if (ALLOWED_JDK9_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)){ //drop jdk9 specific params on jdk 8
                 return false;

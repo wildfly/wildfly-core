@@ -39,8 +39,8 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.management.security.WhoAmIOperation;
 import org.jboss.as.host.controller.descriptions.HostEnvironmentResourceDefinition;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
+import org.jboss.as.host.controller.model.host.HostDefinition;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
-import org.jboss.as.host.controller.operations.HostModelRegistrationHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.LocalDomainControllerRemoveHandler;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
@@ -83,11 +83,11 @@ public class HostModelUtil {
                                           final HostModelRegistrar hostModelRegistrar,
                                           final ProcessType processType,
                                           final DelegatingConfigurableAuthorizer authorizer,
-                                          final Resource modelControllerResource) {
-        // Add of the host itself
-        final HostModelRegistrationHandler hostModelRegistratorHandler =
-                new HostModelRegistrationHandler(environment, ignoredDomainResourceRegistry, hostModelRegistrar, modelControllerResource);
-        root.registerOperationHandler(HostModelRegistrationHandler.DEFINITION, hostModelRegistratorHandler);
+                                          final Resource modelControllerResource,
+                                          final LocalHostControllerInfoImpl localHostControllerInfo) {
+
+        // register HostDefinition for /host=*:add()
+        root.registerSubModel(new HostDefinition(root, environment, ignoredDomainResourceRegistry, hostModelRegistrar, processType, authorizer, modelControllerResource, localHostControllerInfo));
 
         // Global operations
         GlobalOperationHandlers.registerGlobalOperations(root, processType);

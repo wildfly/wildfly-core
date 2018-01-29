@@ -19,15 +19,14 @@
 
 <config default-supplement="standalone" >
     <extension-module>org.wildfly.extension.elytron</extension-module>
-    <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+    <subsystem xmlns="urn:wildfly:elytron:2.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
         <providers>
-            <provider-loader name="elytron" module="org.wildfly.security.elytron" />
-            <provider-loader name="openssl" module="org.wildfly.openssl" />
-
             <aggregate-providers name="combined-providers">
                 <providers name="elytron" />
                 <providers name="openssl" />
             </aggregate-providers>
+            <provider-loader name="elytron" module="org.wildfly.security.elytron" />
+            <provider-loader name="openssl" module="org.wildfly.openssl" />
         </providers>
 
         <?AUDIT_DEFINITIONS?>
@@ -42,16 +41,16 @@
         </security-realms>
 
         <mappers>
-            <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
-            <simple-permission-mapper name="anonymous-permission-mapper">
-                <permission-mapping principals="anonymous">
-                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+            <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+                <permission-mapping>
+                    <principal name="anonymous"/>
+                    <?ADDITIONAL_PERMISSIONS?>
+                </permission-mapping>
+                <permission-mapping match-all="true">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
+                    <?ADDITIONAL_PERMISSIONS?>
                 </permission-mapping>
             </simple-permission-mapper>
-            <constant-permission-mapper name="constant-permission-mapper">
-                <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
-                <?ADDITIONAL_PERMISSIONS?>
-            </constant-permission-mapper>
 
             <constant-realm-mapper name="local" realm-name="local" />
 
@@ -69,17 +68,17 @@
 
         <sasl>
             <?SASL_DEFINITIONS?>
-            <provider-sasl-server-factory name="global"/>
-            <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
-                <filters>
-                    <filter provider-name="WildFlyElytron" />
-                </filters>
-            </mechanism-provider-filtering-sasl-server-factory>
             <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
                 <properties>
                     <property name="wildfly.sasl.local-user.default-user" value="$local" />
                 </properties>
             </configurable-sasl-server-factory>
+            <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
+                <filters>
+                    <filter provider-name="WildFlyElytron" />
+                </filters>
+            </mechanism-provider-filtering-sasl-server-factory>
+            <provider-sasl-server-factory name="global"/>
         </sasl>
     </subsystem>
 
@@ -90,7 +89,7 @@
             </audit-logging>
         </replacement>
         <replacement placeholder="DOMAIN_DEFINITIONS">
-            <security-domain name="ApplicationDomain" default-realm="ApplicationRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
+            <security-domain name="ApplicationDomain" default-realm="ApplicationRealm" permission-mapper="default-permission-mapper">
                 <realm name="ApplicationRealm" role-decoder="groups-to-roles" />
             </security-domain>
         </replacement>
@@ -137,7 +136,7 @@
             </audit-logging>
         </replacement>
         <replacement placeholder="DOMAIN_DEFINITIONS">
-            <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
+            <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
                 <realm name="ManagementRealm" role-decoder="groups-to-roles" />
                 <realm name="local" role-mapper="super-user-mapper"/>
             </security-domain>
@@ -176,12 +175,12 @@
             </audit-logging>
         </replacement>
         <replacement placeholder="DOMAIN_DEFINITIONS">
-            <security-domain name="ApplicationDomain" default-realm="ApplicationRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
+            <security-domain name="ApplicationDomain" default-realm="ApplicationRealm" permission-mapper="default-permission-mapper">
                 <realm name="ApplicationRealm" role-decoder="groups-to-roles" />
                 <realm name="local"/>
             </security-domain>
 
-            <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
+            <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
                 <realm name="ManagementRealm" role-decoder="groups-to-roles" />
                 <realm name="local" role-mapper="super-user-mapper"/>
             </security-domain>

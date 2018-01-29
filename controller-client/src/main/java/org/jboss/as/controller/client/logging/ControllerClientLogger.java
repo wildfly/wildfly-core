@@ -24,6 +24,10 @@ package org.jboss.as.controller.client.logging;
 
 import static org.jboss.logging.Logger.Level.WARN;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+
 import org.jboss.as.controller.client.helpers.domain.DeploymentAction.Type;
 import org.jboss.as.controller.client.helpers.domain.RollbackCancelledException;
 import org.jboss.logging.BasicLogger;
@@ -32,10 +36,6 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -96,13 +96,13 @@ public interface ControllerClientLogger extends BasicLogger {
     @Message(id = 5, value = "Cannot use a DeploymentPlan not created by this manager")
     IllegalArgumentException cannotUseDeploymentPlan();
 
-    /**
-     * Creates an exception indicating the channel is closed.
-     *
-     * @return an {@link IOException} for the error.
-     */
-    @Message(id = 6, value = "Channel closed")
-    IOException channelClosed(@Cause IOException cause);
+//    /**
+//     * Creates an exception indicating the channel is closed.
+//     *
+//     * @return an {@link IOException} for the error.
+//     */
+//    @Message(id = 6, value = "Channel closed")
+//    IOException channelClosed(@Cause IOException cause);
 
     /**
      * A message indicating a deployment with the {@code name} is already present in the domain.
@@ -221,15 +221,15 @@ public interface ControllerClientLogger extends BasicLogger {
     @Message(id = 17, value = "Screen real estate is expensive; displayUnits must be 5 characters or less")
     RuntimeException maxDisplayUnitLength();
 
-    /**
-     * Creates an exception indicating no active request found for the batch id.
-     *
-     * @param batchId the batch id.
-     *
-     * @return an {@link IOException} for the error.
-     */
-    @Message(id = 18, value = "No active request found for %d")
-    IOException noActiveRequest(int batchId);
+//    /**
+//     * Creates an exception indicating no active request found for the batch id.
+//     *
+//     * @param batchId the batch id.
+//     *
+//     * @return an {@link IOException} for the error.
+//     */
+//    @Message(id = 18, value = "No active request found for %d")
+//    IOException noActiveRequest(int batchId);
 
     /**
      * A message indicating that no failure details were provided.

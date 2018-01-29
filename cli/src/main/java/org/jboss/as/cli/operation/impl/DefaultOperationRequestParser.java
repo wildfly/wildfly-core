@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.operation.impl;
 
+import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -60,6 +61,16 @@ public class DefaultOperationRequestParser implements CommandLineParser {
     public static final String PARENT_NODE = "..";
     public static final String NODE_TYPE = ".type";
 */
+    private final CommandContext ctx;
+
+    public DefaultOperationRequestParser() {
+        this(null);
+    }
+
+    public DefaultOperationRequestParser(CommandContext ctx) {
+        this.ctx = ctx;
+    }
+
     @Override
     public void parse(String operationRequest, final CallbackHandler handler) throws OperationFormatException {
 
@@ -68,7 +79,7 @@ public class DefaultOperationRequestParser implements CommandLineParser {
         }
 
         try {
-            ParserUtil.parseOperationRequest(operationRequest, handler);
+            ParserUtil.parseOperationRequest(operationRequest, handler, ctx);
         } catch (CommandFormatException e) {
             throw new OperationFormatException("Failed to parse '" + operationRequest + "'", e);
         }

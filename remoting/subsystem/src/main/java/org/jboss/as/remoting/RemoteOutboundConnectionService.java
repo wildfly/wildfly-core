@@ -25,6 +25,7 @@ package org.jboss.as.remoting;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.util.function.Supplier;
 
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -70,9 +71,10 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
     private final String username;
     private final String protocol;
 
-    private AuthenticationConfiguration configuration;
     private URI destination;
     private SSLContext sslContext;
+
+    private Supplier<AuthenticationConfiguration> authenticationConfiguration;
 
     public RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
         super();
@@ -94,7 +96,6 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
     }
 
     public void start(final StartContext context) throws StartException {
-        AuthenticationConfiguration configuration;
         final OutboundSocketBinding binding = destinationOutboundSocketBindingInjectedValue.getValue();
         final String hostName = NetworkUtils.formatPossibleIpv6Address(binding.getUnresolvedDestinationAddress());
         final int port = binding.getDestinationPort();
@@ -108,7 +109,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
         }
         final AuthenticationContext injectedContext = this.authenticationContext.getOptionalValue();
         if (injectedContext != null) {
-            configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null);
+            AuthenticationConfiguration configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null);
             try {
                 sslContext = AUTH_CONFIGURATION_CLIENT.getSSLContext(uri, injectedContext);
             } catch (GeneralSecurityException e) {
@@ -117,15 +118,17 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
             // if the protocol is specified in the authentication configuration, use it in the destination URI
             final String realProtocol = AUTH_CONFIGURATION_CLIENT.getRealProtocol(configuration);
             try {
-                uri = new URI(realProtocol == null ? Protocol.HTTP_REMOTING.toString() : realProtocol, username, hostName, port, null, null, null);
+                uri = new URI(realProtocol == null ? Protocol.REMOTE_HTTP.toString() : realProtocol, username, hostName, port, null, null, null);
             } catch (URISyntaxException e) {
                 throw new StartException(e);
             }
+            URI finalUri = uri;
+            authenticationConfiguration = () -> AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(finalUri, injectedContext);
         } else {
             final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
+            AuthenticationConfiguration configuration = AuthenticationConfiguration.empty();
             if (securityRealm != null) {
                 // legacy remote-outbound-connection configuration
-                configuration = AuthenticationConfiguration.empty();
                 if (username != null) {
                     configuration = configuration
                             .useName(username)
@@ -137,25 +140,26 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
                 }
                 sslContext = securityRealm.getSSLContext();
             } else {
-                configuration = AuthenticationConfiguration.empty();
                 sslContext = null;
             }
+            AuthenticationConfiguration finalConfiguration = configuration;
+            authenticationConfiguration = () -> finalConfiguration;
         }
-        final OptionMap optionMap = this.connectionCreationOptions;
-        if (optionMap != null) {
-            configuration = RemotingOptions.mergeOptionsIntoAuthenticationConfiguration(optionMap, configuration);
-        }
-        this.configuration = configuration;
         this.destination = uri;
         this.sslContext = sslContext;
     }
 
     public void stop(final StopContext context) {
-        this.configuration = null;
+        authenticationConfiguration = null;
     }
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
-        return configuration;
+        AuthenticationConfiguration authenticationConfiguration = this.authenticationConfiguration.get();
+        final OptionMap optionMap = this.connectionCreationOptions;
+        if (optionMap != null) {
+            return RemotingOptions.mergeOptionsIntoAuthenticationConfiguration(optionMap, authenticationConfiguration);
+        }
+        return authenticationConfiguration;
     }
 
     public SSLContext getSSLContext() {

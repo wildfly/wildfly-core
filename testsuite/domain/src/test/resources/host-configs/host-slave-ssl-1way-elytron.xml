@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host xmlns="urn:jboss:domain:5.0" name="slave">
+<host xmlns="urn:jboss:domain:6.0" name="slave">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -229,7 +229,7 @@
                     </key-store>
                 </key-stores>
                 <trust-managers>
-                    <trust-manager name="oneWayTM" algorithm="SunX509" key-store="oneWayTS"/>
+                    <trust-manager name="oneWayTM" key-store="oneWayTS"/>
                 </trust-managers>
                 <client-ssl-contexts>
                     <client-ssl-context name="oneWayCSC" protocols="TLSv1.2" trust-manager="oneWayTM"/>

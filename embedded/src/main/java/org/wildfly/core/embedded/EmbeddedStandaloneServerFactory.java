@@ -47,7 +47,6 @@ import org.jboss.as.server.Main;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.SystemExiter;
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
@@ -138,7 +137,7 @@ public class EmbeddedStandaloneServerFactory {
             if (prop == null) {
                 File dir = new File(jbossHomeDir, "standalone" + File.separator + relativeLocation);
                 if (mustExist && (!dir.exists() || !dir.isDirectory())) {
-                    throw ServerLogger.ROOT_LOGGER.embeddedServerDirectoryNotFound("standalone" + File.separator + relativeLocation, jbossHomeDir.getAbsolutePath());
+                    throw EmbeddedLogger.ROOT_LOGGER.embeddedServerDirectoryNotFound("standalone" + File.separator + relativeLocation, jbossHomeDir.getAbsolutePath());
                 }
                 return dir;
             } else {
@@ -175,10 +174,10 @@ public class EmbeddedStandaloneServerFactory {
 
     private static void validateDirectory(String property, File file) {
         if (!file.exists()) {
-            throw ServerLogger.ROOT_LOGGER.propertySpecifiedFileDoesNotExist(property, file.getAbsolutePath());
+            throw EmbeddedLogger.ROOT_LOGGER.propertySpecifiedFileDoesNotExist(property, file.getAbsolutePath());
         }
         if (!file.isDirectory()) {
-            throw ServerLogger.ROOT_LOGGER.propertySpecifiedFileIsNotADirectory(property, file.getAbsolutePath());
+            throw EmbeddedLogger.ROOT_LOGGER.propertySpecifiedFileIsNotADirectory(property, file.getAbsolutePath());
         }
     }
 
@@ -194,7 +193,7 @@ public class EmbeddedStandaloneServerFactory {
                         copyDirectory(srcFile, destFile);
                     }
                 } catch (IOException e) {
-                    throw ServerLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
+                    throw EmbeddedLogger.ROOT_LOGGER.errorCopyingFile(srcFile.getAbsolutePath(), destFile.getAbsolutePath(), e);
                 }
             }
         }
@@ -336,10 +335,10 @@ public class EmbeddedStandaloneServerFactory {
                 } catch (RuntimeException rte) {
                     throw rte;
                 } catch (InterruptedException ite) {
-                    ite.printStackTrace();
+                    EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
                 }
             }
             if (controlledProcessStateService != null) {
@@ -356,10 +355,10 @@ public class EmbeddedStandaloneServerFactory {
                 } catch (RuntimeException rte) {
                     throw rte;
                 } catch (InterruptedException ite) {
-                    ite.printStackTrace();
+                    EmbeddedLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    EmbeddedLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
                 }
             }
 

@@ -112,8 +112,14 @@ public abstract class PatchOperationTarget {
     protected abstract ModelNode info(String patchId, boolean verbose) throws PatchingException;
     protected abstract ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException;
 
-    protected abstract ModelNode history() throws PatchingException;
-    protected abstract ModelNode history(String streamName) throws PatchingException;
+    protected ModelNode history() throws PatchingException {
+        return history(false);
+    }
+    protected abstract ModelNode history(boolean excludeAgedOut) throws PatchingException;
+    protected ModelNode history(String streamName) throws PatchingException {
+        return history(streamName, false);
+    }
+    protected abstract ModelNode history(String streamName, boolean excludeAgedOut) throws PatchingException;
 
     protected abstract ModelNode applyPatch(final File file, final ContentPolicyBuilderImpl builder) throws PatchingException;
 
@@ -194,16 +200,16 @@ public abstract class PatchOperationTarget {
         }
 
         @Override
-        protected ModelNode history() {
-            return history(null);
+        protected ModelNode history(boolean excludeAgedOut) {
+            return history(null, excludeAgedOut);
         }
 
         @Override
-        protected ModelNode history(String streamName) {
+        protected ModelNode history(String streamName, boolean excludeAgedOut) {
             final ModelNode result = new ModelNode();
             result.get(OUTCOME).set(SUCCESS);
             try {
-                result.get(RESULT).set(tool.getPatchingHistory(streamName).getHistory());
+                result.get(RESULT).set(tool.getPatchingHistory(streamName).getHistory(excludeAgedOut));
             } catch (PatchingException e) {
                 return formatFailedResponse(e);
             }
@@ -352,17 +358,20 @@ public abstract class PatchOperationTarget {
         }
 
         @Override
-        protected ModelNode history() throws PatchingException {
-            return history(null);
+        protected ModelNode history(boolean excludeAgedOut) throws PatchingException {
+            return history(null, excludeAgedOut);
         }
 
         @Override
-        protected ModelNode history(String streamName) throws PatchingException {
+        protected ModelNode history(String streamName, boolean excludeAgedOut) throws PatchingException {
             final ModelNode operation = new ModelNode();
             operation.get(OP).set(Constants.SHOW_HISTORY);
             operation.get(OP_ADDR).set(address.toModelNode());
             if(streamName != null) {
                 operation.get(ModelDescriptionConstants.OP_ADDR).add(Constants.PATCH_STREAM, streamName);
+            }
+            if(excludeAgedOut) {
+                operation.get(Constants.EXCLUDE_AGED_OUT).set(true);
             }
             return executeOp(operation);
         }

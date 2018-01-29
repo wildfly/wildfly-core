@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,6 +41,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
+import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
@@ -112,13 +114,25 @@ class CredentialStoreService implements Service<CredentialStore> {
     public void start(StartContext startContext) throws StartException {
         Path loc = resolveLocation();
         try {
+            ROOT_LOGGER.tracef("starting CredentialStore:  name = %s", name);
             credentialStoreAttributes.put(CS_LOCATION_ATTRIBUTE, loc.toAbsolutePath().toString());
             CredentialStore cs = getCredentialStoreInstance();
-            cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProviders.getOptionalValue());
+            Provider[] otherProvidersArr = otherProviders.getOptionalValue();
+            if (ROOT_LOGGER.isTraceEnabled()) {
+                ROOT_LOGGER.tracef(
+                        "initializing CredentialStore:  name = %s  type = %s  provider = %s  otherProviders = %s  attributes = %s",
+                        name, type, provider, Arrays.toString(otherProvidersArr), credentialStoreAttributes
+                );
+            }
+            synchronized (EmptyProvider.getInstance()) {
+                cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProvidersArr);
+            }
             if ( credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && !loc.toFile().exists() ){
+                ROOT_LOGGER.tracef("CredentialStore %s does not exist, creating", name);
                 cs.flush();
             }
             credentialStore.set(cs);
+            ROOT_LOGGER.tracef("CredentialStore started:  name = %s  credentialStore = %s", name, cs);
         } catch (Exception e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.unableToStartService(e);
         }
@@ -126,6 +140,9 @@ class CredentialStoreService implements Service<CredentialStore> {
 
     @Override
     public void stop(StopContext stopContext) {
+        if (ROOT_LOGGER.isTraceEnabled()) {
+            ROOT_LOGGER.tracef("stopping CredentialStore:  name = %s  credentialStore = %s", name, credentialStore.get());
+        }
         if (callbackHandle != null) {
             callbackHandle.remove();
         }
@@ -168,6 +185,9 @@ class CredentialStoreService implements Service<CredentialStore> {
         }
 
         Provider[] injectedProviders = providers.getOptionalValue();
+        if (ROOT_LOGGER.isTraceEnabled()) {
+            ROOT_LOGGER.tracef("obtaining CredentialStore %s from providers %s", name, Arrays.toString(injectedProviders));
+        }
         if (injectedProviders != null) {
             // injected provider list, select the first provider with corresponding type
             for (Provider p : injectedProviders) {
@@ -219,7 +239,9 @@ class CredentialStoreService implements Service<CredentialStore> {
         ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getValue();
         CredentialSource cs = sourceSupplier != null ? sourceSupplier.get() : null;
         if (cs != null) {
-            return credentialToCredentialSourceProtectionParameter(cs.getCredential(PasswordCredential.class));
+            Credential credential = cs.getCredential(PasswordCredential.class);
+            ROOT_LOGGER.tracef("resolving CredentialStore %s ProtectionParameter from %s", name, credential);
+            return credentialToCredentialSourceProtectionParameter(credential);
         } else {
             throw ROOT_LOGGER.credentialStoreProtectionParameterCannotBeResolved(name);
         }

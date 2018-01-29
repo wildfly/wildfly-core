@@ -18,27 +18,22 @@ import static org.jboss.as.remoting.CommonAttributes.AUTHENTICATION_PROVIDER;
 import static org.jboss.as.remoting.CommonAttributes.CONNECTOR;
 import static org.jboss.as.remoting.CommonAttributes.INCLUDE_MECHANISMS;
 import static org.jboss.as.remoting.CommonAttributes.PROPERTY;
-import static org.jboss.as.remoting.CommonAttributes.QOP;
 import static org.jboss.as.remoting.CommonAttributes.SOCKET_BINDING;
-import static org.jboss.as.remoting.CommonAttributes.STRENGTH;
 import static org.jboss.as.remoting.CommonAttributes.VALUE;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.xnio.sasl.SaslQop;
-import org.xnio.sasl.SaslStrength;
 
 /**
  * The root element parser for the Remoting subsystem.
@@ -243,14 +238,8 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
                     break;
                 }
                 case QOP: {
-                    String[] qop = readArrayAttributeElement(reader, "value", String.class);
-                    for (String q : qop) {
-                        try {
-                            saslElement.get(QOP).add(SaslQop.fromString(q).getString().toLowerCase(Locale.ENGLISH));
-                        } catch (IllegalArgumentException e) {
-                            throw RemotingLogger.ROOT_LOGGER.invalidQOPV(q);
-                        }
-                    }
+                    String qop = readStringAttributeElement(reader, "value");
+                    SaslResource.QOP_ATTRIBUTE.getParser().parseAndSetParameter(SaslResource.QOP_ATTRIBUTE, qop, saslElement, reader);
                     break;
                 }
                 case REUSE_SESSION: {
@@ -264,15 +253,8 @@ class RemotingSubsystem10Parser implements XMLStreamConstants, XMLElementReader<
                     break;
                 }
                 case STRENGTH: {
-                    //FIXME is this really an xml attribute?
-                    String[] strength = readArrayAttributeElement(reader, "value", String.class);
-                    for (String s : strength) {
-                        try {
-                            saslElement.get(STRENGTH).add(SaslStrength.valueOf(s.toUpperCase(Locale.ENGLISH)).name().toLowerCase(Locale.ENGLISH));
-                        } catch (IllegalArgumentException e) {
-                            throw RemotingLogger.ROOT_LOGGER.invalidStrength(s);
-                        }
-                    }
+                    String strength = readStringAttributeElement(reader, "value");
+                    SaslResource.STRENGTH_ATTRIBUTE.getParser().parseAndSetParameter(SaslResource.STRENGTH_ATTRIBUTE, strength, saslElement, reader);
                     break;
                 }
                 default: {

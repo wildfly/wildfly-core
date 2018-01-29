@@ -20,10 +20,8 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
-import static org.wildfly.extension.elytron.RealmDefinitions.CASE_SENSITIVE;
 
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -90,7 +88,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setRestartAllServices()
                     .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, CASE_SENSITIVE};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -133,7 +131,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             final boolean encoded = ENCODED.resolveModelAttribute(context, model).asBoolean();
 
             final String path = PATH.resolveModelAttribute(context, model).asString();
-            final String relativeTo = asStringIfDefined(context, RELATIVE_TO, model);
+            final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
             final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
             final InjectedValue<NameRewriter> nameRewriterInjector = new InjectedValue<>();

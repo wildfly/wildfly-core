@@ -63,7 +63,6 @@ class ProviderAttributeDefinition {
         .build();
 
     private static final ObjectTypeAttributeDefinition SERVICE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVICE, TYPE, ALGORITHM, CLASS_NAME)
-        .setStorageRuntime()
         .setRequired(true)
         .build();
 
@@ -86,19 +85,19 @@ class ProviderAttributeDefinition {
     private static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.INDEX, ModelType.INT)
         .build();
 
-    static final SimpleAttributeDefinition LOAD_SERVICES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOAD_SERVICES, ModelType.BOOLEAN)
+    private static final SimpleAttributeDefinition LOAD_SERVICES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOAD_SERVICES, ModelType.BOOLEAN)
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(true)
         .setRequired(false)
         .setDefaultValue(new ModelNode(false))
         .build();
 
-    static final SimpleAttributeDefinition PROPERTY_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition PROPERTY_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
 
-    static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING, false)
+    private static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING, false)
         .setAllowExpression(true)
         .setMinSize(1)
         .build();
@@ -113,14 +112,14 @@ class ProviderAttributeDefinition {
     private static final ObjectTypeAttributeDefinition INDEXED_PROPERTY = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY, INDEXED_PROPERTY_ATTRIBUTES)
         .build();
 
-    static final ObjectListAttributeDefinition PROPERTY_LIST = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY_LIST, PROPERTY)
+    private static final ObjectListAttributeDefinition PROPERTY_LIST = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY_LIST, PROPERTY)
         .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
         .setAlternatives(ElytronDescriptionConstants.PATH)
         .setAllowDuplicates(true)
         .setRequired(false)
         .build();
 
-    static final ObjectListAttributeDefinition INDEXED_PROPERTY_LIST = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY_LIST, INDEXED_PROPERTY)
+    private static final ObjectListAttributeDefinition INDEXED_PROPERTY_LIST = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTY_LIST, INDEXED_PROPERTY)
         .setAttributeGroup(ElytronDescriptionConstants.CONFIGURATION)
         .setAlternatives(ElytronDescriptionConstants.PATH)
         .setAllowDuplicates(true)
@@ -138,7 +137,7 @@ class ProviderAttributeDefinition {
 
     private static final AttributeDefinition[] PROVIDER_ATTRIBUTES = { MODULE, LOAD_SERVICES, CLASS_NAMES, PATH, RELATIVE_TO };
 
-    static final ObjectTypeAttributeDefinition PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDER, combine(null, PROVIDER_ATTRIBUTES, PROPERTY_LIST))
+    private static final ObjectTypeAttributeDefinition PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDER, combine(null, PROVIDER_ATTRIBUTES, PROPERTY_LIST))
         .build();
 
     private static final ObjectTypeAttributeDefinition INDEXED_PROVIDER = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.PROVIDER, combine(INDEX, PROVIDER_ATTRIBUTES, INDEXED_PROPERTY_LIST))

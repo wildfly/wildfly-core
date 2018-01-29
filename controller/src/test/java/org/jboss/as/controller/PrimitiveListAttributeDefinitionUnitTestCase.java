@@ -30,6 +30,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ListValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
@@ -38,6 +40,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -48,7 +51,7 @@ import org.junit.Test;
 public class PrimitiveListAttributeDefinitionUnitTestCase {
 
     @Test
-    public void testExpressions() throws OperationFailedException {
+    public void testExpressions() throws OperationFailedException, XMLStreamException {
 
         PrimitiveListAttributeDefinition ld = PrimitiveListAttributeDefinition.Builder.of("test", ModelType.INT)
                 .setAllowExpression(true)
@@ -66,6 +69,29 @@ public class PrimitiveListAttributeDefinitionUnitTestCase {
         ld.validateAndSet(op, model);
         assertEquals(op.get("test").get(0), model.get("test").get(0));
         assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(1).asString())), model.get("test").get(1));
+        ModelNode resolved = ld.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, model);
+        Assert.assertTrue(resolved.toString(), resolved.isDefined());
+        Assert.assertEquals(resolved.toString(), 2, resolved.get(0).asInt());
+        Assert.assertEquals(resolved.toString(), 1, resolved.get(1).asInt());
+
+        // Check an expression passed in that resolves to what a list would look like in the xml
+        System.setProperty("WFCORE-3448", "2 1");
+        op = new ModelNode();
+        ld.getParser().parseAndSetParameter(ld, "${WFCORE-3448}", op, null);
+
+        Assert.assertEquals(op.toString(), "${WFCORE-3448}", op.get("test").get(0).asExpression().getExpressionString());
+
+        validated = ld.validateOperation(op);
+        Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(0).asString())), validated.get(0));
+
+        model = new ModelNode();
+        ld.validateAndSet(op, model);
+        Assert.assertEquals(new ModelNode().set(new ValueExpression(op.get("test").get(0).asString())), model.get("test").get(0));
+
+        resolved = ld.resolveModelAttribute(ExpressionResolver.TEST_RESOLVER, model);
+        Assert.assertTrue(resolved.toString(), resolved.isDefined());
+        Assert.assertEquals(resolved.toString(), 2, resolved.get(0).asInt());
+        Assert.assertEquals(resolved.toString(), 1, resolved.get(1).asInt());
 
         ld = PrimitiveListAttributeDefinition.Builder.of("test", ModelType.PROPERTY)
                 .setAllowExpression(true)

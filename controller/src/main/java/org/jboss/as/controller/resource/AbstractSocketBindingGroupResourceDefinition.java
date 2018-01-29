@@ -57,6 +57,7 @@ public abstract class AbstractSocketBindingGroupResourceDefinition extends Simpl
     protected static SimpleAttributeDefinition createDefaultInterface(RuntimeCapability dependentCapability) {
         return new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.DEFAULT_INTERFACE, ModelType.STRING, false)
                 .setAllowExpression(true)
+                .setExpressionsDeprecated()
                 .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setCapabilityReference("org.wildfly.network.interface", dependentCapability)

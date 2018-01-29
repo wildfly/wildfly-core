@@ -22,7 +22,7 @@
   ~ */
   -->
 
-<domain xmlns="urn:jboss:domain:5.0">
+<domain xmlns="urn:jboss:domain:6.0">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -68,7 +68,7 @@
             <subsystem xmlns="urn:jboss:domain:remoting:3.0">
                 <connector name="jmx-connector" socket-binding="jmx" security-realm="ApplicationRealm"/>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+            <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
                 <deployment-permissions>
                     <maximum-set>
                         <permission class="java.security.AllPermission"/>
@@ -88,7 +88,7 @@
                 <remoting-connector use-management-endpoint="false"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
-            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+            <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
                 <deployment-permissions>
                     <maximum-set>
                         <permission class="java.security.AllPermission"/>
@@ -108,7 +108,7 @@
                 <remoting-connector use-management-endpoint="false"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:remoting:3.0"/>
-            <subsystem xmlns="urn:jboss:domain:security-manager:3.0">
+            <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
                 <deployment-permissions>
                     <maximum-set>
                         <permission class="java.security.AllPermission"/>

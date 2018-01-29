@@ -48,6 +48,7 @@ import javax.net.ssl.X509TrustManager;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
+import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -95,7 +96,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                                            final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
         this.connectionURI= connectionURI;
         this.serverName = serverName;
-        this.userName = "=" + serverName;
+        this.userName = DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX + serverName;
         this.serverProcessName = serverProcessName;
         this.initialAuthKey = authKey;
         this.connectOperationID = connectOperationID;
@@ -112,11 +113,12 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     public synchronized void start(final StartContext context) throws StartException {
         final Endpoint endpoint = endpointInjector.getValue();
         try {
-            // TODO Elytron - Don't disable local authentication for now.
-            //final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
+            // we leave local auth enabled as an option for domain servers to use if available. elytron only configuration
+            // will require this to be enabled and available on the server side for servers to connect successfully.
+            // final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
-            //configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
+            configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
             this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorInjector.getValue());

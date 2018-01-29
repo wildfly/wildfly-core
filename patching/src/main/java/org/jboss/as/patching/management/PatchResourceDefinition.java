@@ -77,6 +77,10 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     // Patch operation
+    static final AttributeDefinition EXCLUDE_AGEDOUT = SimpleAttributeDefinitionBuilder.create(Constants.EXCLUDE_AGED_OUT, ModelType.BOOLEAN)
+            .setDefaultValue(new ModelNode(false))
+            .setRequired(false)
+            .build();
     static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setRequired(false)
@@ -145,6 +149,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     static final OperationDefinition SHOW_HISTORY = new SimpleOperationDefinitionBuilder(Constants.SHOW_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))
+            .addParameter(EXCLUDE_AGEDOUT)
             .build();
 
     static final OperationDefinition AGEOUT_HISTORY = new SimpleOperationDefinitionBuilder(Constants.AGEOUT_HISTORY, getResourceDescriptionResolver(PatchResourceDefinition.NAME))

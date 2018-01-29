@@ -58,6 +58,7 @@ interface ElytronDescriptionConstants {
     String ATTRIBUTES = "attributes";
     String AUDIENCE = "audience";
     String AUDIT_LOGGING = "audit-logging";
+    String AUTHENTICATION = "authentication";
     String AUTHENTICATION_CLIENT = "authentication-client";
     String AUTHENTICATION_CONFIGURATION = "authentication-configuration";
     String AUTHENTICATION_CONTEXT = "authentication-context";
@@ -65,6 +66,7 @@ interface ElytronDescriptionConstants {
     String AUTHENTICATION_NAME = "authentication-name";
     String AUTHENTICATION_OPTIONAL = "authentication-optional";
     String AUTHENTICATION_REALM = "authentication-realm";
+    String AUTHORIZATION = "authorization";
     String AUTHORIZATION_NAME = "authorization-name";
     String AUTHORIZATION_REALM = "authorization-realm";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
@@ -73,7 +75,6 @@ interface ElytronDescriptionConstants {
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
     String CACHING_REALM = "caching-realm";
-    String CASE_SENSITIVE = "case-sensitive";
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_CHAIN = "certificate-chain";
@@ -109,6 +110,7 @@ interface ElytronDescriptionConstants {
     String CONSTANT_PRINCIPAL_TRANSFORMER = "constant-principal-transformer";
     String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
     String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
+    String CONVERT = "convert";
     String CREATE = "create";
     String CREATION_DATE = "creation-date";
     String CREATION_TIME = "creation-time";
@@ -152,6 +154,7 @@ interface ElytronDescriptionConstants {
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
 
+    String FAIL_CACHE = "fail-cache";
     String FILE = "file";
     String FILE_AUDIT_LOG = "file-audit-log";
     String FILESYSTEM_REALM = "filesystem-realm";
@@ -165,6 +168,7 @@ interface ElytronDescriptionConstants {
     String FILTERS = "filters";
     String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     String FINAL_PROVIDERS = "final-providers";
+    String FORWARDING_MODE = "forwarding-mode";
     String FIRST = "first";
     String FORMAT = "format";
     String FROM = "from";
@@ -177,7 +181,6 @@ interface ElytronDescriptionConstants {
     String HOST = "host";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
-    String HASH = "hash";
     String HASH_FROM = "hash-from";
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
@@ -240,6 +243,7 @@ interface ElytronDescriptionConstants {
     String MATCH = "match";
     String MATCH_ABSTRACT_TYPE = "match-abstract-type";
     String MATCH_ABSTRACT_TYPE_AUTHORITY = "match-abstract-type-authority";
+    String MATCH_ALL = "match-all";
     String MATCH_HOST = "match-host";
     String MATCH_LOCAL_SECURITY_DOMAIN = "match-local-security-domain";
     String MATCH_NO_USER = "match-no-user";
@@ -308,6 +312,7 @@ interface ElytronDescriptionConstants {
     String PEER_HOST = "peer-host";
     String PEER_PORT = "peer-port";
     String PEER_PRINCIPAL = "peer-principal";
+    String PERIODIC_ROTATING_FILE_AUDIT_LOG = "periodic-rotating-file-audit-log";
     String PERMISSION = "permission";
     String PERMISSIONS = "permissions";
     String PERMISSION_MAPPER = "permission-mapper";
@@ -379,7 +384,6 @@ interface ElytronDescriptionConstants {
     String ROLES = "roles";
     String ROTATE_SIZE = "rotate-size";
     String ROTATE_ON_BOOT = "rotate-on-boot";
-    String ROTATING_FILE_AUDIT_LOG = "rotating-file-audit-log";
 
     String SALT = "salt";
     String SALT_INDEX = "salt-index";
@@ -433,6 +437,7 @@ interface ElytronDescriptionConstants {
     String SIMPLE_REGEX_REALM_MAPPER = "simple-regex-realm-mapper";
     String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     String SIZE = "size";
+    String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_SESSION = "ssl-session";

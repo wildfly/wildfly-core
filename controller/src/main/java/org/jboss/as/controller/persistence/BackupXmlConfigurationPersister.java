@@ -40,7 +40,7 @@ import org.jboss.staxmapper.XMLElementWriter;
  */
 public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
 
-    ConfigurationFile configurationFile;
+    private ConfigurationFile configurationFile;
     private final AtomicBoolean successfulBoot = new AtomicBoolean();
 
     /**
@@ -51,8 +51,8 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
      * @param rootParser the root model parser
      * @param rootDeparser the root model deparser
      */
-    public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser) {
-        super(file.getBootFile(), rootElement, rootParser, rootDeparser, false);
+    public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser, final XMLElementWriter<ModelMarshallingContext> rootDeparser, final boolean suppressLoad) {
+        super(file.getBootFile(), rootElement, rootParser, rootDeparser, suppressLoad);
         this.configurationFile = file;
     }
 
@@ -63,7 +63,8 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
      * @param rootParser the root model parser
      * @param rootDeparser the root model deparser
      * @param reload {@code true} if this is a reload
-     * @param allowEmpty {@code true} if it is ok if {@code ConfigurationFile.getBootFile()} points to an empty file
+     * @param allowEmpty {@code true} if {@code true} it is ok for this file to be 0 bytes
+     *                               otherwise this is an error
      */
     public BackupXmlConfigurationPersister(final ConfigurationFile file, final QName rootElement, final XMLElementReader<List<ModelNode>> rootParser,
                                            final XMLElementWriter<ModelMarshallingContext> rootDeparser, boolean reload, boolean allowEmpty) {
@@ -72,7 +73,7 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
     }
 
     private static boolean isSuppressLoad(ConfigurationFile configurationFile, boolean reload, boolean allowEmpty) {
-        // We suppress load in two conditions:
+        // We suppress load in two situations.
         // 1) Initial boot where the interaction policy says to ignore the config
         // 2) Any case where allowEmpty is true and the boot file is empty
         if (allowEmpty && configurationFile.getBootFile().length() == 0) {
@@ -93,6 +94,16 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
         if(successfulBoot.compareAndSet(false, true)) {
             configurationFile.successfulBoot();
         }
+    }
+
+    /**
+     * Overrides the default behavior to return {@code false} until {@link #successfulBoot()} has been called.
+     *
+     * @return {@code true} if {@link #successfulBoot()} has been called; {@code false} otherwise
+     */
+    @Override
+    public boolean isPersisting() {
+        return successfulBoot.get();
     }
 
     @Override

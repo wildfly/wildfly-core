@@ -139,7 +139,6 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         stopServerOp.remove(TIMEOUT);
         transOp = mainServices.transformOperation(modelVersion, stopServerOp); //this operation shouldn't be rejected
         Assert.assertFalse(transOp.getFailureDescription(), transOp.rejectOperation(success()));
-
     }
 
     private static ModelNode success() {
@@ -174,6 +173,36 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
                                 .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(SOCKET_BINDING_DEFAULT_INTERFACE))
                                 .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT)));
 
+    }
+
+    @Test
+    public void testRejectKillDestroyTransformers() throws Exception {
+        if (modelVersion.getMajor() > 5) {
+            return;
+        }
+        KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
+                .setModelInitializer(StandardServerGroupInitializers.XML_MODEL_INITIALIZER, StandardServerGroupInitializers.XML_MODEL_WRITE_SANITIZER)
+                .createContentRepositoryContent("12345678901234567890")
+                .createContentRepositoryContent("09876543210987654321");
+
+        // Add legacy subsystems
+        StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
+        KernelServices mainServices = builder.build();
+
+        PathAddress serverGroupAddress = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP));
+
+
+        OperationTransformer.TransformedOperation transOp;
+
+        //check that we reject /server-group=main-server-group:kill-servers()
+        ModelNode killServersOp = Util.createOperation("kill-servers", serverGroupAddress);
+        transOp = mainServices.transformOperation(modelVersion, killServersOp);
+        Assert.assertTrue(transOp.getFailureDescription(), transOp.rejectOperation(success()));
+
+        //check that we reject /server-group=main-server-group:destroy-servers()
+        ModelNode destroyServersOp = Util.createOperation("destroy-servers", serverGroupAddress);
+        transOp = mainServices.transformOperation(modelVersion, destroyServersOp);
+        Assert.assertTrue(transOp.getFailureDescription(), transOp.rejectOperation(success()));
     }
 
     private static final ModelFixer MODEL_FIXER = new ModelFixer() {

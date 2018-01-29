@@ -104,7 +104,7 @@ class FilePersistenceUtils {
         try {
             createTempFileWithAttributes(targetPath, fileName);
         } catch (IOException ioex) {
-           ioex.printStackTrace();
+            ControllerLogger.ROOT_LOGGER.error(ioex.getLocalizedMessage(), ioex);
         }
         try (InputStream is = marshalled.getInputStream()) {
             Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);

@@ -22,7 +22,11 @@
 
 package org.jboss.as.test.integration.logging;
 
-import javax.inject.Inject;
+import static org.jboss.as.controller.client.helpers.ClientConstants.CONTENT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAME;
+import static org.jboss.as.controller.client.helpers.Operations.createAddOperation;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -39,10 +43,13 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
@@ -168,11 +175,30 @@ public abstract class AbstractLoggingTestCase {
      * @param archive     the archive to deploy
      * @param runtimeName the runtime name for the deployment
      *
-     * @throws ServerDeploymentException if an error occurs deploying the archive
+     * @throws IOException if an error occurs deploying the archive
      */
-    public static void deploy(final Archive<?> archive, final String runtimeName) throws ServerDeploymentException {
-        final ServerDeploymentHelper helper = new ServerDeploymentHelper(client.getControllerClient());
-        helper.deploy(runtimeName, archive.as(ZipExporter.class).exportAsInputStream());
+    public static void deploy(final Archive<?> archive, final String runtimeName) throws IOException {
+        // Use an operation to allow overriding the runtime name
+        final ModelNode address = Operations.createAddress(DEPLOYMENT, archive.getName());
+        final ModelNode addOp = createAddOperation(address);
+        if (runtimeName != null && !archive.getName().equals(runtimeName)) {
+            addOp.get(RUNTIME_NAME).set(runtimeName);
+        }
+        addOp.get("enabled").set(true);
+        // Create the content for the add operation
+        final ModelNode contentNode = addOp.get(CONTENT);
+        final ModelNode contentItem = contentNode.get(0);
+        contentItem.get(ClientConstants.INPUT_STREAM_INDEX).set(0);
+
+        // Create an operation and add the input archive
+        final OperationBuilder builder = OperationBuilder.create(addOp);
+        builder.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
+
+        // Deploy the content and check the results
+        final ModelNode result = client.getControllerClient().execute(builder.build());
+        if (!Operations.isSuccessfulOutcome(result)) {
+            Assert.fail(String.format("Failed to deploy %s: %s", archive, Operations.getFailureDescription(result).asString()));
+        }
     }
 
     /**
@@ -197,7 +223,9 @@ public abstract class AbstractLoggingTestCase {
         }
         if (!errors.isEmpty()) {
             final RuntimeException e = new RuntimeException("Error undeploying: " + Arrays.asList(runtimeNames));
-            errors.forEach(e::addSuppressed);
+            for (Throwable error : errors) {
+                e.addSuppressed(error);
+            }
             throw e;
         }
     }

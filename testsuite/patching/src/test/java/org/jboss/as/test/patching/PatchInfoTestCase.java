@@ -232,8 +232,6 @@ public class PatchInfoTestCase extends PatchInfoTestBase {
             line += " --verbose";
         }
 
-        // to avoid the need to reset the terminal manually after the tests, e.g. 'stty sane'
-        System.setProperty("aesh.terminal", "org.jboss.aesh.terminal.TestTerminal");
         final CommandContext ctx = CommandContextFactory.getInstance().newCommandContext(null, null, null, System.in, bytesOs);
 
         if(!offline) {

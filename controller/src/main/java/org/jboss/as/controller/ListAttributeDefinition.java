@@ -266,7 +266,6 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
         public Builder(ListAttributeDefinition basis) {
             super(basis);
             this.elementValidator = basis.getElementValidator();
-            this.setAttributeParser(AttributeParser.STRING_LIST);
         }
 
         /**

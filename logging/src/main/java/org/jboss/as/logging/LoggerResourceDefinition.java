@@ -156,17 +156,6 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
     public void registerTransformers(final KnownModelVersion modelVersion,
                                      final ResourceTransformationDescriptionBuilder rootResourceBuilder,
                                      final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        if (modelVersion.hasTransformers()) {
-            final PathElement pathElement = getPathElement();
-            final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
-            switch (modelVersion) {
-                case VERSION_1_3_0: {
-                    resourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
-                    final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-                    loggingProfileResourceBuilder.setCustomResourceTransformer(new LoggingResourceTransformer(CATEGORY));
-                    break;
-                }
-            }
-        }
+        // do nothing by default
     }
 }

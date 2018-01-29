@@ -17,29 +17,20 @@
  */
 package org.wildfly.extension.elytron;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_PROVIDERS;
+import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDERS;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROVIDER_LOADER;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
 
-import java.util.List;
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParsers;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * XML Parser and Marshaller for Provider configuration.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author Tomaz Cerar
  */
 class ProviderParser {
 
@@ -50,36 +41,16 @@ class ProviderParser {
             .build();
     private final PersistentResourceXMLDescription aggregateProviders = builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_PROVIDERS))
             .addAttribute(ProviderDefinitions.REFERENCES,
-                    new CommonAttributes.AggregateAttributeParser(PROVIDERS), //TODO "providers" is a odd name for singular reference
-                    new CommonAttributes.AggregateAttributeMarshaller(PROVIDERS))
+                    new AttributeParsers.NamedStringListParser(PROVIDERS),
+                    new AttributeMarshallers.NamedStringListMarshaller(PROVIDERS))
+            .build();
+    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.PROVIDERS)
+            .addChild(aggregateProviders)
+            .addChild(providerLoaderParser)
             .build();
 
-    void readProviders(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
-            throws XMLStreamException {
-        requireNoAttributes(reader);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            switch (localName) {
-                case AGGREGATE_PROVIDERS:
-                    aggregateProviders.parse(reader, parentAddress, operations);
-                    break;
-                case PROVIDER_LOADER:
-                    providerLoaderParser.parse(reader, parentAddress, operations);
-                    break;
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
+    ProviderParser() {
+
     }
 
-
-    void writeProviders(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (subsystem.hasDefined(AGGREGATE_PROVIDERS) || subsystem.hasDefined(PROVIDER_LOADER)) {
-            writer.writeStartElement(PROVIDERS);
-            aggregateProviders.persist(writer, subsystem);
-            providerLoaderParser.persist(writer, subsystem);
-            writer.writeEndElement();
-        }
-    }
 }

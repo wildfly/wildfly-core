@@ -26,9 +26,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -184,8 +183,12 @@ public abstract class CustomManagementContextTestBase {
             // the response should contain headers:
             // X-Frame-Options: SAMEORIGIN
             // Cache-Control: public, max-age=2678400
-            final Map<String, String> headersMap = Arrays.stream(resp.getAllHeaders())
-                    .collect(Collectors.toMap(Header::getName, Header::getValue));
+            final Map<String, String> headersMap = new HashMap<>();
+            for (Header header : resp.getAllHeaders()) {
+                if (headersMap.put(header.getName(), header.getValue()) != null) {
+                    throw new IllegalStateException("Duplicate key");
+                }
+            }
             Assert.assertTrue("'X-Frame-Options: SAMEORIGIN' header is expected",
                     headersMap.getOrDefault("X-Frame-Options", "").contains("SAMEORIGIN"));
             Assert.assertTrue("Cache-Control header with max-age=2678400 is expected,",

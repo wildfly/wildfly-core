@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hamcrest.CoreMatchers;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -82,7 +83,7 @@ public class JmxControlledStateNotificationsTestCase {
                         "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
         testSupport.start();
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
+        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group", IS_IBM);
     }
 
     @AfterClass
@@ -195,10 +196,12 @@ public class JmxControlledStateNotificationsTestCase {
                         Pair<String, String> transition = configurationStateTransitions.get(i);
                         errorCollector.checkThat("Transition " + i + ": " + list.get(i),
                                 list.get(i),
-                                containsString(
-                                        "jboss.root:type=state The attribute 'RuntimeConfigurationState' has changed from '"
-                                                + transition.getLeft() + "' to '" + transition.getRight()
-                                                + "'"));
+                                CoreMatchers.allOf(
+                                        containsString("jboss.root:type=state"),
+                                        containsString("RuntimeConfigurationState"),
+                                        containsString(transition.getLeft()),
+                                        containsString(transition.getRight())
+                                ));
                     }
                 });
                 readAndCheckFile(JMX_FACADE_RUNNING, list -> {
@@ -208,10 +211,12 @@ public class JmxControlledStateNotificationsTestCase {
                         Pair<String, String> transition = runningStateTransitions.get(i);
                         errorCollector.checkThat("Transition " + i + ": " + list.get(i),
                                 list.get(i),
-                                containsString(
-                                        "jboss.root:type=state The attribute 'RunningState' has changed from '"
-                                                + transition.getLeft() + "' to '" + transition.getRight()
-                                                + "'"));
+                                CoreMatchers.allOf(
+                                        containsString("jboss.root:type=state"),
+                                        containsString("RunningState"),
+                                        containsString(transition.getLeft()),
+                                        containsString(transition.getRight())
+                                ));
                     }
                 });
                 break;

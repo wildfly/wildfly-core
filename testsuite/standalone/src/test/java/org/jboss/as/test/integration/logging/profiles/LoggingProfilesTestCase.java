@@ -25,6 +25,7 @@ package org.jboss.as.test.integration.logging.profiles;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +34,6 @@ import java.nio.file.Paths;
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
-import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.test.integration.logging.AbstractLoggingTestCase;
 import org.jboss.as.test.integration.logging.LoggingServiceActivator;
 import org.jboss.as.test.integration.management.util.ServerReload;
@@ -300,11 +300,11 @@ public class LoggingProfilesTestCase extends AbstractLoggingTestCase {
         }
     }
 
-    private static void deploy(final String name, final String profileName) throws ServerDeploymentException {
+    private static void deploy(final String name, final String profileName) throws IOException {
         deploy(name, profileName, true);
     }
 
-    private static void deploy(final String name, final String profileName, final boolean useServiceActivator) throws ServerDeploymentException {
+    private static void deploy(final String name, final String profileName, final boolean useServiceActivator) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, name);
         if (useServiceActivator) {
             archive.addClasses(LoggingServiceActivator.DEPENDENCIES);

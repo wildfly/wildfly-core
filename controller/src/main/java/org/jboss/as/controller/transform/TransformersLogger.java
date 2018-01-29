@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -252,8 +253,12 @@ public class TransformersLogger {
      */
     void flushLogQueue() {
         Set<String> problems = new LinkedHashSet<String>();
-        for (LogEntry entry : messageQueue) {
-            problems.add("\t\t" + entry.getMessage() + "\n");
+        synchronized (messageQueue) {
+            Iterator<LogEntry> i = messageQueue.iterator();
+            while (i.hasNext()) {
+                problems.add("\t\t" + i.next().getMessage() + "\n");
+                i.remove();
+            }
         }
         if (!problems.isEmpty()) {
             logger.transformationWarnings(target.getHostName(), problems);

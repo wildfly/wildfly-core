@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -183,13 +182,6 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         switch (modelVersion) {
-            case VERSION_1_3_0: {
-                rootResourceBuilder.getAttributeBuilder()
-                        .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(false, true, ADD_LOGGING_API_DEPENDENCIES.getDefaultValue()), ADD_LOGGING_API_DEPENDENCIES)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, ADD_LOGGING_API_DEPENDENCIES)
-                        .end();
-                break;
-            }
             case VERSION_1_5_0: {
                 rootResourceBuilder.getAttributeBuilder()
                         .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(false, true, USE_DEPLOYMENT_LOGGING_CONFIG.getDefaultValue()), USE_DEPLOYMENT_LOGGING_CONFIG)
@@ -338,8 +330,11 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
                 files.addAll(LoggingResource.findFiles(defaultLogDir, property.getValue(), false));
             }
         }
-        return files.stream()
-                .map(Path::toFile)
-                .collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<File> result = new ArrayList<>();
+        for (Path file : files) {
+            File toFile = file.toFile();
+            result.add(toFile);
+        }
+        return result;
     }
 }

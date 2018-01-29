@@ -290,6 +290,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     abstract Set<String> getAttributeNames(ListIterator<PathElement> iterator);
 
     @Override
+    public final Map<String, AttributeAccess> getAttributes(final PathAddress address) {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getAttributes(ri.pathAddress.append(address));
+        }
+        // else we are the root
+        return getAttributes(address.iterator());
+    }
+
+    abstract Map<String, AttributeAccess> getAttributes(ListIterator<PathElement> iterator);
+
+    @Override
     public final Set<String> getChildNames(final PathAddress address) {
 
         if (parent != null) {

@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>3.0.0.Beta27-SNAPSHOT</version>
+        <version>4.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-framework</artifactId>
@@ -45,7 +45,7 @@
 
         <dependency>
             <groupId>org.apache.maven</groupId>
-            <artifactId>maven-aether-provider</artifactId>
+            <artifactId>maven-resolver-provider</artifactId>
         </dependency>
 
         <dependency>
@@ -99,6 +99,5 @@
             <artifactId>xalan</artifactId>
             <version>2.7.1.jbossorg-2</version>
         </dependency>
-
     </dependencies>
 </project>

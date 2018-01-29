@@ -56,7 +56,9 @@ public class RequestControllerExtension implements Extension {
 
     @Override
     public void initializeParsers(ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REQUEST_CONTROLLER_1_0.getUriString(), RequestControllerSubsystemParser_1_0.INSTANCE);
+        // For the current version we don't use a Supplier as we want its description initialized
+        // TODO if any new xsd versions are added, use a Supplier for the old version
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REQUEST_CONTROLLER_1_0.getUriString(), new RequestControllerSubsystemParser_1_0());
     }
 
     @Override
@@ -64,7 +66,7 @@ public class RequestControllerExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 1));
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new RequestControllerRootDefinition(context.isRuntimeOnlyRegistrationValid()));
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(RequestControllerSubsystemParser_1_0.INSTANCE);
+        subsystem.registerXMLElementWriter(RequestControllerSubsystemParser_1_0::new);
     }
 
 

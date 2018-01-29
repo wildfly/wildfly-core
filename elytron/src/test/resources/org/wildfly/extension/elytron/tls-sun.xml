@@ -1,5 +1,5 @@
 <!-- for needs of SaslTestCase and KeyStoresTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:1.0">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="com.sun.net.ssl.internal.ssl.Provider" />
     </providers>
@@ -14,7 +14,7 @@
         </filesystem-realm>
     </security-realms>
     <credential-stores>
-        <credential-store name="test" case-sensitive="false" location="target/tlstest.keystore">
+        <credential-store name="test" location="target/tlstest.keystore">
             <implementation-properties>
                 <property name="keyStoreType" value="JCEKS"/>
             </implementation-properties>

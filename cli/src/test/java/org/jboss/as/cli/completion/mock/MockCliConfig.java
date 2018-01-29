@@ -128,4 +128,9 @@ public class MockCliConfig implements CliConfig {
     public Integer getCommandTimeout() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public boolean isOutputJSON() {
+        return false;
+    }
 }

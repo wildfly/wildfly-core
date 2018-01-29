@@ -18,27 +18,15 @@
 
 package org.wildfly.extension.elytron;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHENTICATION_CLIENT;
+import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHENTICATION_CONTEXT;
-import static org.wildfly.extension.elytron.ElytronSubsystemParser.verifyNamespace;
-
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-import org.jboss.dmr.ModelNode;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * A parser for the authentication client configuration.
@@ -57,43 +45,10 @@ class AuthenticationClientParser {
             .addAttribute(AuthenticationClientDefinitions.CONTEXT_EXTENDS)
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
+    final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.AUTHENTICATION_CLIENT)
+            .addChild(authenticationConfigurationParser)
+            .addChild(authenticationContextParser)
+            .build();
 
-
-
-    void readAuthenticationClient(PathAddress parentAddress, XMLExtendedStreamReader reader, List<ModelNode> operations)
-            throws XMLStreamException {
-        requireNoAttributes(reader);
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            verifyNamespace(reader);
-            String localName = reader.getLocalName();
-            switch (localName) {
-                case AUTHENTICATION_CONFIGURATION:
-                    authenticationConfigurationParser.parse(reader, parentAddress, operations);
-                    break;
-                case AUTHENTICATION_CONTEXT:
-                    authenticationContextParser.parse(reader, parentAddress, operations);
-                    break;
-                default:
-                    throw unexpectedElement(reader);
-            }
-        }
-    }
-
-    void writeAuthenticationClient(ModelNode subsystem, XMLExtendedStreamWriter writer) throws XMLStreamException {
-        if (shouldWrite(subsystem)==false) {
-            return;
-        }
-
-        writer.writeStartElement(AUTHENTICATION_CLIENT);
-
-        authenticationConfigurationParser.persist(writer, subsystem);
-        authenticationContextParser.persist(writer, subsystem);
-
-        writer.writeEndElement();
-    }
-
-    private boolean shouldWrite(ModelNode subsystem) {
-        return subsystem.hasDefined(AUTHENTICATION_CONFIGURATION) || subsystem.hasDefined(AUTHENTICATION_CONTEXT);
-    }
 
 }

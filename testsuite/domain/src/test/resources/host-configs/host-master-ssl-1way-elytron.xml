@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host name="master" xmlns="urn:jboss:domain:5.0">
+<host name="master" xmlns="urn:jboss:domain:6.0">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -195,7 +195,7 @@
                     </key-store>
                 </key-stores>
                 <key-managers>
-                    <key-manager name="httpsKM" algorithm="SunX509" key-store="httpsKS">
+                    <key-manager name="httpsKM" key-store="httpsKS">
                         <credential-reference clear-text="123456"/>
                     </key-manager>
                 </key-managers>

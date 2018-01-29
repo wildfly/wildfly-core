@@ -52,7 +52,6 @@ import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
@@ -188,23 +187,25 @@ public class DeploymentAttributes {
                     .build();
 
     //Unmanaged content value attributes
-    public static final AttributeDefinition CONTENT_PATH =
+    public static final SimpleAttributeDefinition CONTENT_PATH =
             createContentValueTypeAttribute(ModelDescriptionConstants.PATH, ModelType.STRING, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES,
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.ARCHIVE)
                     .build();
-    public static final AttributeDefinition CONTENT_RELATIVE_TO =
+    public static final SimpleAttributeDefinition CONTENT_RELATIVE_TO =
             createContentValueTypeAttribute(ModelDescriptionConstants.RELATIVE_TO, ModelType.STRING, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES,
                     ModelDescriptionConstants.URL, ModelDescriptionConstants.EMPTY)
                     .setRequires(ModelDescriptionConstants.PATH)
+                    .setRequired(false)
                     .build();
 
-    public static final AttributeDefinition CONTENT_ARCHIVE =
+    public static final SimpleAttributeDefinition CONTENT_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false,
                     ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL)
                     .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH, ModelDescriptionConstants.EMPTY)
+                    .setRequired(false)
                     .build();
 
     //Exploded content attributes
@@ -246,21 +247,23 @@ public class DeploymentAttributes {
                             CONTENT_RELATIVE_TO,
                             CONTENT_ARCHIVE,
                             EMPTY)
+                            .setRequired(true)
                             .setValidator(new ContentTypeValidator())
                             .build())
                     .setMinSize(1)
                     .setMaxSize(1)
+                    .setRequired(true)
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_NILLABLE =
             ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                 ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                        CONTENT_INPUT_STREAM_INDEX,
-                        CONTENT_HASH,
-                        CONTENT_BYTES,
-                        CONTENT_URL,
-                        CONTENT_PATH,
-                        CONTENT_RELATIVE_TO,
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_INPUT_STREAM_INDEX).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_HASH).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_BYTES).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_URL).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_PATH).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_RELATIVE_TO).removeAlternatives(ModelDescriptionConstants.EMPTY).build(),
                         CONTENT_ARCHIVE)
                         .setValidator(new ContentTypeValidator())
                         .build())
@@ -272,13 +275,15 @@ public class DeploymentAttributes {
     public static final ObjectListAttributeDefinition CONTENT_PARAM_ALL_EXPLODED =
                 ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
                     ObjectTypeAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
-                        CONTENT_INPUT_STREAM_INDEX,
-                        CONTENT_HASH,
-                        CONTENT_BYTES,
-                        CONTENT_URL,
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_INPUT_STREAM_INDEX).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_HASH).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_BYTES).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
+                        SimpleAttributeDefinitionBuilder.create(CONTENT_URL).removeAlternatives(ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY).build(),
                         TARGET_PATH)
-                    .build())
+                        .setRequired(true)
+                        .build())
                     .setMinSize(1)
+                    .setRequired(true)
                     .setValidator(new ManagedContentTypeValidator(ModelDescriptionConstants.TARGET_PATH, ModelDescriptionConstants.OVERWRITE))
                     .setCorrector(ContentListCorrector.INSTANCE)
                     .build();
@@ -302,6 +307,7 @@ public class DeploymentAttributes {
     public static final SimpleAttributeDefinition CONTENT_RESOURCE_ARCHIVE =
             createContentValueTypeAttribute(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, new ModelTypeValidator(ModelType.BOOLEAN), false)
                     .setRequires(ModelDescriptionConstants.PATH, ModelDescriptionConstants.HASH)
+                    .setRequired(false)
                     .build();
     public static final ObjectListAttributeDefinition CONTENT_RESOURCE_ALL =
             ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.CONTENT,
@@ -310,10 +316,12 @@ public class DeploymentAttributes {
                             CONTENT_RESOURCE_PATH,
                             CONTENT_RESOURCE_RELATIVE_TO,
                             CONTENT_RESOURCE_ARCHIVE)
+                            .setRequired(true)
                             .setValidator(new ContentTypeValidator())
                             .build())
                     .setMinSize(1)
                     .setMaxSize(1)
+                    .setRequired(true)
                     .build();
 
 
@@ -353,12 +361,13 @@ public class DeploymentAttributes {
     @SuppressWarnings("unchecked")
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
-    public static final OperationDefinition DEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.DEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition UNDEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.UNDEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition REDEPLOY_DEFINITION = new SimpleOperationDefinition(ModelDescriptionConstants.REDEPLOY, DEPLOYMENT_RESOLVER);
-    public static final OperationDefinition EXPLODE_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.EXPLODE, DEPLOYMENT_RESOLVER)
+    public static final OperationDefinition DEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.DEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition UNDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.UNDEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition REDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.REDEPLOY, DEPLOYMENT_RESOLVER).build();
+    public static final OperationDefinition EXPLODE_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.EXPLODE, DEPLOYMENT_RESOLVER)
             .addParameter(DEPLOYMENT_CONTENT_PATH)
-            .withFlag(Flag.DOMAIN_PUSH_TO_SERVERS).build();
+            .withFlag(Flag.DOMAIN_PUSH_TO_SERVERS)
+            .build();
 
     /** Server add deployment definition */
     public static final OperationDefinition SERVER_DEPLOYMENT_ADD_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.ADD, DEPLOYMENT_RESOLVER)
@@ -478,14 +487,19 @@ public class DeploymentAttributes {
     private static final List<String> UNMANAGED_CONTENT_ATTS = Arrays.asList(DeploymentAttributes.CONTENT_PATH.getName(), DeploymentAttributes.CONTENT_RELATIVE_TO.getName());
 
     public static boolean isUnmanagedContent(ModelNode content) {
-        return UNMANAGED_CONTENT_ATTS.stream().anyMatch((s) -> (content.hasDefined(s)));
+        for (String s : UNMANAGED_CONTENT_ATTS) {
+            if ((content.hasDefined(s))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static SimpleAttributeDefinitionBuilder createContentValueTypeAttribute(String name, ModelType type,
                                                                                     ParameterValidator validator,
                                                                                     boolean allowExpression,
                                                                                     String... alternatives) {
-        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type, true);
+        SimpleAttributeDefinitionBuilder builder = SimpleAttributeDefinitionBuilder.create(name, type, false);
         if (validator != null) {
             builder.setValidator(validator);
         }

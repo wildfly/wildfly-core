@@ -40,7 +40,7 @@ public interface ParameterValidator {
 
     /**
      * Validate the parameter with the given name, after first
-     * {@link ModelNode#resolve() resolving} the given {@code value}.
+     * resolving any {@link org.jboss.dmr.ValueExpression} in the given {@code value}.
      *
      * @param parameterName the name of the parameter. Cannot be {@code null}
      * @param value the parameter value. Cannot be {@code null}
@@ -48,9 +48,11 @@ public interface ParameterValidator {
      * @throws OperationFailedException if the value is not valid
      *
      * @deprecated Callers should resolve the value themselves with an {@link org.jboss.as.controller.ExpressionResolver}
-     *             and then use {@link #validateParameter(String, ModelNode)} since {@link ModelNode#resolve()} is not
-     *             an adequate expression resolution approach
+     *             and then use {@link #validateParameter(String, ModelNode)} since a {@code ParameterValidator} does not
+     *             have access to all expression resolution sources
      */
     @Deprecated
-    void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException;
+    default void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
+        throw new UnsupportedOperationException();
+    }
 }

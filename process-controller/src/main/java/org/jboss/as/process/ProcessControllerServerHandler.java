@@ -148,6 +148,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             if (isPrivileged) {
                                 operationType = ProcessMessageHandler.OperationType.ADD;
                                 processName = readUTFZBytes(dataStream);
+                                final int processId = readInt(dataStream);
                                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
                                 readFully(dataStream, authBytes);
                                 final int commandCount = readInt(dataStream);
@@ -163,7 +164,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 final String workingDirectory = readUTFZBytes(dataStream);
                                 ProcessLogger.SERVER_LOGGER.tracef("Received add_process for process %s", processName);
                                 final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
-                                processController.addProcess(processName, authKey, Arrays.asList(command), env, workingDirectory, false, false);
+                                processController.addProcess(processName, processId, authKey, Arrays.asList(command), env, workingDirectory, false, false);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring add_process message from untrusted source");
                             }

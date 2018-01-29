@@ -215,7 +215,14 @@ public class ArgumentValueCallbackHandler implements ParsingStateCallbackHandler
             String b = buf.toString().trim();
             Byte val;
             if (b.startsWith("0x")) {
-                val = Byte.parseByte(b.substring(2), 16);
+                // when reading a hexadecimal value, treat it as unsigned byte (ie numbers from 0x0 to 0xff) rather than
+                // standard java byte range -0x80 to 0x7f, because that is how byte values are specified by the DMR text
+                // syntax
+                short shortVal = Short.parseShort(b.substring(2), 16);
+                if (shortVal < 0 || shortVal > Byte.MAX_VALUE - Byte.MIN_VALUE) {
+                    throw new NumberFormatException("Byte value out of range: " + b);
+                }
+                val = (byte) shortVal;
             } else {
                 val = Byte.parseByte(b);
             }

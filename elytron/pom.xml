@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.0.Beta27-SNAPSHOT</version>
+        <version>4.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-elytron-integration</artifactId>
@@ -33,18 +33,7 @@
     <properties>
         <!-- TODO Elytron Remove once parent on M17 -->
         <version.org.apache.ds>2.0.0-M17</version.org.apache.ds>
-
-        <test.level>INFO</test.level>
     </properties>
-
-
-    <licenses>
-        <license>
-            <name>Apache 2</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
 
     <dependencyManagement>
         <dependencies>
@@ -211,7 +200,13 @@
                             <includes>
                                 <include>*.xml</include>
                             </includes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_1_0.xsd</systemId>
+                            <excludes>
+                                <exclude>*-1.*.xml</exclude>
+                                <exclude>custom-policies.xml</exclude>
+                                <exclude>jacc-with-providers.xml</exclude>
+                                <exclude>*-1.*.xml</exclude>
+                            </excludes>
+                            <systemId>src/main/resources/schema/wildfly-elytron_2_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>

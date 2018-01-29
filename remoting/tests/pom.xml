@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-remoting-parent</artifactId>
-        <version>3.0.0.Beta27-SNAPSHOT</version>
+        <version>4.0.0.Beta1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -37,10 +37,6 @@
 
     <name>WildFly: Remoting Subsystem Test</name>
     <description>This is not in the remoting subsystem as it introduces circular dependencies</description>
-
-    <properties>
-        <test.level>INFO</test.level>
-    </properties>
 
     <dependencies>
         <dependency>

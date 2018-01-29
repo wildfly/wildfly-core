@@ -42,12 +42,16 @@ import org.jboss.as.cli.parsing.StateParser;
 import org.jboss.as.cli.parsing.WordCharacterHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
 
 /**
  *
  * @author Alexey Loubyansky
  */
 public class AttributeNamePathCompleter implements CommandLineCompleter {
+
+    private static final Logger LOG = Logger.getLogger(AttributeNamePathCompleter.class);
 
     /**
      * A filter to accept or not completion candidates.
@@ -230,7 +234,9 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
         try {
             handler = parse(buffer);
         } catch (CommandFormatException e) {
-            e.printStackTrace();
+            if (LOG.isEnabled(Level.WARN)) {
+                LOG.log(Level.WARN, e.getLocalizedMessage(), e);
+            }
             return -1;
         }
         final Collection<String> foundCandidates = handler.getCandidates(descr, writeOnly);

@@ -186,6 +186,39 @@ public interface AttributeMarshallers {
         }
     }
 
+    static class NamedStringListMarshaller extends AttributeMarshaller.AttributeElementMarshaller {
+        private final String xmlName;
+
+        public NamedStringListMarshaller() {
+            this.xmlName = null;
+        }
+
+        public NamedStringListMarshaller(String xmlName) {
+            this.xmlName = xmlName;
+        }
+
+        @Override
+        public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+            assert attribute instanceof StringListAttributeDefinition;
+            try {
+                List<String> list = ((StringListAttributeDefinition) attribute).unwrap(ExpressionResolver.SIMPLE, resourceModel);
+                if (list.isEmpty()) {
+                    return;
+                }
+                if (resourceModel.hasDefined(attribute.getName())) {
+                    for (ModelNode value : resourceModel.get(attribute.getName()).asList()) {
+                        writer.writeStartElement(xmlName==null?attribute.getXmlName():xmlName);
+                        writer.writeAttribute(ModelDescriptionConstants.NAME, value.asString());
+                        writer.writeEndElement();
+                    }
+                }
+
+            } catch (OperationFailedException e) {
+                throw new XMLStreamException(e);
+            }
+        }
+    }
+
     static AttributeMarshaller getObjectMapAttributeMarshaller(String keyElementName) {
         return new ObjectMapAttributeMarshaller(null, null, true, keyElementName);
     }
@@ -205,4 +238,53 @@ public interface AttributeMarshallers {
     static AttributeMarshaller getSimpleListMarshaller(boolean wrapper) {
         return new SimpleListAttributeMarshaller(wrapper);
     }
+
+
+    /**
+     * simple marshaller
+     */
+    AttributeMarshaller SIMPLE = new DefaultAttributeMarshaller();
+
+    /**
+     * marshalls attributes to element where element name is attribute name and its content is value of attribute
+     */
+    AttributeMarshaller SIMPLE_ELEMENT = new AttributeMarshaller.WrappedSimpleAttributeMarshaller();
+
+    /**
+     * space delimited list marshaller
+     */
+    AttributeMarshaller STRING_LIST = AttributeMarshaller.STRING_LIST;
+
+    /**
+     * comma delimited list marshaller
+     */
+    AttributeMarshaller STRING_LIST_COMMA_DELIMITED = AttributeMarshaller.COMMA_STRING_LIST;
+    /**
+     * String list marshaller that marshalls to named element list
+     * example, name of element is attribute.getXmlName()
+     * <principal name="John"/>
+     * <principal name="Joe"/>
+     */
+    AttributeMarshaller STRING_LIST_NAMED_ELEMENT = new NamedStringListMarshaller();
+
+    /**
+     * Marshaller for ObjectTypeAttributeDefinition. The object and all its attributes will be marshalled as element only.
+     */
+    AttributeMarshaller OBJECT_ELEMENT_ONLY = new AttributeMarshaller.ObjectMarshaller(true);
+
+    /**
+     * Marshaller for ObjectTypeAttributeDefinition. The object and all its complex types descendants will get marshalled as elements whereas simple types will get marshalled as attributes.
+     */
+    AttributeMarshaller OBJECT_ATTRIBUTE = new AttributeMarshaller.ObjectMarshaller(false);
+
+
+    AttributeMarshaller OBJECT_LIST_WRAPPED = new AttributeMarshaller.ObjectListMarshaller();
+    AttributeMarshaller OBJECT_LIST_UNWRAPPED = new AttributeMarshaller.UnwrappedObjectListMarshaller();
+    AttributeMarshaller OBJECT_LIST = OBJECT_LIST_WRAPPED;
+
+    AttributeMarshaller OBJECT_MAP_MARSHALLER = new AttributeMarshallers.ObjectMapAttributeMarshaller();
+
+    AttributeMarshaller PROPERTIES_WRAPPED = new AttributeMarshallers.PropertiesAttributeMarshaller();
+
+    AttributeMarshaller PROPERTIES_UNWRAPPED = new AttributeMarshallers.PropertiesAttributeMarshaller(null, false);
 }

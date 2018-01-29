@@ -23,8 +23,9 @@
 package org.jboss.as.remoting;
 
 
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -44,33 +45,26 @@ import org.xnio.XnioWorker;
  */
 class RemotingSubsystemAdd extends AbstractAddStepHandler {
 
-    static final RemotingSubsystemAdd INSTANCE = new RemotingSubsystemAdd();
+    private final boolean forDomain;
 
-    static final OperationContext.AttachmentKey<Boolean> RUNTIME_KEY = OperationContext.AttachmentKey.create(Boolean.class);
-
-    private RemotingSubsystemAdd() {
-        super(RemotingSubsystemRootResource.ATTRIBUTES);
+    RemotingSubsystemAdd(RemotingSubsystemRootResource.Attributes attributes) {
+        super(attributes.all);
+        this.forDomain = attributes.forDomain;
     }
 
     @Override
     protected void populateModel(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.populateModel(context, operation, resource);
-        // Add a step to validate worker-thread-pool vs endpoint and to set up a default endpoint resource if needed
-        context.addStep(WorkerThreadPoolVsEndpointHandler.INSTANCE, OperationContext.Stage.MODEL);
+
+        // Add a step to set up a placeholder endpoint resource if needed
+        context.addStep(new WorkerThreadPoolVsEndpointHandler(forDomain), OperationContext.Stage.MODEL);
     }
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        // Signal RemotingEndpointAdd that we ran
-        context.attach(RUNTIME_KEY, Boolean.FALSE);
-
-        launchServices(context);
-    }
-
-    void launchServices(final OperationContext context) throws OperationFailedException {
 
         ModelNode endpointModel = context.readResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH)).getModel();
-        String workerName = RemotingEndpointResource.WORKER.resolveModelAttribute(context, endpointModel).asString();
+        String workerName = WORKER.resolveModelAttribute(context, endpointModel).asString();
 
         final OptionMap map = EndpointConfigFactory.populate(context, endpointModel);
 
@@ -90,15 +84,5 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
         context.getCapabilityServiceTarget().addCapability(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY, endpointService)
                 .addCapabilityRequirement(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, XnioWorker.class, endpointService.getWorker(), workerName)
                 .install();
-    }
-
-    private boolean areWorkerAttributesSet(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        for (final AttributeDefinition attribute : RemotingSubsystemRootResource.ATTRIBUTES) {
-            ModelNode value = attribute.resolveModelAttribute(context,model);
-            if (value.isDefined() && !value.equals(attribute.getDefaultValue())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

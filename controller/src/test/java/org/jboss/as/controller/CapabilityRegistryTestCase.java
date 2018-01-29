@@ -19,12 +19,15 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +35,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.CapabilityId;
+import org.jboss.as.controller.capability.registry.CapabilityScope;
+import org.jboss.as.controller.capability.registry.RegistrationPoint;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -43,9 +50,9 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -117,15 +124,16 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static PathElement PROFILE_ELEMENT = PathElement.pathElement("profile", "test");
     private static PathElement NO_CAP_ELEMENT = PathElement.pathElement("subsystem", "no-cap");
     private static PathElement DEP_CAP_ELEMENT = PathElement.pathElement("subsystem", "dep-cap");
+    private static PathElement DEP_CAP_ELEMENT_2 = PathElement.pathElement("subsystem", "dep-cap-2");
 
     private static ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
             .setAddOperation(new AbstractAddStepHandler(new HashSet<>(Arrays.asList(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY)), ad, other))
-            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY))
+            .setRemoveOperation(new AbstractRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY) {})
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
-            .addOperation(new SimpleOperationDefinition("add-cap",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("add-cap",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerCapability(TEST_CAPABILITY1);
@@ -151,15 +159,15 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addCapability(TEST_CAPABILITY2)
-            .addOperation(new SimpleOperationDefinition("add-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("add-sub-resource",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerSubModel(SUB_RESOURCE);
                     })
 
-            .addOperation(new SimpleOperationDefinition("remove-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()),
+            .addOperation(SimpleOperationDefinitionBuilder.of("remove-sub-resource",
+                            new NonResolvingResourceDescriptionResolver()).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.unregisterSubModel(SUB_RESOURCE.getPathElement());
@@ -188,6 +196,38 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .addCapability(IO_WORKER_RUNTIME_CAPABILITY)
             .build();
 
+    private static class RuntimeReportAddHandler extends AbstractAddStepHandler {
+        private RuntimeReportAddHandler(Set<RuntimeCapability> caps) {
+            super(caps);
+        }
+
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+            context.getResult().set(true);
+        }
+    }
+
+    private static class RuntimeReportRemoveHandler extends  AbstractRemoveStepHandler {
+        private RuntimeReportRemoveHandler(Set<RuntimeCapability> caps) {
+            super(caps);
+        }
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            if (operation.get(RELOAD).asBoolean(false)) {
+                context.reloadRequired();
+                context.getResult().set(true);
+            }
+        }
+
+        @Override
+        protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            if (operation.get(RELOAD).asBoolean(false)) {
+                context.reloadRequired();
+                context.getResult().set(false);
+            }
+        }
+    };
+
     private static final OperationStepHandler RELOAD_HANDLER = new OperationStepHandler() {
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -195,7 +235,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             context.completeStep(OperationContext.RollbackHandler.REVERT_RELOAD_REQUIRED_ROLLBACK_HANDLER);
         }
     };
-    private static final OperationDefinition RELOAD_DEFINITION = new SimpleOperationDefinition("reload", NonResolvingResourceDescriptionResolver.INSTANCE);
+    private static final OperationDefinition RELOAD_DEFINITION = SimpleOperationDefinitionBuilder.of("reload", NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
     private static final OperationStepHandler RUNTIME_MOD_HANDLER = new OperationStepHandler() {
         @Override
@@ -210,8 +250,8 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         }
     };
 
-    private static final OperationDefinition RUNTIME_MOD_DEFINITION = new SimpleOperationDefinition("runtime-mod", NonResolvingResourceDescriptionResolver.INSTANCE);
-    private static final OperationDefinition RUNTIME_ONLY_DEFINITION = new SimpleOperationDefinitionBuilder("runtime-only", NonResolvingResourceDescriptionResolver.INSTANCE)
+    private static final OperationDefinition RUNTIME_MOD_DEFINITION = SimpleOperationDefinitionBuilder.of("runtime-mod", NonResolvingResourceDescriptionResolver.INSTANCE).build();
+    private static final OperationDefinition RUNTIME_ONLY_DEFINITION = SimpleOperationDefinitionBuilder.of("runtime-only", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setRuntimeOnly()
             .build();
 
@@ -225,9 +265,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 .addOperation(RUNTIME_MOD_DEFINITION, RUNTIME_MOD_HANDLER)
                 .addOperation(RUNTIME_ONLY_DEFINITION, RUNTIME_MOD_HANDLER);
         if (caps != null && caps.length > 0) {
+            Set<RuntimeCapability> capsSet = new HashSet<RuntimeCapability>(Arrays.asList(caps));
             result = result.addCapabilities((Capability[]) caps)
-                    .setAddOperation(new AbstractAddStepHandler(new HashSet<RuntimeCapability>(Arrays.asList(caps))))
-                    .setRemoveOperation(new ModelOnlyRemoveStepHandler());
+                    .setAddOperation(new RuntimeReportAddHandler(capsSet))
+                    .setRemoveOperation(new RuntimeReportRemoveHandler(capsSet));
         }
         return result;
     }
@@ -269,6 +310,9 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT, TRANS_DEP_CAPABILITY)).pop()
             .build();
 
+    private static ResourceDefinition DEP_CAP_RESOURCE_2 = createReloadTestResourceBuilder(DEP_CAP_ELEMENT_2, TRANS_DEP_CAPABILITY)
+            .build();
+
     private static final AtomicReference<CountDownLatch> readLatchHolder = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> failLatchHolder = new AtomicReference<>();
     private static final ResourceDefinition BAD_RESOURCE = ResourceBuilder.Factory.create(TEST_ADDRESS5.getElement(0),
@@ -295,7 +339,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 }
             })
             .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY3))
-            .addOperation(new SimpleOperationDefinition("read", NonResolvingResourceDescriptionResolver.INSTANCE),
+            .addOperation(SimpleOperationDefinitionBuilder.of("read", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     ((context, operation) -> context.getResult().set(true)))
             .build();
 
@@ -312,7 +356,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         // register the global notifications so there is no warning that emitted notifications are not described by the resource.
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
         rootRegistration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("clean", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("clean", NonResolvingResourceDescriptionResolver.INSTANCE).build(), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.unregisterSubModel(TEST_RESOURCE1.getPathElement());
             mrr.unregisterSubModel(TEST_RESOURCE2.getPathElement());
@@ -323,9 +367,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.unregisterSubModel(PROFILE_RESOURCE.getPathElement());
             mrr.unregisterSubModel(NO_CAP_RESOURCE.getPathElement());
             mrr.unregisterSubModel(DEP_CAP_RESOURCE.getPathElement());
+            mrr.unregisterSubModel(DEP_CAP_RESOURCE_2.getPathElement());
         });
 
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("create", NonResolvingResourceDescriptionResolver.INSTANCE), (context, operation) -> {
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("create", NonResolvingResourceDescriptionResolver.INSTANCE).build(), (context, operation) -> {
             ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
             mrr.registerSubModel(TEST_RESOURCE1);
             mrr.registerSubModel(TEST_RESOURCE2);
@@ -336,15 +381,16 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.registerSubModel(PROFILE_RESOURCE);
             mrr.registerSubModel(NO_CAP_RESOURCE);
             mrr.registerSubModel(DEP_CAP_RESOURCE);
+            mrr.registerSubModel(DEP_CAP_RESOURCE_2);
         });
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("root-cap", NonResolvingResourceDescriptionResolver.INSTANCE),
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("root-cap", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                         context.registerCapability(ROOT_CAPABILITY);
                     }
                 });
-        rootRegistration.registerOperationHandler(new SimpleOperationDefinition("no-root-cap", NonResolvingResourceDescriptionResolver.INSTANCE),
+        rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("no-root-cap", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -372,6 +418,30 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(expectedCaps(0), capabilityRegistry.getPossibleCapabilities().size());
     }
 
+
+    @Test
+    public void testCapabilityPossibleProviders() throws OperationFailedException {
+        Set<PathAddress> result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY2.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS2, result.iterator().next());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId("org.wildfly.test.capability", CapabilityScope.GLOBAL));
+        Assert.assertEquals(0, result.size());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId("org.wildfly.test.capability2.test.magic", CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS2, result.iterator().next());
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY1.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(0, result.size());
+        //Add resource 1
+        ModelNode addOp1 = createOperation(ADD, TEST_ADDRESS1);
+        addOp1.get("test").set("some test value");
+        addOp1.get("other").set("other value");
+        executeCheckNoFailure(addOp1);
+        executeCheckNoFailure(createOperation("add-cap", TEST_ADDRESS1));
+        result = capabilityRegistry.getPossibleProviderPoints(new CapabilityId(TEST_CAPABILITY1.getName(), CapabilityScope.GLOBAL));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TEST_ADDRESS1, result.iterator().next());
+        executeCheckNoFailure(createOperation(REMOVE, TEST_ADDRESS1));
+    }
 
     @Test
     public void testCapabilityRegistration() throws OperationFailedException {
@@ -715,30 +785,19 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             runtimeOnlyCheck(true, RELOAD_ELEMENT);
 
             // Do a mock reload
-            CountDownLatch latch = new CountDownLatch(1);
             ServiceController<?> svc = container.getRequiredService(ServiceName.of("ModelController"));
             final AtomicInteger downCaps = new AtomicInteger();
             final AtomicInteger downPossibleCaps = new AtomicInteger();
-            svc.addListener(new AbstractServiceListener<Object>(){
+            StabilityMonitor monitor = new StabilityMonitor();
+            monitor.addController(svc);
 
-                @Override
-                public void listenerAdded(ServiceController<?> controller) {
-                    controller.setMode(ServiceController.Mode.NEVER);
-                }
+            svc.setMode(ServiceController.Mode.NEVER);
+            monitor.awaitStability();
+            downCaps.set(capabilityRegistry.getCapabilities().size());
+            downPossibleCaps.set(capabilityRegistry.getPossibleCapabilities().size());
+            svc.setMode(ServiceController.Mode.ACTIVE);
 
-                @Override
-                public void transition(ServiceController<?> controller, ServiceController.Transition transition) {
-                    if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
-                        downCaps.set(capabilityRegistry.getCapabilities().size());
-                        downPossibleCaps.set(capabilityRegistry.getPossibleCapabilities().size());
-                        controller.setMode(ServiceController.Mode.ACTIVE);
-                    } else if (transition == ServiceController.Transition.STARTING_to_UP) {
-                        controller.removeListener(this);
-                        latch.countDown();
-                    }
-                }
-            });
-            Assert.assertTrue("Failed to reload", latch.await(30, TimeUnit.SECONDS));
+            Assert.assertTrue("Failed to reload", monitor.awaitStability(30, TimeUnit.SECONDS));
 
             Assert.assertEquals(0, downCaps.get());
             Assert.assertEquals(0, downPossibleCaps.get());
@@ -806,6 +865,73 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             //noinspection ThrowFromFinallyBlock
             executeCheckNoFailure(Util.createEmptyOperation("no-root-cap", PathAddress.EMPTY_ADDRESS));
         }
+    }
+
+    @Test
+    public void testAddRemoveAddWithReloadRequired() throws OperationFailedException {
+        executeCheckNoFailure(Util.createEmptyOperation("root-cap", PathAddress.EMPTY_ADDRESS));
+
+        ModelNode addOp = Util.createEmptyOperation("add", PathAddress.pathAddress(DEP_CAP_ELEMENT));
+        ModelNode rsp = executeCheckNoFailure(addOp);
+        Assert.assertTrue(rsp.toString(), rsp.get(RESULT).asBoolean()); // performRuntime should be called
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
+
+        ModelNode removeOp = Util.createEmptyOperation("remove", PathAddress.pathAddress(DEP_CAP_ELEMENT));
+        removeOp.get(RELOAD).set(true);
+        rsp = executeCheckNoFailure(removeOp);
+        Assert.assertTrue(rsp.toString(), rsp.get(RESULT).asBoolean()); // performRuntime should be called
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+
+        // Can't add DEP_CAP_ELEMENT_2 as DEP_CAPABILITY is missing
+        ModelNode addOp2 = Util.createEmptyOperation("add", PathAddress.pathAddress(DEP_CAP_ELEMENT_2));
+        executeCheckForFailure(addOp2);
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+
+        rsp = executeCheckNoFailure(addOp);
+        Assert.assertFalse(rsp.toString(), rsp.get(RESULT).asBoolean(false)); // performRuntime should NOT be called as cap is reload-required
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
+
+        // Now we can add DEP_CAP_ELEMENT_2 to model but no runtime step should be called
+        rsp = executeCheckNoFailure(addOp2);
+        Assert.assertFalse(rsp.toString(), rsp.get(RESULT).asBoolean(false)); // performRuntime should NOT be called as required cap is reload-required
+        Assert.assertEquals(expectedCaps(3), capabilityRegistry.getCapabilities().size());
+
+        // Can't remove DEP_CAP_ELEMENT now as it has a dependent
+        executeCheckForFailure(removeOp);
+        Assert.assertEquals(expectedCaps(3), capabilityRegistry.getCapabilities().size());
+
+        // Remove DEP_CAP_ELEMENT_2 so we can remove DEP_CAP_ELEMENT
+        ModelNode removeOp2 = Util.createEmptyOperation("remove", PathAddress.pathAddress(DEP_CAP_ELEMENT_2));
+        removeOp2.get(RELOAD).set(true);
+        rsp = executeCheckNoFailure(removeOp2);
+        Assert.assertFalse(rsp.toString(), rsp.get(RESULT).asBoolean(false)); // performRuntime should NOT be called as required cap is reload-required
+        Assert.assertEquals(expectedCaps(2), capabilityRegistry.getCapabilities().size());
+
+        // Now we can remove DEP_CAP_ELEMENT but no runtime step should be called as the cap is still reload-required
+        rsp = executeCheckNoFailure(removeOp);
+        Assert.assertFalse(rsp.toString(), rsp.get(RESULT).asBoolean(false)); // performRuntime should NOT be called as cap is reload-required
+        Assert.assertEquals(expectedCaps(1), capabilityRegistry.getCapabilities().size());
+
+
+        executeCheckNoFailure(Util.createEmptyOperation("no-root-cap", PathAddress.EMPTY_ADDRESS));
+    }
+
+    @Test
+    public void testGetCapabilities() throws OperationFailedException {
+        CapabilityRegistry reg = new CapabilityRegistry(false);
+        reg.registerPossibleCapability(RuntimeCapability.Builder.of("org.wildfly.obj",
+                true, Object.class).build(),
+                PathAddress.pathAddress(new PathElement("subsystem", "java:jboss"),
+                        new PathElement("foo", "*")));
+        RegistrationPoint rp
+                = new RegistrationPoint(PathAddress.pathAddress(new PathElement("subsystem", "java:jboss"),
+                        new PathElement("foo", "bar")), "bar");
+        RuntimeCapabilityRegistration registration = new RuntimeCapabilityRegistration(RuntimeCapability.Builder.of("org.wildfly.obj.dyn",
+                true, Object.class).build(), CapabilityScope.GLOBAL, rp);
+        reg.registerCapability(registration);
+        Set<String> result = reg.getDynamicCapabilityNames("org.wildfly.obj", CapabilityScope.GLOBAL);
+        Assert.assertEquals(1, result.size());
+        Assert.assertTrue(result.contains("dyn"));
     }
 
     private void addRemoveAddTest() throws OperationFailedException {

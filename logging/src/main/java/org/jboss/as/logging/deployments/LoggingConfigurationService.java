@@ -22,15 +22,8 @@
 
 package org.jboss.as.logging.deployments;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.Services;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -44,7 +37,7 @@ public class LoggingConfigurationService implements Service<LogContextConfigurat
     private final LogContextConfiguration logContextConfiguration;
     private final String configuration;
 
-    public LoggingConfigurationService(final LogContextConfiguration logContextConfiguration, final String configuration) {
+    LoggingConfigurationService(final LogContextConfiguration logContextConfiguration, final String configuration) {
         this.logContextConfiguration = logContextConfiguration;
         this.configuration = configuration;
     }
@@ -74,45 +67,5 @@ public class LoggingConfigurationService implements Service<LogContextConfigurat
      */
     public String getConfiguration() {
         return configuration;
-    }
-
-    /**
-     * Create the service name used for this service for the deployment.
-     *
-     * @param deployment the deployment for this service
-     *
-     * @return the service name
-     */
-    static ServiceName forDeployment(final DeploymentUnit deployment) {
-        return deployment.getServiceName().append("logging", "configuration");
-    }
-
-    /**
-     * Create the service name used for this service on a deployment.
-     *
-     * @param address the deployments address
-     *
-     * @return the service name
-     */
-    public static ServiceName forDeployment(final PathAddress address) {
-        String deploymentName = null;
-        String subdeploymentName = null;
-        for (PathElement element : address) {
-            if (ModelDescriptionConstants.DEPLOYMENT.equals(element.getKey())) {
-                deploymentName = element.getValue();
-            } else if (ModelDescriptionConstants.SUBDEPLOYMENT.endsWith(element.getKey())) {
-                subdeploymentName = element.getValue();
-            }
-        }
-        if (deploymentName == null) {
-            throw LoggingLogger.ROOT_LOGGER.deploymentNameNotFound(address);
-        }
-        final ServiceName result;
-        if (subdeploymentName == null) {
-            result = Services.deploymentUnitName(deploymentName);
-        } else {
-            result = Services.deploymentUnitName(deploymentName, subdeploymentName);
-        }
-        return result.append("logging", "configuration");
     }
 }

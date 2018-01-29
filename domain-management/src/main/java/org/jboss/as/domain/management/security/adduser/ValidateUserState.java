@@ -94,7 +94,7 @@ public class ValidateUserState extends AbstractValidationState {
             public State execute() {
                 for (char currentChar : stateValues.getUserName().toCharArray()) {
                     if ((!isValidPunctuation(currentChar))
-                            && (Character.isLetter(currentChar) || Character.isDigit(currentChar)) == false) {
+                            && (isValidLetter(currentChar) || Character.isDigit(currentChar)) == false) {
                         return new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.usernameNotAlphaNumeric(VALID_SYMBOLS), getRetryState(), stateValues);
                     }
                 }
@@ -104,6 +104,10 @@ public class ValidateUserState extends AbstractValidationState {
 
             private boolean isValidPunctuation(char currentChar) {
                 return (Arrays.binarySearch(VALID_PUNCTUATION, currentChar) >= 0);
+            }
+
+            private boolean isValidLetter(char c) {
+                return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
             }
         };
     }

@@ -1,0 +1,11 @@
+<subsystem xmlns="urn:wildfly:elytron:1.1">
+    <policy default-policy="custom-b">
+        <!-- Parser will no longer discard unreferenced policies
+        <jacc-policy name="elytron-a" policy="a.b.Policy" configuration-factory="a.b.PolicyConfigurationFactory" module="a.b"/>
+        <jacc-policy name="elytron-b" policy="a.b.Policy" configuration-factory="a.b.PolicyConfigurationFactory" module="a.b"/>
+        <jacc-policy name="elytron-c" />
+        <custom-policy name="custom-a" class-name="a.b.c.CustomPolicy" module="a.b.c.custom"/>
+        -->
+        <custom-policy name="custom-b" class-name="a.b.c.CustomPolicy" module="a.b.c.custom"/>
+    </policy>
+</subsystem>

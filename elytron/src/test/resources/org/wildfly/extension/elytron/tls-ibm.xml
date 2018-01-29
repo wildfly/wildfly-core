@@ -1,5 +1,5 @@
 <!-- for needs of SaslTestCase and KeyStoresTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:1.0">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="com.ibm.crypto.provider.IBMJCE com.ibm.jsse.IBMJSSEProvider com.ibm.jsse2.IBMJSSEProvider2 com.ibm.security.jgss.IBMJGSSProvider com.ibm.security.cert.IBMCertPath com.ibm.security.cmskeystore.CMSProvider com.ibm.security.jgss.mech.spnego.IBMSPNEGO" />
     </providers>
@@ -14,7 +14,7 @@
         </filesystem-realm>
     </security-realms>
     <credential-stores>
-        <credential-store name="test" case-sensitive="false" location="target/tlstest.keystore">
+        <credential-store name="test" location="target/tlstest.keystore">
             <implementation-properties>
                 <property name="keyStoreType" value="JCEKS"/>
             </implementation-properties>
@@ -25,22 +25,22 @@
         <key-stores>
             <key-store name="FireflyKeystore" >
                 <credential-reference store="test" alias="master-password-alias"/>
-                <implementation type="TLS" />
+                <implementation type="JKS" />
                 <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
             </key-store>
             <key-store name="LocalhostKeystore" >
                 <credential-reference store="test" alias="master-password-alias"/>
-                <implementation type="TLS" />
+                <implementation type="JKS" />
                 <file path="localhost.keystore" relative-to="jboss.server.config.dir" required="true"/>
             </key-store>
             <key-store name="ElytronCaTruststore" >
                 <credential-reference clear-text="Elytron"/>
-                <implementation type="TLS" />
+                <implementation type="JKS" />
                 <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
             </key-store>
             <key-store name="NewKeyStore" >
                 <credential-reference clear-text="Elytron"/>
-                <implementation type="TLS" />
+                <implementation type="JKS" />
                 <file path="target/not-existing.keystore" required="false"/>
             </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="FireflyKeystore" alias-filter="NONE:+firefly"/>

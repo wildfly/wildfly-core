@@ -166,13 +166,13 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
                                 serverOrganizations.put(hostOrganization, hostOrganization);
                             }
                             Set<String> hostServers = context.readResource(PathAddress.EMPTY_ADDRESS).getChildrenNames(SERVER);
-                            hostServers.stream().forEach((server) -> {
+                            for (String server : hostServers) {
                                 String nodeName = host + ":" + server;
                                 addServerReport(context, hostAddress.append(SERVER, server), nodeName, servers);
-                                if(hostOrganization != null) {
+                                if (hostOrganization != null) {
                                     serverOrganizations.put(nodeName, hostOrganization);
                                 }
-                            });
+                            }
                         }
                     }, OperationContext.Stage.RUNTIME);
                     break;

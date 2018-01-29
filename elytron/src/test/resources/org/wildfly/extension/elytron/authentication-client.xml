@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:1.0" default-authentication-context="child">
+<subsystem xmlns="urn:wildfly:elytron:2.0" default-authentication-context="child">
     <authentication-client>
         <authentication-configuration name="base" anonymous="true" />
         <authentication-configuration name="most"
@@ -13,11 +13,19 @@
         </authentication-configuration>
         <authentication-configuration name="forward"
             extends="base"
-            security-domain="TestDomain">
+            security-domain="TestDomain"
+            forwarding-mode="authentication">
             <mechanism-properties>
                 <property name="a" value="b" />
                 <property name="c" value="d" />
             </mechanism-properties>
+        </authentication-configuration>
+        <authentication-configuration name="forward-authz"
+            extends="base"
+            security-domain="TestDomain"
+            forwarding-mode="authorization"
+            authentication-name="my-server-login">
+            <credential-reference clear-text="supersecret!"/>
         </authentication-configuration>
         <authentication-configuration name="selector"
             extends = "base"

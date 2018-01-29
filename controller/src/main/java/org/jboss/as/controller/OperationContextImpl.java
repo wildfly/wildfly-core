@@ -109,6 +109,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.AbstractServiceListener;
 import org.jboss.msc.service.BatchServiceTarget;
+import org.jboss.msc.service.DelegatingServiceBuilder;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -171,7 +173,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private volatile ModelControllerImpl.ManagementModelImpl managementModel;
 
-    private volatile ModelControllerImpl.ManagementModelImpl originalModel;
+    private final ModelControllerImpl.ManagementModelImpl originalModel;
 
     /** Tracks the relationship between domain resources and hosts and server groups */
     private volatile HostServerGroupTracker hostServerGroupTracker;
@@ -1404,10 +1406,14 @@ final class OperationContextImpl extends AbstractOperationContext {
             try {
                 // Decouple any ServiceTarget or ServiceRegistry we have created from this object
                 try {
-                    serviceTargets.forEach(ContextServiceTarget::done);
+                    for (ContextServiceTarget serviceTarget : serviceTargets) {
+                        serviceTarget.done();
+                    }
                     serviceTargets.clear();
                 } finally {
-                    serviceRegistries.forEach(OperationContextServiceRegistry::done);
+                    for (OperationContextServiceRegistry serviceRegistry : serviceRegistries) {
+                        serviceRegistry.done();
+                    }
                     serviceRegistries.clear();
                 }
             } finally {
@@ -1655,7 +1661,8 @@ final class OperationContextImpl extends AbstractOperationContext {
         } catch (IllegalStateException ignored) {
             // not registered. just do it directly
         }
-        return ServiceName.parse(capabilityName);
+        ControllerLogger.ROOT_LOGGER.debugf("OperationContext: Parsing ServiceName for %s", capabilityName);
+        return ServiceNameFactory.parseServiceName(capabilityName);
     }
 
     private void rejectUserDomainServerUpdates() {
@@ -2056,7 +2063,9 @@ final class OperationContextImpl extends AbstractOperationContext {
          */
         synchronized void done() {
             builderSupplier = null;
-            builders.forEach(ContextServiceBuilder::done);
+            for (ContextServiceBuilder builder : builders) {
+                builder.done();
+            }
             builders.clear();
         }
 
@@ -2132,10 +2141,20 @@ final class OperationContextImpl extends AbstractOperationContext {
             return delegate.addListener(listeners);
         }
 
+        public ServiceTarget addListener(final LifecycleListener lifecycleListener) {
+            checkNotInManagementOperation();
+            return delegate.addListener(lifecycleListener);
+        }
+
         @SuppressWarnings("deprecation")
         public ServiceTarget removeListener(final ServiceListener<Object> listener) {
             checkNotInManagementOperation();
             return delegate.removeListener(listener);
+        }
+
+        public ServiceTarget removeListener(final LifecycleListener lifecycleListener) {
+            checkNotInManagementOperation();
+            return delegate.removeListener(lifecycleListener);
         }
 
         @SuppressWarnings("deprecation")
@@ -2303,7 +2322,9 @@ final class OperationContextImpl extends AbstractOperationContext {
          */
         synchronized void done() {
             registryActiveStep = null;
-            controllers.forEach(OperationContextServiceController::done);
+            for (OperationContextServiceController controller : controllers) {
+                controller.done();
+            }
             controllers.clear();
         }
 
@@ -2418,9 +2439,17 @@ final class OperationContextImpl extends AbstractOperationContext {
             return controller.getAliases();
         }
 
+        public void addListener(final LifecycleListener lifecycleListener) {
+            controller.addListener(lifecycleListener);
+        }
+
         @SuppressWarnings("deprecation")
         public void addListener(ServiceListener<? super S> serviceListener) {
             controller.addListener(serviceListener);
+        }
+
+        public void removeListener(final LifecycleListener lifecycleListener) {
+            controller.removeListener(lifecycleListener);
         }
 
         @SuppressWarnings("deprecation")
@@ -2664,7 +2693,13 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public ServiceName getCapabilityServiceName(String capabilityName) {
-            return ServiceName.parse(capabilityName);
+            try {
+                return managementModel.getCapabilityRegistry().getCapabilityServiceName(capabilityName, CapabilityScope.GLOBAL, null);
+            } catch (IllegalStateException | IllegalArgumentException ignore) {
+                // ignore
+            }
+            ControllerLogger.ROOT_LOGGER.debugf("CapabilityServiceSupport: Parsing ServiceName for %s", capabilityName);
+            return ServiceNameFactory.parseServiceName(capabilityName);
         }
 
         @Override

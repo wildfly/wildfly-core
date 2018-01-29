@@ -94,9 +94,13 @@ public class CommandBuilderTest {
 
 
         // A system property should only be added ones
-        Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, commandBuilder.getJavaOptions().stream()
-                .filter(s -> s.contains("java.net.preferIPv4Stack"))
-                .count());
+        long count = 0L;
+        for (String s : commandBuilder.getJavaOptions()) {
+            if (s.contains("java.net.preferIPv4Stack")) {
+                count++;
+            }
+        }
+        Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, count);
 
         // The value saved should be the last value added
         Assert.assertTrue("java.net.preferIPv4Stack should be set to false", commandBuilder.getJavaOptions().contains("-Djava.net.preferIPv4Stack=false"));

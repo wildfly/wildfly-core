@@ -34,29 +34,19 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.jboss.staxmapper.XMLMapper;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Parsing and marshalling logic related to the {@code extension} element in standalone.xml and domain.xml.
@@ -71,10 +61,19 @@ public class ExtensionXml {
     private final ExecutorService bootExecutor;
     private final ExtensionRegistry extensionRegistry;
 
+    private final DeferredExtensionContext deferredExtensionContext;
+
+    public ExtensionXml(DeferredExtensionContext deferredExtensionContext) {
+        this.deferredExtensionContext = deferredExtensionContext;
+        this.moduleLoader = null;
+        this.bootExecutor = null;
+        this.extensionRegistry = null;
+    }
     public ExtensionXml(final ModuleLoader loader, final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
         moduleLoader = loader;
         bootExecutor = executorService;
         this.extensionRegistry = extensionRegistry;
+        this.deferredExtensionContext = null;
     }
 
     public void writeExtensions(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
@@ -91,7 +90,10 @@ public class ExtensionXml {
 
     public void parseExtensions(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list)
             throws XMLStreamException {
-
+        DeferredExtensionContext ctx = this.deferredExtensionContext;
+        if(ctx == null) {
+            ctx = new DeferredExtensionContext(moduleLoader, extensionRegistry, bootExecutor);
+        }
         long start = System.currentTimeMillis();
 
         requireNoAttributes(reader);
@@ -99,9 +101,6 @@ public class ExtensionXml {
         final Set<String> found = new HashSet<String>();
 
         final XMLMapper xmlMapper = reader.getXMLMapper();
-
-        final Map<String, Future<XMLStreamException>> loadFutures = bootExecutor != null
-                ? new LinkedHashMap<String, Future<XMLStreamException>>() : null;
 
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
@@ -117,47 +116,13 @@ public class ExtensionXml {
                 // duplicate module name
                 throw ControllerLogger.ROOT_LOGGER.duplicateExtensionElement(Element.EXTENSION.getLocalName(), Attribute.MODULE.getLocalName(), moduleName, reader.getLocation());
             }
-
-            if (loadFutures != null) {
-                // Load the module asynchronously
-                Callable<XMLStreamException> callable = new Callable<XMLStreamException>() {
-                    @Override
-                    public XMLStreamException call() throws Exception {
-                        return loadModule(moduleName, xmlMapper);
-                    }
-                };
-                Future<XMLStreamException> future = bootExecutor.submit(callable);
-                loadFutures.put(moduleName, future);
-            } else {
-                // Load the module from this thread
-                XMLStreamException xse = loadModule(moduleName, xmlMapper);
-                if (xse != null) {
-                    throw xse;
-                }
-                addExtensionAddOperation(address, list, moduleName);
-            }
-
+            ctx.addExtension(moduleName, xmlMapper);
+            addExtensionAddOperation(address, list, moduleName);
         }
 
-        if (loadFutures != null) {
-            for (Map.Entry<String, Future<XMLStreamException>> entry : loadFutures.entrySet()) {
-
-                try {
-                    XMLStreamException xse = entry.getValue().get();
-                    if (xse != null) {
-                        throw xse;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(entry.getKey());
-                } catch (ExecutionException e) {
-                    throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e, entry.getKey());
-                }
-
-                addExtensionAddOperation(address, list, entry.getKey());
-            }
+        if(deferredExtensionContext == null) {
+            ctx.load();
         }
-
         long elapsed = System.currentTimeMillis() - start;
         if (ROOT_LOGGER.isDebugEnabled()) {
             ROOT_LOGGER.debugf("Parsed extensions in [%d] ms", elapsed);
@@ -171,28 +136,4 @@ public class ExtensionXml {
         list.add(add);
     }
 
-    private XMLStreamException loadModule(final String moduleName, final XMLMapper xmlMapper) throws XMLStreamException {
-        // Register element handlers for this extension
-        try {
-            final Module module = moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName));
-            boolean initialized = false;
-            for (final Extension extension : module.loadService(Extension.class)) {
-                ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
-                try {
-                    extension.initializeParsers(extensionRegistry.getExtensionParsingContext(moduleName, xmlMapper));
-                } finally {
-                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
-                }
-                if (!initialized) {
-                    initialized = true;
-                }
-            }
-            if (!initialized) {
-                throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module.getIdentifier());
-            }
-            return null;
-        } catch (final ModuleLoadException e) {
-            throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e);
-        }
-    }
 }

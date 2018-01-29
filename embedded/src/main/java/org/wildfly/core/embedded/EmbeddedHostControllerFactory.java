@@ -369,10 +369,10 @@ public class EmbeddedHostControllerFactory {
                 } catch (RuntimeException rte) {
                     throw rte;
                 } catch (InterruptedException ite) {
-                    ite.printStackTrace();
+                    ServerLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    ServerLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
                 }
             }
             if (controlledProcessStateService != null) {
@@ -388,10 +388,10 @@ public class EmbeddedHostControllerFactory {
                 } catch (RuntimeException rte) {
                     throw rte;
                 } catch (InterruptedException ite) {
-                    ite.printStackTrace();
+                    ServerLogger.ROOT_LOGGER.error(ite.getLocalizedMessage(), ite);
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    ServerLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
                 }
             }
 

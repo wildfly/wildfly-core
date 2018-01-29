@@ -38,7 +38,7 @@ import org.jboss.dmr.ModelNode;
  */
 public final class Action {
 
-    public static enum ActionEffect {
+    public enum ActionEffect {
         /** "Address" a resource, thus confirming the address is valid. All operations have this effect. */
         ADDRESS("address"),
         /** Read the persistent configuration */
@@ -52,7 +52,7 @@ public final class Action {
 
         private final String name;
 
-        private ActionEffect(String name) {
+        ActionEffect(String name) {
             this.name = name;
         }
 
@@ -85,7 +85,7 @@ public final class Action {
             return Collections.emptySet();
         }
         final EnumSet<ActionEffect> result;
-        final EnumSet<OperationEntry.Flag> flags = operationEntry.getFlags();
+        final Set<OperationEntry.Flag> flags = operationEntry.getFlags();
         if (flags.contains(OperationEntry.Flag.RUNTIME_ONLY)) {
             result = EnumSet.of(ActionEffect.ADDRESS, ActionEffect.READ_RUNTIME);
             if (!flags.contains(OperationEntry.Flag.READ_ONLY)) {
@@ -107,7 +107,7 @@ public final class Action {
         return actionEffects;
     }
 
-    public EnumSet<OperationEntry.Flag> getFlags() {
+    public Set<OperationEntry.Flag> getFlags() {
         return operationEntry != null ? operationEntry.getFlags() : EnumSet.noneOf(OperationEntry.Flag.class);
     }
 

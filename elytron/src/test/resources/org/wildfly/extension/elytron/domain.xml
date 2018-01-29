@@ -1,9 +1,9 @@
-<subsystem xmlns="urn:wildfly:elytron:1.0">
+<subsystem xmlns="urn:wildfly:elytron:2.0">
     <audit-logging>
         <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
     </audit-logging>
     <security-domains>
-        <security-domain name="MyDomain" default-realm="RealmTwo" pre-realm-principal-transformer="RegexOne" post-realm-principal-transformer="RegexTwo" 
+        <security-domain name="MyDomain" default-realm="RealmTwo" pre-realm-principal-transformer="RegexOne" post-realm-principal-transformer="RegexTwo"
             principal-decoder="CustomPrincipalDecoder" realm-mapper="RegexMapper" role-mapper="ConstantRoleMapper" permission-mapper="PermissionMapper"
             trusted-security-domains="OtherDomain" outflow-security-domains="OtherDomain" security-event-listener="local-file">
             <realm name="RealmTwo" role-mapper="PrefixRoleMapper" />

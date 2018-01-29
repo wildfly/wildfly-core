@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<host name="master" xmlns="urn:jboss:domain:5.0">
+<host name="master" xmlns="urn:jboss:domain:6.0">
 
     <extensions>
         <?EXTENSIONS?>
@@ -82,6 +82,9 @@
                 <option value="-XX:MetaspaceSize=96m"/>
                 <option value="-XX:MaxMetaspaceSize=256m"/>
             </jvm-options>
+            <environment-variables>
+                <variable name="MALLOC_ARENA_MAX" value="1"/>
+            </environment-variables>
         </jvm>
     </jvms>
 

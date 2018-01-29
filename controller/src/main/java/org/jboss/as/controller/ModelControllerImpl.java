@@ -184,7 +184,7 @@ class ModelControllerImpl implements ModelController {
         this.prepareStep = prepareStep == null ? new DefaultPrepareStepHandler() : prepareStep;
         assert processState != null;
         this.processState = processState;
-        this.serviceTarget.addListener(stateMonitor);
+        this.serviceTarget.addMonitor(stateMonitor.getStabilityMonitor());
         this.executorService = executorService;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;
@@ -689,9 +689,15 @@ class ModelControllerImpl implements ModelController {
                                                           final boolean resourceRegistrationModified) throws ConfigurationPersistenceException {
         final ConfigurationPersister.PersistenceResource delegate;
         if (resourceTreeModified) {
-            ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
-            final ModelNode newModel = Resource.Tools.readModel(model.rootResource, model.resourceRegistration);
-            delegate = persister.store(newModel, affectedAddresses);
+            // Don't do an expensive Resource.Tools.readModel if the persister isn't going to use the result
+            if (persister.isPersisting()) {
+                ControllerLogger.MGMT_OP_LOGGER.tracef("persisting %s from %s", model.rootResource, model);
+                final ModelNode newModel = Resource.Tools.readModel(model.rootResource, model.resourceRegistration);
+                delegate = persister.store(newModel, affectedAddresses);
+            } else {
+                ControllerLogger.MGMT_OP_LOGGER.tracef("Ignoring permanent persistence during boot");
+                delegate = null;
+            }
         } else {
             ControllerLogger.MGMT_OP_LOGGER.tracef("persisting with no resource tree changes to %s", model);
             delegate = null;
@@ -714,7 +720,9 @@ class ModelControllerImpl implements ModelController {
                 }
                 if (resourceTreeModified) {
                     model.publish();
-                    delegate.commit();
+                    if (delegate != null) {
+                        delegate.commit();
+                    }
                 }
             }
 
@@ -722,7 +730,7 @@ class ModelControllerImpl implements ModelController {
             public void rollback() {
                 // Don't discard the model here; let that happen via finally block calls to MCI.discardModel
                 //model.discard();
-                if (resourceTreeModified) {
+                if (delegate != null) {
                     delegate.rollback();
                 }
             }

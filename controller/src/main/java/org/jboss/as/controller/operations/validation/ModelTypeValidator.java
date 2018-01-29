@@ -20,10 +20,14 @@ package org.jboss.as.controller.operations.validation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -57,7 +61,22 @@ public class ModelTypeValidator implements ParameterValidator {
     protected static final BigInteger BIGINTEGER_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
     protected static final BigInteger BIGINTEGER_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
 
-    protected final EnumSet<ModelType> validTypes;
+    private static final Map<EnumSet<ModelType>, Set<ModelType>> flagSets = new ConcurrentHashMap<>(16);
+    private static Set<ModelType> sharedSetOf(boolean allowExpressions, ModelType firstValidType, ModelType... otherValidTypes) {
+        EnumSet<ModelType> baseSet = EnumSet.of(firstValidType, otherValidTypes);
+        if (allowExpressions) {
+            baseSet.add(ModelType.EXPRESSION);
+        }
+        Set<ModelType> result = flagSets.get(baseSet);
+        if (result == null) {
+            Set<ModelType> immutable = Collections.unmodifiableSet(baseSet);
+            Set<ModelType> existing = flagSets.putIfAbsent(baseSet, immutable);
+            result = existing == null ? immutable : existing;
+        }
+        return result;
+    }
+
+    protected final Set<ModelType> validTypes;
     protected final boolean nullable;
     protected final boolean strictType;
 
@@ -115,11 +134,8 @@ public class ModelTypeValidator implements ParameterValidator {
      * @param otherValidTypes additional valid types. May be {@code null}
      */
     public ModelTypeValidator(final boolean nullable, final boolean allowExpressions, final boolean strictType, ModelType firstValidType, ModelType... otherValidTypes) {
-        this.validTypes = EnumSet.of(firstValidType, otherValidTypes);
+        this.validTypes = sharedSetOf(allowExpressions, firstValidType, otherValidTypes);
         this.nullable = nullable;
-        if (allowExpressions) {
-            this.validTypes.add(ModelType.EXPRESSION);
-        }
         this.strictType = strictType;
     }
 
@@ -159,14 +175,6 @@ public class ModelTypeValidator implements ParameterValidator {
                 throw new OperationFailedException(message, cause);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        validateParameter(parameterName, value.resolve());
     }
 
     private boolean matches(ModelNode value, ModelType validType) {

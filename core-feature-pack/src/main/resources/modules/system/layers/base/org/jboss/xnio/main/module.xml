@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.5" name="org.jboss.xnio">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.xnio" version="${org.jboss.xnio:xnio-api}">
     <resources>
         <artifact name="${org.jboss.xnio:xnio-api}"/>
     </resources>
@@ -31,6 +31,7 @@
         <module name="javax.api"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.xnio.nio" services="import"/>
+        <module name="org.jboss.threads"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.client.config"/>
     </dependencies>

@@ -21,15 +21,11 @@
  */
 package org.jboss.as.controller.operations.validation;
 
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.dmr.ModelNode;
-
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
+ *
+ * @deprecated Adds no value versus implementing the interface directly
  */
+@Deprecated
 public abstract class AbstractParameterValidator implements ParameterValidator {
-    @Override
-    public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        validateParameter(parameterName, value);
-    }
 }

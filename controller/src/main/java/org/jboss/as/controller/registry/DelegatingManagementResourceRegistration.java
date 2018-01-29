@@ -161,6 +161,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public Map<String, AttributeAccess> getAttributes(PathAddress address) {
+        return getDelegate().getAttributes(address);
+    }
+
+    @Override
     public Set<String> getChildNames(PathAddress address) {
         return getDelegate().getChildNames(address);
     }

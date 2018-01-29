@@ -20,14 +20,15 @@ package org.jboss.as.controller;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.AttributeParsers.ObjectParser.parseEmbeddedElement;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROPERTY;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.parsing.ParseUtils;
@@ -38,6 +39,30 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public interface AttributeParsers {
+
+    abstract class AttributeElementParser extends AttributeParser {
+        private final String xmlName;
+        public AttributeElementParser() {
+                    this.xmlName = null;
+        }
+
+        public AttributeElementParser(String xmlName) {
+            this.xmlName = xmlName;
+        }
+
+        @Override
+        public boolean isParseAsElement() {
+            return true;
+        }
+
+        @Override
+        public String getXmlName(AttributeDefinition attribute) {
+            return xmlName == null ? attribute.getXmlName() : xmlName;
+        }
+
+        @Override
+        public abstract void parseElement(AttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException;
+    }
 
     abstract class MapParser extends AttributeParser {
         protected final String wrapperElement;
@@ -119,7 +144,7 @@ public interface AttributeParsers {
     }
 
 
-    static class PropertiesParser extends MapParser {
+    class PropertiesParser extends MapParser {
 
         public PropertiesParser(String wrapperElement, String elementName, boolean wrapElement) {
             super(wrapperElement, elementName, wrapElement);
@@ -148,7 +173,7 @@ public interface AttributeParsers {
         }
     }
 
-    static class ObjectMapParser extends MapParser {
+    class ObjectMapParser extends MapParser {
         private final String keyAttributeName; //name of attribute to use for "key"
 
         public ObjectMapParser(String wrapperElement, String elementName, boolean wrapElement, String keyAttributeName) {
@@ -185,7 +210,7 @@ public interface AttributeParsers {
     }
 
 
-    static class ObjectParser extends AttributeParser {
+    class ObjectParser extends AttributeParser {
         @Override
         public boolean isParseAsElement() {
             return true;
@@ -214,13 +239,17 @@ public interface AttributeParsers {
         static void parseEmbeddedElement(ObjectTypeAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode op, String... additionalExpectedAttributes) throws XMLStreamException {
             AttributeDefinition[] valueTypes = attribute.getValueTypes();
 
-            Map<String, AttributeDefinition> attributes = Arrays.stream(valueTypes)
-                    .collect(Collectors.toMap(AttributeDefinition::getXmlName, Function.identity()));
+            Map<String, AttributeDefinition> attributes = new HashMap<>();
+            for (AttributeDefinition valueType : valueTypes) {
+                attributes.put(valueType.getXmlName(), valueType);
+            }
 
-            Map<String, AttributeDefinition> attributeElements = Arrays.stream(valueTypes)
-                                   .filter(attributeDefinition -> attributeDefinition.getParser().isParseAsElement())
-                    .collect(Collectors.toMap(a -> a.getParser().getXmlName(a) , Function.identity()));
-
+            Map<String, AttributeDefinition> attributeElements = new HashMap<>();
+            for (AttributeDefinition attributeDefinition : valueTypes) {
+                if (attributeDefinition.getParser().isParseAsElement()) {
+                    attributeElements.put(attributeDefinition.getParser().getXmlName(attributeDefinition), attributeDefinition);
+                }
+            }
 
             for (int i = 0; i < reader.getAttributeCount(); i++) {
                 String attributeName = reader.getAttributeLocalName(i);
@@ -317,15 +346,22 @@ public interface AttributeParsers {
         }
     }
 
+    class NamedStringListParser extends AttributeParsers.AttributeElementParser {
+        public NamedStringListParser() {
+        }
 
-    AttributeParser PROPERTIES_WRAPPED = new PropertiesParser();
-    AttributeParser PROPERTIES_UNWRAPPED = new PropertiesParser(false);
+        public NamedStringListParser(String xmlName) {
+            super(xmlName);
+        }
 
-    AttributeParser OBJECT_MAP_WRAPPED = new ObjectMapParser();
-    AttributeParser OBJECT_MAP_UNWRAPPED = new ObjectMapParser(false);
-
-    AttributeParser WRAPPED_OBJECT_LIST_PARSER = new WrappedObjectListParser();
-    AttributeParser UNWRAPPED_OBJECT_LIST_PARSER = new UnWrappedObjectListParser();
+        @Override
+        public void parseElement(AttributeDefinition ad, XMLExtendedStreamReader reader, ModelNode addPermissionMapper) throws XMLStreamException {
+            ParseUtils.requireSingleAttribute(reader, NAME);
+            String name = reader.getAttributeValue(0);
+            addPermissionMapper.get(ad.getName()).add(name);
+            ParseUtils.requireNoContent(reader);
+        }
+    }
 
     static AttributeParser getObjectMapAttributeParser(String keyElementName) {
         return new ObjectMapParser(null, null, true, keyElementName);
@@ -342,6 +378,29 @@ public interface AttributeParsers {
     static AttributeParser getObjectMapAttributeParser(String wrapperElementName, boolean wrapElement, String elementName, String keyElementName) {
         return new ObjectMapParser(wrapperElementName, elementName, wrapElement, keyElementName);
     }
+
+    /**
+     * Simple attribute parser, that loads attribute from xml attribute
+     */
+    AttributeParser SIMPLE = AttributeParser.SIMPLE;
+    /**
+     * simple parser that loads attribute value from xml element with name of attribute and takes its content as value of attribute.
+     */
+    AttributeParser SIMPLE_ELEMENT = new AttributeParser.WrappedSimpleAttributeParser();
+
+
+    AttributeParser PROPERTIES_WRAPPED = new PropertiesParser();
+    AttributeParser PROPERTIES_UNWRAPPED = new PropertiesParser(false);
+
+    AttributeParser OBJECT_MAP_WRAPPED = new ObjectMapParser();
+    AttributeParser OBJECT_MAP_UNWRAPPED = new ObjectMapParser(false);
+
+    AttributeParser WRAPPED_OBJECT_LIST_PARSER = new WrappedObjectListParser();
+    AttributeParser UNWRAPPED_OBJECT_LIST_PARSER = new UnWrappedObjectListParser();
+
+    AttributeParser STRING_LIST_NAMED_ELEMENT = new NamedStringListParser();
+    AttributeParser STRING_LIST = AttributeParser.STRING_LIST;
+    AttributeParser STRING_LIST_COMMA_DELIMITED = AttributeParser.COMMA_DELIMITED_STRING_LIST;
 
 
 }

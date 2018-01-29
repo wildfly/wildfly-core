@@ -1,5 +1,5 @@
 <!-- for needs of TlsTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:1.0" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:2.0" initial-providers="elytron">
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
@@ -15,7 +15,8 @@
     </security-realms>
     <mappers>
         <simple-permission-mapper name="PermMapper">
-            <permission-mapping principals="firstUser" >
+            <permission-mapping>
+                <principal name="firstUser"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
             </permission-mapping>
         </simple-permission-mapper>

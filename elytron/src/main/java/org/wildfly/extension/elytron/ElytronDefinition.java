@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
@@ -30,7 +31,6 @@ import static org.wildfly.extension.elytron.Capabilities.ROLE_DECODER_RUNTIME_CA
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.asStringIfDefined;
 
 import java.security.Provider;
 import java.util.List;
@@ -117,7 +117,6 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .build();
     static final PropertiesAttributeDefinition SECURITY_PROPERTIES = new PropertiesAttributeDefinition.Builder("security-properties", true)
-            .setXmlName("security-property")
             .build();
 
     public static final ElytronDefinition INSTANCE = new ElytronDefinition();
@@ -133,14 +132,17 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+        final boolean serverOrHostController = isServerOrHostController(resourceRegistration);
+
         // Provider Loader
         resourceRegistration.registerSubModel(ProviderDefinitions.getAggregateProvidersDefinition());
-        resourceRegistration.registerSubModel(ProviderDefinitions.getProviderLoaderDefinition());
+        resourceRegistration.registerSubModel(ProviderDefinitions.getProviderLoaderDefinition(serverOrHostController));
 
         // Audit
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getAggregateSecurityEventListenerDefinition());
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getFileAuditLogResourceDefinition());
-        resourceRegistration.registerSubModel(AuditResourceDefinitions.getRotatingFileAuditLogResourceDefinition());
+        resourceRegistration.registerSubModel(AuditResourceDefinitions.getPeriodicRotatingFileAuditLogResourceDefinition());
+        resourceRegistration.registerSubModel(AuditResourceDefinitions.getSizeRotatingFileAuditLogResourceDefinition());
         resourceRegistration.registerSubModel(AuditResourceDefinitions.getSyslogAuditLogResourceDefinition());
 
         // Security Domain SASL / HTTP Configurations
@@ -159,7 +161,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(RealmDefinitions.getIdentityRealmDefinition());
         resourceRegistration.registerSubModel(new JdbcRealmDefinition());
         resourceRegistration.registerSubModel(new KeyStoreRealmDefinition());
-        resourceRegistration.registerSubModel(new PropertiesRealmDefinition());
+        resourceRegistration.registerSubModel(PropertiesRealmDefinition.create(serverOrHostController));
         resourceRegistration.registerSubModel(new TokenRealmDefinition());
         resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new LdapRealmDefinition()));
         resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new FileSystemRealmDefinition()));
@@ -227,8 +229,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(ModifiableKeyStoreDecorator.wrap(new FilteringKeyStoreDefinition()));
         resourceRegistration.registerSubModel(SSLDefinitions.getKeyManagerDefinition());
         resourceRegistration.registerSubModel(SSLDefinitions.getTrustManagerDefinition());
-        resourceRegistration.registerSubModel(SSLDefinitions.getServerSSLContextDefinition());
-        resourceRegistration.registerSubModel(SSLDefinitions.getClientSSLContextDefinition());
+        resourceRegistration.registerSubModel(SSLDefinitions.getServerSSLContextDefinition(serverOrHostController));
+        resourceRegistration.registerSubModel(SSLDefinitions.getClientSSLContextDefinition(serverOrHostController));
 
         // Credential Store Block
         resourceRegistration.registerSubModel(new CredentialStoreResourceDefinition());
@@ -331,14 +333,14 @@ class ElytronDefinition extends SimpleResourceDefinition {
             ServiceBuilder<Void> builder = target.addService(ProviderRegistrationService.SERVICE_NAME, prs)
                 .setInitialMode(Mode.ACTIVE);
 
-            String initialProviders = asStringIfDefined(context, INITIAL_PROVIDERS, model);
+            String initialProviders = INITIAL_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             if (initialProviders != null) {
                 builder.addDependency(
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, initialProviders, Provider[].class),
                         Provider[].class, prs.getInitialProivders());
             }
 
-            String finalProviders = asStringIfDefined(context, FINAL_PROVIDERS, model);
+            String finalProviders = FINAL_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             if (finalProviders != null) {
                 builder.addDependency(
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, finalProviders, Provider[].class),
@@ -351,8 +353,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
                 context.addStep(new AbstractDeploymentChainStep() {
                     @Override
                     protected void execute(DeploymentProcessorTarget processorTarget) {
-                        // TODO Remove hard coded Phase ID once a suitable core is available with Phase.DEPENDENCIES_ELYTRON defined.
-                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0x0C51, new DependencyProcessor());
+                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_ELYTRON, new DependencyProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.CONFIGURE_MODULE, Phase.CONFIGURE_AUTHENTICATION_CONTEXT, AUTHENITCATION_CONTEXT_PROCESSOR);
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.FIRST_MODULE_USE, Phase.FIRST_MODULE_USE_AUTHENTICATION_CONTEXT, new AuthenticationContextAssociationProcessor());
                     }

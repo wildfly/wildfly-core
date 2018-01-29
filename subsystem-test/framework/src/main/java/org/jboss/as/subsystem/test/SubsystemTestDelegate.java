@@ -129,7 +129,7 @@ final class SubsystemTestDelegate {
     }
 
     private final Class<?> testClass;
-    private final List<KernelServices> kernelServices = new ArrayList<KernelServices>();
+    private final List<KernelServices> kernelServices = new ArrayList<>();
 
     protected final String mainSubsystemName;
     private final Extension mainExtension;
@@ -219,7 +219,7 @@ final class SubsystemTestDelegate {
                 "</test>";
         final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
         addAdditionalParsers(additionalParsers);
-        final List<ModelNode> operationList = new ArrayList<ModelNode>();
+        final List<ModelNode> operationList = new ArrayList<>();
         xmlMapper.parseDocument(operationList, reader);
         return operationList;
     }
@@ -232,7 +232,7 @@ final class SubsystemTestDelegate {
      */
     String outputModel(ModelNode model) throws Exception {
 
-        StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), testParser, true);
+        StringConfigurationPersister persister = new StringConfigurationPersister(Collections.emptyList(), testParser, true);
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
@@ -243,7 +243,7 @@ final class SubsystemTestDelegate {
         Extension extension = mainExtension.getClass().newInstance();
         extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
 
-        ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.<PathAddress>emptySet());
+        ConfigurationPersister.PersistenceResource resource = persister.store(model, Collections.emptySet());
         resource.commit();
         return persister.getMarshalled();
     }
@@ -297,7 +297,7 @@ final class SubsystemTestDelegate {
 
         Resource rootResource = ModelTestModelControllerService.grabRootResource(kernelServices);
 
-        List<PathAddress> addresses = new ArrayList<PathAddress>();
+        List<PathAddress> addresses = new ArrayList<>();
         PathAddress pathAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, mainSubsystemName));
         Resource subsystemResource = rootResource.getChild(pathAddress.getLastElement());
         Assert.assertNotNull(subsystemResource);
@@ -310,7 +310,7 @@ final class SubsystemTestDelegate {
 
         // If the remove order comparator is not null, then sort the addresses
         if (removeOrderComparator != null) {
-            Collections.sort(addresses, removeOrderComparator);
+            addresses.sort(removeOrderComparator);
         }
 
         ModelNode composite = new ModelNode();
@@ -336,7 +336,7 @@ final class SubsystemTestDelegate {
     }
 
     private void getAllChildAddressesForRemove(PathAddress address, List<PathAddress> addresses, Resource resource) {
-        List<PathElement> childElements = new ArrayList<PathElement>();
+        List<PathElement> childElements = new ArrayList<>();
         for (String type : resource.getChildTypes()) {
             for (String childName : resource.getChildrenNames(type)) {
                 PathElement element = PathElement.pathElement(type, childName);
@@ -555,6 +555,12 @@ final class SubsystemTestDelegate {
             return initializer;
         }
 
+        public LegacyKernelServicesInitializer createLegacyKernelServicesBuilder(AdditionalInitialization additionalInit, ModelTestControllerVersion version) {
+
+
+            return createLegacyKernelServicesBuilder(additionalInit, version, version.getSubsystemModelVersion(mainSubsystemName));
+        }
+
         public KernelServices build() throws Exception {
             bootOperationBuilder.validateNotAlreadyBuilt();
             List<ModelNode> bootOperations = bootOperationBuilder.build();
@@ -644,12 +650,7 @@ final class SubsystemTestDelegate {
         private boolean skipReverseCheck;
         private AdditionalInitialization reverseCheckConfig;
         private ModelFixer reverseCheckModelFixer;
-        private OperationFixer reverseCheckOperationFixer = new OperationFixer() {
-            @Override
-            public ModelNode fixOperation(ModelNode operation) {
-                return operation;
-            }
-        };
+        private OperationFixer reverseCheckOperationFixer = operation -> operation;
 
         public LegacyKernelServiceInitializerImpl(AdditionalInitialization additionalInit, ModelTestControllerVersion version, ModelVersion modelVersion) {
             this.classLoaderBuilder = new ChildFirstClassLoaderBuilder(version.isEap());
@@ -900,6 +901,11 @@ final class SubsystemTestDelegate {
         @Override
         public AttributeAccess getAttributeAccess(PathAddress address, String attributeName) {
             return null;
+        }
+
+        @Override
+        public Map<String, AttributeAccess> getAttributes(PathAddress address) {
+            return Collections.emptyMap();
         }
 
         @Override

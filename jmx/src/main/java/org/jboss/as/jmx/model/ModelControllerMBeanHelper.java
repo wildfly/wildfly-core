@@ -92,6 +92,7 @@ public class ModelControllerMBeanHelper {
     private final TypeConverters converters;
     private final ConfiguredDomains configuredDomains;
     private final String domain;
+    private final ObjectInstance rootObjectInstance;
     private final ManagementModelIntegration.ManagementModelProvider managementModelProvider;
 
     ModelControllerMBeanHelper(TypeConverters converters, ConfiguredDomains configuredDomains, String domain,
@@ -104,15 +105,25 @@ public class ModelControllerMBeanHelper {
         this.accessControlUtil = new ResourceAccessControlUtil(controller);
         this.mutabilityChecker = mutabilityChecker;
         this.managementModelProvider = managementModelProvider;
+        this.rootObjectInstance = ModelControllerMBeanHelper.createRootObjectInstance(domain);
     }
 
     int getMBeanCount() {
-        return new RootResourceIterator<Integer>(accessControlUtil, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
+        // Here we don't provide the accessControlUtil as we don't want to pay the cost of doing RBAC
+        // checks. An mbean exists and can be in the count regardless of whether it can be addressed
+        return new RootResourceIterator<Integer>(null, getRootResourceAndRegistration().getResource(), new ResourceAction<Integer>() {
             int count;
-
+            final ImmutableManagementResourceRegistration rootRegistration = getRootResourceAndRegistration().getRegistration();
             @Override
             public ObjectName onAddress(PathAddress address) {
-                return isExcludeAddress(address) ? null : ObjectNameAddressUtil.createObjectName(domain, address);
+                // We don't exclude addresses based on RBAC but we do check that they correspond to a real MRR
+                // plus we exclude the platform mbean resources, which are not visible via this JMX domain.
+                // If the address is good, then we don't need to do a costly parse of it into an ObjectName,
+                // as in this iterator's case all that's done with the ObjectName is a null check.
+                // So we just return an ObjectName we already have at hand, i.e. the name of the root resource mbean
+                // for this JMX domain.
+                return isExcludeAddress(address) || rootRegistration.getSubModel(address) == null
+                        ? null : rootObjectInstance.getObjectName();
             }
 
             public boolean onResource(ObjectName address) {
@@ -142,9 +153,6 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectInstance> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectInstance(domain))) {
-                    return Collections.emptySet();
-                }
                 return set;
             }
         }).iterate();
@@ -189,9 +197,6 @@ public class ModelControllerMBeanHelper {
 
             @Override
             public Set<ObjectName> getResult() {
-                if (set.size() == 1 && set.contains(ModelControllerMBeanHelper.createRootObjectName(domain))) {
-                  return Collections.emptySet();
-                }
                 return set;
             }
         }).iterate();
@@ -231,11 +236,11 @@ public class ModelControllerMBeanHelper {
 
 
     PathAddress resolvePathAddress(final ObjectName name) {
-        return ObjectNameAddressUtil.resolvePathAddress(domain, getRootResourceAndRegistration().getResource(), name);
+        return ObjectNameAddressUtil.resolvePathAddress(rootObjectInstance.getObjectName(), getRootResourceAndRegistration().getResource(), name);
     }
 
-    PathAddress resolvePathAddress(final ObjectName name, ManagementModelIntegration.ResourceAndRegistration reg) {
-        return ObjectNameAddressUtil.resolvePathAddress(domain, reg.getResource(), name);
+    private PathAddress resolvePathAddress(final ObjectName name, ManagementModelIntegration.ResourceAndRegistration reg) {
+        return ObjectNameAddressUtil.resolvePathAddress(rootObjectInstance.getObjectName(), reg.getResource(), name);
     }
 
     /**
@@ -246,7 +251,7 @@ public class ModelControllerMBeanHelper {
      */
 
     PathAddress toPathAddress(final ObjectName name) {
-        return ObjectNameAddressUtil.toPathAddress(domain, getRootResourceAndRegistration().getRegistration(), name);
+        return ObjectNameAddressUtil.toPathAddress(rootObjectInstance.getObjectName(), getRootResourceAndRegistration().getRegistration(), name);
     }
 
     MBeanInfo getMBeanInfo(final ObjectName name) throws InstanceNotFoundException {
@@ -255,7 +260,8 @@ public class ModelControllerMBeanHelper {
         if (address == null) {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
-        final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, true);
+        // Ensure the resource is addressable; fail if not
+        accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, true);
         return MBeanInfoFactory.createMBeanInfo(name, converters, configuredDomains, mutabilityChecker, address, getMBeanRegistration(address, reg));
     }
 
@@ -266,7 +272,7 @@ public class ModelControllerMBeanHelper {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
         final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, false);
-        return getAttribute(reg, address, name, attribute, accessControl);
+        return getAttribute(reg, address, attribute, accessControl);
     }
 
     AttributeList getAttributes(ObjectName name, String[] attributes) throws InstanceNotFoundException, ReflectionException {
@@ -279,7 +285,7 @@ public class ModelControllerMBeanHelper {
         AttributeList list = new AttributeList();
         for (String attribute : attributes) {
             try {
-                list.add(new Attribute(attribute, getAttribute(reg, address, name, attribute, accessControl)));
+                list.add(new Attribute(attribute, getAttribute(reg, address, attribute, accessControl)));
             } catch (AttributeNotFoundException e) {
                 throw new ReflectionException(e);
             }
@@ -287,7 +293,7 @@ public class ModelControllerMBeanHelper {
         return list;
     }
 
-    private Object getAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final ObjectName name, final String attribute, final ResourceAccessControl accessControl)  throws ReflectionException, AttributeNotFoundException, InstanceNotFoundException {
+    private Object getAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final String attribute, final ResourceAccessControl accessControl)  throws ReflectionException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
         final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
         if (provider == null) {
@@ -322,7 +328,7 @@ public class ModelControllerMBeanHelper {
             throw JmxLogger.ROOT_LOGGER.mbeanNotFound(name);
         }
         final ResourceAccessControl accessControl = accessControlUtil.getResourceAccessWithInstanceNotFoundExceptionIfNotAccessible(name, address, false);
-        setAttribute(reg, address, name, attribute, accessControl);
+        setAttribute(reg, address, attribute, accessControl);
 
     }
 
@@ -336,7 +342,7 @@ public class ModelControllerMBeanHelper {
 
         for (Attribute attribute : attributes.asList()) {
             try {
-                setAttribute(reg, address, name, attribute, accessControl);
+                setAttribute(reg, address, attribute, accessControl);
             } catch (JMRuntimeException e) {
                 //Propagate the JMRuntimeException thrown from authorization
                 throw e;
@@ -348,7 +354,7 @@ public class ModelControllerMBeanHelper {
         return attributes;
     }
 
-    private void setAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final ObjectName name, final Attribute attribute, ResourceAccessControl accessControl)  throws InvalidAttributeValueException, AttributeNotFoundException, InstanceNotFoundException {
+    private void setAttribute(final ManagementModelIntegration.ResourceAndRegistration reg, final PathAddress address, final Attribute attribute, ResourceAccessControl accessControl)  throws InvalidAttributeValueException, AttributeNotFoundException, InstanceNotFoundException {
         final ImmutableManagementResourceRegistration registration = getMBeanRegistration(address, reg);
         final DescriptionProvider provider = registration.getModelDescription(PathAddress.EMPTY_ADDRESS);
         if (provider == null) {
@@ -490,10 +496,10 @@ public class ModelControllerMBeanHelper {
                 throw JmxLogger.ROOT_LOGGER.differentLengths("params", "description");
             }
             Iterator<String> it = requestProperties.keys().iterator();
-            for (int i = 0 ; i < params.length ; i++) {
+            for (Object param : params) {
                 String attributeName = it.next();
                 ModelNode paramDescription = requestProperties.get(attributeName);
-                op.get(attributeName).set(converters.toModelNode(paramDescription, params[i]));
+                op.get(attributeName).set(converters.toModelNode(paramDescription, param));
             }
         }
 
@@ -604,8 +610,9 @@ public class ModelControllerMBeanHelper {
         private final Map<String, String> properties;
         private final ObjectName domainOnlyName;
         private final boolean propertyListPattern;
+        private final ObjectNameAddressUtil.ObjectNameCreationContext creationContext = ObjectNameAddressUtil.ObjectNameCreationContext.create();
 
-        protected ObjectNameMatchResourceAction(ObjectName baseName) {
+        ObjectNameMatchResourceAction(ObjectName baseName) {
             this.baseName = baseName;
             this.properties = baseName == null ? Collections.<String, String>emptyMap() : baseName.getKeyPropertyList();
             try {
@@ -623,7 +630,7 @@ public class ModelControllerMBeanHelper {
             }
 
             ObjectName result = null;
-            ObjectName toMatch = ObjectNameAddressUtil.createObjectName(domain, address);
+            ObjectName toMatch = ObjectNameAddressUtil.createObjectName(domain, address, creationContext);
             if (baseName == null) {
                 result = toMatch;
             } else if (address.size() == 0) {

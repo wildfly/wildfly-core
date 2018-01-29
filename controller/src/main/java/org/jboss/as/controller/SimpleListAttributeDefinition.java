@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.PrimitiveListAttributeDefinition.parseSingleElementToList;
+
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -103,7 +105,6 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         addValueTypeDescription(node);
     }
 
-
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle) {
         addValueTypeDescription(node);
     }
@@ -136,6 +137,13 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
             throw new IllegalStateException();
         }
         return allowExp ? convertStringExpression(parameterElement) : parameterElement;
+    }
+
+
+
+    @Override
+    ModelNode parseResolvedValue(ModelNode original, ModelNode resolved) {
+        return parseSingleElementToList(this, original, resolved);
     }
 
     private void addValueTypeDescription(final ModelNode node) {

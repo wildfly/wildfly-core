@@ -50,6 +50,18 @@ public class BasicOpsTestCase {
     }
 
     @Test
+    public void testConnectBind() throws Exception {
+        CLIWrapper cli = new CLIWrapper(false);
+
+        assertFalse(cli.isConnected());
+        cli.sendLine("connect " + TestSuiteEnvironment.getServerAddress() + ":"
+                + TestSuiteEnvironment.getServerPort() + " --bind=" + TestSuiteEnvironment.getServerAddress());
+        assertTrue(cli.isConnected());
+
+        cli.quit();
+    }
+
+    @Test
     public void testLs() throws Exception {
         CLIWrapper cli = new CLIWrapper(true);
         cli.sendLine("ls");
@@ -124,6 +136,17 @@ public class BasicOpsTestCase {
                 assertTrue(!mn.get("use-current-server-config").asBoolean());
                 assertTrue(mn.get("server-config").asString().equals("toto"));
             }
+        }
+    }
+
+    @Test
+    public void testWithVariables() throws Exception {
+        try (CLIWrapper cli = new CLIWrapper(true)) {
+            cli.sendLine("set var1=core-service");
+            cli.sendLine("ls /$var1=management");
+            cli.sendLine("read-operation --node=/$var1=management whoami");
+            cli.sendLine("read-attribute --node=/$var1=capability-registry capabilities");
+            cli.sendLine("cd /$var1=management");
         }
     }
 }

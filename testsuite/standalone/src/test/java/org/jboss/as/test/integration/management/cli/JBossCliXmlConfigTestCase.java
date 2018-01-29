@@ -49,6 +49,7 @@ public class JBossCliXmlConfigTestCase {
         testConfig("2.0");
         testConfig("3.0");
         testConfig("3.1");
+        testConfig("3.2");
     }
 
     private static void testConfig(String version) {

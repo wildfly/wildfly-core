@@ -192,6 +192,10 @@ class FileKeyManagerService extends AbstractKeyManagerService {
             try (FileOutputStream stream = new FileOutputStream(path)) {
                 keyStore.store(stream, resolveKeystorePassword());
             }
+            path.setReadable(false, false);
+            path.setReadable(true, true);
+            path.setWritable(false, false);
+            path.setWritable(true, true);
             DomainManagementLogger.SECURITY_LOGGER.keystoreHasBeenCreated(path.toString(), getSha1Fingerprint(cert, "SHA-1"), getSha1Fingerprint(cert, "SHA-256"));
 
         } catch (Exception e) {

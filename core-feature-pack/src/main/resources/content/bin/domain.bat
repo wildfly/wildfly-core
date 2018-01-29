@@ -89,8 +89,12 @@ if "x%JAVA_HOME%" == "x" (
   if not exist "%JAVA_HOME%" (
     echo JAVA_HOME "%JAVA_HOME%" path doesn't exist
     goto END
-  ) else (
-    echo Setting JAVA property to "%JAVA_HOME%\bin\java"
+   ) else (
+     if not exist "%JAVA_HOME%\bin\java.exe" (
+       echo "%JAVA_HOME%\bin\java.exe" does not exist
+       goto END_NO_PAUSE
+     )
+      echo Setting JAVA property to "%JAVA_HOME%\bin\java"
     set "JAVA=%JAVA_HOME%\bin\java"
   )
 )
@@ -207,7 +211,9 @@ echo.
     -default-jvm "%JAVA%" ^
     %*
 
-if ERRORLEVEL 10 goto RESTART
+if %errorlevel% equ 10 (
+	goto RESTART
+)
 
 :END
 if "x%NOPAUSE%" == "x" pause

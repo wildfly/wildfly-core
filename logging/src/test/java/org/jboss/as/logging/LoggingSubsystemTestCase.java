@@ -68,7 +68,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-logging_3_0.xsd";
+        return "schema/jboss-as-logging_4_0.xsd";
     }
 
     @Test
@@ -124,85 +124,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
             // Run the standard subsystem test, but don't compare the XML as it should never match
             standardSubsystemTest(configId, false);
         }
-    }
-
-    @Test
-    public void testTransformersEAP620() throws Exception {
-        testEapTransformer(ModelTestControllerVersion.EAP_6_2_0, ModelVersion.create(1, 3, 0), readResource("/logging_1_3.xml"),
-                AsyncModelFixer.INSTANCE,
-                // Using a ModelFixer to remove an attribute from the legacy model that the transformer removes seems odd here.
-                // However, the category attribute is a read-only attribute resolved at runtime by the name of the resource.
-                // WildFly does not require the ModelFixer as read-only attributes can be left off. If a change is made in EAP
-                // to do the same thing, this ModelFixer can and should be removed.
-                new AttributeRemovalModelFixer(LoggerResourceDefinition.CATEGORY));
-    }
-
-    @Test
-    public void testFailedTransformersEAP620() throws Exception {
-        final ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_6_2_0;
-        final ModelVersion modelVersion = ModelVersion.create(1, 3, 0);
-        final PathAddress loggingProfileAddress = SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE);
-
-        // Test against current
-        testEapFailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS, new NewAttributesConfig(LoggingResourceDefinition.ADD_LOGGING_API_DEPENDENCIES, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(FileHandlerResourceDefinition.FILE_HANDLER_PATH),
-                                new NewAttributesConfig(FileHandlerResourceDefinition.NAMED_FORMATTER))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX))
-                        .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(loggingProfileAddress.append(FileHandlerResourceDefinition.FILE_HANDLER_PATH),
-                                new NewAttributesConfig(FileHandlerResourceDefinition.NAMED_FORMATTER))
-                        .addFailedAttribute(loggingProfileAddress.append(PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(loggingProfileAddress.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(loggingProfileAddress.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX)));
-    }
-
-    @Test
-    public void testTransformersEAP630() throws Exception {
-        testEapTransformer(ModelTestControllerVersion.EAP_6_3_0, ModelVersion.create(1, 4, 0), readResource("/logging_1_4.xml"),
-                AsyncModelFixer.INSTANCE,
-                // In WildFly Core the default formatter changed from %E (extended exceptions) to %e. When the legacy
-                // model is compared to the new model and the formatter is not defined or a named-formatter is used the
-                // check fails due to the formatter difference. This is not ideal, but will work as the difference isn't
-                // important.
-                new AttributeValueChangerModelFixer(AbstractHandlerDefinition.FORMATTER, "%E", "%e")
-        );
-    }
-
-    @Test
-    public void testFailedTransformersEAP630() throws Exception {
-        final ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_6_3_0;
-        final ModelVersion modelVersion = ModelVersion.create(1, 4, 0);
-        final PathAddress loggingProfileAddress = SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE);
-
-        // Test against current
-        testEapFailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS, new NewAttributesConfig(LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX))
-                        .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(loggingProfileAddress.append(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_HANDLER_PATH),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                        .addFailedAttribute(loggingProfileAddress.append(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_HANDLER_PATH),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(SizeRotatingHandlerResourceDefinition.SUFFIX)));
     }
 
     @Test
@@ -299,48 +220,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, legacyModelVersion, ops, config);
     }
 
-    private void testWildFlyTransformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {
-
-        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance())
-                .setSubsystemXml(subsystemXml);
-
-        // Create the legacy kernel
-        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
-                .addMavenResourceURL("org.wildfly:wildfly-logging:" + controllerVersion.getMavenGavVersion())
-                .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
-                .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
-
-        KernelServices mainServices = builder.build();
-        Assert.assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(legacyModelVersion);
-        Assert.assertTrue(legacyServices.isSuccessfulBoot());
-        Assert.assertNotNull(legacyServices);
-        checkSubsystemModelTransformation(mainServices, legacyModelVersion, new ChainedModelFixer(modelFixers));
-    }
-
-    private void testWildFlyFailedTransformers(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final FailedOperationTransformationConfig config) throws Exception {
-        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance());
-
-        // Create the legacy kernel
-        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
-                .addMavenResourceURL("org.wildfly:wildfly-logging:" + controllerVersion.getMavenGavVersion())
-                .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
-                .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
-
-
-        KernelServices mainServices = builder.build();
-        KernelServices legacyServices = mainServices.getLegacyServices(legacyModelVersion);
-
-        Assert.assertNotNull(legacyServices);
-        Assert.assertTrue("main services did not boot", mainServices.isSuccessfulBoot());
-        Assert.assertTrue(legacyServices.isSuccessfulBoot());
-
-        final List<ModelNode> ops = builder.parseXml(subsystemXml);
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, legacyModelVersion, ops, config);
-    }
-
     private static class ChainedModelFixer implements ModelFixer {
         private final ModelFixer[] modelFixers;
 
@@ -372,37 +251,6 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                     async.remove(CommonAttributes.ENCODING.getName());
                     async.remove(AbstractHandlerDefinition.FORMATTER.getName());
                     asyncHandlers.get(asyncHandler.getName()).set(async);
-                }
-            }
-            return modelNode;
-        }
-    }
-
-    private static class AttributeRemovalModelFixer implements ModelFixer {
-        private final AttributeDefinition[] attributes;
-
-        AttributeRemovalModelFixer(final AttributeDefinition... attributes) {
-            this.attributes = attributes;
-        }
-
-        @Override
-        public ModelNode fixModel(final ModelNode modelNode) {
-            // Recursively remove the attributes
-            if (modelNode.getType() == ModelType.OBJECT) {
-                for (Property property : modelNode.asPropertyList()) {
-                    final String name = property.getName();
-                    final ModelNode value = property.getValue();
-                    if (value.isDefined()) {
-                        if (value.getType() == ModelType.OBJECT) {
-                            modelNode.get(name).set(fixModel(value));
-                        } else {
-                            for (AttributeDefinition attribute : attributes) {
-                                if (name.equals(attribute.getName())) {
-                                    modelNode.remove(name);
-                                }
-                            }
-                        }
-                    }
                 }
             }
             return modelNode;

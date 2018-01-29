@@ -132,7 +132,9 @@ class HandlerResourceDefinition extends SimpleResourceDefinition {
             @Override
             protected void updateModel(final HandlerConfiguration configuration, final ModelNode model) {
                 final ModelNode handlers = model.setEmptyList();
-                configuration.getHandlerNames().forEach(handlers::add);
+                for (String s : configuration.getHandlerNames()) {
+                    handlers.add(s);
+                }
             }
         });
         resourceRegistration.registerReadOnlyAttribute(PROPERTIES, new HandlerConfigurationReadStepHandler() {

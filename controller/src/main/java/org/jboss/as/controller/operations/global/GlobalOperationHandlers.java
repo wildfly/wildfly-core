@@ -42,17 +42,18 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
@@ -893,7 +894,9 @@ public class GlobalOperationHandlers {
                 if (childType != null && !childType.equals(path.getKey())) {
                     continue;
                 }
-                if (path.getKey().equals(RUNNING_SERVER) && path.isWildcard() && newRemaining.size() > 0) {
+                // matches /host=xxx/server=*/... address
+                final boolean isHostWildcardServerAddress = base.size() > 0 && base.getLastElement().getKey().equals(HOST) && path.getKey().equals(RUNNING_SERVER) && path.isWildcard();
+                if (isHostWildcardServerAddress && newRemaining.size() > 0) {
                     //Trying to get e.g. /host=xxx/server=*/interface=public will fail, so make sure if there are remaining elements for
                     //a /host=master/server=* that we don't attempt to get those
                     continue;
@@ -1009,11 +1012,17 @@ public class GlobalOperationHandlers {
         Predicate<String> validChildTypeFilter = childType -> (validChildType == null) || validChildType.equals(childType);
 
         if (resource != null) {
-            registry.getChildNames(PathAddress.EMPTY_ADDRESS).stream()
-                    .filter(validChildTypeFilter)
-                    .forEach(childType -> result.put(childType, new LinkedHashSet<>(resource.getChildrenNames(childType).stream()
-                            .filter(child -> registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, child))) != null)
-                            .collect(Collectors.toList()))));
+            for (String childType : registry.getChildNames(PathAddress.EMPTY_ADDRESS)) {
+                if (validChildTypeFilter.test(childType)) {
+                    List<String> list = new ArrayList<>();
+                    for (String child : resource.getChildrenNames(childType)) {
+                        if (registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childType, child))) != null) {
+                            list.add(child);
+                        }
+                    }
+                    result.put(childType, new LinkedHashSet<>(list));
+                }
+            }
         }
 
         Set<PathElement> paths = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);

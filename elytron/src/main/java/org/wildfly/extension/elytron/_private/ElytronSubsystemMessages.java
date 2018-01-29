@@ -18,14 +18,17 @@
 
 package org.wildfly.extension.elytron._private;
 
-import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.NoSuchProviderException;
+import java.security.Policy;
 import java.security.Provider;
+
+import javax.xml.stream.Location;
+import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.logging.BasicLogger;
@@ -34,6 +37,7 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
+import org.jboss.logging.annotations.Param;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
@@ -90,14 +94,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 5, value = "Unable to access KeyStore to complete the requested operation.")
     OperationFailedException unableToAccessKeyStore(@Cause Exception cause);
 
-    /**
-     * An {@link OperationFailedException} for operations that are unable to populate the result.
-     *
-     * @param cause the underlying cause of the failure.
-     * @return The {@link OperationFailedException} for the error.
-     */
-    @Message(id = 6, value = "Unable to populate result.")
-    OperationFailedException unableToPopulateResult(@Cause Exception cause);
+//    /**
+//     * An {@link OperationFailedException} for operations that are unable to populate the result.
+//     *
+//     * @param cause the underlying cause of the failure.
+//     * @return The {@link OperationFailedException} for the error.
+//     */
+//    @Message(id = 6, value = "Unable to populate result.")
+//    OperationFailedException unableToPopulateResult(@Cause Exception cause);
 
     /**
      * An {@link OperationFailedException} where an operation can not proceed as it's required service is not UP.
@@ -133,17 +137,17 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      *
      * @return The {@link OperationFailedException} for the error.
      */
-    @Message(id = 10, value = "Unable to save KeyStore - path is not defined.")
-    OperationFailedException cantSaveWithoutFile();
+    @Message(id = 10, value = "Unable to save KeyStore - KeyStore file '%s' does not exist.")
+    OperationFailedException cantSaveWithoutFile(final String file);
 
-    /**
-     * A {@link StartException} for when provider registration fails due to an existing registration.
-     *
-     * @param name the name of the provider registration failed for.
-     * @return The {@link StartException} for the error.
-     */
-    @Message(id = 11, value = "A Provider is already registered for '%s'")
-    StartException providerAlreadyRegistered(String name);
+//    /**
+//     * A {@link StartException} for when provider registration fails due to an existing registration.
+//     *
+//     * @param name the name of the provider registration failed for.
+//     * @return The {@link StartException} for the error.
+//     */
+//    @Message(id = 11, value = "A Provider is already registered for '%s'")
+//    StartException providerAlreadyRegistered(String name);
 
     /**
      * A {@link StartException} where a service can not identify a suitable {@link Provider}
@@ -241,11 +245,11 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 21, value = "Exception while creating the permission object for the permission mapping. Please check [class-name], [target-name] (name of permission) and [action] of [%s].")
     StartException exceptionWhileCreatingPermission(String permissionClassName, @Cause Throwable cause);
 
-    @Message(id = 22, value = "KeyStore file '%s' does not exists and required.")
+    @Message(id = 22, value = "KeyStore file '%s' does not exist and required.")
     StartException keyStoreFileNotExists(final String file);
 
     @LogMessage(level = WARN)
-    @Message(id = 23, value = "KeyStore file '%s' does not exists. Used blank.")
+    @Message(id = 23, value = "KeyStore file '%s' does not exist. Used blank.")
     void keyStoreFileNotExistsButIgnored(final String file);
 
     @LogMessage(level = WARN)
@@ -277,10 +281,11 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     RuntimeException unableToReloadCRL(@Cause Exception cause);
 
     /**
-     * An {@link OperationFailedException} if it is not possible to access an entry from a {@link KeyStore} at RUNTIME.
+     * A {@link RuntimeException} if it is not possible to access an entry from a {@link KeyStore} at RUNTIME.
      *
-     * @param cause the underlying cause of the failure
-     * @return The {@link OperationFailedException} for the error.
+     * @param alias the entry that couldn't be accessed
+     * @param keyStore the keystore
+     * @return {@link RuntimeException} for the error.
      */
     @Message(id = 33, value = "Unable to access entry [%s] from key store [%s].")
     RuntimeException unableToAccessEntryFromKeyStore(String alias, String keyStore);
@@ -309,29 +314,35 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 37, value = "Injected value is not of '%s' type.")
     StartException invalidTypeInjected(final String type);
 
+    @LogMessage(level = WARN)
+    @Message(id = 38, value = "Could not load permission class \"%s\"")
+    void invalidPermissionClass(String className);
+
+    @Message(id = 39, value = "Unable to reload CRL file - TrustManager is not reloadable")
+    OperationFailedException unableToReloadCRLNotReloadable();
 
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
-    @Message(id = 910, value = "Password cannot be resolved for key-store \"%s\"")
+    @Message(id = 910, value = "Password cannot be resolved for key-store '%s'")
     IOException keyStorePasswordCannotBeResolved(String path);
 
-    @Message(id = 911, value = "Credential store \"%s\" protection parameter cannot be resolved")
+    @Message(id = 911, value = "Credential store '%s' protection parameter cannot be resolved")
     IOException credentialStoreProtectionParameterCannotBeResolved(String name);
 
-    @LogMessage(level = ERROR)
-    @Message(id = 912, value = "Credential store issue encountered")
-    void credentialStoreIssueEncountered(@Cause Exception cause);
+//    @LogMessage(level = ERROR)
+//    @Message(id = 912, value = "Credential store issue encountered")
+//    void credentialStoreIssueEncountered(@Cause Exception cause);
 
-    @Message(id = 913, value = "Credential alias \"%s\" of credential type \"%s\" already exists in the store")
+    @Message(id = 913, value = "Credential alias '%s' of credential type '%s' already exists in the store")
     OperationFailedException credentialAlreadyExists(String alias, String credentialType);
 
-    @Message(id = 914, value = "Provider loader \"%s\" cannot supply Credential Store provider of type \"%s\"")
+    @Message(id = 914, value = "Provider loader '%s' cannot supply Credential Store provider of type '%s'")
     NoSuchProviderException providerLoaderCannotSupplyProvider(String providerLoader, String type);
 
-    @Message(id = 915, value = "Name of the credential store has to be specified in this credential-reference")
-    IllegalStateException nameOfCredentialStoreHasToBeSpecified();
+//    @Message(id = 915, value = "Name of the credential store has to be specified in this credential-reference")
+//    IllegalStateException nameOfCredentialStoreHasToBeSpecified();
 
     @Message(id = 916, value = "Credential cannot be resolved")
     IllegalStateException credentialCannotBeResolved();
@@ -339,14 +350,14 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 917, value = "Password cannot be resolved for dir-context")
     StartException dirContextPasswordCannotBeResolved(@Cause Exception cause);
 
-    @Message(id = 918, value = "Invalid user name '%s' because the realm %s only supports lower case user names")
-    OperationFailedException invalidUsername(String username, String realmName);
-
-    @Message(id = 919, value = "Invalid alias name '%s' because the credential store %s only supports lower case alias names")
-    OperationFailedException invalidAliasName(String alias, String credntialStore);
-
-    @Message(id = 920, value = "Credential alias \"%s\" of credential type \"%s\" does not exist in the store")
+    @Message(id = 920, value = "Credential alias '%s' of credential type '%s' does not exist in the store")
     OperationFailedException credentialDoesNotExist(String alias, String credentialType);
+
+    @Message(id = Message.NONE, value = "Reload dependent services which might already have cached the secret value")
+    String reloadDependantServices();
+
+    @Message(id = Message.NONE, value = "Update dependent resources as alias \"%s\" does not exist anymore")
+    String updateDependantServices(String alias);
 
     /*
      * Identity Resource Messages - 1000
@@ -370,8 +381,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1005, value = "Could not read identity [%s] from security domain [%s].")
     RuntimeException couldNotReadIdentity(final String principalName, final ServiceName domainServiceName, @Cause Exception cause);
 
-    @Message(id = 1006, value = "Unsupported password type [%s].")
-    RuntimeException unsupportedPasswordType(final Class passwordType);
+//    @Message(id = 1006, value = "Unsupported password type [%s].")
+//    RuntimeException unsupportedPasswordType(final Class passwordType);
 
     @Message(id = 1007, value = "Could not read identity with name [%s].")
     RuntimeException couldNotReadIdentity(final String principalName, @Cause Exception cause);
@@ -405,4 +416,33 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1017, value = "Invalid value for cipher-suite-filter. %s")
     OperationFailedException invalidCipherSuiteFilter(@Cause Throwable cause, String causeMessage);
+
+    @Message(id = 1018, value = "Invalid size %s")
+    OperationFailedException invalidSize(String size);
+
+    @Message(id = 1019, value = "The suffix (%s) can not contain seconds or milliseconds.")
+    OperationFailedException suffixContainsMillis(String suffix);
+
+    @Message(id = 1020, value = "The suffix (%s) is invalid. A suffix must be a valid date format.")
+    OperationFailedException invalidSuffix(String suffix);
+
+//    @Message(id = 1021, value = "Cannot remove the default policy provider [%s]")
+//    OperationFailedException cannotRemoveDefaultPolicy(String defaultPolicy);
+
+    @Message(id = 1022, value = "Failed to set policy [%s]")
+    RuntimeException failedToSetPolicy(Policy policy, @Cause Exception cause);
+
+    @Message(id = 1023, value = "Could not find policy provider with name [%s]")
+    XMLStreamException cannotFindPolicyProvider(String policyProvider, @Param Location location);
+
+    @Message(id = 1024, value = "Failed to register policy context handlers")
+    RuntimeException failedToRegisterPolicyHandlers(@Cause Exception cause);
+
+    @Message(id = 1025, value = "Failed to create policy [%s]")
+    RuntimeException failedToCreatePolicy(String className, @Cause Exception cause);
+
+    @LogMessage(level = WARN)
+    @Message(id = 1026, value = "Element '%s' with attribute '%s' set to '%s' is unused. Since unused policy " +
+            "configurations can no longer be stored in the configuration model this item is being discarded.")
+    void discardingUnusedPolicy(String element, String attr, String name);
 }

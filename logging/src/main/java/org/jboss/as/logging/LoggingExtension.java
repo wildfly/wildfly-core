@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.function.Supplier;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -85,7 +84,7 @@ public class LoggingExtension implements Extension {
 
     static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 3;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 5;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -224,20 +223,28 @@ public class LoggingExtension implements Extension {
             configurationResource.registerSubModel(LoggingDeploymentResources.ERROR_MANAGER);
         }
 
-        subsystem.registerXMLElementWriter(LoggingSubsystemWriter.INSTANCE);
+        subsystem.registerXMLElementWriter(LoggingSubsystemWriter::new);
     }
 
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        setParser(context, Namespace.LOGGING_1_0, LoggingSubsystemParser_1_0::new);
-        setParser(context, Namespace.LOGGING_1_1, LoggingSubsystemParser_1_1::new);
-        setParser(context, Namespace.LOGGING_1_2, LoggingSubsystemParser_1_2::new);
-        setParser(context, Namespace.LOGGING_1_3, LoggingSubsystemParser_1_3::new);
-        setParser(context, Namespace.LOGGING_1_4, LoggingSubsystemParser_1_4::new);
-        setParser(context, Namespace.LOGGING_1_5, LoggingSubsystemParser_1_5::new);
-        setParser(context, Namespace.LOGGING_2_0, LoggingSubsystemParser_2_0::new);
-        setParser(context, Namespace.LOGGING_3_0, LoggingSubsystemParser_3_0::new);
+        setParser(context, Namespace.LOGGING_1_0, new LoggingSubsystemParser_1_0());
+        setParser(context, Namespace.LOGGING_1_1, new LoggingSubsystemParser_1_1());
+        setParser(context, Namespace.LOGGING_1_2, new LoggingSubsystemParser_1_2());
+        setParser(context, Namespace.LOGGING_1_3, new LoggingSubsystemParser_1_3());
+        setParser(context, Namespace.LOGGING_1_4, new LoggingSubsystemParser_1_4());
+        setParser(context, Namespace.LOGGING_1_5, new LoggingSubsystemParser_1_5());
+        setParser(context, Namespace.LOGGING_2_0, new LoggingSubsystemParser_2_0());
+        setParser(context, Namespace.LOGGING_3_0, new LoggingSubsystemParser_3_0());
+        setParser(context, Namespace.LOGGING_4_0, new LoggingSubsystemParser_4_0());
+
+        // Hack to ensure the Element and Attribute enums are loaded during this call which
+        // is part of concurrent boot. These enums trigger a lot of classloading and static
+        // initialization that we don't want deferred until the single-threaded parsing phase
+        if (Element.forName("").equals(Attribute.forName(""))) { // never true
+            throw new IllegalStateException();
+        }
     }
 
     private void registerLoggingProfileSubModels(final ManagementResourceRegistration registration, final PathManager pathManager) {
@@ -317,16 +324,13 @@ public class LoggingExtension implements Extension {
         registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
         // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_1_5_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_5_0, KnownModelVersion.VERSION_1_4_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_1_4_0, KnownModelVersion.VERSION_1_3_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
         }, new ModelVersion[] {
-                KnownModelVersion.VERSION_1_3_0.getModelVersion(),
-                KnownModelVersion.VERSION_1_4_0.getModelVersion(),
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
+                KnownModelVersion.VERSION_3_0_0.getModelVersion(),
         });
     }
 
@@ -343,8 +347,8 @@ public class LoggingExtension implements Extension {
         }
     }
 
-    private static void setParser(final ExtensionParsingContext context, final Namespace namespace, final Supplier<XMLElementReader<List<ModelNode>>> supplier) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, namespace.getUriString(), supplier);
+    private static void setParser(final ExtensionParsingContext context, final Namespace namespace, final XMLElementReader<List<ModelNode>> parser) {
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, namespace.getUriString(), parser);
     }
 
     private static boolean getBooleanProperty(final String property) {

@@ -41,6 +41,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
+import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.logging.ServerLogger;
@@ -73,24 +74,40 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         if (computeCompositeIndex != null && !computeCompositeIndex) {
             return;
         }
+        DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
+        Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModuleSpecificationMap = new HashMap<>();
+        for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
+            additionalModuleSpecificationMap.put(i.getModuleIdentifier(), i);
+        }
         Map<ModuleIdentifier, CompositeIndex> additionalAnnotationIndexes = new HashMap<ModuleIdentifier, CompositeIndex>();
         final List<ModuleIdentifier> additionalModuleIndexes = deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES);
         final List<Index> indexes = new ArrayList<Index>();
         for (final ModuleIdentifier moduleIdentifier : additionalModuleIndexes) {
-            try {
-                Module module = moduleLoader.loadModule(moduleIdentifier);
-                final CompositeIndex additionalIndex = ModuleIndexBuilder.buildCompositeIndex(module);
-                if (additionalIndex != null) {
-                    indexes.addAll(additionalIndex.indexes);
-                    additionalAnnotationIndexes.put(moduleIdentifier, additionalIndex);
-                } else {
-                    final Index index = calculateModuleIndex(module);
-                    indexes.add(index);
+            AdditionalModuleSpecification additional = additionalModuleSpecificationMap.get(moduleIdentifier);
+            if(additional != null) {
+                for(ResourceRoot resource : additional.getResourceRoots()) {
+                    ResourceRootIndexer.indexResourceRoot(resource);
+                    Index indexAttachment = resource.getAttachment(Attachments.ANNOTATION_INDEX);
+                    if(indexAttachment != null) {
+                        indexes.add(indexAttachment);
+                    }
                 }
-            } catch (ModuleLoadException e) {
-                throw new DeploymentUnitProcessingException(e);
-            } catch (IOException e) {
-                throw new DeploymentUnitProcessingException(e);
+            } else {
+                try {
+                    Module module = moduleLoader.loadModule(moduleIdentifier);
+                    final CompositeIndex additionalIndex = ModuleIndexBuilder.buildCompositeIndex(module);
+                    if (additionalIndex != null) {
+                        indexes.addAll(additionalIndex.indexes);
+                        additionalAnnotationIndexes.put(moduleIdentifier, additionalIndex);
+                    } else {
+                        final Index index = calculateModuleIndex(module);
+                        indexes.add(index);
+                    }
+                } catch (ModuleLoadException e) {
+                    throw new DeploymentUnitProcessingException(e);
+                } catch (IOException e) {
+                    throw new DeploymentUnitProcessingException(e);
+                }
             }
         }
         deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalAnnotationIndexes);

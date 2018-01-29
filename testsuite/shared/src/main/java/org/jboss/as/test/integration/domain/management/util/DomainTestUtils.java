@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 public class DomainTestUtils {
 
     private static final int DEFAULT_TIMEOUT = 60;
+    private static final int SLEEP_TIME_MILLIS = 100;
 
     private DomainTestUtils() {
         //
@@ -313,7 +314,7 @@ public class DomainTestUtils {
                 return;
             }
             try {
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME_MILLIS);
             } catch(InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;

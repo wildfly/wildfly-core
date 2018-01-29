@@ -36,8 +36,8 @@
         <xs:annotation>
             <xs:documentation>
                 <![CDATA[
-                The security manager subsystem configuration.
-                        ]]>
+                 The security manager subsystem configuration.
+                         ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -49,15 +49,26 @@
         <xs:annotation>
             <xs:documentation>
                 <![CDATA[
-                The deploymentPermissionConfigType specifies the elements and attributes that can be used to configure
-                the minimum and maximum set of permissions for deployments.
+                 The deploymentPermissionConfigType specifies the elements and attributes that can be used to configure
+                 the minimum and maximum set of permissions for deployments.
 
-                - minimum-set: this element allows for the configuration of the minimum set of permissions that are to
-                be granted to all deployments.
-                - maximum-set: this element allows for the configuration of the maximum set of permissions that a deployment
-                can have. This set defines the maximum scope of permissions that can be granted to a deployment and acts
-                as a validation mechanims that prevents deployments from acquiring undesirable permissions.
-                        ]]>
+                 - minimum-set: this element allows for the configuration of the minimum set of permissions that are to
+                 be granted to all deployments. If this element is not specified or if the element is empty in the
+                 subsystem configuration, an empty minimum permission set will be created. The effect in this case is that
+                 deployment will not get any permissions other than the ones configured in the deployment itself.
+                 - maximum-set: this element allows for the configuration of the maximum set of permissions that a deployment
+                 can have. This set defines the maximum scope of permissions that can be granted to a deployment and acts
+                 as a validation mechanism that prevents deployments from acquiring undesirable permissions. If this element
+                 is not specified, a default maximum set with a single java.security.AllPermission is created (and it thus
+                 implies all permissions specified in the minimum set or in the deployment). If this element is empty, the
+                 maximum set will be assigned an empty set of permissions and will thus reject any permissions specified
+                 in the minimum set or in the deployment. In this case, the empty set can be used to enforce a policy
+                 where deployments cannot be assigned any permissions.
+
+                 NOTE: the behavior regarding empty maximum sets has changed in version 3.0. In previous versions of the
+                 subsystem an empty maximum set was handled the same way as an undefined set and that caused caused the
+                 maximum set to resolve to a set containing java.security.AllPermission.
+                         ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -70,9 +81,9 @@
         <xs:annotation>
             <xs:documentation>
                 <![CDATA[
-                The permissionSetConfigType defines a sequence of permission elements that can be used to specify the
-                permissions that are to be granted to deployments or external jars.
-                        ]]>
+                 The permissionSetConfigType defines a sequence of permission elements that can be used to specify the
+                 permissions that are to be granted to deployments or external jars.
+                         ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -84,12 +95,13 @@
         <xs:annotation>
             <xs:documentation>
                 <![CDATA[
-                The permission specifies the attributes used to declare a security permission.
+                 The permission specifies the attributes used to declare a security permission.
 
-                * class: the permission fully-qualified class name (e.g. java.util.PropertyPermission).
-                * name: the name  of permission target (e.g. java.* for a PropertyPermission).
-                * actions: the permission actions (e.g. read, write)
-                        ]]>
+                 * class: the permission fully-qualified class name (e.g. java.util.PropertyPermission).
+                 * name: the name  of permission target (e.g. java.* for a PropertyPermission).
+                 * actions: the permission actions (e.g. read, write)
+                 * module: the name of the module that contains the permission class.
+                         ]]>
             </xs:documentation>
         </xs:annotation>
         <xs:attribute name="class" type="xs:string" use="required"/>

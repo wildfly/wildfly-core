@@ -26,7 +26,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -77,7 +77,7 @@ public class ManagedDMRContentResourceDefinition extends SimpleResourceDefinitio
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
 
-        OperationDefinition addOD = new SimpleOperationDefinition("add", getResourceDescriptionResolver(),contentDefinition);
+        OperationDefinition addOD = SimpleOperationDefinitionBuilder.of("add", getResourceDescriptionResolver()).addParameter(contentDefinition).build();
         resourceRegistration.registerOperationHandler(addOD, new ManagedDMRContentAddHandler(contentDefinition));
 
         final ManagedDMRContentStoreHandler handler = new ManagedDMRContentStoreHandler(contentDefinition, getResourceDescriptionResolver());
