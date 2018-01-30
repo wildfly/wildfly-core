@@ -375,37 +375,17 @@ public class RequestController implements Service<RequestController>, ServerActi
      * @param hasPermit If the caller has already called {@link #beginRequest(boolean force)}
      */
     private boolean runQueuedTask(boolean hasPermit) {
-        QueuedTask task = null;
-        if(!hasPermit) {
-            if(!paused) {
-                if (beginRequest(false) == RunResult.REJECTED) {
-                    return false;
-                }
-                task = taskQueue.poll();
-            } else {
-                //the container is suspended, but we still need to run any force queued tasks
-                List<QueuedTask> storage = new ArrayList<>();
-                while (task == null && !taskQueue.isEmpty()) {
-                    QueuedTask tmp = taskQueue.poll();
-                    if(tmp.forceRun) {
-                        task = tmp;
-                    } else {
-                        storage.add(tmp);
-                    }
-                }
-                //this screws the order somewhat, but the container is suspending anyway, and the order
-                //was never guarenteed. if we push them back onto the front we will need to just go through them again
-                taskQueue.addAll(storage);
-                if(task == null) {
-                    return false;
-                }
-                //after all that we are at the max request limit anyway
-                if (beginRequest(true) == RunResult.REJECTED) {
-                    return false;
-                }
-            }
+        if (!hasPermit && beginRequest(paused) == RunResult.REJECTED) {
+            return false;
         }
-        if(task != null) {
+        QueuedTask task = null;
+        if (!paused) {
+            task = taskQueue.poll();
+        } else {
+            //the container is suspended, but we still need to run any force queued tasks
+            task = findForcedTask();
+        }
+        if (task != null) {
             if(!task.runRequest()) {
                 decrementRequestCount();
             }
@@ -414,6 +394,23 @@ public class RequestController implements Service<RequestController>, ServerActi
             decrementRequestCount();
             return false;
         }
+    }
+
+    private QueuedTask findForcedTask() {
+        QueuedTask task = null;
+        List<QueuedTask> storage = new ArrayList<>();
+        while (task == null && !taskQueue.isEmpty()) {
+            QueuedTask tmp = taskQueue.poll();
+            if(tmp.forceRun) {
+                task = tmp;
+            } else {
+                storage.add(tmp);
+            }
+        }
+        //this screws the order somewhat, but the container is suspending anyway, and the order
+        //was never guarenteed. if we push them back onto the front we will need to just go through them again
+        taskQueue.addAll(storage);
+        return task;
     }
 
     private static final class ControlPointIdentifier {
