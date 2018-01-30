@@ -19,6 +19,7 @@ import org.jboss.as.cli.impl.aesh.cmd.deployment.security.CommandWithPermissions
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.Permissions;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -30,12 +31,13 @@ import org.aesh.command.option.Option;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.impl.aesh.cmd.AbstractCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersConverter;
 import org.jboss.as.cli.impl.aesh.cmd.security.ControlledCommandActivator;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.AccessRequirements;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators.InfoNameActivator;
-import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators.InfoServerGroupsActivator;
+import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators.InfoServerGroupActivator;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.cli.util.StrictSizeTable;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -43,6 +45,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.wildfly.core.cli.command.DMRCommand;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
+import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
 import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 
 /**
@@ -53,6 +56,21 @@ import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
  */
 @CommandDefinition(name = "info", description = "", activator = ControlledCommandActivator.class)
 public class InfoCommand extends CommandWithPermissions implements DMRCommand {
+
+    public static class ServerGroupCompleter
+            extends AbstractCompleter {
+
+        @Override
+        protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+            List<String> groups = Collections.emptyList();
+            if (completerInvocation.getCommandContext().getModelControllerClient() != null) {
+                CommandWithPermissions rc = (CommandWithPermissions) completerInvocation.getCommand();
+                return rc.getPermissions().getServerGroupAddPermission().
+                        getAllowedOn(completerInvocation.getCommandContext());
+            }
+            return groups;
+        }
+    }
 
     private static final String ADDED = "added";
     private static final String ENABLED = "ENABLED";
@@ -77,8 +95,8 @@ public class InfoCommand extends CommandWithPermissions implements DMRCommand {
             required = false)
     public ModelNode headers;
 
-    @Option(name = "server-group", activator = InfoServerGroupsActivator.class,
-            completer = AbstractDeployCommand.ServerGroupsCompleter.class,
+    @Option(name = "server-group", activator = InfoServerGroupActivator.class,
+            completer = ServerGroupCompleter.class,
             required = false)
     public String serverGroup;
 

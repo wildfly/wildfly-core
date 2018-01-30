@@ -204,10 +204,10 @@ public interface OptionActivators {
         }
     }
 
-    public static class InfoServerGroupsActivator extends AbstractRejectOptionActivator
+    public static class InfoServerGroupActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
-        public InfoServerGroupsActivator() {
+        public InfoServerGroupActivator() {
             super(DependOptionActivator.ARGUMENT_NAME);
         }
 

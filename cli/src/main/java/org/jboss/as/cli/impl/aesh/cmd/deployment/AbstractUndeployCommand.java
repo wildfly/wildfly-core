@@ -18,23 +18,19 @@ package org.jboss.as.cli.impl.aesh.cmd.deployment;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.CommandWithPermissions;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.Permissions;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.aesh.command.Command;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
-import org.aesh.command.completer.OptionCompleter;
 import org.aesh.command.option.Option;
 import org.jboss.as.cli.Attachments;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
-import org.jboss.as.cli.impl.CommaSeparatedCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.AccessRequirements;
 import org.jboss.as.cli.impl.aesh.cmd.security.ControlledCommandActivator;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersCompleter;
@@ -45,9 +41,9 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.BatchCompliantCommand;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
-import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
 import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 import org.jboss.as.cli.impl.aesh.cmd.LegacyBridge;
+import org.jboss.as.cli.impl.aesh.cmd.deployment.AbstractDeployCommand.ServerGroupsCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators;
 
 /**
@@ -60,31 +56,6 @@ import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators;
 @CommandDefinition(name = "abstract-undeploy-deployment", description = "", activator = ControlledCommandActivator.class)
 public abstract class AbstractUndeployCommand extends CommandWithPermissions
         implements Command<CLICommandInvocation>, BatchCompliantCommand, LegacyBridge {
-
-    public static class ServerGroupsCompleter implements
-            OptionCompleter<CLICompleterInvocation> {
-
-        @Override
-        public void complete(CLICompleterInvocation completerInvocation) {
-            UndeployCommand rc = (UndeployCommand) completerInvocation.getCommand();
-
-            CommaSeparatedCompleter comp = new CommaSeparatedCompleter() {
-                @Override
-                protected Collection<String> getAllCandidates(CommandContext ctx) {
-                    try {
-                        return Util.getServerGroupsReferencingDeployment(rc.name, ctx.getModelControllerClient());
-                    } catch (CommandLineException ex) {
-                        return Collections.emptyList();
-                    }
-                }
-            };
-            List<String> candidates = new ArrayList<>();
-            int offset = comp.complete(completerInvocation.getCommandContext(),
-                    completerInvocation.getGivenCompleteValue(), 0, candidates);
-            completerInvocation.addAllCompleterValues(candidates);
-            completerInvocation.setOffset(offset);
-        }
-    }
 
     @Deprecated
     @Option(hasValue = false, activator = HideOptionActivator.class)
