@@ -205,6 +205,64 @@ public class CliCompletionTestCase {
         assertTrue(candidates.toString(), candidates.contains("deployment"));
         assertTrue(candidates.toString(), candidates.contains("deployment-info"));
         assertTrue(candidates.toString(), candidates.contains("deployment-overlay"));
+
+        testDeployAction("deploy-file", true);
+        testDeployAction("deploy-url", false);
+        testDisableAction("disable-all");
+        testDisableAction("disable foo");
+        testEnableAction("enable-all");
+        testEnableAction("enable foo");
+        testDeploymentInfo();
+        testUndeploy();
+        testList();
+    }
+
+    private void testDeployAction(String action, boolean unmanaged) {
+        String cmd = "deployment " + action + " foo ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertFalse(candidates.toString(), candidates.contains("--all-server-groups"));
+        assertFalse(candidates.toString(), candidates.contains("--server-groups="));
+        assertTrue(candidates.toString(), candidates.contains("--disabled"));
+        assertTrue(candidates.toString(), candidates.contains("--enabled"));
+        assertTrue(candidates.toString(), candidates.contains("--replace"));
+        assertTrue(candidates.toString(), candidates.contains("--name="));
+        assertTrue(candidates.toString(), candidates.contains("--runtime-name="));
+        if (unmanaged) {
+            assertTrue(candidates.toString(), candidates.contains("--unmanaged"));
+        }
+    }
+
+    private void testDisableAction(String action) {
+        String cmd = "deployment " + action + " ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertFalse(candidates.toString(), candidates.contains("--all-relevant-server-groups"));
+        assertFalse(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testEnableAction(String action) {
+        String cmd = "deployment " + action + " ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertFalse(candidates.toString(), candidates.contains("--all-server-groups"));
+        assertFalse(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testDeploymentInfo() {
+        String cmd = "deployment info ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertFalse(candidates.toString(), candidates.contains("--server-group="));
+    }
+
+    private void testUndeploy() {
+        String cmd = "deployment undeploy foo ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertFalse(candidates.toString(), candidates.contains("--all-relevant-server-groups"));
+        assertFalse(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testList() {
+        String cmd = "deployment list ";
+        List<String> candidates = complete(ctx, cmd, null);
+        assertTrue(candidates.toString(), candidates.contains("--l"));
     }
 
     @Test

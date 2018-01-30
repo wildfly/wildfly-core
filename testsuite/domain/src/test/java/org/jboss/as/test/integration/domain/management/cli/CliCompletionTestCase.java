@@ -2512,6 +2512,92 @@ public class CliCompletionTestCase {
         }
     }
 
+    @Test
+    public void testCommandsDeployment() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(testSupport,
+                System.in, System.out);
+        ctx.connectController();
+        try {
+            testDeployAction("deploy-file", true);
+            testDeployAction("deploy-url", false);
+            testDisableAction("disable-all");
+            testDisableAction("disable foo");
+            testEnableAction("enable-all");
+            testEnableAction("enable foo");
+            testDeploymentInfo();
+            testUndeploy();
+            testCliArchiveAction("deploy-cli-archive");
+            testCliArchiveAction("undeploy-cli-archive");
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
+    private void testDeployAction(String action, boolean unmanaged) {
+        {
+            String cmd = "deployment " + action + " foo ";
+            List<String> candidates = complete(ctx, cmd, null, cmd.length());
+            assertTrue(candidates.toString(), candidates.contains("--all-server-groups"));
+            assertTrue(candidates.toString(), candidates.contains("--server-groups="));
+            assertFalse(candidates.toString(), candidates.contains("--disabled"));
+            assertFalse(candidates.toString(), candidates.contains("--enabled"));
+            assertTrue(candidates.toString(), candidates.contains("--replace"));
+            assertTrue(candidates.toString(), candidates.contains("--name="));
+            assertTrue(candidates.toString(), candidates.contains("--runtime-name="));
+            if (unmanaged) {
+                assertTrue(candidates.toString(), candidates.contains("--unmanaged"));
+            }
+        }
+        {
+            String cmd = "deployment " + action + " foo --all-server-groups ";
+            List<String> candidates = complete(ctx, cmd, null, cmd.length());
+            assertFalse(candidates.toString(), candidates.contains("--replace"));
+        }
+        {
+            String cmd = "deployment " + action + " foo --server-groups=foo ";
+            List<String> candidates = complete(ctx, cmd, null, cmd.length());
+            assertFalse(candidates.toString(), candidates.contains("--replace"));
+        }
+        {
+            String cmd = "deployment " + action + " foo --replace ";
+            List<String> candidates = complete(ctx, cmd, null, cmd.length());
+            assertFalse(candidates.toString(), candidates.contains("--all-server-groups"));
+            assertFalse(candidates.toString(), candidates.contains("--server-groups="));
+        }
+    }
+
+    private void testDisableAction(String action) {
+        String cmd = "deployment " + action + " ";
+        List<String> candidates = complete(ctx, cmd, null, cmd.length());
+        assertTrue(candidates.toString(), candidates.contains("--all-relevant-server-groups"));
+        assertTrue(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testDeploymentInfo() {
+        String cmd = "deployment info ";
+        List<String> candidates = complete(ctx, cmd, null, cmd.length());
+        assertTrue(candidates.toString(), candidates.contains("--server-group="));
+    }
+
+    private void testEnableAction(String action) {
+        String cmd = "deployment " + action + " ";
+        List<String> candidates = complete(ctx, cmd, null, cmd.length());
+        assertTrue(candidates.toString(), candidates.contains("--all-server-groups"));
+        assertTrue(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testUndeploy() {
+        String cmd = "deployment undeploy foo ";
+        List<String> candidates = complete(ctx, cmd, null, cmd.length());
+        assertTrue(candidates.toString(), candidates.contains("--all-relevant-server-groups"));
+        assertTrue(candidates.toString(), candidates.contains("--server-groups="));
+    }
+
+    private void testCliArchiveAction(String action) {
+        String cmd = "deployment " + action + " foo ";
+        List<String> candidates = complete(ctx, cmd, null, cmd.length());
+        assertTrue(candidates.toString(), candidates.contains("--script="));
+    }
 
     /**
      * Legacy way of CLI completion
