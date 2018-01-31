@@ -70,7 +70,7 @@
         <module>test-runner</module>
         <module>standalone</module>
         <module>vault-test-feature-pack</module>
-        <module>elytron</module>
+        <!--<module>elytron</module>-->
     </modules>
 
 
