@@ -110,6 +110,7 @@ public class Util {
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILESYSTEM_PATH = "filesystem-path";
     public static final String FULL_REPLACE_DEPLOYMENT = "full-replace-deployment";
+    public static final String FAILED = "failed";
     public static final String FALSE = "false";
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
     public static final String HOST = "host";

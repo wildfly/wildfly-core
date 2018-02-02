@@ -24,23 +24,17 @@ package org.jboss.as.test.integration.domain.management.cli;
 import java.io.File;
 import java.util.Iterator;
 import org.jboss.as.cli.CommandContext;
-import static org.jboss.as.cli.Util.DEPLOYMENT;
-import static org.jboss.as.cli.Util.ENABLED;
-import static org.jboss.as.cli.Util.NAME;
-import static org.jboss.as.cli.Util.READ_ATTRIBUTE;
-import static org.jboss.as.cli.Util.SERVER_GROUP;
-import static org.jboss.as.cli.Util.isSuccess;
-import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
+
+import org.jboss.as.test.deployment.DeploymentInfoUtils;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.jboss.dmr.ModelNode;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
 import org.junit.After;
 import org.junit.AfterClass;
+
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createWarArchive;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ENABLED;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,19 +49,16 @@ public class UndeployTestCase {
 
     private CommandContext ctx;
     private static DomainTestSupport testSupport;
+    private static DeploymentInfoUtils infoUtils;
 
     @BeforeClass
     public static void before() throws Exception {
-
         testSupport = CLITestSuite.createSupport(UndeployTestCase.class.getSimpleName());
-
-        String tempDir = System.getProperty("java.io.tmpdir");
+        infoUtils = new DeploymentInfoUtils(DomainTestSupport.masterAddress);
+        infoUtils.connectCli();
 
         // deployment1
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-undeploy-test-app1.war");
-        war.addAsWebResource(new StringAsset("Version0"), "page.html");
-        cliTestApp1War = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
+        cliTestApp1War = createWarArchive("cli-undeploy-test-app1.war", "Version0");
 
         final Iterator<String> sgI = CLITestSuite.serverGroups.keySet().iterator();
         if (!sgI.hasNext()) {
@@ -82,8 +73,8 @@ public class UndeployTestCase {
 
     @AfterClass
     public static void after() throws Exception {
-
         CLITestSuite.stopSupport();
+        infoUtils.disconnectCli();
 
         cliTestApp1War.delete();
     }
@@ -92,57 +83,56 @@ public class UndeployTestCase {
     public void beforeTest() throws Exception {
         ctx = CLITestUtil.getCommandContext(testSupport);
         ctx.connectController();
-
-        ctx.handle("deploy --server-groups=" + sgOne + ',' + sgTwo + " " + cliTestApp1War.getAbsolutePath());
-
+        infoUtils.enableDoubleCheck(ctx);
     }
 
     @After
     public void afterTest() throws Exception {
+        ctx.handleSafe("deployment undeploy * --all-relevant-server-groups");
+
         ctx.terminateSession();
+        infoUtils.resetDoubleCheck();
     }
 
     @Test
-    public void undeploy() throws Exception {
+    public void testLegacyUndeployWithAllServerGroups() throws Exception {
+        ctx.handle("deploy --server-groups=" + sgOne + ',' + sgTwo + " " + cliTestApp1War.getAbsolutePath());
+
+        infoUtils.checkDeploymentByLegacyInfo(sgOne, cliTestApp1War.getName(), ENABLED);
+        infoUtils.checkDeploymentByLegacyInfo(sgTwo, cliTestApp1War.getName(), ENABLED);
+
         // From serverGroup1 only, still referenced from sg2. Must keep-content
         ctx.handle("undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
 
-        checkState(sgOne, cliTestApp1War.getName(), false);
-        checkState(sgTwo, cliTestApp1War.getName(), true);
+        infoUtils.checkDeploymentByLegacyInfo(sgOne, cliTestApp1War.getName(), ADDED);
+        infoUtils.checkDeploymentByLegacyInfo(sgTwo, cliTestApp1War.getName(), ENABLED);
 
-        ctx.handle("deployment undeploy * --all-relevant-server-groups");
+        ctx.handle("undeploy --name=* --server-groups=" + sgOne + ',' + sgTwo);
+
+        infoUtils.readLegacyDeploymentInfo(sgOne);
+        infoUtils.checkMissingInOutputMemory(cliTestApp1War.getName());
+        infoUtils.readLegacyDeploymentInfo(sgTwo);
+        infoUtils.checkMissingInOutputMemory(cliTestApp1War.getName());
+    }
+
+    @Test
+    public void testUndeployWithAllServerGroups() throws Exception {
         ctx.handle("deployment deploy-file --server-groups=" + sgOne + ',' + sgTwo + " " + cliTestApp1War.getAbsolutePath());
 
-        checkState(sgOne, cliTestApp1War.getName(), true);
-        checkState(sgTwo, cliTestApp1War.getName(), true);
+        infoUtils.checkDeploymentByInfo(sgOne, cliTestApp1War.getName(), ENABLED);
+        infoUtils.checkDeploymentByInfo(sgTwo, cliTestApp1War.getName(), ENABLED);
 
         // From serverGroup1 only, still referenced from sg2. Must keep-content
         ctx.handle("deployment undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
 
-        checkState(sgOne, cliTestApp1War.getName(), false);
-        checkState(sgTwo, cliTestApp1War.getName(), true);
-    }
+        infoUtils.checkDeploymentByInfo(sgOne, cliTestApp1War.getName(), ADDED);
+        infoUtils.checkDeploymentByInfo(sgTwo, cliTestApp1War.getName(), ENABLED);
 
-    private void checkState(String groupName, String deploymentname, boolean expected) throws Exception {
-        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
-        builder.addNode(SERVER_GROUP, groupName);
-        builder.addNode(DEPLOYMENT, deploymentname);
-        builder.setOperationName(READ_ATTRIBUTE);
-        builder.addProperty(NAME, ENABLED);
-        ModelNode request;
-        request = builder.buildRequest();
+        ctx.handle("deployment undeploy * --all-relevant-server-groups");
 
-        ModelNode outcome = ctx.getModelControllerClient().execute(request);
-        if (isSuccess(outcome)) {
-            if (!outcome.hasDefined("result")) {
-                throw new Exception("No result");
-            }
-            if (outcome.get("result").asBoolean() != expected) {
-                throw new Exception("Not expected " + expected + " for "
-                        + groupName + " " + deploymentname);
-            }
-        } else {
-            throw new Exception("Not success " + outcome);
-        }
+        infoUtils.readDeploymentInfo(sgOne);
+        infoUtils.checkMissingInOutputMemory(cliTestApp1War.getName());
+        infoUtils.readDeploymentInfo(sgTwo);
+        infoUtils.checkMissingInOutputMemory(cliTestApp1War.getName());
     }
 }
