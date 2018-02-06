@@ -52,6 +52,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @RunWith(WildflyTestRunner.class)
 public class CliConfigTestCase {
 
+    private final String LINE_SEPARATOR = System.getProperty("line.separator");
+
     @Rule
     public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
 
@@ -60,7 +62,8 @@ public class CliConfigTestCase {
         File f = createConfigFile(true);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
-                .addCliArgument("--command=version");
+                .addCliArgument("--command=version")
+                .addCliArgument("--no-color-output");
         try {
             final String result = cli.executeNonInteractive();
             assertNotNull(result);
@@ -75,7 +78,8 @@ public class CliConfigTestCase {
         File f = createConfigFile(false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
-                .addCliArgument("--command=version");
+                .addCliArgument("--command=version")
+                .addCliArgument("--no-color-output");
         try {
             final String result = cli.executeNonInteractive();
             assertNotNull(result);
@@ -269,7 +273,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testValidateOperation() throws Exception {
-        File f = createConfigFile(false, 0, true, false);
+        File f = createConfigFile(false, 0, true, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -290,7 +294,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testNoValidateOperationFlag() throws Exception {
-        File f = createConfigFile(false, 0, true, false);
+        File f = createConfigFile(false, 0, true, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -312,7 +316,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testNotValidateOperation() throws Exception {
-        File f = createConfigFile(false, 0, false, false);
+        File f = createConfigFile(false, 0, false, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
@@ -333,7 +337,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testOutputJSONViaConfig() throws Exception {
-        File f = createConfigFile(false, 0, false, true);
+        File f = createConfigFile(false, 0, false, true, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--connect")
@@ -352,7 +356,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testInteractiveOutputJSON() throws Exception {
-        File f = createConfigFile(false, 0, false, false);
+        File f = createConfigFile(false, 0, false, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--controller="
@@ -383,7 +387,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testOutputDmrByDefault() throws Exception {
-        File f = createConfigFile(false, 0, false, false);
+        File f = createConfigFile(false, 0, false, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--controller="
@@ -402,7 +406,7 @@ public class CliConfigTestCase {
 
     @Test
     public void testInteractiveOutputDmrByDefault() throws Exception {
-        File f = createConfigFile(false, 0, false, false);
+        File f = createConfigFile(false, 0, false, false, false);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--controller="
@@ -444,6 +448,96 @@ public class CliConfigTestCase {
         cli.clearOutput();
         cli.pushLineAndWaitForResults("command-timeout get");
         assertEquals(getValue(cli.getOutput()), "" + config);
+    }
+
+    @Test
+    public void testColorOutputViaConfigFile() throws Exception {
+        File f = createConfigFile(false, 0, true, false, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                                        + TestSuiteEnvironment.getServerAddress() + ":"
+                                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("read-attribute");
+            String out = cli.getOutput();
+            assertTrue(out.contains("Required argument --name is not specified."));
+            // Error message: red color, bold and high intensity with default background
+            assertTrue(out.contains("\u001B[1;91;109m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-resource");
+            out = cli.getOutput();
+            assertTrue(out.contains("\"outcome\" => \"success\""));
+            // Success message: default color, normal style and intensity with default background
+            assertTrue(out.contains("\u001B[;39;49m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+        } finally {
+            cli.destroyProcess();
+            f.delete();
+        }
+
+        // Testing with success message blue and error message cyan
+        f = createConfigFileWithColors(false, 0, true, false, true, "cyan", "", "blue", "", "");
+        cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                                        + TestSuiteEnvironment.getServerAddress() + ":"
+                                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("read-attribute");
+            String out = cli.getOutput();
+            assertTrue(out.contains("Required argument --name is not specified."));
+            // Error message: cyan color, bold and high intensity with default background
+            assertTrue(out.contains("\u001B[1;96;109m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-resource");
+            out = cli.getOutput();
+            assertTrue(out.contains("\"outcome\" => \"success\""));
+            // Success message: blue color, normal style and intensity with default background
+            assertTrue(out.contains("\u001B[;34;49m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+        } finally {
+            cli.destroyProcess();
+            f.delete();
+        }
+    }
+
+    @Test
+    public void testColorOutputViaCliArgument() throws Exception {
+        File f = createConfigFile(false, 0, true, false, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                                        + TestSuiteEnvironment.getServerAddress() + ":"
+                                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("read-attribute");
+            String out = cli.getOutput();
+            assertTrue(out.contains("Required argument --name is not specified."));
+            // Error message: red color, bold and high intensity with default background
+            assertTrue(out.contains("\u001B[1;91;109m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults(":read-resource");
+            out = cli.getOutput();
+            assertTrue(out.contains("\"outcome\" => \"success\""));
+            // Success message: default color, normal style and intensity with default background
+            assertTrue(out.contains("\u001B[;39;49m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+        } finally {
+            cli.destroyProcess();
+        }
     }
 
     private static String getValue(String line) {
@@ -515,15 +609,19 @@ public class CliConfigTestCase {
     }
 
     private static File createConfigFile(Boolean enable) {
-        return createConfigFile(enable, 0, false, false);
+        return createConfigFile(enable, 0, false, false, false);
+    }
+
+    private static File createConfigFile(Boolean enable, Boolean colorOutput) {
+        return createConfigFile(enable, 0, false, false, true);
     }
 
     private static File createConfigFile(Boolean enable, int timeout) {
-        return createConfigFile(enable, timeout, true, false);
+        return createConfigFile(enable, timeout, true, false, false);
     }
 
     private static File createConfigFile(Boolean enable, int timeout,
-            Boolean validate, Boolean outputJSON) {
+            Boolean validate, Boolean outputJSON, Boolean colorOutput) {
         File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
                 System.currentTimeMillis() + ".xml");
         f.deleteOnExit();
@@ -550,6 +648,10 @@ public class CliConfigTestCase {
             writer.writeCharacters(outputJSON.toString());
             writer.writeEndElement(); //output-json
 
+            if (colorOutput) {
+                writeColorConfig(writer, true, "", "", "", "", "");
+            }
+
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
             writer.flush();
@@ -558,5 +660,88 @@ public class CliConfigTestCase {
             fail("Failure creating config file " + ex);
         }
         return f;
+    }
+
+    private static File createConfigFileWithColors(Boolean enable, int timeout,
+            Boolean validate, Boolean outputJSON, Boolean colorOutput, String error,
+            String warn, String success, String required, String batch) {
+        File f = new File(TestSuiteEnvironment.getTmpDir(), "test-jboss-cli" +
+                System.currentTimeMillis() + ".xml");
+        f.deleteOnExit();
+        String namespace = Namespace.CURRENT.getUriString();
+        XMLOutputFactory output = XMLOutputFactory.newInstance();
+        try (Writer stream = Files.newBufferedWriter(f.toPath(), StandardCharsets.UTF_8)) {
+            XMLStreamWriter writer = output.createXMLStreamWriter(stream);
+            writer.writeStartDocument();
+            writer.writeStartElement("jboss-cli");
+            writer.writeDefaultNamespace(namespace);
+            writer.writeStartElement("echo-command");
+            writer.writeCharacters(enable.toString());
+            writer.writeEndElement(); //echo-command
+            if (timeout != 0) {
+                writer.writeStartElement("command-timeout");
+                writer.writeCharacters("" + timeout);
+                writer.writeEndElement(); //command-timeout
+            }
+            writer.writeStartElement("validate-operation-requests");
+            writer.writeCharacters(validate.toString());
+            writer.writeEndElement(); //validate-operation-requests
+
+            writer.writeStartElement("output-json");
+            writer.writeCharacters(outputJSON.toString());
+            writer.writeEndElement(); //output-json
+
+            if (colorOutput) {
+                writeColorConfig(writer, true, error, warn, success, required, batch);
+            }
+
+            writer.writeEndElement(); //jboss-cli
+            writer.writeEndDocument();
+            writer.flush();
+            writer.close();
+        } catch (XMLStreamException | IOException ex) {
+            fail("Failure creating config file " + ex);
+        }
+        return f;
+    }
+
+    private static void writeColorConfig(XMLStreamWriter writer, Boolean enabled, String error,
+            String warn, String success, String required, String batch) throws XMLStreamException {
+        writer.writeStartElement("color-output");
+        writer.writeStartElement("enabled");
+        writer.writeCharacters(enabled.toString());
+        writer.writeEndElement(); // enabled
+
+        if (!"".equals(error)) {
+            writer.writeStartElement("error-color");
+            writer.writeCharacters(error);
+            writer.writeEndElement();
+        }
+
+        if (!"".equals(warn)) {
+            writer.writeStartElement("warn-color");
+            writer.writeCharacters(warn);
+            writer.writeEndElement();
+        }
+
+        if (!"".equals(success)) {
+            writer.writeStartElement("success-color");
+            writer.writeCharacters(success);
+            writer.writeEndElement();
+        }
+
+        if (!"".equals(required)) {
+            writer.writeStartElement("required-color");
+            writer.writeCharacters(required);
+            writer.writeEndElement();
+        }
+
+        if (!"".equals(batch)) {
+            writer.writeStartElement("workflow-color");
+            writer.writeCharacters(batch);
+            writer.writeEndElement();
+        }
+
+        writer.writeEndElement(); //color-output
     }
 }

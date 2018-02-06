@@ -340,6 +340,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     private final AeshCommands aeshCommands;
     private CLICommandInvocation invocationContext;
     private final CommandCompleter legacyCmdCompleter;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -374,6 +375,11 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         cliPrintStream = new CLIPrintStream();
         initSSLContext();
         initJaasConfig();
+
+        if (config.isColorOutput()) {
+            Util.configureColors(this);
+        }
+
         addShutdownHook();
         CliLauncher.runcom(this);
     }
@@ -428,6 +434,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
         try {
             initCommands();
+            if (config.isColorOutput()) {
+                Util.configureColors(this);
+            }
         } catch (CommandLineException | CommandLineParserException e) {
             throw new CliInitializationException("Failed to initialize commands", e);
         }
@@ -961,12 +970,60 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     @Override
+    public void printDMR(ModelNode node) {
+        if (getConfig().isOutputJSON() && getConfig().isColorOutput()) {
+            printLine(node.toJSONString(false), node.get("outcome").asString());
+        } else if (getConfig().isOutputJSON()) {
+            printLine(node.toJSONString(false));
+        } else if (getConfig().isColorOutput()) {
+            printLine(node.toString(), node.get("outcome").asString());
+        } else {
+            printLine(node.toString());
+        }
+    }
+    private String colorizeMessage(String message, String outcome) {
+        if (outcome != null && !outcome.isEmpty()) {
+            switch (outcome) {
+                case "success":
+                    return Util.formatSuccessMessage(message);
+                case "fail":
+                case "failed":
+                case "failure":
+                case "error":
+                    return Util.formatErrorMessage(message);
+                case "cancelled":
+                case "warn":
+                case "warning":
+                    return Util.formatWarnMessage(message);
+            }
+        }
+
+        return message;
+    }
+
+    @Override
     public void printLine(String message) {
+        if (getConfig().isColorOutput()) {
+            message = colorizeMessage(message, "");
+        }
+
+        print(message, true, true);
+    }
+
+    public void printLine(String message, String outcome) {
+        if (getConfig().isColorOutput()) {
+            message = colorizeMessage(message, outcome);
+        }
+
         print(message, true, true);
     }
 
     @Override
     public void print(String message) {
+        if (getConfig().isColorOutput()) {
+            message = colorizeMessage(message, "");
+        }
+
         print(message, false, true);
     }
 
@@ -980,7 +1037,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
      */
     protected void error(String message) {
         this.exitCode = 1;
-        printLine(message);
+        printLine(message, "error");
     }
 
     // Aesh input API expects InterruptedException so is implemented with input methods
@@ -1475,6 +1532,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             buffer.append(promptConnectPart);
         }
 
+        if (getConfig().isColorOutput()) {
+            Util.formatPrompt(buffer);
+        }
+
         if (prefix.isEmpty()) {
             buffer.append('/');
         } else {
@@ -1486,8 +1547,21 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         }
 
         if (isBatchMode()) {
-            buffer.append(" #");
+            if (getConfig().isColorOutput()) {
+                buffer.append(Util.formatWorkflowPrompt(" #"));
+            } else {
+                buffer.append(" #");
+            }
         }
+
+        if (isWorkflowMode()) {
+            if (getConfig().isColorOutput()) {
+                buffer.append(Util.formatWorkflowPrompt(" ..."));
+            } else {
+                buffer.append(" ...");
+            }
+        }
+
         buffer.append("] ");
         return buffer.toString();
     }

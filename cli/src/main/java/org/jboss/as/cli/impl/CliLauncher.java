@@ -68,6 +68,7 @@ public class CliLauncher {
 
             final CommandContextConfiguration.Builder ctxBuilder = new CommandContextConfiguration.Builder();
             ctxBuilder.setErrorOnInteract(errorOnInteract);
+            ctxBuilder.setColorOutput(true);
 
             for(String arg : args) {
                 if(arg.startsWith("--controller=") || arg.startsWith("controller=")) {
@@ -165,6 +166,8 @@ public class CliLauncher {
                     ctxBuilder.setEchoCommand(true);
                 } else if (arg.equals("--output-json")) {
                     ctxBuilder.setOutputJSON(true);
+                } else if (arg.equals("--no-color-output")) {
+                    ctxBuilder.setColorOutput(false);
                 } else if (arg.startsWith("--command-timeout=")) {
                     ctxBuilder.
                             setCommandTimeout(Integer.parseInt(arg.substring(18)));

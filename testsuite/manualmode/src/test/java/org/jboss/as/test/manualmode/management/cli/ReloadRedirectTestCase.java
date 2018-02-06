@@ -258,6 +258,7 @@ public class ReloadRedirectTestCase {
     public void testRedirectWithSecurityCommands() throws Throwable {
         CliProcessWrapper cliProc = new CliProcessWrapper()
                 .addCliArgument("--connect")
+                .addCliArgument("--no-color-output")
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"
                         + TestSuiteEnvironment.getServerPort());

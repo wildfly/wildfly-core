@@ -195,7 +195,19 @@ public interface CliConfig {
 
     /**
      * Output JSON for DMR content.
-     * @return true is JSON output is expected, false if DMR string output is expected.
+     * @return true if JSON output is expected, false if DMR string output is expected.
      */
     boolean isOutputJSON();
+
+    /**
+     * Format DMR content in color.
+     * @return true if the output should be in color, false if color shouldn't be used.
+     */
+    boolean isColorOutput();
+
+    /**
+     * Color configurations to be used when enabled
+     * @return The color configurations
+     */
+    ColorConfig getColorConfig();
 }
