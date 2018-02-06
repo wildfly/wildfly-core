@@ -53,7 +53,7 @@ public class EchoVariableHandler extends CommandHandlerWithHelp {
     @Override
     protected void doHandle(CommandContext ctx) throws CommandFormatException {
         final ParsedCommandLine line = ctx.getParsedCommandLine();
-        String result = line.getSubstitutedLine().substring(line.getOperationName().length()).trim();
+        String result = line.getSubstitutedLine().trim().substring(line.getOperationName().length()).trim();
         if(ctx.isResolveParameterValues()) {
             result = CLIExpressionResolver.resolve(result);
         }

@@ -24,7 +24,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -81,7 +80,6 @@ public class PipeTestCase {
     }
 
     @Test
-    @Ignore("Uncomment when  https://issues.jboss.org/browse/WFCORE-3555 is fixed")
     public void testPipeWithUnsupportedCommand() throws Exception {
         testCommand("version | echo test", "test", true);
     }
