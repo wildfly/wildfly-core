@@ -136,6 +136,27 @@ public class CLIScriptSupportTestCase {
         }
     }
 
+    @Test
+    public void testFailedConnect() {
+        CLI cli = CLI.newInstance();
+        try {
+            // Make an invalid connect
+            checkFail(() -> cli.connect(TestSuiteEnvironment.getServerAddress(),
+                    123,
+                    null,
+                    null));
+            // re-use the same instance to start an embedded server.
+            executeCommand(cli, "embed-server --std-out=echo");
+            try {
+                executeCommand(cli, ":read-resource()");
+            } finally {
+                executeCommand(cli, "stop-embedded-server");
+            }
+        } finally {
+            cli.terminate();
+        }
+    }
+
     private static void checkFail(Runnable runner) {
         boolean failed = false;
         try {

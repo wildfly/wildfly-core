@@ -290,7 +290,6 @@ public class CLI {
         if (isConnected()) {
             throw new IllegalStateException("Already connected to server.");
         }
-        terminate();
         CommandContext newContext = null;
         try {
             newContext = callable.call();
@@ -309,6 +308,8 @@ public class CLI {
             }
             throw new IllegalStateException(ex);
         }
+        // We have a new connected context, terminate the current one.
+        terminate();
         ctx = newContext;
     }
 
