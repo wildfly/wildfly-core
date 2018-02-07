@@ -45,7 +45,8 @@ ARGUMENTS
                      can be used as name value. '*' can be used both in standalone 
                      and domain mode.
 
- --runtime-name    - optional, the runtime name for the deployment. This will
+ --runtime-name    - optional, the runtime name for the deployment which should
+                     end with .ear, .jar, .rar, .sar or .war. This will
                      form the basis for such things as default Java EE
                      application and module names. This would typically be the
                      same as --name, and if not specified the value used for
