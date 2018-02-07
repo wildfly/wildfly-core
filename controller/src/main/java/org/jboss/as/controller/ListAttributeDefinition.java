@@ -56,6 +56,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      * The validator used to validate elements in the list.
      * @return  the element validator
      */
+    @SuppressWarnings("WeakerAccess")
     public ParameterValidator getElementValidator() {
         return elementValidator;
     }
@@ -174,7 +175,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
 
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
     }
 
     /**
@@ -234,7 +235,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
      * @param value String with "," separated string elements
      * @param operation operation to with this list elements are added
      * @param reader xml reader from where reading is be done
-     * @throws XMLStreamException
+     * @throws XMLStreamException if {@code value} is not valid
      */
     @Deprecated
     public void parseAndSetParameter(String value, ModelNode operation, XMLStreamReader reader) throws XMLStreamException {
@@ -272,6 +273,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          * Gets the validator to use for validating list elements. En
          * @return the validator, or {@code null} if no validator has been set
          */
+        @SuppressWarnings("WeakerAccess")
         public ParameterValidator getElementValidator() {
             if (elementValidator == null) {
                 return null;
@@ -310,7 +312,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
             Assert.checkNotNullParam("elementValidator", elementValidator);
             this.elementValidator = elementValidator;
             // Setting an element validator invalidates any existing overall attribute validator
-            this.validator = null;
+            super.setValidator(null);
             return (BUILDER) this;
         }
 
@@ -336,20 +338,29 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          * @param validator the validator. {@code null} is allowed
          * @return a builder that can be used to continue building the attribute definition
          */
+        @SuppressWarnings("WeakerAccess")
         public BUILDER setListValidator(ParameterValidator validator) {
             return super.setValidator(validator);
         }
 
         @Override
         public int getMinSize() {
-            if (minSize < 0) { minSize = 0;}
-            return minSize;
+            int min = super.getMinSize();
+            if (min < 0) {
+                min = 0;
+                setMinSize(min);
+            }
+            return min;
         }
 
         @Override
         public int getMaxSize() {
-            if (maxSize < 1) { maxSize = Integer.MAX_VALUE; }
-            return maxSize;
+            int max = super.getMaxSize();
+            if (max < 1) {
+                max = Integer.MAX_VALUE;
+                setMaxSize(max);
+            }
+            return max;
         }
 
         /**
@@ -358,6 +369,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          *
          * @return {@code true} if undefined list elements are valid
          */
+        @SuppressWarnings("WeakerAccess")
         public boolean getAllowNullElement() {
             return allowNullElement == null ? isAllowNull() : allowNullElement;
         }
@@ -367,7 +379,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
          * @param allowNullElement whether undefined elements are valid
          * @return a builder that can be used to continue building the attribute definition
          */
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "WeakerAccess"})
         public BUILDER setAllowNullElement(boolean allowNullElement) {
             this.allowNullElement = allowNullElement;
             return (BUILDER) this;

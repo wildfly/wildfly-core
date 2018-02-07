@@ -142,7 +142,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
      * @throws javax.xml.stream.XMLStreamException if {@code writer} throws an exception
      */
     public void marshallAsAttribute(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsAttribute(this, resourceModel, marshallDefault, writer);
+        getMarshaller().marshallAsAttribute(this, resourceModel, marshallDefault, writer);
     }
 
     /**
@@ -155,7 +155,7 @@ public class SimpleAttributeDefinition extends AttributeDefinition {
     @Deprecated
     @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-        attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
     }
 
     @Deprecated

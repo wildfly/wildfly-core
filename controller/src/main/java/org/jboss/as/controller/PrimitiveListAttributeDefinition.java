@@ -137,7 +137,8 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     }
 
     private void handleCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue, boolean remove) {
-        if (referenceRecorder != null && attributeValue.isDefined()) {
+        CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
+        if (refRecorder != null && attributeValue.isDefined()) {
             List<ModelNode> valueList = attributeValue.asList();
             String[] attributeValues = new String[valueList.size()];
             int position = 0;
@@ -148,9 +149,9 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
                 attributeValues[position++] = current.asString();
             }
             if (remove) {
-                referenceRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
+                refRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
             } else {
-                referenceRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
+                refRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
             }
         }
     }

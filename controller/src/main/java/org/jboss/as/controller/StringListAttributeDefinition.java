@@ -71,7 +71,8 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
     }
 
     private void handleCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue, boolean remove) {
-        if (referenceRecorder != null && attributeValue.isDefined()) {
+        CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
+        if (refRecorder != null && attributeValue.isDefined()) {
             List<ModelNode> valueList = attributeValue.asList();
             String[] attributeValues = new String[valueList.size()];
             int position = 0;
@@ -82,30 +83,30 @@ public final class StringListAttributeDefinition extends PrimitiveListAttributeD
                 attributeValues[position++] = current.asString();
             }
             if (remove) {
-                referenceRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
+                refRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
             } else {
-                referenceRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
+                refRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
             }
         }
     }
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, StringListAttributeDefinition> {
 
-        public static final Builder of(final String name) {
+        public static Builder of(final String name) {
             return new Builder(name);
         }
 
         public Builder(final String name) {
             super(name);
-            parser = AttributeParser.STRING_LIST;
-            attributeMarshaller = AttributeMarshaller.STRING_LIST;
+            setAttributeParser(AttributeParser.STRING_LIST);
+            setAttributeMarshaller(AttributeMarshaller.STRING_LIST);
             setElementValidator(new ModelTypeValidator(ModelType.STRING));
         }
 
         public Builder(final StringListAttributeDefinition basic) {
             super(basic);
-            parser = AttributeParser.STRING_LIST;
-            attributeMarshaller = AttributeMarshaller.STRING_LIST;
+            setAttributeParser(AttributeParser.STRING_LIST);
+            setAttributeMarshaller(AttributeMarshaller.STRING_LIST);
         }
 
         @Override

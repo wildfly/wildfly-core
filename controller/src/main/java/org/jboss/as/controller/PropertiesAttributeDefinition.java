@@ -50,8 +50,8 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 //todo maybe replace with SimpleMapAttributeDefinition?
 public final class PropertiesAttributeDefinition extends MapAttributeDefinition {
 
-    final boolean wrapXmlElement;
-    final String wrapperElement;
+    private final boolean wrapXmlElement;
+    private final String wrapperElement;
 
     private PropertiesAttributeDefinition(final Builder builder) {
         super(builder);
@@ -111,6 +111,7 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         return wrapXmlElement;
     }
 
+    @SuppressWarnings("unused")
     public String getWrapperElement() {
         return wrapperElement;
     }
@@ -118,7 +119,7 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
     public static class Builder extends MapAttributeDefinition.Builder<Builder, PropertiesAttributeDefinition> {
         private boolean wrapXmlElement = true;
         private String wrapperElement = null;
-        //for backward compatibilty, until we get new core out and used by wildfly full.
+        //for backward compatibility, until we get new core out and used by wildfly full.
         private boolean xmlNameExplicitlySet = false;
 
         public Builder(final String name, boolean optional) {
@@ -164,14 +165,15 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
         @Override
         public PropertiesAttributeDefinition build() {
             if (elementValidator == null) {
-                elementValidator = new ModelTypeValidator(ModelType.STRING, allowNull, allowExpression);
+                elementValidator = new ModelTypeValidator(ModelType.STRING);
             }
-            String elementName = name.equals(xmlName) ? null : xmlName;
-            if (attributeMarshaller == null) {
-                attributeMarshaller = new AttributeMarshallers.PropertiesAttributeMarshaller(wrapperElement, xmlNameExplicitlySet ? xmlName : elementName, wrapXmlElement);
+            String xmlName = getXmlName();
+            String elementName = getName().equals(xmlName) ? null : xmlName;
+            if (getAttributeMarshaller() == null) {
+                setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(wrapperElement, xmlNameExplicitlySet ? xmlName : elementName, wrapXmlElement));
             }
-            if (parser == null) {
-                parser = new AttributeParsers.PropertiesParser(wrapperElement, elementName, wrapXmlElement);
+            if (getParser() == null) {
+                setAttributeParser(new AttributeParsers.PropertiesParser(wrapperElement, elementName, wrapXmlElement));
             }
 
             return new PropertiesAttributeDefinition(this);

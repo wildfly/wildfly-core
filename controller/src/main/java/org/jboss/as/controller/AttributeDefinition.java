@@ -84,6 +84,8 @@ public abstract class AttributeDefinition {
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
     private final Set<AttributeAccess.Flag> flags;
+    /** @deprecated use {@link #getMarshaller()} as this will be made private in a future release*/
+    @Deprecated
     protected final AttributeMarshaller attributeMarshaller;
     private final boolean resourceOnly;
     private final DeprecationData deprecationData;
@@ -92,6 +94,8 @@ public abstract class AttributeDefinition {
     private final AttributeParser parser;
     private final String attributeGroup;
     private final ModelNode undefinedMetricValue;
+    /** @deprecated use {@link #getReferenceRecorder()} ()} as this will be made private in a future release*/
+    @Deprecated
     protected final CapabilityReferenceRecorder referenceRecorder;
     private final Map<String, ModelNode> arbitraryDescriptors;
 
@@ -139,6 +143,7 @@ public abstract class AttributeDefinition {
         this.valueCorrector = valueCorrector;
         this.validator = validator;
         this.flags = flags;
+        //noinspection deprecation
         this.attributeMarshaller = marshaller != null ? marshaller : AttributeMarshaller.SIMPLE;
         this.resourceOnly = resourceOnly;
         this.accessConstraints = accessConstraints;
@@ -152,6 +157,7 @@ public abstract class AttributeDefinition {
         } else {
             this.undefinedMetricValue = null;
         }
+        //noinspection deprecation
         this.referenceRecorder = referenceRecorder;
         if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
             if (arbitraryDescriptors.size() == 1) {
@@ -456,7 +462,7 @@ public abstract class AttributeDefinition {
      * @return {@code true} if the given {@code resourceModel} has a defined value under this attribute's {@link #getName()} () name}.
      */
     public boolean isMarshallable(final ModelNode resourceModel) {
-        return attributeMarshaller.isMarshallable(this, resourceModel, true);
+        return getMarshaller().isMarshallable(this, resourceModel, true);
     }
 
     /**
@@ -469,7 +475,7 @@ public abstract class AttributeDefinition {
      * and {@code marshallDefault} is {@code true} or that value differs from this attribute's {@link #getDefaultValue() default value}.
      */
     public boolean isMarshallable(final ModelNode resourceModel, final boolean marshallDefault) {
-        return attributeMarshaller.isMarshallable(this, resourceModel, marshallDefault);
+        return getMarshaller().isMarshallable(this, resourceModel, marshallDefault);
     }
 
     /**
@@ -748,8 +754,8 @@ public abstract class AttributeDefinition {
      * @throws javax.xml.stream.XMLStreamException if thrown by {@code writer}
      */
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-        if (this.attributeMarshaller.isMarshallableAsElement()) {
-            this.attributeMarshaller.marshallAsElement(this, resourceModel, marshallDefault, writer);
+        if (getMarshaller().isMarshallableAsElement()) {
+            getMarshaller().marshallAsElement(this, resourceModel, marshallDefault, writer);
         } else {
             throw ControllerLogger.ROOT_LOGGER.couldNotMarshalAttributeAsElement(getName());
         }
@@ -976,8 +982,8 @@ public abstract class AttributeDefinition {
                 result.get(ModelDescriptionConstants.REQUIRES).add(required);
             }
         }
-        if (referenceRecorder != null) {
-            result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE).set(referenceRecorder.getBaseRequirementName());
+        if (getReferenceRecorder() != null) {
+            result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE).set(getReferenceRecorder().getBaseRequirementName());
         }
 
         if (validator instanceof MinMaxValidator) {
@@ -1044,11 +1050,13 @@ public abstract class AttributeDefinition {
      * @param attributeValue the value of the attribute described by this object
      */
     public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
-        if (referenceRecorder != null) {
+        @SuppressWarnings("deprecation")
+        CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
+        if (refRecorder != null) {
             // We can't process expressions
             if (attributeValue.getType() != ModelType.EXPRESSION) {
                 ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
-                referenceRecorder.addCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
+                refRecorder.addCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
             }
         }
     }
@@ -1083,11 +1091,13 @@ public abstract class AttributeDefinition {
      * @param attributeValue the value of the attribute described by this object
      */
     public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
-        if (referenceRecorder != null) {
+        @SuppressWarnings("deprecation")
+        CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
+        if (refRecorder != null) {
             // We can't process expressions
             if (attributeValue.getType() != ModelType.EXPRESSION) {
                 ModelNode value = attributeValue.isDefined() ? attributeValue : (defaultValue != null) ? defaultValue : new ModelNode();
-                referenceRecorder.removeCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
+                refRecorder.removeCapabilityRequirements(context, resource, name, value.isDefined() ? value.asString() : null);
             }
         }
     }
@@ -1106,6 +1116,7 @@ public abstract class AttributeDefinition {
     }
 
     protected CapabilityReferenceRecorder getReferenceRecorder(){
+        //noinspection deprecation
         return referenceRecorder;
     }
 
@@ -1228,6 +1239,7 @@ public abstract class AttributeDefinition {
      * @return attribute marshaller that can be used to persist attribute to XML
      */
     public AttributeMarshaller getMarshaller() {
+        //noinspection deprecation
         return attributeMarshaller;
     }
 

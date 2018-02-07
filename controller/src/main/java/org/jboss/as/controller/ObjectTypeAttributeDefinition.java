@@ -335,7 +335,10 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
         }
 
         public ObjectTypeAttributeDefinition build() {
-            if (validator == null) { validator = new ObjectTypeValidator(allowNull, valueTypes); }
+            ParameterValidator validator = getValidator();
+            if (validator == null) {
+                setValidator(new ObjectTypeValidator(isAllowNull(), valueTypes));
+            }
             return new ObjectTypeAttributeDefinition(this);
         }
 
