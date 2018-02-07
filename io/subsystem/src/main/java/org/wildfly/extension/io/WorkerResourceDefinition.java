@@ -198,8 +198,14 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         super.registerChildren(resourceRegistration);
-        resourceRegistration.registerSubModel(new WorkerServerDefinition());
         resourceRegistration.registerSubModel(OutboundBindAddressResourceDefinition.getInstance());
+        // Don't register on a domain profile, as there are no services to back the resource
+        // We could check if (resourceRegistration.getProcessType().isServer()) instead but
+        // if we ever support this extension as an HC subsystem (which seems reasonably possible)
+        // by doing it this way it will still behave correctly.
+        if (!PROFILE.equals(resourceRegistration.getPathAddress().getElement(0).getKey())) {
+            resourceRegistration.registerSubModel(new WorkerServerDefinition());
+        }
     }
 
     private abstract static class AbstractWorkerAttributeHandler implements OperationStepHandler {
