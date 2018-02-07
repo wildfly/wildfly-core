@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -46,6 +47,8 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public abstract class DeploymentHandlerUtils {
+
+    public static final Pattern ARCHIVE_PATTERN = Pattern.compile("^.*\\.(?:(?:[SsWwJjEeRr][Aa][Rr])|(?:[Ww][Aa][Bb])|(?:[Ee][Ss][Aa]))$");
 
     protected static String asString(final ModelNode node, final String name) {
         return node.has(name) ? node.require(name).asString() : null;

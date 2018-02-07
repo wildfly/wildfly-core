@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_REPLACE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.ARCHIVE_PATTERN;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -106,7 +107,9 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
             } else {
             }
             runtimeName = operation.hasDefined(RUNTIME_NAME) ? DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.get(RUNTIME_NAME).resolveModelAttribute(context, operation).asString() : replacedName;
-
+            if (!ARCHIVE_PATTERN.matcher(runtimeName).matches()) {
+                ServerLogger.DEPLOYMENT_LOGGER.invalidRuntimeNameExtension(runtimeName);
+            }
             // Create the resource
             final Resource deployResource = context.createResource(PathAddress.pathAddress(deployPath));
             deployNode = deployResource.getModel();

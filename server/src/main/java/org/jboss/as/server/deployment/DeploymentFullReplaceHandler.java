@@ -29,6 +29,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.ARCHIVE_PATTERN;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
@@ -89,6 +90,9 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         final String name = DeploymentAttributes.NAME.resolveModelAttribute(context, correctedOperation).asString();
         final PathElement deploymentPath = PathElement.pathElement(DEPLOYMENT, name);
         final String runtimeName = correctedOperation.hasDefined(RUNTIME_NAME.getName()) ? correctedOperation.get(RUNTIME_NAME.getName()).asString() : name;
+        if (!ARCHIVE_PATTERN.matcher(runtimeName).matches()) {
+            ServerLogger.DEPLOYMENT_LOGGER.invalidRuntimeNameExtension(runtimeName);
+        }
         // clone the content param, so we can modify it to our own content
         ModelNode content = correctedOperation.require(CONTENT).clone();
 

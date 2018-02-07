@@ -1277,6 +1277,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 266, value = "Server home is set to '%s', but server real home is '%s' - unpredictable results may occur.")
     void serverHomeMismatch(Path passed, Path real);
 
+    @LogMessage(level = Logger.Level.WARN)
+    @Message(id = 267, value = "Runtime name %s without an extension may not be regonized during deployment")
+    void invalidRuntimeNameExtension(String name);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

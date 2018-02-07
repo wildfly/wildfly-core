@@ -32,6 +32,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.ARCHIVE_PATTERN;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidContentAdditionParameterDefined;
@@ -108,6 +109,9 @@ public class DeploymentAddHandler implements OperationStepHandler {
         final PathAddress address = PathAddress.pathAddress(opAddr);
         final String name = address.getLastElement().getValue();
         final String runtimeName = operation.hasDefined(RUNTIME_NAME.getName()) ? operation.get(RUNTIME_NAME.getName()).asString() : name;
+        if (!ARCHIVE_PATTERN.matcher(runtimeName).matches()) {
+            ServerLogger.DEPLOYMENT_LOGGER.invalidRuntimeNameExtension(runtimeName);
+        }
         newModel.get(RUNTIME_NAME.getName()).set(runtimeName);
 
         final DeploymentHandlerUtil.ContentItem contentItem;
