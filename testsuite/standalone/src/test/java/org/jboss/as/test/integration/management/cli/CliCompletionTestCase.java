@@ -35,17 +35,20 @@ import java.util.stream.Collectors;
 import org.aesh.complete.AeshCompleteOperation;
 import org.aesh.readline.completion.Completion;
 import org.aesh.readline.terminal.formatting.TerminalString;
+import org.hamcrest.CoreMatchers;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -537,29 +540,40 @@ public class CliCompletionTestCase {
     }
 
     @Test
-    @Ignore("Un-ignore when WFCORE-3561 is fixed")
     public void testAppendCustomFileAbsoluteDirCompletion() throws Exception {
         Path tempFile = Files.createTempFile("tempFile", ".tmp");
         String tempFileStringPath = tempFile.toString();
-
         try {
             ctx.handle("version >" + tempFileStringPath);
             List<String> paths = new ArrayList<>();
-            for (Path path: tempFile.toAbsolutePath()) {
-                paths.add(path.toFile().getName());
+
+            // Split the absolute path. First item must be the root directory (for X:\ on Windows)
+            paths.add(tempFile.toAbsolutePath().getRoot().toString());
+            for (int i=0; i < tempFile.toAbsolutePath().getNameCount(); i++) {
+                paths.add(tempFile.toAbsolutePath().getName(i).toString());
             }
 
             String cmd = "version >>";
             String testPath = "";
-            List<String> candidates = new ArrayList<>();
-            for (int i = 0; i < paths.size(); i++) {
+            List<String> candidates;
+            // Iterate through whole path except the last element which is the filename itself
+            for (int i = 0; i < paths.size() - 1; i++) {
                 String p = paths.get(i);
-                testPath += File.separator + p;
-                candidates = complete(ctx, cmd + testPath, null);
-                if (i + 1 < paths.size()) {
-                    assertTrue(candidates.toString(), candidates.contains(p + File.separator));
+                if (i == 0 || (i == paths.size() - 1)) {
+                    testPath += p;
                 } else {
-                    assertTrue(candidates.toString(), candidates.contains(p));
+                    testPath += p + File.separator;
+                }
+
+                candidates = complete(ctx, cmd + testPath, null);
+                // Candidate should be directory
+                if (i < tempFile.toAbsolutePath().getNameCount() - 1) {
+                    assertThat("No candidate for completion match with the expected content.",
+                            candidates, CoreMatchers.hasItem(paths.get(i+1) + File.separator));
+                // Candidate should be the final filename
+                } else {
+                    assertThat("No candidate for completion match with the expected content.",
+                            candidates, CoreMatchers.hasItem((paths.get(paths.size()-1))));
                 }
             }
         } finally {
@@ -577,9 +591,6 @@ public class CliCompletionTestCase {
         candidates = complete(ctx, cmd, null);
         assertEquals(expectedParameters, candidates.stream().map(String::toString).collect(Collectors.toSet()));
     }
-
-
-
 
     private String escapePath(String filePath) {
         if (Util.isWindows()) {
