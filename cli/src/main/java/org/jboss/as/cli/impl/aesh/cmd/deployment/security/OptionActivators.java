@@ -146,6 +146,9 @@ public interface OptionActivators {
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
             }
+            if (cmd.getCommandContext().isDomainMode()) {
+                return false;
+            }
             return super.isActivated(processedCommand);
         }
     }
@@ -173,24 +176,18 @@ public interface OptionActivators {
                     isSatisfied(cmd.getCommandContext())) {
                 return false;
             }
+            if (cmd.getCommandContext().isDomainMode()) {
+                return false;
+            }
             return super.isActivated(processedCommand);
         }
     }
 
-    public static class ServerGroupsActivator extends AbstractDependRejectOptionActivator
+    public static class ServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
-        private static final Set<String> EXPECTED = new HashSet<>();
-        private static final Set<String> NOT_EXPECTED = new HashSet<>();
-
-        static {
-            // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
-            NOT_EXPECTED.add("all-server-groups");
-            NOT_EXPECTED.add("replace");
-        }
         public ServerGroupsActivator() {
-            super(false, EXPECTED, NOT_EXPECTED);
+            super("all-server-groups", "replace");
         }
 
         @Override
@@ -207,10 +204,10 @@ public interface OptionActivators {
         }
     }
 
-    public static class InfoServerGroupsActivator extends AbstractRejectOptionActivator
+    public static class InfoServerGroupActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
-        public InfoServerGroupsActivator() {
+        public InfoServerGroupActivator() {
             super(DependOptionActivator.ARGUMENT_NAME);
         }
 
@@ -231,21 +228,11 @@ public interface OptionActivators {
         }
     }
 
-    public static class AllServerGroupsActivator extends AbstractDependRejectOptionActivator
+    public static class AllServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
-        private static final Set<String> EXPECTED = new HashSet<>();
-        private static final Set<String> NOT_EXPECTED = new HashSet<>();
-
-        static {
-            // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
-            NOT_EXPECTED.add("server-groups");
-            NOT_EXPECTED.add("replace");
-        }
-
         public AllServerGroupsActivator() {
-            super(false, EXPECTED, NOT_EXPECTED);
+            super("server-groups", "replace");
         }
 
         @Override
@@ -263,20 +250,11 @@ public interface OptionActivators {
         }
     }
 
-    public static class AllRelevantServerGroupsActivator extends AbstractDependRejectOptionActivator
+    public static class AllRelevantServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public AllRelevantServerGroupsActivator() {
-            super(false, EXPECTED, NOT_EXPECTED);
-        }
-
-        private static final Set<String> EXPECTED = new HashSet<>();
-        private static final Set<String> NOT_EXPECTED = new HashSet<>();
-
-        static {
-            // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
-            NOT_EXPECTED.add("server-groups");
+            super("server-groups");
         }
 
         @Override
@@ -294,20 +272,11 @@ public interface OptionActivators {
         }
     }
 
-    public static class UndeployServerGroupsActivator extends AbstractDependRejectOptionActivator
+    public static class UndeployServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public UndeployServerGroupsActivator() {
-            super(false, EXPECTED, NOT_EXPECTED);
-        }
-
-        private static final Set<String> EXPECTED = new HashSet<>();
-        private static final Set<String> NOT_EXPECTED = new HashSet<>();
-
-        static {
-            // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
-            NOT_EXPECTED.add("all-relevant-server-groups");
+            super("all-relevant-server-groups");
         }
 
         @Override

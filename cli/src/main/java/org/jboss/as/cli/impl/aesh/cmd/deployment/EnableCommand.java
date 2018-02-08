@@ -17,18 +17,17 @@ package org.jboss.as.cli.impl.aesh.cmd.deployment;
 
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.Permissions;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
-import org.aesh.command.completer.OptionCompleter;
 import org.aesh.command.option.Argument;
 import org.aesh.command.option.Option;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.Util;
+import org.jboss.as.cli.impl.aesh.cmd.AbstractCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.AccessRequirements;
 import org.jboss.as.cli.impl.aesh.cmd.security.ControlledCommandActivator;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators.NameActivator;
@@ -48,30 +47,17 @@ import org.jboss.as.cli.impl.aesh.cmd.LegacyBridge;
 public class EnableCommand extends AbstractDeployCommand implements LegacyBridge {
 
     public static class NameCompleter
-            implements OptionCompleter<CLICompleterInvocation> {
+            extends AbstractCompleter {
 
         @Override
-        public void complete(CLICompleterInvocation completerInvocation) {
+        protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+            List<String> deployments = Collections.emptyList();
             if (completerInvocation.getCommandContext().getModelControllerClient() != null) {
-                List<String> deployments
+                deployments
                         = Util.getDeployments(completerInvocation.getCommandContext().
                                 getModelControllerClient());
-                if (!deployments.isEmpty()) {
-                    List<String> candidates = new ArrayList<>();
-                    String opBuffer = completerInvocation.getGivenCompleteValue();
-                    if (opBuffer.isEmpty()) {
-                        candidates.addAll(deployments);
-                    } else {
-                        for (String name : deployments) {
-                            if (name.startsWith(opBuffer)) {
-                                candidates.add(name);
-                            }
-                        }
-                        Collections.sort(candidates);
-                    }
-                    completerInvocation.addAllCompleterValues(candidates);
-                }
             }
+            return deployments;
         }
     }
 

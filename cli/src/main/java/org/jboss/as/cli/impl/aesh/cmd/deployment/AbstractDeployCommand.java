@@ -17,18 +17,15 @@ package org.jboss.as.cli.impl.aesh.cmd.deployment;
 
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.CommandWithPermissions;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.Permissions;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import org.aesh.command.CommandDefinition;
 import org.aesh.command.option.Option;
-import org.aesh.command.completer.OptionCompleter;
 import org.jboss.as.cli.Attachments;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.accesscontrol.AccessRequirement;
 import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
-import org.jboss.as.cli.impl.CommaSeparatedCompleter;
+import org.jboss.as.cli.impl.aesh.cmd.AbstractCommaCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.HeadersConverter;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.OptionActivators.AllServerGroupsActivator;
@@ -46,25 +43,13 @@ import org.wildfly.core.cli.command.BatchCompliantCommand;
 @CommandDefinition(name = "deployment-deploy", description = "")
 public abstract class AbstractDeployCommand extends CommandWithPermissions implements BatchCompliantCommand {
 
-    public static class ServerGroupsCompleter implements
-            OptionCompleter<CLICompleterInvocation> {
+    public static class ServerGroupsCompleter extends AbstractCommaCompleter {
 
         @Override
-        public void complete(CLICompleterInvocation completerInvocation) {
+        protected List<String> getItems(CLICompleterInvocation completerInvocation) {
             CommandWithPermissions rc = (CommandWithPermissions) completerInvocation.getCommand();
-
-            CommaSeparatedCompleter comp = new CommaSeparatedCompleter() {
-                @Override
-                protected Collection<String> getAllCandidates(CommandContext ctx) {
-                    return rc.getPermissions().getServerGroupAddPermission().
-                            getAllowedOn(ctx);
-                }
-            };
-            List<String> candidates = new ArrayList<>();
-            int offset = comp.complete(completerInvocation.getCommandContext(),
-                    completerInvocation.getGivenCompleteValue(), 0, candidates);
-            completerInvocation.addAllCompleterValues(candidates);
-            completerInvocation.setOffset(offset);
+            return rc.getPermissions().getServerGroupAddPermission().
+                    getAllowedOn(completerInvocation.getCommandContext());
         }
     }
 
