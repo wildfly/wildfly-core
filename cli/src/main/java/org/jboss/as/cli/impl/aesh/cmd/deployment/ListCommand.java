@@ -135,7 +135,7 @@ public class ListCommand extends CommandWithPermissions {
             throw new CommandException("Failed to execute operation request.", e);
         }
         if (!result.hasDefined(Util.RESULT)) {
-            return null;
+            throw new CommandException("Failed to read deployment information.");
         }
         return result.get(Util.RESULT);
     }
