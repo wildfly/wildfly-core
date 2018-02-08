@@ -46,6 +46,7 @@ import org.jboss.jandex.Index;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -94,6 +95,8 @@ public final class Attachments {
      * A builder used to install a deployment phase
      */
     public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
+
+    public static final AttachmentKey<StabilityMonitor> STABILITY_MONITOR = AttachmentKey.create(StabilityMonitor.class);
 
     //
     // STRUCTURE
