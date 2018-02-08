@@ -863,11 +863,15 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private void notifyModificationBegun() {
-        Notification notification = new Notification(RUNTIME_MODIFICATION_BEGUN,
-                modelController.getModelControllerResourceAddress(managementModel),
-                MGMT_OP_LOGGER.runtimeModificationBegun());
-        notificationSupport.emit(notification);
-        notifiedModificationBegun = true;
+        final PathAddress pa = modelController.getModelControllerResourceAddress(managementModel);
+        // this will return null if a host has been started with --empty-host-controller, but not yet added.
+        if (pa != null) {
+            Notification notification = new Notification(RUNTIME_MODIFICATION_BEGUN,
+                    pa,
+                    MGMT_OP_LOGGER.runtimeModificationBegun());
+            notificationSupport.emit(notification);
+            notifiedModificationBegun = true;
+        }
     }
 
     @Override
