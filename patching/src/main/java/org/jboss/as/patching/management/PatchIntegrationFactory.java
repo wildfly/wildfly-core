@@ -53,6 +53,11 @@ public final class PatchIntegrationFactory implements ModelControllerServiceInit
         final PathElement host = PathElement.pathElement(HOST, hostName);
         final ManagementResourceRegistration hostRegistration = managementModel.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS.append(host));
         final Resource hostResource = managementModel.getRootResource().getChild(host);
+        if (hostResource == null) {
+            // this is generally only the case when an embedded HC has been started with an empty config, but /host=foo:add() has not yet been invoked, so we have no
+            // real hostname yet.
+            return;
+        }
         initializeCoreServices(serviceTarget, hostRegistration, hostResource);
     }
 

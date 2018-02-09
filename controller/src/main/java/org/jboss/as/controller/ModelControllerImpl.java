@@ -898,7 +898,12 @@ class ModelControllerImpl implements ModelController {
 
     PathAddress getModelControllerResourceAddress(ManagementModel managementModel) {
         if (modelControllerResourceAddress == null) {
-            String hostName = managementModel.getRootResource().getChildrenNames(HOST).iterator().next();
+            Set<String> hosts = managementModel.getRootResource().getChildrenNames(HOST);
+            // if we don't actually have a host name yet (e.g. --empty-host-config) we return null for now.
+            if (hosts.size() == 0) {
+                return null;
+            }
+            String hostName = hosts.iterator().next();
             modelControllerResourceAddress = PathAddress.pathAddress(HOST, hostName).append(MODEL_CONTROLLER_ADDRESS);
         }
         return modelControllerResourceAddress;
