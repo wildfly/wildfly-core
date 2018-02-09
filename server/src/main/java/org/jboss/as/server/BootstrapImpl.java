@@ -33,6 +33,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.server.jmx.RunningStateJmx;
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -55,6 +56,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class BootstrapImpl implements Bootstrap {
+
+    private static final String SIGTERM_SUSPEND_TIMEOUT_PROP = "org.wildfly.sigterm.suspend.timeout";
 
     private static final int MAX_THREADS = ServerEnvironment.getBootstrapMaxThreads();
     private final ShutdownHook shutdownHook;
@@ -247,25 +250,30 @@ final class BootstrapImpl implements Bootstrap {
             }
             try {
                 if (ps != null) {
+                    if (!failed && ps.getState() == ControlledProcessState.State.RUNNING) {
+                        suspend(sc);
+                    }
                     ps.setStopping();
                 }
             } finally {
                 if (sc != null && !sc.isShutdownComplete()) {
                     if (!failed) {
+                        // TODO this is probably better before the 'suspend' logging but the
+                        // shutdown mgmt op has this order of logging
                         SystemExiter.logBeforeExit(ServerLogger.ROOT_LOGGER::shutdownHookInvoked);
                     }
-                    final CountDownLatch latch = new CountDownLatch(1);
+                    final CountDownLatch terminateLatch = new CountDownLatch(1);
                     sc.addTerminateListener(new ServiceContainer.TerminateListener() {
                         @Override
                         public void handleTermination(Info info) {
-                            latch.countDown();
+                            terminateLatch.countDown();
                         }
                     });
                     sc.shutdown();
                     // wait for all services to finish.
                     for (;;) {
                         try {
-                            latch.await();
+                            terminateLatch.await();
                             break;
                         } catch (InterruptedException e) {
                             // ignored
@@ -273,6 +281,83 @@ final class BootstrapImpl implements Bootstrap {
                     }
                 }
             }
+        }
+
+        private static void suspend(ServiceContainer sc) {
+            try {
+                final SuspendController suspendController = getSuspendController(sc);
+                if (suspendController != null) {
+                    long timeout = getSuspendTimeout();
+                    final CountDownLatch suspendLatch = new CountDownLatch(1);
+                    OperationListener listener = new OperationListener() {
+                        @Override
+                        public void suspendStarted() {
+
+                        }
+
+                        @Override
+                        public void complete() {
+                            suspendController.removeListener(this);
+                            suspendLatch.countDown();
+                        }
+
+                        @Override
+                        public void cancelled() {
+                            suspendController.removeListener(this);
+                            suspendLatch.countDown();
+                        }
+
+                        @Override
+                        public void timeout() {
+                            suspendController.removeListener(this);
+                            suspendLatch.countDown();
+                        }
+                    };
+                    suspendController.addListener(listener);
+                    suspendController.suspend(timeout);
+                    if (timeout > 0) {
+                        // The latch should trip within 'timeout' but if necessary we'll wait
+                        // 500 ms longer for it in the off chance a gc or something delays things
+                        suspendLatch.await(timeout + 500, TimeUnit.MILLISECONDS);
+                    } else if (timeout < 0) {
+                        suspendLatch.await();
+                    } // else 0 means we don't wait for tasks to finish
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+            catch (Throwable t) {
+                // ignored
+            }
+        }
+
+        private static SuspendController getSuspendController(ServiceContainer sc) {
+            SuspendController result = null;
+            if (sc != null && !sc.isShutdownComplete()) {
+                final ServiceController serviceController = sc.getService(SuspendController.SERVICE_NAME);
+                if (serviceController != null && serviceController.getState() == ServiceController.State.UP) {
+                    result = (SuspendController) serviceController.getValue();
+                }
+            }
+            return result;
+        }
+
+        private static long getSuspendTimeout() {
+            long result = 0;
+            String timeoutString = System.getProperty(SIGTERM_SUSPEND_TIMEOUT_PROP);
+            if (timeoutString != null && timeoutString.length() > 0) {
+                try {
+                    int max = Integer.decode(timeoutString);
+                    result = max > 0 ? max * 1000 : max;
+                } catch(NumberFormatException ex) {
+                    try {
+                        ServerLogger.ROOT_LOGGER.failedToParseCommandLineInteger(SIGTERM_SUSPEND_TIMEOUT_PROP, timeoutString);
+                    } catch (Throwable ignored) {
+                        // ignore
+                    }
+                }
+            }
+            return result;
         }
     }
 }

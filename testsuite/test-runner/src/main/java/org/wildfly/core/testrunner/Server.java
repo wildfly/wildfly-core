@@ -151,6 +151,8 @@ public class Server {
             if (jbossArgs != null) {
                 commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
             }
+            commandBuilder.addServerArgument("-D[Standalone]");
+
             StringBuilder builder = new StringBuilder("Starting container with: ");
             for(String arg : commandBuilder.build()) {
                 builder.append(arg).append(" ");
