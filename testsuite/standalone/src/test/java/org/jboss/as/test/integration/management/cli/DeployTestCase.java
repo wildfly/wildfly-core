@@ -22,30 +22,35 @@
 package org.jboss.as.test.integration.management.cli;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
-import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.Util;
 
-import static org.jboss.as.cli.Util.RESULT;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createCliArchive;
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createWarArchive;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.STOPPED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.OK;
 
 import org.jboss.as.cli.impl.CommandContextConfiguration;
+import org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentInfoResult;
+import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.dmr.ModelNode;
-import org.jboss.shrinkwrap.api.GenericArchive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
+import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
 
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentList;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,15 +58,18 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
- *
  * @author jdenise@redhat.com
  */
 @RunWith(WildflyTestRunner.class)
-public class DeployTestCase {
+public class DeployTestCase extends AbstractCliTestBase{
+
+    private static final String WRONG_PATH_PART = "216561-d.war";
+    private static final String WRONG_DEPLOYMENT = "testRo.war";
 
     private static File cliTestApp1War;
     private static File cliTestApp2War;
     private static File cliTestAnotherWar;
+    private static File tempCliTestAppWar;
 
     private static CommandContext ctx;
 
@@ -73,84 +81,139 @@ public class DeployTestCase {
                         + ":" + TestSuiteEnvironment.getServerPort());
         ctx = CommandContextFactory.getInstance().newCommandContext(configBuilder.build());
         ctx.connectController();
-
-        String tempDir = System.getProperty("java.io.tmpdir");
+        AbstractCliTestBase.initCLI(TestSuiteEnvironment.getServerAddress());
 
         // deployment1
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
-        war.addAsWebResource(new StringAsset("Version0"), "page.html");
-        cliTestApp1War = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
+        cliTestApp1War = createWarArchive("cli-test-app1-deploy.war", "Version0");
 
         // deployment2
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-app2-deploy.war");
-        war.addAsWebResource(new StringAsset("Version1"), "page.html");
-        cliTestApp2War = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestApp2War, true);
+        cliTestApp2War = createWarArchive("cli-test-app2-deploy.war", "Version1");
 
         // deployment3
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-another-deploy.war");
-        war.addAsWebResource(new StringAsset("Version2"), "page.html");
-        cliTestAnotherWar = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestAnotherWar, true);
-
-        ctx.handle("deploy --disabled " + cliTestApp1War.getAbsolutePath());
-        ctx.handle("deploy --disabled " + cliTestAnotherWar.getAbsolutePath());
-        ctx.handle("deploy --disabled " + cliTestApp2War.getAbsolutePath());
-
+        cliTestAnotherWar = createWarArchive("cli-test-another-deploy.war", "Version2");
     }
 
     @AfterClass
     public static void after() throws Exception {
-        ctx.handle("undeploy *");
         ctx.terminateSession();
+        AbstractCliTestBase.closeCLI();
+
         cliTestApp1War.delete();
         cliTestApp2War.delete();
         cliTestAnotherWar.delete();
     }
 
-    @Before
-    public void beforeTest() throws Exception {
-        if (readDeploymentStatus(cliTestApp1War.getName())) {
-            ctx.handle("deployment disable " + cliTestApp1War.getName());
+    @After
+    public void afterTest() {
+        ctx.handleSafe("deployment undeploy *");
+        if (tempCliTestAppWar != null) {
+            tempCliTestAppWar.delete();
         }
-        if (readDeploymentStatus(cliTestAnotherWar.getName())) {
-            ctx.handle("deployment disable " + cliTestAnotherWar.getName());
-        }
-        if (readDeploymentStatus(cliTestApp2War.getName())) {
-            ctx.handle("deployment disable " + cliTestApp2War.getName());
-        }
-        checkDeployment(cliTestApp1War.getName(), false);
-        checkDeployment(cliTestAnotherWar.getName(), false);
-        checkDeployment(cliTestApp2War.getName(), false);
     }
 
+    /**
+     * Test verify a life cycle of deployment operation in singleton mode.
+     * <ul>
+     * <li>Step 1) Deploy applications deployments</li>
+     * <li>Step 2a) Verify if deployment are successful by list command</li>
+     * <li>Step 2b) Verify if applications deployments are enabled by info command</li>
+     * <li>Step 3) Disabling selected application deployment</li>
+     * <li>Step 4) Verify if selected application deployment is disabled, but other have still previous state</li>
+     * <li>Step 5) Disable all deployed applications deployments</li>
+     * <li>Step 6) Check if all applications deployments is disabled</li>
+     * <li>Step 7) Enable selected application deployment</li>
+     * <li>Step 8) Verify if selected application deployment are enabled, but other have still previous state</li>
+     * <li>Step 9) Enable all applications deployments</li>
+     * <li>Step 10) Verify if all applications deployments are enabled</li>
+     * <li>Step 11) Undeploy one application deployment</li>
+     * <li>Step 12) Check if selected application deployment is removed, but others still exist with right state</li>
+     * <li>Step 13) Undeploy all applications deployments</li>
+     * <li>Step 14) Check if all applications deployments is gone</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
     @Test
-    public void testDeployAll() throws Exception {
-        checkDeployment(cliTestApp1War.getName(), false);
-        checkDeployment(cliTestAnotherWar.getName(), false);
-        checkDeployment(cliTestApp2War.getName(), false);
-        // Deploy them all.
-        ctx.handle("deploy --name=*");
-        checkDeployment(cliTestApp1War.getName(), true);
-        checkDeployment(cliTestAnotherWar.getName(), true);
-        checkDeployment(cliTestApp2War.getName(), true);
+    public void testDeploymentLiveCycle() throws Exception {
+        // Step 1) Deploy applications deployments
+        ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath());
+        ctx.handle("deployment deploy-file " + cliTestAnotherWar.getAbsolutePath());
+        ctx.handle("deployment deploy-file " + cliTestApp2War.getAbsolutePath());
 
-        // Undeploy them all.
+        // Step 2a) Verify if deployment are successful by list command
+        DeploymentInfoResult result = deploymentList(cli);
+        checkExist(result, cliTestApp1War.getName(), ctx);
+        checkExist(result, cliTestAnotherWar.getName());
+        checkExist(result, cliTestApp2War.getName());
+
+        // Step 2b) Verify if applications deployments are enabled by info command
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), OK);
+        checkExist(result, cliTestAnotherWar.getName(), OK);
+        checkExist(result, cliTestApp2War.getName(), OK);
+
+        // Step 3) Disabling selected application deployment
+        ctx.handle("deployment disable " + cliTestApp1War.getName());
+
+        // Step 4) Verify if selected application deployment is disabled, but other have still previous state
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), STOPPED);
+        checkExist(result, cliTestAnotherWar.getName(), OK);
+        checkExist(result, cliTestApp2War.getName(), OK);
+
+        // Step 5) Disable all deployed applications deployments
         ctx.handle("deployment disable-all");
-        checkDeployment(cliTestApp1War.getName(), false);
-        checkDeployment(cliTestAnotherWar.getName(), false);
-        checkDeployment(cliTestApp2War.getName(), false);
 
-        // Deploy them all.
+        // Step 6) Check if all applications deployments is disabled
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), STOPPED);
+        checkExist(result, cliTestAnotherWar.getName(), STOPPED);
+        checkExist(result, cliTestApp2War.getName(), STOPPED);
+
+        // Step 7) Enable selected application deployment
+        ctx.handle("deployment enable " + cliTestApp2War.getName());
+
+        // Step 8) Verify if selected application deployment are enabled, but other have still previous state
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), STOPPED);
+        checkExist(result, cliTestAnotherWar.getName(), STOPPED);
+        checkExist(result, cliTestApp2War.getName(), OK);
+
+        // Step 9) Enable all applications deployments
         ctx.handle("deployment enable-all");
-        checkDeployment(cliTestApp1War.getName(), true);
-        checkDeployment(cliTestAnotherWar.getName(), true);
-        checkDeployment(cliTestApp2War.getName(), true);
+
+        // Step 10) Verify if all applications deployments are enabled
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), OK);
+        checkExist(result, cliTestAnotherWar.getName(), OK);
+        checkExist(result, cliTestApp2War.getName(), OK);
+
+        // Step 11) Undeploy one application deployment
+        ctx.handle("deployment undeploy " + cliTestApp2War.getName());
+
+        // Step 12) Check if selected application deployment is removed, but others still exist with right state
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), OK);
+        checkExist(result, cliTestAnotherWar.getName(), OK);
+        checkMissing(result, cliTestApp2War.getName());
+
+        // Step 13) Undeploy all applications deployments
+        ctx.handle("deployment undeploy *");
+
+        // Step 14) Check if all applications deployments is gone
+        result = deploymentList(cli);
+        checkMissing(result, cliTestApp1War.getName(), ctx);
+        checkMissing(result, cliTestAnotherWar.getName(), ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkEmpty(result);
     }
 
     @Test
     public void testDeployAllCompletion() throws Exception {
+        ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath());
+        ctx.handle("deployment deploy-file " + cliTestAnotherWar.getAbsolutePath());
+        ctx.handle("deployment deploy-file " + cliTestApp2War.getAbsolutePath());
+
         {
             String cmd = "deploy --name=";
             List<String> candidates = new ArrayList<>();
@@ -172,113 +235,340 @@ public class DeployTestCase {
         }
     }
 
+    /**
+     * Testing re-deploy of application deployment.
+     * Using backward compatibility commands.
+     * <ul>
+     * <li>Step 1) Prepare application deployment archive</li>
+     * <li>Step 2) Deploy application deployment</li>
+     * <li>Step 3) Verify if application deployment is deployed and enabled by info command</li>
+     * <li>Step 4) Delete previous application deployment archive and create new for redeploy</li>
+     * <li>Step 5) Try redeploy application deployment</li>
+     * <li>Step 6) Verify if application deployment is deployed and enabled by info command</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
     @Test
-    public void testRedeploy() throws Exception {
-        redeploy("deploy --force", false);
-        redeploy("deploy --force", true);
+    public void testLegacyRedeployFileDeployment() throws Exception {
+        // Step 1) Prepare application deployment archive
+        tempCliTestAppWar = createWarArchive("cli-test-app-redeploy.war", "VersionDeploy1.01");
+
+        // Step 2) Deploy application deployment
+        ctx.handle("deploy " + tempCliTestAppWar.getAbsolutePath());
+
+        // Step 3) Verify if application deployment is deployed and enabled by info command
+        DeploymentInfoResult result = legacyDeploymentInfo(cli);
+        checkExist(result, tempCliTestAppWar.getName(), OK, ctx);
+
+        // Step 4) Delete previous application deployment archive and create new for redeploy
+        tempCliTestAppWar.delete();
+        tempCliTestAppWar = createWarArchive("cli-test-app-redeploy.war", "VersionReDeploy2.02");
+
+        // Step 5) Try redeploy application deployment
+        ctx.handle("deploy --force " + tempCliTestAppWar.getAbsolutePath());
+
+        // Step 6) Verify if application deployment is deployed and enabled by info command
+        result = legacyDeploymentInfo(cli);
+        checkExist(result, tempCliTestAppWar.getName(), OK, ctx);
+        // TODO read page.html and check content
     }
 
-    private void redeploy(String cmd, boolean enabled) throws Exception {
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
-        war.addAsWebResource(new StringAsset("Version0.1"), "page.html");
-        cliTestApp1War.delete();
-        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
-        {
-            ctx.handle(cmd + " " + cliTestApp1War.getAbsolutePath());
-            checkDeployment(cliTestApp1War.getName(), enabled);
-        }
-        String op;
-        if(enabled) {
-            op = "undeploy";
-        } else {
-            op = "deploy";
-        }
-        ctx.handle("/deployment=" + cliTestApp1War.getName() + ':'+op+"()");
-        assertEquals(!enabled, readDeploymentStatus(cliTestApp1War.getName()));
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy.war");
-        war.addAsWebResource(new StringAsset("Version0.2"), "page.html");
-        cliTestApp1War.delete();
-        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
-        {
-            ctx.handle(cmd + " " + cliTestApp1War.getAbsolutePath());
-            checkDeployment(cliTestApp1War.getName(), !enabled);
-        }
+    /**
+     * Testing re-deploy of application deployment.
+     * <ul>
+     * <li>Step 1) Prepare application deployment archive</li>
+     * <li>Step 2) Deploy application deployment</li>
+     * <li>Step 3) Verify if application deployment is deployed and enabled by info command</li>
+     * <li>Step 4) Delete previous application deployment archive and create new for redeploy</li>
+     * <li>Step 5) Try redeploy application deployment</li>
+     * <li>Step 6) Verify if application deployment is deployed and enabled by info command</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testRedeployFileDeployment() throws Exception {
+        // Step 1) Prepare application deployment archive
+        tempCliTestAppWar = createWarArchive("cli-test-app-redeploy.war", "VersionDeploy1.01");
+
+        // Step 2) Deploy application deployment
+        ctx.handle("deployment deploy-file " + tempCliTestAppWar.getAbsolutePath());
+
+        // Step 3) Verify if application deployment is deployed and enabled by info command
+        DeploymentInfoResult result = deploymentInfo(cli);
+        checkExist(result, tempCliTestAppWar.getName(), OK, ctx);
+
+        // Step 4) Delete previous application deployment archive and create new for redeploy
+        tempCliTestAppWar.delete();
+        tempCliTestAppWar = createWarArchive("cli-test-app-redeploy.war", "VersionReDeploy2.02");
+
+        // Step 5) Try redeploy application deployment
+        ctx.handle("deployment deploy-file --replace " + tempCliTestAppWar.getAbsolutePath());
+
+        // Step 6) Verify if application deployment is deployed and enabled by info command
+        result = deploymentInfo(cli);
+        checkExist(result, tempCliTestAppWar.getName(), OK, ctx);
+        // TODO read page.html and check content
     }
 
+    /**
+     * Deploy one application deployment via cli archive.
+     * Using backward compatibility commands.
+     *
+     * @throws Exception
+     */
     @Test
-    public void testRedeploy2() throws Exception {
-        redeploy("deployment deploy-file --replace", false);
-        redeploy("deployment deploy-file --replace", true);
+    public void testLegacyDeployUndeployViaCliArchive() throws Exception {
+        tempCliTestAppWar = createCliArchive();
+        ctx.handle("deploy " + tempCliTestAppWar.getAbsolutePath());
     }
 
+    /**
+     * Deploy one application deployment via cli archive
+     *
+     * @throws Exception
+     */
     @Test
-    public void testArchive() throws Exception {
-        File cliFile = createCliArchive();
+    public void testDeployUndeployViaCliArchive() throws Exception {
+        tempCliTestAppWar = createCliArchive();
+        ctx.handle("deployment deploy-cli-archive " + tempCliTestAppWar.getAbsolutePath());
+    }
+
+    /**
+     * Deploy one application deployment via cli archive.
+     * Operation is limited by 2 second only.
+     * Using backward compatibility commands.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLegacyDeployUndeployViaCliArchiveWithTimeout() throws Exception {
+        tempCliTestAppWar = createCliArchive();
+        ctx.handle("command-timeout set 2"); // set num_seconds        - set the timeout to a number of seconds.
+        ctx.handle("deploy " + tempCliTestAppWar.getAbsolutePath());
+    }
+
+    /**
+     * Deploy one application deployment via cli archive.
+     * Operation is limited by 2 second only.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeployUndeployViaCliArchiveWithTimeout() throws Exception {
+        tempCliTestAppWar = createCliArchive();
+        ctx.handle("command-timeout set 2"); // Operation is limited by 2000 second only
+        ctx.handle("deployment deploy-cli-archive " + tempCliTestAppWar.getAbsolutePath());
+    }
+
+    /**
+     * Testing deploy disabled application deployments and try enable and disable again it.
+     * Using backward compatibility commands.
+     * <ul>
+     * <li>Step 1) Deploy disabled 3 applications deployments</li>
+     * <li>Step 2) Check if applications deployments is installed and disabled</li>
+     * <li>Step 3) Enable all applications deployments</li>
+     * <li>Step 4) Check if applications deployments is enabled</li>
+     * <li>Step 5) Disable all applications deployments</li>
+     * <li>Step 6) Check if applications deployments is disabled</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testLegacyDisableEnableDeployments() throws Exception {
+        // Step 1) Deploy disabled 3 applications deployments
+        ctx.handle("deploy --disabled " + cliTestApp1War.getAbsolutePath());
+        ctx.handle("deploy --disabled " + cliTestAnotherWar.getAbsolutePath());
+        ctx.handle("deploy --disabled " + cliTestApp2War.getAbsolutePath());
+
+        // Step 2) Check if applications deployments is installed and disabled
+        DeploymentInfoResult result = legacyDeploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), STOPPED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), STOPPED, ctx);
+        checkExist(result, cliTestApp2War.getName(), STOPPED, ctx);
+
+        // Step 3) Enable all applications deployments
+        ctx.handle("deploy --name=*");
+
+        // Step 4) Check if applications deployments is enabled
+        result = legacyDeploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), OK, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), OK, ctx);
+        checkExist(result, cliTestApp2War.getName(), OK, ctx);
+
+        // Step 5) Disable all applications deployments
+        ctx.handle("undeploy * --keep-content");
+
+        // Step 6) Check if applications deployments is disabled
+        result = legacyDeploymentInfo(cli);
+        checkExist(result, cliTestApp1War.getName(), STOPPED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), STOPPED, ctx);
+        checkExist(result, cliTestApp2War.getName(), STOPPED, ctx);
+    }
+
+    /**
+     * Testing deploy via URL.
+     * Only tested by local file URL, testing via http/https can not rely on availability.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeployViaUrl() throws Exception {
+        // Deploy application deployment via url link
+        ctx.handle("deployment deploy-url " + cliTestApp2War.toURI());
+
+        // Check if application deployments is installed
+        DeploymentInfoResult result = deploymentList(cli);
+        checkExist(result, cliTestApp2War.getName(), ctx);
+        result = deploymentInfo(cli);
+        checkExist(result, cliTestApp2War.getName(), OK, ctx);
+    }
+
+    /**
+     * Testing deploy application deployments with wrong path.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeployFileWithWrongPath() throws Exception {
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+
+        // Try deploy application deployments with wrong path
         try {
-            ctx.handle("deploy " + cliFile.getAbsolutePath());
-        } finally {
-            cliFile.delete();
+            ctx.handle("deployment deploy-file " + cliTestApp2War.getPath() + WRONG_PATH_PART);
+            fail("Deploying application deployment with wrong url link doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), containsString("Path " + cliTestApp2War.getPath() + WRONG_PATH_PART + " doesn't exist."));
+            // Verification wrong command execution fail - success
+        }
+
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        if (!after.isOutputEmpty()) {
+            assertThat("After deploying wrong path of application deployment something is deployed.",
+                    after, is(before));
         }
     }
 
+    /**
+     * Testing deploy application deployments with wrong url.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     */
     @Test
-    public void testArchive2() throws Exception {
-        File cliFile = createCliArchive();
+    public void testDeployWithWrongUrl() throws Exception {
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+
+        // Use local file url
         try {
-            ctx.handle("deployment deploy-cli-archive " + cliFile.getAbsolutePath());
-        } finally {
-            cliFile.delete();
+            ctx.handle("deployment deploy-url " + cliTestApp2War.toURI() + WRONG_PATH_PART);
+            fail("Deploying application deployment with wrong url link doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), containsString("WFLYSRV0150: Cannot create input stream from URL '" +
+                            cliTestApp2War.toURI() + WRONG_PATH_PART + "'"));
+            // Verification wrong command execution fail - success
+        }
+
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        if (!after.isOutputEmpty()) {
+            assertThat("After deploying wrong url of application deployment something is deployed.",
+                    after, is(before));
         }
     }
 
+    /**
+     * Try deploy cli archive with wrong path and wrong cli command.
+     * Verify if status of application deployments hasn't change.
+     * Verify error messages.
+     *
+     * @throws Exception
+     */
     @Test
-    public void testArchiveWithTimeout() throws Exception {
-        File cliFile = createCliArchive();
+    public void testDeployWithWrongCli() throws Exception {
+        final String wrongArgument = "--fddhgfhtsdgr";
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+
+        // Try deploy cli archive with wrong path
+        tempCliTestAppWar = createCliArchive("ls "+ wrongArgument +" sgsfgfd ghf d");
         try {
-            ctx.handle("command-timeout set 2000");
-            ctx.handle("deploy " + cliFile.getAbsolutePath());
-        } finally {
-            cliFile.delete();
+            ctx.handle("deployment deploy-cli-archive " + tempCliTestAppWar.getPath() + WRONG_PATH_PART);
+            fail("Deploying application deployment with wrong url link doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), containsString("Path " + tempCliTestAppWar.getPath() + WRONG_PATH_PART + " doesn't exist."));
+            // Verification wrong command execution fail - success
+        }
+
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        if (!after.isOutputEmpty()) {
+            assertThat("After deploying wrong path of cli archive something is deployed.",
+                    after, is(before));
+        }
+
+        // Try deploy cli archive with wrong cli command in archive
+        try {
+            ctx.handle("deployment deploy-cli-archive " + tempCliTestAppWar.getPath());
+            fail("Deploying application deployment with wrong url link doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), containsString("Unrecognized arguments: [" + wrongArgument + "]"));
+            // Verification wrong command execution fail - success
+        }
+
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after1 = deploymentInfo(cli);
+        if (!after1.isOutputEmpty()) {
+            assertThat("After deploying wrong cli archive something is deployed.",
+                    after1, is(before));
         }
     }
 
+    /**
+     * Testing of enabling non-deployed application deployment.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     */
     @Test
-    public void testArchiveWithTimeout2() throws Exception {
-        File cliFile = createCliArchive();
+    public void testEnableWrongDeployments() throws Exception {
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+
+        // Try enable non installed application deployment
         try {
-            ctx.handle("command-timeout set 2000");
-            ctx.handle("deployment deploy-cli-archive " + cliFile.getAbsolutePath());
-        } finally {
-            cliFile.delete();
+            ctx.handle("deployment enable " + WRONG_DEPLOYMENT);
+            fail("Deploying application deployment with wrong url link doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), containsString("'" + WRONG_DEPLOYMENT +
+                            "' is not found among the registered deployments."));
+            // Verification wrong command execution fail - success
         }
-    }
 
-    private void checkDeployment(String name, boolean enabled) throws CommandFormatException, IOException {
-        if (readDeploymentStatus(name) != enabled) {
-            throw new CommandFormatException(name + " not in right state");
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        if (!after.isOutputEmpty()) {
+            assertThat("After enable of non-deployed application deployment something is change.",
+                    after, is(before));
         }
-    }
-
-     private boolean readDeploymentStatus(String name) throws CommandFormatException, IOException {
-        ModelNode mn = ctx.buildRequest("/deployment=" + name + ":read-attribute(name=enabled)");
-        ModelNode response = ctx.getModelControllerClient().execute(mn);
-        if (response.hasDefined(Util.OUTCOME) && response.get(Util.OUTCOME).asString().equals(Util.SUCCESS)) {
-            if (!response.hasDefined(RESULT)) {
-                throw new CommandFormatException("No result for " + name);
-            }
-            return response.get(RESULT).asBoolean() ;
-        }
-        throw new CommandFormatException("No result for " + name);
-    }
-
-    private static File createCliArchive() {
-
-        final GenericArchive cliArchive = ShrinkWrap.create(GenericArchive.class, "deploymentarchive.cli");
-        cliArchive.add(new StringAsset("ls -l"), "deploy.scr");
-
-        final String tempDir = TestSuiteEnvironment.getTmpDir();
-        final File file = new File(tempDir, "deploymentarchive.cli");
-        cliArchive.as(ZipExporter.class).exportTo(file, true);
-        return file;
     }
 }
