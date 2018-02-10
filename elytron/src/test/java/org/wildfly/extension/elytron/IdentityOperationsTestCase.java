@@ -50,6 +50,7 @@ import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
 import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
+import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
 import org.wildfly.security.password.util.PasswordUtil;
 import org.wildfly.security.permission.PermissionVerifier;
@@ -256,7 +257,7 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
-    public void testAddBcryptPassword() throws Exception {
+    public void testBcryptPassword() throws Exception {
         KernelServices services = createKernelServicesBuilder(null)
                 .setSubsystemXmlResource("identity-management.xml")
                 .build();
@@ -321,6 +322,26 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
 
         operation = createSetPasswordOperation("default", realmAddress, principalName,
                 ModifiableRealmDecorator.SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION, "saltedSimpleDigest", PasswordUtil.generateRandomSalt(16), null, null, SaltedSimpleDigestPassword.ALGORITHM_PASSWORD_SALT_DIGEST_SHA_256, null, null);
+        result = services.executeOperation(operation);
+        assertSuccessful(result);
+    }
+
+    @Test
+    public void testScramDigestPassword() throws Exception {
+        KernelServices services = createKernelServicesBuilder(null)
+                .setSubsystemXmlResource("identity-management.xml")
+                .build();
+        String principalName = "plainUser";
+        PathAddress realmAddress = getSecurityRealmAddress("FileSystemRealm");
+        ModelNode operation = createAddIdentityOperation(realmAddress, principalName);
+        ModelNode result = services.executeOperation(operation);
+        assertSuccessful(result);
+
+        byte[] salt = PasswordUtil.generateRandomSalt(ScramDigestPassword.DEFAULT_SALT_SIZE);
+        int iterationCount = ScramDigestPassword.DEFAULT_ITERATION_COUNT;
+
+        operation = createSetPasswordOperation("default", realmAddress, principalName,
+                ModifiableRealmDecorator.SetPasswordHandler.ScramDigest.OBJECT_DEFINITION, "scramPassword", salt, iterationCount, null, null, null, null);
         result = services.executeOperation(operation);
         assertSuccessful(result);
     }

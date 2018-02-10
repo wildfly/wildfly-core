@@ -54,6 +54,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
 import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
+import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
 import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
@@ -414,6 +415,30 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                     .build();
         }
 
+        static class ScramDigest {
+            static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
+                    .setRequired(false)
+                    .setDefaultValue(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_512))
+                    .setValidator(new StringAllowedValuesValidator(
+                            ScramDigestPassword.ALGORITHM_SCRAM_SHA_1,
+                            ScramDigestPassword.ALGORITHM_SCRAM_SHA_256,
+                            ScramDigestPassword.ALGORITHM_SCRAM_SHA_384,
+                            ScramDigestPassword.ALGORITHM_SCRAM_SHA_512
+                    ))
+                    .build();
+
+            static final SimpleAttributeDefinition SALT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT, ModelType.BYTES, false)
+                    .build();
+
+            static final SimpleAttributeDefinition ITERATION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ITERATION_COUNT, ModelType.INT, false)
+                    .build();
+
+            static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
+                    ElytronDescriptionConstants.SCRAM_DIGEST, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+                    .setRequired(false)
+                    .build();
+        }
+
         static class Digest {
             static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING)
                     .setRequired(false)
@@ -472,6 +497,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 SetPasswordHandler.Clear.OBJECT_DEFINITION,
                 SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION,
+                SetPasswordHandler.ScramDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.Digest.OBJECT_DEFINITION,
                 SetPasswordHandler.OTPassword.OBJECT_DEFINITION
         };
@@ -482,6 +508,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 SetPasswordHandler.Clear.OBJECT_DEFINITION,
                 SetPasswordHandler.SimpleDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.SaltedSimpleDigest.OBJECT_DEFINITION,
+                SetPasswordHandler.ScramDigest.OBJECT_DEFINITION,
                 SetPasswordHandler.Digest.OBJECT_DEFINITION,
                 SetPasswordHandler.OTPassword.OBJECT_DEFINITION
         };
@@ -538,6 +565,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 SaltedPasswordAlgorithmSpec spec = new SaltedPasswordAlgorithmSpec(salt);
                 passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec);
                 algorithm = SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
+
+            } else if (passwordType.equals(ElytronDescriptionConstants.SCRAM_DIGEST)) {
+                byte[] salt = ScramDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
+                int iterationCount = ScramDigest.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt));
+                algorithm = ScramDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.DIGEST)) {
                 String realm = Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
