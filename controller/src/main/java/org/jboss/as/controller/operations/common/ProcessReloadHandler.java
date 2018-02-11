@@ -83,12 +83,12 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                         if(resultAction == OperationContext.ResultAction.KEEP) {
+                            processState.setStopping();
                             service.addListener(new AbstractServiceListener<Object>() {
                                 @Override
                                 public void listenerAdded(final ServiceController<?> controller) {
                                     Future<?> stopping = executor.submit(() -> {
                                         reloadContext.reloadInitiated(runningModeControl);
-                                        processState.setStopping();
                                         controller.setMode(ServiceController.Mode.NEVER);
                                     });
                                     try {
