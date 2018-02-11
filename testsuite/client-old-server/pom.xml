@@ -79,7 +79,7 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.jacoco.args}</argLine>
 
                     <environmentVariables>
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>

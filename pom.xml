@@ -160,6 +160,7 @@
         <version.org.wildfly.security.elytron-web.undertow-server>1.1.0.Beta1</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
+        <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.xml.plugin>1.0.1</version.xml.plugin>
 
@@ -169,7 +170,7 @@
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
-        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -Duser.timezone=America/Chicago -XX:MaxMetaspaceSize=256m ${surefire.jpda.args}</surefire.system.args>
+        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -Duser.timezone=America/Chicago -XX:MaxMetaspaceSize=256m ${surefire.jpda.args} ${surefire.jacoco.args}</surefire.system.args>
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
@@ -1754,6 +1755,55 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!--
+            JaCoCo test coverage. Will set ${surefire.jacoco.args} to be used in WildFly Test Runner config and as surefire jvm argument.
+            This profile generate .exec files only. This profile doesn't generate html coverage report.
+        -->
+        <profile>
+            <id>ts.jacoco.profile</id>
+            <activation><property><name>coverage</name></property></activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${version.jacoco.plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>ts.jacoco-prepare</id>
+                                <phase>process-test-classes</phase>
+                                <goals><goal>prepare-agent</goal></goals>
+                                <configuration>
+                                    <append>true</append>
+                                    <destFile>target/jacoco.exec</destFile>
+                                    <includes>
+                                        <include>*</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>org.jboss.as.test.*</exclude>
+                                    </excludes>
+                                    <output>file</output>
+                                    <propertyName>surefire.jacoco.args</propertyName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+            This profile is needed for the jacoco plugin as the jacoco plugin is unable to replace surefire.jacoco.args
+            property if this property is defined in main properties section of the pom file
+          -->
+        <profile>
+            <id>ts.jacoco.profile.not.enabled</id>
+            <activation><property><name>!coverage</name></property></activation>
+            <properties>
+                <surefire.jacoco.args></surefire.jacoco.args>
+            </properties>
         </profile>
     </profiles>
 </project>
