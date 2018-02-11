@@ -123,7 +123,7 @@ public class ExtensionAddHandler implements OperationStepHandler {
                     if (unknownModule || !extensionRegistry.getExtensionModuleNames().contains(module)) {
                         // This extension wasn't handled by the standalone.xml or domain.xml parsing logic, so we
                         // need to initialize its parsers so we can display what XML namespaces it supports
-                        extension.initializeParsers(extensionRegistry.getExtensionParsingContext(module, null));
+                        extensionRegistry.initializeParsers(extension, module, null);
                         // AS7-6190 - ensure we initialize parsers for other extensions from this module
                         // now that we know the registry was unaware of the module
                         unknownModule = true;

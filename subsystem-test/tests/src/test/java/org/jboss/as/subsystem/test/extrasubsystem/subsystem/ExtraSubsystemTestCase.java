@@ -198,7 +198,7 @@ public class ExtraSubsystemTestCase extends AbstractSubsystemTest {
 
         @Override
         public void addParsers(ExtensionRegistry extensionRegistry, XMLMapper xmlMapper) {
-            dependency.initializeParsers(extensionRegistry.getExtensionParsingContext(DependencySubsystemExtension.EXTENSION_NAME, xmlMapper));
+            extensionRegistry.initializeParsers(dependency, DependencySubsystemExtension.EXTENSION_NAME, xmlMapper);
         }
 
         @Override
