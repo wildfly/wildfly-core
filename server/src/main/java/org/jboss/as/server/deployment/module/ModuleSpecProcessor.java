@@ -45,6 +45,7 @@ import org.jboss.as.server.moduleservice.ModuleResolvePhaseService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.filter.ClassFilters;
@@ -313,11 +314,15 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
 
     private void installAliases(final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier, final DeploymentUnit deploymentUnit, final DeploymentPhaseContext phaseContext) {
 
+        ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         for (final ModuleIdentifier alias : moduleSpecification.getAliases()) {
             final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(alias);
             final ModuleSpec spec = ModuleSpec.buildAlias(alias, moduleIdentifier).create();
 
-            ModuleDefinition moduleDefinition = new ModuleDefinition(alias, new HashSet<>(moduleSpecification.getAllDependencies()), spec);
+            HashSet<ModuleDependency> dependencies = new HashSet<>(moduleSpecification.getAllDependencies());
+            //we need to add the module we are aliasing as a dependency, to make sure that it will be resolved
+            dependencies.add(new ModuleDependency(moduleLoader, moduleIdentifier, false, false, false, false));
+            ModuleDefinition moduleDefinition = new ModuleDefinition(alias, dependencies, spec);
 
             final ValueService<ModuleDefinition> moduleSpecService = new ValueService<>(new ImmediateValue<>(moduleDefinition));
             phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependencies(
