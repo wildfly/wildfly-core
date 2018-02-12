@@ -47,6 +47,7 @@ import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
+import org.jboss.modules.filter.ClassFilters;
 import org.jboss.modules.filter.MultiplePathFilterBuilder;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
@@ -211,6 +212,26 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         DEFAULT_PERMISSIONS = permissions;
     }
 
+    private static final PathFilter JAXRS_CLIENT_BUILDER_FILTER = PathFilters.is("META-INF/services/javax.ws.rs.client.ClientBuilder");
+
+    private static final DependencySpec ONLY_JAXRS_CLIENT_BUILDER_DEP = DependencySpec.createLocalDependencySpec(
+        PathFilters.getMetaInfServicesFilter(),
+        PathFilters.acceptAll(),
+        JAXRS_CLIENT_BUILDER_FILTER,
+        PathFilters.rejectAll(),
+        ClassFilters.rejectAll(),
+        ClassFilters.rejectAll()
+    );
+
+    private static final DependencySpec NOT_JAXRS_CLIENT_BUILDER_DEP = DependencySpec.createLocalDependencySpec(
+        PathFilters.acceptAll(),
+        PathFilters.acceptAll(),
+        PathFilters.not(JAXRS_CLIENT_BUILDER_FILTER),
+        PathFilters.acceptAll(),
+        ClassFilters.acceptAll(),
+        ClassFilters.acceptAll()
+    );
+
     private ServiceName createModuleService(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit,
                                             final List<ResourceRoot> resourceRoots, final List<ResourceRoot> parentResourceRoots,
                                             final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier) throws DeploymentUnitProcessingException {
@@ -238,14 +259,16 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             addResourceRoot(specBuilder, resourceRoot, permFactories);
         }
 
+        specBuilder.addDependency(ONLY_JAXRS_CLIENT_BUILDER_DEP);
+
         createDependencies(specBuilder, dependencies, false);
         createDependencies(specBuilder, userDependencies, false);
 
         if (moduleSpecification.isLocalLast()) {
             createDependencies(specBuilder, localDependencies, moduleSpecification.isLocalDependenciesTransitive());
-            specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
+            specBuilder.addDependency(NOT_JAXRS_CLIENT_BUILDER_DEP);
         } else {
-            specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
+            specBuilder.addDependency(NOT_JAXRS_CLIENT_BUILDER_DEP);
             createDependencies(specBuilder, localDependencies, moduleSpecification.isLocalDependenciesTransitive());
         }
 

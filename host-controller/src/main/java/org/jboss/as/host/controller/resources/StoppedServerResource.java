@@ -22,7 +22,12 @@
 
 package org.jboss.as.host.controller.resources;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+
 import org.jboss.as.controller.CompositeOperationHandler;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.helpers.ClientConstants;
@@ -31,7 +36,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
-import org.jboss.as.server.operations.LaunchTypeHandler;
+import org.jboss.dmr.ModelNode;
 
 /**
  * {@code ResourceDescription} describing a stopped server instance.
@@ -49,13 +54,36 @@ public class StoppedServerResource extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
 
-        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, new LaunchTypeHandler(ServerEnvironment.LaunchType.DOMAIN));
+        resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.LAUNCH_TYPE, (context,operation) -> {
+            readResourceServerConfig(context, operation);
+            context.getResult().set(ServerEnvironment.LaunchType.DOMAIN.toString());
+        });
+
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SERVER_STATE, (context, operation) -> {
+            readResourceServerConfig(context, operation);
             // note this is inconsistent with the other values, should be lower case, preserved for now.
             context.getResult().set("STOPPED");
         });
+
         resourceRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNTIME_CONFIGURATION_STATE,
-                (context, operation) -> context.getResult().set(ClientConstants.CONTROLLER_PROCESS_STATE_STOPPED));
+                (context, operation) -> {
+                    readResourceServerConfig(context, operation);
+                    context.getResult().set(ClientConstants.CONTROLLER_PROCESS_STATE_STOPPED);
+                    }
+                );
+    }
+
+    // https://issues.jboss.org/browse/WFCORE-3338 read server-config to test name of the server in operation is present
+    private void readResourceServerConfig(OperationContext context, ModelNode operation) {
+        final PathAddress address = context.getCurrentAddress();
+        final String hostName = address.getElement(0).getValue();
+        final PathElement element = address.getLastElement();
+        final String serverName = element.getValue();
+
+        final ModelNode addr = new ModelNode();
+        addr.add(HOST, hostName);
+        addr.add(SERVER_CONFIG, serverName);
+        context.readResourceFromRoot(PathAddress.pathAddress(addr), false);
     }
 
     @Override
@@ -66,5 +94,4 @@ public class StoppedServerResource extends SimpleResourceDefinition {
         // WFCORE-998 register composite here so addressing this resource as a step in a composite works
         resourceRegistration.registerOperationHandler(CompositeOperationHandler.INTERNAL_DEFINITION, CompositeOperationHandler.INSTANCE);
     }
-
 }
