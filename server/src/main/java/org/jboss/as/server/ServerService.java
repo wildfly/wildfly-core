@@ -311,6 +311,7 @@ public final class ServerService extends AbstractControllerService {
                 public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
                     phaseContext.getDeploymentUnit().putAttachment(Attachments.SERVICE_MODULE_LOADER, injectedModuleLoader.getValue());
                     phaseContext.getDeploymentUnit().putAttachment(Attachments.EXTERNAL_MODULE_SERVICE, injectedExternalModuleService.getValue());
+                    phaseContext.getDeploymentUnit().putAttachment(Attachments.EXTERNAL_SERVICE_TARGET, serviceTarget);
                 }
 
                 @Override
