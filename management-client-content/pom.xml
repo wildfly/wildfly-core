@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>3.0.11.Final-SNAPSHOT</version>
+        <version>3.1.0.Final</version>
     </parent>
 
     <artifactId>wildfly-management-client-content</artifactId>

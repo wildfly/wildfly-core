@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>3.0.11.Final-SNAPSHOT</version>
+        <version>3.1.0.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
