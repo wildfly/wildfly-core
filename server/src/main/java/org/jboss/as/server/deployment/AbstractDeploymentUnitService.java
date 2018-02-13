@@ -63,7 +63,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
 
     private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
     private volatile DeploymentUnit deploymentUnit;
-    volatile StabilityMonitor monitor;
+    private volatile StabilityMonitor monitor;
 
     AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader) {
         this.mutableRegistration = mutableRegistration;

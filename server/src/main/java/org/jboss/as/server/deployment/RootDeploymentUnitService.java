@@ -88,7 +88,6 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(Attachments.VAULT_READER_ATTACHMENT_KEY, vaultReader);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, deploymentOverlays);
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManagerInjector.getValue());
-        deploymentUnit.putAttachment(Attachments.STABILITY_MONITOR, monitor);
         if(this.isExplodedContent) {
             MountExplodedMarker.setMountExploded(deploymentUnit);
         }
