@@ -71,9 +71,7 @@ public interface SubsystemRegistration {
      * the subsystem's configuration to XML.
      *
      * @param writer the writer
-     * @deprecated use the {@link #registerXMLElementWriter(Supplier)} variant
      */
-    @Deprecated
     void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer);
 
     /**
@@ -85,6 +83,7 @@ public interface SubsystemRegistration {
     default void registerXMLElementWriter(Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
         registerXMLElementWriter(writer.get());
     }
+
     /**
      * Register transformers for a specific model versions.
      *
