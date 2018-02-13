@@ -43,7 +43,7 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
         <module name="javax.api" />
-        <module name="javax.json.api"/>
+        <module name="org.wildfly.javax.json"/>
         <module name="javax.security.jacc.api" optional="true"/>
         <module name="sun.jdk"/>
         <module name="org.wildfly.common"/>
