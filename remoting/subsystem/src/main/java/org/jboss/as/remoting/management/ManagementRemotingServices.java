@@ -36,6 +36,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
 import org.jboss.as.network.SocketBindingManager;
@@ -184,7 +185,7 @@ public final class ManagementRemotingServices extends RemotingServices {
         try {
             remotingConnector = context.readResourceFromRoot(
                     PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "jmx"), PathElement.pathElement("remoting-connector", "jmx")), false).getModel();
-        } catch (NoSuchElementException ex) {
+        } catch (Resource.NoSuchResourceException ex) {
             return;
         }
         if (!remotingConnector.hasDefined(USE_MGMT_ENDPOINT) ||

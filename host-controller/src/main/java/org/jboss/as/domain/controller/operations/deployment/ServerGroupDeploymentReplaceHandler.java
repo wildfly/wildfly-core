@@ -29,7 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -85,7 +84,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
         try {
             // check if the domain deployment exists
             domainDeployment = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS.append(deploymentPath));
-        } catch (NoSuchElementException e) {
+        } catch (Resource.NoSuchResourceException e) {
             throw operationFailed(DomainControllerLogger.ROOT_LOGGER.noDeploymentContentWithName(name));
         }
 
