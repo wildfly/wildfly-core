@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -592,6 +593,253 @@ public class CliCompletionTestCase {
         assertEquals(expectedParameters, candidates.stream().map(String::toString).collect(Collectors.toSet()));
     }
 
+    @Test
+    public void securityCommandsCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        ctx.connectController();
+        // add a key-store.
+        ctx.handle("/subsystem=elytron/key-store=foo:add(type=JKS, credential-reference={clear-text=secret})");
+        try {
+
+            {
+                String cmd = "security ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("disable-ssl-management", "enable-ssl-management");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--interactive", "--key-store-name=", "--key-store-path=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            // --interactive completion
+            {
+                String cmd = "security enable-ssl-management --interactive ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.contains(Util.HTTP_INTERFACE));
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.contains(Util.HTTP_INTERFACE));
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(!candidates.contains("--http-secure-socket-binding="));
+                candidates = complete(ctx, cmd, null);
+                assertTrue(!candidates.contains("--http-secure-socket-binding="));
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=" + Util.HTTP_INTERFACE + " ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.contains("--http-secure-socket-binding="));
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.contains("--http-secure-socket-binding="));
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=foo --no-reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList();
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            // key-store-name completion
+            {
+                String cmd = "security enable-ssl-management --key-store-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=",
+                        "--new-key-manager-name=", "--new-ssl-context-name=",
+                        "--no-reload", "--trust-store-name=", "--trusted-certificate-path=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            // key-store-path completion
+            {
+                String cmd = "security enable-ssl-management --key-store-path=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-path=ccc ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--key-store-password=",
+                        "--key-store-path-relative-to=",
+                        "--key-store-type=",
+                        "--management-interface=",
+                        "--new-key-manager-name=",
+                        "--new-key-store-name=",
+                        "--new-ssl-context-name=",
+                        "--no-reload", "--trust-store-name=", "--trusted-certificate-path=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-path=ccc --key-store-type=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("JKS", "PKCS12");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            // client certificate completion
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc "
+                        + "--management-interface=ccsd --new-key-manager-name=ccsd "
+                        + "--new-ssl-context-name=cdscs --no-reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--trust-store-name=", "--trusted-certificate-path=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            // client certificate completion
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc "
+                        + "--management-interface=ccsd --new-key-manager-name=ccsd "
+                        + "--new-ssl-context-name=cdscs --no-reload --trust-store-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc "
+                        + "--management-interface=ccsd --new-key-manager-name=ccsd "
+                        + "--new-ssl-context-name=cdscs --no-reload --trust-store-name=cdcds ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--new-trust-manager-name=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc "
+                        + "--management-interface=ccsd --new-key-manager-name=ccsd --new-ssl-context-name=cdscs "
+                        + "--no-reload --trusted-certificate-path=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-ssl-management --key-store-name=ccc "
+                        + "--management-interface=ccsd --new-key-manager-name=ccsd --new-ssl-context-name=cdscs "
+                        + "--no-reload --trusted-certificate-path=cdscsd ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--new-trust-manager-name=",
+                        "--new-trust-store-name=", "--no-trusted-certificate-validation",
+                        "--trust-store-file-name=", "--trust-store-file-password=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security disable-ssl-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=",
+                        "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+        } finally {
+            ctx.handle("/subsystem=elytron/key-store=foo:remove");
+            ctx.handle("reload");
+            ctx.terminateSession();
+        }
+    }
+
     private String escapePath(String filePath) {
         if (Util.isWindows()) {
             StringBuilder builder = new StringBuilder();
@@ -648,6 +896,8 @@ public class CliCompletionTestCase {
         for (TerminalString ts : op.getCompletionCandidates()) {
             candidates.add(ts.getCharacters());
         }
+        // aesh-readline does sort the candidates prior to display.
+        Collections.sort(candidates);
         return candidates;
     }
 }

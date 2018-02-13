@@ -649,7 +649,7 @@ public class ReadlineConsole {
     }
 
     public String readLine(String prompt) throws IOException, InterruptedException {
-        return readLine(prompt, null);
+        return readLine(prompt, (Character) null);
     }
 
     /**
@@ -676,6 +676,10 @@ public class ReadlineConsole {
     }
 
     public String readLine(Prompt prompt) throws InterruptedException, IOException {
+        return readLine(prompt, null);
+    }
+
+    public String readLine(Prompt prompt, Completion completer) throws InterruptedException, IOException {
         // If there are some output collected, flush it.
         printCollectedOutput();
         // New collector
@@ -690,9 +694,9 @@ public class ReadlineConsole {
                 // No Terminal waiting in Main thread yet.
                 // We are opening the connection to the terminal until we have read
                 // something from prompt.
-                return promptFromNonStartedConsole(prompt);
+                return promptFromNonStartedConsole(prompt, completer);
             } else {
-                return promptFromStartedConsole(prompt);
+                return promptFromStartedConsole(prompt, completer);
             }
         } finally {
             readingThread = null;
@@ -706,12 +710,17 @@ public class ReadlineConsole {
         return new StringBuilder();
     }
 
-    private String promptFromNonStartedConsole(Prompt prompt) throws InterruptedException, IOException {
+    private String promptFromNonStartedConsole(Prompt prompt, Completion completer) throws InterruptedException, IOException {
         initializeConnection();
         LOG.trace("Not started");
         String[] out = new String[1];
         if (connection.suspended()) {
             connection.awake();
+        }
+        List<Completion> lst = null;
+        if (completer != null) {
+            lst = new ArrayList<>();
+            lst.add(completer);
         }
         getReadLine().readline(connection, prompt, newLine -> {
             out[0] = newLine;
@@ -720,13 +729,13 @@ public class ReadlineConsole {
             // We must call stopReading to stop reading from terminal
             // and release this thread.
             connection.stopReading();
-        }, null, null, null, null, READLINE_FLAGS);
+        }, lst, null, null, null, READLINE_FLAGS);
         connection.openBlockingInterruptable();
         LOG.trace("Done for prompt");
         return out[0];
     }
 
-    private String promptFromStartedConsole(Prompt prompt) throws InterruptedException, IOException {
+    private String promptFromStartedConsole(Prompt prompt, Completion completer) throws InterruptedException, IOException {
         initializeConnection();
         String[] out = new String[1];
         // We must be called from another Thread. connection is reading in Main thread.
@@ -737,6 +746,11 @@ public class ReadlineConsole {
             throw new RuntimeException("Can't prompt from the Thread that is "
                     + "reading terminal input");
         }
+        List<Completion> lst = null;
+        if (completer != null) {
+            lst = new ArrayList<>();
+            lst.add(completer);
+        }
         CountDownLatch latch = new CountDownLatch(1);
         // We need to set the interrupt SignalHandler to interrupt the current thread.
         Consumer<Signal> prevHandler = connection.getSignalHandler();
@@ -745,7 +759,7 @@ public class ReadlineConsole {
             out[0] = newLine;
             LOG.trace("Got some input");
             latch.countDown();
-        }, null, null, null, null, READLINE_FLAGS);
+        }, lst, null, null, null, READLINE_FLAGS);
         try {
             latch.await();
         } finally {

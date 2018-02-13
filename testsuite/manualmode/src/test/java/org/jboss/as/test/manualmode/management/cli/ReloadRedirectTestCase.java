@@ -37,6 +37,7 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -237,6 +238,75 @@ public class ReloadRedirectTestCase {
             assertTrue("No certificate prompt " + cliProc.getOutput(), promptFound);
         } finally {
             cliProc.ctrlCAndWaitForClose();
+        }
+    }
+
+    @Test
+    public void testRedirectWithSecurityCommands() throws Throwable {
+        CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addCliArgument("--connect")
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort());
+        Throwable exception = null;
+        try {
+            cliProc.executeInteractive();
+            cliProc.clearOutput();
+            Assert.assertTrue("No certificate prompt " + cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security enable-ssl-management"
+                    + " --key-store-path=target/server.keystore.jks"
+                    + " --key-store-password=secret"
+                    + " --new-key-store-name=nks"
+                    + " --new-key-manager-name=nkm"
+                    + " --new-ssl-context-name=nsslctx", "Accept certificate"));
+            cliProc.clearOutput();
+            Assert.assertTrue(cliProc.getOutput(),
+                    cliProc.pushLineAndWaitForResults("T", "[standalone@"));
+            cliProc.clearOutput();
+            Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security disable-ssl-management",
+                    "[standalone@"));
+        } catch (Throwable ex) {
+            exception = ex;
+        } finally {
+            try {
+                cliProc.clearOutput();
+                Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/server-ssl-context=nsslctx:remove", null));
+                Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+            } catch (Exception ex) {
+                if (exception != null) {
+                    exception = ex;
+                }
+            } finally {
+                try {
+                    cliProc.clearOutput();
+                    Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-manager=nkm:remove", null));
+                    Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+                } catch (Exception ex) {
+                    if (exception != null) {
+                        exception = ex;
+                    }
+                } finally {
+                    try {
+                        cliProc.clearOutput();
+                        Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-store=nks:remove", null));
+                        Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+                    } catch (Exception ex) {
+                        if (exception != null) {
+                            exception = ex;
+                        }
+                    } finally {
+                        try {
+                            cliProc.ctrlCAndWaitForClose();
+                        } catch (Exception ex) {
+                            if (exception != null) {
+                                exception = ex;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (exception != null) {
+            throw exception;
         }
     }
 

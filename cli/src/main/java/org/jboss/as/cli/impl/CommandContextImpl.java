@@ -168,6 +168,7 @@ import org.jboss.as.cli.impl.aesh.cmd.HelpCommand;
 import org.jboss.as.cli.impl.aesh.cmd.VersionCommand;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.DeploymentCommand;
 import org.jboss.as.cli.impl.aesh.cmd.operation.OperationCommandContainer;
+import org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.NodePathFormatter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
@@ -604,6 +605,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         final AtomicReference<EmbeddedProcessLaunch> embeddedServerLaunch = EmbeddedControllerHandlerRegistrar.registerEmbeddedCommands(cmdRegistry, this);
         cmdRegistry.registerHandler(new ReloadHandler(this, embeddedServerLaunch), "reload");
         cmdRegistry.registerHandler(new ShutdownHandler(this, embeddedServerLaunch), "shutdown");
+
+        cmdRegistry.addCommand(new SecurityCommand(this, embeddedServerLaunch));
+
         registerExtraHandlers();
 
         extLoader = new ExtensionsLoader(cmdRegistry, aeshCommands.getRegistry(), this);
