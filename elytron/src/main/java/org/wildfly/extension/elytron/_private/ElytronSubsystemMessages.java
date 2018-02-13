@@ -445,4 +445,52 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1026, value = "Element '%s' with attribute '%s' set to '%s' is unused. Since unused policy " +
             "configurations can no longer be stored in the configuration model this item is being discarded.")
     void discardingUnusedPolicy(String element, String attr, String name);
+
+    @Message(id = 1027, value = "Key password cannot be resolved for key-store '%s'")
+    IOException keyPasswordCannotBeResolved(String path);
+
+    @Message(id = 1028, value = "Invalid value for not-before. %s")
+    OperationFailedException invalidNotBefore(@Cause Throwable cause, String causeMessage);
+
+    @Message(id = 1029, value = "Alias '%s' does not exist in KeyStore")
+    OperationFailedException keyStoreAliasDoesNotExist(String alias);
+
+    @Message(id = 1030, value = "Alias '%s' does not identify a PrivateKeyEntry in KeyStore")
+    OperationFailedException keyStoreAliasDoesNotIdentifyPrivateKeyEntry(String alias);
+
+    @Message(id = 1031, value = "Unable to obtain PrivateKey for alias '%s'")
+    OperationFailedException unableToObtainPrivateKey(String alias);
+
+    @Message(id = 1032, value = "Unable to obtain Certificate for alias '%s'")
+    OperationFailedException unableToObtainCertificate(String alias);
+
+    @Message(id = 1033, value = "No certificates found in certificate reply")
+    OperationFailedException noCertificatesFoundInCertificateReply();
+
+    @Message(id = 1034, value = "Public key from certificate reply does not match public key from certificate in KeyStore")
+    OperationFailedException publicKeyFromCertificateReplyDoesNotMatchKeyStore();
+
+    @Message(id = 1035, value = "Certificate reply is the same as the certificate from PrivateKeyEntry in KeyStore")
+    OperationFailedException certificateReplySameAsCertificateFromKeyStore();
+
+    @Message(id = 1036, value = "Alias '%s' already exists in KeyStore")
+    OperationFailedException keyStoreAliasAlreadyExists(String alias);
+
+    @Message(id = 1037, value = "Top-most certificate from certificate reply is not trusted. Inspect the certificate carefully and if it is valid, execute import-certificate again with validate set to false.")
+    OperationFailedException topMostCertificateFromCertificateReplyNotTrusted();
+
+    @Message(id = 1038, value = "Trusted certificate is already in KeyStore under alias '%s'")
+    OperationFailedException trustedCertificateAlreadyInKeyStore(String alias);
+
+    @Message(id = 1039, value = "Trusted certificate is already in cacerts KeyStore under alias '%s'")
+    OperationFailedException trustedCertificateAlreadyInCacertsKeyStore(String alias);
+
+    @Message(id = 1040, value = "Unable to determine if the certificate is trusted. Inspect the certificate carefully and if it is valid, execute import-certificate again with validate set to false.")
+    OperationFailedException unableToDetermineIfCertificateIsTrusted();
+
+    @Message(id = 1041, value = "Certificate file does not exist")
+    OperationFailedException certificateFileDoesNotExist(@Cause Exception cause);
+
+    @Message(id = 1042, value = "Unable to obtain Entry for alias '%s'")
+    OperationFailedException unableToObtainEntry(String alias);
 }

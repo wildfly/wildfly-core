@@ -67,7 +67,7 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
         return new ModifiableKeyStoreDecorator(resourceDefinition);
     }
 
-    private ModifiableKeyStoreDecorator(ResourceDefinition resourceDefinition) {
+    ModifiableKeyStoreDecorator(ResourceDefinition resourceDefinition) {
         setDelegate(resourceDefinition);
     }
 
@@ -80,10 +80,6 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
         if (isServerOrHostController(resourceRegistration)) { // server-only operations
             RemoveAliasHandler.register(resourceRegistration, resolver);
-
-            // Create Key Pair / Certificate
-            // Create CSR
-            // Import certificate
         }
     }
 
@@ -230,6 +226,17 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
      * @throws OperationFailedException if any error occurs while obtaining.
      */
     static KeyStore getModifiableKeyStore(OperationContext context) throws OperationFailedException {
+        return getModifiableKeyStoreService(context).getModifiableValue();
+    }
+
+    /**
+     * Try to obtain a modifiable {@link KeyStoreService} based on the given {@link OperationContext}.
+     *
+     * @param context the current context
+     * @return the modifiable KeyStore service
+     * @throws OperationFailedException if an error occurs while attempting to obtain the modifiable KeyStore service
+     */
+    static ModifiableKeyStoreService getModifiableKeyStoreService(OperationContext context) throws OperationFailedException {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
         PathAddress currentAddress = context.getCurrentAddress();
         RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(currentAddress.getLastElement().getValue());
@@ -241,7 +248,6 @@ public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
             throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
         }
 
-        ModifiableKeyStoreService service = (ModifiableKeyStoreService) serviceContainer.getService();
-        return service.getModifiableValue();
+        return (ModifiableKeyStoreService) serviceContainer.getService();
     }
 }

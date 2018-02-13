@@ -46,6 +46,8 @@ import org.jboss.jandex.Index;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -198,6 +200,14 @@ public final class Attachments {
      * Support for integrating with services and other runtime API provided by managed capabilities.
      */
     public static final AttachmentKey<CapabilityServiceSupport> CAPABILITY_SERVICE_SUPPORT = AttachmentKey.create(CapabilityServiceSupport.class);
+
+    /**
+     * A service target that can be used to install services outside the scope of the deployment.
+     *
+     * These services will not be removed automatically on undeploy, so if this is used some other strategy must be used
+     * to handle undeployment.
+     */
+    public static final AttachmentKey<ServiceTarget> EXTERNAL_SERVICE_TARGET = AttachmentKey.create(ServiceTarget.class);
 
     //
     // VALIDATE

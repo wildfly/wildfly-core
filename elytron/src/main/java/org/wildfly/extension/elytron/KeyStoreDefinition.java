@@ -262,8 +262,8 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             ServiceName serviceName = runtimeCapability.getCapabilityServiceName(KeyStore.class);
             ServiceBuilder<KeyStore> serviceBuilder = serviceTarget.addService(serviceName, keyStoreService).setInitialMode(Mode.ACTIVE);
 
+            serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyStoreService.getPathManagerInjector());
             if (relativeTo != null) {
-                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyStoreService.getPathManagerInjector());
                 serviceBuilder.addDependency(pathName(relativeTo));
             }
 

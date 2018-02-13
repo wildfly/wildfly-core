@@ -198,6 +198,15 @@ public class SuspendOnSoftKillTestCase {
             }
             Assert.assertEquals("SUSPENDING", suspendState);
 
+            final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
+            try {
+                conn.setDoInput(true);
+                int responseCode = conn.getResponseCode();
+                Assert.assertEquals(503, responseCode);
+            } finally {
+                conn.disconnect();
+            }
+
             // Send a request that will trigger the first request to complete
             HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             // Confirm 1st request completed
@@ -208,18 +217,6 @@ public class SuspendOnSoftKillTestCase {
                 Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
             } catch (RuntimeException ok) {
                 // ignore; it's fine if the server's down
-            }
-
-            final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
-            try {
-                conn.setDoInput(true);
-                int responseCode = conn.getResponseCode();
-                Assert.assertEquals(503, responseCode);
-            } catch (IOException ok) {
-                // ignore; it's fine if the server's down
-            }
-            finally {
-                conn.disconnect();
             }
 
             waitForServerShutdown();

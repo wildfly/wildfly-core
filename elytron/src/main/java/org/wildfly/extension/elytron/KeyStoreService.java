@@ -111,11 +111,7 @@ class KeyStoreService implements ModifiableKeyStoreService {
             AtomicLoadKeyStore keyStore = AtomicLoadKeyStore.newInstance(type, provider);
             if (path != null) {
                 pathResolver = pathResolver();
-                pathResolver.path(path);
-                if (relativeTo != null) {
-                    pathResolver.relativeTo(relativeTo, pathManager.getValue());
-                }
-                resolvedPath = pathResolver.resolve();
+                resolvedPath = getResolvedPath(pathResolver, path, relativeTo);
             }
 
             synched = System.currentTimeMillis();
@@ -124,10 +120,9 @@ class KeyStoreService implements ModifiableKeyStoreService {
                     throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
                 } else {
                     ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
-                    resolvedPath = null;
                 }
             }
-            try (InputStream is = resolvedPath != null ? new FileInputStream(resolvedPath) : null) {
+            try (InputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
                 char[] password = resolvePassword();
 
                 ROOT_LOGGER.tracef(
@@ -271,6 +266,21 @@ class KeyStoreService implements ModifiableKeyStoreService {
         return trackingKeyStore.isModified();
     }
 
+    char[] resolveKeyPassword(final ExceptionSupplier<CredentialSource, Exception> keyPasswordCredentialSourceSupplier) throws Exception {
+        if (keyPasswordCredentialSourceSupplier == null) {
+            // use the key-store password if no key password is provided
+            return resolvePassword();
+        }
+        CredentialSource cs = keyPasswordCredentialSourceSupplier.get();
+        String path = resolvedPath != null ? resolvedPath.getPath() : "null";
+        if (cs == null) throw ROOT_LOGGER.keyPasswordCannotBeResolved(path);
+        PasswordCredential credential = cs.getCredential(PasswordCredential.class);
+        if (credential == null) throw ROOT_LOGGER.keyPasswordCannotBeResolved(path);
+        ClearPassword password = credential.getPassword(ClearPassword.class);
+        if (password == null) throw ROOT_LOGGER.keyPasswordCannotBeResolved(path);
+        return password.getPassword();
+    }
+
     private char[] resolvePassword() throws Exception {
         ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getValue();
         CredentialSource cs = sourceSupplier != null ? sourceSupplier.get() : null;
@@ -282,6 +292,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
         if (password == null) throw ROOT_LOGGER.keyStorePasswordCannotBeResolved(path);
 
         return password.getPassword();
+    }
+
+    File getResolvedPath(PathResolver pathResolver, String path, String relativeTo) {
+        pathResolver.path(path);
+        if (relativeTo != null) {
+            pathResolver.relativeTo(relativeTo, pathManager.getValue());
+        }
+        return pathResolver.resolve();
     }
 
     static class LoadKey {
