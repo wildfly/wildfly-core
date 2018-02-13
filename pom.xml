@@ -155,7 +155,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
-        <version.org.wildfly.security.elytron>1.2.0.Beta12</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.2.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.0.0.Final</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.1.0.Beta1</version.org.wildfly.security.elytron-web.undertow-server>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
