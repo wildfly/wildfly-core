@@ -59,7 +59,6 @@ public class VaultAddHandler extends AbstractAddStepHandler {
 
     }
 
-
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return true;
@@ -67,7 +66,6 @@ public class VaultAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-
         ModelNode codeNode = VaultResourceDefinition.CODE.resolveModelAttribute(context, model);
         ModelNode moduleNode = VaultResourceDefinition.MODULE.resolveModelAttribute(context, model);
         String vaultClass = codeNode.isDefined() ? codeNode.asString() : null;
@@ -94,6 +92,8 @@ public class VaultAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-        vaultReader.destroyVault();
+        if (vaultReader != null) {
+            vaultReader.destroyVault();
+        }
     }
 }
