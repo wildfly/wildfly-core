@@ -24,6 +24,7 @@ import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
@@ -32,7 +33,9 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
  */
 public class IOSubsystemTransformers implements ExtensionTransformerRegistration {
+    static final ModelVersion VERSION_1_0 = ModelVersion.create(1, 0);
     static final ModelVersion VERSION_2_0 = ModelVersion.create(2, 0);
+    static final ModelVersion VERSION_5_0 = ModelVersion.create(5, 0);
 
 
     @Override
@@ -44,10 +47,17 @@ public class IOSubsystemTransformers implements ExtensionTransformerRegistration
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current 3.0.0 to 2.0.0, aka EAP 7.0.0
-        buildTransformers_2_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_2_0));
+        buildTransformers_5_0(chainedBuilder.createBuilder(VERSION_5_0, VERSION_2_0));
+        buildTransformers_2_0(chainedBuilder.createBuilder(VERSION_2_0, VERSION_1_0));
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_2_0});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{ VERSION_2_0, VERSION_5_0 });
+    }
+
+    private void buildTransformers_5_0(ResourceTransformationDescriptionBuilder builder) {
+        final ResourceTransformationDescriptionBuilder worker = builder.addChildResource(WorkerResourceDefinition.INSTANCE.getPathElement());
+        worker.getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, WorkerResourceDefinition.WORKER_TASK_CORE_THREADS)
+                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS.getDefaultValue()), WorkerResourceDefinition.WORKER_TASK_CORE_THREADS);
     }
 
     private void buildTransformers_2_0(ResourceTransformationDescriptionBuilder builder) {

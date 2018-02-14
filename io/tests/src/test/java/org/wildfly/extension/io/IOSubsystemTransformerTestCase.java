@@ -39,11 +39,13 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
+@Ignore()
 public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     public IOSubsystemTransformerTestCase() {

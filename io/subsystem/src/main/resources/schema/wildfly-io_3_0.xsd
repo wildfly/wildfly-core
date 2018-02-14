@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2018, Red Hat, Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:jboss:domain:io:3.0"
+           targetNamespace="urn:jboss:domain:io:3.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified"
+           version="1.0">
+    <!-- The io subsystem root element -->
+    <xs:element name="subsystem" type="io-subsystemType"/>
+    <xs:complexType name="io-subsystemType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                The configuration of the io subsystem.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="worker" type="workerType"/>
+            <xs:element name="buffer-pool" type="bufferPoolType"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="workerType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="outbound-bind-address" type="outboundBindAddressType"/>
+        </xs:choice>
+        <xs:attribute name="name" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Name of worker
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="io-threads" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Specify the number of I/O threads to create for the worker.
+                        If not specified, a default will be chosen, which is calculated by cpuCount * 2
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="task-keepalive" type="xs:int" default="60000">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                       Specify the number of milliseconds to keep non-core task threads alive.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="task-core-threads" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Specify the starting number of threads for the worker task thread pool.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="task-max-threads" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Specify the maximum number of threads for the worker task thread pool.
+                        If not set, default value used which is calculated by formula cpuCount * 16,
+                        as long as MaxFileDescriptorCount jmx property allows that number,
+                        otherwise calculation takes max into account to adjust it accordingly.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="stack-size" type="xs:long" default="0">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        The stack size (in bytes) to attempt to use for worker threads.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="bufferPoolType">
+        <xs:attribute name="name" use="required" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Name of buffer pool
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="buffer-size" use="optional" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        The size of each buffer slice in bytes, if not set optimal value is calculated based on available RAM resources in your system.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="buffers-per-slice" use="optional" type="xs:int">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        How many buffers per slice, if not set optimal value is calculated based on available RAM resources in your system.
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="direct-buffers" use="optional" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    <![CDATA[
+                        Does the buffer pool use direct buffers, some platforms don't support direct buffers
+                    ]]>
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="outboundBindAddressType">
+        <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+            <documentation>
+                A configuration of a single outbound bind address.
+            </documentation>
+        </annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The name of the bind address sub-resource.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="match" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The CIDR address string which matches the destination when this rule applies.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="bind-address" type="xs:string" use="required">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The bind address to use if the destination address matches.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+        <xs:attribute name="bind-port" type="xs:nonNegativeInteger" use="optional" default="0">
+            <annotation xmlns="http://www.w3.org/2001/XMLSchema">
+                <documentation>
+                    The port number to bind to if the destination address matches.
+                </documentation>
+            </annotation>
+        </xs:attribute>
+    </xs:complexType>
+</xs:schema>

@@ -26,7 +26,7 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config>
     <extension-module>org.wildfly.extension.io</extension-module>
-    <subsystem xmlns="urn:jboss:domain:io:2.0">
+    <subsystem xmlns="urn:jboss:domain:io:3.0">
         <worker name="default" />
         <buffer-pool name="default" />
     </subsystem>

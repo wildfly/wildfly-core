@@ -65,14 +65,15 @@ public class IOExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_0.getUriString(), IOSubsystemParser_1_0::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_1_1.getUriString(), IOSubsystemParser_1_1::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_2_0.getUriString(), IOSubsystemParser_2_0::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.IO_3_0.getUriString(), new IOSubsystemParser_3_0());
     }
 
     @Override
     public void initialize(ExtensionContext context) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(4));
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(5));
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(IORootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
-        subsystem.registerXMLElementWriter(IOSubsystemParser_2_0::new);
+        subsystem.registerXMLElementWriter(new IOSubsystemParser_3_0());
     }
 
 

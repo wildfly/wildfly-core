@@ -22,7 +22,7 @@
   ~ */
   -->
 
-<subsystem xmlns="urn:jboss:domain:io:2.0">
+<subsystem xmlns="urn:jboss:domain:io:3.0">
     <worker name="default" />
     <buffer-pool name="default" />
 </subsystem>
