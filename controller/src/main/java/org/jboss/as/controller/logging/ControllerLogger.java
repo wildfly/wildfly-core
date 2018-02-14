@@ -2099,16 +2099,6 @@ public interface ControllerLogger extends BasicLogger {
     String serviceStatusReportMissing(ServiceName serviceName, String dependents);
 
     /**
-     * A message for the service status report for unavailable dependencies.
-     *
-     * @param serviceName the name of the service
-     *
-     * @return the message.
-     */
-    @Message(id = Message.NONE, value = "      %s (unavailable) dependents: %s %n")
-    String serviceStatusReportUnavailable(ServiceName serviceName, String dependents);
-
-    /**
      * A message for the service status report indicating new corrected service.
      *
      * @return the message.
@@ -3518,4 +3508,16 @@ public interface ControllerLogger extends BasicLogger {
             "or itself configures a requirement for a capability provided by another part of the configuration. " +
             "Full support for this kind of configuration cannot be provided when an expression is used.")
     void attributeExpressionDeprecated(String name, String address);
+
+
+    /**
+     * A message for the service status report for unavailable dependencies.
+     *
+     * @param count The number of missing services
+     *
+     * @return the message.
+     */
+    @Message(id = 448, value = "%s additional services are down due to their dependencies being missing or failed")
+    String servicesWithTransitiveUnavailability(int count);
+
 }
