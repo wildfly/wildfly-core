@@ -29,7 +29,6 @@ import java.util.List;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
@@ -53,7 +52,7 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("io-2.0-transformer.xml");
+        return readResource("eap-7.1.0-transformer.xml");
     }
 
 
@@ -68,11 +67,14 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     }
 
     private KernelServices buildKernelServices(ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
-        return this.buildKernelServices(this.getSubsystemXml(), controllerVersion, version, mavenResourceURLs);
+        String xmlName = String.format("eap-%s-transformer.xml", controllerVersion.getRealVersionName());
+        String xml = readResource(xmlName);
+        return this.buildKernelServices(xml, controllerVersion, version, mavenResourceURLs);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
-        KernelServicesBuilder builder = this.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT).setSubsystemXml(xml);
+        KernelServicesBuilder builder = this.createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
+                .setSubsystemXml(xml);
 
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, version)
                 .addMavenResourceURL(mavenResourceURLs)
@@ -98,12 +100,37 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         Assert.assertTrue(transformed.isDefined());
     }
 
+    private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SUBSYSTEM_PATH);
+
     @Test
     public void testRejectingTransformersEAP_7_0_0() throws Exception {
-        testRejectingTransformers(EAP_7_0_0);
+        testRejectingTransformers70(EAP_7_0_0, new FailedOperationTransformationConfig()
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(WORKER_PATH),
+                                new FailedOperationTransformationConfig.RejectExpressionsConfig(
+                                        WorkerResourceDefinition.STACK_SIZE,
+                                        WorkerResourceDefinition.WORKER_IO_THREADS,
+                                        WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
+                                        WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
+                                )
+
+                        ).addFailedAttribute(SUBSYSTEM_ADDRESS.append(WORKER_PATH),
+                                new FailedOperationTransformationConfig.NewAttributesConfig( WorkerResourceDefinition.WORKER_TASK_CORE_THREADS)
+                        )
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(WORKER_PATH, OutboundBindAddressResourceDefinition.getInstance().getPathElement()),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE
+                        ));
     }
 
-    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
+    @Test
+    public void testRejectingTransformersEAP_7_1_0() throws Exception {
+        testRejectingTransformers70(EAP_7_1_0, new FailedOperationTransformationConfig()
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(WORKER_PATH),
+                                new FailedOperationTransformationConfig.NewAttributesConfig( WorkerResourceDefinition.WORKER_TASK_CORE_THREADS)
+                        )
+        );
+    }
+
+    private void testRejectingTransformers70(ModelTestControllerVersion controllerVersion, FailedOperationTransformationConfig config) throws Exception {
         ModelVersion modelVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
         KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
@@ -114,22 +141,11 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         KernelServices mainServices = builder.build();
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(modelVersion).isSuccessfulBoot());
+        String xmlName = String.format("eap-%s-reject.xml", controllerVersion.getRealVersionName());
+        List<ModelNode> ops = builder.parseXmlResource(xmlName);
 
-        List<ModelNode> ops = builder.parseXmlResource("io-1.1-reject.xml");
-        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
-                        new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                WorkerResourceDefinition.STACK_SIZE,
-                                WorkerResourceDefinition.WORKER_IO_THREADS,
-                                WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
-                                WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
-                        )
-                )
-                .addFailedAttribute(subsystemAddress.append(WORKER_PATH, PathElement.pathElement("outbound-bind-address")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-        );
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, config);
     }
+
 
 }

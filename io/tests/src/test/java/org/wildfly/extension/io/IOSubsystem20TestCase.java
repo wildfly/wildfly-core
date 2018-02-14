@@ -1,34 +1,30 @@
 /*
+ * JBoss, Home of Professional Open Source
+ * Copyright 2018, Red Hat, Inc., and individual contributors as indicated
+ * by the @authors tag.
  *
- *  JBoss, Home of Professional Open Source.
- *  Copyright 2013, Red Hat, Inc., and individual contributors
- *  as indicated by the @author tags. See the copyright.txt file in the
- *  distribution for a full listing of individual contributors.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  This is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU Lesser General Public License as
- *  published by the Free Software Foundation; either version 2.1 of
- *  the License, or (at your option) any later version.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  This software is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this software; if not, write to the Free
- *  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- *  02110-1301 USA, or see the FSF site: http://www.fsf.org.
- * /
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.wildfly.extension.io;
 
 import java.io.IOException;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -38,40 +34,33 @@ import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.common.cpu.ProcessorInfo;
+import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.Sequence;
 import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  */
-public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
+public class IOSubsystem20TestCase extends AbstractSubsystemBaseTest {
 
-    public IOSubsystemTestCase() {
+    public IOSubsystem20TestCase() {
         super(IOExtension.SUBSYSTEM_NAME, new IOExtension());
     }
 
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("io-3.0.xml");
+        return readResource("io-2.0.xml");
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_3_0.xsd";
+        return "schema/wildfly-io_2_0.xsd";
     }
 
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/io.xml"
-        };
-    }
-
-    @Test
-    @Override
-    public void testSchemaOfSubsystemTemplates() throws Exception {
-        super.testSchemaOfSubsystemTemplates();
+    protected void standardSubsystemTest(final String configId) throws Exception {
+        standardSubsystemTest(configId, false);
     }
 
     @Test
@@ -104,5 +93,26 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
         };
     }
 
+    protected static final OptionAttributeDefinition ENABLED_PROTOCOLS = OptionAttributeDefinition.builder("enabled-protocols", Options.SSL_ENABLED_PROTOCOLS)
+            .setRequired(false)
+            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
+            .setAllowExpression(true)
+            .build();
+
+    @Test
+    public void testSequence() throws Exception {
+        OptionMap.Builder builder = OptionMap.builder();
+        ModelNode model = new ModelNode();
+        ModelNode operation = new ModelNode();
+        operation.get(ENABLED_PROTOCOLS.getName()).set("TLSv1, TLSv1.1, TLSv1.2");
+        ENABLED_PROTOCOLS.validateAndSet(operation, model);
+        ENABLED_PROTOCOLS.resolveOption(ExpressionResolver.SIMPLE, model, builder);
+        Sequence<String> protocols = builder.getMap().get(Options.SSL_ENABLED_PROTOCOLS);
+        Assert.assertEquals(3, protocols.size());
+        Assert.assertEquals("TLSv1", protocols.get(0));
+        Assert.assertEquals("TLSv1.1", protocols.get(1));
+        Assert.assertEquals("TLSv1.2", protocols.get(2));
+
+    }
 
 }

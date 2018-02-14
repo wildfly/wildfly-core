@@ -74,6 +74,12 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
     static final RuntimeCapability<Void> IO_WORKER_RUNTIME_CAPABILITY =
             RuntimeCapability.Builder.of(IOServices.IO_WORKER_CAPABILITY_NAME, true, XnioWorker.class).build();
 
+
+    static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(2))
+            .build();
+
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new IntRangeValidator(0))
@@ -99,6 +105,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
     static final OptionAttributeDefinition[] ATTRIBUTES = new OptionAttributeDefinition[]{
             WORKER_IO_THREADS,
+            WORKER_TASK_CORE_THREADS,
             WORKER_TASK_KEEPALIVE,
             WORKER_TASK_MAX_THREADS,
             STACK_SIZE
@@ -159,6 +166,14 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
                         return worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt()) == null;
+                    }
+                });
+        resourceRegistration.registerReadWriteAttribute(WORKER_TASK_CORE_THREADS,
+                new WorkerReadAttributeHandler(WORKER_TASK_CORE_THREADS.getOption()),
+                new WorkerWriteAttributeHandler(WORKER_TASK_CORE_THREADS) {
+                    @Override
+                    boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
+                        return worker.setOption(Options.WORKER_TASK_CORE_THREADS, value.asInt()) == null;
                     }
                 });
         resourceRegistration.registerReadWriteAttribute(WORKER_TASK_KEEPALIVE,

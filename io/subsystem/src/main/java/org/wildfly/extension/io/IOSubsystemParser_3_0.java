@@ -1,23 +1,19 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2017, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
+ * JBoss, Home of Professional Open Source
+ * Copyright 2018, Red Hat, Inc., and individual contributors as indicated
+ * by the @authors tag.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.wildfly.extension.io;
@@ -30,16 +26,17 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  */
-class IOSubsystemParser_2_0 extends PersistentResourceXMLParser {
+class IOSubsystemParser_3_0 extends PersistentResourceXMLParser {
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return builder(IORootDefinition.INSTANCE.getPathElement(), Namespace.IO_2_0.getUriString())
+        return builder(IORootDefinition.INSTANCE.getPathElement(), Namespace.IO_3_0.getUriString())
                 .addChild(
                         builder(WorkerResourceDefinition.INSTANCE.getPathElement())
                                 .addAttributes(
                                         WorkerResourceDefinition.WORKER_IO_THREADS,
                                         WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
+                                        WorkerResourceDefinition.WORKER_TASK_CORE_THREADS,
                                         WorkerResourceDefinition.WORKER_TASK_MAX_THREADS,
                                         WorkerResourceDefinition.STACK_SIZE)
                                 .addChild(
