@@ -154,6 +154,16 @@ public class ProxyStepHandler implements OperationStepHandler {
 
                     @Override
                     public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode response) {
+                        proxyControl.operationPrepared(transaction, transformResponse(response));
+                    }
+
+                    @Override
+                    public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode response,
+                                                  OperationContext context1) {
+                        proxyControl.operationPrepared(transaction, transformResponse(response), context1);
+                    }
+
+                    private ModelNode transformResponse(ModelNode response) {
                         final ModelNode transformed;
                         // Check if we have to reject the operation
                         if(result.rejectOperation(response)) {
@@ -164,7 +174,7 @@ public class ProxyStepHandler implements OperationStepHandler {
                         } else {
                             transformed = response;
                         }
-                        proxyControl.operationPrepared(transaction, transformed);
+                        return transformed;
                     }
                 };
                 proxyController.execute(transformedOperation, messageHandler, transformingProxyControl,

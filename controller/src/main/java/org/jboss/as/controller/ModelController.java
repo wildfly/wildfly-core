@@ -125,6 +125,22 @@ public interface ModelController {
          *
          * @param transaction the transaction to control the fate of the operation. Cannot be {@code null}
          * @param result the result. Cannot be {@code null}
+         * @param context the {@code OperationContext} for the operation that is prepared
+         */
+        default void operationPrepared(OperationTransaction transaction, ModelNode result, OperationContext context) {
+            operationPrepared(transaction, result);
+        }
+
+        /**
+         * Notify that an operation is complete and may be committed or rolled back.
+         *
+         * <p><strong>It is the responsibility of the user of this {@code OperationTransactionControl} to ensure that
+         * {@link OperationTransaction#commit()} or {@link OperationTransaction#rollback()} is eventually called on
+         * the provided {@code transaction}.
+         * </strong></p>
+         *
+         * @param transaction the transaction to control the fate of the operation. Cannot be {@code null}
+         * @param result the result. Cannot be {@code null}
          */
         void operationPrepared(OperationTransaction transaction, ModelNode result);
 

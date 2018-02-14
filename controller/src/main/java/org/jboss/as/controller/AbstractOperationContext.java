@@ -826,7 +826,7 @@ abstract class AbstractOperationContext implements OperationContext {
                     public void rollback() {
                         ref.set(ResultAction.ROLLBACK);
                     }
-                }, primaryResponse);
+                }, primaryResponse, this);
             }
             resultAction = ref.get();
 

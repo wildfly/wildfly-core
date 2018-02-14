@@ -359,6 +359,11 @@ class ModelControllerImpl implements ModelController {
         // the result of the last active step in a composite operation
         final OperationTransactionControl originalResultTxControl = control == null ? null : new OperationTransactionControl() {
             @Override
+            public void operationPrepared(OperationTransaction transaction, ModelNode result, OperationContext context) {
+                control.operationPrepared(transaction, responseNode, context);
+            }
+
+            @Override
             public void operationPrepared(OperationTransaction transaction, ModelNode result) {
                 control.operationPrepared(transaction, responseNode);
             }

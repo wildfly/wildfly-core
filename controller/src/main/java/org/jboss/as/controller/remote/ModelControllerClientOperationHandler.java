@@ -48,8 +48,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -58,6 +58,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
@@ -200,9 +201,31 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
             // Send the prepared response for :reload operations
             final boolean sendPreparedOperation = sendPreparedResponse(operation);
             final ModelController.OperationTransactionControl transactionControl = sendPreparedOperation ? new ModelController.OperationTransactionControl() {
+
                 @Override
                 public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode preparedResult) {
+                    // Shouldn't be called but if it is, send the result immediately
+                    operationPrepared(transaction, preparedResult, null);
+                }
+
+                @Override
+                public void operationPrepared(ModelController.OperationTransaction transaction, final ModelNode preparedResult, OperationContext context) {
                     transaction.commit();
+                    if (context == null || !RELOAD.equals(operation.get(OP).asString())) { // TODO deal with shutdown as well,
+                                                                                           // the handlers for which have some
+                                                                                           // subtleties that need thought
+                        sendResponse(preparedResult);
+                    } else {
+                        context.attach(EarlyResponseSendListener.ATTACHMENT_KEY, new EarlyResponseSendListener() {
+                            @Override
+                            public void sendEarlyResponse(OperationContext.ResultAction resultAction) {
+                                sendResponse(preparedResult);
+                            }
+                        });
+                    }
+                }
+
+                private void sendResponse(ModelNode preparedResult) {
                     // Fix prepared result
                     preparedResult.get(OUTCOME).set(SUCCESS);
                     preparedResult.get(RESULT);

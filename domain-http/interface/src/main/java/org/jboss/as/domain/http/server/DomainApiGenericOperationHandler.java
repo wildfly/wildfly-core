@@ -32,8 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
@@ -58,6 +56,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
@@ -135,6 +134,15 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             return;
         }
 
+        // Set up the correct headers
+        ModelNode opheaders = operation.get(OPERATION_HEADERS);
+        opheaders.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
+        opheaders.get(CALLER_TYPE).set(USER);
+        // Don't allow a domain-uuid operation header from a user call
+        if (opheaders.hasDefined(DOMAIN_UUID)) {
+            opheaders.remove(DOMAIN_UUID);
+        }
+
         // Process the input streams
         final OperationBuilder builder = OperationBuilder.create(operation, true);
         final Iterator<String> i = data.iterator();
@@ -155,7 +163,8 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         final OperationParameter opParam = operationParameterBuilder.build();
         final ResponseCallback callback = new ResponseCallback() {
             @Override
-            void doSendResponse(final ModelNode response) {
+            void doSendResponse(final OperationResponse operationResponse) {
+                ModelNode response = operationResponse.getResponseNode();
                 if (response.hasDefined(OUTCOME) && FAILED.equals(response.get(OUTCOME).asString())) {
                     Common.sendError(exchange, opParam.isEncode(), response);
                     return;
@@ -165,28 +174,14 @@ class DomainApiGenericOperationHandler implements HttpHandler {
         };
 
         final boolean sendPreparedResponse = sendPreparedResponse(operation);
-        final ModelController.OperationTransactionControl control = sendPreparedResponse ? new ModelController.OperationTransactionControl() {
-            @Override
-            public void operationPrepared(final ModelController.OperationTransaction transaction, final ModelNode result) {
-                transaction.commit();
-                // Fix prepared result
-                result.get(OUTCOME).set(SUCCESS);
-                result.get(RESULT);
-                callback.sendResponse(result);
-            }
-        } : ModelController.OperationTransactionControl.COMMIT;
+        final ModelController.OperationTransactionControl control = sendPreparedResponse
+                ? new EarlyResponseTransactionControl(callback, operation)
+                : ModelController.OperationTransactionControl.COMMIT;
 
-        ModelNode response;
+        OperationResponse response;
         final Operation builtOp = builder.build();
         try {
-            ModelNode opheaders = operation.get(OPERATION_HEADERS);
-            opheaders.get(ACCESS_MECHANISM).set(AccessMechanism.HTTP.toString());
-            opheaders.get(CALLER_TYPE).set(USER);
-            // Don't allow a domain-uuid operation header from a user call
-            if (opheaders.hasDefined(DOMAIN_UUID)) {
-                opheaders.remove(DOMAIN_UUID);
-            }
-            response = modelController.execute(operation, OperationMessageHandler.DISCARD, control, builtOp);
+            response = modelController.execute(builtOp, OperationMessageHandler.DISCARD, control);
         } catch (Throwable t) {
             ROOT_LOGGER.modelRequestError(t);
             Common.sendError(exchange, opParam.isEncode(), t.getLocalizedMessage());
@@ -253,23 +248,6 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             }
         }
         return false;
-    }
-
-    /**
-     * Callback to prevent the response will be sent multiple times.
-     */
-    private abstract static class ResponseCallback {
-        private boolean complete;
-
-        synchronized void sendResponse(final ModelNode response) {
-            if (complete) {
-                return;
-            }
-            complete = true;
-            doSendResponse(response);
-        }
-
-        abstract void doSendResponse(ModelNode response);
     }
 
 }
