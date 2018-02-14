@@ -26,6 +26,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -103,6 +104,7 @@ public class ZipCompletionScanner {
      * @return true if a complete end of central directory record could be found
      *
      * @throws IOException
+     * @throws org.jboss.as.server.deployment.scanner.ZipCompletionScanner.NonScannableZipException
      */
     public static boolean isCompleteZip(File file) throws IOException, NonScannableZipException {
 
@@ -384,15 +386,15 @@ public class ZipCompletionScanner {
     }
 
     private static void read(ByteBuffer bb, FileChannel ch) throws IOException {
-        bb.clear();
+        ((Buffer) bb).clear();
         ch.read(bb);
-        bb.flip();
+        ((Buffer) bb).flip();
     }
 
     private static void read(ByteBuffer bb, FileChannel ch, long pos) throws IOException {
-        bb.clear();
+        ((Buffer) bb).clear();
         ch.read(bb, pos);
-        bb.flip();
+        ((Buffer) bb).flip();
     }
 
     private static long getUnsignedInt(ByteBuffer bb, int offset) {
