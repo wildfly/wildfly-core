@@ -65,7 +65,7 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
 
     static final Collection<AttributeDefinition> ATTRIBUTES = Collections.unmodifiableList(Arrays.asList( MATCH, BIND_ADDRESS, BIND_PORT));
 
-    private static final String RESOURCE_NAME = "outbound-bind-address";
+    static final String RESOURCE_NAME = "outbound-bind-address";
 
     static final OutboundBindAddressResourceDefinition INSTANCE = new OutboundBindAddressResourceDefinition();
 
