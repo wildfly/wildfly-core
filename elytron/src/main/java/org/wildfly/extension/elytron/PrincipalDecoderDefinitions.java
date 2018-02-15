@@ -188,14 +188,13 @@ class PrincipalDecoderDefinitions {
                 final boolean convert = CONVERT.resolveModelAttribute(context, model).asBoolean();
 
                 final List<String> requiredOids = REQUIRED_OIDS.unwrap(context, model);
-                List<String> list = new ArrayList<>();
+                final List<String> list = new ArrayList<>(requiredOids);
                 for (String name : REQUIRED_ATTRIBUTES.unwrap(context, model)) {
                     String s = OidsUtil.attributeNameToOid(OidsUtil.Category.RDN, name);
                     list.add(s);
                 }
-                requiredOids.addAll(list);
 
-                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, convert, requiredOids.toArray(new String[requiredOids.size()]));
+                return () -> new X500AttributePrincipalDecoder(oid, joiner, startSegment, maximumSegments, reverse, convert, list.toArray(new String[list.size()]));
             }
 
         };

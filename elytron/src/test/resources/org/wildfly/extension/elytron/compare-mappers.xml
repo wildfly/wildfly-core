@@ -45,7 +45,7 @@
         <x500-attribute-principal-decoder name="X500PrincipalDecoderOne" oid="2.5.4.3" joiner="," maximum-segments="6" />
         <x500-attribute-principal-decoder name="X500PrincipalDecoderTwo" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" />
         <x500-attribute-principal-decoder name="X500PrincipalDecoderThree" oid="2.5.4.3" joiner="." start-segment="2" maximum-segments="6" reverse="true" convert="true" required-oids="2.5.4.3 2.5.4.11"/>
-
+        <x500-attribute-principal-decoder name="X500PrincipalDecoderFour" attribute-name="cn" required-attributes="cn"/>
         <aggregate-principal-transformer name="AggregateOne">
             <principal-transformer name="CustomOne" />
             <principal-transformer name="RegexOne" />
