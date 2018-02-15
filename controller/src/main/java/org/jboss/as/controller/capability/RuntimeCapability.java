@@ -42,17 +42,6 @@ import org.wildfly.common.Assert;
  */
 public class RuntimeCapability<T> extends AbstractCapability  {
 
-    //todo remove, here only for binary compatibility of elytron subsystem, drop once it is in.
-    public static String buildDynamicCapabilityName(String baseName, String dynamicNameElement) {
-        return buildDynamicCapabilityName(baseName, new String[]{dynamicNameElement});
-    }
-
-    //only here for binary compatibility, remove once elytron subsystem lands
-    public RuntimeCapability<T> fromBaseCapability(String dynamicElement) {
-        return fromBaseCapability(new String[]{dynamicElement});
-    }
-    //end remove
-
     /**
      * Constructs a full capability name from a static base name and a dynamic element.
      *

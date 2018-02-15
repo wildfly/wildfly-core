@@ -44,32 +44,6 @@ public abstract class AbstractCapability implements Capability {
     private final Set<String> requirements;
     final Function<PathAddress,String[]> dynamicNameMapper;
 
-    /**
-     * Creates a new capability
-     * @param name the name of the capability. Cannot be {@code null}
-     * @param requirements names of other capabilities upon which this capability has a hard requirement. May be {@code null}
-     * @param optionalRequirements Ignored. May be {@code null}
-     * @param runtimeOnlyRequirements Ignored. May be {@code null}
-     * @param dynamicRequirements Ignored. May be {@code null}
-     * @param dynamicOptionalRequirements Ignored. May be {@code null}
-     * @param dynamicNameMapper a function to be used to convert from a PathAddress to the dynamic elements in a
-     *                          dynamically named capability. May be {@code null}
-     *
-     * @deprecated Expected to be removed or hidden in the next WildFly Core release
-     */
-    @SuppressWarnings("unused")
-    @Deprecated
-    protected AbstractCapability(final String name,
-                                 final boolean dynamic,
-                                 final Set<String> requirements,
-                                 final Set<String> optionalRequirements,
-                                 final Set<String> runtimeOnlyRequirements,
-                                 final Set<String> dynamicRequirements,
-                                 final Set<String> dynamicOptionalRequirements,
-                                 Function<PathAddress, String[]> dynamicNameMapper) {
-        this(name, dynamic, requirements, dynamicNameMapper);
-    }
-
     AbstractCapability(final String name,
                        final boolean dynamic,
                        final Set<String> requirements,
@@ -87,7 +61,7 @@ public abstract class AbstractCapability implements Capability {
 
     private static Set<String> establishRequirements(Set<String> input) {
         if (input != null && !input.isEmpty()) {
-            return Collections.unmodifiableSet(new HashSet<String>(input));
+            return Collections.unmodifiableSet(new HashSet<>(input));
         } else {
             return Collections.emptySet();
         }
@@ -99,10 +73,8 @@ public abstract class AbstractCapability implements Capability {
      * @param pathAddress the address. Cannot be {@code null}
      * @return dynamic part of the capability name
      *
-     * @deprecated Will be made non-public in a future release.
      */
-    @Deprecated
-    public static String[] addressValueToDynamicName(PathAddress pathAddress){
+    static String[] addressValueToDynamicName(PathAddress pathAddress){
         return new String[]{pathAddress.getLastElement().getValue()};
     }
 
@@ -114,26 +86,6 @@ public abstract class AbstractCapability implements Capability {
     @Override
     public Set<String> getRequirements() {
         return requirements;
-    }
-
-    @Override
-    public Set<String> getOptionalRequirements() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Set<String> getRuntimeOnlyRequirements() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Set<String> getDynamicRequirements() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Set<String> getDynamicOptionalRequirements() {
-        return Collections.emptySet();
     }
 
     @Override
