@@ -119,7 +119,7 @@ public interface ConfigurationChangesCollector {
 
     static final class ConfigurationChange implements Comparable<ConfigurationChange> {
 
-        private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant().toFormatter(Locale.ENGLISH);
+        private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant(3).toFormatter(Locale.ENGLISH);
         private final OperationContext.ResultAction resultAction;
         private final String userId;
         private final String domainUuid;
