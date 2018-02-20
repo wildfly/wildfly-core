@@ -42,10 +42,19 @@ public class SuspendStateReadHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        @SuppressWarnings("unchecked")
         ServiceController<SuspendController> sc = (ServiceController<SuspendController>) context.getServiceRegistry(false).getService(SuspendController.SERVICE_NAME);
+        SuspendController.State state;
         if(sc != null) {
-            context.getResult().set(sc.getValue().getState().name());
+            state = sc.getValue().getState();
+        } else {
+            // Either we haven't installed the SC yet or we're stopping and it's been removed
+            // If we haven't installed, when we do its initial state is SUSPENDED
+            // If it's been removed, it's last state was SUSPENDED.
+            // So, report that.
+            state = SuspendController.State.SUSPENDED;
         }
+        context.getResult().set(state.name());
     }
 
 
