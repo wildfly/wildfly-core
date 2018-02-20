@@ -41,7 +41,6 @@ import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.RemoteFileRepositoryService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
-import org.jboss.as.server.moduleservice.ModuleIndexService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
@@ -151,7 +150,6 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         DeploymentMountProvider.Factory.addService(serviceTarget);
         ServiceModuleLoader.addService(serviceTarget, configuration);
         ExternalModuleService.addService(serviceTarget);
-        ModuleIndexService.addService(serviceTarget);
         //Add server path manager service
         ServerPathManagerService.addService(serviceTarget, new ServerPathManagerService(configuration.getCapabilityRegistry()), serverEnvironment);
         final AbstractVaultReader vaultReader = loadVaultReaderService();
