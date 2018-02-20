@@ -135,8 +135,10 @@ public class EnableCommand extends AbstractDeployCommand implements LegacyBridge
             deployRequest.get(Util.ADDRESS).setEmptyList();
             ModelNode steps = deployRequest.get(Util.STEPS);
             for (String serverGroup : sgList) {
-                steps.add(Util.configureDeploymentOperation(Util.ADD, name,
-                        serverGroup));
+                if (!Util.isDeploymentPresent(name, ctx.getModelControllerClient(), serverGroup)) {
+                    steps.add(Util.configureDeploymentOperation(Util.ADD, name,
+                            serverGroup));
+                }
             }
             for (String serverGroup : sgList) {
                 steps.add(Util.configureDeploymentOperation(Util.DEPLOY, name,
