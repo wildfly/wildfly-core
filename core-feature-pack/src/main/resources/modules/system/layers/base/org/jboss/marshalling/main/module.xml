@@ -30,5 +30,6 @@
     <dependencies>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.marshalling.river" services="import"/>
+        <module name="sun.jdk" />
     </dependencies>
 </module>
