@@ -17,16 +17,18 @@ package org.jboss.as.test.integration.management.cli;
 
 import org.hamcrest.CoreMatchers;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +45,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class FilePermissionTestCase {
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     private static ByteArrayOutputStream cliOut;
 
     @BeforeClass
@@ -56,7 +61,6 @@ public class FilePermissionTestCase {
     }
 
     @Test
-    @Ignore("Uncomment when https://issues.jboss.org/browse/WFCORE-3553 is fixed")
     public void testWriteFileIntoDirWithoutWritePermission() throws Exception {
 
         // This is unix test only
@@ -67,16 +71,17 @@ public class FilePermissionTestCase {
 
             Path dir = Files.createTempDirectory("tmpDir", PosixFilePermissions.asFileAttribute(permsBefore));
             String dirFullStringPath = dir.toString();
+            String filePath = dirFullStringPath + "/test";
 
-            String cmd = "echo \"aaa\" >>" + dirFullStringPath + "/test";
+            String cmd = "echo \"aaa\" >>" + filePath;
+
+            expectedException.expect(CommandLineException.class);
+            expectedException.expectMessage(filePath + " (Access denied)");
 
             cliOut.reset();
             final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
             try {
                 ctx.handle(cmd);
-                String output = cliOut.toString(StandardCharsets.UTF_8.name());
-                assertThat("Wrong results of the command - " + cmd, output,
-                        CoreMatchers.containsString("You don't have permission to write into this location."));
             } finally {
                 ctx.terminateSession();
                 cliOut.reset();

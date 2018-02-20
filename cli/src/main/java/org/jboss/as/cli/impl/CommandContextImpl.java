@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.AccessDeniedException;
 import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -1638,6 +1639,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                             invContext.getConfiguration().getOutputRedirection().close();
                         } catch (IOException ex) {
                             // Message must contain the Exception and the localized message.
+                            if (ex instanceof AccessDeniedException) {
+                                String message = ex.getMessage();
+                                throw new CommandLineException((message != null ? message : line) + " (Access denied)");
+                            }
                             throw new CommandLineException(ex.toString());
                         }
                     }
