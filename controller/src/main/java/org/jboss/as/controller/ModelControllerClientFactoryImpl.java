@@ -41,6 +41,7 @@ import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
@@ -128,7 +129,22 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         @Override
         public OperationResponse executeOperation(Operation operation, OperationMessageHandler messageHandler) {
             Operation toExecute = sanitizeOperation(operation);
-            return modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+            OperationResponse response;
+            if (forUserCalls) {
+                final SecurityIdentity securityIdentity = securityIdentitySupplier.get();
+                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+
+                    @Override
+                    public OperationResponse run() {
+                        SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
+                        return modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                    }
+                });
+
+            }  else {
+                response = modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+            }
+            return response;
         }
 
         @Override
@@ -159,20 +175,20 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                 public void run() {
                     try {
                         if (opThread.compareAndSet(null, Thread.currentThread())) {
-                            // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
-                            OperationResponse response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
+                            OperationResponse response;
+                            if (forUserCalls) {
+                                // We need the AccessAuditContext as that will make any inflowed SecurityIdentity available.
+                                response = AccessAuditContext.doAs(securityIdentity, null, new PrivilegedAction<OperationResponse>() {
 
-                                @Override
-                                public OperationResponse run() {
-                                    Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
-                                            attachments.isAutoCloseStreams());
-                                    if (inVmCall) {
-                                        return SecurityActions.runInVm(() -> modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT));
-                                    } else {
-                                        return modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                                    @Override
+                                    public OperationResponse run() {
+                                        SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
+                                        return runOperation(operation, messageHandler, attachments, inVmCall);
                                     }
-                                }
-                            });
+                                });
+                            } else {
+                                response = runOperation(operation, messageHandler, attachments, inVmCall);
+                            }
                             responseFuture.handleResult(response);
                         }
                     } finally {
@@ -209,6 +225,17 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             }
 
             return sanitized;
+        }
+
+        private OperationResponse runOperation(final ModelNode operation, final OperationMessageHandler messageHandler,
+                                               final OperationAttachments attachments, boolean inVmCall) {
+            Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
+                    attachments.isAutoCloseStreams());
+            if (inVmCall) {
+                return SecurityActions.runInVm(() -> modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT));
+            } else {
+                return modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+            }
         }
     }
 
