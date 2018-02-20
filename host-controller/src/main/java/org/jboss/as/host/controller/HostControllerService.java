@@ -48,7 +48,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
-import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.FutureServiceContainer;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
@@ -182,7 +181,6 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
                 .addDependency(EXECUTOR_CAPABILITY.getCapabilityServiceName(), ExecutorService.class, scheduledExecutorService.executorInjector)
                 .install();
 
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName());
 
         // Install required path services. (Only install those identified as required)
         HostPathManagerService hostPathManagerService = new HostPathManagerService(capabilityRegistry);
@@ -195,8 +193,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE, new ValueService<ProductConfig>(productConfigValue))
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
+
         DomainModelControllerService.addService(serviceTarget, environment, runningModeControl, processState,
-                bootstrapListener, hostPathManagerService, capabilityRegistry);
+                bootstrapListener, hostPathManagerService, capabilityRegistry, threadGroup);
+
     }
 
     @Override

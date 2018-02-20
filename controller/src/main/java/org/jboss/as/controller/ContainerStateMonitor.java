@@ -48,15 +48,16 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 final class ContainerStateMonitor {
 
     private final ServiceRegistry serviceRegistry;
-    private final StabilityMonitor monitor = new StabilityMonitor();
-    final Set<ServiceController<?>> failed = new HashSet<ServiceController<?>>();
-    final Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
+    private final StabilityMonitor monitor;
+    private final Set<ServiceController<?>> failed = new HashSet<ServiceController<?>>();
+    private final Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
 
     private Set<ServiceName> previousMissingDepSet = new HashSet<ServiceName>();
     private Set<ServiceController<?>> previousFailedSet = new HashSet<>();
 
-    ContainerStateMonitor(final ServiceRegistry registry) {
+    ContainerStateMonitor(final ServiceRegistry registry, final StabilityMonitor stabilityMonitor) {
         serviceRegistry = registry;
+        monitor = stabilityMonitor;
     }
 
     /**
