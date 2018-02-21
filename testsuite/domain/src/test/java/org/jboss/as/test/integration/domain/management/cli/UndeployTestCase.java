@@ -26,6 +26,7 @@ import java.util.Iterator;
 
 import org.jboss.as.cli.CommandContext;
 
+import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentInfoResult;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
@@ -34,14 +35,16 @@ import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createWarArchive;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ENABLED;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Before;
@@ -114,10 +117,22 @@ public class UndeployTestCase extends AbstractCliTestBase {
         checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
 
         // From serverGroup1 only, still referenced from sg2. Must keep-content
-        ctx.handle("undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        try {
+            ctx.handle("undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        } catch (CommandLineException ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!",
+                    ex.getMessage(),
+                    allOf(containsString("Cannot undeploy"),
+                            containsString(cliTestApp1War.getName()),
+                            containsString(" as it is still deployed in "),
+                            containsString(sgTwo),
+                            containsString("Please specify all relevant server groups.")));
+            // Verification wrong command execution fail - success
+        }
 
         result = legacyDeploymentInfo(cli, sgOne);
-        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
         result = legacyDeploymentInfo(cli, sgTwo);
         checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
 
@@ -146,10 +161,22 @@ public class UndeployTestCase extends AbstractCliTestBase {
         checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
 
         // From serverGroup1 only, still referenced from sg2. Must keep-content
-        ctx.handle("deployment undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        try {
+            ctx.handle("deployment undeploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        } catch (CommandLineException ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!",
+                    ex.getMessage(),
+                    allOf(containsString("Cannot undeploy"),
+                            containsString(cliTestApp1War.getName()),
+                            containsString(" as it is still deployed in "),
+                            containsString(sgTwo),
+                            containsString("Please specify all relevant server groups.")));
+            // Verification wrong command execution fail - success
+        }
 
         result = deploymentInfo(cli, sgOne);
-        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
         result = deploymentInfo(cli, sgTwo);
         checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
 
