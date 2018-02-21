@@ -71,9 +71,10 @@ public class Server {
     private volatile Process process;
     private final ManagementClient client = new ManagementClient(new DelegatingModelControllerClient(ServerClientProvider.INSTANCE), managementAddress, managementPort, managementProtocol);
     private final URI authConfigUri;
+    private final boolean readOnly;
 
     public Server() {
-        this(null);
+        this(null, false);
     }
 
     /**
@@ -86,9 +87,23 @@ public class Server {
      * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
      */
     public Server(final URI authConfigUri) {
-        this.authConfigUri = authConfigUri;
+        this(authConfigUri, false);
     }
 
+    /**
+     * Creates a new server.
+     * <p>
+     * If the {@code authConfigUri} is defined the path will be used to authenticate the
+     * {@link ModelControllerClient}.
+     * </p>
+     *
+     * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
+     * @param readOnly {@code true} to start the server in read-only mode
+     */
+    public Server(final URI authConfigUri, boolean readOnly) {
+        this.authConfigUri = authConfigUri;
+        this.readOnly = readOnly;
+    }
 
     private static boolean processHasDied(final Process process) {
         try {
@@ -143,9 +158,14 @@ public class Server {
                 commandBuilder.setStartSuspended();
             }
 
+            if(readOnly) {
+                commandBuilder.setServerReadOnlyConfiguration(serverConfig);
+            } else {
+                commandBuilder.setServerConfiguration(serverConfig);
+            }
+
             //we are testing, of course we want assertions and set-up some other defaults
             commandBuilder.addJavaOption("-ea")
-                    .setServerConfiguration(serverConfig)
                     .setBindAddressHint("management", managementAddress);
 
             if (jbossArgs != null) {

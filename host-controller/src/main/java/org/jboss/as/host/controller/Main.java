@@ -340,6 +340,7 @@ public final class Main {
                     domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.DISCARD;
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_DOMAIN_CONFIG)) {
                     initialDomainConfig = parseValue(arg, CommandLineConstants.READ_ONLY_DOMAIN_CONFIG);
+                    domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.READ_ONLY;
                     if (initialDomainConfig == null) {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
@@ -362,6 +363,7 @@ public final class Main {
                     hostConfig = val;
                 } else if (arg.startsWith(CommandLineConstants.READ_ONLY_HOST_CONFIG)) {
                     initialHostConfig = parseValue(arg, CommandLineConstants.READ_ONLY_HOST_CONFIG);
+                    hostConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.READ_ONLY;
                     if (initialHostConfig == null) {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }

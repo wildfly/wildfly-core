@@ -46,7 +46,7 @@ public class ServerController {
      * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
      */
     public void start(final String serverConfig, final URI authConfigUri) {
-        start(serverConfig, authConfigUri, Server.StartMode.NORMAL, System.out);
+        start(serverConfig, authConfigUri, Server.StartMode.NORMAL, System.out, false);
     }
 
     public void start(final String serverConfig, Server.StartMode startMode) {
@@ -54,7 +54,7 @@ public class ServerController {
     }
 
     public void start(final String serverConfig, Server.StartMode startMode, PrintStream out) {
-        start(serverConfig, null, startMode, out);
+        start(serverConfig, null, startMode, out, false);
     }
 
     /**
@@ -68,10 +68,11 @@ public class ServerController {
      * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
      * @param startMode     the mode to start the server in
      * @param out           the print stream used to consume the {@code stdout} and {@code stderr} streams
+     * @param readOnly
      */
-    public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out) {
+    public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out, boolean readOnly) {
         if (started.compareAndSet(false, true)) {
-            server = new Server(authConfigUri);
+            server = new Server(authConfigUri, readOnly);
             if (serverConfig != null) {
                 server.setServerConfig(serverConfig);
             }
@@ -97,6 +98,10 @@ public class ServerController {
 
     public void startInAdminMode(){
         start(null, Server.StartMode.ADMIN_ONLY);
+    }
+
+    public void startReadOnly(){
+        start(null, null, Server.StartMode.NORMAL, System.out, true);
     }
 
     public void startSuspended() {
