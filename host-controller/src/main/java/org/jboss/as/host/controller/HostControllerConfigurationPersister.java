@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -186,23 +187,26 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
 
     @Override
     public List<ModelNode> load() throws ConfigurationPersistenceException {
-        final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
-        final File bootFile = configurationFile.getBootFile();
-        final ConfigurationFile.InteractionPolicy policy = configurationFile.getInteractionPolicy();
-        final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
+        // TODO investigate replacing all this with something more like BackupXmlConfigurationPersister.isSuppressLoad
+        if (environment.getProcessType() == ProcessType.EMBEDDED_HOST_CONTROLLER) {
+            final ConfigurationFile configurationFile = environment.getHostConfigurationFile();
+            final File bootFile = configurationFile.getBootFile();
+            final ConfigurationFile.InteractionPolicy policy = configurationFile.getInteractionPolicy();
+            final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
 
-        if (bootFile.exists() && bootFile.length() == 0) { // empty config, by definition
-            return new ArrayList<>();
-        }
+            if (bootFile.exists() && bootFile.length() == 0) { // empty config, by definition
+                return new ArrayList<>();
+            }
 
-        if (policy == ConfigurationFile.InteractionPolicy.NEW && (bootFile.exists() && bootFile.length() != 0)) {
-            throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteHostXmlWithEmpty(bootFile.getName());
-        }
+            if (policy == ConfigurationFile.InteractionPolicy.NEW && (bootFile.exists() && bootFile.length() != 0)) {
+                throw HostControllerLogger.ROOT_LOGGER.cannotOverwriteHostXmlWithEmpty(bootFile.getName());
+            }
 
-        // if we started with new / discard but now we're reloading, ignore it. Otherwise on a reload, we have no way to drop the --empty-host-config
-        // if we're loading a 0 byte file, treat this the same as booting with an emoty config
-        if (configurationFile.getBootFile().length() == 0 || (!runningModeControl.isReloaded() && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD))) {
-            return new ArrayList<>();
+            // if we started with new / discard but now we're reloading, ignore it. Otherwise on a reload, we have no way to drop the --empty-host-config
+            // if we're loading a 0 byte file, treat this the same as booting with an emoty config
+            if (bootFile.length() == 0 || (!runningModeControl.isReloaded() && (policy == ConfigurationFile.InteractionPolicy.NEW || policy == ConfigurationFile.InteractionPolicy.DISCARD))) {
+                return new ArrayList<>();
+            }
         }
         return hostPersister.load();
     }
