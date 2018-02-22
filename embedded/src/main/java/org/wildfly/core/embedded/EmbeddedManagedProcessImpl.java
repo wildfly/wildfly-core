@@ -37,8 +37,9 @@ class EmbeddedManagedProcessImpl implements EmbeddedManagedProcess, StandaloneSe
     private final Method methodStart;
     private final Method methodStop;
     private final Method methodGetModelControllerClient;
+    private final Context context;
 
-    EmbeddedManagedProcessImpl(Class<?> processClass, Object managedProcess) {
+    EmbeddedManagedProcessImpl(Class<?> processClass, Object managedProcess, Context context) {
         this.managedProcess = managedProcess;
         // Get a handle on the {@link EmbeddedManagedProcess} methods
         try {
@@ -48,16 +49,22 @@ class EmbeddedManagedProcessImpl implements EmbeddedManagedProcess, StandaloneSe
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), processClass.getName());
         }
+        this.context = context;
     }
 
     @Override
     public void start() throws EmbeddedProcessStartException {
+        context.activate();
         invokeOnServer(methodStart);
     }
 
     @Override
     public void stop()  {
-        safeInvokeOnServer(methodStop);
+        try {
+            safeInvokeOnServer(methodStop);
+        } finally {
+            context.restore();
+        }
     }
 
     @Override

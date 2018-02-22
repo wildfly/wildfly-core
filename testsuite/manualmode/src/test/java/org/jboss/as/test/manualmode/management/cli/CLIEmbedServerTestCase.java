@@ -820,9 +820,11 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         try {
             // save the current value
             currBaseDir = WildFlySecurityManager.getPropertyPrivileged(JBOSS_SERVER_BASE_DIR, null);
-            //if (currBaseDir == null) {
-            //    currBaseDir = ROOT + File.separator + "standalone";
-            //}
+            // The current directory isn't set until the embedded server is started, just use the root directory if the
+            // property was not previously set.
+            if (currBaseDir == null) {
+                currBaseDir = ROOT + File.separator + "standalone";
+            }
             CLIEmbedUtil.copyServerBaseDir(ROOT, "standalone", newStandalone, true);
             String newBaseDir = ROOT + File.separator + newStandalone;
             WildFlySecurityManager.setPropertyPrivileged(propName, newBaseDir + File.separator + value);
