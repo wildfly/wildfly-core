@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright 2016 Red Hat, Inc.
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright 2018 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~     http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +19,18 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.logmanager.commons.logging" version="${org.jboss.logmanager:commons-logging-jboss-logmanager}">
+<module xmlns="urn:jboss:module:1.7" name="org.jboss.logging.commons.logging" version="${org.jboss.logging:commons-logging-jboss-logging}">
 
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <artifact name="${org.jboss.logmanager:commons-logging-jboss-logmanager}"/>
+        <artifact name="${org.jboss.logging:commons-logging-jboss-logging}"/>
     </resources>
 
     <dependencies>
-        <module name="org.jboss.logmanager"/>
+        <module name="org.jboss.logging"/>
     </dependencies>
 </module>
 
