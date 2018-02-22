@@ -19,7 +19,7 @@
 
 package org.jboss.as.test.integration.logging.profiles;
 
-import org.jboss.as.test.integration.logging.LoggingServiceActivator;
+import org.jboss.as.test.integration.logging.Log4jServiceActivator;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
@@ -29,9 +29,9 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerSetup(AbstractLoggingProfilesTestCase.LoggingProfilesTestCaseSetup.class)
-public class LoggingProfilesTestCase extends AbstractLoggingProfilesTestCase {
+public class Log4jLoggingProfilesTestCase extends AbstractLoggingProfilesTestCase {
 
-    public LoggingProfilesTestCase() {
-        super(LoggingServiceActivator.class, 2);
+    public Log4jLoggingProfilesTestCase() {
+        super(Log4jServiceActivator.class, 2);
     }
 }
