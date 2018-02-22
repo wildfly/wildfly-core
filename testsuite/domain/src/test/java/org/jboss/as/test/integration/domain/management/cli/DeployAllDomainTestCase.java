@@ -22,35 +22,42 @@
 package org.jboss.as.test.integration.domain.management.cli;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Iterator;
+
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.Util;
-import static org.jboss.as.cli.Util.RESULT;
+
+import org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentInfoResult;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
+import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.jboss.dmr.ModelNode;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.impl.base.exporter.zip.ZipExporterImpl;
-import org.jboss.shrinkwrap.impl.base.path.BasicPath;
 import org.junit.After;
 import org.junit.AfterClass;
+
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createCliArchive;
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createEnterpriseArchive;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ENABLED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.NOT_ADDED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentList;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
  * @author jdenise@redhat.com
  */
-public class DeployAllDomainTestCase {
+public class DeployAllDomainTestCase extends AbstractCliTestBase {
 
     protected static File cliTestApp1War;
     protected static File cliTestApp2War;
@@ -60,42 +67,25 @@ public class DeployAllDomainTestCase {
     protected static String sgOne;
     protected static String sgTwo;
 
-    protected CommandContext ctx;
+    protected static CommandContext ctx;
     protected static DomainTestSupport testSupport;
 
     @BeforeClass
     public static void before() throws Exception {
-
         testSupport = CLITestSuite.createSupport(UndeployWildcardDomainTestCase.class.getSimpleName());
-
-        String tempDir = System.getProperty("java.io.tmpdir");
+        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
 
         // deployment1
-        WebArchive war = ShrinkWrap.create(WebArchive.class, "cli-test-app1-deploy-all.war");
-        war.addAsWebResource(new StringAsset("Version0"), "page.html");
-        cliTestApp1War = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestApp1War, true);
+        cliTestApp1War = createCliArchive("cli-test-app1-deploy-all.war", "Version0");
 
         // deployment2
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-app2-deploy-all.war");
-        war.addAsWebResource(new StringAsset("Version1"), "page.html");
-        cliTestApp2War = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestApp2War, true);
+        cliTestApp2War = createCliArchive("cli-test-app2-deploy-all.war", "Version1");
 
         // deployment3
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-another-deploy-all.war");
-        war.addAsWebResource(new StringAsset("Version2"), "page.html");
-        cliTestAnotherWar = new File(tempDir + File.separator + war.getName());
-        new ZipExporterImpl(war).exportTo(cliTestAnotherWar, true);
+        cliTestAnotherWar = createCliArchive("cli-test-another-deploy-all.war", "Version2");
 
         // deployment4
-        war = ShrinkWrap.create(WebArchive.class, "cli-test-app3-deploy-all.war");
-        war.addAsWebResource(new StringAsset("Version3"), "page.html");
-        final EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class,
-                "cli-test-app-deploy-all.ear");
-        ear.add(war, new BasicPath("/"), ZipExporter.class);
-        cliTestAppEar = new File(tempDir + File.separator + ear.getName());
-        new ZipExporterImpl(ear).exportTo(cliTestAppEar, true);
+        cliTestAppEar = createEnterpriseArchive();
 
         final Iterator<String> sgI = CLITestSuite.serverGroups.keySet().iterator();
         if (!sgI.hasNext()) {
@@ -110,8 +100,10 @@ public class DeployAllDomainTestCase {
 
     @AfterClass
     public static void after() throws Exception {
+        ctx.handleSafe("deployment undeploy * --all-relevant-server-groups");
 
         CLITestSuite.stopSupport();
+        AbstractCliTestBase.closeCLI();
 
         cliTestApp1War.delete();
         cliTestApp2War.delete();
@@ -123,69 +115,295 @@ public class DeployAllDomainTestCase {
     public void beforeTest() throws Exception {
         ctx = CLITestUtil.getCommandContext(testSupport);
         ctx.connectController();
+    }
 
+    @After
+    public void afterTest() {
+        ctx.handleSafe("deployment undeploy * --all-relevant-server-groups");
+        ctx.terminateSession();
+    }
+
+    /**
+     * Test verify a life cycle of deployment operation in singleton mode with Aesh commands.
+     * <ul>
+     * <li>Step 1) Deploy applications deployments to defined server groups</li>
+     * <li>Step 2a) Verify if deployment are successful by list command</li>
+     * <li>Step 2b) Verify if applications deployments are enabled for defined server groups by info command</li>
+     * <li>Step 3a) Disabling two selected applications deployments</li>
+     * <li>Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail</li>
+     * <li>Step 4) Verify if two selected applications deployments are disabled, but other have still previous state</li>
+     * <li>Step 5) Disable all deployed applications deployments in all server groups</li>
+     * <li>Step 6) Check if all applications deployments is disabled in all server groups</li>
+     * <li>Step 7) Enable all applications deployments for all server groups</li>
+     * <li>Step 8) Verify if all applications deployments are enabled for all server groups</li>
+     * <li>Step 9) Undeploy one application deployment</li>
+     * <li>Step 10) Check if selected application deployment is removed, but others still exist with right state</li>
+     * <li>Step 11) Undeploy all applications deployments</li>
+     * <li>Step 12) Check if all applications deployments is gone</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeploymentLiveCycleWithServerGroups() throws Exception {
+        // Step 1) Deploy applications deployments to defined server groups
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        ctx.handle("deployment deploy-file --server-groups=" + sgTwo + ' ' + cliTestApp2War.getAbsolutePath());
+        ctx.handle("deployment deploy-file --server-groups=" + sgTwo + ',' + sgOne + ' ' + cliTestAppEar.getAbsolutePath());
+
+        // Step 2a) Verify if deployment are successful by list command
+        DeploymentInfoResult result = deploymentList(cli);
+        checkExist(result, cliTestApp1War.getName());
+        checkExist(result, cliTestAnotherWar.getName());
+        checkExist(result, cliTestApp2War.getName());
+        checkExist(result, cliTestAppEar.getName());
+
+        // Step 2b) Verify if applications deployments are enabled for defined server groups by info command
+        result = deploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = deploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 3a) Disabling two selected applications deployments
+        ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        ctx.handle("deployment disable --server-groups=" + sgTwo + ' ' + cliTestApp2War.getName());
+
+        // Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail
+        try {
+            ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp2War.getName());
+            fail("Disabling application deployment with wrong server group doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!",
+                    ex.getMessage(),
+                    allOf(containsString("WFLYCTL0216: Management resource"),
+                            containsString(sgOne),
+                            containsString(cliTestApp2War.getName()),
+                            containsString("not found")));
+            // Verification wrong command execution fail - success
+        }
+
+        // Step 4) Verify if two selected applications deployments are disabled, but other have still previous state
+        result = deploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = deploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 5) Disable all deployed applications deployments in all server groups
+        ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
+        ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getName());
+        ctx.handle("deployment disable --server-groups=" + sgTwo + ' ' + cliTestApp2War.getName());
+        ctx.handle("deployment disable --server-groups=" + sgTwo + ',' + sgOne + ' ' + cliTestAppEar.getName());
+
+        // Step 6) Check if all applications deployments is disabled in all server groups
+        result = deploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ADDED, ctx);
+
+        result = deploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ADDED, ctx);
+
+        // Step 7) Enable all applications deployments for all server groups
+        ctx.handle("deployment enable-all --all-server-groups");
+
+        // Step 8) Verify if all applications deployments are enabled for all server groups
+        result = deploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = deploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 9) Undeploy one application deployment
+        ctx.handle("deployment undeploy --server-groups=" + sgTwo + ' ' + cliTestApp2War.getName());
+        // Step 10) Check if selected application deployment is removed, but others still exist with right state
+        result = deploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = deploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 11) Undeploy all applications deployments
+        ctx.handle("deployment undeploy * --all-relevant-server-groups");
+        // Step 12) Check if all applications deployments is gone
+        result = deploymentList(cli);
+        checkMissing(result, cliTestApp1War.getName(), ctx);
+        checkMissing(result, cliTestAnotherWar.getName(), ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkMissing(result, cliTestAppEar.getName(), ctx);
+        checkEmpty(result);
+    }
+
+    /**
+     * Test verify a life cycle of deployment operation in domain mode with Legacy commands.
+     * <ul>
+     * <li>Step 1) Deploy applications deployments to defined server groups</li>
+     * <li>Step 2a) Verify if deployment are successful by list command</li>
+     * <li>Step 2b) Verify if applications deployments are enabled for defined server groups by info command</li>
+     * <li>Step 3a) Disabling two selected applications deployments</li>
+     * <li>Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail</li>
+     * <li>Step 4) Verify if two selected applications deployments are disabled, but other have still previous state</li>
+     * <li>Step 5) Disable all deployed applications deployments in all server groups</li>
+     * <li>Step 6) Check if all applications deployments is disabled in all server groups</li>
+     * <li>Step 7) Enable all applications deployments for all server groups</li>
+     * <li>Step 8) Verify if all applications deployments are enabled for all server groups</li>
+     * <li>Step 9) Undeploy one application deployment</li>
+     * <li>Step 10) Check if selected application deployment is removed, but others still exist with right state</li>
+     * <li>Step 11) Undeploy all applications deployments</li>
+     * <li>Step 12) Check if all applications deployments is gone</li>
+     * </ul>
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeploymentLegacyLiveCycleWithServerGroups() throws Exception {
+        // Step 1) Deploy applications deployments to defined server groups
         ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
         ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
         ctx.handle("deploy --server-groups=" + sgTwo + ' ' + cliTestApp2War.getAbsolutePath());
         ctx.handle("deploy --server-groups=" + sgTwo + ',' + sgOne + ' ' + cliTestAppEar.getAbsolutePath());
 
-        // Disable them all.
-        ctx.handle("undeploy * --keep-content --all-relevant-server-groups");
-    }
+        // Step 2a) Verify if deployment are successful by list command
+        DeploymentInfoResult result = deploymentList(cli);
+        checkExist(result, cliTestApp1War.getName());
+        checkExist(result, cliTestAnotherWar.getName());
+        checkExist(result, cliTestApp2War.getName());
+        checkExist(result, cliTestAppEar.getName());
 
-    @After
-    public void afterTest() throws Exception {
-        ctx.terminateSession();
-    }
+        // Step 2b) Verify if applications deployments are enabled for defined server groups by info command
+        result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
 
-    @Test
-    public void testDeployAll() throws Exception {
-        checkDeployment(sgOne, cliTestApp1War.getName(), false);
-        checkDeployment(sgOne, cliTestAnotherWar.getName(), false);
-        checkDeployment(sgOne, cliTestAppEar.getName(), false);
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
 
-        checkDeployment(sgTwo, cliTestApp2War.getName(), false);
-        checkDeployment(sgTwo, cliTestAppEar.getName(), false);
-        // Deploy them all.
-        ctx.handle("deploy --name=* --server-groups=" + sgTwo + ',' + sgOne);
-        checkDeployment(sgOne, cliTestApp1War.getName(), true);
-        checkDeployment(sgOne, cliTestAnotherWar.getName(), true);
-        checkDeployment(sgOne, cliTestAppEar.getName(), true);
+        // Step 3a) Disabling two selected applications deployments
+        ctx.handle("undeploy " + cliTestApp1War.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgTwo);
 
-        checkDeployment(sgTwo, cliTestApp2War.getName(), true);
-        checkDeployment(sgTwo, cliTestAppEar.getName(), true);
-
-        ctx.handle("deployment disable-all --all-relevant-server-groups");
-
-        checkDeployment(sgOne, cliTestApp1War.getName(), false);
-        checkDeployment(sgOne, cliTestAnotherWar.getName(), false);
-        checkDeployment(sgOne, cliTestAppEar.getName(), false);
-
-        checkDeployment(sgTwo, cliTestApp2War.getName(), false);
-        checkDeployment(sgTwo, cliTestAppEar.getName(), false);
-        // Deploy them all.
-        ctx.handle("deployment enable-all --server-groups=" + sgTwo + ',' + sgOne);
-        checkDeployment(sgOne, cliTestApp1War.getName(), true);
-        checkDeployment(sgOne, cliTestAnotherWar.getName(), true);
-        checkDeployment(sgOne, cliTestAppEar.getName(), true);
-
-        checkDeployment(sgTwo, cliTestApp2War.getName(), true);
-        checkDeployment(sgTwo, cliTestAppEar.getName(), true);
-    }
-
-    private void checkDeployment(String serverGroup, String name, boolean enabled) throws CommandFormatException, IOException {
-        ModelNode mn = ctx.buildRequest("/server-group=" + serverGroup
-                + "/deployment=" + name + ":read-attribute(name=enabled)");
-        ModelNode response = ctx.getModelControllerClient().execute(mn);
-        if (response.hasDefined(Util.OUTCOME) && response.get(Util.OUTCOME).asString().equals(Util.SUCCESS)) {
-            if (!response.hasDefined(RESULT)) {
-                throw new CommandFormatException("No result for " + name);
-            }
-            if (!response.get(RESULT).asBoolean() == enabled) {
-                throw new CommandFormatException(name + " not in right state");
-            }
-        } else {
-            throw new CommandFormatException("Invalid response for " + name);
+        // Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail
+        try {
+            ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgOne);
+            fail("Disabling application deployment with wrong server group doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!",
+                    ex.getMessage(),
+                    allOf(containsString("WFLYCTL0216: Management resource"),
+                            containsString(sgOne),
+                            containsString(cliTestApp2War.getName()),
+                            containsString("not found")));
+            // Verification wrong command execution fail - success
         }
+
+        // Step 4) Verify if two selected applications deployments are disabled, but other have still previous state
+        result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 5) Disable all deployed applications deployments in all server groups
+        ctx.handle("undeploy " + cliTestApp1War.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestAnotherWar.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgTwo);
+        ctx.handle("undeploy " + cliTestAppEar.getName() + " --keep-content --server-groups=" + sgTwo + ',' + sgOne);
+
+        // Step 6) Check if all applications deployments is disabled in all server groups
+        result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ADDED, ctx);
+
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ADDED, ctx);
+
+        // Step 7) Enable all applications deployments for all server groups
+        ctx.handle("deploy --name=* --server-groups=" + sgTwo + ',' + sgOne);
+
+        // Step 8) Verify if all applications deployments are enabled for all server groups
+        result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 9) Undeploy one application deployment
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --server-groups=" + sgTwo);
+        // Step 10) Check if selected application deployment is removed, but others still exist with right state
+        result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ENABLED, ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkMissing(result, cliTestApp2War.getName(), ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        // Step 11) Undeploy all applications deployments
+        ctx.handle("undeploy * --all-relevant-server-groups");
+        // Step 12) Check if all applications deployments is gone
+        result = deploymentList(cli);
+        checkMissing(result, cliTestApp1War.getName());
+        checkMissing(result, cliTestAnotherWar.getName());
+        checkMissing(result, cliTestApp2War.getName());
+        checkMissing(result, cliTestAppEar.getName());
+        checkEmpty(result);
     }
 }
