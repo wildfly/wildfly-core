@@ -680,10 +680,12 @@ public class ReadlineConsole {
     }
 
     public String readLine(Prompt prompt, Completion completer) throws InterruptedException, IOException {
-        // If there are some output collected, flush it.
-        printCollectedOutput();
-        // New collector
-        outputCollector = createCollector();
+        if (started) {
+            // If there are some output collected, flush it.
+            printCollectedOutput();
+            // New collector
+            outputCollector = createCollector();
+        }
 
         // Keep a reference on the caller thread in case Ctrl-C is pressed
         // and thread needs to be interrupted.
