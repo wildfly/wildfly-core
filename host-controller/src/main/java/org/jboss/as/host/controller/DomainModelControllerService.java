@@ -87,7 +87,6 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationContext;
@@ -175,6 +174,7 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.repository.LocalFileRepository;
 import org.jboss.as.server.BootstrapListener;
+import org.jboss.as.server.ExternalManagementRequestExecutor;
 import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
 import org.jboss.as.server.deployment.ContentCleanerService;
@@ -257,13 +257,15 @@ public class DomainModelControllerService extends AbstractControllerService impl
     private volatile ManagementResourceRegistration hostModelRegistration;
     private volatile MasterDomainControllerClient masterDomainControllerClient;
 
-    static ServiceController<ModelController> addService(final ServiceTarget serviceTarget,
+    static void addService(final ServiceTarget serviceTarget,
                                                             final HostControllerEnvironment environment,
                                                             final HostRunningModeControl runningModeControl,
                                                             final ControlledProcessState processState,
                                                             final BootstrapListener bootstrapListener,
                                                             final PathManagerService pathManager,
-                                                            final CapabilityRegistry capabilityRegistry) {
+                                                            final CapabilityRegistry capabilityRegistry,
+                                                            final ThreadGroup threadGroup) {
+
         final ConcurrentMap<String, ProxyController> hostProxies = new ConcurrentHashMap<String, ProxyController>();
         final Map<String, ProxyController> serverProxies = new ConcurrentHashMap<String, ProxyController>();
         final LocalHostControllerInfoImpl hostControllerInfo = new LocalHostControllerInfoImpl(processState, environment);
@@ -290,7 +292,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         HostControllerEnvironmentService.addService(environment, serviceTarget);
 
-        return serviceTarget.addService(SERVICE_NAME, service)
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup,
+                EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
+
+        serviceTarget.addService(SERVICE_NAME, service)
                 .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
                 .addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()) // ensure this is up

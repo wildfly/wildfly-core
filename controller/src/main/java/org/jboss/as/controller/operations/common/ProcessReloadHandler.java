@@ -22,11 +22,6 @@
 
 package org.jboss.as.controller.operations.common;
 
-import static org.jboss.as.controller.AbstractControllerService.EXECUTOR_CAPABILITY;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
@@ -35,7 +30,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.remote.EarlyResponseSendListener;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.AbstractServiceListener;
@@ -78,37 +73,49 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
             public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                 final ReloadContext<T> reloadContext = initializeReloadContext(context, operation);
                 final ServiceController<?> service = context.getServiceRegistry(true).getRequiredService(rootService);
-                final ExecutorService executor = (ExecutorService) context.getServiceRegistry(false).getRequiredService(EXECUTOR_CAPABILITY.getCapabilityServiceName()).getValue();
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
-                        if(resultAction == OperationContext.ResultAction.KEEP) {
-                            service.addListener(new AbstractServiceListener<Object>() {
-                                @Override
-                                public void listenerAdded(final ServiceController<?> controller) {
-                                    Future<?> stopping = executor.submit(() -> {
+                        final EarlyResponseSendListener sendListener = context.getAttachment(EarlyResponseSendListener.ATTACHMENT_KEY);
+                        try {
+                            if (resultAction == OperationContext.ResultAction.KEEP) {
+                                service.addListener(new AbstractServiceListener<Object>() {
+                                    @Override
+                                    public void listenerAdded(final ServiceController<?> controller) {
                                         reloadContext.reloadInitiated(runningModeControl);
                                         processState.setStopping();
-                                        controller.setMode(ServiceController.Mode.NEVER);
-                                    });
-                                    try {
-                                        stopping.get();
-                                    } catch (InterruptedException ex) {
-                                        Thread.currentThread().interrupt();
-                                    } catch (ExecutionException ex) {
-                                        ControllerLogger.ROOT_LOGGER.errorStoppingServer(ex);
+                                        try {
+                                            // If we were interrupted during setStopping (i.e. while calling process state listeners)
+                                            // we want to clear that so we don't disrupt the reload of MSC services.
+                                            // Once we set STOPPING state we proceed. And we don't want this thread
+                                            // to have interrupted status as that will just mess up checking for
+                                            // container stability
+                                            Thread.interrupted();
+                                            // Now that we're in STOPPING state we can send the response to the caller
+                                            if (sendListener != null) {
+                                                sendListener.sendEarlyResponse(resultAction);
+                                            }
+                                        } finally {
+                                            // If we set the process state to STOPPING, we must stop
+                                            controller.setMode(ServiceController.Mode.NEVER);
+                                        }
                                     }
-                                }
 
-                                @Override
-                                public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
-                                    if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
-                                        controller.removeListener(this);
-                                        reloadContext.doReload(runningModeControl);
-                                        controller.setMode(ServiceController.Mode.ACTIVE);
+                                    @Override
+                                    public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
+                                        if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
+                                            controller.removeListener(this);
+                                            reloadContext.doReload(runningModeControl);
+                                            controller.setMode(ServiceController.Mode.ACTIVE);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
+                        } finally {
+                            if (sendListener != null) {
+                                // even if we called this in the try block, it's ok to call it again.
+                                sendListener.sendEarlyResponse(resultAction);
+                            }
                         }
                     }
                 });

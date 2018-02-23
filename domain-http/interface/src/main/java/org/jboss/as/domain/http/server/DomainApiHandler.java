@@ -36,8 +36,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.DomainUtil.getStreamIndex;
@@ -199,16 +197,9 @@ class DomainApiHandler implements HttpHandler {
         };
 
         final boolean sendPreparedResponse = sendPreparedResponse(dmr);
-        final ModelController.OperationTransactionControl control = sendPreparedResponse ? new ModelController.OperationTransactionControl() {
-            @Override
-            public void operationPrepared(final ModelController.OperationTransaction transaction, final ModelNode result) {
-                transaction.commit();
-                // Fix prepared result
-                result.get(OUTCOME).set(SUCCESS);
-                result.get(RESULT);
-                callback.sendResponse(OperationResponse.Factory.createSimple(result));
-            }
-        } : ModelController.OperationTransactionControl.COMMIT;
+        final ModelController.OperationTransactionControl control = sendPreparedResponse
+                ? new EarlyResponseTransactionControl(callback, dmr)
+                : ModelController.OperationTransactionControl.COMMIT;
 
         try {
             ModelNode headers = dmr.get(OPERATION_HEADERS);
@@ -361,23 +352,6 @@ class DomainApiHandler implements HttpHandler {
             }
         }
         return false;
-    }
-
-    /**
-     * Callback to prevent the response will be sent multiple times.
-     */
-    private abstract static class ResponseCallback {
-        private volatile boolean complete;
-
-        void sendResponse(final OperationResponse response) {
-            if (complete) {
-                return;
-            }
-            complete = true;
-            doSendResponse(response);
-        }
-
-        abstract void doSendResponse(OperationResponse response);
     }
 
 }
