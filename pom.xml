@@ -33,10 +33,10 @@
     <artifactId>wildfly-core-parent</artifactId>
     <version>5.0.0.Alpha2-SNAPSHOT</version>
 
+    <packaging>pom</packaging>
+
     <name>WildFly: Core Parent Aggregator</name>
     <description>WildFly: Core Parent Aggregator</description>
-
-    <packaging>pom</packaging>
 
     <licenses>
         <license>
@@ -56,128 +56,26 @@
         <developerConnection>scm:git:${wildfly.core.scm.connection}</developerConnection>
         <url>${wildfly.core.scm.url}</url>
     </scm>
-
+    
+    <!--
+        Build configuration.  Override JBoss Parent settings as necessary.
+        For example: <version.surefire.plugin>2.11</version.surefire.plugin>
+      -->
+    <!-- keep properties sorted-->
     <properties>
-        <!-- Release Info -->
-        <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
-        <wildfly.core.release.codename>Kenny</wildfly.core.release.codename>
-        <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
-        <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
-
-        <!--
-            Build configuration.  Override JBoss Parent settings as necessary.
-            For example: <version.surefire.plugin>2.11</version.surefire.plugin>
-          -->
-        <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
-        <maven.min.version>3.3.1</maven.min.version>
-     
-        <!-- use older version of checkstyle as otherwise lots of checks fail -->
-        <version.checkstyle>6.8</version.checkstyle>
-        <!--
-            Dependency versions. Please keep alphabetical.
-
-            Each version property should be of the form "version.<groupId>".
-            For example: <version.org.jboss.as>
-
-            In cases where multiple artifacts use the same groupId but have different
-            versions, add the artifactId or other qualifier to the property name.
-            For example: <version.org.jboss.hal.release-stream>
-         -->
-
-        <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
-        <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
-        <version.commons-io>2.5</version.commons-io>
-        <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.0.3.Final</version.io.undertow>
-        <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
-        <version.junit>4.12</version.junit>
-        <version.log4j>1.2.17</version.log4j>
-        <version.org.aesh>1.1</version.org.aesh>
-        <version.org.aesh-extensions>1.1</version.org.aesh-extensions>
-        <version.org.aesh-readline>1.6</version.org.aesh-readline>
-        <version.org.apache.ds>2.0.0-M15</version.org.apache.ds> <!-- TODO Elytron - Bump to M17 -->
-        <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
-        <version.org.apache.maven>3.5.0</version.org.apache.maven>
-        <version.org.apache.maven.resolver>1.1.0</version.org.apache.maven.resolver>
-        <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
-        <version.org.codehaus.plexus.plexus-utils>3.1.0</version.org.codehaus.plexus.plexus-utils>
-        <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
-        <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
-        <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
-        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.jboss.byteman>3.0.9</version.org.jboss.byteman>
-        <version.org.jboss.classfilewriter>1.2.1.Final</version.org.jboss.classfilewriter>
-        <version.org.jboss.invocation>1.5.1.Final</version.org.jboss.invocation>
-        <version.org.jboss.jandex>2.0.5.Final</version.org.jboss.jandex>
-        <version.org.jboss.jboss-dmr>1.5.0.Final</version.org.jboss.jboss-dmr>
-        <version.org.jboss.jboss-vfs>3.2.12.Final</version.org.jboss.jboss-vfs>
-        <version.org.jboss.logging.jboss-logging>3.3.1.Final</version.org.jboss.logging.jboss-logging>
-        <version.org.jboss.logging.jboss-logging-tools>2.1.0.Final</version.org.jboss.logging.jboss-logging-tools>
-        <version.org.jboss.logging.commons-logging-jboss-logging>1.0.0.Beta1</version.org.jboss.logging.commons-logging-jboss-logging>
-        <version.org.jboss.logmanager.jboss-logmanager>2.1.0.Final</version.org.jboss.logmanager.jboss-logmanager>
-        <version.org.jboss.logmanager.log4j-jboss-logmanager>1.1.4.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.5.Final</version.org.jboss.marshalling.jboss-marshalling>
-        <version.org.jboss.modules.jboss-modules>1.7.0.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.3.2.Final</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.5.Final</version.org.jboss.remoting>
-        <version.org.jboss.remotingjmx.remoting-jmx>3.0.0.Final</version.org.jboss.remotingjmx.remoting-jmx>
-        <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
-        <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
-        <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
-        <version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>1.0.1.Final</version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec>
-        <version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>1.0.2.Final</version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
-        <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
-        <version.org.jboss.stdio>1.0.2.GA</version.org.jboss.stdio>
-        <version.org.jboss.threads>2.3.2.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.6.2.Final</version.org.jboss.xnio>
-        <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
-        <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
-        <version.org.jmockit>1.38</version.org.jmockit>
-        <version.org.mockito>2.13.0</version.org.mockito>
-        <version.org.picketbox>5.0.2.Final</version.org.picketbox>
-        <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.22.jbossorg-1</version.org.slf4j>
-        <version.org.syslog4j>0.9.30</version.org.syslog4j>
-        <version.org.wildfly.build-tools>1.2.6.Final</version.org.wildfly.build-tools>
-        <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.client.config>1.0.0.Final</version.org.wildfly.client.config>
-        <version.org.wildfly.common>1.3.1.Final</version.org.wildfly.common>
-        <version.org.wildfly.discovery>1.0.0.Final</version.org.wildfly.discovery>
-        <version.org.wildfly.legacy.test>3.0.0.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.openssl>1.0.4.Final</version.org.wildfly.openssl>
-        <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
-        <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
-        <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
-        <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>
-        <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
-        <version.org.wildfly.security.elytron>1.2.4.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron.tool>1.1.4.Final</version.org.wildfly.security.elytron.tool>
-        <version.org.wildfly.security.elytron-web.undertow-server>1.1.0.Final</version.org.wildfly.security.elytron-web.undertow-server>
-        <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
-        <!-- Non-default maven plugin versions and configuration -->
-        <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
-        <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
-        <version.xml.plugin>1.0.1</version.xml.plugin>
-
-        <!-- Modularized JDK support (various workarounds) - activated via profile -->
-        <modular.jdk.args/>
-        <modular.jdk.props/>
-
-        <!-- Surefire args -->
-        <surefire.jpda.args/>
-        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -Duser.timezone=America/Chicago -XX:MaxMetaspaceSize=256m ${surefire.jpda.args} ${surefire.jacoco.args}</surefire.system.args>
+        <!-- Byteman -->
+        <byteman.host>127.0.0.1</byteman.host>
+        <byteman.port>17091</byteman.port>
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
-        <server.output.dir.prefix>wildfly-core</server.output.dir.prefix>
-        <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
-        <test.level>INFO</test.level>
+        <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
+        <maven.min.version>3.3.1</maven.min.version>
+
+        <!-- Modularized JDK support (various workarounds) - activated via profile -->
+        <modular.jdk.args></modular.jdk.args>
+        <modular.jdk.props></modular.jdk.props>
 
         <!--
             See ChildFirstClassLoaderBuilder in model-test for the explanation of the org.jboss.model.test.cache.root and org.jboss.model.test.classpath.cache properties.
@@ -188,9 +86,35 @@
         <org.jboss.model.test.cache.root>[pom.xml,testsuite]</org.jboss.model.test.cache.root>
         <!-- Location relative to root that will be used for the cached legacy classpaths used by subsystem-test and core-model-test-->
         <org.jboss.model.test.classpath.cache>target/model-test-cache</org.jboss.model.test.classpath.cache>
-        <!-- Byteman -->
-        <byteman.host>127.0.0.1</byteman.host>
-        <byteman.port>17091</byteman.port>
+
+        <server.output.dir.prefix>wildfly-core</server.output.dir.prefix>
+
+        <!-- Surefire args -->
+        <surefire.jpda.args></surefire.jpda.args>
+        <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -Duser.timezone=America/Chicago -XX:MaxMetaspaceSize=256m
+            ${surefire.jpda.args} ${surefire.jacoco.args}
+        </surefire.system.args>
+        <test.level>INFO</test.level>
+
+        <!-- use older version of checkstyle as otherwise lots of checks fail -->
+        <version.checkstyle>6.8</version.checkstyle>
+
+        <!-- Non-default maven plugin versions and configuration -->
+        <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
+        <version.org.wildfly.build-tools>1.2.6.Final</version.org.wildfly.build-tools>
+        <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
+        <!-- wildfly plugin-->
+        <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
+        <!-- plugins related to wildfly build and tooling -->
+        <version.org.wildfly.plugins>1.0.1</version.org.wildfly.plugins>
+        <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
+        <version.surefire.plugin>2.18.1</version.surefire.plugin>
+        <version.xml.plugin>1.0.1</version.xml.plugin>
+        <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
+        <!-- Release Info -->
+        <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
+        <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
+        <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
     </properties>
 
     <modules>
@@ -230,45 +154,10 @@
         <module>testsuite</module>
         <module>threads</module>
         <module>version</module>
+        <module>component-matrix</module>
     </modules>
 
     <build>
-        <plugins>
-            <!-- to deal with type 'bundle' dependencies -->
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <inherited>true</inherited>
-                <extensions>true</extensions>
-            </plugin>
-
-           <!-- Zanata translations -->
-            <plugin>
-              <groupId>org.zanata</groupId>
-              <artifactId>zanata-maven-plugin</artifactId>
-              <version>${version.org.zanata.plugin}</version>
-              <configuration>
-                 <!-- Process sub-modules separately, sharing parent config -->
-                 <enableModules>true</enableModules>
-                 <projectConfig>${session.executionRootDirectory}/zanata.xml</projectConfig>
-                  <!-- Generated English i18n.properties are written here: -->
-                 <srcDir>target/classes</srcDir>
-                 <transDir>src/main/resources</transDir>
-                 <includes>**/*.i18n.properties,**/LocalDescriptions.properties</includes>
-                 <!-- In previous versions, 3.8.0 and lower, this defaulted to true -->
-                 <copyTrans>true</copyTrans>
-                 <deleteObsoleteModules>true</deleteObsoleteModules>
-              </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -280,7 +169,6 @@
                             <manifestEntries>
                                 <Scm-Url>${wildfly.core.scm.url}</Scm-Url>
                                 <JBossAS-Release-Version>${wildfly.core.release.version}</JBossAS-Release-Version>
-                                <JBossAS-Release-Codename>${wildfly.core.release.codename}</JBossAS-Release-Codename>
                             </manifestEntries>
                         </archive>
                         <!-- Do not package the generated logging properties as the generated binaries will be packaged -->
@@ -319,20 +207,20 @@
                             <org.jboss.model.test.cache.strict>true</org.jboss.model.test.cache.strict>
                         </systemPropertyVariables>
                         <systemProperties>
-                              <property>
-                                  <name>java.util.logging.manager</name>
-                                  <value>org.jboss.logmanager.LogManager</value>
-                              </property>
-                              <property>
-                                  <name>jboss.remoting.leakdebugging</name>
-                                  <value>false</value>
-                              </property>
-                              <property>
-                                  <name>test.level</name>
-                                  <value>${test.level}</value>
-                              </property>
-                          </systemProperties>
-                          <argLine>${surefire.system.args}</argLine>
+                            <property>
+                                <name>java.util.logging.manager</name>
+                                <value>org.jboss.logmanager.LogManager</value>
+                            </property>
+                            <property>
+                                <name>jboss.remoting.leakdebugging</name>
+                                <value>false</value>
+                            </property>
+                            <property>
+                                <name>test.level</name>
+                                <value>${test.level}</value>
+                            </property>
+                        </systemProperties>
+                        <argLine>${surefire.system.args}</argLine>
                     </configuration>
 
                 </plugin>
@@ -341,22 +229,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.checkstyle.plugin}</version>
-                    <configuration>
-                        <configLocation>wildfly-checkstyle/checkstyle.xml</configLocation>
-                        <consoleOutput>true</consoleOutput>
-                        <failsOnError>true</failsOnError>
-                        <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
-                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                        <excludes>**/*$logger.java,**/*$bundle.java</excludes>
-                        <useFile/>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.wildfly.checkstyle</groupId>
-                            <artifactId>wildfly-checkstyle-config</artifactId>
-                            <version>${version.org.wildfly.checkstyle-config}</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <id>check-style</id>
@@ -366,6 +238,39 @@
                             </goals>
                         </execution>
                     </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.wildfly.checkstyle</groupId>
+                            <artifactId>wildfly-checkstyle-config</artifactId>
+                            <version>${version.org.wildfly.checkstyle-config}</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <configLocation>wildfly-checkstyle/checkstyle.xml</configLocation>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <excludes>**/*$logger.java,**/*$bundle.java</excludes>
+                        <useFile></useFile>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.zanata</groupId>
+                    <artifactId>zanata-maven-plugin</artifactId>
+                    <version>${version.org.zanata.plugin}</version>
+                    <configuration>
+                        <!-- Process sub-modules separately, sharing parent config -->
+                        <enableModules>true</enableModules>
+                        <projectConfig>${session.executionRootDirectory}/zanata.xml</projectConfig>
+                        <!-- Generated English i18n.properties are written here: -->
+                        <srcDir>target/classes</srcDir>
+                        <transDir>src/main/resources</transDir>
+                        <includes>**/*.i18n.properties,**/LocalDescriptions.properties</includes>
+                        <!-- In previous versions, 3.8.0 and lower, this defaulted to true -->
+                        <copyTrans>true</copyTrans>
+                        <deleteObsoleteModules>true</deleteObsoleteModules>
+                    </configuration>
                 </plugin>
 
                 <!-- Ban bad dependencies -->
@@ -431,7 +336,7 @@
                                             <exclude>xml-apis:xml-apis</exclude>
                                         </excludes>
                                     </bannedDependencies>
-                                    <dependencyConvergence/>
+                                    <dependencyConvergence></dependencyConvergence>
                                 </rules>
                             </configuration>
                         </execution>
@@ -447,139 +352,14 @@
                             <pluginExecutions>
                                 <pluginExecution>
                                     <pluginExecutionFilter>
-                                        <groupId>
-                                            org.apache.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            maven-dependency-plugin
-                                        </artifactId>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-dependency-plugin</artifactId>
                                         <versionRange>[2.1,)</versionRange>
                                         <goals>
                                             <goal>copy</goal>
                                             <goal>properties</goal>
-                                            <goal>
-                                                copy-dependencies
-                                            </goal>
-                                            <goal>
-                                            	unpack-dependencies
-                                            </goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.apache.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            maven-checkstyle-plugin
-                                        </artifactId>
-                                        <versionRange>[2.0.0,)</versionRange>
-                                        <goals>
-                                            <goal>checkstyle</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.apache.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            maven-clean-plugin
-                                        </artifactId>
-                                        <versionRange>[2.4.1,)</versionRange>
-                                        <goals>
-                                            <goal>clean</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.apache.maven.plugins
-                                        </groupId>
-                                        <artifactId>
-                                            maven-antrun-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [1.4,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>run</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.codehaus.mojo
-                                        </groupId>
-                                        <artifactId>
-                                            javacc-maven-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [2.5,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>jjtree</goal>
-                                            <goal>javacc</goal>
-                                            <goal>jjtree-javacc</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.codehaus.mojo
-                                        </groupId>
-                                        <artifactId>
-                                            xml-maven-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [1.0,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>transform</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore/>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>
-                                            org.codehaus.mojo
-                                        </groupId>
-                                        <artifactId>
-                                            keytool-maven-plugin
-                                        </artifactId>
-                                        <versionRange>
-                                            [1.2,)
-                                        </versionRange>
-                                        <goals>
-                                            <goal>clean</goal>
-                                            <goal>genkey</goal>
-                                            <goal>generateKeyPair</goal>
-                                            <goal>
-                                            	generateSecretKey
-                                            </goal>
+                                            <goal>copy-dependencies</goal>
+                                            <goal>unpack-dependencies</goal>
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
@@ -587,44 +367,113 @@
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
-                                	<pluginExecutionFilter>
-                                		<groupId>
-                                			org.wildfly.build
-                                		</groupId>
-                                		<artifactId>
-                                			wildfly-server-provisioning-maven-plugin
-                                		</artifactId>
-                                		<versionRange>
-                                			[1.0.0.Alpha2,)
-                                		</versionRange>
-                                		<goals>
-                                			<goal>build</goal>
-                                		</goals>
-                                	</pluginExecutionFilter>
-                                	<action>
-                                		<ignore></ignore>
-                                	</action>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-checkstyle-plugin</artifactId>
+                                        <versionRange>[2.0.0,)</versionRange>
+                                        <goals>
+                                            <goal>checkstyle</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
                                 </pluginExecution>
                                 <pluginExecution>
-                                	<pluginExecutionFilter>
-                                		<groupId>
-                                			org.codehaus.mojo
-                                		</groupId>
-                                		<artifactId>
-                                			buildnumber-maven-plugin
-                                		</artifactId>
-                                		<versionRange>
-                                			[1.3,)
-                                		</versionRange>
-                                		<goals>
-                                			<goal>
-                                				create-timestamp
-                                			</goal>
-                                		</goals>
-                                	</pluginExecutionFilter>
-                                	<action>
-                                		<ignore></ignore>
-                                	</action>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-clean-plugin</artifactId>
+                                        <versionRange>[2.4.1,)</versionRange>
+                                        <goals>
+                                            <goal>clean</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-antrun-plugin</artifactId>
+                                        <versionRange>[1.4,)</versionRange>
+                                        <goals>
+                                            <goal>run</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.codehaus.mojo</groupId>
+                                        <artifactId>javacc-maven-plugin</artifactId>
+                                        <versionRange>[2.5,)</versionRange>
+                                        <goals>
+                                            <goal>jjtree</goal>
+                                            <goal>javacc</goal>
+                                            <goal>jjtree-javacc</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.codehaus.mojo</groupId>
+                                        <artifactId>xml-maven-plugin</artifactId>
+                                        <versionRange>[1.0,)</versionRange>
+                                        <goals>
+                                            <goal>transform</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.codehaus.mojo</groupId>
+                                        <artifactId>keytool-maven-plugin</artifactId>
+                                        <versionRange>[1.2,)</versionRange>
+                                        <goals>
+                                            <goal>clean</goal>
+                                            <goal>genkey</goal>
+                                            <goal>generateKeyPair</goal>
+                                            <goal>generateSecretKey</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.wildfly.build</groupId>
+                                        <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                                        <versionRange>[1.0.0.Alpha2,)</versionRange>
+                                        <goals>
+                                            <goal>build</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
+                                </pluginExecution>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.codehaus.mojo</groupId>
+                                        <artifactId>buildnumber-maven-plugin</artifactId>
+                                        <versionRange>[1.3,)</versionRange>
+                                        <goals>
+                                            <goal>create-timestamp</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore></ignore>
+                                    </action>
                                 </pluginExecution>
                             </pluginExecutions>
                         </lifecycleMappingMetadata>
@@ -640,6 +489,12 @@
                     <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
                     <version>${version.org.wildfly.build-tools}</version>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.wildfly.maven.plugins</groupId>
+                    <artifactId>licenses-plugin</artifactId>
+                    <version>${version.org.wildfly.plugins}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
@@ -647,1039 +502,33 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.wildfly.checkstyle</groupId>
-            <artifactId>wildfly-checkstyle-config</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
     <dependencyManagement>
         <dependencies>
 
-            <!-- Modules in this project -->
             <dependency>
                 <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>pom</type>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-feature-pack</artifactId>
-                <type>zip</type>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-test-runner</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-controller</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-security-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-security</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-controller-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-deployment-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-deployment-scanner</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-domain-http-error-context</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-domain-http-interface</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-domain-management</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-dist</artifactId>
+                <artifactId>component-matrix</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-cli</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-testsuite-shared</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-cli</artifactId>
-                <classifier>client</classifier>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-model-test-framework</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-model-test-controller-optional</artifactId>
-                <version>${project.version}</version>
-             </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-discovery</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-embedded</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-elytron-integration</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-host-controller</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-io</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-jmx</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-launcher</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-logging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-management-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-management-subsystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-management-client-content</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-model-test</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-network</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-patching</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-platform-mbean</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-process-controller</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-protocol</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-remoting</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-request-controller</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-security-manager</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-self-contained</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-server</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test</artifactId>
-                <type>pom</type>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-subsystem-test-framework</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-threads</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
-                <type>pom</type>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
-                <type>zip</type>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-version</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>ch.qos.cal10n</groupId>
-                <artifactId>cal10n-api</artifactId>
-                <version>${version.ch.qos.cal10n}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.commons-io}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${version.commons-lang}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${version.javax.inject.javax.inject}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aesh</groupId>
-                <artifactId>aesh-readline</artifactId>
-                <version>${version.org.aesh-readline}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aesh</groupId>
-                <artifactId>aesh-extensions</artifactId>
-                <version>${version.org.aesh-extensions}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>${version.org.aesh}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.fusesource.jansi</groupId>
-                <artifactId>jansi</artifactId>
-                <version>${version.org.fusesource.jansi}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${version.log4j}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>ant</groupId>
-                        <artifactId>ant-nodeps</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ant</groupId>
-                        <artifactId>ant-junit</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>sun.jdk</groupId>
-                        <artifactId>tools</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.org.apache.httpcomponents.httpclient}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpmime</artifactId>
-                <version>${version.org.apache.httpcomponents.httpclient}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${version.org.apache.httpcomponents.httpcore}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore-nio</artifactId>
-                <version>${version.org.apache.httpcomponents.httpcore}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-              <groupId>org.apache.maven</groupId>
-              <artifactId>maven-resolver-provider</artifactId>
-              <version>${version.org.apache.maven}</version>
-               <!--<exclusions>
-                   <exclusion>
-                       <groupId>org.sonatype.aether</groupId>
-                       <artifactId>aether-impl</artifactId>
-                   </exclusion>
-                   <exclusion>
-                       <groupId>org.sonatype.aether</groupId>
-                       <artifactId>aether-spi</artifactId>
-                   </exclusion>
-                   <exclusion>
-                       <groupId>org.sonatype.aether</groupId>
-                       <artifactId>aether-util</artifactId>
-                   </exclusion>
-                   <exclusion>
-                       <groupId>org.sonatype.aether</groupId>
-                       <artifactId>aether-api</artifactId>
-                   </exclusion>
-               </exclusions>-->
-           </dependency>
-
-
-            <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->
-            <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-utils</artifactId>
-                <version>${version.org.codehaus.plexus.plexus-utils}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.woodstox</groupId>
-                <artifactId>woodstox-core</artifactId>
-                <version>${version.org.codehaus.woodstox.woodstox-core}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>stax2-api</artifactId>
-                <version>${version.org.codehaus.woodstox.stax2-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman</artifactId>
-                <scope>test</scope>
-                <version>${version.org.jboss.byteman}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-submit</artifactId>
-                <scope>test</scope>
-                <version>${version.org.jboss.byteman}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-install</artifactId>
-                <scope>test</scope>
-                <version>${version.org.jboss.byteman}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-bmunit</artifactId>
-                <scope>test</scope>
-                <version>${version.org.jboss.byteman}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jandex</artifactId>
-                <version>${version.org.jboss.jandex}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-dmr</artifactId>
-                <version>${version.org.jboss.jboss-dmr}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>staxmapper</artifactId>
-                <version>${version.org.jboss.staxmapper}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-vfs</artifactId>
-                <version>${version.org.jboss.jboss-vfs}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.classfilewriter</groupId>
-                <artifactId>jboss-classfilewriter</artifactId>
-                <version>${version.org.jboss.classfilewriter}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.invocation</groupId>
-                <artifactId>jboss-invocation</artifactId>
-                <version>${version.org.jboss.invocation}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-annotations</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging-tools}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging-tools}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jul-to-slf4j-stub</artifactId>
-                <version>${version.org.jboss.logging.jul-to-slf4j-stub}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>commons-logging-jboss-logging</artifactId>
-                <version>${version.org.jboss.logging.commons-logging-jboss-logging}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logmanager</groupId>
-                <artifactId>jboss-logmanager</artifactId>
-                <version>${version.org.jboss.logmanager.jboss-logmanager}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logmanager</groupId>
-                <artifactId>log4j-jboss-logmanager</artifactId>
-                <version>${version.org.jboss.logmanager.log4j-jboss-logmanager}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling</artifactId>
-                <version>${version.org.jboss.marshalling.jboss-marshalling}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.marshalling</groupId>
-                <artifactId>jboss-marshalling-river</artifactId>
-                <version>${version.org.jboss.marshalling.jboss-marshalling}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.msc</groupId>
-                <artifactId>jboss-msc</artifactId>
-                <version>${version.org.jboss.msc.jboss-msc}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.modules</groupId>
-                <artifactId>jboss-modules</artifactId>
-                <version>${version.org.jboss.modules.jboss-modules}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.spec.javax.security.jacc</groupId>
-                <artifactId>jboss-jacc-api_1.5_spec</artifactId>
-                <version>${version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-core</artifactId>
-                <version>${version.io.undertow}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-servlet</artifactId>
-                <version>${version.io.undertow}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
-                        <artifactId>jboss-jsp-api_2.2_spec</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.undertow</groupId>
-                <artifactId>undertow-websockets-jsr</artifactId>
-                <version>${version.io.undertow}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.remoting</groupId>
-                <artifactId>jboss-remoting</artifactId>
-                <version>${version.org.jboss.remoting}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.remotingjmx</groupId>
-                <artifactId>remoting-jmx</artifactId>
-                <version>${version.org.jboss.remotingjmx.remoting-jmx}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-processor</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.logmanager</groupId>
-                        <artifactId>jboss-logmanager</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.shrinkwrap</groupId>
-                <artifactId>shrinkwrap-api</artifactId>
-                <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.shrinkwrap</groupId>
-                <artifactId>shrinkwrap-impl-base</artifactId>
-                <version>${version.org.jboss.shrinkwrap.shrinkwrap}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.slf4j</groupId>
-                <artifactId>slf4j-jboss-logmanager</artifactId>
-                <version>${version.org.jboss.slf4j.slf4j-jboss-logmanager}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.spec.javax.interceptor</groupId>
-                <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
-                <version>${version.org.jboss.spec.javax.interceptor.jboss-interceptors-api_1.2_spec}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.stdio</groupId>
-                <artifactId>jboss-stdio</artifactId>
-                <version>${version.org.jboss.stdio}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.threads</groupId>
-                <artifactId>jboss-threads</artifactId>
-                <version>${version.org.jboss.threads}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.xnio</groupId>
-                <artifactId>xnio-api</artifactId>
-                <version>${version.org.jboss.xnio.xnio-api}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.xnio</groupId>
-                <artifactId>xnio-nio</artifactId>
-                <version>${version.org.jboss.xnio.xnio-nio}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jmockit</groupId>
-                <artifactId>jmockit</artifactId>
-                <version>${version.org.jmockit}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${version.org.mockito}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.projectodd.vdx</groupId>
-                <artifactId>vdx-core</artifactId>
-                <version>${version.org.projectodd.vdx}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.projectodd.vdx</groupId>
-                <artifactId>vdx-wildfly</artifactId>
-                <version>${version.org.projectodd.vdx}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox</artifactId>
-                <version>${version.org.picketbox}</version>
-            </dependency>
-
-            <!-- This isn't used in WildFly Core but we include it here to keep
-                 it's version aligned with the core's use of related picketbox artifacts -->
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-infinispan</artifactId>
-                <version>${version.org.picketbox}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.picketbox</groupId>
-                        <artifactId>picketbox-spi-bare</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.picketbox</groupId>
-                        <artifactId>jbosssx-bare</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-spi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.org.slf4j}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-ext</artifactId>
-                <version>${version.org.slf4j}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jcl-over-slf4j</artifactId>
-                <version>${version.org.slf4j}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.syslog4j</groupId>
-                <artifactId>syslog4j</artifactId>
-                <version>${version.org.syslog4j}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-api</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-spi</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-util</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-impl</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-connector-basic</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-transport-file</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.resolver</groupId>
-                <artifactId>maven-resolver-transport-http</artifactId>
-                <version>${version.org.apache.maven.resolver}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.client</groupId>
-                <artifactId>wildfly-client-config</artifactId>
-                <version>${version.org.wildfly.client.config}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.common</groupId>
-                <artifactId>wildfly-common</artifactId>
-                <version>${version.org.wildfly.common}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.wildfly.security</groupId>
-                        <artifactId>wildfly-security-manager</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-java</artifactId>
-                <version>${version.org.wildfly.openssl}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-linux-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-x86_64}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-linux-i386</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-i386}</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-windows-i386</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-windows-i386}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-windows-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-windows-x86_64}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.checkstyle</groupId>
-                <artifactId>wildfly-checkstyle-config</artifactId>
-                <version>${version.org.wildfly.checkstyle-config}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.discovery</groupId>
-                <artifactId>wildfly-discovery-client</artifactId>
-                <version>${version.org.wildfly.discovery}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.legacy.test</groupId>
-                <artifactId>wildfly-legacy-spi</artifactId>
-                <version>${version.org.wildfly.legacy.test}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.legacy.test</groupId>
-                <artifactId>wildfly-legacy-versions</artifactId>
-                <version>${version.org.wildfly.legacy.test}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-tool</artifactId>
-                <version>${version.org.wildfly.security.elytron.tool}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.security.elytron-web</groupId>
-                <artifactId>undertow-server</artifactId>
-                <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <!-- JSR-353 JSONP RI implementation -->
-            <!-- used by elytron audit logging -->
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
-                <version>${version.org.glassfish.javax.json}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>xml-resolver</groupId>
-                <artifactId>xml-resolver</artifactId>
-                <version>${version.xml-resolver}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>xerces</groupId>
-                <artifactId>xercesImpl</artifactId>
-                <version>${version.org.apache.xerces}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.io7m.xom</groupId>
-                <artifactId>xom</artifactId>
-                <version>${version.com.io7m.xom}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xalan</groupId>
-                        <artifactId>xalan</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                </exclusions>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <repositories>
         <repository>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-            <layout>default</layout>
             <releases>
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
@@ -1688,20 +537,24 @@
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
             </snapshots>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <layout>default</layout>
         </repository>
     </repositories>
 
     <pluginRepositories>
         <pluginRepository>
-            <id>jboss-public-repository-group</id>
-            <name>JBoss Public Repository Group</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -1714,13 +567,12 @@
         <profile>
             <id>JDK9</id>
             <activation>
-                <jdk>[9,)</jdk> <!-- match 9+ -->
+                <jdk>[9,)</jdk>
+                <!-- match 9+ -->
             </activation>
             <properties>
-                <modular.jdk.args>
-                    --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-                    --illegal-access=permit
-                </modular.jdk.args>
+                <modular.jdk.args>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                    --illegal-access=permit</modular.jdk.args>
                 <!-- [WFCORE-1494] remove JUL workaround -->
                 <modular.jdk.props>-Dsun.util.logging.disableCallerCheck=true -Djdk.attach.allowAttachSelf=true</modular.jdk.props>
                 <version.org.jboss.byteman>4.0.0-BETA5</version.org.jboss.byteman>
@@ -1754,13 +606,6 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <version>${version.enforcer.plugin}</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.redhat.victims</groupId>
-                                <artifactId>enforce-victims-rule</artifactId>
-                                <version>1.3.4</version>
-                            </dependency>
-                        </dependencies>
                         <executions>
                             <execution>
                                 <id>enforce-victims-rule</id>
@@ -1778,6 +623,13 @@
                                 </configuration>
                             </execution>
                         </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.redhat.victims</groupId>
+                                <artifactId>enforce-victims-rule</artifactId>
+                                <version>1.3.4</version>
+                            </dependency>
+                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -1789,7 +641,11 @@
         -->
         <profile>
             <id>ts.jacoco.profile</id>
-            <activation><property><name>coverage</name></property></activation>
+            <activation>
+                <property>
+                    <name>coverage</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -1800,7 +656,9 @@
                             <execution>
                                 <id>ts.jacoco-prepare</id>
                                 <phase>process-test-classes</phase>
-                                <goals><goal>prepare-agent</goal></goals>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
                                 <configuration>
                                     <append>true</append>
                                     <destFile>target/jacoco.exec</destFile>
@@ -1826,7 +684,11 @@
           -->
         <profile>
             <id>ts.jacoco.profile.not.enabled</id>
-            <activation><property><name>!coverage</name></property></activation>
+            <activation>
+                <property>
+                    <name>!coverage</name>
+                </property>
+            </activation>
             <properties>
                 <surefire.jacoco.args></surefire.jacoco.args>
             </properties>
