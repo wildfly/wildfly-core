@@ -81,9 +81,12 @@ public class SimpleTable {
                 value = "null";
             }
             values[i] = value;
-            if (columnLengths[i] < value.length() + 1) {
-                if (terminalWidth <= 0 || value.length() < terminalWidth) // WFCORE-2812, terminalWidth could be 0 or -1 in tests
-                    columnLengths[i] = value.length() + 1;
+            if (columnLengths[i] == 0) {
+                // WFCORE-2812 and WFCORE-3540 the SimpleTable constructor allows to create object without headers. We assign the
+                // smaller one to it.
+                columnLengths[i] = (value.length() < terminalWidth) ? value.length() + 1 : terminalWidth;
+            } else if (columnLengths[i] < value.length() + 1 && value.length() < terminalWidth) {
+                columnLengths[i] = value.length() + 1;
             }
         }
         lines.add(values);

@@ -1849,8 +1849,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public int getTerminalWidth() {
-        if( !INTERACT ){
-            return 0;
+        if (!INTERACT) {
+            return 80;
         }
 
         if(console == null) {
@@ -1866,8 +1866,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public int getTerminalHeight() {
-        if( !INTERACT ){
-            return 0;
+        if (!INTERACT) {
+            return 24; // WFCORE-3540 24 has no special meaning except that it is a value greater than 0
         }
 
         if(console == null) {
