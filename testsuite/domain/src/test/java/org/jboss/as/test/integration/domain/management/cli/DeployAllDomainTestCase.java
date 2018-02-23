@@ -22,10 +22,12 @@
 package org.jboss.as.test.integration.domain.management.cli;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.jboss.as.cli.CommandContext;
 
+import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentInfoResult;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
@@ -405,5 +407,44 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
         checkMissing(result, cliTestApp2War.getName());
         checkMissing(result, cliTestAppEar.getName());
         checkEmpty(result);
+    }
+
+    /**
+     * Separate test for check status of issue WFCORE-3563 by Legacy command.
+     * Concentration is for enabling one application deployments with separates group by Legacy command.
+     */
+    @Test
+    public void testLegacyEnableSingleAppDeployment() throws CommandLineException, IOException {
+        // Step 1) Deploy applications deployments to defined server groups
+        ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
+        ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        ctx.handle("deploy --server-groups=" + sgTwo + ' ' + cliTestApp2War.getAbsolutePath());
+        ctx.handle("deploy --server-groups=" + sgTwo + ',' + sgOne + ' ' + cliTestAppEar.getAbsolutePath());
+
+        // Step 2) Disabling two selected applications deployments
+        ctx.handle("undeploy " + cliTestApp1War.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgTwo);
+
+        // Step 3) Disable all deployed applications deployments in all server groups
+        ctx.handle("undeploy " + cliTestApp1War.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestAnotherWar.getName() + " --keep-content --server-groups=" + sgOne);
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgTwo);
+        ctx.handle("undeploy " + cliTestAppEar.getName() + " --keep-content --server-groups=" + sgTwo + ',' + sgOne);
+
+        // Step 4) Enable one application deployment
+        ctx.handle("deploy --name=" + cliTestAppEar.getName() + " --server-groups=" + sgTwo + ',' + sgOne);
+
+        // Step 5) Verify if selected application deployment are enabled, but other have still previous state
+        DeploymentInfoResult result = legacyDeploymentInfo(cli, sgOne);
+        checkExist(result, cliTestApp1War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
+
+        result = legacyDeploymentInfo(cli, sgTwo);
+        checkExist(result, cliTestApp1War.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestAnotherWar.getName(), NOT_ADDED, ctx);
+        checkExist(result, cliTestApp2War.getName(), ADDED, ctx);
+        checkExist(result, cliTestAppEar.getName(), ENABLED, ctx);
     }
 }

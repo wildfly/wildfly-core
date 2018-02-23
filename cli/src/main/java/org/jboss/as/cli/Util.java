@@ -438,6 +438,25 @@ public class Util {
         return false;
     }
 
+    public static boolean isDeploymentPresent(String name, ModelControllerClient client, String serverGroup) throws OperationFormatException {
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+
+        builder.addNode(Util.SERVER_GROUP, serverGroup);
+        builder.addNode(Util.DEPLOYMENT, name);
+        builder.setOperationName(Util.READ_RESOURCE);
+        ModelNode request = builder.buildRequest();
+        try {
+            ModelNode outcome = client.execute(request);
+            if (isSuccess(outcome)) {
+                return outcome.hasDefined(RESULT);
+            }
+        } catch (Exception ex) {
+            return false;
+        }
+
+        return false;
+    }
+
     public static List<String> getAllEnabledServerGroups(String deploymentName, ModelControllerClient client) {
 
         List<String> serverGroups = getServerGroups(client);
