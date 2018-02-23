@@ -54,3 +54,4 @@ testsuite-core/standalone/cli_output
 
 # Zanata files
 **/.zanata-cache/
+/testsuite/domain/target1/
