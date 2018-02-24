@@ -32,9 +32,9 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -43,15 +43,15 @@ import org.junit.Test;
  */
 public class ReadOnlyModeTestCase {
 
-    private static DomainTestSupport.Configuration domainConfig;
-    private static DomainTestSupport domainManager;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private DomainTestSupport.Configuration domainConfig;
+    private DomainTestSupport domainManager;
+    private DomainLifecycleUtil domainMasterLifecycleUtil;
+    private DomainLifecycleUtil domainSlaveLifecycleUtil;
     private static final long TIMEOUT_S = TimeoutUtil.adjust(30);
     private static final int TIMEOUT_SLEEP_MILLIS = 50;
 
-    @BeforeClass
-    public static void setupDomain() throws Exception {
+    @Before
+    public void setupDomain() throws Exception {
        domainConfig = DomainTestSupport.Configuration.create(ReadOnlyModeTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
         domainConfig.getMasterConfiguration().setReadOnlyHost(true);
@@ -64,8 +64,8 @@ public class ReadOnlyModeTestCase {
         domainSlaveLifecycleUtil = domainManager.getDomainSlaveLifecycleUtil();
     }
 
-    @AfterClass
-    public static void tearDownDomain() throws Exception {
+    @After
+    public void tearDownDomain() throws Exception {
         domainManager.stop();
         domainManager = null;
         domainMasterLifecycleUtil = null;
@@ -120,8 +120,10 @@ public class ReadOnlyModeTestCase {
         domainManager.stop();
         domainConfig.getMasterConfiguration().setRewriteConfigFiles(false);
         domainConfig.getSlaveConfiguration().setRewriteConfigFiles(false);
-        domainManager.getDomainMasterLifecycleUtil().startAsync();
-        domainManager.getDomainSlaveLifecycleUtil().startAsync();
+        domainMasterLifecycleUtil = domainManager.getDomainMasterLifecycleUtil();
+        domainSlaveLifecycleUtil = domainManager.getDomainSlaveLifecycleUtil();
+        domainMasterLifecycleUtil.startAsync();
+        domainSlaveLifecycleUtil.startAsync();
         try (final DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
             Assert.assertTrue(Operations.getFailureDescription(clientMaster.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asString().contains("WFLYCTL0216"));
