@@ -354,8 +354,6 @@ public class Server {
             if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException) && !(cause instanceof SocketException) ) {
                 throw new RuntimeException(e);
             } // else ignore, this might happen if the channel gets closed before we got the response
-        }finally {
-            safeCloseClient();//close existing client
         }
     }
 
@@ -371,6 +369,10 @@ public class Server {
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
         operation.get(NAME).set("server-state");
         while (System.currentTimeMillis() - start < timeout) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
             recreateClient();
             ModelControllerClient liveClient = client.getControllerClient();
             try {
@@ -379,10 +381,6 @@ public class Server {
                     return;
                 }
             } catch (IOException e) {
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
             }
 
         }
