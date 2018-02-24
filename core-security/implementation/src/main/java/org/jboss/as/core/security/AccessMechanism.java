@@ -39,5 +39,11 @@ public enum AccessMechanism {
     /**
      * The request was submitted over JMX and subsequently converted to a management operation.
      */
-    JMX
+    JMX,
+    /**
+     * The request was submitted by an in-vm client on behalf of a user. For example, the server is embedded
+     * and the user is using a {@code LocalModelControllerClient}.  An in-vm client not performing operations
+     * on behalf of a user (e.g. a client used by the deployment-scanner) will not have this mechanism set.
+     */
+    IN_VM_USER
 }
