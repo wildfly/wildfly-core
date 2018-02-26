@@ -103,7 +103,6 @@ public interface OptionActivators {
         private static final Set<String> NOT_EXPECTED = new HashSet<>();
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("all-server-groups");
             NOT_EXPECTED.add("server-groups");
         }
@@ -131,7 +130,6 @@ public interface OptionActivators {
 
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("disabled");
         }
 
@@ -161,7 +159,6 @@ public interface OptionActivators {
 
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("enabled");
         }
 
