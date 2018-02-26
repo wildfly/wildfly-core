@@ -64,14 +64,27 @@ public abstract class AbstractDeployContentCommand extends AbstractDeployCommand
             = RuntimeNameActivator.class)
     public String runtimeName;
 
+    private final String legacyReplaceName;
+
     AbstractDeployContentCommand(CommandContext ctx,
             Permissions permissions) {
         super(ctx, AccessRequirements.deployContentAccess(permissions), permissions);
+        legacyReplaceName = null;
+    }
+
+    AbstractDeployContentCommand(CommandContext ctx,
+            Permissions permissions, String legacyReplaceName) {
+        super(ctx, AccessRequirements.deployContentAccess(permissions), permissions);
+        this.legacyReplaceName = legacyReplaceName;
     }
 
     protected abstract void checkArgument() throws CommandException;
 
     protected abstract String getCommandName();
+
+    private String getReplaceOptionName() {
+        return legacyReplaceName == null ? "--replace" : "--"+legacyReplaceName;
+    }
 
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation)
@@ -158,7 +171,7 @@ public abstract class AbstractDeployContentCommand extends AbstractDeployCommand
         if (replace) {
             if (((disabled || enabled) && ctx.isDomainMode()) || serverGroups != null
                     || allServerGroups) {
-                throw new CommandFormatException("--replace only replaces the content "
+                throw new CommandFormatException("--" + getReplaceOptionName() + " only replaces the content "
                         + "in the deployment repository and can't be used in combination with any of "
                         + "--enabled, --disabled, --server-groups or --all-server-groups.");
             }
@@ -188,7 +201,7 @@ public abstract class AbstractDeployContentCommand extends AbstractDeployCommand
             if (!ctx.isBatchMode() && Util.isDeploymentInRepository(name,
                     ctx.getModelControllerClient())) {
                 throw new CommandFormatException("'" + name + "' already exists "
-                        + "in the deployment repository (use --replace"
+                        + "in the deployment repository (use  "+ getReplaceOptionName()
                         + " to replace the existing content in the repository).");
             }
 
@@ -246,8 +259,8 @@ public abstract class AbstractDeployContentCommand extends AbstractDeployCommand
         if (!ctx.isBatchMode() && Util.isDeploymentInRepository(getName(),
                 ctx.getModelControllerClient())) {
             throw new CommandFormatException("'" + getName() + "' already exists in "
-                    + "the deployment repository (use "
-                    + "--replace to replace the existing content in the repository).");
+                    + "the deployment repository (use " + getReplaceOptionName()
+                    + " to replace the existing content in the repository).");
         }
 
         ModelNode request = buildDeploymentRequest(ctx, Util.ADD);

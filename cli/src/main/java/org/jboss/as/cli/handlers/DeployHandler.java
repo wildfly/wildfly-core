@@ -85,6 +85,8 @@ public class DeployHandler extends DeploymentHandler {
 
     private static final String ALL = "*";
 
+    private static final String REPLACE_OPTION = "force";
+
     public DeployHandler(CommandContext ctx) {
         super(ctx, "deploy", true);
 
@@ -331,7 +333,7 @@ public class DeployHandler extends DeploymentHandler {
                 command.script = this.script.getValue(args);
                 c = command;
             } else {
-                DeployFileCommand command = new DeployFileCommand(ctx);
+                DeployFileCommand command = new DeployFileCommand(ctx, REPLACE_OPTION);
                 command.allServerGroups = allServerGroups;
                 command.disabled = disabled;
                 command.enabled = enabled;
@@ -357,7 +359,7 @@ public class DeployHandler extends DeploymentHandler {
                 throw new CommandLineException("Filesystem path and --url can't be "
                         + "used together.");
             }
-            DeployUrlCommand command = new DeployUrlCommand(ctx);
+            DeployUrlCommand command = new DeployUrlCommand(ctx, REPLACE_OPTION);
             command.allServerGroups = allServerGroups;
             command.disabled = disabled;
             command.enabled = enabled;
@@ -442,7 +444,7 @@ public class DeployHandler extends DeploymentHandler {
                 command.script = this.script.getValue(args);
                 c = command;
             } else {
-                DeployFileCommand command = new DeployFileCommand(ctx);
+                DeployFileCommand command = new DeployFileCommand(ctx, REPLACE_OPTION);
                 command.allServerGroups = allServerGroups;
                 command.disabled = disabled;
                 command.enabled = enabled;
@@ -463,7 +465,7 @@ public class DeployHandler extends DeploymentHandler {
                 throw new CommandFormatException("Filesystem path and --url can't be "
                         + "used together.");
             }
-            DeployUrlCommand command = new DeployUrlCommand(ctx);
+            DeployUrlCommand command = new DeployUrlCommand(ctx, REPLACE_OPTION);
             command.allServerGroups = allServerGroups;
             command.disabled = disabled;
             command.enabled = enabled;
