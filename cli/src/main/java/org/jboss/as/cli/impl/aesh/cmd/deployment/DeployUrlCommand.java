@@ -70,8 +70,8 @@ public class DeployUrlCommand extends AbstractDeployContentCommand {
     }
 
     @Deprecated
-    public DeployUrlCommand(CommandContext ctx) {
-        this(ctx, null);
+    public DeployUrlCommand(CommandContext ctx, String replaceName) {
+        super(ctx, null, replaceName);
     }
 
     @Override

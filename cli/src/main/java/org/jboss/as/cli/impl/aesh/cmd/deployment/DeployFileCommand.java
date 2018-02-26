@@ -61,8 +61,8 @@ public class DeployFileCommand extends AbstractDeployContentCommand {
     }
 
     @Deprecated
-    public DeployFileCommand(CommandContext ctx) {
-        this(ctx, null);
+    public DeployFileCommand(CommandContext ctx, String replaceName) {
+        super(ctx, null, replaceName);
     }
 
     @Override
