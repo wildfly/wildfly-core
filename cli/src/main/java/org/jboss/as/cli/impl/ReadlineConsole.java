@@ -630,6 +630,26 @@ public class ReadlineConsole {
             decoder.add(keys);
             if (decoder.hasNext()) {
                 key[0] = decoder.next().buffer().array();
+                /*
+                    Synchronously put the TerminalConnection thread in wait (side effect of setting a null handler).
+                    This does guarantee that when this thread unstack it will put itself
+                    in wait mode. That is safe, wait is the state expected once this handler is done.
+                    When the latch.await returns, or the current command
+                    terminates and a new readline call will position a new stdinhandler
+                    or read() is called again and a new stdinhandler will be set. In
+                    both cases the terminalConnection will wake up and read on the terminal.
+                    If we were not doing this call here but after latch.await we could
+                    have this thread to be already reading on the terminal when
+                    attempted to be put in wait mode (by the latch.await thread).
+                    Theoreticaly the console could read a key although no inputHandler has been already set.
+                    This has never been observed. But this can cause an issue on Cygwin (WFCORE-3647),
+                    if the connection is reading although Terminal attributes are
+                    get/set (by forking a sub process) by the next call to read(),
+                    the get/set call is stuck when reading sub
+                    process output and is unblocked when a key is typed in the terminal.
+                    So one key is swallowed and the key must be typed twice to operate.
+                */
+                connection.setStdinHandler(null);
                 latch.countDown();
             }
         });
@@ -637,8 +657,8 @@ public class ReadlineConsole {
             // Wait until interrupted
             latch.await();
         } finally {
-            connection.setStdinHandler(null);
             connection.setSignalHandler(prevHandler);
+            connection.setAttributes(attributes);
             readingThread = null;
         }
         return key[0];
