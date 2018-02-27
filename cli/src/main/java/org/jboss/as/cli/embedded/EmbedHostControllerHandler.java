@@ -262,37 +262,24 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
 
-            if (!emptyHost && (bootTimeout == null || bootTimeout > 0)) {
+            if (bootTimeout == null || bootTimeout > 0) {
                 long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                String status = "starting";
-
-                // read out the host controller name
+                // read out the host controller name as proof that HC has started. We will fail until then.
                 final ModelNode getNameOp = new ModelNode();
                 getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
                 getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
 
-                final ModelNode getStateOp = new ModelNode();
-                getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
-                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
+                boolean running = false;
                 do {
                     try {
                         final ModelNode nameResponse = mcc.execute(getNameOp);
-                        if (Util.isSuccess(nameResponse)) {
-                            // read out the connected HC name
-                            final String localName = nameResponse.get(ClientConstants.RESULT).asString();
-                            address.set(ClientConstants.HOST, localName);
-                            final ModelNode stateResponse = mcc.execute(getStateOp);
-                            if (Util.isSuccess(stateResponse)) {
-                                status = stateResponse.get(ClientConstants.RESULT).asString();
-                            }
-                        }
+                        running = Util.isSuccess(nameResponse);
                     } catch (Exception e) {
                         // ignore and try again
                     }
 
-                    if ("starting".equals(status)) {
+                    if (!running) {
                         try {
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
@@ -304,7 +291,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                     }
                 } while (System.nanoTime() < expired);
 
-                if ("starting".equals(status)) {
+                if (!running) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
                     // Stop server and restore environment
                     StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
