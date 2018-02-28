@@ -96,6 +96,7 @@
         <module name="io.undertow.core" />
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.extension.core-management-client" />
+        <module name="org.wildfly.url.http.wildfly-url-http" services="import"/>
         <module name="sun.jdk" services="export" export="true"/>
     </dependencies>
 </module>
