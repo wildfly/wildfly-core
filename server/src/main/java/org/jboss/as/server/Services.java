@@ -67,11 +67,6 @@ public final class Services {
      */
     public static final ServiceName JBOSS_EXTERNAL_MODULE_SERVICE = JBOSS_AS.append("external-module-service");
 
-    /**
-     * The service that caches system module jandex indexes
-     */
-    public static final ServiceName JBOSS_MODULE_INDEX_SERVICE = JBOSS_AS.append("module-index-service");
-
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
     /**
