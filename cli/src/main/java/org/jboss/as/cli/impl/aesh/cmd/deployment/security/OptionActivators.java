@@ -32,7 +32,7 @@ import org.wildfly.core.cli.command.aesh.activator.StandaloneOptionActivator;
  */
 public interface OptionActivators {
 
-    public static class UrlActivator implements OptionActivator {
+    class UrlActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -42,7 +42,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class NameActivator implements OptionActivator {
+    class NameActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -53,7 +53,7 @@ public interface OptionActivators {
 
     }
 
-    public static class UndeployNameActivator implements OptionActivator {
+    class UndeployNameActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -64,10 +64,10 @@ public interface OptionActivators {
 
     }
 
-    public static class UndeployArchiveActivator extends UndeployNameActivator {
+    class UndeployArchiveActivator extends UndeployNameActivator {
     }
 
-    public static class FileActivator implements OptionActivator {
+    class FileActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -77,7 +77,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class UnmanagedActivator implements OptionActivator {
+    class UnmanagedActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -87,7 +87,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class RuntimeNameActivator implements OptionActivator {
+    class RuntimeNameActivator implements OptionActivator {
 
         @Override
         public boolean isActivated(ParsedCommand pc) {
@@ -97,13 +97,12 @@ public interface OptionActivators {
         }
     }
 
-    public static class ReplaceActivator extends AbstractDependRejectOptionActivator {
+    class ReplaceActivator extends AbstractDependRejectOptionActivator {
 
         private static final Set<String> EXPECTED = new HashSet<>();
         private static final Set<String> NOT_EXPECTED = new HashSet<>();
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("all-server-groups");
             NOT_EXPECTED.add("server-groups");
         }
@@ -123,7 +122,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class EnabledActivator extends AbstractDependRejectOptionActivator
+    class EnabledActivator extends AbstractDependRejectOptionActivator
             implements StandaloneOptionActivator {
 
         private static final Set<String> EXPECTED = new HashSet<>();
@@ -131,7 +130,6 @@ public interface OptionActivators {
 
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("disabled");
         }
 
@@ -153,7 +151,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class DisabledActivator extends AbstractDependRejectOptionActivator
+    class DisabledActivator extends AbstractDependRejectOptionActivator
             implements StandaloneOptionActivator {
 
         private static final Set<String> EXPECTED = new HashSet<>();
@@ -161,7 +159,6 @@ public interface OptionActivators {
 
         static {
             // Argument.
-            EXPECTED.add(DependOptionActivator.ARGUMENT_NAME);
             NOT_EXPECTED.add("enabled");
         }
 
@@ -183,7 +180,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class ServerGroupsActivator extends AbstractRejectOptionActivator
+    class ServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public ServerGroupsActivator() {
@@ -204,7 +201,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class InfoServerGroupActivator extends AbstractRejectOptionActivator
+    class InfoServerGroupActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public InfoServerGroupActivator() {
@@ -221,14 +218,14 @@ public interface OptionActivators {
         }
     }
 
-    public static class InfoNameActivator extends AbstractRejectOptionActivator {
+    class InfoNameActivator extends AbstractRejectOptionActivator {
 
         public InfoNameActivator() {
             super("server-group");
         }
     }
 
-    public static class AllServerGroupsActivator extends AbstractRejectOptionActivator
+    class AllServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public AllServerGroupsActivator() {
@@ -250,7 +247,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class AllRelevantServerGroupsActivator extends AbstractRejectOptionActivator
+    class AllRelevantServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public AllRelevantServerGroupsActivator() {
@@ -272,7 +269,7 @@ public interface OptionActivators {
         }
     }
 
-    public static class UndeployServerGroupsActivator extends AbstractRejectOptionActivator
+    class UndeployServerGroupsActivator extends AbstractRejectOptionActivator
             implements DomainOptionActivator {
 
         public UndeployServerGroupsActivator() {
