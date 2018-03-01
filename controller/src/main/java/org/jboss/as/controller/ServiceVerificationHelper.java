@@ -38,6 +38,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
 
@@ -88,28 +89,32 @@ class ServiceVerificationHelper implements OperationStepHandler {
                 failedSet.add(serviceName);
                 failedList.get(serviceName.getCanonicalName()).set(getServiceFailureDescription(controller.getStartException()));
             }
-
+            ServiceRegistry registry = context.getServiceRegistry(false);
             // generate lists of problems and missing services
             List<String> problemList = new ArrayList<>();
             for (ServiceController<?> controller : problems) {
                 Set<ServiceName> immediatelyUnavailable = controller.getImmediateUnavailableDependencies();
                 if (!immediatelyUnavailable.isEmpty()) {
                     StringBuilder missing = new StringBuilder();
+                    boolean direct = false;
                     for (Iterator<ServiceName> i = immediatelyUnavailable.iterator(); i.hasNext(); ) {
                         ServiceName missingSvc = i.next();
-                        if (!failedSet.contains(missingSvc)) {
+                        ServiceController<?> depController = registry.getService(missingSvc);
+                        if (depController == null || depController.getMode() == ServiceController.Mode.NEVER) {
                             unavailableServices.add(missingSvc);
-                        }
-                        missing.append(missingSvc.getCanonicalName());
-                        if (i.hasNext()) {
-                            missing.append(", ");
+                            direct = true;
+                            if (missing.length() != 0) {
+                                missing.append(", ");
+                            }
+                            missing.append(missingSvc.getCanonicalName());
                         }
                     }
-
-                    final StringBuilder problem = new StringBuilder();
-                    problem.append(controller.getName().getCanonicalName());
-                    problem.append(" ").append(ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
-                    problemList.add(problem.toString());
+                    if(direct) {
+                        final StringBuilder problem = new StringBuilder();
+                        problem.append(controller.getName().getCanonicalName());
+                        problem.append(" ").append(ControllerLogger.ROOT_LOGGER.servicesMissing(missing));
+                        problemList.add(problem.toString());
+                    }
 
                 } else {
                     if (missingTransitive == null) {

@@ -204,7 +204,7 @@ final class ContainerStateMonitor {
                 final ServiceName name = entry.getKey();
                 if (!previousMissing.contains(name)) {
                     ServiceController<?> controller = serviceRegistry.getService(name);
-                    boolean unavailable = controller != null;
+                    boolean unavailable = controller != null && controller.getMode() != ServiceController.Mode.NEVER;
                     missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
                 }
             }
@@ -242,13 +242,18 @@ final class ContainerStateMonitor {
 
         final StringBuilder msg = new StringBuilder();
         msg.append(forException ? ControllerLogger.ROOT_LOGGER.serviceStatusReportFailureHeader() : ControllerLogger.ROOT_LOGGER.serviceStatusReportHeader());
+        int transitiveDownCount = 0;
         if (!changeReport.getMissingServices().isEmpty()) {
-            msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportDependencies());
+            boolean first = true;
             for (Map.Entry<ServiceName, MissingDependencyInfo> entry : changeReport.getMissingServices().entrySet()) {
                 if (!entry.getValue().isUnavailable()) {
+                    if(first) {
+                        msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportDependencies());
+                        first = false;
+                    }
                     msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportMissing(entry.getKey(), createDependentsString(entry.getValue().getDependents())));
                 } else {
-                    msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportUnavailable(entry.getKey(), createDependentsString(entry.getValue().getDependents())));
+                    transitiveDownCount++;
                 }
             }
         }
@@ -281,6 +286,9 @@ final class ContainerStateMonitor {
                 }
                 msg.append('\n');
             }
+        }
+        if(transitiveDownCount > 0) {
+            msg.append(ControllerLogger.ROOT_LOGGER.servicesWithTransitiveUnavailability(transitiveDownCount));
         }
         return msg.toString();
     }
@@ -395,7 +403,7 @@ final class ContainerStateMonitor {
         }
 
         /**
-         * Gets whether the service that was missing dependencies was still installed when this report was created.
+         * Gets whether the service that was missing dependencies was still installed and has a mode that will allow it to start when this report was created.
          * Note that "installed" does not mean "started."
          *
          * @return {@code true} if the service was still installed.
