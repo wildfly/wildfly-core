@@ -42,7 +42,6 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.integration.management.util.CustomCLIExecutor;
-import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SecurityTestConstants;
@@ -50,7 +49,6 @@ import org.jboss.as.test.integration.security.common.config.realm.Authentication
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
-import org.jboss.as.test.module.util.TestModule;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -96,8 +94,6 @@ public class HTTPSConnectionWithCLITestCase {
     private static final ServerResourcesSetup keystoreFilesSetup = new ServerResourcesSetup();
     private static final ManagementNativeRealmSetup managementNativeRealmSetup = new ManagementNativeRealmSetup();
 
-    private static TestModule picketLinkModule;
-
     @Inject
     private static ServerController containerController;
 
@@ -110,7 +106,6 @@ public class HTTPSConnectionWithCLITestCase {
         managementNativeRealmSetup.setup(mgmtClient);
 
 
-        picketLinkModule = PicketBoxModuleUtil.createTestModule();
         // To apply new security realm settings for http interface reload of  server is required
         reloadServer();
     }
@@ -166,7 +161,6 @@ public class HTTPSConnectionWithCLITestCase {
         managementNativeRealmSetup.tearDown(managementClient);
 
         containerController.stop();
-        picketLinkModule.remove();
         FileUtils.deleteDirectory(WORK_DIR);
     }
 

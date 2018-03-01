@@ -29,7 +29,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.server.controller.resources.VaultResourceDefinition;
-import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.manualmode.vault.module.CustomSecurityVault;
 import org.jboss.as.test.manualmode.vault.module.TestVaultExtension;
 import org.jboss.as.test.manualmode.vault.module.TestVaultParser;
@@ -66,7 +65,6 @@ public class CustomVaultInModuleTestCase {
     private static ServerController containerController;
 
     private static TestModule testModule;
-    private static TestModule picketLink;
 
     @Test
     public void testCustomVault() throws Exception {
@@ -105,7 +103,6 @@ public class CustomVaultInModuleTestCase {
         } finally {
             containerController.stop();
             testModule.remove();
-            picketLink.remove();
             IoUtils.safeClose(client);
         }
         containerController.stop();
@@ -128,8 +125,6 @@ public class CustomVaultInModuleTestCase {
         path = ArchivePaths.create(path, Extension.class.getName());
         archive.addAsManifestResource(CustomSecurityVault.class.getPackage(), Extension.class.getName(), path);
         testModule.create(true);
-
-        picketLink = PicketBoxModuleUtil.createTestModule();
     }
 
     private static void setupServerWithVault() throws Exception {

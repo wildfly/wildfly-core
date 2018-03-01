@@ -33,7 +33,6 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.test.integration.management.util.CustomCLIExecutor;
-import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SecurityTestConstants;
 import org.jboss.as.test.module.util.TestModule;
@@ -82,7 +81,6 @@ public class CustomVaultInCLITestCase {
 
     @Inject
     private static ServerController containerController;
-    private static TestModule picketLinkModule;
 
     @BeforeClass
     public static void prepareConfiguration() throws Exception {
@@ -94,7 +92,7 @@ public class CustomVaultInCLITestCase {
         createCustomVaultModule();
         createCustomVaultConfiguration();
 
-        LOGGER.info("*** starting server");
+        LOGGER.trace("*** starting server");
         containerController.start();
     }
 
@@ -142,11 +140,10 @@ public class CustomVaultInCLITestCase {
     @AfterClass
     public static void rollbackConfiguration() throws Exception {
 
-        LOGGER.info("*** stopping server");
+        LOGGER.trace("*** stopping server");
         containerController.stop();
 
         customVaultModule.remove();
-        picketLinkModule.remove();
         FileUtils.deleteDirectory(WORK_DIR);
     }
 
@@ -162,8 +159,6 @@ public class CustomVaultInCLITestCase {
         customVaultModule = new TestModule(MODULE_NAME, MODULE_FILE);
         customVaultModule.addResource(JAR_NAME).addClass(CustomDummyVault.class);
         customVaultModule.create(true);
-        picketLinkModule = PicketBoxModuleUtil.createTestModule();
-
     }
 
     private static void createCustomVaultConfiguration() throws IOException {

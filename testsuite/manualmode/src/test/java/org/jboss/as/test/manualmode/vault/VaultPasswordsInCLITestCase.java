@@ -37,7 +37,6 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.util.CustomCLIExecutor;
-import org.jboss.as.test.integration.security.PicketBoxModuleUtil;
 import org.jboss.as.test.integration.security.common.AbstractBaseSecurityRealmsServerSetupTask;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.integration.security.common.SecurityTestConstants;
@@ -45,7 +44,6 @@ import org.jboss.as.test.integration.security.common.config.realm.Authentication
 import org.jboss.as.test.integration.security.common.config.realm.RealmKeystore;
 import org.jboss.as.test.integration.security.common.config.realm.SecurityRealm;
 import org.jboss.as.test.integration.security.common.config.realm.ServerIdentity;
-import org.jboss.as.test.module.util.TestModule;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -98,19 +96,17 @@ public class VaultPasswordsInCLITestCase {
 
     @Inject
     private static ServerController containerController;
-    private static TestModule picketLink;
 
 
     @BeforeClass
     public static void prepareServer() throws Exception {
 
-        LOGGER.info("*** starting server");
+        LOGGER.trace("*** starting server");
         containerController.startInAdminMode();
         ManagementClient mgmtClient = containerController.getClient();
         managementInterfacesSetup.setup(mgmtClient);
         managementCLICliRealmSetup.setup(mgmtClient);
 
-        picketLink = PicketBoxModuleUtil.createTestModule();
         createAndInitializeVault();
 
         // To apply new security realm settings for native interface reload of
@@ -164,7 +160,6 @@ public class VaultPasswordsInCLITestCase {
         LOGGER.info("*** stopping container");
         containerController.stop();
 
-        picketLink.remove();
         FileUtils.deleteDirectory(WORK_DIR);
     }
 
