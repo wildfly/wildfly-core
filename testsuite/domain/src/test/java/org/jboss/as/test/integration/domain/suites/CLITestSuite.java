@@ -59,7 +59,6 @@ import org.junit.runners.Suite;
     HelpTestCase.class,
     HierarchicalCompositionTestCase.class,
     WildCardReadsTestCase.class,
-    DeployAllDomainTestCase.class,
     DeploymentOverlayTestCase.class,
     DeployAllDomainTestCase.class
 })
