@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -133,7 +134,20 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         // Sort the attribute descriptions based on attribute group and then attribute name
         Set<String> attributeNames = registration.getAttributeNames(PathAddress.EMPTY_ADDRESS);
 
-        Map<AttributeDefinition.NameAndGroup, ModelNode> sortedDescriptions = new TreeMap<>();
+        //fix of WFCORE-1985 - attributes have to be sorted firstly by name
+        //case that two attributes of the same name are allowed is not possible, see error WFLYCTL0043
+        Comparator<AttributeDefinition.NameAndGroup> comparator = new Comparator<AttributeDefinition.NameAndGroup>() {
+            @Override
+            public int compare(AttributeDefinition.NameAndGroup o1, AttributeDefinition.NameAndGroup o2) {
+                int attrCompare = o1.getName().compareTo(o2.getName());
+                if (attrCompare != 0) {
+                    return attrCompare;
+                }
+                //if attr compare is the same, use default compare which involves groups
+                return o1.compareTo(o2);
+            }
+        };
+        Map<AttributeDefinition.NameAndGroup, ModelNode> sortedDescriptions = new TreeMap<>(comparator);
         for (String attr : attributeNames)  {
             AttributeAccess attributeAccess = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attr);
             AttributeDefinition def = attributeAccess.getAttributeDefinition();
