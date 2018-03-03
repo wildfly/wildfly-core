@@ -31,6 +31,7 @@ import org.jboss.as.cli.CommandArgument;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
+import org.jboss.as.cli.handlers.SimpleTabCompleter;
 import org.jboss.as.cli.operation.OperationCandidatesProvider;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestHeader;
@@ -114,9 +115,11 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
             return Collections.emptyList();
         }
 
-        final List<String> names = operation.getPropertyNames();
-        final List<CommandArgument> result = new ArrayList<CommandArgument>(names.size());
-        for(final String name : names) {
+        final List<MockOperationProperty> properties = operation.getProperties();
+        final List<CommandArgument> result = new ArrayList<CommandArgument>(properties.size());
+        for(final MockOperationProperty property : properties) {
+            String name = property.getName();
+
             result.add(new CommandArgument(){
                 @Override
                 public String getFullName() {
@@ -166,7 +169,7 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
                     if(!isPresent(args)) {
                         return false;
                     }
-                    if(name.equals(args.getLastParsedPropertyName())) {
+                    if(name.equals(args.getLastParsedPropertyName()) && !args.isLastPropertyNegated()) {
                         return false;
                     }
                     return true;
@@ -174,12 +177,14 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
 
                 @Override
                 public boolean isValueRequired() {
-                    return true;
+                    return property.isValueRequired();
                 }
 
                 @Override
                 public CommandLineCompleter getValueCompleter() {
-                    return null;
+                        return property.getPossibleValues() != null
+                                ? new SimpleTabCompleter(property.getPossibleValues())
+                                : null;
                 }});
         }
         return result;

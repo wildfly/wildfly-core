@@ -396,7 +396,7 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 if (argFullName.equals(argName)) {
                     if (!arg.isValueRequired()) {
                         candidates.add(Util.FALSE);
-                        return parsedCmd.getLastChunkIndex();
+                        return buffer.length();
                     }
                 }
             }
@@ -577,11 +577,14 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 // enough.
                 if (!parsedCmd.isLastPropertyNegated()) {
                     candidates.add("=" + Util.FALSE);
+                    result = recalculateResult(parsedCmd, candidates, chunk, result);
                 }
                 if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                     candidates.add(format.getPropertyListEnd());
+                    result = recalculateResult(parsedCmd, candidates, chunk, result);
                     if (!allPropertiesPresent) {
                         candidates.add(format.getPropertySeparator());
+                        result = recalculateResult(parsedCmd, candidates, chunk, result);
                     }
                 }
             }
@@ -592,10 +595,20 @@ public class OperationRequestCompleter implements CommandLineCompleter {
                 final CommandLineFormat format = parsedCmd.getFormat();
                 if (format != null && format.getPropertyListEnd() != null && format.getPropertyListEnd().length() > 0) {
                     candidates.add(format.getPropertyListEnd());
+                    result = recalculateResult(parsedCmd, candidates, chunk, result);
                 }
             }
         } else {
             Collections.sort(candidates);
+        }
+        return result;
+    }
+
+    private int recalculateResult(ParsedCommandLine parsedCmd, List<String> candidates, String chunk, int result) {
+        if (candidates.size() == 1 && chunk != null) {
+            // Move the offset to the end of the line, since the name of the last property is completely specified
+            // and there are no other candidates
+            result = parsedCmd.getLastChunkIndex() + chunk.length();
         }
         return result;
     }

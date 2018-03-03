@@ -31,7 +31,7 @@ import java.util.List;
 public class MockOperation {
 
     private final String name;
-    private List<String> parameterNames = Collections.emptyList();
+    private List<MockOperationProperty> properties = Collections.emptyList();
 
     public MockOperation(String name) {
         this.name = name;
@@ -41,11 +41,11 @@ public class MockOperation {
         return name;
     }
 
-    public List<String> getPropertyNames() {
-        return parameterNames;
+    public List<MockOperationProperty> getProperties() {
+        return properties;
     }
 
-    public void setPropertyNames(List<String> parameterNames) {
-        this.parameterNames = parameterNames;
+    public void setProperties(List<MockOperationProperty> properties) {
+        this.properties = properties;
     }
 }
