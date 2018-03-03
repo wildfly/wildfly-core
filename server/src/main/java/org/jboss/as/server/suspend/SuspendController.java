@@ -123,7 +123,7 @@ public class SuspendController implements Service<SuspendController> {
             try {
                 activity.resume();
             } catch (Exception e) {
-                ServerLogger.ROOT_LOGGER.failedToResume(activity);
+                ServerLogger.ROOT_LOGGER.failedToResume(activity, e);
             }
         }
         state = State.RUNNING;
