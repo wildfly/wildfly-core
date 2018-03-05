@@ -1083,7 +1083,7 @@ public interface ServerLogger extends BasicLogger {
 
     @LogMessage(level = ERROR)
     @Message(id = 215, value = "Failed to resume activity %s. To resume normal operation it is recommended that you restart the server.")
-    void failedToResume(ServerActivity activity);
+    void failedToResume(ServerActivity activity, @Cause Exception cause);
 
     @LogMessage(level = ERROR)
     @Message(id = 216, value = "Error cleaning obsolete content %s ")
