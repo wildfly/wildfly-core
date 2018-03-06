@@ -155,7 +155,7 @@ public class EnableCommand extends AbstractDeployCommand implements LegacyBridge
 
         if (!ctx.isBatchMode() && !Util.isDeploymentInRepository(name,
                 ctx.getModelControllerClient())) {
-            throw new CommandFormatException("'" + name + "' is not found among "
+            throw new CommandFormatException("Deployment '" + name + "' is not found among "
                     + "the registered deployments.");
         }
         if (headers != null) {

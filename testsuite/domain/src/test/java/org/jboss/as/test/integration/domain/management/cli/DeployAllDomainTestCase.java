@@ -21,8 +21,10 @@
  */
 package org.jboss.as.test.integration.domain.management.cli;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Iterator;
 
 import org.jboss.as.cli.CommandContext;
@@ -36,8 +38,6 @@ import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createCliArchive;
 import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createEnterpriseArchive;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
@@ -49,9 +49,9 @@ import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentList;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -148,6 +148,9 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
      */
     @Test
     public void testDeploymentLiveCycleWithServerGroups() throws Exception {
+        ByteArrayOutputStream errorOutput = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(errorOutput));
+
         // Step 1) Deploy applications deployments to defined server groups
         ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
         ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
@@ -178,20 +181,10 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
         ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp1War.getName());
         ctx.handle("deployment disable --server-groups=" + sgTwo + ' ' + cliTestApp2War.getName());
 
-        // Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail
-        try {
-            ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp2War.getName());
-            fail("Disabling application deployment with wrong server group doesn't failed! Command execution fail is expected.");
-        } catch (Exception ex) {
-            // Check error message
-            assertThat("Error message doesn't contains expected message information!",
-                    ex.getMessage(),
-                    allOf(containsString("WFLYCTL0216: Management resource"),
-                            containsString(sgOne),
-                            containsString(cliTestApp2War.getName()),
-                            containsString("not found")));
-            // Verification wrong command execution fail - success
-        }
+        // Step 3b) Try disabling application deployment in wrong server group space
+        ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestApp2War.getName());
+        Assert.assertEquals(String.format("Deployment '%s' is " +
+                "already disabled in '%s'." + System.lineSeparator(), cliTestApp2War.getName(), sgOne), errorOutput.toString());
 
         // Step 4) Verify if two selected applications deployments are disabled, but other have still previous state
         result = deploymentInfo(cli, sgOne);
@@ -290,6 +283,9 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
      */
     @Test
     public void testDeploymentLegacyLiveCycleWithServerGroups() throws Exception {
+        ByteArrayOutputStream errorOutput = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(errorOutput));
+
         // Step 1) Deploy applications deployments to defined server groups
         ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
         ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
@@ -320,20 +316,10 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
         ctx.handle("undeploy " + cliTestApp1War.getName() + " --keep-content --server-groups=" + sgOne);
         ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgTwo);
 
-        // Step 3b) Try disabling application deployment in wrong server group space. expect command execution fail
-        try {
-            ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgOne);
-            fail("Disabling application deployment with wrong server group doesn't failed! Command execution fail is expected.");
-        } catch (Exception ex) {
-            // Check error message
-            assertThat("Error message doesn't contains expected message information!",
-                    ex.getMessage(),
-                    allOf(containsString("WFLYCTL0216: Management resource"),
-                            containsString(sgOne),
-                            containsString(cliTestApp2War.getName()),
-                            containsString("not found")));
-            // Verification wrong command execution fail - success
-        }
+        // Step 3b) Try disabling application deployment in wrong server group space
+        ctx.handle("undeploy " + cliTestApp2War.getName() + " --keep-content --server-groups=" + sgOne);
+        Assert.assertEquals(String.format("Deployment '%s' is " +
+                "already disabled in '%s'." + System.lineSeparator(), cliTestApp2War.getName(), sgOne), errorOutput.toString());
 
         // Step 4) Verify if two selected applications deployments are disabled, but other have still previous state
         result = legacyDeploymentInfo(cli, sgOne);

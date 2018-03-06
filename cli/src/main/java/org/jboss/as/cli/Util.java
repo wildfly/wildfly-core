@@ -369,32 +369,10 @@ public class Util {
         return getDeployments(client).contains(name);
     }
 
-    public static boolean isDeployedAndEnabledInStandalone(String name, ModelControllerClient client) {
-
+    public static boolean isEnabledInStandalone(String name, ModelControllerClient client) {
         DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
         ModelNode request;
-        try {
-            builder.setOperationName(Util.READ_CHILDREN_NAMES);
-            builder.addProperty(Util.CHILD_TYPE, Util.DEPLOYMENT);
-            request = builder.buildRequest();
-        } catch (OperationFormatException e) {
-            throw new IllegalStateException("Failed to build operation", e);
-        }
 
-        try {
-            ModelNode outcome = client.execute(request);
-            if (isSuccess(outcome)) {
-                if(!listContains(outcome, name)) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-
-        builder = new DefaultOperationRequestBuilder();
         builder.addNode(Util.DEPLOYMENT, name);
         builder.setOperationName(Util.READ_ATTRIBUTE);
         builder.addProperty(Util.NAME, Util.ENABLED);
@@ -413,13 +391,15 @@ public class Util {
                 return outcome.get(RESULT).asBoolean();
             }
         } catch(Exception e) {
+            return false;
         }
+
         return false;
     }
 
     public static boolean isEnabledDeployment(String name,
             ModelControllerClient client, String serverGroup) throws
-            OperationFormatException, IOException, CommandFormatException {
+            IOException, CommandFormatException {
         DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
         if (serverGroup != null) {
             builder.addNode(Util.SERVER_GROUP, serverGroup);
@@ -464,7 +444,7 @@ public class Util {
             return Collections.emptyList();
         }
 
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for(String serverGroup : serverGroups) {
             DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
             ModelNode request;
@@ -525,7 +505,7 @@ public class Util {
         if(serverGroups.isEmpty()) {
             return Collections.emptyList();
         }
-        final List<String> groupNames = new ArrayList<String>();
+        final List<String> groupNames = new ArrayList<>();
         for(String serverGroup : serverGroups) {
             final ModelNode request = new ModelNode();
             request.get(Util.OPERATION).set(Util.VALIDATE_ADDRESS);

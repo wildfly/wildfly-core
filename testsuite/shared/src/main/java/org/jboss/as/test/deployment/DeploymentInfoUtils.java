@@ -134,7 +134,7 @@ public class DeploymentInfoUtils {
             this.serverGroup = serverGroup;
             originalOutput = output;
             if (originalOutput != null && !originalOutput.isEmpty()) {
-                log.trace("Read output:\n" + output);
+                log.trace("Read output:" + LINE_SEPARATOR + output);
                 rows = Arrays.asList(originalOutput.split(LINE_SEPARATOR));
             } else {
                 log.trace("Read output: <EMPTY>");
@@ -176,10 +176,12 @@ public class DeploymentInfoUtils {
          */
         @Override
         public String toString() {
+            String result = "DeploymentInfoResult{Command='" + command + "'";
             if (isOutputEmpty()) {
-                return "<EMPTY>";
+                return result + ", Output='<EMPTY>'}";
             }
-            return String.join(LINE_SEPARATOR, rows);
+            return result + LINE_SEPARATOR + ", Output={" + LINE_SEPARATOR + String.join(LINE_SEPARATOR, rows) +
+                    LINE_SEPARATOR +"}}";
         }
 
         /**
@@ -258,6 +260,22 @@ public class DeploymentInfoUtils {
         }
 
         // &&&& END   Method for additional information about processing verify check
+
+        @Override
+        public int hashCode() {
+            int hash = 21 * command.hashCode();
+            hash += 37 * originalOutput.hashCode();
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof DeploymentInfoResult) {
+                DeploymentInfoResult result = (DeploymentInfoResult) obj;
+                return command.equals(result.command) && originalOutput.equals(result.originalOutput);
+            }
+            return false;
+        }
     }
 
     /**
@@ -385,18 +403,18 @@ public class DeploymentInfoUtils {
          */
         @Override
         public String toString() {
-            return "CheckArguments{\n" +
-                    "result={\n called_command='" + result.getCommand() + "'" +
-                    "\n, server_group='" + result.getServerGroup() + "'" +
-                    "\n, command_output={\n" + result.getOriginalOutput() + "\n}" +
-                    "\n, request='" + result.getRequest() + "'" +
-                    "\n, response={\n" + result.getResponse() + "\n}" +
-                    "\n}\n, name='" + name + '\'' +
-                    "\n, expectedState=" + expectedState +
-                    "\n, searchType=" + searchType +
-                    "\n, ctx=" + ctx +
-                    "\n, goalStr='" + goalStr + '\'' +
-                    "\n}";
+            return "CheckArguments{" + LINE_SEPARATOR +
+                    "result={" + LINE_SEPARATOR + " called_command='" + result.getCommand() + "'" +
+                    LINE_SEPARATOR + ", server_group='" + result.getServerGroup() + "'" +
+                    LINE_SEPARATOR + ", command_output={" + LINE_SEPARATOR + result.getOriginalOutput() + LINE_SEPARATOR + "}" +
+                    LINE_SEPARATOR + ", request='" + result.getRequest() + "'" +
+                    LINE_SEPARATOR + ", response={" + LINE_SEPARATOR + result.getResponse() + LINE_SEPARATOR + "}" +
+                    LINE_SEPARATOR + "}" + LINE_SEPARATOR + ", name='" + name + '\'' +
+                    LINE_SEPARATOR + ", expectedState=" + expectedState +
+                    LINE_SEPARATOR + ", searchType=" + searchType +
+                    LINE_SEPARATOR + ", ctx=" + ctx +
+                    LINE_SEPARATOR + ", goalStr='" + goalStr + '\'' +
+                    LINE_SEPARATOR + "}";
         }
     }
 
@@ -574,12 +592,12 @@ public class DeploymentInfoUtils {
                         return state;
                     }
                 }
-                log.warn("Status of application deployment not found!\n"
+                log.warn("Status of application deployment not found!" + LINE_SEPARATOR
                         + row);
                 return UNKNOWN;
             }
         }
-        throw new CommandFormatException("No result for " + name + " in \n" + result);
+        throw new CommandFormatException("No result for " + name + " in " + LINE_SEPARATOR + result);
     }
     // #### END   Method for checking without recalling command for applications deployments state
 
@@ -621,7 +639,7 @@ public class DeploymentInfoUtils {
                     if (param.isSearchTypeMissing()) {
 
                         fail("Found non wanted application deployment " +
-                                "" + param.getName() + " in \n" + param.getResult());
+                                "" + param.getName() + " in" + LINE_SEPARATOR + param.getResult());
                     } else if (param.isSearchTypeExist()) {
 
                         log.trace("Check existence application deployment '" + param.getName() + "' Success");
@@ -629,7 +647,7 @@ public class DeploymentInfoUtils {
                         return;
                     } else if (param.isSearchTypeStatus()) {
 
-                        assertThat("", row, containsString(param.getExpectedState().getTitle()));
+                        assertThat("Invalid state of application deployment!", row, containsString(param.getExpectedState().getTitle()));
                         log.trace("Check application deployment in right state '" + param.getName() + "'->'"
                                 + param.getExpectedState().getTitle() + " by command '" + param.getResult().getCommand() + " Success");
                         doubleCheck(param);
@@ -637,7 +655,7 @@ public class DeploymentInfoUtils {
                     }
 
                     fail(param.getName() + " not in right state" + param.getResult().getServerGroupInfo() +
-                            "! Expected '" + param.getExpectedState().getTitle() + "' but is\n" + row);
+                            "! Expected '" + param.getExpectedState().getTitle() + "' but is" + LINE_SEPARATOR + row);
                 }
             }
         }
@@ -646,7 +664,7 @@ public class DeploymentInfoUtils {
             doubleCheck(param);
             return;
         }
-        throw new CommandFormatException("No result for " + param.getName() + " in \n" + param.getResult());
+        throw new CommandFormatException("No result for " + param.getName() + " in" + LINE_SEPARATOR + param.getResult());
     }
 
     /**
@@ -706,7 +724,7 @@ public class DeploymentInfoUtils {
         if (NOT_ADDED.equals(param.getExpectedState())) {
             // Verify state NOT_ADDED, because is only in Domain mode, for domain mode not-exist deployment in other group
             assertThat("Invalid response for " + param.getName(), response.hasDefined(OUTCOME), is(true));
-            assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!\n" + param,
+            assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!" + LINE_SEPARATOR + param,
                     response.get(OUTCOME).asString(), is(FAILED));
             assertThat("No result for " + param.getName(), response.hasDefined(FAILURE_DESCRIPTION), is(true));
             // Verify error message
@@ -720,7 +738,7 @@ public class DeploymentInfoUtils {
         } else {
             // Standard verify with boolean enabled/disabled
             assertThat("Invalid response for " + param.getName(), response.hasDefined(OUTCOME), is(true));
-            assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!\n" + param,
+            assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!" + LINE_SEPARATOR + param,
                     response.get(OUTCOME).asString(), is(SUCCESS));
             boolean enable = mapBooleanByDeploymentStatus(param.getExpectedState());
             assertThat("No result for " + param.getName(), response.hasDefined(RESULT), is(true));
@@ -744,7 +762,7 @@ public class DeploymentInfoUtils {
         param.getResult().setResponse(response.asString());
 
         assertThat("Invalid response for " + param.getName(), response.hasDefined(OUTCOME), is(true));
-        assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!\n" + param,
+        assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!" + LINE_SEPARATOR + param,
                 response.get(OUTCOME).asString(), is(SUCCESS));
         assertThat("No result for " + param.getName(), response.hasDefined(RESULT), is(true));
         assertThat(param.getName() + " not in right state", response.get(RESULT).asString(), is(param.getName()));
@@ -766,7 +784,7 @@ public class DeploymentInfoUtils {
         param.getResult().setResponse(response.asString());
 
         assertThat("Invalid response for " + param.getName(), response.hasDefined(OUTCOME), is(true));
-        assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!\n" + param,
+        assertThat("Verification failed for " + param.getName() + param.getGoalStr() + "!" + LINE_SEPARATOR + param,
                 response.get(OUTCOME).asString(), is(FAILED));
         assertThat("No result for " + param.getName(), response.hasDefined(FAILURE_DESCRIPTION), is(true));
         // Verify error message

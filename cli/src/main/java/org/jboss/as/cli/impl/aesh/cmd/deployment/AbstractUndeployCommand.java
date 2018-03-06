@@ -118,10 +118,13 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
         try {
             ModelNode request = buildRequest(ctx,
                     name, allServerGroups, serverGroups, keepContent, headers);
-            final ModelNode result = ctx.
-                    getModelControllerClient().execute(request);
-            if (!Util.isSuccess(result)) {
-                throw new CommandException(Util.getFailureDescription(result));
+
+            if (request.get(Util.STEPS).isDefined()) {
+                final ModelNode result = ctx.
+                        getModelControllerClient().execute(request);
+                if (!Util.isSuccess(result)) {
+                    throw new CommandException(Util.getFailureDescription(result));
+                }
             }
         } catch (IOException e) {
             throw new CommandException("Failed to deploy", e);
@@ -160,6 +163,11 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
 
         for (String deploymentName : deploymentNames) {
 
+            if (!Util.isDeploymentInRepository(deploymentName, client)) {
+                throw new CommandFormatException("Deployment '" + name + "' is not found among "
+                        + "the registered deployments.");
+            }
+
             final List<String> serverGroups;
             if (ctx.isDomainMode()) {
                 if (allRelevantServerGroups) {
@@ -186,28 +194,48 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                 } else {
                     // If !keepContent, check that all server groups have been listed by user.
                     if (!keepContent) {
+                        List<String> sg;
                         try {
-                            List<String> sg = Util.getServerGroupsReferencingDeployment(deploymentName, client);
-                            // Keep the content if some groups are missing.
-                            keepContent = !serverGroups.containsAll(sg);
+                             sg = Util.getServerGroupsReferencingDeployment(deploymentName, client);
                         } catch (CommandLineException e) {
                             throw new CommandFormatException("Failed to retrieve all referencing server groups", e);
                         }
+
+                        if (!serverGroups.containsAll(sg)) {
+                            sg.removeAll(serverGroups);
+                            throw new CommandFormatException("Cannot undeploy '" + deploymentName +
+                                    "' as it is still deployed in " + sg + ". Please specify all relevant server groups.");
+                        }
+
                     }
                     for (String group : serverGroups) {
-                        ModelNode groupStep = Util.configureDeploymentOperation(Util.UNDEPLOY, deploymentName, group);
-                        steps.add(groupStep);
+                        ModelNode groupStep;
                         if (!keepContent) {
                             groupStep = Util.configureDeploymentOperation(Util.REMOVE, deploymentName, group);
+                            steps.add(groupStep);
+                        } else {
+                            try {
+                                if (!Util.isEnabledDeployment(deploymentName, client, group)) {
+                                    System.err.println("Deployment '" + deploymentName + "' is already disabled in '" + group + "'.");
+                                    continue;
+                                }
+                            } catch (IOException e) {
+                                throw new CommandFormatException("Error retrieving deployment information for '" + deploymentName + "'");
+                            }
+                            groupStep = Util.configureDeploymentOperation(Util.UNDEPLOY, deploymentName, group);
                             steps.add(groupStep);
                         }
                     }
                 }
-            } else if (Util.isDeployedAndEnabledInStandalone(deploymentName, client)) {
-                builder = new DefaultOperationRequestBuilder();
-                builder.setOperationName(Util.UNDEPLOY);
-                builder.addNode(Util.DEPLOYMENT, deploymentName);
-                steps.add(builder.buildRequest());
+            } else {
+                if (keepContent && !Util.isEnabledInStandalone(deploymentName, client)) {
+                    System.err.println("Deployment '" + deploymentName + "' is already disabled.");
+                } else {
+                    builder = new DefaultOperationRequestBuilder();
+                    builder.setOperationName(Util.UNDEPLOY);
+                    builder.addNode(Util.DEPLOYMENT, deploymentName);
+                    steps.add(builder.buildRequest());
+                }
             }
         }
 
