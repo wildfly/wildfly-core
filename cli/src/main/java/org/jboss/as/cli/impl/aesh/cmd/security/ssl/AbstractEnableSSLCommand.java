@@ -206,9 +206,6 @@ public abstract class AbstractEnableSSLCommand implements Command<CLICommandInvo
         SSLSecurityBuilder builder = null;
 
         if (keystorePath != null) {
-            if (builder != null) {
-                invalidUseCase();
-            }
             if (keystoreName != null) {
                 throw new CommandException(formatOption(OPT_KEY_STORE_NAME) + " can't be used with " + formatOption(OPT_KEY_STORE_PATH));
             }
