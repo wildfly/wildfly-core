@@ -14,7 +14,11 @@ DESCRIPTION
     NB: for can't be used inside a batch, but batch can be used in for blocks.
 
     Example of a loop that displays the manifest of all deployments:
-    
+
+    for varName in :read-children-names(child-type=deployment)
+     echo Manifest file in $varName
+     attachment display --operation=/deployment=$varName:read-content(path=META-INF/MANIFEST.MF)
+    done
 
 ARGUMENTS
 
