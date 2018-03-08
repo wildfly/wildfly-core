@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>25</version>
+      <version>26</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -70,8 +70,7 @@
           -->
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.3.1</maven.min.version>
-        <version.surefire.plugin>2.18.1</version.surefire.plugin>
-
+     
         <!-- use older version of checkstyle as otherwise lots of checks fail -->
         <version.checkstyle>6.8</version.checkstyle>
         <!--
