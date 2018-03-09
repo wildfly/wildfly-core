@@ -46,7 +46,8 @@ import org.jboss.dmr.Property;
 //todo consider removing this class or moving it to test harness for transformers
 public class LegacyResourceDefinition implements ResourceDefinition {
     private Map<String, AttributeAccess> attributes = new HashMap<String, AttributeAccess>();
-    private List<ResourceDefinition> children = new LinkedList<ResourceDefinition>();
+    private List<ResourceDefinition> wildcardChildren = new LinkedList<>();
+    private List<ResourceDefinition> singletonChildren = new LinkedList<>();
     private final PathAddress address;
     private final ModelNode description;
 
@@ -69,7 +70,12 @@ public class LegacyResourceDefinition implements ResourceDefinition {
             return;
         }
         for (ModelNode child : children.asList()) {
-            this.children.add(new LegacyResourceDefinition(child));
+            ResourceDefinition definition = new LegacyResourceDefinition(child);
+            if (definition.getPathElement().isWildcard()) {
+                this.wildcardChildren.add(definition);
+            } else {
+                this.singletonChildren.add(definition);
+            }
         }
         description.remove(ModelDescriptionConstants.CHILDREN);
     }
@@ -140,7 +146,11 @@ public class LegacyResourceDefinition implements ResourceDefinition {
      */
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        for (ResourceDefinition rd : children) {
+        // Register wildcard children last to prevent duplicate registration errors when override definitions exist
+        for (ResourceDefinition rd : singletonChildren) {
+            resourceRegistration.registerSubModel(rd);
+        }
+        for (ResourceDefinition rd : wildcardChildren) {
             resourceRegistration.registerSubModel(rd);
         }
     }
