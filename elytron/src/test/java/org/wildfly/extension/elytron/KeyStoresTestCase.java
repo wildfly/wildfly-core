@@ -673,8 +673,6 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     @Test
     public void testFileDoesNotExistAndIsRequired() throws Exception {
         String nonExistentFileName = "/does-not-exist.keystore";
-        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
-        File file = new File(resources + nonExistentFileName);
 
         ModelNode operation = getAddKeyStoreUsingNonExistingFileOperation(true, nonExistentFileName);
         assertFailed(services.executeOperation(operation));

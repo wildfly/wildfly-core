@@ -313,7 +313,6 @@ public abstract class SSLSecurityBuilder implements SecurityCommand.FailureConsu
         boolean exists = false;
 
         boolean need = trustManager != null;
-        String tm = trustManager == null ? null : trustManager.getName();
         // Lookup for a matching sslContext only if the keymanager already exists
         // and no name has been provided
         if (manager.exists() && lookupExisting) {
