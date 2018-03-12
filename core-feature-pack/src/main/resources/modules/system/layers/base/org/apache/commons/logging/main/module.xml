@@ -23,8 +23,8 @@
     </properties>
 
     <dependencies>
-        <!-- This allows the org.jboss.logmanager.commons.logging module to be private while keeping this module public -->
-        <module name="org.jboss.logmanager.commons.logging" export="true"/>
+        <!-- This allows the org.jboss.logging.commons.logging module to be private while keeping this module public -->
+        <module name="org.jboss.logging.commons.logging" export="true"/>
     </dependencies>
 </module>
 
