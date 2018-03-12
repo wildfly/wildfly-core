@@ -86,6 +86,7 @@
          -->
 
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
+        <version.commons-codec>1.10</version.commons-codec>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>2.0.1.Final</version.io.undertow>
@@ -95,6 +96,8 @@
         <version.org.apache.ds>2.0.0-M15</version.org.apache.ds> <!-- TODO Elytron - Bump to M17 -->
         <version.org.apache.httpcomponents.httpclient>4.5.2</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.4</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpasyncclient>4.1.3</version.org.apache.httpcomponents.httpasyncclient>
+        <version.org.apache.james.apache-mime4j>0.6</version.org.apache.james.apache-mime4j>
         <version.org.apache.maven>3.5.0</version.org.apache.maven>
         <version.org.apache.maven.resolver>1.1.0</version.org.apache.maven.resolver>
         <version.org.apache.xerces>2.11.0.SP5</version.org.apache.xerces>
@@ -158,6 +161,7 @@
         <version.org.wildfly.security.elytron>1.2.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron.tool>1.1.3.Final</version.org.wildfly.security.elytron.tool>
         <version.org.wildfly.security.elytron-web.undertow-server>1.1.0.Final</version.org.wildfly.security.elytron-web.undertow-server>
+        <version.org.wildfly.url.http.wildfly-url-http>1.0.2.Final</version.org.wildfly.url.http.wildfly-url-http>
         <version.xml-resolver>1.2</version.xml-resolver> <!-- Apache xml-resolver -->
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
@@ -1057,6 +1061,40 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpasyncclient</artifactId>
+                <version>${version.org.apache.httpcomponents.httpasyncclient}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-io</groupId>
+                        <artifactId>commons-io</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.commons-codec}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-mime4j</artifactId>
+                <version>${version.org.apache.james.apache-mime4j}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
               <groupId>org.apache.maven</groupId>
               <artifactId>maven-resolver-provider</artifactId>
               <version>${version.org.apache.maven}</version>
@@ -1602,6 +1640,12 @@
                         <groupId>*</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.url.http</groupId>
+                <artifactId>wildfly-url-http</artifactId>
+                <version>${version.org.wildfly.url.http.wildfly-url-http}</version>
             </dependency>
 
             <!-- JSR-353 JSONP RI implementation -->
