@@ -147,7 +147,7 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
             return this;
         }
 
-        public org.jboss.as.controller.SimpleResourceDefinition.Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
+        public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
             super.setDeprecatedSince(deprecatedSince);
 
             return this;

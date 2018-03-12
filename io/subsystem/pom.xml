@@ -62,5 +62,9 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+        </dependency>
     </dependencies>
 </project>
