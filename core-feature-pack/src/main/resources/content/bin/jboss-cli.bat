@@ -79,12 +79,13 @@ if errorlevel == 1 (
   echo logging.configuration already set in JAVA_OPTS
 )
 
+rem No variable that can contain '!' character can be handled once 
+rem delayed expansion has been enabled.
+set ARGS=%*
+
 rem the arguments can contain ')' character, this breaks parser. Delaying 
 rem argument evaluation at script execution fixes it.
 setlocal ENABLEDELAYEDEXPANSION
-
-rem script arguments will be evaluated at execution time.
-set ARGS=%*
 
 rem Force following commands to be loaded in memory.
 rem This protects the running script from being rewritten.
