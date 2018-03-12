@@ -84,4 +84,15 @@ public class CdTestCase {
             ctx.terminateSession();
         }
     }
+
+    @Test
+    public void testTypeAddress() throws Exception {
+        final CommandContext ctx = CLITestUtil.getCommandContext();
+        try {
+            ctx.connectController();
+            ctx.handle("cd deployment");
+        } finally {
+            ctx.terminateSession();
+        }
+    }
 }

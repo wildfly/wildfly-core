@@ -93,42 +93,40 @@ public class PrefixHandler extends CommandHandlerWithHelp {
         req.get(Util.OPERATION).set(Util.VALIDATE_ADDRESS);
         final ModelNode addressValue = req.get(Util.VALUE);
         String lastType = null;
-        if(addr.isEmpty()) {
-            addressValue.setEmptyList();
-        } else {
-            for(OperationRequestAddress.Node node : addr) {
-                if(node.getName() != null) {
-                    addressValue.add(node.getType(), node.getName());
-                } else {
-                    lastType = node.getType();
-                }
-            }
-        }
-        ModelNode response;
-        try {
-            response = ctx.getModelControllerClient().execute(req);
-        } catch (IOException e) {
-            throw new CommandLineException("Failed to validate address.", e);
-        }
-        ModelNode result = response.get(Util.RESULT);
-        if(!result.isDefined()) {
-            throw new CommandLineException("Failed to validate address: the response from the controller doesn't contain result.");
-        }
-        final ModelNode valid = result.get(Util.VALID);
-        if(!valid.isDefined()) {
-            throw new CommandLineException("Failed to validate address: the result doesn't contain 'valid' property.");
-        }
-        if(!valid.asBoolean()) {
-            final String msg;
-            if(result.hasDefined(Util.PROBLEM)) {
-                msg = result.get(Util.PROBLEM).asString();
+        for (OperationRequestAddress.Node node : addr) {
+            if (node.getName() != null) {
+                addressValue.add(node.getType(), node.getName());
             } else {
-                msg = "Invalid target address.";
+                lastType = node.getType();
             }
-            throw new CommandLineException(msg);
         }
-
-        if(lastType != null) {
+        if (addressValue.isDefined()) {
+            ModelNode response;
+            try {
+                response = ctx.getModelControllerClient().execute(req);
+            } catch (IOException e) {
+                throw new CommandLineException("Failed to validate address.", e);
+            }
+            ModelNode result = response.get(Util.RESULT);
+            if (!result.isDefined()) {
+                throw new CommandLineException("Failed to validate address: the response from the controller doesn't contain result.");
+            }
+            final ModelNode valid = result.get(Util.VALID);
+            if (!valid.isDefined()) {
+                throw new CommandLineException("Failed to validate address: the result doesn't contain 'valid' property.");
+            }
+            if (!valid.asBoolean()) {
+                final String msg;
+                if (result.hasDefined(Util.PROBLEM)) {
+                    msg = result.get(Util.PROBLEM).asString();
+                } else {
+                    msg = "Invalid target address.";
+                }
+                throw new CommandLineException(msg);
+            }
+        }
+        if (lastType != null) {
+            ModelNode response;
             req = new ModelNode();
             req.get(Util.OPERATION).set(Util.READ_CHILDREN_TYPES);
             final ModelNode addrNode = req.get(Util.ADDRESS);
@@ -146,7 +144,7 @@ public class PrefixHandler extends CommandHandlerWithHelp {
             } catch (IOException e) {
                 throw new CommandLineException("Failed to validate address.", e);
             }
-            result = response.get(Util.RESULT);
+            ModelNode result = response.get(Util.RESULT);
             if(!result.isDefined()) {
                 throw new CommandLineException("Failed to validate address: the response from the controller doesn't contain result.");
             }
