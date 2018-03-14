@@ -65,11 +65,13 @@ import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
@@ -232,7 +234,6 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
 
         ManagementResourceRegistration profileCSub5Reg = profileReg.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), new NonResolvingResourceDescriptionResolver()));
-
         profileCSub5Reg.registerReadOnlyAttribute(TestUtils.createAttribute("name", ModelType.STRING, "varchar"), new OperationStepHandler() {
 
             @Override
@@ -240,10 +241,17 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                 context.getResult().set("Overridden by special read handler");
             }
         });
+        profileCSub5Reg.registerRequirements(Collections.singleton(
+                        new CapabilityReferenceRecorder.ResourceCapabilityReferenceRecorder(
+                                address-> new String[]{address.getLastElement().getKey()},
+                                "org.wildfly.test.capability.dep",
+                                address-> new String[]{address.getParent().getLastElement().getValue(), address.getLastElement().getValue()},
+                                "org.wildfly.test.capability.req")));
 
-        ResourceDefinition profileCSub5Type1RegDef = ResourceBuilder.Factory.create(PathElement.pathElement("type1", "thing1"),
+        ResourceDefinition profileCSub5Type1RegDef = ResourceBuilder.Factory.create(PathElement.pathElement("type1"),
                 new NonResolvingResourceDescriptionResolver())
                 .build();
+
         ManagementResourceRegistration profileCSub5Type1Reg = profileCSub5Reg.registerSubModel(profileCSub5Type1RegDef);
 
         ManagementResourceRegistration profileCSub6Reg = profileReg.registerSubModel(

@@ -25,6 +25,7 @@ package org.jboss.as.controller.registry;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -199,5 +200,10 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public Set<RuntimeCapability> getIncorporatingCapabilities() {
         return delegate.getIncorporatingCapabilities();
+    }
+
+    @Override
+    public Set<CapabilityReferenceRecorder> getRequirements() {
+        return delegate.getRequirements();
     }
 }

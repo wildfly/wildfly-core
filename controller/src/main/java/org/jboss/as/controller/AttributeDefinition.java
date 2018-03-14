@@ -984,7 +984,7 @@ public abstract class AttributeDefinition {
         }
 
         if (getReferenceRecorder() != null) {
-            String[] capabilityPatternElements = getReferenceRecorder().getRequirementPatternSegments(name);
+            String[] capabilityPatternElements = getReferenceRecorder().getRequirementPatternSegments(name, PathAddress.EMPTY_ADDRESS);
             result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE).set(getReferenceRecorder().getBaseRequirementName());
             if(capabilityPatternElements.length > 0 && (capabilityPatternElements.length > 1 || !name.equals(capabilityPatternElements[0]))) {
                 for(String patternElement : capabilityPatternElements) {

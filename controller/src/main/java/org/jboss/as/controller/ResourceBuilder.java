@@ -88,6 +88,10 @@ public interface ResourceBuilder {
         throw new UnsupportedOperationException();
     }
 
+    default ResourceBuilder setRequirements(Set<CapabilityReferenceRecorder> requirements) {
+        throw new UnsupportedOperationException();
+    }
+
     ResourceDefinition build();
 
     class Factory {

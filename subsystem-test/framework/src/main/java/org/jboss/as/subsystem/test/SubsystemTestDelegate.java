@@ -51,6 +51,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ModelVersion;
@@ -1016,6 +1017,11 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+
+        }
+
+        @Override
         public Set<RuntimeCapability> getCapabilities() {
             return Collections.emptySet();
         }
@@ -1023,6 +1029,11 @@ final class SubsystemTestDelegate {
         @Override
         public Set<RuntimeCapability> getIncorporatingCapabilities() {
             return null;
+        }
+
+        @Override
+        public Set<CapabilityReferenceRecorder> getRequirements() {
+            return Collections.emptySet();
         }
 
         @Override

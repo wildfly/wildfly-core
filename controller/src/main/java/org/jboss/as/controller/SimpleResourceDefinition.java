@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -66,6 +67,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final boolean orderedChild;
     private final RuntimeCapability[] capabilities;
     private final Set<RuntimeCapability> incorporatingCapabilities;
+    private final Set<CapabilityReferenceRecorder> requirements;
     private final List<AccessConstraintDefinition> accessConstraints;
     private final int minOccurs;
     private final int maxOccurs;
@@ -95,6 +97,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.capabilities = NO_CAPABILITIES;
         this.incorporatingCapabilities = null;
         this.accessConstraints = Collections.emptyList();
+        this.requirements = Collections.emptySet();
         this.minOccurs = 0;
         this.maxOccurs = Integer.MAX_VALUE;
     }
@@ -298,6 +301,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         } else {
             this.accessConstraints = Collections.emptyList();
         }
+        this.requirements = new HashSet<>(parameters.requirements);
         this.minOccurs = parameters.minOccurs;
         this.maxOccurs = parameters.maxOccurs;
     }
@@ -365,6 +369,8 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         if (incorporatingCapabilities != null) {
             resourceRegistration.registerIncorporatingCapabilities(incorporatingCapabilities);
         }
+        assert requirements != null;
+        resourceRegistration.registerRequirements(requirements);
     }
 
     /**
@@ -532,6 +538,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private boolean orderedChildResource;
         private RuntimeCapability[] capabilities;
         private Set<RuntimeCapability> incorporatingCapabilities;
+        private Set<CapabilityReferenceRecorder> requirements = new HashSet<>();
         private AccessConstraintDefinition[] accessConstraints;
         private int minOccurs = 0;
         private int maxOccurs = Integer.MAX_VALUE;
@@ -767,6 +774,23 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setIncorporatingCapabilities(Set<RuntimeCapability> incorporatingCapabilities) {
             this.incorporatingCapabilities = incorporatingCapabilities;
+            return this;
+        }
+
+        /**
+         * Add a required capability at the resource level, using the resource registration address and the nameMappers
+         * to resolve the required and dependant capabilities.
+         * @param baseDependentName the dependent capability base name.
+         * @param dependentDynamicNameMapper the dependent capability name mapper.
+         * @param baseRequirementName the required capability base name.
+         * @param requirementDynamicNameMapper  the required capability name mapper.
+         * @return Parameters object.
+         */
+        public Parameters addRequirement(String baseDependentName,
+                Function<PathAddress, String[]> dependentDynamicNameMapper,
+                String baseRequirementName, Function<PathAddress, String[]> requirementDynamicNameMapper) {
+            this.requirements.add(new CapabilityReferenceRecorder.ResourceCapabilityReferenceRecorder(
+                    dependentDynamicNameMapper, baseDependentName, requirementDynamicNameMapper, baseRequirementName));
             return this;
         }
 

@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -475,6 +476,19 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         }
         return result;
     }
+
+    @Override
+    public final Set<CapabilityReferenceRecorder> getRequirements() {
+
+        if (parent != null) {
+            RootInvocation ri = getRootInvocation();
+            return ri.root.getRequirements(ri.pathAddress.iterator());
+        }
+        // else we are the root
+        return getRequirements(pathAddress.iterator());
+    }
+
+    abstract Set<CapabilityReferenceRecorder> getRequirements(ListIterator<PathElement> iterator);
 
     protected AbstractResourceRegistration getRootResourceRegistration() {
         if (parent == null) {

@@ -283,6 +283,11 @@ public class AbstractAddStepHandler implements OperationStepHandler {
                 ad.addCapabilityRequirements(context, resource, model.get(ad.getName()));
             }
         }
+        ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
+        assert mrr.getRequirements() != null;
+        for (CapabilityReferenceRecorder recorder : mrr.getRequirements()) {
+            recorder.addCapabilityRequirements(context, resource, null);
+        }
     }
 
     /**

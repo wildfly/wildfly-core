@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MOD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +48,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.DeprecationData;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -119,6 +121,25 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
                         }
                     }
                 }
+            }
+        }
+
+        for (CapabilityReferenceRecorder requirement : registration.getRequirements()) {
+            ModelNode cap = result.get(ModelDescriptionConstants.CAPABILITIES).add();
+            cap.get(REQUIRED).set(true);
+            cap.get(NAME).set(requirement.getBaseRequirementName());
+            String[] segments = requirement.getRequirementPatternSegments(null, createAliasPathAddress(pa));
+            if (segments != null && segments.length > 0) {
+                cap.get(DYNAMIC).set(true);
+                for (String segment : segments) {
+                    String elt = segment;
+                    if (segment.charAt(0) == '$') {
+                        elt = segment.substring(1);
+                    }
+                    cap.get(DYNAMIC_ELEMENTS).add(elt);
+                }
+            } else {
+                cap.get(DYNAMIC).set(false);
             }
         }
 
