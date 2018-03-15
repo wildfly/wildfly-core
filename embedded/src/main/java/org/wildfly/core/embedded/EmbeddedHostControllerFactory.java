@@ -284,7 +284,7 @@ public class EmbeddedHostControllerFactory {
                 final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
                 controlledProcessStateService = processStateServiceValue.getValue();
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState(), false);
+                establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
             } catch (RuntimeException rte) {
                 if (hostControllerBootstrap != null) {
                     hostControllerBootstrap.failed();
