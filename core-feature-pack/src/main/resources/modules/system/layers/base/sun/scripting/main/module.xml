@@ -58,6 +58,7 @@
                 <path name="jdk/nashorn/internal/runtime/scripts"/>
                 <path name="jdk/nashorn/internal/tools"/>
                 <path name="jdk/nashorn/internal/tools/resources"/>
+                <path name="jdk/nashorn/tools"/>
                 <path name="jdk/internal/dynalink"/>
                 <path name="jdk/internal/dynalink/beans"/>
                 <path name="jdk/internal/dynalink/linker"/>
