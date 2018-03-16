@@ -22,15 +22,20 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="javax.xml.stream.api">
+<module xmlns="urn:jboss:module:1.8" name="javax.xml.stream.api">
+    <properties>
+        <property name="jboss.api" value="deprecated"/>
+    </properties>
 
     <dependencies>
-        <system export="true">
-            <paths>
-                <path name="javax/xml/stream"/>
-                <path name="javax/xml/stream/events"/>
-                <path name="javax/xml/stream/util"/>
-            </paths>
-        </system>
+        <module name="java.xml">
+            <exports>
+                <include-set>
+                    <path name="java/xml/stream"/>
+                    <path name="java/xml/stream/events"/>
+                    <path name="java/xml/stream/util"/>
+                </include-set>
+            </exports>
+        </module>
     </dependencies>
 </module>
