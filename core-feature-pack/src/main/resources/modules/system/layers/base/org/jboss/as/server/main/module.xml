@@ -69,7 +69,6 @@
         <module name="org.jboss.msc" export="true"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager" services="import"/>
-        <module name="org.jboss.log4j.logmanager"/>
         <module name="org.jboss.remoting"/>
         <module name="org.jboss.stdio"/>
         <module name="org.jboss.threads"/>
