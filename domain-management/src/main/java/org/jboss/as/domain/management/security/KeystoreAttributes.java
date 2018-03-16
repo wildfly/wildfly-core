@@ -61,11 +61,11 @@ public class KeystoreAttributes {
             .setAlternatives(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)
             .build();
 
-    public static final ObjectTypeAttributeDefinition KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, false, false)
+    public static final ObjectTypeAttributeDefinition KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE = CredentialReference.getAttributeBuilder(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME, true, false)
                     .setAlternatives(ModelDescriptionConstants.KEYSTORE_PASSWORD)
                     .build();
 
-    public static final SimpleAttributeDefinition KEYSTORE_PASSWORD = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_PASSWORD, ModelType.STRING, false)
+    public static final SimpleAttributeDefinition KEYSTORE_PASSWORD = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_PASSWORD, ModelType.STRING, true)
             .setXmlName(ModelDescriptionConstants.KEYSTORE_PASSWORD)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
             .setAllowExpression(true)
@@ -76,7 +76,7 @@ public class KeystoreAttributes {
     public static final SimpleAttributeDefinition KEYSTORE_PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_PATH, ModelType.STRING, true)
             .setXmlName(ModelDescriptionConstants.PATH)
             .setAllowExpression(true)
-            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public static final SimpleAttributeDefinition KEYSTORE_RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.KEYSTORE_RELATIVE_TO, ModelType.STRING, true)
