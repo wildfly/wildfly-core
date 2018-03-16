@@ -110,10 +110,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>jboss-logmanager</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling</artifactId>
         </dependency>
