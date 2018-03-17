@@ -296,6 +296,11 @@ public class ManagementHttpServer {
                 new LogoutHandler(builder.securityRealm != null ? builder.securityRealm.getName() : DEFAULT_SECURITY_REALM)));
     }
 
+    private static void addErrorContextHandler(PathHandler pathHandler, Builder builder) throws ModuleLoadException {
+        HttpHandler errorContextHandler = wrapXFrameOptions(ErrorContextHandler.createErrorContext(builder.consoleSlot));
+        pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, errorContextHandler);
+    }
+
     private static class ExtensionHandlers {
         private final PathHandler extensionPathHandler;
         private final HttpHandler managementHandler;
@@ -351,7 +356,7 @@ public class ManagementHttpServer {
         }
 
         try {
-            pathHandler.addPrefixPath(ErrorContextHandler.ERROR_CONTEXT, ErrorContextHandler.createErrorContext(builder.consoleSlot));
+            addErrorContextHandler(pathHandler, builder);
         } catch (ModuleLoadException e) {
             ROOT_LOGGER.errorContextModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
