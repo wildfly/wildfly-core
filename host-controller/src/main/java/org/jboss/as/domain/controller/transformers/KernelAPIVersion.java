@@ -46,6 +46,8 @@ enum KernelAPIVersion {
     VERSION_4_1(4, 1, 0),
     // WF 11.0.0, EAP 7.1.0
     VERSION_5_0(5, 0, 0),
+    // WF 12.0.0
+    VERSION_6_0(6, 0, 0),
     // Latest
     CURRENT(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION);
 

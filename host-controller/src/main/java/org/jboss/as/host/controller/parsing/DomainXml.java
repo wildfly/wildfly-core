@@ -70,15 +70,18 @@ public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLEl
             case 5:
                 new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
-            default:
+            case 6:
                 new DomainXml_6(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
+                break;
+            default:
+                new DomainXml_7(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        new DomainXml_6(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
+        new DomainXml_7(extensionXml, extensionRegistry, CURRENT).writeContent(writer, context);
     }
 
 }
