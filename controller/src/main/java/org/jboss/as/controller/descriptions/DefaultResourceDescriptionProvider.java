@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC_ELEMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_OCCURS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MIN_OCCURS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
@@ -33,7 +34,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -99,11 +104,20 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         }
 
         Set<? extends Capability> capabilities = registration.getCapabilities();
-        if (capabilities!=null&&!capabilities.isEmpty()){
+        if (capabilities !=null && !capabilities.isEmpty()){
             for (Capability capability: capabilities) {
                 ModelNode cap = result.get(ModelDescriptionConstants.CAPABILITIES).add();
                 cap.get(NAME).set(capability.getName());
                 cap.get(DYNAMIC).set(capability.isDynamicallyNamed());
+                if (capability.isDynamicallyNamed()) {
+                    String[] elements = capability.getDynamicName(createAliasPathAddress(pa)).split("\\.\\$");
+                    String[] capabilityPatternElements = Arrays.copyOfRange(elements, 1, elements.length);
+                    if (capabilityPatternElements.length > 0) {
+                        for (String patternElement : capabilityPatternElements) {
+                            cap.get(DYNAMIC_ELEMENTS).add(patternElement);
+                        }
+                    }
+                }
             }
         }
 
@@ -167,4 +181,25 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
         return deprecated;
     }
 
+    /**
+     * Creates an alias address by replacing all wildcard values by $ + key so that the address can be used to obtain a capability pattern.
+     * @param pa the registration address to be aliased.
+     * @return  the aliased address.
+     */
+    private PathAddress createAliasPathAddress(PathAddress pa) {
+        ImmutableManagementResourceRegistration registry = registration.getParent();
+        List<PathElement> elements = new ArrayList<>();
+        for(int i = pa.size() - 1; i >=0; i--) {
+            PathElement elt = pa.getElement(i);
+            ImmutableManagementResourceRegistration childRegistration = registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(elt.getKey())));
+            if(childRegistration == null) {
+                elements.add(elt);
+            } else {
+                elements.add(PathElement.pathElement(elt.getKey(), "$" + elt.getKey()));
+            }
+            registry = registry.getParent();
+        }
+        Collections.reverse(elements);
+        return PathAddress.pathAddress(elements.toArray(new PathElement[elements.size()]));
+    }
 }

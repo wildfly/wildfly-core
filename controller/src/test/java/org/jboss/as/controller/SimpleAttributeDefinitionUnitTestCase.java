@@ -24,6 +24,8 @@ package org.jboss.as.controller;
 import static org.junit.Assert.fail;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import org.jboss.as.controller.capability.RuntimeCapability;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
@@ -115,6 +117,34 @@ public class SimpleAttributeDefinitionUnitTestCase {
         Assert.assertNull(max);
     }
 
+    /** For WFCORE-3521 scenarios */
+    @Test
+    public void testCapabilityRequirements() {
+        SimpleAttributeDefinition nameAttribute = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING)
+                .build();
+        SimpleAttributeDefinition factoryAttribute = new SimpleAttributeDefinitionBuilder("factory", ModelType.STRING)
+                .setCapabilityReference("org.wildfly.test.network")
+                .build();
+        SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("stack", ModelType.STRING)
+                .setCapabilityReference("org.wildfly.test.socket", factoryAttribute, nameAttribute)
+                .build();
+        ModelNode description = ad.getNoTextDescription(false);
+        Assert.assertTrue(description.hasDefined("capability-reference"));
+        Assert.assertEquals("org.wildfly.test.socket", description.get("capability-reference").asString());
+        Assert.assertTrue(description.hasDefined("capability-reference-pattern-elements"));
+        Assert.assertEquals("org.wildfly.test.socket.$factory.$name.$stack", getCapabilityName("org.wildfly.test.socket", description));
+        description = nameAttribute.getNoTextDescription(false);
+        Assert.assertFalse(description.hasDefined("capability-reference"));
+        Assert.assertFalse(description.hasDefined("capability-reference-pattern-elements"));
+        description = factoryAttribute.getNoTextDescription(false);
+        Assert.assertTrue(description.hasDefined("capability-reference"));
+        Assert.assertEquals("org.wildfly.test.network", description.get("capability-reference").asString());
+        Assert.assertFalse(description.hasDefined("capability-reference-pattern-elements")); //shouldn't appear since attribute name is the pattern
+    }
+
+    private String getCapabilityName(String requirementCp, ModelNode description) {
+        return RuntimeCapability.buildDynamicCapabilityName(requirementCp, description.get("capability-reference-pattern-elements").asList().stream().map(ModelNode::asString).map(s -> "$" + s).collect(Collectors.toList()).toArray(new String[0]));
+    }
     /** For WFCORE-1590 scenarios */
     @Test
     public void testMinMaxSize() {

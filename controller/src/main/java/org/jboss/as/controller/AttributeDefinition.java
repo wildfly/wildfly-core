@@ -982,8 +982,15 @@ public abstract class AttributeDefinition {
                 result.get(ModelDescriptionConstants.REQUIRES).add(required);
             }
         }
+
         if (getReferenceRecorder() != null) {
+            String[] capabilityPatternElements = getReferenceRecorder().getRequirementPatternSegments(name);
             result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE).set(getReferenceRecorder().getBaseRequirementName());
+            if(capabilityPatternElements.length > 0 && (capabilityPatternElements.length > 1 || !name.equals(capabilityPatternElements[0]))) {
+                for(String patternElement : capabilityPatternElements) {
+                    result.get(ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS).add(patternElement);
+                }
+            }
         }
 
         if (validator instanceof MinMaxValidator) {

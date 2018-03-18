@@ -21,8 +21,11 @@
  */
 package org.jboss.as.controller.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
@@ -661,6 +664,25 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileA", "subsystem", "subsystem1", "type2", "other");
         result = executeForResult(operation);
         checkType2Description(result);
+        assertFalse(result.get(OPERATIONS).isDefined());
+
+        operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileA", "subsystem", "subsystem3");
+        result = executeForResult(operation);
+        ModelNode capabilityReferenceAttribute = result.require(ATTRIBUTES).require("test_capability");
+        assertEquals("org.wildfly.test.capability", capabilityReferenceAttribute.require(CAPABILITY_REFERENCE).asString());
+        assertTrue(capabilityReferenceAttribute.hasDefined(CAPABILITY_REFERENCE_PATTERN_ELEMENTS));
+        List<ModelNode> dynamicElements= capabilityReferenceAttribute.require(CAPABILITY_REFERENCE_PATTERN_ELEMENTS).asList();
+        assertEquals(3, dynamicElements.size());
+        assertEquals("param1", dynamicElements.get(0).asString());
+        assertEquals("param2", dynamicElements.get(1).asString());
+        assertEquals("test_capability", dynamicElements.get(2).asString());
+        assertFalse(result.get(OPERATIONS).isDefined());
+
+                operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileA", "subsystem", "subsystem4");
+        result = executeForResult(operation);
+        capabilityReferenceAttribute = result.require(ATTRIBUTES).require("simple_ref");
+        assertEquals("org.wildfly.test.capability", capabilityReferenceAttribute.require(CAPABILITY_REFERENCE).asString());
+        assertFalse(capabilityReferenceAttribute.hasDefined(CAPABILITY_REFERENCE_PATTERN_ELEMENTS));
         assertFalse(result.get(OPERATIONS).isDefined());
     }
 

@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -35,7 +37,6 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
 public interface CapabilityReferenceRecorder {
-
     /**
      * Registers capability requirement information to the given context.
      * @param context         the context
@@ -74,6 +75,20 @@ public interface CapabilityReferenceRecorder {
     @Deprecated
     default boolean isDynamicDependent() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the elements to be added to the baseRequirementName to build the capability name pattern.
+     * It will return an array  of the form `segment[.segment]` where each segment represents either the name of one of the
+     * resource's attributes or one of the keys in the resource's address. In the actual name the attribute name
+     * or address key will be replaced by the value associated with that attribute or key.
+     * @return the elements to be added to the baseRequirementName to build the capability name pattern.
+     */
+    default String[] getRequirementPatternSegments(String name) {
+        if (name != null && !name.isEmpty()) {
+            return new String[]{name};
+        }
+        return null;
     }
 
     /**
@@ -149,7 +164,6 @@ public interface CapabilityReferenceRecorder {
         public String getBaseRequirementName() {
             return baseRequirementName;
         }
-
     }
 
     /**
@@ -214,10 +228,10 @@ public interface CapabilityReferenceRecorder {
         String getDependentName(RuntimeCapability cap, OperationContext context) {
             if (cap.isDynamicallyNamed()) {
                 return cap.fromBaseCapability(context.getCurrentAddress()).getName();
-            } else {
-                return cap.getName();
             }
+            return cap.getName();
         }
+
         protected String getRequirementName(OperationContext context, Resource resource, String attributeValue){
             return RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, attributeValue);
         }
@@ -245,7 +259,6 @@ public interface CapabilityReferenceRecorder {
      * that do not meet this requirement.</strong>
      */
     class CompositeAttributeDependencyRecorder extends ContextDependencyRecorder {
-
         private AttributeDefinition[] attributes;
         private RuntimeCapability capability;
 
@@ -294,6 +307,18 @@ public interface CapabilityReferenceRecorder {
             return RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, dynamicParts);
         }
 
+        @Override
+        public String[] getRequirementPatternSegments(String dynamicElement) {
+            List<String> dynamicParts = new ArrayList<>();
+            for (int i = 0; i < attributes.length; i++) {
+                dynamicParts.add(attributes[i].getName());
+            }
+            if (dynamicElement != null && !dynamicElement.isEmpty()) {
+                String element = dynamicElement;
+                dynamicParts.add(element);
+            }
+            return dynamicParts.toArray(new String[dynamicParts.size()]);
+        }
     }
 
 }
