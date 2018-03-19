@@ -134,6 +134,7 @@ public class EmbeddedProcessFactory {
     public static StandaloneServer createStandaloneServer(ModuleLoader moduleLoader, File jbossHomeDir, String... cmdargs) {
         final ChainedContext context = new ChainedContext();
         context.add(new StandaloneSystemPropertyContext(jbossHomeDir.toPath()));
+        context.add(new LoggerContext(moduleLoader));
 
         setupVfsModule(moduleLoader);
 
@@ -207,6 +208,7 @@ public class EmbeddedProcessFactory {
     public static HostController createHostController(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
         final ChainedContext context = new ChainedContext();
         context.add(new HostControllerSystemPropertyContext(jbossHomeDir.toPath()));
+        context.add(new LoggerContext(moduleLoader));
 
         setupVfsModule(moduleLoader);
 
