@@ -33,7 +33,7 @@
     </parent>
 
     <artifactId>wildfly-domain-management</artifactId>
-    
+
 
     <name>WildFly: Domain Management</name>
 
@@ -52,7 +52,7 @@
 
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.basedir}/../src/test/resources</additionalClasspathElement>
-                    </additionalClasspathElements>                                        
+                    </additionalClasspathElements>
                 </configuration>
             </plugin>
         </plugins>
@@ -103,7 +103,7 @@
             <artifactId>apacheds-server-annotations</artifactId>
             <scope>test</scope>
         </dependency>
-    
+
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
@@ -131,7 +131,7 @@
             <groupId>org.jboss.msc</groupId>
             <artifactId>jboss-msc</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
@@ -145,11 +145,6 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-java</artifactId>
         </dependency>
 
         <dependency>
@@ -168,6 +163,6 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-       
+
     </dependencies>
 </project>

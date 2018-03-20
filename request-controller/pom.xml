@@ -77,12 +77,6 @@
             <groupId>org.jboss.msc</groupId>
             <artifactId>jboss-msc</artifactId>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-        </dependency>
-        -->
 
         <!-- Test Dependencies -->
         <dependency>

@@ -39,7 +39,7 @@
     <dependencies>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-controller</artifactId>
+            <artifactId>wildfly-controller-client</artifactId>
         </dependency>
     </dependencies>
 </project>
