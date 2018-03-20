@@ -55,6 +55,7 @@ public class ModelDescriptionConstants {
     public static final String ALL_ROLE_NAMES = "all-role-names";
     public static final String ALL_SERVICES = "all-services";
     public static final String ALTERNATIVES = "alternatives";
+    public static final String ANNOTATION = "annotation";
     public static final String ANY = "any";
     public static final String ANY_ADDRESS = "any-address";
     public static final String ANY_IPV4_ADDRESS = "any-ipv4-address";
@@ -189,6 +190,8 @@ public class ModelDescriptionConstants {
     public static final String FAILED_SERVICES = "failed-services";
     public static final String FAILURE_COUNT = "failure-count";
     public static final String FAILURE_DESCRIPTION = "failure-description";
+    public static final String FEATURE = "feature";
+    public static final String FEATURE_REFERENCE = "feature-reference";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
     public static final String FILE_SIZE = "file-size";
@@ -381,6 +384,7 @@ public class ModelDescriptionConstants {
     public static final String READ_CHILDREN_RESOURCES_OPERATION = "read-children-resources";
     public static final String READ_CONFIG_AS_XML_OPERATION = "read-config-as-xml";
     public static final String READ_CONTENT = "read-content";
+    public static final String READ_FEATURE_DESCRIPTION_OPERATION = "read-feature-description";
     public static final String READ_ONLY = "read-only";
     public static final String READ_OPERATION_DESCRIPTION_OPERATION = "read-operation-description";
     public static final String READ_OPERATION_NAMES_OPERATION = "read-operation-names";

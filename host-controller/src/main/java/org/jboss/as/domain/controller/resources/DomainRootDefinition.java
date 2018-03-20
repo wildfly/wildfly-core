@@ -203,7 +203,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             final HostRegistrations hostRegistrations,
             final DomainHostExcludeRegistry domainHostExcludeRegistry,
             final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
-        super(null, DomainResolver.getResolver(DOMAIN, false));
+        super(new Parameters(null, DomainResolver.getResolver(DOMAIN, false)).setFeature(false));
         this.domainController = domainController;
         this.isMaster = isMaster;
         this.environment = environment;

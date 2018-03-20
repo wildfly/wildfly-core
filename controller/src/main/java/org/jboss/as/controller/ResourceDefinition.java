@@ -132,4 +132,8 @@ public interface ResourceDefinition {
     default int getMinOccurs() {
         return getPathElement() != null ? 0 : 1;
     }
+
+    default boolean isFeature() {
+        return false;
+    }
 }

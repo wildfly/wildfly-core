@@ -79,7 +79,8 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
     private ModuleLoadingResourceDefinition() {
         super(new Parameters(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING),
                 ServerDescriptions.getResourceDescriptionResolver("core", MODULE_LOADING))
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MODULE_LOADING));
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MODULE_LOADING)
+                .setFeature(false));
     }
 
     @Override

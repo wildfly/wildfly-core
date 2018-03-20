@@ -115,6 +115,11 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public boolean isFeature() {
+        return target.isFeature();
+    }
+
+    @Override
     public ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition) {
         throw alreadyRegistered();
     }

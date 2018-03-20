@@ -22,11 +22,16 @@
 
 package org.jboss.as.controller.registry;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+
 import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
+import java.util.StringJoiner;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -93,6 +98,34 @@ public interface ImmutableManagementResourceRegistration {
      */
     default int getMinOccurs() {
         return getPathAddress().size() == 0 ? 1 : 0;
+    }
+
+
+    default boolean isFeature() {
+        return !PathAddress.EMPTY_ADDRESS.equals(getPathAddress());
+    }
+
+    default String getFeature() {
+        if(PathAddress.EMPTY_ADDRESS.equals(getPathAddress())) {
+            if(getProcessType().isServer()) {
+                return "server-root";
+            }
+            return "";
+        }
+        StringJoiner joiner = new StringJoiner(".");
+        final PathAddress pathAddress = getPathAddress();
+        final String initialKey = pathAddress.getElement(0).getKey();
+        if (getProcessType().isManagedDomain() && !HOST.equals(initialKey) && !PROFILE.equals(initialKey)) {
+            joiner.add(DOMAIN);
+        }
+        for (int i = 0; i < pathAddress.size(); i++) {
+            PathElement elt = pathAddress.getElement(i);
+            joiner.add(elt.getKey());
+            if (!elt.isWildcard() && (i > 0 || !HOST.equals(elt.getKey()))) {
+                joiner.add(elt.getValue());
+            }
+        }
+        return joiner.toString();
     }
 
     /**

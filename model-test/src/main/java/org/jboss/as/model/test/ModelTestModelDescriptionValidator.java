@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXPRESSIONS_ALLOWED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HEAD_COMMENT_ALLOWED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
@@ -120,12 +121,14 @@ public class ModelTestModelDescriptionValidator {
         validResourceKeys.put(DEPRECATED, DeprecatedDescriptorValidator.INSTANCE);
         validResourceKeys.put(ACCESS_CONSTRAINTS, AccessConstraintValidator.INSTANCE);
         validResourceKeys.put(STORAGE, NullDescriptorValidator.INSTANCE);
+        validResourceKeys.put("feature", NullDescriptorValidator.INSTANCE);
         VALID_RESOURCE_KEYS = Collections.unmodifiableMap(validResourceKeys);
 
         Map<String, ArbitraryDescriptorValidator> validChildTypeKeys = new HashMap<String, ModelTestModelDescriptionValidator.ArbitraryDescriptorValidator>();
         validChildTypeKeys.put(DESCRIPTION, NullDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(MODEL_DESCRIPTION, NullDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(ALLOWED, StringListValidator.INSTANCE);
+        validChildTypeKeys.put(FEATURE_REFERENCE, BooleanDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(ATTACHED_STREAMS, BooleanDescriptorValidator.INSTANCE);
         validChildTypeKeys.put(RELATIVE_TO, BooleanDescriptorValidator.INSTANCE);
@@ -143,6 +146,7 @@ public class ModelTestModelDescriptionValidator {
         //Arbitrary
         paramAndAttributeKeys.put(ALTERNATIVES, StringListValidator.INSTANCE);
         paramAndAttributeKeys.put(ATTRIBUTE_GROUP, NullDescriptorValidator.INSTANCE);
+        paramAndAttributeKeys.put(FEATURE_REFERENCE, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(FILESYSTEM_PATH, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(ATTACHED_STREAMS, BooleanDescriptorValidator.INSTANCE);
         paramAndAttributeKeys.put(RELATIVE_TO, BooleanDescriptorValidator.INSTANCE);
