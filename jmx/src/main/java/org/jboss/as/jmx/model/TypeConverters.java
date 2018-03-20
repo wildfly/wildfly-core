@@ -128,6 +128,8 @@ class TypeConverters {
         }
     }
 
+    // TODO WFCORE-3551 stop using the full attribute description for this, particularly
+    // for non-OBJECT/LIST/PROPERTY where all we need is the ModelType
     public TypeConverter getConverter(ModelNode description) {
         return getConverter(description.hasDefined(TYPE) ? description.get(TYPE) : null,
                 description.hasDefined(VALUE_TYPE) ? description.get(VALUE_TYPE) : null);
