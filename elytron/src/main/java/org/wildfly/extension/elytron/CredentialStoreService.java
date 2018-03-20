@@ -60,9 +60,6 @@ class CredentialStoreService implements Service<CredentialStore> {
     // generally supported credential store attributes
     private static final String CS_LOCATION_ATTRIBUTE = "location";
 
-    // KeyStore backed credential store supported attributes
-    private static final String CS_KEY_STORE_TYPE_ATTRIBUTE = "keyStoreType";
-
     private final AtomicReference<CredentialStore> credentialStore = new AtomicReference<>();
     private final String type;
     private final String provider;
@@ -100,10 +97,8 @@ class CredentialStoreService implements Service<CredentialStore> {
         // location will be inserted later after resolving relative-to
         credentialStoreAttributes.put(ElytronDescriptionConstants.MODIFIABLE, Boolean.toString(modifiable));
         credentialStoreAttributes.put(ElytronDescriptionConstants.CREATE, Boolean.toString(create));
-        if (type == null || type.equals(KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE)) {
-            credentialStoreAttributes.putIfAbsent(CS_KEY_STORE_TYPE_ATTRIBUTE, "JCEKS");
-        }
-        return new CredentialStoreService(name, credentialStoreAttributes, type, provider, relativeTo, location != null ? location : name, providerLoaderName, keyStoreProvidersLoaderName);
+
+        return new CredentialStoreService(name, credentialStoreAttributes, type, provider, relativeTo, location, providerLoaderName, keyStoreProvidersLoaderName);
     }
 
     /*
@@ -112,10 +107,10 @@ class CredentialStoreService implements Service<CredentialStore> {
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        Path loc = resolveLocation();
+        Path loc = location == null ? null : resolveLocation();
         try {
             ROOT_LOGGER.tracef("starting CredentialStore:  name = %s", name);
-            credentialStoreAttributes.put(CS_LOCATION_ATTRIBUTE, loc.toAbsolutePath().toString());
+            credentialStoreAttributes.put(CS_LOCATION_ATTRIBUTE, loc == null ? null : loc.toAbsolutePath().toString());
             CredentialStore cs = getCredentialStoreInstance();
             Provider[] otherProvidersArr = otherProviders.getOptionalValue();
             if (ROOT_LOGGER.isTraceEnabled()) {
@@ -127,7 +122,7 @@ class CredentialStoreService implements Service<CredentialStore> {
             synchronized (EmptyProvider.getInstance()) {
                 cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProvidersArr);
             }
-            if ( credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && !loc.toFile().exists() ){
+            if (credentialStoreAttributes.get(ElytronDescriptionConstants.CREATE).equals("true") && loc != null && !loc.toFile().exists()){
                 ROOT_LOGGER.tracef("CredentialStore %s does not exist, creating", name);
                 cs.flush();
             }
