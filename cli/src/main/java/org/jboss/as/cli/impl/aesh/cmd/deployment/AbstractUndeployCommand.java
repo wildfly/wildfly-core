@@ -158,6 +158,9 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
             }
         }
 
+        // WFCORE-3566 - adding the UNDEPLOY step for each found deployment is required as this
+        // request is included in the composite operation which would fail with empty steps otherwise,
+        // if the deployment does not exist, the composite will report a proper error
         for (String deploymentName : deploymentNames) {
 
             final List<String> serverGroups;
@@ -203,7 +206,7 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                         }
                     }
                 }
-            } else if (Util.isDeployedAndEnabledInStandalone(deploymentName, client)) {
+            } else {
                 builder = new DefaultOperationRequestBuilder();
                 builder.setOperationName(Util.UNDEPLOY);
                 builder.addNode(Util.DEPLOYMENT, deploymentName);
