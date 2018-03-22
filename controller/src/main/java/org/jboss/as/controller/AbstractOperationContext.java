@@ -88,6 +88,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -976,6 +977,11 @@ abstract class AbstractOperationContext implements OperationContext {
                 && (isRollbackOnRuntimeFailure() || currentStage == Stage.MODEL || currentStage == Stage.DOMAIN)) {
             activeStep.response.get(OUTCOME).set(FAILED);
             activeStep.response.get(ROLLED_BACK).set(true);
+
+            // runtime failure description needs to be attached to context to roll back in previous stage.
+            if (isRollbackOnRuntimeFailure() && activeStep.response.hasDefined(FAILURE_DESCRIPTION)) {
+                attach(ReadResourceHandler.ROLLBACKED_FAILURE_DESC, activeStep.response.get(FAILURE_DESCRIPTION));
+            }
             resultAction = ResultAction.ROLLBACK;
             ControllerLogger.MGMT_OP_LOGGER.tracef("Rolling back on failed response %s to operation %s on address %s in stage %s",
                     activeStep.response, activeStep.operationId.name, activeStep.operationId.address, currentStage);

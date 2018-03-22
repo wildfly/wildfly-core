@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import org.jboss.as.controller.OperationContext.RollbackHandler;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -81,6 +82,7 @@ import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider
 import org.jboss.as.controller.extension.ParallelExtensionAddHandler;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationSupport;
+import org.jboss.as.controller.operations.global.ReadResourceHandler;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.DelegatingResource;
@@ -968,7 +970,14 @@ class ModelControllerImpl implements ModelController {
                     context.getFailureDescription().set(ControllerLogger.ROOT_LOGGER.noHandlerForOperation(operationName, address));
                 }
             }
-            context.completeStep(OperationContext.ResultHandler.NOOP_RESULT_HANDLER);
+            context.completeStep(new RollbackHandler() {
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    if (!context.getFailureDescription().isDefined() && context.getAttachment(ReadResourceHandler.ROLLBACKED_FAILURE_DESC) != null) {
+                        context.getFailureDescription().set(context.getAttachment(ReadResourceHandler.ROLLBACKED_FAILURE_DESC));
+                    }
+                }
+            });
         }
     }
 
