@@ -21,7 +21,6 @@ import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -54,11 +53,6 @@ public class GrepTestCase {
     public void testGrepHelp() throws Exception {
         testCommand("grep --help", "SYNOPSIS", false);
     }
-    @Test
-    @Ignore("Uncomment when https://issues.jboss.org/browse/WFCORE-3556 is fixed")
-    public void testGrepBasicRegexp() throws Exception {
-        testCommand("echo nofork | grep '^no\\(fork\\|group\\)'", "nofork", true);
-    }
 
     @Test
     public void testGrepIgnoreCase() throws Exception {
@@ -76,7 +70,6 @@ public class GrepTestCase {
     }
 
     @Test
-    @Ignore("Un-ignore when WFCORE-3560 is fixed")
     public void testGrepWithInputFromFile() throws Exception {
         ByteArrayOutputStream cliOut = new ByteArrayOutputStream();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
