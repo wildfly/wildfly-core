@@ -68,7 +68,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-logging_4_0.xsd";
+        return "schema/jboss-as-logging_5_0.xsd";
     }
 
     @Test
