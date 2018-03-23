@@ -54,8 +54,7 @@ public class SystemPropertyResetTestCase extends AbstractTestCase {
         expectedProperties.put("jboss.server.data.dir", resolvePath(baseDir, "data"));
         expectedProperties.put("jboss.server.temp.dir", resolvePath(baseDir, "tmp"));
 
-        final StandaloneServer server = EmbeddedProcessFactory.createStandaloneServer(Environment.JBOSS_HOME.toString(),
-                Environment.MODULE_PATH.toString(), null, null);
+        final StandaloneServer server = EmbeddedProcessFactory.createStandaloneServer(Environment.createConfigBuilder().build());
 
         validateNullProperties(expectedProperties.keySet());
         validateProperties(setProperties);
@@ -92,8 +91,7 @@ public class SystemPropertyResetTestCase extends AbstractTestCase {
         expectedProperties.put("jboss.domain.data.dir", resolvePath(baseDir, "data"));
         expectedProperties.put("jboss.domain.temp.dir", resolvePath(baseDir, "tmp"));
 
-        final HostController server = EmbeddedProcessFactory.createHostController(Environment.JBOSS_HOME.toString(),
-                Environment.MODULE_PATH.toString(), null, null);
+        final HostController server = EmbeddedProcessFactory.createHostController(Environment.createConfigBuilder().build());
 
         validateNullProperties(expectedProperties.keySet());
         validateProperties(setProperties);

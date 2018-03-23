@@ -30,6 +30,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.dmr.ModelNode;
@@ -135,6 +137,10 @@ class AbstractTestCase {
     };
 
     static ModelNode executeOperation(final ModelControllerClient client, final ModelNode op) throws IOException {
+        return executeOperation(client, OperationBuilder.create(op).build());
+    }
+
+    private static ModelNode executeOperation(final ModelControllerClient client, final Operation op) throws IOException {
         final ModelNode result = client.execute(op);
         if (!Operations.isSuccessfulOutcome(result)) {
             Assert.fail(String.format("Failed to execute op: %s%nFailure Description: %s", op, Operations.getFailureDescription(result)));

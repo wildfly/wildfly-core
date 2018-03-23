@@ -76,8 +76,6 @@
                         <!-- Default the log manager and jboss-logging to use JUL -->
                         <java.util.logging.manager>java.util.logging.LogManager</java.util.logging.manager>
                         <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
-                        <!-- This can go away once the logging extension is designed to ignore the check for embedded containers -->
-                        <org.wildfly.logging.skipLogManagerCheck>true</org.wildfly.logging.skipLogManagerCheck>
                         <jboss.test.start.timeout>${jboss.test.start.timeout}</jboss.test.start.timeout>
                         <jboss.test.log.dir>${project.build.directory}${file.separator}test-logs</jboss.test.log.dir>
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>

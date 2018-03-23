@@ -20,6 +20,7 @@
 package org.wildfly.core.test.embedded.host.controller;
 
 import org.junit.Test;
+import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.test.embedded.LoggingTestCase;
 
 /**
@@ -30,7 +31,6 @@ public class Log4jHostControllerTestCase extends LoggingTestCase {
     @Test
     public void testLog4j() throws Exception {
         System.setProperty("test.log.file", "test-hc-log4j.log");
-        System.setProperty("org.jboss.logging.provider", "log4j");
-        testHostController("org.apache.log4j", "test-hc-log4j.log");
+        testHostController(Configuration.LoggerHint.LOG4J, "test-hc-log4j.log", "[log4j]");
     }
 }

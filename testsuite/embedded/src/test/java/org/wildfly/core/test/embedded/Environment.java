@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.jboss.as.test.shared.TimeoutUtil;
+import org.wildfly.core.embedded.Configuration;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -56,6 +57,11 @@ public class Environment {
         LOG_DIR = Paths.get(System.getProperty("jboss.test.log.dir"));
         final String timeoutString = System.getProperty("jboss.test.start.timeout", "20");
         TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(timeoutString));
+    }
+
+    static Configuration.Builder createConfigBuilder() {
+        return Configuration.Builder.of(JBOSS_HOME)
+                .setModulePath(MODULE_PATH.toString());
     }
 
     private static boolean isNullOrEmpty(final String value) {

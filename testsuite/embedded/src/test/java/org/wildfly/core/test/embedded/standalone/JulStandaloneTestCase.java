@@ -28,6 +28,7 @@ import org.jboss.logmanager.handlers.FileHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.test.embedded.Environment;
 import org.wildfly.core.test.embedded.LoggingTestCase;
 
@@ -56,6 +57,6 @@ public class JulStandaloneTestCase extends LoggingTestCase {
 
     @Test
     public void testLogManager() throws Exception {
-        testStandalone(null, "test-standalone-jul.log");
+        testStandalone(Configuration.LoggerHint.JUL, "test-standalone-jul.log", "[jul]", false);
     }
 }

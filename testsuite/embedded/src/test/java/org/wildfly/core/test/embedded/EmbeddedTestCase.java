@@ -40,8 +40,7 @@ public class EmbeddedTestCase extends AbstractTestCase {
 
     @Test
     public void testStartAndStopStandalone() throws Exception {
-        final StandaloneServer server = EmbeddedProcessFactory.createStandaloneServer(Environment.JBOSS_HOME.toString(),
-                Environment.MODULE_PATH.toString(), null, null);
+        final StandaloneServer server = EmbeddedProcessFactory.createStandaloneServer(Environment.createConfigBuilder().build());
 
         try {
             server.start();
@@ -60,8 +59,7 @@ public class EmbeddedTestCase extends AbstractTestCase {
 
     @Test
     public void testStartAndStopHostController() throws Exception {
-        final HostController server = EmbeddedProcessFactory.createHostController(Environment.JBOSS_HOME.toString(),
-                Environment.MODULE_PATH.toString(), null, null);
+        final HostController server = EmbeddedProcessFactory.createHostController(Environment.createConfigBuilder().build());
 
         try {
             server.start();

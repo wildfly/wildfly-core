@@ -211,6 +211,10 @@ public interface EmbeddedLogger extends BasicLogger {
     @Message(id = 143, value = "No directory called '%s' exists under '%s'")
     IllegalArgumentException embeddedServerDirectoryNotFound(String string, String absolutePath);
 
+    @Message(id = 145, value = "The module loader has already been configured. Changing the %s property will have no effect.")
+    @LogMessage(level = Logger.Level.WARN)
+    void moduleLoaderAlreadyConfigured(String propertyName);
+
     @Message(id = 146, value = "Failed to restore context %s")
     @LogMessage(level = Logger.Level.ERROR)
     void failedToRestoreContext(@Cause Throwable cause, Context context);

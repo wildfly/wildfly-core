@@ -51,9 +51,6 @@ public class EmbeddedProcessFactory {
 
     private static final String MODULE_ID_EMBEDDED = "org.wildfly.embedded";
     private static final String MODULE_ID_VFS = "org.jboss.vfs";
-    private static final String SYSPROP_KEY_CLASS_PATH = "java.class.path";
-    private static final String SYSPROP_KEY_MODULE_PATH = "module.path";
-    private static final String SYSPROP_KEY_JBOSS_MODULES_DIR = "jboss.modules.dir";
 
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
@@ -116,11 +113,13 @@ public class EmbeddedProcessFactory {
         if (!jbossHomeDir.isDirectory()) {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
-
-        if (modulePath == null)
-            modulePath = SecurityActions.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
-
-        return createStandaloneServer(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+        return createStandaloneServer(
+                Configuration.Builder.of(jbossHomeDir)
+                        .setModulePath(modulePath)
+                        .setSystemPackages(systemPackages)
+                        .setCommandArguments(cmdargs)
+                        .build()
+        );
     }
 
     /**
@@ -132,16 +131,32 @@ public class EmbeddedProcessFactory {
      * @return the running embedded server. Will not be {@code null}
      */
     public static StandaloneServer createStandaloneServer(ModuleLoader moduleLoader, File jbossHomeDir, String... cmdargs) {
+        return createStandaloneServer(
+                Configuration.Builder.of(jbossHomeDir)
+                        .setCommandArguments(cmdargs)
+                        .setModuleLoader(moduleLoader)
+                        .build()
+        );
+    }
+
+    /**
+     * Create an embedded standalone server with an already established module loader.
+     *
+     * @param configuration the configuration for the embedded server
+     * @return the running embedded server. Will not be {@code null}
+     */
+    public static StandaloneServer createStandaloneServer(final Configuration configuration) {
         final ChainedContext context = new ChainedContext();
-        context.add(new StandaloneSystemPropertyContext(jbossHomeDir.toPath()));
-        context.add(new LoggerContext(moduleLoader));
+        context.add(new StandaloneSystemPropertyContext(configuration.getJBossHome()));
+        context.add(new LoggerContext(configuration.getModuleLoader()));
+        final ModuleLoader moduleLoader = configuration.getModuleLoader();
 
         setupVfsModule(moduleLoader);
 
         // Load the Embedded Server Module
         final Module embeddedModule;
         try {
-            embeddedModule = moduleLoader.loadModule(ModuleIdentifier.create(MODULE_ID_EMBEDDED));
+            embeddedModule = moduleLoader.loadModule(MODULE_ID_EMBEDDED);
         } catch (final ModuleLoadException mle) {
             throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_EMBEDDED, moduleLoader);
         }
@@ -165,7 +180,7 @@ public class EmbeddedProcessFactory {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedServerFactoryClass.getName());
         }
         // Create the server
-        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, moduleLoader, jbossHomeDir, cmdargs);
+        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, configuration);
         return new EmbeddedManagedProcessImpl(standaloneServerClass, standaloneServerImpl, context);
     }
 
@@ -189,12 +204,13 @@ public class EmbeddedProcessFactory {
         if (!jbossHomeDir.isDirectory()) {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
-
-        if (modulePath == null) {
-            modulePath = SecurityActions.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
-        }
-
-        return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
+        return createHostController(
+                Configuration.Builder.of(jbossHomeDir)
+                        .setModulePath(modulePath)
+                        .setSystemPackages(systemPackages)
+                        .setCommandArguments(cmdargs)
+                        .build()
+        );
     }
 
     /**
@@ -206,16 +222,32 @@ public class EmbeddedProcessFactory {
      * @return the running host controller Will not be {@code null}
      */
     public static HostController createHostController(ModuleLoader moduleLoader, File jbossHomeDir, String[] cmdargs) {
+        return createHostController(
+                Configuration.Builder.of(jbossHomeDir)
+                        .setModuleLoader(moduleLoader)
+                        .setCommandArguments(cmdargs)
+                        .build()
+        );
+    }
+
+    /**
+     * Create an embedded host controller with an already established module loader.
+     *
+     * @param configuration the configuration for the embedded host controller
+     * @return the running host controller Will not be {@code null}
+     */
+    public static HostController createHostController(final Configuration configuration) {
         final ChainedContext context = new ChainedContext();
-        context.add(new HostControllerSystemPropertyContext(jbossHomeDir.toPath()));
-        context.add(new LoggerContext(moduleLoader));
+        context.add(new HostControllerSystemPropertyContext(configuration.getJBossHome()));
+        context.add(new LoggerContext(configuration.getModuleLoader()));
+        final ModuleLoader moduleLoader = configuration.getModuleLoader();
 
         setupVfsModule(moduleLoader);
 
         // Load the Embedded Server Module
         final Module embeddedModule;
         try {
-            embeddedModule = moduleLoader.loadModule(ModuleIdentifier.create(MODULE_ID_EMBEDDED));
+            embeddedModule = moduleLoader.loadModule(MODULE_ID_EMBEDDED);
         } catch (final ModuleLoadException mle) {
             throw EmbeddedLogger.ROOT_LOGGER.moduleLoaderError(mle, MODULE_ID_EMBEDDED, moduleLoader);
         }
@@ -240,51 +272,8 @@ public class EmbeddedProcessFactory {
         }
 
         // Create the server
-        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, moduleLoader, jbossHomeDir, cmdargs);
+        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration);
         return new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context);
-    }
-
-    private static String trimPathToModulesDir(String modulePath) {
-        int index = modulePath.indexOf(File.pathSeparator);
-        return index == -1 ? modulePath : modulePath.substring(0, index);
-    }
-
-    private static ModuleLoader setupModuleLoader(String modulePath, String... systemPackages) {
-
-        assert modulePath != null : "modulePath not null";
-
-        // verify the the first element of the supplied modules path exists, and if it does not, stop and allow the user to correct.
-        // Once modules are initialized and loaded we can't change Module.BOOT_MODULE_LOADER (yet).
-
-        File moduleDir = new File(trimPathToModulesDir(modulePath));
-        if (!moduleDir.exists() || !moduleDir.isDirectory()) {
-            throw new RuntimeException("The first directory of the specified module path " + modulePath + " is invalid or does not exist.");
-        }
-
-        // deprecated property
-        SecurityActions.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, moduleDir.getPath());
-
-        final String classPath = SecurityActions.getPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, null);
-        try {
-            // Set up sysprop env
-            SecurityActions.clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
-            SecurityActions.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
-
-            StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
-            if (systemPackages != null) {
-                for (String packageName : systemPackages) {
-                    packages.append(",");
-                    packages.append(packageName);
-                }
-            }
-            SecurityActions.setPropertyPrivileged("jboss.modules.system.pkgs", packages.toString());
-
-            // Get the module loader
-            return Module.getBootModuleLoader();
-        } finally {
-            // Return to previous state for classpath prop
-            SecurityActions.setPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, classPath);
-        }
     }
 
     private static void setupVfsModule(final ModuleLoader moduleLoader) {
@@ -298,13 +287,13 @@ public class EmbeddedProcessFactory {
         Module.registerURLStreamHandlerFactoryModule(vfsModule);
     }
 
-    private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final ModuleLoader moduleLoader, final File jbossHomeDir, final String[] cmdargs) {
+    private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final Configuration configuration) {
         Object serverImpl;
         try {
             Properties sysprops = getSystemPropertiesPrivileged();
             Map<String, String> sysenv = getSystemEnvironmentPrivileged();
-            String[] args = cmdargs != null ? cmdargs : new String[0];
-            serverImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
+            String[] args = configuration.getCommandArguments();
+            serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args);
         } catch (final InvocationTargetException ite) {
             if (embeddedType == ProcessType.HOST_CONTROLLER) {
                 throw EmbeddedLogger.ROOT_LOGGER.cannotCreateHostController(ite.getCause(), createServerMethod);

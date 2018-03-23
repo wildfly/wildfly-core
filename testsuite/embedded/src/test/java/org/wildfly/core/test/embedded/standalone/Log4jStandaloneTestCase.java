@@ -20,6 +20,7 @@
 package org.wildfly.core.test.embedded.standalone;
 
 import org.junit.Test;
+import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.test.embedded.LoggingTestCase;
 
 /**
@@ -31,7 +32,6 @@ public class Log4jStandaloneTestCase extends LoggingTestCase {
     @Test
     public void testLog4j() throws Exception {
         System.setProperty("test.log.file", "test-standalone-log4j.log");
-        System.setProperty("org.jboss.logging.provider", "log4j");
-        testStandalone("org.apache.log4j", "test-standalone-log4j.log");
+        testStandalone(Configuration.LoggerHint.LOG4J, "test-standalone-log4j.log", "[log4j]");
     }
 }

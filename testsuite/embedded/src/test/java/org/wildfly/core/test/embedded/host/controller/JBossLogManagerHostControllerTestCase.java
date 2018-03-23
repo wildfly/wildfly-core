@@ -19,7 +19,9 @@
 
 package org.wildfly.core.test.embedded.host.controller;
 
+import org.junit.Assume;
 import org.junit.Test;
+import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.test.embedded.LoggingTestCase;
 
 /**
@@ -30,8 +32,12 @@ public class JBossLogManagerHostControllerTestCase extends LoggingTestCase {
 
     @Test
     public void testLogManager() throws Exception {
+        // The IBM JDK creates a logger early on doesn't allow the JBoss Log Manager to be used. For now we will ignore
+        // the test when the IBM JDK is being used.
+        Assume.assumeFalse(isIbmJdk());
         System.setProperty("test.log.file", "test-standalone-jbl.log");
-        System.setProperty("org.jboss.logging.provider", "jboss");
-        testHostController("org.jboss.logmanager", "test-standalone-jbl.log");
+        System.setProperty("logging.configuration", getClass().getResource("/logging.properties").toExternalForm());
+        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        testHostController(Configuration.LoggerHint.JBOSS_LOG_MANAGER, "test-standalone-jbl.log", "[jboss-logmanager]");
     }
 }
