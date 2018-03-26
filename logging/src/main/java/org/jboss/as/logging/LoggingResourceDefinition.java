@@ -57,6 +57,7 @@ import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
@@ -152,10 +153,12 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
     private final PathManager pathManager;
 
     protected LoggingResourceDefinition(final PathManager pathManager, final WildFlyLogContextSelector contextSelector) {
-        super(SUBSYSTEM_PATH,
-                LoggingExtension.getResourceDescriptionResolver(),
-                new LoggingSubsystemAdd(pathManager, contextSelector),
-                ReloadRequiredRemoveStepHandler.INSTANCE);
+        super(
+                new Parameters(SUBSYSTEM_PATH, LoggingExtension.getResourceDescriptionResolver())
+                        .setAddHandler(new LoggingSubsystemAdd(pathManager, contextSelector))
+                        .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                        .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+        );
         this.pathManager = pathManager;
     }
 

@@ -300,6 +300,25 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         assertTrue(String.format("Contents don't match: %nResult:%n%s%nProfileResult%n%s", result, profileResult), result.equals(profileResult));
     }
 
+    @Test
+    public void testRemoveReAdd() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        // Get all add ops for the current subsystem
+        final ModelNode addOps = SubsystemOperations.readResult(executeOperation(kernelServices, createDescribeOperation()));
+
+        // Remove the subsystem
+        executeOperation(kernelServices, SubsystemOperations
+                .createRemoveOperation(SubsystemOperations.createAddress(ClientConstants.SUBSYSTEM, "logging")));
+
+        // Create a composite operation to re-add the subsystem
+        final SubsystemOperations.CompositeOperationBuilder builder = SubsystemOperations.CompositeOperationBuilder.create();
+        for (ModelNode addOp : addOps.asList()) {
+            builder.addStep(addOp);
+        }
+        executeOperation(kernelServices, builder.build().getOperation());
+    }
+
     private void testChangeRootLogLevel(final String loggingProfile) throws Exception {
         final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
