@@ -20,7 +20,6 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -150,11 +149,10 @@ public class AppendTestCase {
     }
 
     @Test
-    @Ignore("Uncomment when https://issues.jboss.org/browse/WFCORE-3554 is fixed")
     public void testAppendFileNamePipe() throws Exception {
         // '|' character is not supported in filename in windows
         if (!Util.isWindows()) {
-            testAppend("tmp|file", "version", "Release:");
+            testAppend("tmp\\|file", "version", "Release:");
         }
     }
 
@@ -169,13 +167,17 @@ public class AppendTestCase {
     private void testAppend(String filename, String commandToAppend, String expectedContent) throws Exception {
         CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
                 TestSuiteEnvironment.getServerPort(), System.in, System.out);
-        Path tempFile = Files.createTempFile(filename, ".tmp");
+        // Do not create a file with escape character in its name.
+        String filtered = filename.replaceAll("\\\\", "");
+        Path tempFile = Files.createTempFile(filtered, ".tmp");
+        // Create an escaped path to be used from CLI.
+        Path escapedPath = tempFile.getParent().resolve(tempFile.getFileName().toString().replace(filtered, filename));
         String tempFileStringPath = tempFile.toString();
 
         writeTestFile(tempFile, "some content");
 
         try {
-            ctx.handle(commandToAppend + " >> " + tempFileStringPath);
+            ctx.handle(commandToAppend + " >> " + escapedPath.toString());
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(tempFile, "some content"));
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have expected content.",

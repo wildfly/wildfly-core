@@ -25,7 +25,7 @@ import org.aesh.readline.Prompt;
 import org.aesh.readline.terminal.Key;
 import org.aesh.terminal.tty.Capability;
 import org.aesh.terminal.tty.Size;
-import org.aesh.util.Parser;
+import org.aesh.readline.util.Parser;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.cli.impl.ReadlineConsole;
