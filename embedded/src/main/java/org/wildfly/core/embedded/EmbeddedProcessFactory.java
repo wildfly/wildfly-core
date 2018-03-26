@@ -136,7 +136,7 @@ public class EmbeddedProcessFactory {
         }
 
         if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
+            modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
 
         return createStandaloneServer(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
@@ -210,8 +210,9 @@ public class EmbeddedProcessFactory {
             throw EmbeddedLogger.ROOT_LOGGER.invalidJBossHome(jbossHomePath);
         }
 
-        if (modulePath == null)
-            modulePath = jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME;
+        if (modulePath == null) {
+            modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
+        }
 
         return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
