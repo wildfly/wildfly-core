@@ -84,6 +84,7 @@
             For example: <version.org.jboss.hal.release-stream>
          -->
 
+        <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.commons-codec>1.10</version.commons-codec>
         <version.commons-io>2.5</version.commons-io>
@@ -139,7 +140,7 @@
         <version.org.mockito>2.13.0</version.org.mockito>
         <version.org.picketbox>5.0.2.Final</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.22</version.org.slf4j>
+        <version.org.slf4j>1.7.22.jbossorg-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.build-tools>1.2.6.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
@@ -946,6 +947,12 @@
             </dependency>
 
             <dependency>
+                <groupId>ch.qos.cal10n</groupId>
+                <artifactId>cal10n-api</artifactId>
+                <version>${version.ch.qos.cal10n}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons-io}</version>
@@ -1472,6 +1479,18 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
+                <version>${version.org.slf4j}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-ext</artifactId>
+                <version>${version.org.slf4j}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
                 <version>${version.org.slf4j}</version>
             </dependency>
 
