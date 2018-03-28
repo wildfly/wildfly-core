@@ -28,6 +28,7 @@ import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -570,5 +571,143 @@ public class DeployTestCase extends AbstractCliTestBase{
             assertThat("After enable of non-deployed application deployment something is change.",
                     after, is(before));
         }
+    }
+
+    /**
+     * Testing disabling of non-deployed application deployments.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testDisableWrongDeployment() throws Exception {
+        // Deploying one additional deployment to verify that disabling of non-deployed application deployment does't have affect to others
+        ctx.handle("deployment deploy-file " + cliTestAnotherWar.getAbsolutePath());
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+        checkExist(before, cliTestAnotherWar.getName(), OK, ctx);
+
+        // Try disable non installed application deployment
+        try {
+            ctx.handle("deployment disable " + WRONG_DEPLOYMENT);
+            fail("Disabling of non-deployed application deployment doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), allOf(containsString("WFLYCTL0216"),
+                            containsString(WRONG_DEPLOYMENT)));
+            // Verification wrong command execution fail - success
+        }
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        assertThat("After disabling of non-deployed application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing of disabling already disabled application deployment.
+     * <ul>
+     * <li>Step 1) Deploy disabled application deployment</li>
+     * <li>Step 2) Verify if applications deployments is right state by info command</li>
+     * <li>Step 3) Try disable already disabled application deployment</li>
+     * <li>Step 4) Verify if is application deployment status hasn't change</li>
+     * </ul>
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testDisableAlreadyDisabledDeployment() throws Exception {
+        // Step 1) Deploy disabled application deployment
+        ctx.handle("deployment deploy-file --disabled " + cliTestAnotherWar.getAbsolutePath());
+        // Deploying one additional deployment to verify that disabling already disabled does't have affect to others
+        ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath());
+
+        // Step 2) Verify if applications deployments is right state by info command
+        final DeploymentInfoResult before = deploymentInfo(cli);
+        checkExist(before, cliTestApp1War.getName(), OK, ctx);
+        checkExist(before, cliTestAnotherWar.getName(), STOPPED, ctx);
+
+        // Step 3) Try disable already disabled application deployment
+        try {
+            ctx.handle("deployment disable " + cliTestAnotherWar.getName());
+        } catch (Exception ex) {
+            fail("Disabling already disabled application deployment FAILED! Expecting No error no warning \n" + ex.getMessage());
+        }
+        // Step 4) Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        assertThat("After disabling of already disabled application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing legacy disabling of non-deployed application deployments.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testLegacyDisableWrongDeployment() throws Exception {
+        // Deploying one additional deployment to verify that disabling of non-deployed application deployment does't have affect to others
+        ctx.handle("deploy  " + cliTestAnotherWar.getAbsolutePath());
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli);
+        checkExist(before, cliTestAnotherWar.getName(), OK, ctx);
+
+        // Try disable non installed application deployment
+        try {
+            ctx.handle("undeploy --keep-content " + WRONG_DEPLOYMENT);
+            fail("Disabling of non-deployed application deployment doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), allOf(containsString("WFLYCTL0216"),
+                            containsString(WRONG_DEPLOYMENT)));
+            // Verification wrong command execution fail - success
+        }
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        assertThat("After disabling of non-deployed application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing of legacy disabling already disabled application deployment.
+     * <ul>
+     * <li>Step 1) Deploy disabled application deployment</li>
+     * <li>Step 2) Verify if applications deployments is right state by info command</li>
+     * <li>Step 3) Try disable already disabled application deployment</li>
+     * <li>Step 4) Verify if is application deployment status hasn't change</li>
+     * </ul>
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testLegacyDisableAlreadyDisabledDeployment() throws Exception {
+        // Step 1) Deploy disabled application deployment
+        ctx.handle("deploy --disabled " + cliTestAnotherWar.getAbsolutePath());
+        // Deploying one additional deployment to verify that disabling already disabled does't have affect to others
+        ctx.handle("deploy " + cliTestApp1War.getAbsolutePath());
+
+        // Step 2) Verify if applications deployments is right state by info command
+        final DeploymentInfoResult before = deploymentInfo(cli);
+        checkExist(before, cliTestApp1War.getName(), OK, ctx);
+        checkExist(before, cliTestAnotherWar.getName(), STOPPED, ctx);
+
+        // Step 3) Try disable already disabled application deployment
+        try {
+            ctx.handle("undeploy --keep-content " + cliTestAnotherWar.getName());
+        } catch (Exception ex) {
+            fail("Disabling already disabled application deployment FAILED! Expecting No error no warning \n" + ex.getMessage());
+        }
+        // Step 4) Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli);
+        assertThat("After disabling of already disabled application deployment something is change!",
+                after, is(before));
     }
 }

@@ -21,11 +21,7 @@
  */
 package org.jboss.as.test.integration.domain.management.cli;
 
-import java.io.File;
-import java.util.Iterator;
-
 import org.jboss.as.cli.CommandContext;
-
 import org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentInfoResult;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.CLITestSuite;
@@ -33,24 +29,33 @@ import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.After;
 import org.junit.AfterClass;
-
-import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createWarArchive;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ENABLED;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
-import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
-import static org.junit.Assert.fail;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
+import java.util.Iterator;
+
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.jboss.as.test.deployment.DeploymentArchiveUtils.createWarArchive;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ADDED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.DeploymentState.ENABLED;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkEmpty;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
+import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
+import static org.junit.Assert.fail;
+
 public class UndeployTestCase extends AbstractCliTestBase {
 
+    private static final String WRONG_DEPLOYMENT = "testRo.war";
+
     private static File cliTestApp1War;
+    private static File cliTestAnotherWar;
 
     private static String sgOne;
     private static String sgTwo;
@@ -65,6 +70,9 @@ public class UndeployTestCase extends AbstractCliTestBase {
 
         // deployment1
         cliTestApp1War = createWarArchive("cli-undeploy-test-app1.war", "Version0");
+
+        // deployment2
+        cliTestAnotherWar = createWarArchive("cli-test-another-deploy.war", "Version2");
 
         final Iterator<String> sgI = CLITestSuite.serverGroups.keySet().iterator();
         if (!sgI.hasNext()) {
@@ -159,5 +167,151 @@ public class UndeployTestCase extends AbstractCliTestBase {
         checkMissing(result, cliTestApp1War.getName());
         result = deploymentInfo(cli, sgTwo);
         checkMissing(result, cliTestApp1War.getName());
+    }
+
+    /**
+     * Testing disabling of non-deployed application deployments.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testDisableWrongDeploymentWithServerGroups() throws Exception {
+        // Deploying one additional deployment to verify that disabling of non-deployed application deployment does't have affect to others
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli, sgOne);
+        checkExist(before, cliTestAnotherWar.getName(), ENABLED, ctx);
+
+        // Try disable non installed application deployment
+        try {
+            ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + WRONG_DEPLOYMENT);
+            fail("Disabling of non-deployed application deployment doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), allOf(containsString("WFLYCTL0216"),
+                            containsString(sgOne),
+                            containsString(WRONG_DEPLOYMENT)));
+            // Verification wrong command execution fail - success
+        }
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli, sgOne);
+        assertThat("After disabling of non-deployed application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing of disabling already disabled application deployment.
+     * <ul>
+     * <li>Step 1) Deploy disabled application deployment</li>
+     * <li>Step 2) Verify if applications deployments is right state by info command</li>
+     * <li>Step 3) Try disable already disabled application deployment</li>
+     * <li>Step 4) Verify if is application deployment status hasn't change</li>
+     * </ul>
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testDisableAlreadyDisabledDeploymentWithServerGroups() throws Exception {
+        // Step 1) Deploy disabled application deployment
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        // Deploy disabled is not supported in domain mode
+        ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getName());
+        // Deploying one additional deployment to verify that disabling already disabled does't have affect to others
+        ctx.handle("deployment deploy-file --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
+
+        // Step 2) Verify if applications deployments is right state by info command
+        final DeploymentInfoResult before = deploymentInfo(cli, sgOne);
+        checkExist(before, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(before, cliTestAnotherWar.getName(), ADDED, ctx);
+
+        // Step 3) Try disable already disabled application deployment
+        try {
+            ctx.handle("deployment disable --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getName());
+        } catch (Exception ex) {
+            fail("Disabling already disabled application deployment FAILED! Expecting No error no warning \n" + ex.getMessage());
+        }
+
+        // Step 4) Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli, sgOne);
+        assertThat("After disabling of already disabled application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing legacy disabling of non-deployed application deployments.
+     * Verify if status of application deployments hasn't change.
+     * Verify error message.
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testLegacyDisableWrongDeploymentWithServerGroups() throws Exception {
+        // Deploying one additional deployment to verify that disabling of non-deployed application deployment does't have affect to others
+        ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        // Remember status of application deployment before deploy operation
+        final DeploymentInfoResult before = deploymentInfo(cli, sgOne);
+        checkExist(before, cliTestAnotherWar.getName(), ENABLED, ctx);
+
+        // Try disable non installed application deployment
+        try {
+            ctx.handle("undeploy --keep-content --server-groups=" + sgOne + ' ' + WRONG_DEPLOYMENT);
+            fail("Disabling of non-deployed application deployment doesn't failed! Command execution fail is expected.");
+        } catch (Exception ex) {
+            // Check error message
+            assertThat("Error message doesn't contains expected message information!"
+                    , ex.getMessage(), allOf(containsString("WFLYCTL0216"),
+                            containsString(sgOne),
+                            containsString(WRONG_DEPLOYMENT)));
+            // Verification wrong command execution fail - success
+        }
+        // Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli, sgOne);
+        assertThat("After disabling of non-deployed application deployment something is change!",
+                after, is(before));
+    }
+
+    /**
+     * Testing of legacy disabling already disabled application deployment.
+     * <ul>
+     * <li>Step 1) Deploy disabled application deployment</li>
+     * <li>Step 2) Verify if applications deployments is right state by info command</li>
+     * <li>Step 3) Try disable already disabled application deployment</li>
+     * <li>Step 4) Verify if is application deployment status hasn't change</li>
+     * </ul>
+     *
+     * @throws Exception
+     * @see <a href="https://issues.jboss.org/browse/WFCORE-3566">WFCORE-3566</a>
+     */
+    @Test
+    public void testLegacyDisableAlreadyDisabledDeploymentWithServerGroups() throws Exception {
+        // Step 1) Deploy disabled application deployment
+        ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getAbsolutePath());
+        // Deploy disabled is not supported in domain mode
+        ctx.handle("undeploy --keep-content --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getName());
+        // Deploying one additional deployment to verify that disabling already disabled does't have affect to others
+        ctx.handle("deploy --server-groups=" + sgOne + ' ' + cliTestApp1War.getAbsolutePath());
+
+        // Step 2) Verify if applications deployments is right state by info command
+        final DeploymentInfoResult before = deploymentInfo(cli, sgOne);
+        checkExist(before, cliTestApp1War.getName(), ENABLED, ctx);
+        checkExist(before, cliTestAnotherWar.getName(), ADDED, ctx);
+
+        // Step 3) Try disable already disabled application deployment
+        try {
+            ctx.handle("undeploy --keep-content --server-groups=" + sgOne + ' ' + cliTestAnotherWar.getName());
+        } catch (Exception ex) {
+            fail("Disabling already disabled application deployment FAILED! Expecting No error no warning \n" + ex.getMessage());
+        }
+
+        // Step 4) Verify if is application deployment status hasn't change
+        final DeploymentInfoResult after = deploymentInfo(cli, sgOne);
+        assertThat("After disabling of already disabled application deployment something is change!",
+                after, is(before));
     }
 }
