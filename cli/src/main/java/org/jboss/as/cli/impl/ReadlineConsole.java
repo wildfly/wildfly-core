@@ -571,6 +571,9 @@ public class ReadlineConsole {
             int max = connection.size().getHeight();
             int currentLines = 0;
             int allLines = 0;
+            int lastScrolledLines = lines.length;
+            connection.write(ANSI.ALTERNATE_BUFFER);
+            clearScreen();
             while (allLines < lines.length) {
                 if (currentLines > max - 2) {
                     try {
@@ -581,11 +584,36 @@ public class ReadlineConsole {
                         connection.write(ANSI.CURSOR_RESTORE);
                         connection.stdoutHandler().accept(ANSI.ERASE_LINE_FROM_CURSOR);
                         if (k == null) { // interrupted, exit.
+                            lastScrolledLines = allLines;
                             allLines = lines.length;
                         } else {
                             switch (k) {
-                                case SPACE: {
+                                case SPACE:
+                                case PGDOWN:{
                                     currentLines = 0;
+                                    break;
+                                }
+                                case SLASH:
+                                case PGUP: {
+                                    clearScreen();
+                                    currentLines = 0;
+                                    if (allLines > 2*(max-1)) {
+                                        //Move one screen up
+                                        allLines -= 2*(max-1);
+                                    } else {
+                                        //Move to the start of input
+                                        allLines = 0;
+                                    }
+                                    break;
+                                }
+                                case SEMI_COLON:
+                                case UP: {
+                                    if (allLines > (max-1)) {
+                                        clearScreen();
+                                        currentLines = 0;
+                                        //Move one line up
+                                        allLines -= max;
+                                    }
                                     break;
                                 }
                                 case DOWN:
@@ -595,7 +623,9 @@ public class ReadlineConsole {
                                     break;
                                 }
                                 case Q:
+                                case ESC:
                                 case q: {
+                                    lastScrolledLines = allLines;
                                     allLines = lines.length;
                                     break;
                                 }
@@ -620,6 +650,19 @@ public class ReadlineConsole {
                     }
                     connection.write(l + Config.getLineSeparator());
                 }
+            }
+            connection.write(ANSI.MAIN_BUFFER);
+            //Print the output to main buffer (from start until the last scrolled position)
+            for (int i = 0; i < lastScrolledLines; i++) {
+                String l = lines[i];
+                // Do not add an extra \n
+                // The \n has been added by the previous line.
+                if (i + 1 == lastScrolledLines) {
+                    if (l.isEmpty()) {
+                        continue;
+                    }
+                }
+                connection.write(l + Config.getLineSeparator());
             }
         } finally {
             outputCollector = null;
