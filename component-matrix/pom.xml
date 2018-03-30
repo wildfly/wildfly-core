@@ -554,6 +554,11 @@
                 <version>${version.org.slf4j}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.build</groupId>
+                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <version>${version.org.wildfly.build-tools}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.client</groupId>
                 <artifactId>wildfly-client-config</artifactId>
                 <version>${version.org.wildfly.client.config}</version>
