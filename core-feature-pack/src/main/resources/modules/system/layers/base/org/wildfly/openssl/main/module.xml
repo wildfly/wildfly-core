@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.wildfly.openssl" version="${org.wildfly.openssl:wildfly-openssl-java}">
+<module xmlns="urn:jboss:module:1.6" name="org.wildfly.openssl">
 
     <properties>
         <property name="jboss.api" value="private"/>

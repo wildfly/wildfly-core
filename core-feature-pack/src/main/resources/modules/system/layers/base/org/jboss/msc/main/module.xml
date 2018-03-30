@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.msc" version="${org.jboss.msc:jboss-msc}">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.msc">
 
     <properties>
         <property name="jboss.require-java-version" value="1.8"/>
