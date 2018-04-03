@@ -108,7 +108,7 @@
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.plugins>1.0.1</version.org.wildfly.plugins>
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
-        <version.surefire.plugin>2.18.1</version.surefire.plugin>
+        <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.0.1</version.xml.plugin>
         <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
         <!-- Release Info -->
@@ -477,6 +477,14 @@
                                 </pluginExecution>
                             </pluginExecutions>
                         </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${version.versions.plugin}</version>
+                    <configuration>
+                        <processAllModules>true</processAllModules>
                     </configuration>
                 </plugin>
                 <plugin>
