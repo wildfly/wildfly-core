@@ -98,14 +98,14 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
     }
 
     public static final SimpleAttributeDefinition HOST_RELEASE =
-            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.HOST_RELEASE, ModelType.STRING, true)
+            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.HOST_RELEASE, ModelType.STRING, false)
                     .setXmlName("id")
                     .setAlternatives(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION)
                     .setValidator(EnumValidator.create(KnownRelease.class, false, false))
                     .build();
 
     public static final SimpleAttributeDefinition MANAGEMENT_MAJOR_VERSION =
-            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION, ModelType.INT, true)
+            SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION, ModelType.INT, false)
                     .setXmlName("major-version")
                     .setAlternatives(ModelDescriptionConstants.HOST_RELEASE)
                     .setRequires(ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION)
