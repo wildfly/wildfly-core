@@ -629,7 +629,7 @@ public class DeploymentInfoUtils {
                         return;
                     } else if (param.isSearchTypeStatus()) {
 
-                        assertThat("", row, containsString(param.getExpectedState().getTitle()));
+                        assertThat("Application deployment is not in right state!", row, containsString(param.getExpectedState().getTitle()));
                         log.trace("Check application deployment in right state '" + param.getName() + "'->'"
                                 + param.getExpectedState().getTitle() + " by command '" + param.getResult().getCommand() + " Success");
                         doubleCheck(param);

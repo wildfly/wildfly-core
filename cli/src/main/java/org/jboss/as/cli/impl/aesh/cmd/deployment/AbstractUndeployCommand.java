@@ -149,6 +149,7 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
         DefaultOperationRequestBuilder builder;
 
         final List<String> deploymentNames;
+        boolean all = false;
         if (name.indexOf('*') < 0) {
             deploymentNames = Collections.singletonList(name);
         } else {
@@ -156,6 +157,7 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
             if (deploymentNames.isEmpty()) {
                 throw new CommandFormatException("No deployment matched wildcard expression " + name);
             }
+            all = true;
         }
 
         for (String deploymentName : deploymentNames) {
@@ -165,6 +167,9 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                 if (allRelevantServerGroups) {
                     if (keepContent) {
                         serverGroups = Util.getAllEnabledServerGroups(deploymentName, client);
+                        if (all && serverGroups.isEmpty()) {
+                            continue;
+                        }
                     } else {
                         try {
                             serverGroups = Util.getServerGroupsReferencingDeployment(deploymentName, client);
@@ -179,10 +184,8 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                     serverGroups = Arrays.asList(serverGroupsStr.split(","));
                 }
 
-                if (serverGroups.isEmpty()) {
-                    if (keepContent) {
-                        throw new OperationFormatException("None of the server groups is specified or references specified deployment.");
-                    }
+                if (serverGroups.isEmpty() && keepContent) {
+                    throw new OperationFormatException("None of the server groups is specified or references deployment " + deploymentName);
                 } else {
                     // If !keepContent, check that all server groups have been listed by user.
                     if (!keepContent) {
@@ -195,6 +198,9 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                         }
                     }
                     for (String group : serverGroups) {
+                        if (all && !Util.isDeploymentPresent(deploymentName, client, group)) {
+                            continue;
+                        }
                         ModelNode groupStep = Util.configureDeploymentOperation(Util.UNDEPLOY, deploymentName, group);
                         steps.add(groupStep);
                         if (!keepContent) {
@@ -217,6 +223,10 @@ public abstract class AbstractUndeployCommand extends CommandWithPermissions
                 builder.setOperationName(Util.REMOVE);
                 builder.addNode(Util.DEPLOYMENT, deploymentName);
                 steps.add(builder.buildRequest());
+            }
+        } else {
+            if (ctx.isDomainMode() && allRelevantServerGroups && all && !steps.isDefined()) {
+                throw new OperationFormatException("No enabled deployment found in any server-groups.");
             }
         }
         if (headers != null) {
