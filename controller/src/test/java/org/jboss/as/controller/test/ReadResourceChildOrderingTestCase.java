@@ -21,12 +21,19 @@
 */
 package org.jboss.as.controller.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -47,14 +54,25 @@ import org.junit.Test;
  */
 public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBase {
 
+    private static final PathElement testSubsystem = PathElement.pathElement("test");
     private static final String[] STR = new String[]{"g", "e", "l", "d", "h", "h", "k", "f", "a", "b", "j", "g", "c", "i"};
+    private static final String PROP = "prop";
+    private static final LinkedHashMap<String, String> data;
+
+    static {
+        data = new LinkedHashMap<>();
+
+        data.put("attr03", null);
+        data.put("attr02", "g01");
+        data.put("attr01", "g02");
+    }
 
     ModelNode model;
 
     public ReadResourceChildOrderingTestCase() {
         model = new ModelNode();
         for (String aSTR : STR) {
-            model.get("test", aSTR, "prop").set(aSTR.toUpperCase(Locale.ENGLISH));
+            model.get("test", aSTR, PROP).set(aSTR.toUpperCase(Locale.ENGLISH));
         }
     }
 
@@ -66,6 +84,47 @@ public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBas
 
         ModelNode result = executeForResult(op);
         Assert.assertEquals(model, result);
+    }
+
+
+    /**
+     * Test for alphabetical order of read-resource-operation - fix of defect WFCORE-1985.
+     *
+     * Test case reads resource description with following values: ["attr1", group "g2"], ["attr2", group "g1"], ["attr3", group none], ["prop", group none]
+     *
+     * Order of result before fix of WFCORE-1985 was: ["attr3", group none], ["prop", group none], ["attr2", group "g1"], ["attr1", group "g2"]. Result was firstly sorted by group, then by name
+     *
+     * New order is alphabetical by name only: ["attr1", group "g2"], ["attr2", group "g1"], ["attr3", group none], ["prop", group none]:
+     */
+    @Test
+    public void testReadResourceDescriptionOrdering() throws Exception {
+        final ModelController controller = getController();
+
+        ModelNode address = new ModelNode();
+        address.add("test", "*");
+
+        final ModelNode read = new ModelNode();
+        read.get(OP).set("read-resource-description");
+        read.get(OP_ADDR).set(address);
+        read.get("recursive").set(true);
+
+        ModelNode response = controller.execute(read, null, null, null);
+        assertEquals(response.toString(), "success", response.get("outcome").asString());
+        ModelNode result = response.get("result").get(0).get("result");
+
+        for (String attr : data.keySet()) {
+            assertTrue(result.toString(), result.hasDefined("attributes", attr));
+        }
+
+        ModelNode attrs = result.get("attributes");
+
+        int i = 1;
+        for (; i < 3; i++) {
+            String desc = attrs.asList().get(i-1).get(0).get("description").asString();
+            assertEquals("Order of the "+i+". item is wrong.", "attr0"+i, desc);
+        }
+        String desc = attrs.asList().get(3).get(0).get("description").asString();
+        assertEquals("Order of the 4. item is wrong.", PROP, desc);
     }
 
     @Override
@@ -84,8 +143,14 @@ public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBas
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        ManagementResourceRegistration child = registration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = registration.registerSubModel(new SimpleResourceDefinition(testSubsystem, new NonResolvingResourceDescriptionResolver()));
         child.registerReadOnlyAttribute(TestUtils.createNillableAttribute("prop", ModelType.STRING), null);
+
+
+
+        for(Map.Entry<String, String> entry : data.entrySet() ) {
+            child.registerReadOnlyAttribute(TestUtils.createAttribute(entry.getKey(), ModelType.STRING, entry.getValue(), true), null);
+        }
 
         managementModel.getRootResource().getModel().set(model);
     }
