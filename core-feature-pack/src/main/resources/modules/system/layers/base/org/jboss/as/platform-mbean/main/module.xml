@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.platform-mbean" version="${org.wildfly.core:wildfly-platform-mbean}">
+<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.platform-mbean">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>

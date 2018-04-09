@@ -22,18 +22,14 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="javax.sql.api">
+<module xmlns="urn:jboss:module:1.8" name="javax.sql.api">
+    <properties>
+        <property name="jboss.api" value="deprecated"/>
+    </properties>
+
     <resources/>
 
     <dependencies>
-        <system export="true">
-            <paths>
-                <path name="javax/sql"/>
-                <path name="javax/sql/rowset"/>
-                <path name="javax/sql/rowset/serial"/>
-                <path name="javax/sql/rowset/spi"/>
-                <path name="javax/transaction/xa"/>
-            </paths>
-        </system>
+        <module name="java.sql" export="true"/>
     </dependencies>
 </module>
