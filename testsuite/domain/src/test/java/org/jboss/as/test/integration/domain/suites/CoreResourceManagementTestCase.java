@@ -49,6 +49,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PLATFORM_MBEAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
@@ -59,6 +60,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLBACK_ON_RUNTIME_FAILURE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SELECT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -70,10 +72,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SELECT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WHERE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
@@ -94,6 +94,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.SnapshotDeleteHandler;
 import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -938,6 +939,39 @@ public class CoreResourceManagementTestCase {
         Assert.assertTrue(result.hasDefined("running-mode"));
         Assert.assertEquals(result.get("name").asString(), "slave");
         Assert.assertEquals(result.get("running-mode").asString(), "NORMAL");
+    }
+
+    /** WFCORE-3730 */
+    @Test
+    public void testDomainRelativeToDomainBaseDir() throws IOException {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        PathAddress pa = PathAddress.pathAddress("path", "wfcore-3730");
+        ModelNode operation = Util.createAddOperation(pa);
+        operation.get("path").set("wfcore-3730");
+        operation.get("relative-to").set("jboss.domain.base.dir");
+        ModelNode response = masterClient.execute(operation);
+        validateResponse(response);
+
+        operation = Util.createRemoveOperation(pa);
+        response = masterClient.execute(operation);
+        validateResponse(response);
+    }
+
+    /** WFCORE-3730 */
+    @Test
+    public void testHostRelativeToDomainBaseDir() throws IOException {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        PathAddress pa = PathAddress.pathAddress("host", "master").append("path", "wfcore-3730");
+        ModelNode operation = Util.createAddOperation(pa);
+        operation.get("path").set("wfcore-3730");
+        operation.get("relative-to").set("jboss.domain.base.dir");
+        ModelNode response = masterClient.execute(operation);
+        validateResponse(response);
+
+        operation = Util.createRemoveOperation(pa);
+        response = masterClient.execute(operation);
+        validateResponse(response);
+
     }
 
     private void testCannotInvokeManagedServerOperationsComposite(ModelNode stepAddress) throws Exception {
