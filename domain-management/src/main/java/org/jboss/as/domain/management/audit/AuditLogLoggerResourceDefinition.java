@@ -148,7 +148,6 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
                         final boolean wasReadOnly = auditLoggerProvider.isLogReadOnly();
-                        final AuditLogger.Status oldStatus = auditLoggerProvider.getLoggerStatus();
 
                         auditLoggerProvider.setLogBoot(AuditLogLoggerResourceDefinition.LOG_BOOT.resolveModelAttribute(context, model).asBoolean());
                         auditLoggerProvider.setLogReadOnly(AuditLogLoggerResourceDefinition.LOG_READ_ONLY.resolveModelAttribute(context, model).asBoolean());

@@ -32,9 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.CompositeOperationHandler;
@@ -160,7 +158,6 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
         final Set<String> profiles = new HashSet<>();
         final Set<String> serverGroups = new HashSet<>();
         final Set<String> socketBindings = new HashSet<>();
-        final Map<String, Set<String>> serversByGroup = new HashMap<>();
 
         for (final Resource.ResourceEntry serverConfig : host.getChildren(SERVER_CONFIG)) {
             final ModelNode model = serverConfig.getModel();

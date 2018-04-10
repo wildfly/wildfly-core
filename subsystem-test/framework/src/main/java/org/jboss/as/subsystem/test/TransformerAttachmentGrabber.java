@@ -77,8 +77,6 @@ public class TransformerAttachmentGrabber implements OperationStepHandler {
         OperationStepHandler handler = context.getRootResourceRegistration().getOperationHandler(opAddr, opName);
         context.addStep(realOp, handler, OperationContext.Stage.MODEL);
 
-        final ModelNode originalOp = realOp.clone();
-
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

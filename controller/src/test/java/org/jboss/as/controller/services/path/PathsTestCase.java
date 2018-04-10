@@ -633,7 +633,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
         //TODO I changed this to fail, not 100% sure that is correct
         executeForFailure(operation);
 
-        ServiceController<?> svc = getContainer().getRequiredService(AbstractPathService.pathNameOf("add1"));
+        getContainer().getRequiredService(AbstractPathService.pathNameOf("add1"));
         allCallback1.checkDone();
         checkServiceAndPathEntry("add1", "123", null);
     }

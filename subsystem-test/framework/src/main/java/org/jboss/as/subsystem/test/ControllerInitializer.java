@@ -226,7 +226,7 @@ public class ControllerInitializer {
             return;
         }
         rootResource.getModel().get(SYSTEM_PROPERTY);
-        ManagementResourceRegistration sysProps = rootRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(testControllerAccessor.getServerEnvironment()));
+        rootRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(testControllerAccessor.getServerEnvironment()));
     }
 
     /**

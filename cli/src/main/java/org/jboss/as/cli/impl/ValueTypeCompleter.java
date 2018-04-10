@@ -413,9 +413,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
     }
 
     private static boolean isObject(ModelNode mn) {
-        ModelType mt;
         try {
-            mt = mn.asType();
+            mn.asType();
         } catch (IllegalArgumentException ex) {
             return true;
         }

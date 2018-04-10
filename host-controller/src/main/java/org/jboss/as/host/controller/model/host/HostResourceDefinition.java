@@ -478,7 +478,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         discoveryOptions.registerSubModel(new DiscoveryOptionResourceDefinition(hostControllerInfo));
 
         // Jvms
-        final ManagementResourceRegistration jvms = hostRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
+        hostRegistration.registerSubModel(JvmResourceDefinition.GLOBAL);
 
         //Paths
         // TODO why resolvable?

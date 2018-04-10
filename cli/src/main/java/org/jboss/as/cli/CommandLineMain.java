@@ -63,7 +63,6 @@ public class CommandLineMain {
                 }
                 // The log level has not been set, no need to continue
                 if (logLevel == null) return;
-                final SecurityManager sm = System.getSecurityManager();
                 // Configure the log manager
                 final LogManager logManager = LogManager.getLogManager();
                 if (logManager instanceof org.jboss.logmanager.LogManager) {

@@ -19,7 +19,6 @@
 package org.jboss.as.host.controller.operations;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -66,7 +65,6 @@ public class ServerRemoveHandler extends AbstractRemoveStepHandler {
         super.performRemove(context, operation, model);
 
         final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final String group = model.get(GROUP).asString();
         final String serverName = address.getLastElement().getValue();
         final PathAddress running = address.subAddress(0, 1).append(PathElement.pathElement(RUNNING_SERVER, serverName));
 

@@ -22,7 +22,6 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.HashUtils.hashFile;
 import static org.jboss.as.patching.IoUtils.NO_CONTENT;
 import static org.jboss.as.patching.IoUtils.mkdir;
 import static org.jboss.as.patching.runner.PatchingAssert.assertFileContent;
@@ -91,7 +90,6 @@ public class FileTaskTestCase extends AbstractTaskTestCase {
         String fileName = "standalone.sh";
         File standaloneShellFile = touch(env.getInstalledImage().getJbossHome(), "bin", fileName );
         dump(standaloneShellFile, "original script to run standalone AS7");
-        byte[] existingHash = hashFile(standaloneShellFile);
 
         // build a one-off patch for the base installation
         // with 1 removed file
@@ -180,7 +178,6 @@ public class FileTaskTestCase extends AbstractTaskTestCase {
         File subTwo = touch(subDirOne, two);
         touch(subTwo);
         dump(subTwo, randomString());
-        byte[] existingHash = hashFile(test);
 
         // build a one-off patch for the base installation
         // with 1 removed directory

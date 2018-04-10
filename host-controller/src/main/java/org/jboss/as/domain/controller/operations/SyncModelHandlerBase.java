@@ -102,7 +102,6 @@ abstract class SyncModelHandlerBase implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final HostControllerRegistrationHandler.OperationExecutor operationExecutor = parameters.getOperationExecutor();
                 final ModelNode result = localOperations.get(RESULT);
                 final SyncModelOperationHandler handler =
                         new SyncModelOperationHandler(result.asList(), remote, remoteExtensions,

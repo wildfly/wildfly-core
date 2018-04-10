@@ -20,7 +20,6 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
@@ -42,7 +41,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
         // 2.0.0 to 1.2.0, aka EAP 7.1.0
-        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
+        chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
 
     }
 

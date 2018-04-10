@@ -522,7 +522,6 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
         assertNotPresent(redeployAffected, args);
 
         final String overlay = getName(ctx, false);
-        final ModelControllerClient client = ctx.getModelControllerClient();
 
         final ModelNode redeployOp = new ModelNode();
         redeployOp.get(Util.OPERATION).set(Util.COMPOSITE);

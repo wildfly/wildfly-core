@@ -23,7 +23,6 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.remoting.CommonAttributes.SECURITY_REALM;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -33,7 +32,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceName;
 import org.xnio.OptionMap;
 
 /**
@@ -69,9 +67,6 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
     void launchServices(OperationContext context, String connectorName, ModelNode model) throws OperationFailedException {
         OptionMap optionMap = ConnectorUtils.getFullOptions(context, model);
-
-        ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
-        final String realmName= model.hasDefined(SECURITY_REALM) ? model.require(SECURITY_REALM).asString() : null;
 
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
 
