@@ -378,7 +378,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
                     Operations.readResult(result).get("identity").get("username").asString());
         } catch (Exception e) {
             LOGGER.warn("Operation execution failed", e);
-            fail("The whoami operation failed - " + e.getMessage());
+            throw new AssertionError("The whoami operation failed", e);
         }
     }
 

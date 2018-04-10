@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.domain-http-interface">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.as.domain-http-interface">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
@@ -36,6 +36,8 @@
     </resources>
 
     <dependencies>
+        <module name="java.security.jgss"/>
+        <module name="java.security.sasl"/>
         <module name="io.undertow.core"/>
         <module name="org.wildfly.security.elytron-private"/>
         <module name="org.jboss.as.protocol"/>
@@ -48,7 +50,6 @@
         <module name="org.jboss.xnio"/>
         <module name="org.wildfly.common" />
         <module name="org.wildfly.security.elytron-web.undertow-server" />
-        <module name="javax.api"/>
     </dependencies>
 
 

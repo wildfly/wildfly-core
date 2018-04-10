@@ -22,13 +22,15 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.remoting">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.remoting">
     <resources>
         <artifact name="${org.jboss.remoting:jboss-remoting}"/>
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <module name="java.management"/>
+        <module name="java.security.sasl"/>
+        <module name="java.xml"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.marshalling" export="true"/>
         <module name="org.jboss.modules"/>

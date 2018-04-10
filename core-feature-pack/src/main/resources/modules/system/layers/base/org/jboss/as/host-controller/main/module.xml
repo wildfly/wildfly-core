@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.host-controller">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.as.host-controller">
     <properties>
         <property name="jboss.api" value="private"/>
         <property name="jboss.require-java-version" value="1.8"/>
@@ -35,7 +35,12 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <!-- for java.beans -->
+        <module name="java.desktop"/>
+        <module name="java.logging"/>
+        <module name="java.management"/>
+        <module name="java.security.sasl"/>
+        <module name="java.xml"/>
         <!--
         Xalan is optional dependancy and would need to be present in cases where runtime code needs xslt transformation otherwise
         xslt parser will fallback to JDK provided xalan, which can cause issues.

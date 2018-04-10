@@ -24,7 +24,7 @@
   ~ */
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.wildfly.extension.core-management">
+<module xmlns="urn:jboss:module:1.8" name="org.wildfly.extension.core-management">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
@@ -34,7 +34,8 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <!-- for java.beans -->
+        <module name="java.desktop"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.server" />
         <module name="org.jboss.logging"/>

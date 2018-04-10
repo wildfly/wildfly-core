@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.as.core-security">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.as.core-security">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
@@ -33,6 +33,5 @@
 
     <dependencies>
         <module name="org.jboss.as.core-security-api" export="true" />
-        <module name="javax.api"/>
     </dependencies>
 </module>
