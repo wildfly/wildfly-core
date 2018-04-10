@@ -18,6 +18,7 @@ package org.jboss.as.cli.impl.aesh.cmd.security;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.aesh.command.Command;
@@ -28,7 +29,19 @@ import org.aesh.command.GroupCommandDefinition;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.embedded.EmbeddedProcessLaunch;
+import org.jboss.as.cli.impl.aesh.cmd.AbstractCommaCompleter;
 import org.jboss.as.cli.impl.aesh.cmd.AbstractCompleter;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.AbstractDisableAuthenticationCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.AbstractEnableAuthenticationCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.AbstractReorderSASLCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.HTTPServerDisableAuthCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.HTTPServerEnableAuthCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.ManagementDisableHTTPCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.ManagementDisableSASLCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.ManagementEnableHTTPCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.ManagementEnableSASLCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.auth.ManagementReorderSASLCommand;
+import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthFactorySpec;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.ElytronUtil;
 import org.jboss.as.cli.impl.aesh.cmd.security.ssl.HTTPServerDisableSSLCommand;
 import org.jboss.as.cli.impl.aesh.cmd.security.ssl.HTTPServerEnableSSLCommand;
@@ -61,24 +74,25 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
         void failureOccured(CommandContext ctx, ModelNode reply) throws CommandException;
     }
 
-    public static final String OPT_FILE_SYSTEM_REALM = "file-system-realm";
+    public static final String OPT_KEY_STORE_REALM_NAME = "key-store-realm-name";
+    public static final String OPT_FILE_SYSTEM_REALM_NAME = "file-system-realm-name";
     public static final String OPT_USER_ROLE_DECODER = "user-role-decoder";
     public static final String OPT_USER_PROPERTIES_FILE = "user-properties-file";
     public static final String OPT_GROUP_PROPERTIES_FILE = "group-properties-file";
+    public static final String OPT_PROPERTIES_REALM_NAME = "properties-realm-name";
     public static final String OPT_RELATIVE_TO = "relative-to";
     public static final String OPT_NO_RELOAD = "no-reload";
-    public static final String OPT_EXPOSED_REALM_NAME = "exposed-realm-name";
-
+    public static final String OPT_EXPOSED_REALM = "exposed-realm";
     public static final String OPT_NEW_SECURITY_DOMAIN_NAME = "new-security-domain-name";
     public static final String OPT_NEW_AUTH_FACTORY_NAME = "new-auth-factory-name";
-    public static final String OPT_NEW_SECURITY_REALM_NAME = "new-security-realm-name";
-
+    public static final String OPT_NEW_SECURITY_REALM_NAME = "new-realm-name";
+    public static final String OPT_MECHANISMS_ORDER = "mechanisms-order";
     public static final String OPT_MECHANISM = "mechanism";
     public static final String OPT_SUPER_USER = "super-user";
 
-    public static final String OPT_INTERACTIVE = "interactive";
+    public static final String OPT_ROLES = "roles";
 
-    public static final String OPT_EXT_TRUST_STORE = "external-trust-store";
+    public static final String OPT_INTERACTIVE = "interactive";
 
     public static final String OPT_KEY_STORE_NAME = "key-store-name";
     public static final String OPT_KEY_STORE_PATH = "key-store-path";
@@ -122,6 +136,13 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
         commands.add(new ManagementDisableSSLCommand(embeddedServerRef));
         commands.add(new HTTPServerEnableSSLCommand(ctx));
         commands.add(new HTTPServerDisableSSLCommand());
+        commands.add(new ManagementDisableSASLCommand());
+        commands.add(new ManagementDisableHTTPCommand());
+        commands.add(new ManagementEnableSASLCommand());
+        commands.add(new ManagementEnableHTTPCommand());
+        commands.add(new ManagementReorderSASLCommand());
+        commands.add(new HTTPServerEnableAuthCommand());
+        commands.add(new HTTPServerDisableAuthCommand());
         return commands;
     }
 
@@ -135,6 +156,16 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
                         getModelControllerClient());
             }
         }
+
+        public static class RoleMapperCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getConstantRoleMappers(completerInvocation.getCommandContext().
+                        getModelControllerClient());
+            }
+        }
+
 
         public static class KeyStoreTypeCompleter extends AbstractCompleter {
 
@@ -165,6 +196,96 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
             @Override
             protected List<String> getItems(CLICompleterInvocation completerInvocation) {
                 return Util.getStandardSocketBindings(completerInvocation.getCommandContext().getModelControllerClient());
+            }
+        }
+
+        public static class MechanismCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                AbstractEnableAuthenticationCommand cmd = (AbstractEnableAuthenticationCommand) completerInvocation.getCommand();
+
+                try {
+                    return ElytronUtil.getMechanisms(completerInvocation.getCommandContext(),
+                            cmd.getFactorySpec(),
+                            cmd.getTargetedFactory(completerInvocation.getCommandContext()));
+                } catch (Exception ex) {
+                    return Collections.emptyList();
+                }
+            }
+        }
+
+        public static class SimpleDecoderCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getSimpleDecoderNames(completerInvocation.getCommandContext().
+                        getModelControllerClient());
+            }
+        }
+
+        public static class MechanismDisableCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                AbstractDisableAuthenticationCommand cmd = (AbstractDisableAuthenticationCommand) completerInvocation.getCommand();
+
+                try {
+                    return ElytronUtil.getMechanisms(completerInvocation.getCommandContext(),
+                            cmd.getEnabledFactory(completerInvocation.getCommandContext()), cmd.getFactorySpec());
+                } catch (Exception ex) {
+                    return Collections.emptyList();
+                }
+            }
+        }
+
+        public static class FileSystemRealmCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getFileSystemRealmNames(completerInvocation.getCommandContext().
+                        getModelControllerClient());
+            }
+        }
+
+        public static class PropertiesRealmCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getPropertiesRealmNames(completerInvocation.getCommandContext().
+                        getModelControllerClient());
+            }
+        }
+
+        public static class KeyStoreRealmCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getKeyStoreRealmNames(completerInvocation.getCommandContext().
+                        getModelControllerClient());
+            }
+        }
+
+        public static class SecurityDomainCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return Util.getUndertowSecurityDomains(completerInvocation.getCommandContext().getModelControllerClient());
+            }
+        }
+
+        public static class MechanismsCompleter extends AbstractCommaCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                AbstractReorderSASLCommand cmd = (AbstractReorderSASLCommand) completerInvocation.getCommand();
+                try {
+                    return ElytronUtil.getMechanisms(completerInvocation.getCommandContext(),
+                            cmd.getSASLFactoryName(completerInvocation.getCommandContext()),
+                            AuthFactorySpec.SASL);
+                } catch (Exception ex) {
+                    return Collections.emptyList();
+                }
             }
         }
     }

@@ -61,11 +61,9 @@ public class ReloadRedirectTestCase {
     private static ServerController container;
 
     private static boolean elytron;
-    @BeforeClass
-    public static void initServer() throws Exception {
-        container.start();
 
-        ModelControllerClient client = container.getClient().getControllerClient();
+    public static void setupNativeInterface(ServerController controller) throws Exception {
+        ModelControllerClient client = controller.getClient().getControllerClient();
 
         // Set up native management so we can use it to do cleanup without dealing with https
         // add native socket binding
@@ -87,6 +85,43 @@ public class ReloadRedirectTestCase {
         operation.get("security-realm").set("native-realm");
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
+    }
+
+    public static void removeNativeInterface(ManagementClient client) throws Exception {
+        Exception e = null;
+        try {
+            removeNativeMgmt(client);
+        } catch (Exception ex) {
+            if (e == null) {
+                e = ex;
+            }
+        } finally {
+            try {
+                removeNativeRealm(client);
+            } catch (Exception ex) {
+                if (e == null) {
+                    e = ex;
+                }
+            } finally {
+                try {
+                    remoteNativeMgmtPort(client);
+                } catch (Exception ex) {
+                    if (e == null) {
+                        e = ex;
+                    }
+                }
+            }
+        }
+        if (e != null) {
+            throw e;
+        }
+    }
+
+    @BeforeClass
+    public static void initServer() throws Exception {
+        container.start();
+
+        setupNativeInterface(container);
 
         // elytron or legacy
         try {
@@ -124,29 +159,7 @@ public class ReloadRedirectTestCase {
                     e = ex;
                 }
             } finally {
-                try {
-                    removeNativeMgmt(client);
-                } catch (Exception ex) {
-                    if (e == null) {
-                        e = ex;
-                    }
-                } finally {
-                    try {
-                        removeNativeRealm(client);
-                    } catch (Exception ex) {
-                        if (e == null) {
-                            e = ex;
-                        }
-                    } finally {
-                        try {
-                            remoteNativeMgmtPort(client);
-                        } catch (Exception ex) {
-                            if (e == null) {
-                                e = ex;
-                            }
-                        }
-                    }
-                }
+                removeNativeInterface(client);
             }
         }
 
@@ -210,7 +223,7 @@ public class ReloadRedirectTestCase {
         client.executeForResult(remove);
     }
 
-    private static ManagementClient getCleanupClient() throws UnknownHostException {
+    public static ManagementClient getCleanupClient() throws UnknownHostException {
         // Use a client that connects to 9999
         ModelControllerClient mcc = ModelControllerClient.Factory.create("remote", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
         return new ManagementClient(mcc, TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT, "remote");
@@ -271,8 +284,8 @@ public class ReloadRedirectTestCase {
                 cliProc.clearOutput();
                 Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/server-ssl-context=nsslctx:remove", null));
                 Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-            } catch (Exception ex) {
-                if (exception != null) {
+            } catch (Throwable ex) {
+                if (exception == null) {
                     exception = ex;
                 }
             } finally {
@@ -280,8 +293,8 @@ public class ReloadRedirectTestCase {
                     cliProc.clearOutput();
                     Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-manager=nkm:remove", null));
                     Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-                } catch (Exception ex) {
-                    if (exception != null) {
+                } catch (Throwable ex) {
+                    if (exception == null) {
                         exception = ex;
                     }
                 } finally {
@@ -289,15 +302,15 @@ public class ReloadRedirectTestCase {
                         cliProc.clearOutput();
                         Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-store=nks:remove", null));
                         Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-                    } catch (Exception ex) {
-                        if (exception != null) {
+                    } catch (Throwable ex) {
+                        if (exception == null) {
                             exception = ex;
                         }
                     } finally {
                         try {
                             cliProc.ctrlCAndWaitForClose();
-                        } catch (Exception ex) {
-                            if (exception != null) {
+                        } catch (Throwable ex) {
+                            if (exception == null) {
                                 exception = ex;
                             }
                         }
