@@ -583,6 +583,7 @@ public class ReadlineConsole {
                                     currentLines -= 1;
                                     break;
                                 }
+                                case Q:
                                 case q: {
                                     allLines = lines.length;
                                     break;
