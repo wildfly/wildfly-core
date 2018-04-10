@@ -56,6 +56,7 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
+import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
@@ -84,7 +85,7 @@ public class LoggingExtension implements Extension {
 
     static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 5;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -238,6 +239,7 @@ public class LoggingExtension implements Extension {
         setParser(context, Namespace.LOGGING_2_0, new LoggingSubsystemParser_2_0());
         setParser(context, Namespace.LOGGING_3_0, new LoggingSubsystemParser_3_0());
         setParser(context, Namespace.LOGGING_4_0, new LoggingSubsystemParser_4_0());
+        setParser(context, Namespace.LOGGING_5_0, new LoggingSubsystemParser_5_0());
 
         // Hack to ensure the Element and Attribute enums are loaded during this call which
         // is part of concurrent boot. These enums trigger a lot of classloading and static
@@ -299,6 +301,7 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(SyslogHandlerResourceDefinition.INSTANCE);
         registration.registerSubModel(PatternFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(CustomFormatterResourceDefinition.INSTANCE);
+        registration.registerSubModel(JsonFormatterResourceDefinition.INSTANCE);
 
         if (registerTransformers) {
             registerTransformers(subsystem,
@@ -314,23 +317,28 @@ public class LoggingExtension implements Extension {
                     customHandlerResourceDefinition,
                     SyslogHandlerResourceDefinition.INSTANCE,
                     PatternFormatterResourceDefinition.INSTANCE,
-                    CustomFormatterResourceDefinition.INSTANCE);
+                    CustomFormatterResourceDefinition.INSTANCE,
+                    JsonFormatterResourceDefinition.INSTANCE);
         }
     }
 
     private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_2_0_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_5_0_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
         // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
 
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_5_0_0.getModelVersion(),
         }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
                 KnownModelVersion.VERSION_3_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_4_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_5_0_0.getModelVersion(),
         });
     }
 

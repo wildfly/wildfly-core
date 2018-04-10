@@ -68,7 +68,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-logging_4_0.xsd";
+        return "schema/jboss-as-logging_5_0.xsd";
     }
 
     @Test
@@ -151,12 +151,26 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
                                 new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
                         .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
-                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET)));
+                                new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
     @Test
     public void testTransformersEAP700() throws Exception {
-        testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml") );
+        testEap7Transformer(ModelTestControllerVersion.EAP_7_0_0, ModelVersion.create(3, 0, 0), readResource("/logging_3_0.xml"));
+    }
+
+    @Test
+    public void testFailedTransformersEAP700() throws Exception {
+        final ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_7_0_0;
+        final ModelVersion modelVersion = ModelVersion.create(3, 0, 0);
+
+        // Test against current
+        testEap7FailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
+                new FailedOperationTransformationConfig()
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
     private void testEap7Transformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {
@@ -204,6 +218,28 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         // Create the legacy kernel
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
                 .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
+                .dontPersistXml()
+                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
+
+
+        KernelServices mainServices = builder.build();
+        KernelServices legacyServices = mainServices.getLegacyServices(legacyModelVersion);
+
+        Assert.assertNotNull(legacyServices);
+        Assert.assertTrue("main services did not boot", mainServices.isSuccessfulBoot());
+        Assert.assertTrue(legacyServices.isSuccessfulBoot());
+
+        final List<ModelNode> ops = builder.parseXml(subsystemXml);
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, legacyModelVersion, ops, config);
+    }
+
+    private void testEap7FailedTransformers(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final FailedOperationTransformationConfig config) throws Exception {
+        final KernelServicesBuilder builder = createKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance());
+
+        // Create the legacy kernel
+        builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
+                .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-logging:" + controllerVersion.getCoreVersion())
                 .dontPersistXml()
                 .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
                 .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);

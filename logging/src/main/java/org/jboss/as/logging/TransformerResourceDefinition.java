@@ -12,7 +12,7 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-abstract class TransformerResourceDefinition extends SimpleResourceDefinition {
+public abstract class TransformerResourceDefinition extends SimpleResourceDefinition {
 
     protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver) {
         super(new Parameters(pathElement, descriptionResolver));

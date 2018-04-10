@@ -120,6 +120,24 @@ abstract class LoggingSubsystemParser implements XMLStreamConstants, XMLElementR
      * @throws XMLStreamException if a parsing error occurs
      */
     static void parsePropertyElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
+        parsePropertyElement(operation, reader, PROPERTIES.getName());
+    }
+
+    /**
+     * Parses a property element.
+     * <p>
+     *
+     * The {@code name} attribute is required. If the {@code value} attribute is not present an
+     * {@linkplain org.jboss.dmr.ModelNode UNDEFINED ModelNode} will set on the operation.
+     * </p>
+     *
+     * @param operation   the operation to add the parsed properties to
+     * @param reader      the reader to use
+     * @param wrapperName the name of the attribute that wraps the key and value attributes
+     *
+     * @throws XMLStreamException if a parsing error occurs
+     */
+    static void parsePropertyElement(final ModelNode operation, final XMLExtendedStreamReader reader, final String wrapperName) throws XMLStreamException {
         while (reader.nextTag() != END_ELEMENT) {
             final int cnt = reader.getAttributeCount();
             String name = null;
@@ -144,7 +162,7 @@ abstract class LoggingSubsystemParser implements XMLStreamConstants, XMLElementR
             if (name == null) {
                 throw missingRequired(reader, Collections.singleton(Attribute.NAME.getLocalName()));
             }
-            operation.get(PROPERTIES.getName()).add(name, (value == null ? new ModelNode() : new ModelNode(value)));
+            operation.get(wrapperName).add(name, (value == null ? new ModelNode() : new ModelNode(value)));
             if (reader.nextTag() != END_ELEMENT) {
                 throw unexpectedElement(reader);
             }
