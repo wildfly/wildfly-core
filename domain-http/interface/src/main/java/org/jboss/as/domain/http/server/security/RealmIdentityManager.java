@@ -156,7 +156,7 @@ public class RealmIdentityManager implements IdentityManager {
 
     private Account verify(String id, PasswordCredential credential) {
         assertMechanism(AuthMechanism.PLAIN);
-        if (credential instanceof PasswordCredential == false) {
+        if (credential == null) {
             return null;
         }
 

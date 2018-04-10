@@ -23,7 +23,6 @@ package org.jboss.as.cli.handlers;
 
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
@@ -105,17 +104,14 @@ public class ConnectionInfoHandler extends CommandHandlerWithHelp {
             boolean sslConn = lastChain != null;
             if (sslConn) {
                 try {
-                    for (Certificate current : lastChain) {
-                        if (current instanceof X509Certificate) {
-                            X509Certificate x509Current = (X509Certificate) current;
-                            Map<String, String> fingerprints = FingerprintGenerator.generateFingerprints(x509Current);
-                            st.addLine(new String[] {"Subject", x509Current.getSubjectX500Principal().getName()});
-                            st.addLine(new String[] {"Issuer", x509Current.getIssuerDN().getName()});
-                            st.addLine(new String[] {"Valid from", x509Current.getNotBefore().toString()});
-                            st.addLine(new String[] {"Valid to", x509Current.getNotAfter().toString()});
-                            for (String alg : fingerprints.keySet()) {
-                                st.addLine(new String[] {alg, fingerprints.get(alg)});
-                            }
+                    for (X509Certificate x509Current : lastChain) {
+                        Map<String, String> fingerprints = FingerprintGenerator.generateFingerprints(x509Current);
+                        st.addLine(new String[] {"Subject", x509Current.getSubjectX500Principal().getName()});
+                        st.addLine(new String[] {"Issuer", x509Current.getIssuerDN().getName()});
+                        st.addLine(new String[] {"Valid from", x509Current.getNotBefore().toString()});
+                        st.addLine(new String[] {"Valid to", x509Current.getNotAfter().toString()});
+                        for (String alg : fingerprints.keySet()) {
+                            st.addLine(new String[] {alg, fingerprints.get(alg)});
                         }
                     }
                 } catch (CommandLineException cle) {

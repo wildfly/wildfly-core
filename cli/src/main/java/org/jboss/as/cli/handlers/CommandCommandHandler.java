@@ -70,9 +70,6 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
             public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
                 int offset = 0;
                 int result = OperationRequestCompleter.ARG_VALUE_COMPLETER.complete(ctx, buffer, cursor + offset, candidates) - offset;
-                if(result < 0) {
-                    return result;
-                }
                 return result;
             }}, "--node-type") {
             @Override
