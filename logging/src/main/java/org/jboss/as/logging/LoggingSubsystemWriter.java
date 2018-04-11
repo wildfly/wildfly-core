@@ -22,6 +22,7 @@
 
 package org.jboss.as.logging;
 
+import static org.jboss.as.logging.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.AbstractHandlerDefinition.NAMED_FORMATTER;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.ASYNC_HANDLER;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
@@ -29,24 +30,23 @@ import static org.jboss.as.logging.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
 import static org.jboss.as.logging.AsyncHandlerResourceDefinition.SUBHANDLERS;
 import static org.jboss.as.logging.CommonAttributes.APPEND;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
+import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
 import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
-import static org.jboss.as.logging.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.CommonAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.HANDLER_NAME;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILES;
+import static org.jboss.as.logging.CommonAttributes.MODULE;
 import static org.jboss.as.logging.CommonAttributes.NAME;
+import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.CONSOLE_HANDLER;
 import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.TARGET;
 import static org.jboss.as.logging.CustomFormatterResourceDefinition.CUSTOM_FORMATTER;
-import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CustomHandlerResourceDefinition.CUSTOM_HANDLER;
-import static org.jboss.as.logging.CommonAttributes.MODULE;
-import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.FileHandlerResourceDefinition.FILE_HANDLER;
 import static org.jboss.as.logging.LoggerResourceDefinition.CATEGORY;
 import static org.jboss.as.logging.LoggerResourceDefinition.LOGGER;
@@ -74,9 +74,11 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -218,6 +220,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         writeFormatters(writer, PATTERN_FORMATTER, model);
         writeFormatters(writer, CUSTOM_FORMATTER, model);
         writeStructuredFormatters(writer, JsonFormatterResourceDefinition.NAME, model);
+        writeStructuredFormatters(writer, XmlFormatterResourceDefinition.NAME, model,
+                XmlFormatterResourceDefinition.PRINT_NAMESPACE, XmlFormatterResourceDefinition.NAMESPACE_URI);
     }
 
     private void writeCommonLogger(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
@@ -370,7 +374,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         }
     }
 
-    private void writeStructuredFormatters(final XMLExtendedStreamWriter writer, final String elementName, final ModelNode model) throws XMLStreamException {
+    private void writeStructuredFormatters(final XMLExtendedStreamWriter writer, final String elementName, final ModelNode model,
+                                           final SimpleAttributeDefinition... additionalAttributes) throws XMLStreamException {
         if (model.hasDefined(elementName)) {
             for (String name : model.get(elementName).keys()) {
                 writer.writeStartElement(Element.FORMATTER.getLocalName());
@@ -382,6 +387,9 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 StructuredFormatterResourceDefinition.PRETTY_PRINT.marshallAsAttribute(value, writer);
                 StructuredFormatterResourceDefinition.PRINT_DETAILS.marshallAsAttribute(value, writer);
                 StructuredFormatterResourceDefinition.ZONE_ID.marshallAsAttribute(value, writer);
+                for (SimpleAttributeDefinition ad : additionalAttributes) {
+                    ad.marshallAsAttribute(value, writer);
+                }
                 // Next write elements
                 StructuredFormatterResourceDefinition.EXCEPTION_OUTPUT_TYPE.marshallAsElement(value, writer);
                 StructuredFormatterResourceDefinition.RECORD_DELIMITER.marshallAsElement(value, writer);

@@ -41,6 +41,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.ElementAttributeMarshaller;
 import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.PropertyAttributeDefinition;
@@ -260,7 +261,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
             .setPropertyName("zoneId")
             .build();
 
-    private static final AttributeDefinition[] ATTRIBUTES = {
+    private static final AttributeDefinition[] DEFAULT_ATTRIBUTES = {
             DATE_FORMAT,
             EXCEPTION_OUTPUT_TYPE,
             KEY_OVERRIDES,
@@ -271,60 +272,13 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
             ZONE_ID,
     };
 
-    private static final OperationStepHandler WRITE = new LoggingOperations.LoggingWriteAttributeHandler(ATTRIBUTES) {
-
-        @SuppressWarnings("OverlyStrongTypeCast")
-        @Override
-        protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName,
-                                      final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
-            final FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(addressName);
-            if (attributeName.equals(META_DATA.getName())) {
-                final String metaData = modelValueToMetaData(value);
-                if (metaData != null) {
-                    configuration.setPropertyValueString("metaData", metaData);
-                } else {
-                    configuration.removeProperty("metaData");
-                }
-            } else if (attributeName.equals(KEY_OVERRIDES.getName())) {
-                // Require a restart of the resource
-                return true;
-            } else {
-                for (AttributeDefinition attribute : ATTRIBUTES) {
-                    if (attribute.getName().equals(attributeName)) {
-                        if (attribute instanceof PropertyAttributeDefinition) {
-                            final PropertyAttributeDefinition propertyAttribute = (PropertyAttributeDefinition) attribute;
-                            if (value.isDefined()) {
-                                final ModelNodeResolver<String> resolver = propertyAttribute.resolver();
-                                String resolvedValue = value.asString();
-                                if (resolver != null) {
-                                    resolvedValue = resolver.resolveValue(context, value);
-                                }
-                                configuration.setPropertyValueString(propertyAttribute.getPropertyName(), resolvedValue);
-                            } else {
-                                configuration.removeProperty(propertyAttribute.getPropertyName());
-                            }
-                        } else {
-                            if (value.isDefined()) {
-                                configuration.setPropertyValueString(attributeName, value.asString());
-                            } else {
-                                configuration.removeProperty(attributeName);
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-            return false;
-        }
-    };
-
     /**
      * A step handler to remove
      */
     private static final OperationStepHandler REMOVE = new LoggingOperations.LoggingRemoveOperationStepHandler() {
 
         @Override
-        protected void performRemove(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        protected void performRemove(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) {
             context.removeResource(PathAddress.EMPTY_ADDRESS);
         }
 
@@ -338,18 +292,35 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
         }
     };
 
-    StructuredFormatterResourceDefinition(final PathElement pathElement, final String descriptionPrefix, final Class<? extends StructuredFormatter> type) {
+    private final AttributeDefinition[] attributes;
+    private final OperationStepHandler writeHandler;
+
+    StructuredFormatterResourceDefinition(final PathElement pathElement, final String descriptionPrefix,
+                                          final Class<? extends StructuredFormatter> type) {
         super(
                 new Parameters(pathElement, LoggingExtension.getResourceDescriptionResolver(descriptionPrefix))
-                        .setAddHandler(new AddStructuredFormatterStepHandler(type))
+                        .setAddHandler(new AddStructuredFormatterStepHandler(type, DEFAULT_ATTRIBUTES))
                         .setRemoveHandler(REMOVE)
         );
+        attributes = DEFAULT_ATTRIBUTES;
+        writeHandler = new WriteStructuredFormatterStepHandler(attributes);
+    }
+
+    StructuredFormatterResourceDefinition(final PathElement pathElement, final String descriptionPrefix,
+                                          final Class<? extends StructuredFormatter> type, final AttributeDefinition... additionalAttributes) {
+        super(
+                new Parameters(pathElement, LoggingExtension.getResourceDescriptionResolver(descriptionPrefix))
+                        .setAddHandler(new AddStructuredFormatterStepHandler(type, Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes)))
+                        .setRemoveHandler(REMOVE)
+        );
+        attributes = Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes);
+        writeHandler = new WriteStructuredFormatterStepHandler(attributes);
     }
 
     @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
-        for (AttributeDefinition attribute : ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, WRITE);
+        for (AttributeDefinition attribute : attributes) {
+            resourceRegistration.registerReadWriteAttribute(attribute, null, writeHandler);
         }
     }
 
@@ -392,12 +363,14 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
 
     private static class AddStructuredFormatterStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
         private final Class<? extends StructuredFormatter> type;
+        private final AttributeDefinition[] attributes;
 
-        private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type) {
+        private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type, final AttributeDefinition[] attributes) {
             this.type = type;
+            this.attributes = attributes;
         }
 
-        @SuppressWarnings("OverlyStrongTypeCast")
+        @SuppressWarnings({"OverlyStrongTypeCast", "StatementWithEmptyBody"})
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
             String keyOverrides = null;
@@ -424,7 +397,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
             }
 
             // Process the attributes
-            for (AttributeDefinition attribute : ATTRIBUTES) {
+            for (AttributeDefinition attribute : attributes) {
                 if (attribute == META_DATA) {
                     final String metaData = modelValueToMetaData(META_DATA.resolveModelAttribute(context, model));
                     if (metaData != null) {
@@ -455,7 +428,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
 
         @Override
         public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition attribute : ATTRIBUTES) {
+            for (AttributeDefinition attribute : attributes) {
                 attribute.validateAndSet(operation, model);
             }
         }
@@ -466,6 +439,56 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
                 return value != null;
             }
             return currentValue.equals(value);
+        }
+    }
+
+    private static class WriteStructuredFormatterStepHandler extends LoggingOperations.LoggingWriteAttributeHandler {
+
+        WriteStructuredFormatterStepHandler(final AttributeDefinition[] attributes) {
+            super(attributes);
+        }
+
+        @Override
+        protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName,
+                                      final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(addressName);
+            if (attributeName.equals(META_DATA.getName())) {
+                final String metaData = modelValueToMetaData(value);
+                if (metaData != null) {
+                    configuration.setPropertyValueString("metaData", metaData);
+                } else {
+                    configuration.removeProperty("metaData");
+                }
+            } else if (attributeName.equals(KEY_OVERRIDES.getName())) {
+                // Require a restart of the resource
+                return true;
+            } else {
+                for (AttributeDefinition attribute : DEFAULT_ATTRIBUTES) {
+                    if (attribute.getName().equals(attributeName)) {
+                        if (attribute instanceof PropertyAttributeDefinition) {
+                            final PropertyAttributeDefinition propertyAttribute = (PropertyAttributeDefinition) attribute;
+                            if (value.isDefined()) {
+                                final ModelNodeResolver<String> resolver = propertyAttribute.resolver();
+                                String resolvedValue = value.asString();
+                                if (resolver != null) {
+                                    resolvedValue = resolver.resolveValue(context, value);
+                                }
+                                configuration.setPropertyValueString(propertyAttribute.getPropertyName(), resolvedValue);
+                            } else {
+                                configuration.removeProperty(propertyAttribute.getPropertyName());
+                            }
+                        } else {
+                            if (value.isDefined()) {
+                                configuration.setPropertyValueString(attributeName, value.asString());
+                            } else {
+                                configuration.removeProperty(attributeName);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

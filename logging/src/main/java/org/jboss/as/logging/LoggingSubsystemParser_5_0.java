@@ -32,9 +32,11 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -103,6 +105,15 @@ class LoggingSubsystemParser_5_0 extends LoggingSubsystemParser_4_0 {
                     operations.add(operation);
                     break;
                 }
+                case XML_FORMATTER: {
+                    final ModelNode operation = Util.createAddOperation();
+                    // Setup the operation address
+                    addOperationAddress(operation, address, XmlFormatterResourceDefinition.NAME, name);
+                    parseStructuredFormatter(reader, operation, XmlFormatterResourceDefinition.NAMESPACE_URI,
+                            XmlFormatterResourceDefinition.PRINT_NAMESPACE);
+                    operations.add(operation);
+                    break;
+                }
                 default: {
                     throw unexpectedElement(reader);
                 }
@@ -110,7 +121,8 @@ class LoggingSubsystemParser_5_0 extends LoggingSubsystemParser_4_0 {
         }
     }
 
-    void parseStructuredFormatter(final XMLExtendedStreamReader reader, final ModelNode operation) throws XMLStreamException {
+    void parseStructuredFormatter(final XMLExtendedStreamReader reader, final ModelNode operation,
+                                  final SimpleAttributeDefinition... additionalAttributes) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
             requireNoNamespaceAttribute(reader, i);
@@ -125,7 +137,17 @@ class LoggingSubsystemParser_5_0 extends LoggingSubsystemParser_4_0 {
             } else if (attributeName.equals(StructuredFormatterResourceDefinition.ZONE_ID.getXmlName())) {
                 StructuredFormatterResourceDefinition.ZONE_ID.parseAndSetParameter(value, operation, reader);
             } else {
-                throw unexpectedAttribute(reader, i);
+                boolean invalid = true;
+                for (SimpleAttributeDefinition ad : additionalAttributes) {
+                    if (attributeName.equals(ad.getXmlName())) {
+                        invalid = false;
+                        ad.parseAndSetParameter(value, operation, reader);
+                        break;
+                    }
+                }
+                if (invalid) {
+                    throw unexpectedAttribute(reader, i);
+                }
             }
         }
 

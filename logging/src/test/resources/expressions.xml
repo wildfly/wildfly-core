@@ -135,6 +135,21 @@
         </json-formatter>
     </formatter>
 
+    <formatter name="XML">
+        <xml-formatter date-format="${test.date.format:yyyy-MM-dd'T'HH:mm:ssSSS}"
+                        pretty-print="${test.pretty.print:false}" print-details="${test.print.details:false}"
+                        zone-id="${test.date.format.zoneId:GMT}"
+                        print-namespace="${test.print.namespace:true}"
+                        namespace-uri="${test.namespace.uri}">
+            <exception-output-type value="${test.exception.output.type:detailed}"/>
+            <record-delimiter value="${test.record.delimiter:\n}"/>
+            <key-overrides exception-caused-by="${test.cause.key:caused-by}" record="${test.record.key:record"/>
+            <meta-data>
+                <property name="test-xml" value="value-xml"/>
+            </meta-data>
+        </xml-formatter>
+    </formatter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 

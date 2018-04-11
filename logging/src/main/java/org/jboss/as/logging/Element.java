@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
 
 /**
  *
@@ -86,6 +87,7 @@ enum Element {
     SYSLOG_HANDLER(SyslogHandlerResourceDefinition.SYSLOG_HANDLER),
     TARGET(ConsoleHandlerResourceDefinition.TARGET),
     USE_DEPLOYMENT_LOGGING_CONFIG(LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG),
+    XML_FORMATTER(XmlFormatterResourceDefinition.NAME),
     ;
 
     private final String name;

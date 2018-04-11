@@ -153,6 +153,8 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
                                 new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("xml-formatter"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
@@ -170,6 +172,8 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         testEap7FailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("xml-formatter"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 

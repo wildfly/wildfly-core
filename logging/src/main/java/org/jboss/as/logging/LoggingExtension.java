@@ -57,6 +57,7 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
@@ -302,6 +303,7 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(PatternFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(CustomFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(JsonFormatterResourceDefinition.INSTANCE);
+        registration.registerSubModel(XmlFormatterResourceDefinition.INSTANCE);
 
         if (registerTransformers) {
             registerTransformers(subsystem,
@@ -318,7 +320,8 @@ public class LoggingExtension implements Extension {
                     SyslogHandlerResourceDefinition.INSTANCE,
                     PatternFormatterResourceDefinition.INSTANCE,
                     CustomFormatterResourceDefinition.INSTANCE,
-                    JsonFormatterResourceDefinition.INSTANCE);
+                    JsonFormatterResourceDefinition.INSTANCE,
+                    XmlFormatterResourceDefinition.INSTANCE);
         }
     }
 
