@@ -19,7 +19,7 @@
   ~ limitations under the License.
   -->
 <!-- Please note this is a temporary module and will be removed -->
-<module xmlns="urn:jboss:module:1.6" name="org.wildfly.javax.json" version="${org.glassfish:javax.json}">
+<module xmlns="urn:jboss:module:1.6" name="org.wildfly.javax.json">
 
     <properties>
         <property name="jboss.api" value="private"/>

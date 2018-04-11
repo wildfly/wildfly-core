@@ -22,14 +22,15 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.apache.xerces" version="${xerces:xercesImpl}">
+<module xmlns="urn:jboss:module:1.8" name="org.apache.xerces">
 
     <resources>
         <artifact name="${xerces:xercesImpl}"/>
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <module name="jdk.xml.dom"/>
+        <module name="java.xml"/>
     </dependencies>
 
 </module>

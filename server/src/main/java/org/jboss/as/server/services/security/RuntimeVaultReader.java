@@ -23,6 +23,7 @@ package org.jboss.as.server.services.security;
 
 import static java.security.AccessController.doPrivileged;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -50,14 +51,79 @@ import org.wildfly.security.manager.action.GetModuleClassLoaderAction;
  */
 public class RuntimeVaultReader extends AbstractVaultReader {
 
-    private volatile SecurityVault vault;
-    private final AtomicBoolean missingVaultLogged = new AtomicBoolean();
-
+    private volatile Object lazyVaultReader;
     /**
      * This constructor should remain protected to keep the vault as invisible
      * as possible, but it needs to be exposed for service plug-ability.
      */
     public RuntimeVaultReader() {
+        //if PB is not available we want to throw an exception here
+        //also if we are in a modular environment we want to avoid loading/linking
+        //the picketbox module, as loading the module too early breaks
+        //EE8 preview mode
+        if(getClass().getClassLoader() instanceof ModuleClassLoader) {
+            if (!Module.getBootModuleLoader().iterateModules("org.picketbox", false).hasNext()) {
+                throw new RuntimeException();
+            }
+        } else {
+            try {
+                Class.forName("org.jboss.security.vault.SecurityVaultFactory");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private VaultReaderImpl getVault() {
+        if(lazyVaultReader == null) {
+            synchronized (this) {
+                if(lazyVaultReader == null) {
+                    try {
+                        Class<?> lazyVaultReader = getClass().getClassLoader().loadClass("org.jboss.as.server.services.security.VaultReaderImpl");
+                        this.lazyVaultReader = lazyVaultReader.getConstructor().newInstance();
+                    } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                        throw new VaultReaderException(e);
+                    }
+                }
+            }
+        }
+        return (VaultReaderImpl) lazyVaultReader;
+    }
+
+    @Override
+    protected void createVault(String fqn, Map<String, Object> options) throws VaultReaderException {
+        getVault().createVault(fqn, options);
+    }
+
+    @Override
+    protected void createVault(String fqn, String module, Map<String, Object> options) throws VaultReaderException {
+        getVault().createVault(fqn, module, options);
+    }
+
+    @Override
+    protected void destroyVault() {
+        getVault().destroyVault();
+    }
+
+    @Override
+    public boolean isVaultFormat(String toCheck) {
+        return getVault().isVaultFormat(toCheck);
+    }
+
+    @Override
+    public String retrieveFromVault(String vaultedData) {
+        return getVault().retrieveFromVault(vaultedData);
+    }
+
+}
+
+final class VaultReaderImpl extends AbstractVaultReader {
+
+    private volatile Object vault;
+    private final AtomicBoolean missingVaultLogged = new AtomicBoolean();
+
+    public VaultReaderImpl() {
+
     }
 
     protected void createVault(final String fqn, final Map<String, Object> options) throws VaultReaderException {
@@ -104,7 +170,7 @@ public class RuntimeVaultReader extends AbstractVaultReader {
     @Override
     public String retrieveFromVault(final String vaultedData) throws VaultReaderException {
         if (isVaultFormat(vaultedData)) {
-            SecurityVault theVault = vault;
+            SecurityVault theVault = (SecurityVault) vault;
             if (theVault != null) {
                 try {
                     char[] val = getValue(theVault, vaultedData);
