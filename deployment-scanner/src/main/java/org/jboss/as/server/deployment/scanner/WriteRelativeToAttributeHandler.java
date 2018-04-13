@@ -26,7 +26,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
 import org.jboss.dmr.ModelNode;
@@ -51,7 +50,7 @@ public class WriteRelativeToAttributeHandler extends ReloadRequiredWriteAttribut
         final ModelNode relativeTo = DeploymentScannerDefinition.RELATIVE_TO.resolveModelAttribute(context, model);
         if (relativeTo.isDefined()) {
             try {
-                PathEntry pathEntry = pathManager.getPathEntry(relativeTo.asString());
+                pathManager.getPathEntry(relativeTo.asString());
             } catch (IllegalArgumentException e) {
                 throw DeploymentScannerLogger.ROOT_LOGGER.pathEntryNotFound(relativeTo.asString());
             }

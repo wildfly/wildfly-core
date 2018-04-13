@@ -116,7 +116,6 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
         final ListIterator<RegisteredDeploymentUnitProcessor> iterator = list.listIterator();
         final ServiceContainer container = context.getController().getServiceContainer();
         final ServiceTarget serviceTarget = context.getChildTarget().subTarget();
-        final String name = deploymentUnit.getName();
         final DeploymentUnit parent = deploymentUnit.getParent();
 
         final List<DeploymentUnitPhaseDependency> dependencies = new LinkedList<>();

@@ -234,7 +234,7 @@ public class HelpSupport {
     }
 
     public static Class<?> getClassFromType(ModelType mt) {
-        Class<?> clazz = String.class;
+        Class<?> clazz;
         switch (mt) {
             case BIG_DECIMAL: {
                 clazz = BigDecimal.class;

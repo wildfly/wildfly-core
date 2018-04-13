@@ -28,13 +28,11 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
-import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.TransformersTestParameterized;
 import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersParameter;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
 import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,8 +63,7 @@ public class AccessAuthorizationTransformationTestCase extends AbstractCoreModel
         KernelServicesBuilder builder = createKernelServicesBuilder(TestModelType.DOMAIN)
                 .setXmlResource("domain-transform-no-rbac-provider.xml");
 
-        LegacyKernelServicesInitializer initializer = builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion)
-                .skipReverseControllerCheck();
+        builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion).skipReverseControllerCheck();
 
         KernelServices mainServices = builder.build();
         Assert.assertTrue(mainServices.isSuccessfulBoot());
@@ -74,7 +71,7 @@ public class AccessAuthorizationTransformationTestCase extends AbstractCoreModel
         KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        ModelNode legacyModel = checkCoreModelTransformation(mainServices, modelVersion);
+        checkCoreModelTransformation(mainServices, modelVersion);
         mainServices.shutdown();
     }
 }

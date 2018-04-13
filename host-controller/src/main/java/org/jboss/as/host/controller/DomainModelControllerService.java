@@ -997,7 +997,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
     }
 
     private void establishServerInventory(Future<ServerInventory> future) {
-        DelegatingServerInventory dse = new DelegatingServerInventory();
         synchronized (serverInventoryLock) {
             try {
                 serverInventory = getFuture(future);

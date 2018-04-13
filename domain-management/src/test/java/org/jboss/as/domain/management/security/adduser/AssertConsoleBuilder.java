@@ -181,7 +181,6 @@ public class AssertConsoleBuilder {
     public void validate() {
         StringBuffer notValidateAsserts = new StringBuffer();
         if (!queue.isEmpty()) {
-            Iterator<AssertConsole> assertConsoleIter = queue.iterator();
             for (Iterator<AssertConsole> iterator = queue.iterator(); iterator.hasNext(); ) {
                 AssertConsole assertConsole = iterator.next();
                 notValidateAsserts.append("\"");

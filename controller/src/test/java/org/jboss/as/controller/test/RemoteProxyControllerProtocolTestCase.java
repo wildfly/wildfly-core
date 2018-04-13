@@ -252,7 +252,6 @@ public class RemoteProxyControllerProtocolTestCase {
             public ModelNode execute(ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control, OperationAttachments attachments) {
 
                 ModelNode node = new ModelNode();
-                node = new ModelNode();
                 node.get(OUTCOME).set(SUCCESS);
                 node.get(RESULT).set("prepared");
                 control.operationPrepared(tx, node);

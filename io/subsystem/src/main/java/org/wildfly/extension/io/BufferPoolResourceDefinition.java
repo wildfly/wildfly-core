@@ -151,7 +151,6 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-            final String name = address.getLastElement().getValue();
             final ModelNode bufferSizeModel = BUFFER_SIZE.resolveModelAttribute(context, model);
             final ModelNode bufferPerSliceModel = BUFFER_PER_SLICE.resolveModelAttribute(context, model);
             final ModelNode directModel = DIRECT_BUFFERS.resolveModelAttribute(context, model);

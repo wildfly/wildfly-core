@@ -110,7 +110,7 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
     @Test
     public void testRemoveModifiedFileWithSTRICT() throws Exception {
         try {
-            PatchingResult result = runner.applyPatch(zippedPatch, ContentVerificationPolicy.STRICT);
+            runner.applyPatch(zippedPatch, ContentVerificationPolicy.STRICT);
         } catch (ContentConflictsException e) {
             assertPatchHasNotBeenApplied(e, patch, fileRemoved.getItem(), env);
 
@@ -138,7 +138,7 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
     @Test
     public void testRemoveModifiedFileWithPRESERVE_ALL() throws Exception {
         try {
-            PatchingResult result = runner.applyPatch(zippedPatch, ContentVerificationPolicy.PRESERVE_ALL);
+            runner.applyPatch(zippedPatch, ContentVerificationPolicy.PRESERVE_ALL);
         } catch (ContentConflictsException e) {
             assertPatchHasNotBeenApplied(e, patch, fileRemoved.getItem(), env);
 

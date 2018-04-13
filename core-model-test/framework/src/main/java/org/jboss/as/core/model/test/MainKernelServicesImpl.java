@@ -81,7 +81,6 @@ public class MainKernelServicesImpl extends AbstractKernelServicesImpl {
 
     public TransformedOperation transformOperation(ModelVersion modelVersion, ModelNode operation, TransformerOperationAttachment attachment) throws OperationFailedException {
         checkIsMainController();
-        PathAddress opAddr = PathAddress.pathAddress(operation.get(OP_ADDR));
         TransformerRegistry transformerRegistry = extensionRegistry.getTransformerRegistry();
 
         PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
