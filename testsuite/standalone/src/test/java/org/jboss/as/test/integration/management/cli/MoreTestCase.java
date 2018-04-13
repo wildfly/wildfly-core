@@ -134,25 +134,6 @@ public class MoreTestCase {
             // +1 is for command string which was sent to the CLI
             Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
 
-
-            // it sends enter to the console what should return only one new line
-            consoleWriter.print(Key.ENTER.getAsChar());
-            Assert.assertFalse(consoleWriter.checkError());
-
-            window = queue.poll(10, TimeUnit.SECONDS);
-            Assert.assertNotNull(window);
-            checkWithRegex(window, morePattern);
-            // we expect 2 because on the second line there is --More(%)-- string
-            Assert.assertEquals(window,2, countLines(window));
-
-            consoleWriter.print(" ");
-            Assert.assertFalse(consoleWriter.checkError());
-
-            window = queue.poll(10, TimeUnit.SECONDS);
-            Assert.assertNotNull(window);
-            checkWithRegex(window, morePattern);
-            Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-
             // Testing of key down is blocked by https://issues.jboss.org/browse/WFCORE-3545
 //            // it sends key down to the console what should return only one new line
 //            consoleWriter.print(Key.DOWN.getKeyValuesAsString());
@@ -164,13 +145,73 @@ public class MoreTestCase {
 //            // we expect 2 because on the second line there is --More(%)-- string
 //            Assert.assertEquals(window,2, countLines(window));
 
+            //last output line should be the same after move 1 line down and move 1 line back up
+            String lastOutputLine = getBeforeLastLine(window);
+            // it sends enter to the console what should return only one new line
+            consoleWriter.print(Key.ENTER.getAsChar());
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+            // we expect 2 because on the second line there is --More(%)-- string
+            Assert.assertEquals(window,2, countLines(window));
+
+            // it sends semicolon to the console what should move output one line up
+            consoleWriter.print(Key.SEMI_COLON.getAsChar());
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+            // The line above the --More(%)-- should be equal to the one before inserting ENTER
+            Assert.assertEquals(window,lastOutputLine, getBeforeLastLine(window));
+            Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
+
+            lastOutputLine = getBeforeLastLine(window);
+            consoleWriter.print(" ");
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+            Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
+
+            consoleWriter.print(Key.SLASH.getAsChar());
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+            Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
+            Assert.assertEquals(lastOutputLine, getBeforeLastLine(window));
+
+            lastOutputLine = getBeforeLastLine(window);
             consoleWriter.print("q");
             Assert.assertFalse(consoleWriter.checkError());
 
             window = queue.poll(10, TimeUnit.SECONDS);
             Assert.assertNotNull(window);
             checkWithRegex(window, promptPattern);
-            Assert.assertEquals(window, 1, countLines(window));
+            Assert.assertEquals(window, lastOutputLine, getBeforeLastLine(window));
+
+            consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+
+            lastOutputLine = getBeforeLastLine(window);
+            consoleWriter.print(Key.ESC.getAsChar());
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, promptPattern);
+            Assert.assertEquals(window, lastOutputLine, getBeforeLastLine(window));
+            // the output should be printed into the main buffer as well after exiting
+            Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
 
         } finally {
             readThreadActive.set(false);
@@ -190,6 +231,11 @@ public class MoreTestCase {
             IOUtil.close(consoleReader);
         }
 
+    }
+
+    private String getBeforeLastLine(String window) {
+        String[] lines = window.split(System.getProperty("line.separator"));
+        return (lines.length > 1) ? lines[lines.length-2] : "";
     }
 
     private static int countLines(String str) {
