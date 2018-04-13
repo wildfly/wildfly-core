@@ -24,9 +24,12 @@ package org.jboss.as.controller.test;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DYNAMIC_ELEMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INHERITED;
@@ -46,6 +49,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_ONLY;
@@ -678,11 +682,25 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         assertEquals("test_capability", dynamicElements.get(2).asString());
         assertFalse(result.get(OPERATIONS).isDefined());
 
-                operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileA", "subsystem", "subsystem4");
+        operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileA", "subsystem", "subsystem4");
         result = executeForResult(operation);
         capabilityReferenceAttribute = result.require(ATTRIBUTES).require("simple_ref");
         assertEquals("org.wildfly.test.capability", capabilityReferenceAttribute.require(CAPABILITY_REFERENCE).asString());
         assertFalse(capabilityReferenceAttribute.hasDefined(CAPABILITY_REFERENCE_PATTERN_ELEMENTS));
+        assertFalse(result.get(OPERATIONS).isDefined());
+
+        operation = createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, "profile", "profileC", "subsystem", "subsystem5");
+        result = executeForResult(operation);
+        List<ModelNode> capabilities = result.require(CAPABILITIES).asList();
+        assertEquals(1, capabilities.size());
+        ModelNode requirement = capabilities.get(0);
+        assertEquals("org.wildfly.test.capability.req", requirement.require(NAME).asString());
+        assertTrue(requirement.require(REQUIRED).asBoolean());
+        assertTrue(requirement.require(DYNAMIC).asBoolean());
+        dynamicElements = requirement.require(DYNAMIC_ELEMENTS).asList();
+        assertEquals(2, dynamicElements.size());
+        assertEquals("profile", dynamicElements.get(0).asString());
+        assertEquals("subsystem5", dynamicElements.get(1).asString());//fixed value
         assertFalse(result.get(OPERATIONS).isDefined());
     }
 

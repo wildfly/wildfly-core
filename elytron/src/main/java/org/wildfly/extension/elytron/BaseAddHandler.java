@@ -18,6 +18,7 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_CAPABILITY;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -78,7 +79,6 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
     @Override
     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
-
         final String pathValue = context.getCurrentAddressValue();
         for (RuntimeCapability r : runtimeCapabilities) {
             context.registerAdditionalCapabilityRequirement(ELYTRON_CAPABILITY, r.isDynamicallyNamed() ? r.getDynamicName(pathValue) : r.getName(), null);

@@ -30,6 +30,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.PathAddress;
@@ -461,6 +462,28 @@ final class NodeSubregistry {
             } else if (wildCardChildren != null) {
                 // Merge
                 result = new HashSet<RuntimeCapability>(result);
+                result.addAll(wildCardChildren);
+            }
+        }
+        return result;
+    }
+
+    Set<CapabilityReferenceRecorder> getRequirements(ListIterator<PathElement> iterator, String child) {
+
+        final RegistrySearchControl searchControl = new RegistrySearchControl(iterator, child);
+
+        Set<CapabilityReferenceRecorder> result = null;
+        if (searchControl.getSpecifiedRegistry() != null) {
+            result = searchControl.getSpecifiedRegistry().getRequirements(searchControl.getIterator());
+        }
+
+        if (searchControl.getWildCardRegistry() != null) {
+            final Set<CapabilityReferenceRecorder> wildCardChildren = searchControl.getWildCardRegistry().getRequirements(searchControl.getIterator());
+            if (result == null) {
+                result = wildCardChildren;
+            } else if (wildCardChildren != null) {
+                // Merge
+                result = new HashSet<CapabilityReferenceRecorder>(result);
                 result.addAll(wildCardChildren);
             }
         }

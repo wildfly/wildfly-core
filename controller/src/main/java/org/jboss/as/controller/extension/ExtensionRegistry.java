@@ -41,6 +41,7 @@ import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
@@ -1132,6 +1133,12 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+            deployments.registerRequirements(requirements);
+            subdeployments.registerRequirements(requirements);
+        }
+
+        @Override
         public AliasEntry getAliasEntry() {
             return deployments.getAliasEntry();
         }
@@ -1150,6 +1157,12 @@ public class ExtensionRegistry {
         public Set<RuntimeCapability> getIncorporatingCapabilities() {
             return deployments.getIncorporatingCapabilities();
         }
+
+        @Override
+        public Set<CapabilityReferenceRecorder> getRequirements() {
+            return deployments.getRequirements();
+        }
+
     }
 
     private static final JmxAuthorizer NO_OP_AUTHORIZER = new JmxAuthorizer() {

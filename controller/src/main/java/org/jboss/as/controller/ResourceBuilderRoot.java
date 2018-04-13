@@ -54,6 +54,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private final ResourceBuilderRoot parent;
     private boolean isRuntime = false;
     private Set<RuntimeCapability> incorporatingCapabilities;
+    private Set<CapabilityReferenceRecorder> requirements;
 
 
     /** Normal constructor */
@@ -79,6 +80,9 @@ class ResourceBuilderRoot implements ResourceBuilder {
         this.children.addAll(toCopy.children);
         if (toCopy.incorporatingCapabilities != null) {
             this.incorporatingCapabilities = new HashSet<>(toCopy.incorporatingCapabilities);
+        }
+        if (toCopy.requirements != null) {
+            this.requirements = new HashSet<>(toCopy.requirements);
         }
         this.addHandler = toCopy.addHandler;
         this.removeHandler = toCopy.removeHandler;
@@ -205,6 +209,13 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return this;
     }
 
+    @Override
+    public ResourceBuilder setRequirements(Set<CapabilityReferenceRecorder> requirements) {
+        this.requirements = requirements;
+        return this;
+    }
+
+    @Override
     public ResourceBuilder pushChild(final PathElement pathElement) {
         return pushChild(pathElement, resourceResolver.getChildResolver(pathElement.getKey()));
     }
@@ -214,6 +225,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return pushChild(pathElement, resourceResolver.getChildResolver(pathElement.getKey()), addHandler, removeHandler);
     }
 
+    @Override
     public ResourceBuilder pushChild(final PathElement pathElement, StandardResourceDescriptionResolver resolver) {
         return pushChild(pathElement, resolver, null, null);
     }

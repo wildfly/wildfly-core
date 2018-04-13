@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -143,6 +144,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
+        throw alreadyRegistered();
+    }
+
+    @Override
+    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
         throw alreadyRegistered();
     }
 
@@ -272,6 +278,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
 
     @Override
     Set<RuntimeCapability> getIncorporatingCapabilities(ListIterator<PathElement> iterator) {
+        return Collections.emptySet();
+    }
+
+    @Override
+    Set<CapabilityReferenceRecorder> getRequirements(ListIterator<PathElement> iterator) {
         return Collections.emptySet();
     }
 

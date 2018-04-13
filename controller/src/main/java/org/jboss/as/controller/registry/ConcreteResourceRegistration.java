@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
@@ -80,6 +81,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     private Set<RuntimeCapability> capabilities;
 
     private Set<RuntimeCapability> incorporatingCapabilities;
+
+    private Set<CapabilityReferenceRecorder> requirements;
 
     private final Lock readLock;
     private final Lock writeLock;
@@ -712,6 +715,40 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             }
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    @Override
+    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+        writeLock.lock();
+        try {
+            if (requirements == null || requirements.isEmpty()) {
+                this.requirements = Collections.emptySet();
+            } else {
+                this.requirements = Collections.unmodifiableSet(new HashSet<>(requirements));
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    Set<CapabilityReferenceRecorder> getRequirements(ListIterator<PathElement> iterator) {
+        if (iterator.hasNext()) {
+            final PathElement next = iterator.next();
+            final NodeSubregistry subregistry = getSubregistry(next.getKey());
+            if (subregistry == null) {
+                return Collections.emptySet();
+            }
+            return subregistry.getRequirements(iterator, next.getValue());
+        } else {
+            checkPermission();
+            readLock.lock();
+            try {
+                return requirements == null ? Collections.emptySet() : Collections.unmodifiableSet(requirements);
+            } finally {
+                readLock.unlock();
+            }
         }
     }
 

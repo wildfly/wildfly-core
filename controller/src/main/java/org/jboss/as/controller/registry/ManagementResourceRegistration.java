@@ -25,6 +25,7 @@ package org.jboss.as.controller.registry;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
@@ -323,6 +324,12 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      */
     void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities);
 
+    /**
+     * Registers a set of CapabilityReferenceRecorder. Each recorder is a link between acapability requirement and
+     * the resource capability requiring it.
+     * @param requirements a set of CapabilityReferenceRecorder.
+     */
+    void registerRequirements(Set<CapabilityReferenceRecorder> requirements);
     /**
      * A factory for creating a new, root model node registration.
      */

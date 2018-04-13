@@ -56,6 +56,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.NoopOperationStepHandler;
@@ -851,6 +852,11 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+
+        }
+
+        @Override
         public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler) {
 
         }
@@ -952,6 +958,11 @@ public abstract class AbstractOperationTestCase {
         @Override
         public Set<RuntimeCapability> getIncorporatingCapabilities() {
             return null;
+        }
+
+        @Override
+        public Set<CapabilityReferenceRecorder> getRequirements() {
+            return Collections.emptySet();
         }
 
         @Override

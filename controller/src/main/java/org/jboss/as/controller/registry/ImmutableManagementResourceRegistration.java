@@ -26,6 +26,7 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -355,4 +356,11 @@ public interface ImmutableManagementResourceRegistration {
      * @see #getCapabilities()
      */
     Set<RuntimeCapability> getIncorporatingCapabilities();
+
+    /**
+     * Returns all capability reference recorders provided by this resource.
+     *
+     * @return Set of CapabilityReferenceRecorder if any registered otherwise an empty set.
+     */
+    Set<CapabilityReferenceRecorder> getRequirements();
 }

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationStepHandler;
@@ -342,6 +343,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
+        getDelegate().registerRequirements(requirements);
+    }
+
+    @Override
     public Set<RuntimeCapability> getCapabilities() {
         return getDelegate().getCapabilities();
     }
@@ -355,5 +361,9 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
         return delegateProvider.getDelegateRegistration();
     }
 
+    @Override
+    public Set<CapabilityReferenceRecorder> getRequirements() {
+        return getDelegate().getRequirements();
+    }
 
 }

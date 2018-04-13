@@ -202,6 +202,10 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
                 }
             }
         }
+        assert mrr.getRequirements() != null;
+        for (CapabilityReferenceRecorder recorder : mrr.getRequirements()) {
+            recorder.removeCapabilityRequirements(context, resource, null);
+        }
     }
 
     /**
