@@ -172,6 +172,23 @@ public class MoreTestCase {
             checkWithRegex(window, promptPattern);
             Assert.assertEquals(window, 1, countLines(window));
 
+            consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, morePattern);
+            // +1 is for command string which was sent to the CLI
+            Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
+
+            consoleWriter.print("Q");
+            Assert.assertFalse(consoleWriter.checkError());
+
+            window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+            checkWithRegex(window, promptPattern);
+            Assert.assertEquals(window, 1, countLines(window));
+
         } finally {
             readThreadActive.set(false);
             if (ctx != null) {
