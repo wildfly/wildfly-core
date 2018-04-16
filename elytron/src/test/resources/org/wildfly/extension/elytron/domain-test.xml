@@ -33,20 +33,35 @@
     <mappers>
         <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$MyPermissionMapper" name="MyPermissionMapper" module="a.b.c" />
         <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$LoginPermissionMapper" name="LoginPermissionMapper" module="a.b.c" />
-        <simple-permission-mapper name="SimplePermissionMapperRole">
+        <simple-permission-mapper name="SimplePermissionMapperRoleLegacy">
             <permission-mapping>
                 <role name="role2"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
             </permission-mapping>
         </simple-permission-mapper>
-        <simple-permission-mapper name="SimplePermissionMapperPrincipal">
+        <simple-permission-mapper name="SimplePermissionMapperPrincipalLegacy">
             <permission-mapping>
                 <principal name="firstUser"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
             </permission-mapping>
         </simple-permission-mapper>
-        <constant-permission-mapper name="ConstantPermissionMapper">
+        <simple-permission-mapper name="SimplePermissionMapperRole">
+            <permission-mapping>
+                <role name="role2"/>
+                <permission-set name="login-permission"/>
+            </permission-mapping>
+        </simple-permission-mapper>
+        <simple-permission-mapper name="SimplePermissionMapperPrincipal">
+            <permission-mapping>
+                <principal name="firstUser"/>
+                <permission-set name="login-permission"/>
+            </permission-mapping>
+        </simple-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapperLegacy">
             <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+        </constant-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission-set name="login-permission"/>
         </constant-permission-mapper>
         <concatenating-principal-decoder joiner="@" name="MyX500PrincipalDecoderThree">
             <principal-decoder name="MyCnDecoder"/>
@@ -69,4 +84,9 @@
             <role-mapper name="RoleSuffixer"/>
         </aggregate-role-mapper>
     </mappers>
+    <permission-sets>
+        <permission-set name="login-permission">
+            <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+        </permission-set>
+    </permission-sets>
 </subsystem>

@@ -20,7 +20,9 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_SETS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
+import static org.wildfly.extension.elytron.PermissionMapperDefinitions.PERMISSIONS;
 
 import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.AttributeParsers;
@@ -33,6 +35,11 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
  * @since 5.0
  */
 class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
+
+    final PersistentResourceXMLDescription permissionSetParser = PersistentResourceXMLDescription.builder(PermissionSetDefinition.getPermissionSet().getPathElement())
+            .setXmlWrapperElement(PERMISSION_SETS)
+            .addAttribute(PERMISSIONS)
+            .build();
 
     @Override
     String getNameSpace() {
@@ -54,6 +61,7 @@ class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
                 .addChild(getRealmParser())
                 .addChild(getCredentialSecurityFactoryParser())
                 .addChild(getMapperParser())
+                .addChild(getPermissionSetParser())
                 .addChild(getHttpParser())
                 .addChild(getSaslParser())
                 .addChild(getTlsParser())
@@ -61,5 +69,13 @@ class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
                 .addChild(getDirContextParser())
                 .addChild(getPolicyParser())
                 .build();
+    }
+
+    protected PersistentResourceXMLDescription getMapperParser() {
+        return new MapperParser().getParser();
+    }
+
+    PersistentResourceXMLDescription getPermissionSetParser() {
+        return permissionSetParser;
     }
 }

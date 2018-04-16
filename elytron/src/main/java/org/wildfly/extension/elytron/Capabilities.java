@@ -19,6 +19,7 @@
 package org.wildfly.extension.elytron;
 
 import java.security.KeyStore;
+import java.security.Permissions;
 import java.security.Policy;
 import java.security.Provider;
 import java.util.function.Consumer;
@@ -125,6 +126,12 @@ class Capabilities {
 
     static final RuntimeCapability<Void> PERMISSION_MAPPER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(PERMISSION_MAPPER_CAPABILITY, true, PermissionMapper.class)
+            .build();
+
+    static final String PERMISSION_SET_CAPABILITY = CAPABILITY_BASE + "permission-set";
+
+    static final RuntimeCapability<Void> PERMISSION_SET_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(PERMISSION_SET_CAPABILITY, true, Permissions.class)
             .build();
 
     static final String PRINCIPAL_TRANSFORMER_CAPABILITY = CAPABILITY_BASE + "principal-transformer";

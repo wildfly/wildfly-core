@@ -330,6 +330,8 @@ interface ElytronDescriptionConstants {
     String PERMISSION_MAPPER = "permission-mapper";
     String PERMISSION_MAPPING = "permission-mapping";
     String PERMISSION_MAPPINGS = "permission-mappings";
+    String PERMISSION_SET = "permission-set";
+    String PERMISSION_SETS = "permission-sets";
     String PLAIN_TEXT = "plain-text";
     String POLICY = "policy";
     String PORT = "port";

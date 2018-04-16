@@ -38,6 +38,7 @@
             <xs:element name="security-realms" type="realmsType" minOccurs="0" />
             <xs:element name="credential-security-factories" type="credentialSecurityFactoriesType" minOccurs="0" />
             <xs:element name="mappers" type="mappersType" minOccurs="0" />
+            <xs:element name="permission-sets" type="permissionSetsType" minOccurs="0" />
             <xs:element name="http" type="httpType" minOccurs="0" />
             <xs:element name="sasl" type="saslType" minOccurs="0" />
             <xs:element name="tls" type="tlsType" minOccurs="0" />
@@ -2375,6 +2376,11 @@
                                 </xs:element>
                                 <xs:element name="permission" minOccurs="0" maxOccurs="unbounded">
                                     <xs:complexType>
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Deprecated. Use a reference to a 'permission-set' instead.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:attribute name="class-name" type="xs:string" use="required">
                                             <xs:annotation>
                                                 <xs:documentation>
@@ -2405,6 +2411,7 @@
                                          </xs:attribute>
                                     </xs:complexType>
                                 </xs:element>
+                                <xs:element name="permission-set" type="permissionSetRefType" minOccurs="0" maxOccurs="unbounded" />
                             </xs:sequence>
                             <xs:attribute name="match-all" type="xs:boolean" default="false" />
                         </xs:complexType>
@@ -2423,9 +2430,14 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="permissionMapperType">
-                <xs:sequence>
+                <xs:choice maxOccurs="unbounded">
                     <xs:element name="permission" maxOccurs="unbounded">
                         <xs:complexType>
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Deprecated. Use a reference to a 'permission-set' instead.
+                                </xs:documentation>
+                            </xs:annotation>
                             <xs:attribute name="class-name" type="xs:string" use="required">
                                 <xs:annotation>
                                     <xs:documentation>
@@ -2456,9 +2468,19 @@
                             </xs:attribute>
                         </xs:complexType>
                     </xs:element>
-                </xs:sequence>
+                    <xs:element name="permission-set" type="permissionSetRefType" maxOccurs="unbounded" />
+                </xs:choice>
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="permissionSetRefType">
+        <xs:annotation>
+            <xs:documentation>
+                A reference to a permission set.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required" />
     </xs:complexType>
 
     <xs:simpleType name="simpleMappingMode">
@@ -3356,6 +3378,66 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to a RealmMapper to be used by this mechanism realm.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="permissionSetsType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for the permission set definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="permission-set" type="permissionSetType" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="permissionSetType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a permission set.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="permission" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="class-name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The fully qualified class name of the permission.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="module" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The module to use to load the permission class.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="target-name" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The target-name to pass to the constructor of the permission.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="action" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The action to pass to the constructor of the permission.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name for the permission set, note names used for permission sets must be unique across the whole context.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -87,7 +87,7 @@
     <mappers>
         <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$MyPermissionMapper" name="MyPermissionMapper" module="a.b.c"/>
         <custom-permission-mapper class-name="org.wildfly.extension.elytron.DomainTestCase$LoginPermissionMapper" name="LoginPermissionMapper" module="a.b.c"/>
-        <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
+        <simple-permission-mapper name="SimplePermissionMapperLegacy" mapping-mode="and">
             <permission-mapping>
                 <principal name="John"/>
                 <principal name="Joe"/>
@@ -106,8 +106,30 @@
             </permission-mapping>
             <permission-mapping match-all="true"/>
         </simple-permission-mapper>
-        <constant-permission-mapper name="ConstantPermissionMapper">
+        <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
+            <permission-mapping>
+                <principal name="John"/>
+                <principal name="Joe"/>
+                <role name="User"/>
+                <role name="Administrator"/>
+                <permission class-name="a.b.MyPermission" />
+                <permission-set name="my-permissions"/>
+            </permission-mapping>
+            <permission-mapping>
+                <principal name="John Doe"/>
+                <permission-set name="john-permissions"/>
+            </permission-mapping>
+            <permission-mapping>
+                <principal name="User"/>
+                <permission-set name="user-permissions"/>
+            </permission-mapping>
+            <permission-mapping match-all="true"/>
+        </simple-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapperLegacy">
             <permission class-name="a.b.UserPermission"/>
+        </constant-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission-set name="user-permissions"/>
         </constant-permission-mapper>
         <concatenating-principal-decoder joiner="@" name="MyX500PrincipalDecoderThree">
             <principal-decoder name="MyCnDecoder"/>
@@ -131,6 +153,18 @@
             <role-mapper name="RoleSuffixer"/>
         </aggregate-role-mapper>
     </mappers>
+    <permission-sets>
+        <permission-set name="my-permissions">
+            <permission class-name="a.b.MyPermission" />
+            <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
+        </permission-set>
+        <permission-set name="john-permissions">
+            <permission class-name="a.b.JohnPermission" />
+        </permission-set>
+        <permission-set name="user-permissions">
+            <permission class-name="a.b.UserPermission" />
+        </permission-set>
+    </permission-sets>
     <sasl>
         <sasl-authentication-factory name="SaslAuthenticationDefinition" security-domain="MyDomain" sasl-server-factory="ConfigurableSaslServerFactory">
             <mechanism-configuration>
