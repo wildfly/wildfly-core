@@ -480,6 +480,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="xml-formatter" type="xmlFormatterType">
+                <xs:annotation>
+                    <xs:documentation>
+                        <![CDATA[
+                            Defines a XML formatter to be used to format log messages.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:choice>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
@@ -611,6 +620,27 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="xmlFormatterType">
+        <xs:complexContent>
+            <xs:extension base="structuredFormatterType">
+                <xs:attribute name="namespace-uri" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Allows the namespace to be overridden. If not defined a default will be used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="print-namespace" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates whether or no the namespace should be added to each record element.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="customFormatterType">

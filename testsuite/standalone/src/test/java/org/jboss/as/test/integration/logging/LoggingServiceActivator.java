@@ -78,13 +78,13 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
                     for (Logger.Level level : LOG_LEVELS) {
                         if (includeLevel) {
                             if (logException) {
-                                LOGGER.log(level, formatMessage(msg, level), new RuntimeException());
+                                LOGGER.log(level, formatMessage(msg, level), createMultiNestedCause());
                             } else {
                                 LOGGER.log(level, formatMessage(msg, level));
                             }
                         } else {
                             if (logException) {
-                                LOGGER.log(level, msg, new RuntimeException());
+                                LOGGER.log(level, msg, createMultiNestedCause());
                             } else {
                                 LOGGER.log(level, msg);
                             }
@@ -113,6 +113,32 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
             return Boolean.parseBoolean(values.getFirst());
         }
         return dft;
+    }
+
+    private static Throwable createMultiNestedCause() {
+        final RuntimeException suppressed1 = new RuntimeException("Suppressed 1");
+        final IllegalStateException nested1 = new IllegalStateException("Nested 1");
+        nested1.addSuppressed(new RuntimeException("Nested 1a"));
+        suppressed1.addSuppressed(nested1);
+        suppressed1.addSuppressed(new IllegalStateException("Nested 1-2"));
+
+        final RuntimeException suppressed2 = new RuntimeException("Suppressed 2", suppressed1);
+        final IllegalStateException nested2 = new IllegalStateException("Nested 2");
+        nested2.addSuppressed(new RuntimeException("Nested 2a"));
+        suppressed2.addSuppressed(nested2);
+        suppressed2.addSuppressed(new IllegalStateException("Nested 2-2"));
+
+        final RuntimeException suppressed3 = new RuntimeException("Suppressed 3");
+        final IllegalStateException nested3 = new IllegalStateException("Nested 3");
+        nested3.addSuppressed(new RuntimeException("Nested 3a"));
+        suppressed3.addSuppressed(nested3);
+        suppressed3.addSuppressed(new IllegalStateException("Nested 3-2"));
+
+        final RuntimeException cause = new RuntimeException("This is the cause");
+        cause.addSuppressed(suppressed1);
+        cause.addSuppressed(suppressed2);
+        cause.addSuppressed(suppressed3);
+        return cause;
     }
 
     public static String formatMessage(final String msg, final Logger.Level level) {

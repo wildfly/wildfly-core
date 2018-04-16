@@ -162,6 +162,18 @@
         </json-formatter>
     </formatter>
 
+    <formatter name="XML">
+        <xml-formatter date-format="yyyy-MM-dd'T'HH:mm:ssSSS" pretty-print="true" print-details="true" zone-id="GMT"
+                       print-namespace="true" namespace-uri="urn:jboss:test:1.0">
+            <exception-output-type value="detailed-and-formatted"/>
+            <record-delimiter value="\n"/>
+            <key-overrides exception-caused-by="cause" record="log-record"/>
+            <meta-data>
+                <property name="test-xml" value="value-xml"/>
+            </meta-data>
+        </xml-formatter>
+    </formatter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 

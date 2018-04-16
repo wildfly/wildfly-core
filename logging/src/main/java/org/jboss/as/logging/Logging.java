@@ -97,7 +97,7 @@ public final class Logging {
      *
      * @return the joined array
      */
-    static <T> T[] join(final T[] base, final T... add) {
+    public static <T> T[] join(final T[] base, final T... add) {
         if (add == null) {
             return base;
         } else if (base == null) {

@@ -95,6 +95,14 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         testJsonFormatter(kernelServices, PROFILE);
     }
 
+    @Test
+    public void testXmlFormatterOperations() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        testXmlFormatter(kernelServices, null);
+        testXmlFormatter(kernelServices, PROFILE);
+    }
+
     private void testPatternFormatter(final KernelServices kernelServices, final String profileName) throws Exception {
         final ModelNode address = createPatternFormatterAddress(profileName, "PATTERN").toModelNode();
 
@@ -115,8 +123,25 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    private void testJsonFormatter(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testJsonFormatter(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createAddress(profileName, "json-formatter", "JSON").toModelNode();
+        testStructuredFormatter(kernelServices, address);
+    }
+
+    private void testXmlFormatter(final KernelServices kernelServices, final String profileName) {
+        final ModelNode address = createAddress(profileName, "xml-formatter", "XML").toModelNode();
+        testStructuredFormatter(kernelServices, address);
+        // Test additional attributes
+        testWrite(kernelServices, address, "print-namespace", true);
+        testWrite(kernelServices, address, "namespace-uri", "urn:jboss:as:logging:test:1.0");
+
+        testUndefine(kernelServices, address, "print-namespace");
+        testUndefine(kernelServices, address, "namespace-uri");
+    }
+
+
+
+    private void testStructuredFormatter(final KernelServices kernelServices, final ModelNode address) {
 
         final String dateFormat = "yyyy-MM-dd'T'HH:mm:ssSSSZ";
 
