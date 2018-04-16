@@ -409,8 +409,6 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
             throw new IllegalStateException("Failed to build operation", e1);
         }
 
-        final Map<String,CommandLineCompleterFactory> globalOpProps = globalOpPropCompleters.get(operationName);
-
         List<CommandArgument> result;
         try {
             ModelNode outcome = client.execute(request);
@@ -426,93 +424,112 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
                     return Collections.emptyList();
                 }
                 final List<Property> propList = reqProps.asPropertyList();
-                result = new ArrayList<CommandArgument>(propList.size());
-
-                String radical = ctx.getParsedCommandLine().getLastParsedPropertyValue() == null
-                        ? ctx.getParsedCommandLine().getLastParsedPropertyName() : null;
-                final PropertyVisibility visibility
-                        = new PropertyVisibility(propList,
-                                ctx.getParsedCommandLine().getPropertyNames(),
-                                radical);
-
-                for(final Property prop : propList) {
-                    final CommandLineCompleter completer = getCompleter(globalOpProps, prop, ctx, operationName, address);
-                    result.add(new CommandArgument(){
-                        final String argName = prop.getName();
-                        @Override
-                        public String getFullName() {
-                            return argName;
-                        }
-
-                        @Override
-                        public String getDecoratedName() {
-                            return visibility.getName(prop);
-                        }
-
-                        @Override
-                        public String getShortName() {
-                            return null;
-                        }
-
-                        @Override
-                        public int getIndex() {
-                            return -1;
-                        }
-
-                        @Override
-                        public boolean isPresent(ParsedCommandLine args) throws CommandFormatException {
-                            return args.hasProperty(argName);
-                        }
-
-                        @Override
-                        public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                            return visibility.canAppearNext(prop);
-                        }
-
-                        @Override
-                        public String getValue(ParsedCommandLine args) throws CommandFormatException {
-                            return args.getPropertyValue(argName);
-                        }
-
-                        @Override
-                        public String getValue(ParsedCommandLine args, boolean required) throws CommandFormatException {
-                            if(!isPresent(args)) {
-                                throw new CommandFormatException("Property '" + argName + "' is missing required value.");
-                            }
-                            return args.getPropertyValue(argName);
-                        }
-
-                        @Override
-                        public boolean isValueComplete(ParsedCommandLine args) throws CommandFormatException {
-                            if(!isPresent(args)) {
-                                return false;
-                            }
-                            if(argName.equals(args.getLastParsedPropertyName())) {
-                                return false;
-                            }
-                            return true;
-                        }
-
-                        @Override
-                        public boolean isValueRequired() {
-                            boolean required = true;
-                            ModelNode mn = prop.getValue().get("type");
-                            if (mn != null) {
-                                // No value required for boolean
-                                required = mn.asType() != ModelType.BOOLEAN;
-                            }
-                            return required;
-                        }
-
-                        @Override
-                        public CommandLineCompleter getValueCompleter() {
-                            return completer;
-                        }
-                    });
-                }
+                result = getPropertiesFromPropList(propList, ctx, operationName, address);
             }
         } catch (Exception e) {
             result = Collections.emptyList();
+        }
+        return result;
+    }
+
+    protected List<CommandArgument> getPropertiesFromPropList(List<Property> propList, CommandContext ctx, String operationName, OperationRequestAddress address){
+        final Map<String,CommandLineCompleterFactory> globalOpProps = globalOpPropCompleters.get(operationName);
+
+        List<CommandArgument> result = new ArrayList<CommandArgument>(propList.size());
+
+        String radical = null;
+        if(ctx.getParsedCommandLine().getLastParsedPropertyValue() == null) {
+            radical = ctx.getParsedCommandLine().getLastParsedPropertyName();
+            //Check if the property is completely specified and is negated
+            if(ctx.getParsedCommandLine().isLastPropertyNegated()) {
+                for (Property prop : propList) {
+                    if(radical.equals(prop.getName())){
+                        radical = null;
+                        break;
+                    }
+                }
+            }
+        }
+
+        final PropertyVisibility visibility
+                = new PropertyVisibility(propList,
+                ctx.getParsedCommandLine().getPropertyNames(),
+                radical);
+
+        for(final Property prop : propList) {
+            final CommandLineCompleter completer = getCompleter(globalOpProps, prop, ctx, operationName, address);
+            result.add(new CommandArgument(){
+                final String argName = prop.getName();
+                @Override
+                public String getFullName() {
+                    return argName;
+                }
+
+                @Override
+                public String getDecoratedName() {
+                    return visibility.getName(prop);
+                }
+
+                @Override
+                public String getShortName() {
+                    return null;
+                }
+
+                @Override
+                public int getIndex() {
+                    return -1;
+                }
+
+                @Override
+                public boolean isPresent(ParsedCommandLine args) throws CommandFormatException {
+                    return args.hasProperty(argName);
+                }
+
+                @Override
+                public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                    return visibility.canAppearNext(prop);
+                }
+
+                @Override
+                public String getValue(ParsedCommandLine args) throws CommandFormatException {
+                    return args.getPropertyValue(argName);
+                }
+
+                @Override
+                public String getValue(ParsedCommandLine args, boolean required) throws CommandFormatException {
+                    if(!isPresent(args)) {
+                        throw new CommandFormatException("Property '" + argName + "' is missing required value.");
+                    }
+                    return args.getPropertyValue(argName);
+                }
+
+                @Override
+                public boolean isValueComplete(ParsedCommandLine args) throws CommandFormatException {
+                    if(!isPresent(args)) {
+                        return false;
+                    }
+                    if(argName.equals(args.getLastParsedPropertyName())) {
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean isValueRequired() {
+                    boolean required = true;
+                    ModelNode mn = prop.getValue().get("type");
+                    if (mn != null) {
+                        // No value required for boolean
+                        required = mn.asType() != ModelType.BOOLEAN;
+                    }
+                    return required;
+                }
+
+                @Override
+                public CommandLineCompleter getValueCompleter() {
+                    return completer;
+                }
+            });
         }
         return result;
     }

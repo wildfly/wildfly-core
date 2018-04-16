@@ -33,6 +33,7 @@ import org.jboss.as.cli.completion.mock.MockCommandContext;
 import org.jboss.as.cli.completion.mock.MockNode;
 import org.jboss.as.cli.completion.mock.MockOperation;
 import org.jboss.as.cli.completion.mock.MockOperationCandidatesProvider;
+import org.jboss.as.cli.completion.mock.MockOperationProperty;
 import org.jboss.as.cli.operation.OperationRequestCompleter;
 import org.junit.Test;
 
@@ -44,6 +45,7 @@ public class PropertiesCompletionTestCase {
 
     private MockCommandContext ctx;
     private OperationRequestCompleter completer;
+    private static String OPERATION_PROPERTY_VALUES = "operation-property-values";
 
     public PropertiesCompletionTestCase() {
 
@@ -53,12 +55,87 @@ public class PropertiesCompletionTestCase {
         root.addOperation(op);
 
         op = new MockOperation("operation-properties-one-two-three");
-        op.setPropertyNames(Arrays.asList("one", "two", "three"));
+        op.setProperties(Arrays.asList(
+                new MockOperationProperty("one"),
+                new MockOperationProperty("two"),
+                new MockOperationProperty("three")));
+        root.addOperation(op);
+
+        op = new MockOperation(OPERATION_PROPERTY_VALUES);
+        op.setProperties(Arrays.asList(
+                new MockOperationProperty("one", new String[]{"1", "5"}),
+                new MockOperationProperty("two", new String[]{"false", "true"}, false),
+                new MockOperationProperty("three", new String[]{"false", "true"}, false),
+                new MockOperationProperty("three-test", new String[]{"false", "true"}, false)));
         root.addOperation(op);
 
         ctx = new MockCommandContext();
         ctx.setOperationCandidatesProvider(new MockOperationCandidatesProvider(root));
         completer = new OperationRequestCompleter();
+    }
+
+    @Test
+    public void testOperationsWithFalseValue() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(two=";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertEquals(Arrays.asList("false"), candidates);
+        assertEquals(buffer.length(), result);
+    }
+
+    @Test
+    public void testOperationsWithValuesAllSpecified() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(one=1,two=false,three-test=false,!three";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertEquals(Arrays.asList(")"), candidates);
+        assertEquals(buffer.length(), result);
+    }
+
+    @Test
+    public void testOperationsNotOperator() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(!three";
+        List<String> candidates = fetchCandidates(buffer);
+        assertTrue(candidates.contains(")"));
+        assertTrue(candidates.contains(","));
+        assertTrue(candidates.contains("three-test"));
+    }
+
+    @Test
+    public void testOperationsWithValues() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(one=";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertEquals(Arrays.asList("1","5"), candidates);
+        assertEquals(buffer.length(), result);
+    }
+
+    @Test
+    public void testOperationsWithNotOperator() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(!two";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertTrue(candidates.contains(")"));
+        assertTrue(candidates.contains(","));
+        assertEquals(buffer.length(), result);
+    }
+
+    @Test
+    public void testOperationsWithNotOperatorAndWrongProperty() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(!twoo";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertEquals(0, candidates.size());
+        assertEquals(buffer.length()-"twoo".length(), result);
+    }
+
+    @Test
+    public void testOperationsWithNotOperatorAndWrongPropertyPart() {
+        String buffer = ":"+OPERATION_PROPERTY_VALUES+"(!te";
+        List<String> candidates = fetchCandidates(buffer);
+        int result = fetchResult(buffer);
+        assertEquals(0, candidates.size());
+        assertEquals(buffer.length()-"te".length(), result);
     }
 
     @Test
@@ -179,5 +256,15 @@ public class PropertiesCompletionTestCase {
         }
         completer.complete(ctx, buffer, 0, candidates);
         return candidates;
+    }
+
+    protected int fetchResult(String buffer) {
+        ArrayList<String> candidates = new ArrayList<>();
+        try {
+            ctx.parseCommandLine(buffer, false);
+        } catch (CommandFormatException e) {
+            return -1;
+        }
+        return completer.complete(ctx, buffer, 0, candidates);
     }
 }

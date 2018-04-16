@@ -24,13 +24,18 @@ package org.jboss.as.cli.operation.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.jboss.as.cli.CommandArgument;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineCompleter;
+import org.jboss.as.cli.completion.mock.MockCommandContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 /**
@@ -104,6 +109,34 @@ public class DefaultOperationCandidatesProviderTestCase {
 
     private static final String bytes_content = "{\n"
             + "            \"type\" => BYTES}";
+
+
+    @Test
+    public void testGetPropertiesFromPropList() throws Exception {
+        List<Property> propList = new ArrayList<>();
+        propList.add(new Property("blocking", ModelNode.fromString(list_content)));
+        propList.add(new Property("blocking-param", ModelNode.fromString(list_content)));
+        propList.add(new Property("start-mode", ModelNode.fromString(list_content)));
+
+        MockCommandContext ctx = new MockCommandContext();
+        String operationName = "operationName";
+        ctx.parseCommandLine(":" + operationName + "(!blocking", false);
+
+        DefaultOperationRequestAddress address = new DefaultOperationRequestAddress();
+
+        DefaultOperationCandidatesProvider candidatesProvider = new DefaultOperationCandidatesProvider();
+        List<CommandArgument> candidates = candidatesProvider
+                .getPropertiesFromPropList(propList, ctx, operationName, address);
+
+        assertEquals(propList.size(), candidates.size());
+        for (CommandArgument candidate : candidates) {
+            if(candidate.getFullName().equals("blocking"))
+                assertFalse("Property blocking can't appear next, since it's completely specified" +
+                        " on the commandline as !blocking", candidate.canAppearNext(ctx));
+            else
+                assertTrue(candidate.canAppearNext(ctx));
+        }
+    }
 
     @Test
     public void testAttributeValueCompleter() throws Exception {
