@@ -117,12 +117,11 @@
         <version.org.wildfly.common>1.3.1.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.0.0.Final</version.org.wildfly.discovery>
         <version.org.wildfly.legacy.test>3.0.0.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.openssl>1.0.4.Final</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>1.0.6.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
         <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
         <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9>
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
@@ -852,11 +851,6 @@
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-sparcv9}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>

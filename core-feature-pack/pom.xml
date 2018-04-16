@@ -298,11 +298,6 @@
             <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
-        </dependency>
-
         <!-- Add this dependency to make sure that the core model is tested before we build the server -->
         <dependency>
             <groupId>org.wildfly.core</groupId>
