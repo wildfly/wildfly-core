@@ -177,8 +177,9 @@ public interface ServerInventory {
      * @param running whether the process was running. If {@code false}, the existence of the server will be
      *                recorded but no attempt to contact it will be made
      * @param stopping whether the process is currently stopping
+     * @param blockUntilStopped wait until the server is stopped.
      */
-    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping);
+    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping, boolean blockUntilStopped);
 
     /**
      * Reload a server with the given name.

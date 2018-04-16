@@ -256,6 +256,7 @@ class ManagedServer {
             final InternalState current = this.internalState;
             if(current != required) {
                 // TODO this perhaps should wait?
+                ROOT_LOGGER.logf(DEBUG_LEVEL, "Cannot start server %s, only servers in STOPPED state can be started. Current state '%s', required state '%s'", serverName, current, required);
                 throw new IllegalStateException();
             }
         }
@@ -380,6 +381,7 @@ class ManagedServer {
                     return true;
                 }
                 try {
+                    ROOT_LOGGER.logf(DEBUG_LEVEL, "Server %s waiting for state %s", this.serverName, expected);
                     wait();
                 } catch(InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -619,6 +621,7 @@ class ManagedServer {
                 ROOT_LOGGER.logf(DEBUG_LEVEL, e, "transition (%s > %s) failed for server \"%s\"", current, next, serverName);
                 transitionFailed(current, e);
             } finally {
+                ROOT_LOGGER.logf(DEBUG_LEVEL,"Notifiying a transition change for server %s", serverName);
                 notifyAll();
             }
         }

@@ -96,6 +96,7 @@ public class StartServersHandler implements OperationStepHandler {
                 final ModelNode hostModel = Resource.Tools.readModel(resource);
                 if(hostModel.hasDefined(SERVER_CONFIG)) {
                     final ModelNode servers = hostModel.get(SERVER_CONFIG).clone();
+                    reconnectServers(servers, domainModel, true);
                     if (hostControllerEnvironment.isRestart() || runningModeControl.getRestartMode() == RestartMode.HC_ONLY){
                         restartedHcStartOrReconnectServers(servers, domainModel, context);
                         runningModeControl.setRestartMode(RestartMode.SERVERS);
@@ -106,6 +107,16 @@ public class StartServersHandler implements OperationStepHandler {
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    private void reconnectServers(final ModelNode servers, final ModelNode domainModel, boolean blockUntilStopped){
+        Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
+        for(final String serverName : servers.keys()) {
+            ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
+            if (info != null){
+                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), blockUntilStopped);
+            }
+        }
     }
 
     private void cleanStartServers(final ModelNode servers, final ModelNode domainModel, OperationContext context) throws OperationFailedException {
@@ -140,7 +151,7 @@ public class StartServersHandler implements OperationStepHandler {
                 }
             } else if (info != null){
                 // Reconnect the server using the current authKey
-                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
+                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), true);
             }
         }
     }

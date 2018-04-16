@@ -133,7 +133,11 @@ class ServerInventoryService implements Service<ServerInventory> {
     @Override
     public synchronized void stop(final StopContext context) {
         final boolean shutdownServers = runningModeControl.getRestartMode() == RestartMode.SERVERS;
-        if (shutdownServers) {
+        final boolean reloadByHandler = runningModeControl.isReloadByHandler();
+        if (reloadByHandler){
+            serverInventory.shutdown(shutdownServers, -1, false); // TODO graceful shutdown
+            serverInventory = null;
+        } else {
             Runnable task = new Runnable() {
                 @Override
                 public void run() {
@@ -154,10 +158,6 @@ class ServerInventoryService implements Service<ServerInventory> {
             } finally {
                 context.asynchronous();
             }
-        } else {
-            // We have to set the shutdown flag in any case
-            serverInventory.shutdown(false, -1, true);
-            serverInventory = null;
         }
     }
 

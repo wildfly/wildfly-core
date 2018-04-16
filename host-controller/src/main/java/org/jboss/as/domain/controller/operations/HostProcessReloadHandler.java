@@ -146,6 +146,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             @Override
             public void reloadInitiated(HostRunningModeControl runningModeControl) {
                 runningModeControl.setRestartMode(restartServers ? RestartMode.SERVERS : RestartMode.HC_ONLY);
+                runningModeControl.setReloadByHandler(true);
             }
 
             @Override
