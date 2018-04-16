@@ -161,8 +161,9 @@
                                 <exclude>custom-policies.xml</exclude>
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>*-1.*.xml</exclude>
+                                <exclude>*-2.*.xml</exclude>
                             </excludes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_2_0.xsd</systemId>
+                            <systemId>src/main/resources/schema/wildfly-elytron_3_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>
