@@ -35,6 +35,7 @@ import static org.jboss.as.patching.runner.TestUtils.dump;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.touch;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -111,6 +112,7 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
     public void testRemoveModifiedFileWithSTRICT() throws Exception {
         try {
             runner.applyPatch(zippedPatch, ContentVerificationPolicy.STRICT);
+            fail("Patch shouldn't be applied - ContentVerificationPolicy.STRICT");
         } catch (ContentConflictsException e) {
             assertPatchHasNotBeenApplied(e, patch, fileRemoved.getItem(), env);
 
@@ -139,6 +141,7 @@ public class RemoveModifiedFileTaskTestCase extends AbstractTaskTestCase {
     public void testRemoveModifiedFileWithPRESERVE_ALL() throws Exception {
         try {
             runner.applyPatch(zippedPatch, ContentVerificationPolicy.PRESERVE_ALL);
+            fail("Patch shouldn't be applied - ContentVerificationPolicy.PRESERVE_ALL");
         } catch (ContentConflictsException e) {
             assertPatchHasNotBeenApplied(e, patch, fileRemoved.getItem(), env);
 
