@@ -34,7 +34,8 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <!-- Workaround for ELY-1561 -->
+        <module name="jdk.security.auth"/>
         <!-- JAXP default dependencies. DO NOT REMOVE!!!
              These are loaded by the JAXP redirect facility in jboss-modules when this module is used
              as a boot module. The purpose is to provide a common default JAXP implementation on all

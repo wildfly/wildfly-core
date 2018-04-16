@@ -22,13 +22,13 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.remoting-jmx">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.remoting-jmx">
     <resources>
         <artifact name="${org.jboss.remotingjmx:remoting-jmx}"/>
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
+        <module name="java.management"/>
         <module name="org.jboss.remoting"/>
         <module name="org.jboss.logging"/>
         <module name="org.wildfly.security.elytron-private" services="import"/>

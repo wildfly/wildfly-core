@@ -22,14 +22,14 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.marshalling">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.marshalling">
     <resources>
         <artifact name="${org.jboss.marshalling:jboss-marshalling}"/>
     </resources>
 
     <dependencies>
+        <module name="jdk.unsupported"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.marshalling.river" services="import"/>
-        <module name="sun.jdk" />
     </dependencies>
 </module>

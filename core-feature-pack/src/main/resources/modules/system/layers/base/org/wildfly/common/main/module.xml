@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.wildfly.common">
+<module xmlns="urn:jboss:module:1.8" name="org.wildfly.common">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
@@ -32,8 +32,7 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
-        <module name="sun.jdk"/>
+        <module name="java.management"/>
         <module name="org.jboss.logging"/>
     </dependencies>
 </module>

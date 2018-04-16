@@ -22,6 +22,10 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 <module xmlns="urn:jboss:module:1.6" name="sun.jdk">
+    <properties>
+        <property name="jboss.api" value="deprecated"/>
+    </properties>
+
     <resources>
         <!-- currently jboss modules has not way of importing services from
         classes.jar so we duplicate them here -->
@@ -31,7 +35,37 @@
         <module name="sun.scripting" export="true"/>
         <system export="true">
             <paths>
-                <path name="com/sun/image/codec/jpeg"/>
+
+                <!-- See below for replacement modules -->
+
+                <!-- Internal to java.base -->
+
+                <path name="com/sun/net/ssl/internal/ssl"/>
+                <path name="com/sun/crypto/provider"/>
+                <path name="sun/security/action"/>
+                <path name="sun/security/pkcs"/>
+                <path name="sun/security/x509"/>
+                <path name="sun/invoke"/>
+                <path name="sun/nio"/>
+                <path name="sun/nio/ch"/>
+                <path name="sun/nio/cs"/>
+                <path name="sun/nio/cs/ext"/>
+                <path name="sun/security/util"/>
+                <path name="sun/util"/>
+                <path name="sun/util/calendar"/>
+                <path name="sun/util/locale"/>
+                <path name="sun/util/resources"/>
+                <path name="sun/security/provider"/>
+                <path name="sun/text"/>
+
+                <!-- Module java.corba (should not be used) -->
+
+                <path name="com/sun/jndi/url/corbaname"/>
+                <path name="com/sun/jndi/url/iiop"/>
+                <path name="com/sun/jndi/url/iiopname"/>
+
+                <!-- Internal to java.desktop -->
+
                 <path name="com/sun/imageio/plugins/bmp"/>
                 <path name="com/sun/imageio/plugins/common"/>
                 <path name="com/sun/imageio/plugins/gif"/>
@@ -40,29 +74,7 @@
                 <path name="com/sun/imageio/plugins/wbmp"/>
                 <path name="com/sun/imageio/spi"/>
                 <path name="com/sun/imageio/stream"/>
-                <path name="com/sun/jndi/dns"/>
-                <path name="com/sun/jndi/ldap"/>
-                <path name="com/sun/jndi/ldap/ext"/>
-                <path name="com/sun/jndi/url"/>
-                <path name="com/sun/jndi/url/corbaname"/>
-                <path name="com/sun/jndi/url/dns"/>
-                <path name="com/sun/jndi/url/iiop"/>
-                <path name="com/sun/jndi/url/iiopname"/>
-                <path name="com/sun/jndi/url/ldap"/>
-                <path name="com/sun/jndi/url/ldaps"/>
-                <path name="com/sun/jndi/url/rmi"/>
                 <path name="com/sun/media/sound"/>
-                <path name="com/sun/net/ssl/internal/ssl"/>
-                <path name="com/sun/crypto/provider"/>
-                <path name="com/sun/org/apache/bcel/internal/classfile"/>
-                <path name="com/sun/org/apache/xml/internal/security/transforms/implementations"/>
-                <path name="com/sun/rowset"/>
-                <path name="com/sun/rowset/providers"/>
-                <path name="com/sun/security/auth"/>
-                <path name="com/sun/security/auth/login"/>
-                <path name="com/sun/security/auth/module"/>
-                <path name="com/sun/tools/internal/xjc"/>
-                <path name="com/sun/security/jgss"/>
                 <path name="sun/awt"/>
                 <path name="sun/awt/color"/>
                 <path name="sun/awt/datatransfer"/>
@@ -81,21 +93,17 @@
                 <path name="sun/dc"/>
                 <path name="sun/print"/>
                 <path name="sun/print/resources"/>
-                <path name="sun/security/action"/>
-                <path name="sun/security/pkcs"/>
-                <path name="sun/security/x509"/>
-                <path name="sun/jdbc/odbc"/>
-                <path name="sun/jdbc/odbc/ee"/>
                 <path name="sun/invoke"/>
-                <path name="sun/font"/>
-                <path name="sun/misc"/>
-                <path name="sun/io"/>
-                <path name="sun/net/spi/nameservice"/>
-                <path name="sun/net/spi/nameservice/dns"/>
-                <path name="sun/nio"/>
-                <path name="sun/nio/ch"/>
-                <path name="sun/nio/cs"/>
-                <path name="sun/nio/cs/ext"/>
+
+                <!-- Internal to java.naming -->
+
+                <path name="com/sun/jndi/ldap"/>
+                <path name="com/sun/jndi/ldap/ext"/>
+                <path name="com/sun/jndi/url/ldap"/>
+                <path name="com/sun/jndi/url/ldaps"/>
+
+                <!-- Internal to java.rmi -->
+
                 <path name="sun/rmi/log"/>
                 <path name="sun/rmi/registry"/>
                 <path name="sun/rmi/runtime"/>
@@ -103,18 +111,67 @@
                 <path name="sun/rmi/transport"/>
                 <path name="sun/rmi/transport/proxy"/>
                 <path name="sun/rmi/transport/tcp"/>
-                <path name="sun/security"/>
-                <path name="sun/security/util"/>
+
+                <!-- Internal to java.security.jgss -->
+
                 <path name="sun/security/krb5"/>
                 <path name="sun/security/krb5/internal"/>
-                <path name="sun/util"/>
-                <path name="sun/util/calendar"/>
-                <path name="sun/util/locale"/>
-                <path name="sun/util/resources"/>
+
+                <!-- Internal to java.sql.rowset -->
+
+                <path name="com/sun/rowset"/>
+                <path name="com/sun/rowset/providers"/>
+
+                <!-- Internal to java.xml -->
+
+                <path name="com/sun/org/apache/bcel/internal/classfile"/>
+
+                <!-- Internal to java.xml.crypto -->
+
+                <path name="com/sun/org/apache/xml/internal/security/transforms/implementations"/>
+
+                <!-- Module jdk.crypto.cryptoki -->
+
                 <path name="sun/security/pkcs11"/>
-                <path name="sun/security/provider"/>
-                <path name="sun/text"/>
+
+                <!-- Internal to jdk.naming.dns -->
+
+                <path name="com/sun/jndi/dns"/>
+                <path name="com/sun/jndi/url/dns"/>
+
+                <!-- Internal to jdk.naming.rmi -->
+
+                <path name="com/sun/jndi/url/rmi"/>
+
+                <!-- Module jdk.security.auth -->
+
+                <path name="com/sun/security/auth"/>
+                <path name="com/sun/security/auth/login"/>
+                <path name="com/sun/security/auth/module"/>
+
+                <!-- Module jdk.security.jgss -->
+
+                <path name="com/sun/security/jgss"/>
+
+                <!-- Module jdk.unsupported -->
+
+                <path name="sun/misc"/>
+
+                <!-- Module jdk.xml.bind -->
+
+                <path name="com/sun/tools/internal/xjc"/>
+
+                <!-- No equivalent module -->
+
+                <path name="com/sun/image/codec/jpeg"/>
+                <path name="sun/jdbc/odbc"/>
+                <path name="sun/jdbc/odbc/ee"/>
+                <path name="sun/io"/>
+                <path name="sun/net/spi/nameservice"/>
+                <path name="sun/net/spi/nameservice/dns"/>
+                <path name="sun/security"/>
                 <path name="META-INF/services"/>
+
             </paths>
             <exports>
                 <include-set>
