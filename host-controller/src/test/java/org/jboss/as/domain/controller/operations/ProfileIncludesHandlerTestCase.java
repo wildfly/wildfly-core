@@ -25,6 +25,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -290,6 +293,7 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
             this.rollback = rollback;
+            when(this.registration.getCapabilities()).thenReturn(Collections.singleton(ProfileResourceDefinition.PROFILE_CAPABILITY));
         }
 
         public void completeStep(ResultHandler resultHandler) {

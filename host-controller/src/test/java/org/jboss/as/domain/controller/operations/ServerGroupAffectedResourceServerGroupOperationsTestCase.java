@@ -31,6 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -360,6 +363,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
             this.rollback = rollback;
+            when(this.registration.getCapabilities()).thenReturn(Collections.singleton(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY));
         }
 
         void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {

@@ -42,6 +42,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -54,13 +58,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.BlockingTimeout;
-import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.NoopOperationStepHandler;
-import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -69,7 +69,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
@@ -77,22 +76,13 @@ import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.MessageSeverity;
-import org.jboss.as.controller.client.OperationAttachments;
-import org.jboss.as.controller.client.OperationMessageHandler;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
-import org.jboss.as.controller.descriptions.OverrideDescriptionProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
-import org.jboss.as.controller.registry.AliasEntry;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.NotificationEntry;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
@@ -134,6 +124,7 @@ public abstract class AbstractOperationTestCase {
         Resource root;
         private final boolean booting;
         final PathAddress operationAddress;
+        final ManagementResourceRegistration registration;
         private Set<PathAddress> expectedSteps = new HashSet<PathAddress>();
         private final Map<AttachmentKey<?>, Object> valueAttachments = new HashMap<AttachmentKey<?>, Object>();
         private final ModelNode result = new ModelNode();
@@ -146,6 +137,7 @@ public abstract class AbstractOperationTestCase {
             this.booting = booting;
             this.operationAddress = operationAddress;
             this.failOnUnexpected = failOnUnexpected;
+            this.registration = createManagementResourceRegistration(operationAddress);
         }
 
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress) {
@@ -373,7 +365,7 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public ManagementResourceRegistration getResourceRegistrationForUpdate() {
-            return RESOURCE_REGISTRATION;
+            return this.registration;
         }
 
         @Override
@@ -787,281 +779,21 @@ public abstract class AbstractOperationTestCase {
         }
     }
 
-
-    static final ManagementResourceRegistration RESOURCE_REGISTRATION = new ManagementResourceRegistration() {
-        @Override
-        public ManagementResourceRegistration getOverrideModel(String name) {
-            return null;
-        }
-
-        @Override
-        public ProcessType getProcessType() {
-            return ProcessType.HOST_CONTROLLER;
-        }
-
-        @Override
-        public ManagementResourceRegistration getSubModel(PathAddress address) {
-            return this;
-        }
-
-        @Override
-        public List<AccessConstraintDefinition> getAccessConstraints() {
-            return Collections.emptyList();
-        }
-
-        public ManagementResourceRegistration registerSubModel(PathElement address, DescriptionProvider descriptionProvider) {
-            return null;
-        }
-
-        @Override
-        public ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition) {
-            return null;
-        }
-
-        @Override
-        public void unregisterSubModel(PathElement address) {
-        }
-
-        @Override
-        public boolean isAllowsOverride() {
-            return false;
-        }
-
-        @Override
-        public void setRuntimeOnly(boolean runtimeOnly) {
-
-        }
-
-        @Override
-        public ManagementResourceRegistration registerOverrideModel(String name, OverrideDescriptionProvider descriptionProvider) {
-            return null;
-        }
-
-        @Override
-        public void unregisterOverrideModel(String name) {
-        }
-
-        @Override
-        public void registerCapability(RuntimeCapability capability) {
-
-        }
-
-        @Override
-        public void registerIncorporatingCapabilities(Set<RuntimeCapability> capabilities) {
-
-        }
-
-        @Override
-        public void registerRequirements(Set<CapabilityReferenceRecorder> requirements) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler) {
-
-        }
-
-        @Override
-        public void registerOperationHandler(OperationDefinition definition, OperationStepHandler handler, boolean inherited) {
-
-        }
-
-        @Override
-        public void unregisterOperationHandler(String operationName) {
-
-        }
-
-        @Override
-        public void registerReadWriteAttribute(AttributeDefinition definition, OperationStepHandler readHandler, OperationStepHandler writeHandler) {
-
-        }
-
-        public void registerReadOnlyAttribute(String attributeName, OperationStepHandler readHandler, AttributeAccess.Storage storage) {
-
-        }
-
-        @Override
-        public void registerReadOnlyAttribute(AttributeDefinition definition, OperationStepHandler readHandler) {
-
-        }
-
-        @Override
-        public void registerMetric(AttributeDefinition definition, OperationStepHandler metricHandler) {
-
-        }
-
-        @Override
-        public void unregisterAttribute(String attributeName) {
-
-        }
-
-        @Override
-        public void registerNotification(NotificationDefinition notification, boolean inherited) {
-
-        }
-
-        @Override
-        public void registerNotification(NotificationDefinition notification) {
-
-        }
-
-        @Override
-        public void unregisterNotification(String notificationType) {
-
-        }
-
-        @Override
-        public boolean isOrderedChildResource() {
-            return false;
-        }
-
-        @Override
-        public Set<String> getOrderedChildTypes() {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public void registerProxyController(PathElement address, ProxyController proxyController) {
-
-        }
-
-        @Override
-        public void unregisterProxyController(PathElement address) {
-
-        }
-
-        @Override
-        public PathAddress getPathAddress() {
-            return PathAddress.EMPTY_ADDRESS;
-        }
-
-        @Override
-        public ImmutableManagementResourceRegistration getParent() {
-            return null;
-        }
-
-        @Override
-        public boolean isRuntimeOnly() {
-            return false;
-        }
-
-        @Override
-        public boolean isRemote() {
-            return false;
-        }
-
-        @Override
-        public Set<RuntimeCapability> getCapabilities() {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public Set<RuntimeCapability> getIncorporatingCapabilities() {
-            return null;
-        }
-
-        @Override
-        public Set<CapabilityReferenceRecorder> getRequirements() {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public OperationStepHandler getOperationHandler(PathAddress address, String operationName) {
-            return NoopOperationStepHandler.WITHOUT_RESULT;
-        }
-
-        @Override
-        public DescriptionProvider getOperationDescription(PathAddress address, String operationName) {
-            return null;
-        }
-
-        @Override
-        public Set<OperationEntry.Flag> getOperationFlags(PathAddress address, String operationName) {
-            return null;
-        }
-
-        @Override
-        public OperationEntry getOperationEntry(PathAddress address, String operationName) {
-            return null;
-        }
-
-        @Override
-        public Set<String> getAttributeNames(PathAddress address) {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public AttributeAccess getAttributeAccess(PathAddress address, String attributeName) {
-            return null;
-        }
-
-        @Override
-        public Map<String, AttributeAccess> getAttributes(PathAddress address) {
-            return Collections.emptyMap();
-        }
-
-        @Override
-        public Set<String> getChildNames(PathAddress address) {
-            return null;
-        }
-
-        @Override
-        public Set<PathElement> getChildAddresses(PathAddress address) {
-            return null;
-        }
-
-        @Override
-        public DescriptionProvider getModelDescription(PathAddress address) {
-            return null;
-        }
-
-        @Override
-        public Map<String, OperationEntry> getOperationDescriptions(PathAddress address, boolean inherited) {
-            return null;
-        }
-
-        @Override
-        public AliasEntry getAliasEntry() {
-            return null;
-        }
-
-        @Override
-        public Map<String, NotificationEntry> getNotificationDescriptions(PathAddress address, boolean inherited) {
-            return null;
-        }
-
-        @Override
-        public ProxyController getProxyController(PathAddress address) {
-            if (address.getLastElement().getKey().equals(SERVER) && !address.getLastElement().getValue().equals("server-two")) {
-                return new ProxyController() {
-                    @Override
-                    public PathAddress getProxyNodeAddress() {
-                        return null;
-                    }
-
-                    public void execute(ModelNode operation, OperationMessageHandler handler, ProxyOperationControl control, OperationAttachments attachments, BlockingTimeout blockingTimeout) {
-                    }
-                };
-            }
-            return null;
-        }
-
-        @Override
-        public Set<ProxyController> getProxyControllers(PathAddress address) {
-            return null;
-        }
-
-        @Override
-        public void registerAlias(PathElement address, AliasEntry alias) {
-        }
-
-        @Override
-        public void unregisterAlias(PathElement address) {
-        }
-
-        @Override
-        public boolean isAlias() {
-            return false;
-        }
-    };
+    static final ManagementResourceRegistration createManagementResourceRegistration(PathAddress address) {
+        ManagementResourceRegistration registration = mock(ManagementResourceRegistration.class);
+        ProxyController proxyController = mock(ProxyController.class);
+        when(registration.getAccessConstraints()).thenReturn(Collections.emptyList());
+        when(registration.getAttributeNames(any())).thenReturn(Collections.emptySet());
+        when(registration.getAttributes(any())).thenReturn(Collections.emptyMap());
+        when(registration.getCapabilities()).thenReturn(Collections.emptySet());
+        when(registration.getChildAddresses(any())).thenReturn(Collections.emptySet());
+        when(registration.getChildNames(any())).thenReturn(Collections.emptySet());
+        when(registration.getOperationHandler(any(), anyString())).thenReturn(NoopOperationStepHandler.WITHOUT_RESULT);
+        when(registration.getOrderedChildTypes()).thenReturn(Collections.emptySet());
+        when(registration.getPathAddress()).thenReturn(address);
+        when(registration.getProcessType()).thenReturn(ProcessType.HOST_CONTROLLER);
+        when(registration.getProxyController(any())).thenReturn(proxyController);
+        when(registration.getSubModel(any())).thenReturn(registration);
+        return registration;
+    }
 }
