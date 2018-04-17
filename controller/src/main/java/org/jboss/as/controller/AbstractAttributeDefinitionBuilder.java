@@ -852,7 +852,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, RuntimeCapability<?> dependentCapability) {
-        return setCapabilityReference(referencedCapability, dependentCapability.getName(), dependentCapability.isDynamicallyNamed());
+        return setCapabilityReference(referencedCapability, dependentCapability.getName());
     }
 
     /**
@@ -948,12 +948,34 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *                             portion of which comes from the name of the resource with which
      *                             the attribute is associated
      * @return the builder
-     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
-     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @deprecated Use {@link #setCapabilityReference(String, String)} instead.
      */
+    @Deprecated
     public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
         //noinspection deprecation
         referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability, dynamicDependent);
+        return (BUILDER) this;
+    }
+
+    /**
+     * Records that this attribute's value represents a reference to an instance of a
+     * {@link org.jboss.as.controller.capability.RuntimeCapability#isDynamicallyNamed() dynamic capability}.
+     * <p>
+     * This method is a convenience method equivalent to calling
+     * {@link #setCapabilityReference(CapabilityReferenceRecorder)}
+     * passing in a {@link org.jboss.as.controller.CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder}
+     * constructed using the parameters passed to this method.
+     *
+     * @param referencedCapability the name of the dynamic capability the dynamic portion of whose name is
+     *                             represented by the attribute's value
+     * @param dependentCapability  the name of the capability that depends on {@code referencedCapability}
+     * @return the builder
+     * @see AttributeDefinition#addCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
+     */
+    public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability) {
+        //noinspection deprecation
+        referenceRecorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder(referencedCapability, dependentCapability);
         return (BUILDER) this;
     }
 

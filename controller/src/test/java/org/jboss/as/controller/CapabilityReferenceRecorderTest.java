@@ -27,7 +27,7 @@ public class CapabilityReferenceRecorderTest {
 
     @Test
     public void testDefaultRequirementPatternElements() {
-        CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder recorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder("org.wildfly.requirement", "org.wildfly.dependent", true);
+        CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder recorder = new CapabilityReferenceRecorder.DefaultCapabilityReferenceRecorder("org.wildfly.requirement", "org.wildfly.dependent");
         String[] result = recorder.getRequirementPatternSegments("test", null);
         Assert.assertTrue(result != null);
         Assert.assertEquals(1, result.length);
