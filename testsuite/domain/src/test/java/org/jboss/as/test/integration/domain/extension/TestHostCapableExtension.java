@@ -134,6 +134,11 @@ public class TestHostCapableExtension implements Extension {
             });
         }
 
+        @Override
+        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
+            resourceRegistration.registerCapability(TEST_CAPABILITY);
+        }
+
         private static ServiceName createServiceName(PathAddress address) {
             ServiceName name = ServiceName.JBOSS;
             name = name.append("test");
@@ -146,7 +151,7 @@ public class TestHostCapableExtension implements Extension {
         private static class AddSubsystemHandler extends AbstractAddStepHandler {
 
             AddSubsystemHandler() {
-                super(TEST_CAPABILITY, NAME, SOCKET_BINDING);
+                super(NAME, SOCKET_BINDING);
             }
 
             @Override
@@ -166,10 +171,6 @@ public class TestHostCapableExtension implements Extension {
 
 
         private static class RemoveSubsystemHandler extends AbstractRemoveStepHandler {
-
-            RemoveSubsystemHandler(){
-                super(TEST_CAPABILITY);
-            }
 
             @Override
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
