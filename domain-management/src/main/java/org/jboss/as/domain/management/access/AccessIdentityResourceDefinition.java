@@ -82,9 +82,10 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
     private AccessIdentityResourceDefinition(AbstractAddStepHandler add) {
         super(new Parameters(PATH_ELEMENT, DomainManagementResolver.getResolver("core.identity"))
                 .setAddHandler(add)
-                .setRemoveHandler(new ReloadRequiredRemoveStepHandler(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY))
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
+                .setCapabilities(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL));
     }
 
@@ -105,7 +106,7 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
         AccessIdentityAddHandler(ManagementSecurityIdentitySupplier securityIdentitySupplier) {
-            super(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(ATTRIBUTES);
             this.securityIdentitySupplier = securityIdentitySupplier;
         }
 
