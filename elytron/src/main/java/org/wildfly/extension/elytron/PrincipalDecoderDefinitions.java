@@ -131,7 +131,7 @@ class PrincipalDecoderDefinitions {
     static final StringListAttributeDefinition PRINCIPAL_DECODERS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_DECODERS)
         .setMinSize(2)
         .setRequired(true)
-        .setCapabilityReference(PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), true)
+        .setCapabilityReference(PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName(), PRINCIPAL_DECODER_RUNTIME_CAPABILITY.getName())
             .setAttributeParser(AttributeParsers.STRING_LIST_NAMED_ELEMENT)
             .setAttributeMarshaller(AttributeMarshallers.STRING_LIST_NAMED_ELEMENT)
             .setXmlName(ElytronDescriptionConstants.PRINCIPAL_DECODER)

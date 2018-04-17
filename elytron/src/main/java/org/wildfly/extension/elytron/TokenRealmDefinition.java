@@ -116,7 +116,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .setAlternatives(ElytronDescriptionConstants.PUBLIC_KEY)
                 .setRequires(ElytronDescriptionConstants.CERTIFICATE)
                 .setMinSize(1)
-                .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .setAllowExpression(false)
                 .build();
@@ -159,7 +159,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         protected static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, ModelType.STRING, true)
-                .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
+                .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_REALM_CAPABILITY)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setValidator(new StringLengthValidator(1))
                 .build();

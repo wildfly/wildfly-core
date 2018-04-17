@@ -145,7 +145,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
-            .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY, true)
+            .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition OTHER_PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OTHER_PROVIDERS, ModelType.STRING, true)
@@ -153,7 +153,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(false)
             .setMinSize(1)
             .setRestartAllServices()
-            .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY, true)
+            .setCapabilityReference(PROVIDERS_CAPABILITY, CREDENTIAL_STORE_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RELATIVE_TO, ModelType.STRING, true)

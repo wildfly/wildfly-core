@@ -104,7 +104,7 @@ public class TestHostCapableExtension implements Extension {
         private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING, false).build();
         private static final SimpleAttributeDefinition SOCKET_BINDING =
                 new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
-                .setCapabilityReference(SOCKET_CAPABILITY_NAME, TEST_CAPABILITY_NAME, true)
+                .setCapabilityReference(SOCKET_CAPABILITY_NAME, TEST_CAPABILITY_NAME)
                 .build();
         private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", new NonResolvingResourceDescriptionResolver()).build();
 

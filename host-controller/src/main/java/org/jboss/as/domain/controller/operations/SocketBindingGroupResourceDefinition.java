@@ -79,7 +79,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
                     }
                 }
             })
-            .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME, true)
+            .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME)
             .build();
 
     public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();

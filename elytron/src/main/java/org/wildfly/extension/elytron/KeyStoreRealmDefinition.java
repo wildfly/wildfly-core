@@ -61,7 +61,7 @@ class KeyStoreRealmDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition KEYSTORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY, true)
+        .setCapabilityReference(KEY_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
         .build();
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();

@@ -100,7 +100,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
         .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_STORE_CAPABILITY, true)
+        .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_STORE_CAPABILITY)
         .build();
 
     static final ObjectTypeAttributeDefinition CREDENTIAL_REFERENCE = CredentialReference.getAttributeDefinition(true);

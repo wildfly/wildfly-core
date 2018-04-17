@@ -83,7 +83,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
 
     public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.AUTHENTICATION_CONTEXT,  ModelType.STRING,  true)
-                    .setCapabilityReference("org.wildfly.security.authentication-context", "org.wildfly.host.controller", false)
+                    .setCapabilityReference("org.wildfly.security.authentication-context", "org.wildfly.host.controller")
                     .setAlternatives(ModelDescriptionConstants.SECURITY_REALM, ModelDescriptionConstants.USERNAME)
                     .build();
 
