@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
+    <copy-path src="docs/licenses/licenses.xsl" relative-to="content" target="docs/licenses/core-licenses.xsl"/>
+    <transform stylesheet="docs/licenses/core-licenses.xsl" src="docs/licenses/core-feature-pack-licenses.xml" output="docs/licenses/core-feature-pack-licenses.html"/>
+    <delete path="docs/licenses/core-licenses.xsl"/>
+</tasks>

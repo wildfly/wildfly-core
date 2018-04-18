@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="management-sockets" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="socket-binding-group.socket-binding">
+        <param name="socket-binding" value="management-http"/>
+        <param name="interface" value="management"/>
+        <param name="port" value="${jboss.management.http.port:9990}"/>
+    </feature>
+    <feature spec="socket-binding-group.socket-binding">
+        <param name="socket-binding" value="management-https"/>
+        <param name="interface" value="management"/>
+        <param name="port" value="${jboss.management.https.port:9993}"/>
+    </feature>
+</feature-group-spec>

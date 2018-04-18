@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="urn:jboss:galleon:config:1.0" model="standalone" name="standalone.xml">
+     <feature spec="server-root">
+        <param name="name" value="test" />
+    </feature>
+</config>

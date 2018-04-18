@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="logging" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.logging">
+      <feature spec="subsystem.logging.console-handler">
+        <param name="console-handler" value="CONSOLE"/>
+        <param name="level" value="INFO"/>
+        <param name="named-formatter" value="COLOR-PATTERN"/>
+      </feature>
+      <feature spec="subsystem.logging.periodic-rotating-file-handler">
+        <param name="periodic-rotating-file-handler" value="FILE"/>
+        <param name="named-formatter" value="PATTERN"/>
+        <param name="file" value="{relative-to=jboss.server.log.dir,path=server.log}"/>
+        <param name="suffix" value=".yyyy-MM-dd"/>
+        <param name="append" value="true"/>
+        <param name="autoflush" value="true"/>
+      </feature>
+      <feature spec="subsystem.logging.logger">
+        <param name="logger" value="com.arjuna"/>
+        <param name="level" value="WARN"/>
+      </feature>
+      <feature spec="subsystem.logging.logger">
+        <param name="logger" value="org.jboss.as.config"/>
+        <param name="level" value="DEBUG"/>
+      </feature>
+      <feature spec="subsystem.logging.logger">
+        <param name="logger" value="sun.rmi"/>
+        <param name="level" value="WARN"/>
+      </feature>
+      <feature spec="subsystem.logging.root-logger.ROOT">
+        <param name="level" value="INFO"/>
+        <param name="handlers" value="[CONSOLE,FILE]"/>
+      </feature>
+      <feature spec="subsystem.logging.pattern-formatter">
+        <param name="pattern-formatter" value="PATTERN"/>
+        <param name="pattern" value="&quot;%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
+      </feature>
+      <feature spec="subsystem.logging.pattern-formatter">
+        <param name="pattern-formatter" value="COLOR-PATTERN"/>
+        <param name="pattern" value="&quot;%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
+      </feature>
+    </feature>
+</feature-group-spec>

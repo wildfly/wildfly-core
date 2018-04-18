@@ -39,6 +39,10 @@
             <includes>
                 <include>${server.output.dir.prefix}-${wildfly.core.release.version}/**</include>
             </includes>
+            <excludes>
+                <exclude>**/.galleon/**</exclude>
+                <exclude>**/.installation/**</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>

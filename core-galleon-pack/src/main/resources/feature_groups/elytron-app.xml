@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="elytron-app" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <!-- application.cli -->
+    <feature spec="subsystem.elytron.properties-realm">
+        <param name="properties-realm" value="ApplicationRealm"/>
+        <param name="users-properties" value="{path=application-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ApplicationRealm}"/>
+        <param name="groups-properties" value="{path=application-roles.properties,relative-to=jboss.server.config.dir}"/>
+    </feature>
+    <feature spec="subsystem.elytron.security-domain">
+        <param name="security-domain" value="ApplicationDomain"/>
+        <param name="default-realm" value="ApplicationRealm"/>
+        <unset param="outflow-security-domains"/>
+        <param name="permission-mapper" value="default-permission-mapper"/>
+        <param name="realms" value="[{realm=ApplicationRealm,role-decoder=groups-to-roles}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.sasl-authentication-factory">
+        <param name="sasl-authentication-factory" value="application-sasl-authentication"/>
+        <param name="sasl-server-factory" value="configured"/>
+        <param name="security-domain" value="ApplicationDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.http-authentication-factory">
+        <param name="http-authentication-factory" value="application-http-authentication"/>
+        <param name="http-server-mechanism-factory" value="global"/>
+        <param name="security-domain" value="ApplicationDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Application Realm}]},{mechanism-name=FORM}]"/>
+    </feature>
+</feature-group-spec>

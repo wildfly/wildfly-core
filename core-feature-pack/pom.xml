@@ -113,10 +113,10 @@
             <groupId>org.jboss.spec.javax.security.jacc</groupId>
             <artifactId>jboss-jacc-api_1.5_spec</artifactId>
             <exclusions>
-	        <exclusion>
+                <exclusion>
                     <groupId>org.jboss.spec.javax.servlet</groupId>
                     <artifactId>jboss-servlet-api_3.1_spec</artifactId>
-                    </exclusion>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -139,7 +139,7 @@
             <groupId>org.aesh</groupId>
             <artifactId>aesh-extensions</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.aesh</groupId>
             <artifactId>aesh</artifactId>
@@ -563,9 +563,8 @@
             </plugin>
         </plugins>
     </build>
-
+    
     <profiles>
-
         <profile>
             <id>update-licenses-xml</id>
             <activation>
