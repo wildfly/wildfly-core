@@ -35,10 +35,10 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
 import org.jboss.as.host.controller.ServerInventory;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.dmr.ModelNode;
@@ -65,7 +65,7 @@ public class StartServersHandler implements OperationStepHandler {
     private final HostRunningModeControl runningModeControl;
 
     /**
-     * Create the ServerAddHandler
+     * Create the StartServersHandler
      */
     public StartServersHandler(final HostControllerEnvironment hostControllerEnvironment, final ServerInventory serverInventory, HostRunningModeControl runningModeControl) {
         this.hostControllerEnvironment = hostControllerEnvironment;
@@ -87,6 +87,7 @@ public class StartServersHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
+        context.acquireControllerLock();
         final ModelNode domainModel = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
             @Override
@@ -95,38 +96,47 @@ public class StartServersHandler implements OperationStepHandler {
                 final Resource resource =  context.readResource(PathAddress.EMPTY_ADDRESS);
                 final ModelNode hostModel = Resource.Tools.readModel(resource);
                 if(hostModel.hasDefined(SERVER_CONFIG)) {
+
                     final ModelNode servers = hostModel.get(SERVER_CONFIG).clone();
-                    reconnectServers(servers, domainModel, true);
+                    final boolean restartRequired = runningModeControl.getRestartMode() == RestartMode.SERVERS;
+                    final boolean blockUntilStopped = runningModeControl.isBlockUntilStopped();
+
+                    if (blockUntilStopped) {
+                        reconnectAndWaitStoppingServers(servers, domainModel, true);
+                    }
+
                     if (hostControllerEnvironment.isRestart() || runningModeControl.getRestartMode() == RestartMode.HC_ONLY){
-                        restartedHcStartOrReconnectServers(servers, domainModel, context);
-                        runningModeControl.setRestartMode(RestartMode.SERVERS);
+                        restartedHcStartOrReconnectServers(servers, domainModel, context, restartRequired);
                     } else {
-                        cleanStartServers(servers, domainModel, context);
+                        cleanStartServers(servers, domainModel, context, restartRequired);
                     }
                 }
+                //Reset runningModeControl values to default for the values that cannot be reset at ProcessReloadHandler.ReloadContext.doReloado
+                runningModeControl.setRestartMode(RestartMode.SERVERS);
+                runningModeControl.setBlockUntilStopped(true);
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);
     }
 
-    private void reconnectServers(final ModelNode servers, final ModelNode domainModel, boolean blockUntilStopped){
+    private void reconnectAndWaitStoppingServers(final ModelNode servers, final ModelNode domainModel, boolean blockUntilStopped){
         Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
         for(final String serverName : servers.keys()) {
             ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
             if (info != null){
-                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), blockUntilStopped);
+                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), blockUntilStopped, false, false);
             }
         }
     }
 
-    private void cleanStartServers(final ModelNode servers, final ModelNode domainModel, OperationContext context) throws OperationFailedException {
+    private void cleanStartServers(final ModelNode servers, final ModelNode domainModel, OperationContext context, boolean restartRequired) throws OperationFailedException {
         Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
         for(final Property serverProp : servers.asPropertyList()) {
             String serverName = serverProp.getName();
             if (ServerConfigResourceDefinition.AUTO_START.resolveModelAttribute(context, serverProp.getValue()).asBoolean(true)) {
                 ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
                 if ( info != null ){
-                    serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
+                    serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), false, restartRequired, START_BLOCKING);
                 } else {
                     try {
                         serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
@@ -138,7 +148,7 @@ public class StartServersHandler implements OperationStepHandler {
         }
     }
 
-    private void restartedHcStartOrReconnectServers(final ModelNode servers, final ModelNode domainModel, final OperationContext context){
+    private void restartedHcStartOrReconnectServers(final ModelNode servers, final ModelNode domainModel, final OperationContext context, boolean restartRequired){
         Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
         for(final String serverName : servers.keys()) {
             ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
@@ -151,7 +161,7 @@ public class StartServersHandler implements OperationStepHandler {
                 }
             } else if (info != null){
                 // Reconnect the server using the current authKey
-                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), true);
+                serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping(), false, restartRequired && auto, START_BLOCKING);
             }
         }
     }

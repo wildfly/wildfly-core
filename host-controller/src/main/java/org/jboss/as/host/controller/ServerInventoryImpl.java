@@ -24,6 +24,8 @@ package org.jboss.as.host.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -58,12 +61,20 @@ import javax.security.sasl.RealmCallback;
 
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.CurrentOperationIdHolder;
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.BlockingQueueOperationListener;
 import org.jboss.as.controller.remote.TransactionalProtocolClient;
 import org.jboss.as.controller.transform.TransformationTarget;
@@ -100,6 +111,15 @@ import org.wildfly.security.password.spec.EncryptablePasswordSpec;
  */
 public class ServerInventoryImpl implements ServerInventory {
 
+    static final Operation EMPTY_OP;
+    static {
+        ModelNode mn  = new ModelNode();
+        mn.get(OP).set("internal-server-start"); // This is actually not used anywhere
+        mn.get(OP_ADDR).setEmptyList();
+        mn.protect();
+        EMPTY_OP = OperationBuilder.create(mn).build();
+    }
+
     /** The managed servers. */
     private final ConcurrentMap<String, ManagedServer> servers = new ConcurrentHashMap<String, ManagedServer>();
 
@@ -117,14 +137,20 @@ public class ServerInventoryImpl implements ServerInventory {
     private volatile Map<String, ProcessInfo> processInfos;
 
     private final Object shutdownCondition = new Object();
+    private final OperationExecutor internalExecutor;
+    private final ExecutorService executorService;
+
 
     ServerInventoryImpl(final DomainController domainController, final HostControllerEnvironment environment, final URI managementURI,
-                        final ProcessControllerClient processControllerClient, final ExtensionRegistry extensionRegistry) {
+                        final ProcessControllerClient processControllerClient, final ExtensionRegistry extensionRegistry, OperationExecutor internalExecutor, ExecutorService executorService) {
         this.domainController = domainController;
         this.environment = environment;
         this.managementURI = managementURI;
         this.processControllerClient = processControllerClient;
         this.extensionRegistry = extensionRegistry;
+        this.internalExecutor = internalExecutor;
+        this.executorService = executorService;
+
     }
 
     @Override
@@ -197,7 +223,7 @@ public class ServerInventoryImpl implements ServerInventory {
             HostControllerLogger.ROOT_LOGGER.failedToStartServer(null, serverName);
             //The gracefulTimeout value does not seem to be used in this case, but initialise it to 1s just in case it gets added.
             //In practise the server has already stopped so the time should be less than this
-            stopServer(serverName, 1000, true);
+            stopServer(serverName, 1, true);
             server = null;
         }
         if(server == null) {
@@ -275,7 +301,7 @@ public class ServerInventoryImpl implements ServerInventory {
     }
 
     @Override
-    public void reconnectServer(final String serverName, final ModelNode domainModel, final String authKey, final boolean running, final boolean stopping, final boolean blockUntilStopped) {
+    public void reconnectServer(final String serverName, final ModelNode domainModel, final String authKey, final boolean running, final boolean stopping, final boolean blockUntilStopped, boolean requestRestart, boolean restartBlocking) {
         if(shutdown || connectionFinished) {
             throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
         }
@@ -293,20 +319,51 @@ public class ServerInventoryImpl implements ServerInventory {
             if(!stopping) {
                  server.reconnectServerProcess(createBootFactory(serverName, domainModel, false));
             } else {
-                 server.setServerProcessStopping();
+                 server.setServerProcessStopping(requestRestart, restartBlocking);
                  if (blockUntilStopped){
                      server.awaitState(ManagedServer.InternalState.STOPPED);
                  }
             }
         } else {
-            server.removeServerProcess();
-            server.awaitState(ManagedServer.InternalState.STOPPED);
+            server.removeServerProcess(requestRestart, restartBlocking);
             if (blockUntilStopped){
                 server.awaitState(ManagedServer.InternalState.STOPPED);
             }
         }
         synchronized (shutdownCondition) {
             shutdownCondition.notifyAll();
+        }
+    }
+
+    @Override
+    public void restartRequested(final String serverProcessName, final boolean blocking) {
+        if(shutdown || connectionFinished) {
+            throw HostControllerLogger.ROOT_LOGGER.hostAlreadyShutdown();
+        }
+
+        final String serverName = ManagedServer.getServerName(serverProcessName);
+        final ManagedServer server = servers.remove(serverName);
+        if (server == null) {
+            ROOT_LOGGER.noServerAvailable(serverName);
+            return;
+        }
+
+        if(server.restartRequested()){
+            Runnable startServerTask = new Runnable() {
+                @Override
+                public void run() {
+                    internalExecutor.execute(EMPTY_OP, OperationMessageHandler.DISCARD, ModelController.OperationTransactionControl.COMMIT, new OperationStepHandler() {
+                        @Override
+                        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                            context.acquireControllerLock();
+                            final ModelNode domainModel = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
+                            startServer(serverName, domainModel, blocking, false);
+                        }
+                    });
+                }
+            };
+
+            this.executorService.submit(startServerTask);
         }
     }
 
@@ -718,12 +775,15 @@ public class ServerInventoryImpl implements ServerInventory {
     @Override
     public void serverProcessRemoved(final String serverProcessName) {
         final String serverName = ManagedServer.getServerName(serverProcessName);
-        final ManagedServer server = servers.remove(serverName);
+        final ManagedServer server = servers.get(serverName);
         if(server == null) {
             ROOT_LOGGER.noServerAvailable(serverName);
             return;
         }
-        server.processRemoved();
+
+        if (server.processRemoved()) {
+            servers.remove(serverName);
+        }
         synchronized (shutdownCondition) {
             shutdownCondition.notifyAll();
         }

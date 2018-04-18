@@ -140,6 +140,7 @@ class ManagedServer {
     private volatile boolean unstable;
 
     private final PathAddress address;
+    private volatile boolean restartBlocking;
 
     ManagedServer(final String hostControllerName, final String serverName, final String authKey,
                   final ProcessControllerClient processControllerClient, final URI managementURI,
@@ -345,16 +346,18 @@ class ManagedServer {
     /**
      * On host controller reload, remove a not running server registered in the process controller declared as down.
      */
-    synchronized void removeServerProcess() {
-        this.requiredState = InternalState.STOPPED;
+    synchronized void removeServerProcess(boolean requestRestart, boolean restartBlocking) {
+        this.restartBlocking = restartBlocking;
+        this.requiredState = requestRestart ? InternalState.REQUESTING_RESTART : InternalState.STOPPED;
         internalSetState(new ProcessRemoveTask(), InternalState.STOPPED, InternalState.PROCESS_REMOVING);
     }
 
     /**
      * On host controller reload, remove a not running server registered in the process controller declared as stopping.
      */
-    synchronized void setServerProcessStopping() {
-        this.requiredState = InternalState.STOPPED;
+    synchronized void setServerProcessStopping(boolean requestRestart, boolean restartBlocking) {
+        this.restartBlocking = restartBlocking;
+        this.requiredState = requestRestart ? InternalState.REQUESTING_RESTART : InternalState.STOPPED;
         internalSetState(null, InternalState.STOPPED, InternalState.PROCESS_STOPPING);
     }
 
@@ -403,6 +406,15 @@ class ManagedServer {
      */
     void processStarted() {
         finishTransition(InternalState.PROCESS_STARTING, InternalState.PROCESS_STARTED);
+    }
+
+    /**
+     * Notification that the server was requested to restart in background.
+     */
+    synchronized boolean restartRequested() {
+        this.requiredState = InternalState.STOPPED;
+        this.unstable = false;
+        return internalSetState(null, InternalState.REQUESTING_RESTART, InternalState.STOPPED);
     }
 
     /**
@@ -506,6 +518,8 @@ class ManagedServer {
         // If the server was not stopped
         if(required == InternalState.STOPPED && state == InternalState.PROCESS_STOPPING) {
             finishTransition(InternalState.PROCESS_STOPPING, InternalState.PROCESS_STOPPED);
+        } else if(required == InternalState.REQUESTING_RESTART && state == InternalState.PROCESS_STOPPING) {
+            finishTransition(InternalState.PROCESS_STOPPING, InternalState.PROCESS_STOPPED);
         } else {
             this.requiredState = InternalState.STOPPED;
             if ( !(internalSetState(getTransitionTask(InternalState.PROCESS_STOPPING), internalState, InternalState.PROCESS_STOPPING)
@@ -519,10 +533,17 @@ class ManagedServer {
 
     /**
      * Notification that the process got removed from the process controller.
+     *
+     * returns false if the managed server is going to REQUESTING_RESTART state
      */
-    void processRemoved() {
+    synchronized boolean processRemoved() {
+        if (this.requiredState == InternalState.REQUESTING_RESTART) {
+            internalSetState(getTransitionTask(InternalState.REQUESTING_RESTART), InternalState.PROCESS_REMOVING, InternalState.REQUESTING_RESTART);
+            return false;
+        }
         finishTransition(InternalState.PROCESS_REMOVING, InternalState.STOPPED);
         unstable = false;
+        return true;
     }
 
     private void transition() {
@@ -566,6 +587,9 @@ class ManagedServer {
                 case SERVER_STARTING:
                     this.internalState = InternalState.PROCESS_STARTED;
                     break;
+                case REQUESTING_RESTART:
+                    this.internalState = InternalState.PROCESS_STOPPED;
+                    break;
             }
             this.requiredState = InternalState.FAILED;
             notifyAll();
@@ -589,6 +613,10 @@ class ManagedServer {
                 case STOPPED:
                     ROOT_LOGGER.failedToStopServer(cause, serverName);
                     break;
+                case REQUESTING_RESTART:
+                    ROOT_LOGGER.failedToRestartServer(cause, serverName);
+                    break;
+
             }
         }
         transitionFailed(state);
@@ -621,7 +649,7 @@ class ManagedServer {
                 ROOT_LOGGER.logf(DEBUG_LEVEL, e, "transition (%s > %s) failed for server \"%s\"", current, next, serverName);
                 transitionFailed(current, e);
             } finally {
-                ROOT_LOGGER.logf(DEBUG_LEVEL,"Notifiying a transition change for server %s", serverName);
+                ROOT_LOGGER.logf(DEBUG_LEVEL,"Notifying a transition change for server %s", serverName);
                 notifyAll();
             }
         }
@@ -642,6 +670,8 @@ class ManagedServer {
                 return new ServerStopTask(null);
             } case PROCESS_REMOVING: {
                 return new ProcessRemoveTask();
+            } case REQUESTING_RESTART: {
+                return new RequestRestartTask();
             } default: {
                 return null;
             }
@@ -715,9 +745,16 @@ class ManagedServer {
                     return InternalState.PROCESS_STARTING;
                 } else if( required == InternalState.STOPPED) {
                     return InternalState.PROCESS_REMOVING;
+                } else if(required == InternalState.REQUESTING_RESTART) {
+                    return InternalState.PROCESS_REMOVING;
                 }
                 break;
             } case PROCESS_REMOVING: {
+                if(required == InternalState.STOPPED) {
+                    return InternalState.STOPPED;
+                }
+                break;
+            } case REQUESTING_RESTART: {
                 if(required == InternalState.STOPPED) {
                     return InternalState.STOPPED;
                 }
@@ -771,6 +808,7 @@ class ManagedServer {
         PROCESS_REMOVING(true),
         SUSPENDING(true),
         FAILED,
+        REQUESTING_RESTART(true)
         ;
 
         /** State transition creates an async task. */
@@ -971,6 +1009,16 @@ class ManagedServer {
             return true;
         }
     }
+
+    private class RequestRestartTask implements TransitionTask {
+        @Override
+        public boolean execute(ManagedServer server) throws Exception {
+            assert Thread.holdsLock(ManagedServer.this); // Call under lock
+            processControllerClient.requestRestart(serverProcessName, server.restartBlocking);
+            return true;
+        }
+    }
+
 
     private static Map<String, String> parseLaunchProperties(final List<String> commands) {
         final Map<String, String> result = new LinkedHashMap<String, String>();

@@ -35,11 +35,13 @@ public class HostRunningModeControl extends RunningModeControl {
     private String newDomainBootFileName;
     private String reloadHostName;
     private boolean reloadByHandler;
+    private boolean blockUntilStopped;
 
 
     public HostRunningModeControl(RunningMode runningMode, RestartMode restartMode) {
         super(runningMode);
         this.restartMode = restartMode;
+        this.blockUntilStopped = true;
     }
 
     /**
@@ -123,5 +125,24 @@ public class HostRunningModeControl extends RunningModeControl {
      */
     public void setReloadByHandler(boolean reloadByHandler) {
         this.reloadByHandler = reloadByHandler;
+    }
+
+    /**
+     * Whether the reload operation will block until get all all servers stopped.
+     *
+     * @return {@code true} if the reload has to wait, otherwise returns false.
+     */
+    public boolean isBlockUntilStopped() {
+        return blockUntilStopped;
+    }
+
+    /**
+     * Set a flag to indicate that the is required a reload waiting for the servers until they are
+     * completely stopped.
+     *
+     * @param blockUntilStopped The flag value
+     */
+    public void setBlockUntilStopped(boolean blockUntilStopped) {
+        this.blockUntilStopped = blockUntilStopped;
     }
 }

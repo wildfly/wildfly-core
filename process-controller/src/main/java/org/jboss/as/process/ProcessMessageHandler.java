@@ -48,6 +48,8 @@ public interface ProcessMessageHandler {
 
     void handleOperationFailed(ProcessControllerClient client, OperationType operation, String processName);
 
+    void handleRestartRequested(ProcessControllerClient client, String processName, boolean blocking);
+
     public enum OperationType {
 
         ADD(Protocol.ADD_PROCESS),

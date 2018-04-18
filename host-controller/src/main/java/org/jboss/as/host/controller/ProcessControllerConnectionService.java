@@ -189,6 +189,17 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
                         serverInventory.operationFailed(processName, operation);
                     }
                 }
+
+                @Override
+                public void handleRestartRequested(final ProcessControllerClient client, final String processName, final boolean blocking) {
+                    if (serverInventory == null){
+                        return;
+                    }
+                    if(ManagedServer.isServerProcess(processName)) {
+                        serverInventory.restartRequested(processName, blocking);
+                    }
+                }
+
             });
         } catch(IOException e) {
             throw new StartException(e);

@@ -70,25 +70,30 @@ class ServerInventoryService implements Service<ServerInventory> {
     private final InjectedValue<ExecutorService> executorService = new InjectedValue<ExecutorService>();
 
     private final FutureServerInventory futureInventory = new FutureServerInventory();
+    private final ServerInventory.OperationExecutor internalExecutor;
 
     private ServerInventoryImpl serverInventory;
 
     private ServerInventoryService(final DomainController domainController, final HostRunningModeControl runningModeControl,
                                    final HostControllerEnvironment environment, final ExtensionRegistry extensionRegistry, final int port,
-                                   final String protocol) {
+                                   final String protocol,
+                                   final ServerInventory.OperationExecutor internalExecutor) {
+
         this.extensionRegistry = extensionRegistry;
         this.domainController = domainController;
         this.runningModeControl = runningModeControl;
         this.environment = environment;
         this.port = port;
         this.protocol = protocol;
+        this.internalExecutor = internalExecutor;
     }
 
     static Future<ServerInventory> install(final ServiceTarget serviceTarget, final DomainController domainController, final HostRunningModeControl runningModeControl, final HostControllerEnvironment environment,
                                            final ExtensionRegistry extensionRegistry,
-                                           final String interfaceBinding, final int port, final String protocol){
+                                           final String interfaceBinding, final int port, final String protocol,
+                                           final ServerInventory.OperationExecutor internalExecutor){
 
-        final ServerInventoryService inventory = new ServerInventoryService(domainController, runningModeControl, environment, extensionRegistry, port, protocol);
+        final ServerInventoryService inventory = new ServerInventoryService(domainController, runningModeControl, environment, extensionRegistry, port, protocol, internalExecutor);
         serviceTarget.addService(ServerInventoryService.SERVICE_NAME, inventory)
                 .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, inventory.executorService)
                 .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, inventory.getClient())
@@ -107,7 +112,7 @@ class ServerInventoryService implements Service<ServerInventory> {
         try {
             final ProcessControllerConnectionService processControllerConnectionService = client.getValue();
             URI managementURI = new URI(protocol, null, NetworkUtils.formatAddress(getNonWildCardManagementAddress()), port, null, null, null);
-            serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry);
+            serverInventory = new ServerInventoryImpl(domainController, environment, managementURI, processControllerConnectionService.getClient(), extensionRegistry, internalExecutor, executorService.getValue());
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
             if (domainServerCallback != null && domainServerCallback.getValue() != null) {

@@ -269,6 +269,20 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             dataStream.close();
                             break;
                         }
+                        case Protocol.REQUEST_RESTART: {
+                            if (isPrivileged) {
+                                operationType = ProcessMessageHandler.OperationType.STOP;
+                                processName = readUTFZBytes(dataStream);
+                                final boolean blocking = readBoolean(dataStream);
+                                //Currently we do not need to do anything with the process when a restart is requested. Here we just go directly to send the
+                                //notification that a restart was requested
+                                processController.restartRequested(processName, blocking);
+                            } else {
+                                ProcessLogger.SERVER_LOGGER.tracef("Ignoring request_restart message from untrusted source");
+                            }
+                            dataStream.close();
+                            break;
+                        }
                         default: {
                             ProcessLogger.SERVER_LOGGER.receivedUnknownMessageCode(Integer.valueOf(cmd));
                             // unknown

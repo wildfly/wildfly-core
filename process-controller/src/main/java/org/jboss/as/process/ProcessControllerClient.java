@@ -22,6 +22,7 @@
 
 package org.jboss.as.process;
 
+import static org.jboss.as.process.protocol.StreamUtils.readBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.readFully;
 import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readLong;
@@ -125,6 +126,13 @@ public final class ProcessControllerClient implements Closeable {
                         dataStream.close();
                         ProcessLogger.CLIENT_LOGGER.tracef("Received operation_failed for process %s", processName);
                         messageHandler.handleOperationFailed(client, type, processName);
+                        break;
+                    } case Protocol.RESTART_REQUESTED: {
+                        final String processName = readUTFZBytes(dataStream);
+                        final boolean blocking = readBoolean(dataStream);
+                        dataStream.close();
+                        ProcessLogger.CLIENT_LOGGER.tracef("Received restart_requested for process %s", processName);
+                        messageHandler.handleRestartRequested(client, processName, blocking);
                         break;
                     } default: {
                         ProcessLogger.CLIENT_LOGGER.receivedUnknownMessageCode(Integer.valueOf(cmd));
@@ -333,5 +341,18 @@ public final class ProcessControllerClient implements Closeable {
 
     public void close() throws IOException {
         connection.close();
+    }
+
+    public void requestRestart(String processName, boolean blocking) throws IOException {
+        Assert.checkNotNullParam("processName", processName);
+        final OutputStream os = connection.writeMessage();
+        try {
+            os.write(Protocol.REQUEST_RESTART);
+            writeUTFZBytes(os, processName);
+            writeBoolean(os, blocking);
+            os.close();
+        } finally {
+            safeClose(os);
+        }
     }
 }

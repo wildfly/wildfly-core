@@ -71,6 +71,7 @@ public class ReloadHandler extends BaseOperationCommand {
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
     private final ArgumentWithValue domainConfig;
     private final ArgumentWithValue hostConfig;
+    private final ArgumentWithValue blocking;
 
     private PerNodeOperationAccess hostReloadPermission;
 
@@ -178,6 +179,16 @@ public class ReloadHandler extends BaseOperationCommand {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
                 if(!ctx.isDomainMode()) {
+                    return false;
+                }
+                return super.canAppearNext(ctx);
+            }
+        };
+
+        blocking = new ArgumentWithValue(this, SimpleTabCompleter.BOOLEAN, "--blocking") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (!ctx.isDomainMode()) {
                     return false;
                 }
                 return super.canAppearNext(ctx);
@@ -368,6 +379,7 @@ public class ReloadHandler extends BaseOperationCommand {
             setBooleanArgument(args, op, this.useCurrentHostConfig, "use-current-host-config");
             setStringValue(args, op, hostConfig, "host-config");
             setStringValue(args, op, domainConfig, "domain-config");
+            setBooleanArgument(args, op, blocking, "blocking");
         } else {
             if(host.isPresent(args)) {
                 throw new CommandFormatException(host.getFullName() + " is not allowed in the standalone mode.");
@@ -386,6 +398,9 @@ public class ReloadHandler extends BaseOperationCommand {
             }
             if (domainConfig.isPresent(args)) {
                 throw new CommandFormatException(domainConfig.getFullName() + " is not allowed in the standalone mode.");
+            }
+            if (blocking.isPresent(args)) {
+                throw new CommandFormatException(blocking.getFullName() + " is not allowed in the standalone mode.");
             }
 
             op.get(Util.ADDRESS).setEmptyList();
