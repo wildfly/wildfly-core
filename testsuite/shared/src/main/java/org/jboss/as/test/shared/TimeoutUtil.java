@@ -21,6 +21,11 @@
  */
 package org.jboss.as.test.shared;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import org.wildfly.security.manager.WildFlySecurityManager;
+
 /**
  * Adjusts default timeouts according to the system property.
  *
@@ -36,7 +41,7 @@ public class TimeoutUtil {
     private static int factor;
 
     static {
-        factor = Integer.getInteger(FACTOR_SYS_PROP, 100);
+        factor = WildFlySecurityManager.isChecking() ? AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Integer.getInteger(FACTOR_SYS_PROP, 100)) : Integer.getInteger(FACTOR_SYS_PROP, 100);
     }
 
     /**
