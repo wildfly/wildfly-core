@@ -39,15 +39,13 @@ import org.apache.directory.server.factory.ServerAnnotationProcessor;
 import org.apache.directory.server.ldap.LdapServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 /**
+ * Starts a LDAP server and WildFly before running the tests.
+ *
  * @author Ladislav Thon <lthon@redhat.com>
  */
-@RunWith(Suite.class) // ensure that the LDAP server is started before Arquillian kicks in
-@Suite.SuiteClasses(PropertiesRoleMappingTestCase.class) // the test cases are completely the same
-public class LdapRoleMappingU2GTestCase {
+public class LdapRoleMappingU2GTestCase extends AbstractPropertiesRoleMappingTestCase {
     private static DirectoryService directoryService;
     private static LdapServer ldapServer;
 
@@ -70,10 +68,14 @@ public class LdapRoleMappingU2GTestCase {
             directoryService.getAdminSession().add(new DefaultEntry(schemaManager, ldifEntry.getEntry()));
         }
         ldapServer = ServerAnnotationProcessor.getLdapServer(directoryService);
+
+        startServer();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
+        stopServer();
+
         ldapServer.stop();
         directoryService.shutdown();
         FileUtils.deleteDirectory(directoryService.getInstanceLayout().getInstanceDirectory());
