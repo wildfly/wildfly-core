@@ -164,8 +164,8 @@
 
         <!-- Required for the json-formatter -->
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
         </dependency>
 
         <!-- Test dependencies -->
@@ -186,6 +186,12 @@
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
             <scope>test</scope>
         </dependency>
 

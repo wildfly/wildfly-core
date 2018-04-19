@@ -26,6 +26,9 @@
     </properties>
 
     <resources>
+        <!-- Add both the API and the implementation as we need a separate module for core until WildFly is Java EE
+             compliant -->
+        <artifact name="${javax.json:javax.json-api}"/>
         <artifact name="${org.glassfish:javax.json}"/>
     </resources>
 </module>
