@@ -1,3 +1,25 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2013, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
 package org.jboss.as.server.moduleservice;
 
 import java.util.Collections;
@@ -17,15 +39,13 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 
-import static org.jboss.msc.service.ServiceBuilder.DependencyType.OPTIONAL;
-import static org.jboss.msc.service.ServiceBuilder.DependencyType.REQUIRED;
-
 /**
  * Module phase resolve service. Basically this service attempts to resolve
  * every dynamic transitive dependency of a module, and allows the module resolved service
  * to start once this is complete.
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseService> {
 
@@ -61,6 +81,7 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
         for (final ModuleDefinition spec : moduleSpecs) {
             if (spec != null) { //this can happen for optional dependencies
                 for (ModuleDependency dep : spec.getDependencies()) {
+                    if (dep.isOptional()) continue; // we don't care about optional dependencies
                     if (ServiceModuleLoader.isDynamicModule(dep.getIdentifier())) {
                         if (!alreadyResolvedModules.contains(dep.getIdentifier())) {
                             nextAlreadySeen.add(dep.getIdentifier());
@@ -88,7 +109,7 @@ public class ModuleResolvePhaseService implements Service<ModuleResolvePhaseServ
         final ModuleResolvePhaseService nextPhaseService = new ModuleResolvePhaseService(moduleIdentifier, nextAlreadySeen, phaseNumber);
         ServiceBuilder<ModuleResolvePhaseService> builder = serviceTarget.addService(moduleSpecServiceName(moduleIdentifier, phaseNumber), nextPhaseService);
         for (ModuleDependency module : nextPhaseIdentifiers) {
-            builder.addDependency(module.isOptional() ? OPTIONAL : REQUIRED, ServiceModuleLoader.moduleSpecServiceName(module.getIdentifier()), ModuleDefinition.class, new Injector<ModuleDefinition>() {
+            builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(module.getIdentifier()), ModuleDefinition.class, new Injector<ModuleDefinition>() {
 
                 ModuleDefinition definition;
 

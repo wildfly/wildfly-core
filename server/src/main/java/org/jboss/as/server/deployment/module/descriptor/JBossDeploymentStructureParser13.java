@@ -62,6 +62,7 @@ import org.jboss.vfs.VirtualFile;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
 
 /**
  * @author Stuart Douglas
@@ -321,8 +322,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
         if (!required.isEmpty()) {
             throw missingAttributes(reader.getLocation(), required);
         }
-        // FIXME: change this
-        if (!name.startsWith("deployment.")) {
+        if (!name.startsWith(MODULE_PREFIX)) {
             throw ServerLogger.ROOT_LOGGER.invalidModuleName(name);
         }
         final ModuleStructureSpec moduleSpecification = new ModuleStructureSpec();

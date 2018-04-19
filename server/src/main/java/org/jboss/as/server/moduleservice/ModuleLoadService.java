@@ -21,9 +21,6 @@
  */
 package org.jboss.as.server.moduleservice;
 
-import static org.jboss.msc.service.ServiceBuilder.DependencyType.OPTIONAL;
-import static org.jboss.msc.service.ServiceBuilder.DependencyType.REQUIRED;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +45,7 @@ import org.jboss.msc.value.InjectedValue;
  * Service that loads and re-links a module once all the modules dependencies are available.
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ModuleLoadService implements Service<Module> {
 
@@ -110,13 +108,6 @@ public class ModuleLoadService implements Service<Module> {
         builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.getServiceModuleLoader());
         builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(identifier), ModuleDefinition.class, service.getModuleDefinitionInjectedValue());
         builder.addDependency(ServiceModuleLoader.moduleResolvedServiceName(identifier)); //don't attempt to load until all dependent module specs are up, even transitive ones
-
-        for (ModuleDependency dependency : dependencies) {
-            final ModuleIdentifier moduleIdentifier = dependency.getIdentifier();
-            if (moduleIdentifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX)) {
-                builder.addDependency(dependency.isOptional() ? OPTIONAL : REQUIRED, ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier));
-            }
-        }
         builder.setInitialMode(Mode.ON_DEMAND);
         builder.install();
         return serviceName;

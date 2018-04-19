@@ -103,7 +103,7 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
                 final boolean annotations = containsParam(dependencyParts, ANNOTATIONS_PARAM);
                 final boolean metaInf = containsParam(dependencyParts, META_INF);
                 final ModuleLoader dependencyLoader;
-                if (dependencyId.getName().startsWith("deployment.")) {
+                if (dependencyId.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX)) {
                     dependencyLoader = deploymentModuleLoader;
                 } else {
                     dependencyLoader = Module.getBootModuleLoader();

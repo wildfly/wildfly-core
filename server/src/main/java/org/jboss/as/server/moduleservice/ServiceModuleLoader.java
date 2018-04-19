@@ -137,7 +137,9 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     @Override
     protected Module preloadModule(final ModuleIdentifier identifier) throws ModuleLoadException {
         if (identifier.getName().startsWith(MODULE_PREFIX)) {
-            return super.preloadModule(identifier);
+            synchronized (ServiceModuleLoader.class) { // WFCORE-2235
+                return super.preloadModule(identifier);
+            }
         } else {
             return preloadModule(identifier, mainModuleLoader);
         }
