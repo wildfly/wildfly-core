@@ -270,7 +270,7 @@ Function Set-Global-Variables-Domain {
 }
 
 Function Env-Clean-Up {
-	[Environment]::SetEnvironmentVariable("JBOSS_HOME", $null, "Process")
+	[Environment]::SetEnvironmentVariable("JBOSS_HOME", $PRE_JBOSS_HOME, "Process")
 }
 
 Function Rotate-GC-Logs {
@@ -319,5 +319,8 @@ Set-Global-Variables-Standalone
 
 # Determine the default JBoss PID file
 $JBOSS_PIDFILE = Get-Env JBOSS_PIDFILE $SCRIPTS_HOME\process.pid
+
+# Set the PRE_JBOSS_HOME variable as the $env:JBOSS_HOME or $null, used in function: Env-Clean-Up
+$PRE_JBOSS_HOME = Get-Env JBOSS_HOME $null
 
 [Environment]::SetEnvironmentVariable("JBOSS_HOME", $JBOSS_HOME, "Process")
