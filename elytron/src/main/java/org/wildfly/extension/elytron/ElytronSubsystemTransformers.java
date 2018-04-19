@@ -30,6 +30,7 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
 public final class ElytronSubsystemTransformers implements ExtensionTransformerRegistration {
     private static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 1);
     private static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2, 0);
+    private static final ModelVersion ELYTRON_3_0_0 = ModelVersion.create(3, 0);
 
     @Override
     public String getSubsystemName() {
@@ -40,8 +41,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        chainedBuilder.createBuilder(ELYTRON_3_0_0, ELYTRON_2_0_0);
+
         // 2.0.0 to 1.2.0, aka EAP 7.1.0
         chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_2_0_0, ELYTRON_1_2_0 });
 
     }
 
