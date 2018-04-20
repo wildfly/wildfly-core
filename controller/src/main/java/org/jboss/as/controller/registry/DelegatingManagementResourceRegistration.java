@@ -117,6 +117,16 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public String getFeature() {
+        return getDelegate().getFeature();
+    }
+
+    @Override
+    public boolean isFeature() {
+        return getDelegate().isFeature();
+    }
+
+    @Override
     public boolean isRuntimeOnly() {
         return getDelegate().isRuntimeOnly();
     }

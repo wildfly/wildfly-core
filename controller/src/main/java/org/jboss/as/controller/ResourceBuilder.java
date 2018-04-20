@@ -76,6 +76,8 @@ public interface ResourceBuilder {
 
     ResourceBuilder setRuntime();
 
+    ResourceBuilder noFeature();
+
     ResourceBuilder addCapability(Capability capability);
 
     ResourceBuilder addCapabilities(Capability... capability);

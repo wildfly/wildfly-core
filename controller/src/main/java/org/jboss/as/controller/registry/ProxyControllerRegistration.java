@@ -413,6 +413,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         return Collections.emptySet();
     }
 
+    @Override
+    public boolean isFeature() {
+        return false;
+    }
+
     /**
      * Registration meant to represent a child registration on the proxied process.
      * Differs from ProxyControllerRegistration in that it never provides locally

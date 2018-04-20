@@ -27,6 +27,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
@@ -51,6 +52,7 @@ import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
 
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 
@@ -84,13 +86,15 @@ public class HostModelUtil {
                                           final ProcessType processType,
                                           final DelegatingConfigurableAuthorizer authorizer,
                                           final Resource modelControllerResource,
-                                          final LocalHostControllerInfoImpl localHostControllerInfo) {
+                                          final LocalHostControllerInfoImpl localHostControllerInfo,
+                                          final ImmutableCapabilityRegistry capabilityRegistry) {
 
         // register HostDefinition for /host=*:add()
         root.registerSubModel(new HostDefinition(root, environment, ignoredDomainResourceRegistry, hostModelRegistrar, processType, authorizer, modelControllerResource, localHostControllerInfo));
 
         // Global operations
         GlobalOperationHandlers.registerGlobalOperations(root, processType);
+        root.registerOperationHandler(ReadFeatureDescriptionHandler.DEFINITION, ReadFeatureDescriptionHandler.getInstance(capabilityRegistry), true);
         // Global notifications
         GlobalNotifications.registerGlobalNotifications(root, processType);
 

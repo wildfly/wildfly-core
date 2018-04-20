@@ -214,7 +214,7 @@ public class LoggingExtension implements Extension {
 
         // Register deployment resources
         if (context.isRuntimeOnlyRegistrationValid()) {
-            final SimpleResourceDefinition deploymentSubsystem = new SimpleResourceDefinition(LoggingResourceDefinition.SUBSYSTEM_PATH, getResourceDescriptionResolver("deployment"));
+            final SimpleResourceDefinition deploymentSubsystem = new SimpleResourceDefinition(new Parameters(LoggingResourceDefinition.SUBSYSTEM_PATH, getResourceDescriptionResolver("deployment")).setFeature(false));
             final ManagementResourceRegistration deployments = subsystem.registerDeploymentModel(deploymentSubsystem);
             final ManagementResourceRegistration configurationResource = deployments.registerSubModel(LoggingDeploymentResources.CONFIGURATION);
             configurationResource.registerSubModel(LoggingDeploymentResources.HANDLER);

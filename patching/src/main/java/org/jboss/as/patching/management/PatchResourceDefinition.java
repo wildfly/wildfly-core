@@ -180,7 +180,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     private PatchResourceDefinition() {
         super(new Parameters(PATH, getResourceDescriptionResolver(NAME))
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING));
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
+                .setFeature(false));
     }
 
     @Override
