@@ -109,13 +109,19 @@ public class StartServersHandler implements OperationStepHandler {
     }
 
     private void cleanStartServers(final ModelNode servers, final ModelNode domainModel, OperationContext context) throws OperationFailedException {
+        Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
         for(final Property serverProp : servers.asPropertyList()) {
             String serverName = serverProp.getName();
             if (ServerConfigResourceDefinition.AUTO_START.resolveModelAttribute(context, serverProp.getValue()).asBoolean(true)) {
-                try {
-                    serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
-                } catch (Exception e) {
-                    ROOT_LOGGER.failedToStartServer(e, serverName);
+                ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
+                if ( info != null ){
+                    serverInventory.reconnectServer(serverName, domainModel, info.getAuthKey(), info.isRunning(), info.isStopping());
+                } else {
+                    try {
+                        serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
+                    } catch (Exception e) {
+                        ROOT_LOGGER.failedToStartServer(e, serverName);
+                    }
                 }
             }
         }
