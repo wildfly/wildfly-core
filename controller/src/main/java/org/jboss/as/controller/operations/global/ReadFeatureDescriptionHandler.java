@@ -21,7 +21,6 @@
  */
 package org.jboss.as.controller.operations.global;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDR_PARAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDR_PARAMS_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANNOTATION;
@@ -31,7 +30,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPLEX_ATTRIBUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCEPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
@@ -42,25 +40,22 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPTIONAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PARAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROVIDES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_FEATURE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REFS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STORAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
@@ -90,10 +85,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
-import org.jboss.as.controller.access.Action.ActionEffect;
-import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.AuthorizationResult.Decision;
-import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
@@ -103,11 +94,9 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AliasStepHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.AttributeAccess.Storage;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -132,8 +121,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             .setReplyValueType(ModelType.OBJECT)
             .build();
 
-    private final ImmutableCapabilityRegistry capabilityRegistry;
-
     private static final String PROFILE_PREFIX = "$profile.";
     private static final String DOMAIN_EXTENSION = "domain.extension";
     private static final String HOST_EXTENSION = "host.extension";
@@ -150,38 +137,33 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
     }
 
     public static OperationStepHandler getInstance(ImmutableCapabilityRegistry capabilityRegistry) {
-        return new ReadFeatureDescriptionHandler(capabilityRegistry);
+        return new ReadFeatureDescriptionHandler(capabilityRegistry, false);
     }
 
-    private ReadFeatureDescriptionHandler(final ImmutableCapabilityRegistry capabilityRegistry) {
+    private final ImmutableCapabilityRegistry capabilityRegistry;
+    private final boolean forChild;
+
+
+    private ReadFeatureDescriptionHandler(final ImmutableCapabilityRegistry capabilityRegistry, boolean forChild) {
         super(true);
         this.capabilityRegistry = capabilityRegistry;
-    }
-
-    private ReadFeatureAccessControlContext getAccessControlContext() {
-        return null;
+        this.forChild = forChild;
     }
 
     @Override
     void doExecute(OperationContext context, ModelNode operation, FilteredData filteredData, boolean ignoreMissingResource) throws OperationFailedException {
-        final PathAddress address = context.getCurrentAddress();
-        ReadFeatureAccessControlContext accessControlContext = getAccessControlContext() == null ? new ReadFeatureAccessControlContext(address, null) : getAccessControlContext();
-        doExecute(context, operation, accessControlContext);
-    }
-
-    void doExecute(OperationContext context, ModelNode operation, ReadFeatureAccessControlContext accessControlContext) throws OperationFailedException {
-        if (accessControlContext.parentAddresses == null) {
-            doExecuteInternal(context, operation, accessControlContext);
+        if (!forChild) {
+            doExecuteInternal(context, operation);
         } else {
             try {
-                doExecuteInternal(context, operation, accessControlContext);
+                doExecuteInternal(context, operation);
             } catch (Resource.NoSuchResourceException | UnauthorizedException nsre) {
                 context.getResult().set(new ModelNode());
             }
         }
     }
 
-    private void doExecuteInternal(final OperationContext context, final ModelNode operation, final ReadFeatureAccessControlContext accessControlContext) throws OperationFailedException {
+    private void doExecuteInternal(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
         for (AttributeDefinition def : DEFINITION.getParameters()) {
             def.validateOperation(operation);
@@ -222,7 +204,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         // We're going to add a bunch of steps that should immediately follow this one. We are going to add them
         // in reverse order of how they should execute, as that is the way adding a Stage.IMMEDIATE step works
         // Last to execute is the handler that assembles the overall response from the pieces created by all the other steps
-        final ReadFeatureAssemblyHandler assemblyHandler = new ReadFeatureAssemblyHandler(feature, childResources, accessControlContext);
+        final ReadFeatureAssemblyHandler assemblyHandler = new ReadFeatureAssemblyHandler(feature, childResources);
         context.addStep(assemblyHandler, OperationContext.Stage.MODEL, true);
 
         if (recursive) {
@@ -266,7 +248,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     final ModelNode rrRsp = new ModelNode();
                     childResources.put(element, rrRsp);
 
-                    final OperationStepHandler handler = getRecursiveStepHandler(childReg, opName, accessControlContext, address);
+                    final OperationStepHandler handler = getRecursiveStepHandler(childReg, opName);
                     context.addStep(rrRsp, rrOp, handler, OperationContext.Stage.MODEL, true);
                 }
             }
@@ -298,17 +280,14 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         return null;
     }
 
-    private OperationStepHandler getRecursiveStepHandler(ImmutableManagementResourceRegistration childReg, String opName, ReadFeatureAccessControlContext accessControlContext, PathAddress address) {
+    private OperationStepHandler getRecursiveStepHandler(ImmutableManagementResourceRegistration childReg, String opName) {
         OperationStepHandler overrideHandler = childReg.getOperationHandler(PathAddress.EMPTY_ADDRESS, opName);
         if (overrideHandler != null && (overrideHandler.getClass() == ReadFeatureDescriptionHandler.class || overrideHandler.getClass() == AliasStepHandler.class)) {
             // not an override
             overrideHandler = null;
         }
 
-        if (overrideHandler != null) {
-            return new NestedReadFeatureHandler(capabilityRegistry, overrideHandler);
-        }
-        return new NestedReadFeatureHandler(capabilityRegistry, new ReadFeatureAccessControlContext(address, accessControlContext));
+        return new NestedReadFeatureHandler(capabilityRegistry, overrideHandler);
     }
 
     private ImmutableManagementResourceRegistration getResourceRegistrationCheckForAlias(OperationContext context, PathAddress opAddr) {
@@ -877,11 +856,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         }
         return false;
     }
+
     private boolean isProfileScope(ProcessType processType, PathAddress address) {
-        if(processType.isServer() || address.size() < 2) {
-            return false;
-        }
-        return PROFILE.equals(address.getElement(0).getKey());
+        return !processType.isServer() && address.size() >= 2 && PROFILE.equals(address.getElement(0).getKey());
     }
 
     private CapabilityRegistration<?> getCapability(CapabilityId capabilityId) {
@@ -916,94 +893,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
     }
 
     /**
-     *
-     * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
-     */
-    private static final class CheckResourceAccessHandler implements OperationStepHandler {
-
-        private final boolean runtimeResource;
-        private final boolean defaultSetting;
-        private final ModelNode accessControlResult;
-        private final ModelNode nodeDescription;
-
-        CheckResourceAccessHandler(boolean runtimeResource, boolean defaultSetting, ModelNode accessControlResult, ModelNode nodeDescription) {
-            this.runtimeResource = runtimeResource;
-            this.defaultSetting = defaultSetting;
-            this.accessControlResult = accessControlResult;
-            this.nodeDescription = nodeDescription;
-        }
-
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ModelNode result = new ModelNode();
-            boolean customDefaultCheck = operation.get(OP).asString().equals(GlobalOperationHandlers.CHECK_DEFAULT_RESOURCE_ACCESS);
-            ResourceAuthorization authResp = context.authorizeResource(true, customDefaultCheck);
-            if (authResp == null || authResp.getResourceResult(ActionEffect.ADDRESS).getDecision() == Decision.DENY) {
-                if (!defaultSetting || authResp == null) {
-                    //We are not allowed to see the resource, so we don't set the accessControlResult, meaning that the ReadFeatureHandler will ignore it for this address
-                } else {
-                    result.get(ActionEffect.ADDRESS.toString()).set(false);
-                }
-            } else {
-//                if (!defaultSetting) {
-//                    result.get(ADDRESS).set(operation.get(OP_ADDR));
-//                }
-                addResourceAuthorizationResults(result, authResp);
-
-                ModelNode attributes = new ModelNode();
-                attributes.setEmptyObject();
-
-                if (result.get(READ).asBoolean()) {
-                    if (nodeDescription.hasDefined(ATTRIBUTES)) {
-                        for (Property attrProp : nodeDescription.require(ATTRIBUTES).asPropertyList()) {
-                            ModelNode attributeResult = new ModelNode();
-                            Storage storage = Storage.valueOf(attrProp.getValue().get(STORAGE).asString().toUpperCase(Locale.ENGLISH));
-                            addAttributeAuthorizationResults(attributeResult, attrProp.getName(), authResp, storage == Storage.RUNTIME);
-                            if (attributeResult.isDefined()) {
-                                attributes.get(attrProp.getName()).set(attributeResult);
-                            }
-                        }
-                    }
-                    result.get(ATTRIBUTES).set(attributes);
-                }
-            }
-            accessControlResult.set(result);
-        }
-
-        private void addResourceAuthorizationResults(ModelNode result, ResourceAuthorization authResp) {
-            if (runtimeResource) {
-                addResourceAuthorizationResult(result, authResp, ActionEffect.READ_RUNTIME);
-                addResourceAuthorizationResult(result, authResp, ActionEffect.WRITE_RUNTIME);
-            } else {
-                addResourceAuthorizationResult(result, authResp, ActionEffect.READ_CONFIG);
-                addResourceAuthorizationResult(result, authResp, ActionEffect.WRITE_CONFIG);
-            }
-        }
-
-        private void addResourceAuthorizationResult(ModelNode result, ResourceAuthorization authResp, ActionEffect actionEffect) {
-            AuthorizationResult authResult = authResp.getResourceResult(actionEffect);
-            result.get(actionEffect == ActionEffect.READ_CONFIG || actionEffect == ActionEffect.READ_RUNTIME ? READ : WRITE).set(authResult.getDecision() == Decision.PERMIT);
-        }
-
-        private void addAttributeAuthorizationResults(ModelNode result, String attributeName, ResourceAuthorization authResp, boolean runtime) {
-            if (runtime) {
-                addAttributeAuthorizationResult(result, attributeName, authResp, ActionEffect.READ_RUNTIME);
-                addAttributeAuthorizationResult(result, attributeName, authResp, ActionEffect.WRITE_RUNTIME);
-            } else {
-                addAttributeAuthorizationResult(result, attributeName, authResp, ActionEffect.READ_CONFIG);
-                addAttributeAuthorizationResult(result, attributeName, authResp, ActionEffect.WRITE_CONFIG);
-            }
-        }
-
-        private void addAttributeAuthorizationResult(ModelNode result, String attributeName, ResourceAuthorization authResp, ActionEffect actionEffect) {
-            AuthorizationResult authorizationResult = authResp.getAttributeResult(attributeName, actionEffect);
-            if (authorizationResult != null) {
-                result.get(actionEffect == ActionEffect.READ_CONFIG || actionEffect == ActionEffect.READ_RUNTIME ? READ : WRITE).set(authorizationResult.getDecision() == Decision.PERMIT);
-            }
-        }
-    }
-
-    /**
      * Assembles the response to a read-feature request from the components
      * gathered by earlier steps.
      */
@@ -1011,25 +900,20 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
 
         private final ModelNode featureDescription;
         private final Map<PathElement, ModelNode> childResources;
-        private final ReadFeatureAccessControlContext accessControlContext;
 
         /**
          * Creates a ReadFeatureAssemblyHandler that will assemble the response
          * using the contents of the given maps.
-         *
          * @param featureDescription basic description of the node, of its
          * attributes and of its child types
          * @param childResources read-resource-description response from child
          * resources, where the key is the PathAddress relative to the address
          * of the operation this handler is handling and the value is the full
          * read-resource response. Will not be {@code null}
-         * @param accessControlContext context for tracking access control data
          */
-        private ReadFeatureAssemblyHandler(final ModelNode featureDescription, final Map<PathElement, ModelNode> childResources,
-                final ReadFeatureAccessControlContext accessControlContext) {
+        private ReadFeatureAssemblyHandler(final ModelNode featureDescription, final Map<PathElement, ModelNode> childResources) {
             this.featureDescription = featureDescription;
             this.childResources = childResources;
-            this.accessControlContext = accessControlContext;
         }
 
         @Override
@@ -1059,94 +943,23 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     break;
                 }
             }
-
-            if (accessControlContext.defaultWildcardAccessControl != null && accessControlContext.localResourceAccessControlResults != null) {
-                ModelNode accessControl = new ModelNode();
-                accessControl.setEmptyObject();
-
-                ModelNode defaultControl;
-                if (accessControlContext.defaultWildcardAccessControl != null) {
-                    accessControl.get(DEFAULT).set(accessControlContext.defaultWildcardAccessControl);
-                    defaultControl = accessControlContext.defaultWildcardAccessControl;
-                } else {
-                    //TODO this should always be present
-                    defaultControl = new ModelNode();
-                }
-
-                if (accessControlContext.localResourceAccessControlResults != null) {
-                    ModelNode exceptions = accessControl.get(EXCEPTIONS);
-                    exceptions.setEmptyObject();
-                    for (Map.Entry<PathAddress, ModelNode> entry : accessControlContext.localResourceAccessControlResults.entrySet()) {
-                        if (!entry.getValue().isDefined()) {
-                            //If access was denied CheckResourceAccessHandler will leave this as undefined
-                            continue;
-                        }
-                        if (!entry.getValue().equals(defaultControl)) {
-                            //This has different values to the default due to vault expressions being used for attribute values. We need to include the address
-                            //in the exception modelnode for the console to be easier able to parse it
-                            ModelNode exceptionAddr = entry.getKey().toModelNode();
-                            ModelNode exception = entry.getValue();
-                            exception.get(ADDRESS).set(exceptionAddr);
-                            exceptions.get(exceptionAddr.asString()).set(entry.getValue());
-                        }
-                    }
-                }
-            }
             context.getResult().set(featureDescription);
-        }
-    }
-
-    private static final class ReadFeatureAccessControlContext {
-
-        private final PathAddress opAddress;
-        private final List<PathAddress> parentAddresses;
-        private List<PathAddress> localResourceAddresses = null;
-        private ModelNode defaultWildcardAccessControl;
-        private Map<PathAddress, ModelNode> localResourceAccessControlResults = new HashMap<>();
-
-        ReadFeatureAccessControlContext(PathAddress opAddress, ReadFeatureAccessControlContext parent) {
-            this.opAddress = opAddress;
-            this.parentAddresses = parent != null ? parent.parentAddresses : null;
-        }
-
-        void checkResourceAccess(final OperationContext context, final ImmutableManagementResourceRegistration registration, final ModelNode nodeDescription) {
-            final ModelNode defaultAccess = Util.createOperation(
-                    opAddress.size() > 0 && !opAddress.getLastElement().isWildcard()
-                    ? GlobalOperationHandlers.CHECK_DEFAULT_RESOURCE_ACCESS : GlobalOperationHandlers.CHECK_RESOURCE_ACCESS,
-                    opAddress);
-            defaultWildcardAccessControl = new ModelNode();
-            context.addStep(defaultAccess, new CheckResourceAccessHandler(registration.isRuntimeOnly(), true, defaultWildcardAccessControl, nodeDescription), OperationContext.Stage.MODEL, true);
-
-            for (final PathAddress address : localResourceAddresses) {
-                final ModelNode op = Util.createOperation(GlobalOperationHandlers.CHECK_RESOURCE_ACCESS, address);
-                final ModelNode resultHolder = new ModelNode();
-                localResourceAccessControlResults.put(address, resultHolder);
-                context.addStep(op, new CheckResourceAccessHandler(registration.isRuntimeOnly(), false, resultHolder, nodeDescription), OperationContext.Stage.MODEL, true);
-            }
         }
     }
 
     private class NestedReadFeatureHandler extends ReadFeatureDescriptionHandler {
 
-        final ReadFeatureAccessControlContext accessControlContext;
         final OperationStepHandler overrideStepHandler;
 
-        NestedReadFeatureHandler(final ImmutableCapabilityRegistry capabilityRegistry, ReadFeatureAccessControlContext accessControlContext) {
-            super(capabilityRegistry);
-            this.accessControlContext = accessControlContext;
-            this.overrideStepHandler = null;
-        }
-
         NestedReadFeatureHandler(final ImmutableCapabilityRegistry capabilityRegistry, OperationStepHandler overrideStepHandler) {
-            super(capabilityRegistry);
-            this.accessControlContext = null;
+            super(capabilityRegistry, true);
             this.overrideStepHandler = overrideStepHandler;
         }
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            if (accessControlContext != null) {
-                doExecute(context, operation, accessControlContext);
+            if (overrideStepHandler == null) {
+                doExecute(context, operation, null, false);
             } else {
                 try {
                     overrideStepHandler.execute(context, operation);
