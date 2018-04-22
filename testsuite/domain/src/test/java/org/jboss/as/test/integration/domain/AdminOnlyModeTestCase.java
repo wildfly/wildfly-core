@@ -138,6 +138,51 @@ public class AdminOnlyModeTestCase {
         domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 
+    @Test
+    public void testAdminOnlyModeRestartServers() throws Exception {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+
+        // restart master HC in admin only mode
+        ModelNode op = new ModelNode();
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP).set("reload");
+        op.get("admin-only").set(true);
+        op.get("restart-servers").set(false);
+        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+
+        // Try to reconnect to the hc
+        domainMasterLifecycleUtil.connect();
+        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+
+        op = new ModelNode();
+        op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(NAME).set("running-mode");
+
+        // Validate that we are started in the --admin-only mode
+        final ModelNode result = executeForResult(masterClient, op);
+        Assert.assertEquals("ADMIN_ONLY", result.asString());
+
+        // restart back to normal mode
+        op = new ModelNode();
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP).set("reload");
+        op.get("admin-only").set(false);
+        op.get("restart-servers").set(true);
+        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+
+        // Try to reconnect to the hc
+        domainMasterLifecycleUtil.connect();
+        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+
+        // check that the servers are up
+        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+
+        // Wait for the slave to reconnect
+        waitForHost(masterClient, "slave");
+        domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
+    }
+
     private ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) throws IOException {
         final ModelNode result = client.execute(operation);
         return validateResponse(result);
