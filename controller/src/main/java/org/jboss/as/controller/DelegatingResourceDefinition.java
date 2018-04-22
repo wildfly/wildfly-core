@@ -62,6 +62,21 @@ public class DelegatingResourceDefinition implements ResourceDefinition {
     }
 
     @Override
+    public boolean isFeature() {
+        return delegate.isFeature();
+    }
+
+    @Override
+    public int getMinOccurs() {
+        return delegate.getMinOccurs();
+    }
+
+    @Override
+    public int getMaxOccurs() {
+        return delegate.getMaxOccurs();
+    }
+
+    @Override
     public PathElement getPathElement() {
         return delegate.getPathElement();
     }
