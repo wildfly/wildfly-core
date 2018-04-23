@@ -42,6 +42,8 @@ public class ModelDescriptionConstants {
     public static final String ACTIVE_SOCKET_BINDING_GROUPS = "active-socket-binding-groups";
     public static final String ADD = "add";
     public static final String ADDRESS = "address";
+    public static final String ADDR_PARAMS = "addr-params";
+    public static final String ADDR_PARAMS_MAPPING = "addr-params-mapping";
     public static final String ADD_CONTENT = "add-content";
     public static final String ADD_INDEX = "add-index";
     public static final String ADMIN_ONLY = "admin-only";
@@ -104,6 +106,7 @@ public class ModelDescriptionConstants {
     public static final String CLONE = "clone";
     public static final String CODE = "code";
     public static final String COMPACT = "compact";
+    public static final String COMPLEX_ATTRIBUTE = "complex-attribute";
     public static final String COMPOSITE = "composite";
     public static final String CONFIGURATION_CHANGES="configuration-changes";
     public static final String CONSTRAINT = "constraint";
@@ -191,6 +194,7 @@ public class ModelDescriptionConstants {
     public static final String FAILURE_COUNT = "failure-count";
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FEATURE = "feature";
+    public static final String FEATURE_ID = "feature-id";
     public static final String FEATURE_REFERENCE = "feature-reference";
     public static final String FILE = "file";
     public static final String FILE_HANDLER = "file-handler";
@@ -336,7 +340,10 @@ public class ModelDescriptionConstants {
     public static final String OPERATION_HEADERS = "operation-headers";
     public static final String OPERATION_ID = "operation-id";
     public static final String OPERATION_NAME = "operation-name";
+    public static final String OP_PARAMS = "op-params";
+    public static final String OP_PARAMS_MAPPING = "op-params-mapping";
     public static final String OPERATIONS = "operations";
+    public static final String OPTIONAL = "optional";
     public static final String OPTIONS = "options";
     public static final String OPERATOR = "operator";
     public static final String OUTBOUND_CONNECTION = "outbound-connection";
@@ -344,6 +351,9 @@ public class ModelDescriptionConstants {
     public static final String OUTCOME = "outcome";
     public static final String OVERWRITE = "overwrite";
     public static final String OWNER = "owner";
+    public static final String PACKAGE = "package";
+    public static final String PACKAGES = "packages";
+    public static final String PARAMS = "params";
     public static final String PARSE_ROLES_FROM_DN = "parse-group-name-from-dn";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
@@ -373,6 +383,7 @@ public class ModelDescriptionConstants {
     public static final String PROPERTY = "property";
     public static final String PROTOCOL = "protocol";
     public static final String PROVIDER = "provider";
+    public static final String PROVIDES = "provides";
     public static final String PROXIES = "proxies";
     public static final String QUERY = "query";
     public static final String READ = "read";
@@ -400,6 +411,7 @@ public class ModelDescriptionConstants {
     public static final String REDEPLOY = "redeploy";
     public static final String REDEPLOY_AFFECTED = "redeploy-affected";
     public static final String REDEPLOY_LINKS = "redeploy-links";
+    public static final String REFS = "refs";
     public static final String RELATIVE_ADDRESS = "relative-address";
     public static final String RELATIVE_TO = "relative-to";
     public static final String RELEASE_CODENAME = "release-codename";
