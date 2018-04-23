@@ -790,7 +790,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     for (CapabilityReferenceRecorder requirement : registration.getRequirements()) {
                         String[] segments = requirement.getRequirementPatternSegments(null, aliasAddress);
                         String[] dynamicElements;
-                        if (segments == null) {
+                        if (segments == null || segments.length == 0) {
                             dynamicElements = null;
                         } else {
                             dynamicElements = new String[segments.length];
