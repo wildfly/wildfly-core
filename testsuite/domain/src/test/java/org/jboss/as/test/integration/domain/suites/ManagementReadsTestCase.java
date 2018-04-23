@@ -22,10 +22,14 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANNOTATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -48,6 +52,7 @@ import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -255,6 +260,22 @@ public class ManagementReadsTestCase {
     }
 
     @Test
+    public void testDomainReadFeatureDescription() throws IOException {
+
+        DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
+        ModelNode request = new ModelNode();
+        request.get(OP).set("read-feature-description");
+        request.get(OP_ADDR).setEmptyList();
+        request.get(RECURSIVE).set(true);
+
+        ModelNode response = domainClient.execute(request);
+        ModelNode result = validateResponse(response);
+        int maxDepth = validateBaseFeature(result);
+        Assert.assertTrue(result.toString(), maxDepth > 3); // >3 is a good sign we're recursing all the way
+        Assert.assertTrue(result.toString(), result.hasDefined(FEATURE, CHILDREN, HOST));
+    }
+
+    @Test
     public void testHostReadResourceDescription() throws IOException {
 
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
@@ -271,6 +292,21 @@ public class ManagementReadsTestCase {
         request.get(OP_ADDR).setEmptyList().add(HOST, "slave");
         response = domainClient.execute(request);
         validateResponse(response);
+    }
+
+    @Test
+    public void testHostReadFeatureDescription() throws IOException {
+
+        DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
+        ModelNode request = new ModelNode();
+        request.get(OP).set("read-feature-description");
+        request.get(OP_ADDR).add(HOST, "master");
+        request.get(RECURSIVE).set(true);
+
+        ModelNode response = domainClient.execute(request);
+        ModelNode result = validateResponse(response);
+        int maxDepth = validateBaseFeature(result);
+        Assert.assertTrue(result.toString(), maxDepth > 3); // >3 is a good sign we're recursing all the way
     }
 
     @Test
@@ -448,5 +484,43 @@ public class ManagementReadsTestCase {
     private static void validateResolveExpressionOnServer(final ModelNode result) {
         ModelNode serverResult = validateResponse(result.get("response"));
         Assert.assertEquals(PATH_SEPARATOR, serverResult.asString());
+    }
+
+    private static int validateBaseFeature(ModelNode base) {
+        Assert.assertTrue(base.toString(), base.hasDefined(FEATURE));
+        Assert.assertEquals(base.toString(), 1, base.asInt());
+        return validateFeature(base.get(FEATURE), null, 0);
+    }
+
+    private static int validateFeature(ModelNode feature, String expectedName, int featureDepth) {
+        int highestDepth = featureDepth;
+        for (Property prop : feature.asPropertyList()) {
+            switch (prop.getName()) {
+                case NAME:
+                    if (expectedName != null) {
+                        Assert.assertEquals(feature.toString(), expectedName, prop.getValue().asString());
+                    }
+                    break;
+                case CHILDREN:
+                    if (prop.getValue().isDefined()) {
+                        for (Property child : prop.getValue().asPropertyList()) {
+                            int treeDepth = validateFeature(child.getValue(), child.getName(), featureDepth + 1);
+                            highestDepth = Math.max(highestDepth, treeDepth);
+                        }
+                    }
+                    break;
+                case ANNOTATION:
+                case "params":
+                case "refs":
+                case "provides":
+                case "requires":
+                case "packages":
+                    // all ok; no other validation right now
+                    break;
+                default:
+                    Assert.fail("Unknown key " + prop.getName() + " in " + feature.toString());
+            }
+        }
+        return highestDepth;
     }
 }
