@@ -28,15 +28,7 @@
         <property name="jboss.api" value="public"/>
     </properties>
 
-    <dependencies>
-        <module name="org.glassfish.javax.json" export="false">
-            <exports>
-                <include-set>
-                    <path name="javax/json"/>
-                    <path name="javax/json/spi"/>
-                    <path name="javax/json/stream"/>
-                </include-set>
-            </exports>
-        </module>
-    </dependencies>
+    <resources>
+        <artifact name="${javax.json:javax.json-api}"/>
+    </resources>
 </module>
