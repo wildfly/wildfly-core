@@ -50,6 +50,7 @@ import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
@@ -64,6 +65,7 @@ import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.domain.controller.resources.DomainResolver;
 import org.jboss.as.host.controller.ServerInventory;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -247,6 +249,9 @@ public class DomainServerLifecycleHandlers {
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
+            }
             context.acquireControllerLock();
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));

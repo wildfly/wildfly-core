@@ -32,8 +32,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -183,6 +187,51 @@ public class AdminOnlyModeTestCase {
         domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 
+    @Test
+    public void testServersCannotStartInAdminOnlyMode() throws Exception {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+
+        // restart master HC in admin only mode
+        ModelNode op = new ModelNode();
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP).set("reload");
+        op.get("admin-only").set(true);
+        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+
+        // Try to reconnect to the hc
+        domainMasterLifecycleUtil.connect();
+        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+
+        op = new ModelNode();
+        op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(NAME).set("running-mode");
+
+        // Validate that we are started in the --admin-only mode
+        ModelNode result = executeForResult(masterClient, op);
+        Assert.assertEquals("ADMIN_ONLY", result.asString());
+
+        result = executeOperation(masterClient, null, START_SERVERS);
+        Assert.assertTrue(result.asString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYHC0048"));
+
+        result = executeOperation(masterClient, PathAddress.pathAddress(SERVER_GROUP, "main-server-group"), START_SERVERS);
+        Assert.assertTrue(result.asString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYHC0048"));
+
+        result = executeOperation(masterClient, PathAddress.pathAddress(mainOne), START);
+        Assert.assertTrue(result.asString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYHC0048"));
+
+        // restart back to normal mode
+        op = new ModelNode();
+        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP).set("reload");
+        op.get("admin-only").set(false);
+        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+
+        // check that the servers are up
+        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+    }
+
+
     private ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) throws IOException {
         final ModelNode result = client.execute(operation);
         return validateResponse(result);
@@ -232,4 +281,16 @@ public class AdminOnlyModeTestCase {
             }
         }
     }
+
+    private ModelNode executeOperation(final ModelControllerClient client, PathAddress address, String opName) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(opName);
+        if (address == null) {
+            operation.get(OP_ADDR).setEmptyList();
+        } else {
+            operation.get(OP_ADDR).set(address.toModelNode());
+        }
+        return client.execute(operation);
+    }
+
 }
