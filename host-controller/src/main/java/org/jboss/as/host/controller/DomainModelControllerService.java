@@ -816,7 +816,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }).getResponseNode();
 
                 if (!SUCCESS.equals(result.get(OUTCOME).asString())) {
-                    throw new OperationFailedException(result.get(FAILURE_DESCRIPTION));
+                    throw HostControllerLogger.ROOT_LOGGER.bootConfigValidationFailed(result.get(FAILURE_DESCRIPTION));
                 }
 
             }

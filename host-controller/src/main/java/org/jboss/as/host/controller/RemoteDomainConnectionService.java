@@ -448,7 +448,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                     if (prepared.hasDefined(FAILURE_DESCRIPTION)) {
                         throw new OperationFailedException(prepared.get(FAILURE_DESCRIPTION).asString());
                     } else {
-                        throw new OperationFailedException(prepared);
+                        throw HostControllerLogger.ROOT_LOGGER.fetchOfMissingConfigurationFailed(prepared.asString());
                     }
                 } else if (result.get(FAILURE_DESCRIPTION).isDefined()) {
                     preparedOperation.rollback();
