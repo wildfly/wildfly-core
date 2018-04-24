@@ -3520,4 +3520,10 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 448, value = "%s additional services are down due to their dependencies being missing or failed")
     String servicesWithTransitiveUnavailability(int count);
 
+
+    @Message(id = 449, value = "Operation %s against the resource at address %s is deprecated, and it might be removed in " +
+            "future version. See the the output of the read-operation-description operation " +
+            "to learn more about the deprecation.")
+    String operationDeprecatedMessage(String name, String address);
+
 }

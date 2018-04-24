@@ -84,6 +84,7 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
@@ -988,6 +989,7 @@ abstract class AbstractOperationContext implements OperationContext {
                     if (step.serviceVerificationHelper != null) {
                         addStep(step.serviceVerificationHelper, Stage.VERIFY);
                     }
+                    checkDeprecatedOperation(step);
                 } finally {
                     step.executed = true;
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
@@ -1025,6 +1027,18 @@ abstract class AbstractOperationContext implements OperationContext {
             }
         } finally {
             addBootFailureDescription();
+        }
+    }
+
+    private void checkDeprecatedOperation(Step step) {
+        DeprecationData deprecationData = step.operationDefinition != null ? step.operationDefinition.getDeprecationData() : null;
+        if (deprecationData != null && deprecationData.isNotificationUseful()
+                // This 'hasDefined(name)' check is carried from the never used WFCORE-611 code but it seems unnecessary
+                // But it does no obvious harm in the typical case so out of caution I bring it over
+                && step.operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME)) {
+            String deprecatedMsg = ControllerLogger.DEPRECATED_LOGGER.operationDeprecatedMessage(step.operationDefinition.getName(),
+                    step.address.toCLIStyleString());
+            addResponseWarning(Level.INFO, new ModelNode(deprecatedMsg));
         }
     }
 
