@@ -166,7 +166,10 @@ public abstract class OperationDefinition {
      *
      * @param operation model node of type {@link ModelType#OBJECT}, representing an operation request
      * @throws OperationFailedException if the value is not valid
+     *
+     * @deprecated Not used by the WildFly management kernel; will be removed in a future release
      */
+    @Deprecated
     public void validateOperation(final ModelNode operation) throws OperationFailedException {
         if (operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME) && deprecationData != null && deprecationData.isNotificationUseful()) {
             ControllerLogger.DEPRECATED_LOGGER.operationDeprecated(getName(),
@@ -183,7 +186,11 @@ public abstract class OperationDefinition {
      * @param operationObject model node of type {@link ModelType#OBJECT}, typically representing an operation request
      * @param model           model node in which the value should be stored
      * @throws OperationFailedException if the value is not valid
+     *
+     * @deprecated Not used by the WildFly management kernel; will be removed in a future release
      */
+    @SuppressWarnings("deprecation")
+    @Deprecated
     public final void validateAndSet(ModelNode operationObject, final ModelNode model) throws OperationFailedException {
         validateOperation(operationObject);
         for (AttributeDefinition ad : this.parameters) {
