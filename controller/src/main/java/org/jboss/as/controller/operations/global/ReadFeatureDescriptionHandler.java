@@ -21,76 +21,78 @@
  */
 package org.jboss.as.controller.operations.global;
 
-import java.util.ArrayList;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDR_PARAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDR_PARAMS_MAPPING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANNOTATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPLEX_ATTRIBUTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCEPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_ID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NILLABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS_MAPPING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPTIONAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PARAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROVIDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_FEATURE_DESCRIPTION_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REFS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STORAGE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
+import static org.jboss.as.controller.registry.AttributeAccess.Storage.CONFIGURATION;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityReferenceRecorder;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.Action.ActionEffect;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
 import org.jboss.as.controller.access.ResourceAuthorization;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.controller.registry.AttributeAccess.Storage;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
-import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
-import org.jboss.dmr.Property;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_FEATURE_DESCRIPTION_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.registry.AttributeAccess.Storage.CONFIGURATION;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.StringJoiner;
-import org.jboss.as.controller.CapabilityReferenceRecorder;
-import org.jboss.as.controller.ObjectListAttributeDefinition;
-import org.jboss.as.controller.ObjectTypeAttributeDefinition;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityRegistration;
@@ -98,10 +100,19 @@ import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CAPABILITY_REFERENCE_PATTERN_ELEMENTS;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AliasStepHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.AttributeAccess.Storage;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 
 /**
  * Global operation handler that describes the resource as a Galleon feature.
@@ -122,16 +133,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
 
     private final ImmutableCapabilityRegistry capabilityRegistry;
 
-    private static final String $PROFILE_PREFIX = "$profile.";
-    private static final String ADDRESS_PARAMETERS = "addr-params";
-    private static final String ADDRESS_PARAMETERS_MAPPING = "addr-params-mapping";
+    private static final String PROFILE_PREFIX = "$profile.";
     private static final String DOMAIN_EXTENSION = "domain.extension";
-    private static final String FEATURE_ID = "feature-id";
     private static final String HOST_EXTENSION = "host.extension";
-    private static final String OPERATION_PARAMETERS = "op-params";
-    private static final String OPERATION_PARAMETERS_MAPPING = "op-params-mapping";
-    private static final String PARAMETERS = "params";
-    private static final String REFERENCES = "refs";
 
     //Placeholder for NoSuchResourceExceptions coming from proxies to remove the child in ReadFeatureHandler
     private static final ModelNode PROXY_NO_SUCH_RESOURCE;
@@ -195,8 +199,8 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             param.get(ModelDescriptionConstants.NAME).set("server-root");
             param.get(ModelDescriptionConstants.DEFAULT).set("/");
             param.get(FEATURE_ID).set(true);
-            feature.require(FEATURE).get(PARAMETERS).add(param);
-            feature.require(FEATURE).require(ANNOTATION).get(ADDRESS_PARAMETERS).set("server-root");
+            feature.require(FEATURE).get(PARAMS).add(param);
+            feature.require(FEATURE).require(ANNOTATION).get(ADDR_PARAMS).set("server-root");
         }
 
         if (pa.getLastElement() != null && SUBSYSTEM.equals(pa.getLastElement().getKey())) {
@@ -205,10 +209,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 ModelNode extensionParam = new ModelNode();
                 extensionParam.get(ModelDescriptionConstants.NAME).set(EXTENSION);
                 extensionParam.get(DEFAULT).set(extension);
-                feature.get(FEATURE).get(PARAMETERS).add(extensionParam);
-                ModelNode packages = feature.get(FEATURE).get("packages").setEmptyList();
+                feature.get(FEATURE).get(PARAMS).add(extensionParam);
+                ModelNode packages = feature.get(FEATURE).get(PACKAGES).setEmptyList();
                 ModelNode packageNode = new ModelNode();
-                packageNode.get("package").set(extension + ".main");
+                packageNode.get(PACKAGE).set(extension + ".main");
                 packages.add(packageNode);
             }
         }
@@ -391,10 +395,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 capabilityName = cap.getDynamicName(aliasAddress);
             }
             if (isProfile) {
-                capabilityName = $PROFILE_PREFIX + capabilityName;
+                capabilityName = PROFILE_PREFIX + capabilityName;
             }
             capabilities.add(capabilityName);
-            feature.get("provides").add(capabilityName);
+            feature.get(PROVIDES).add(capabilityName);
         }
         processComplexAttributes(feature, registration);
         addReferences(feature, registration);
@@ -436,27 +440,27 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         attFeature.get(NAME).set(specName);
         final ModelNode annotation = attFeature.get(ANNOTATION);
         annotation.get(ModelDescriptionConstants.NAME).set(WRITE_ATTRIBUTE_OPERATION);
-        annotation.get("complex-attribute").set(objAttDef.getName());
+        annotation.get(COMPLEX_ATTRIBUTE).set(objAttDef.getName());
         if (parentFeature.hasDefined(ANNOTATION)) {
-            annotation.get(ADDRESS_PARAMETERS)
-                    .set(parentFeature.require(ANNOTATION).require(ADDRESS_PARAMETERS));
-            if (parentFeature.require(ANNOTATION).hasDefined(ADDRESS_PARAMETERS_MAPPING)) {
-                annotation.get(ADDRESS_PARAMETERS)
-                        .set(parentFeature.require(ANNOTATION).require(ADDRESS_PARAMETERS_MAPPING));
+            annotation.get(ADDR_PARAMS)
+                    .set(parentFeature.require(ANNOTATION).require(ADDR_PARAMS));
+            if (parentFeature.require(ANNOTATION).hasDefined(ADDR_PARAMS_MAPPING)) {
+                annotation.get(ADDR_PARAMS)
+                        .set(parentFeature.require(ANNOTATION).require(ADDR_PARAMS_MAPPING));
             }
         } else {
             addParams(attFeature, registration.getPathAddress(), new ModelNode().setEmptyList());
         }
 
-        ModelNode refs = attFeature.get(REFERENCES).setEmptyList();
+        ModelNode refs = attFeature.get(REFS).setEmptyList();
         ModelNode ref = new ModelNode();
         ref.get(FEATURE).set(parentFeature.require(NAME));
         refs.add(ref);
 
-        ModelNode params = attFeature.get(PARAMETERS).setEmptyList();
+        ModelNode params = attFeature.get(PARAMS).setEmptyList();
         Set<String> idParams = new HashSet<>();
-        if (parentFeature.hasDefined(PARAMETERS)) {
-            for (ModelNode param : parentFeature.require(PARAMETERS).asList()) {
+        if (parentFeature.hasDefined(PARAMS)) {
+            for (ModelNode param : parentFeature.require(PARAMS).asList()) {
                 if (param.hasDefined(FEATURE_ID) && param.get(FEATURE_ID).asBoolean()) {
                     idParams.add(param.get(NAME).asString());
                     params.add(param);
@@ -507,27 +511,27 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         attFeature.get(NAME).set(specName);
         ModelNode annotation = attFeature.get(ANNOTATION);
         annotation.get(ModelDescriptionConstants.NAME).set("list-add");
-        annotation.get("complex-attribute").set(objAttDef.getName());
+        annotation.get(COMPLEX_ATTRIBUTE).set(objAttDef.getName());
         if (parentFeature.hasDefined(ANNOTATION)) {
-            annotation.get(ADDRESS_PARAMETERS)
-                    .set(parentFeature.require(ANNOTATION).require(ADDRESS_PARAMETERS));
-            if (parentFeature.require(ANNOTATION).hasDefined(ADDRESS_PARAMETERS_MAPPING)) {
-                annotation.get(ADDRESS_PARAMETERS)
-                        .set(parentFeature.require(ANNOTATION).require(ADDRESS_PARAMETERS_MAPPING));
+            annotation.get(ADDR_PARAMS)
+                    .set(parentFeature.require(ANNOTATION).require(ADDR_PARAMS));
+            if (parentFeature.require(ANNOTATION).hasDefined(ADDR_PARAMS_MAPPING)) {
+                annotation.get(ADDR_PARAMS)
+                        .set(parentFeature.require(ANNOTATION).require(ADDR_PARAMS_MAPPING));
             }
         } else {
             addParams(attFeature, registration.getPathAddress(), new ModelNode().setEmptyList());
         }
 
-        ModelNode refs = attFeature.get(REFERENCES).setEmptyList();
+        ModelNode refs = attFeature.get(REFS).setEmptyList();
         ModelNode ref = new ModelNode();
         ref.get(FEATURE).set(parentSpecName);
         refs.add(ref);
 
-        final ModelNode params = attFeature.get(PARAMETERS).setEmptyList();
+        final ModelNode params = attFeature.get(PARAMS).setEmptyList();
         final Set<String> idParams = new HashSet<>();
-        if (parentFeature.hasDefined(PARAMETERS)) {
-            for (ModelNode param : parentFeature.require(PARAMETERS).asList()) {
+        if (parentFeature.hasDefined(PARAMS)) {
+            for (ModelNode param : parentFeature.require(PARAMS).asList()) {
                 if (param.hasDefined(FEATURE_ID) && param.get(FEATURE_ID).asBoolean()) {
                     final ModelNode parentParam = new ModelNode();
                     final String paramName = param.get(NAME).asString();
@@ -575,7 +579,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
     }
 
     private Map<String, String> addParams(ModelNode feature, PathAddress address, ModelNode requestProperties) {
-        ModelNode params = feature.get(PARAMETERS).setEmptyList();
+        ModelNode params = feature.get(PARAMS).setEmptyList();
         Set<String> paramNames = new HashSet<>();
         StringJoiner addressParams = new StringJoiner(",");
         for (PathElement elt : address) {
@@ -635,7 +639,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             params.add(param);
         }
         final ModelNode annotationNode = feature.get(ANNOTATION);
-        annotationNode.get(ADDRESS_PARAMETERS).set(addressParams.toString());
+        annotationNode.get(ADDR_PARAMS).set(addressParams.toString());
         return featureParamMappings;
     }
 
@@ -648,7 +652,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         if (address == null || PathAddress.EMPTY_ADDRESS.equals(address)) {
             return;
         }
-        ModelNode refs = feature.get(REFERENCES).setEmptyList();
+        ModelNode refs = feature.get(REFS).setEmptyList();
         if (registration.getParent() != null && registration.getParent().isFeature()) {
             addReference(refs, registration.getParent());
         }
@@ -667,7 +671,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             refs.add(ref);
         }
         if (refs.asList().isEmpty()) {
-            feature.remove(REFERENCES);
+            feature.remove(REFS);
         }
     }
 
@@ -708,9 +712,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             paramMappings.add(realName);
         }
         if (keepMapping) {
-            annotation.get(OPERATION_PARAMETERS_MAPPING).set(paramMappings.toString());
+            annotation.get(OP_PARAMS_MAPPING).set(paramMappings.toString());
         }
-        annotation.get(OPERATION_PARAMETERS).set(params.toString());
+        annotation.get(OP_PARAMS).set(params.toString());
     }
 
     private void addRequiredCapabilities(ModelNode feature,
@@ -753,10 +757,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                             }
                             capabilityName = RuntimeCapability.buildDynamicCapabilityName(baseName, elements.toArray(new String[elements.size()]));
                         }
-                        capability.get("optional").set(att.getValue().hasDefined(NILLABLE) && att.getValue().get(NILLABLE).asBoolean());
+                        capability.get(OPTIONAL).set(att.getValue().hasDefined(NILLABLE) && att.getValue().get(NILLABLE).asBoolean());
                         if (isProfile) {
                             if (!capabilityName.startsWith("org.wildfly.network.socket-binding")) {
-                                capabilityName = $PROFILE_PREFIX + capabilityName;
+                                capabilityName = PROFILE_PREFIX + capabilityName;
                             }
                         }
                         capability.get(NAME).set(capabilityName);
@@ -768,10 +772,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                             if (capReg != null) {
                                 ImmutableManagementResourceRegistration root = getRootRegistration(registration);
                                 ModelNode refs;
-                                if (!feature.hasDefined(REFERENCES)) {
-                                    refs = feature.get(REFERENCES).setEmptyList();
+                                if (!feature.hasDefined(REFS)) {
+                                    refs = feature.get(REFS).setEmptyList();
                                 } else {
-                                    refs = feature.get(REFERENCES);
+                                    refs = feature.get(REFS);
                                 }
                                 if (registration.getParent() != null && registration.getParent().isFeature()) {
                                     addReference(refs, registration.getParent());
@@ -790,7 +794,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     for (CapabilityReferenceRecorder requirement : registration.getRequirements()) {
                         String[] segments = requirement.getRequirementPatternSegments(null, aliasAddress);
                         String[] dynamicElements;
-                        if (segments == null) {
+                        if (segments == null || segments.length == 0) {
                             dynamicElements = null;
                         } else {
                             dynamicElements = new String[segments.length];
@@ -800,7 +804,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         }
                         String baseRequirementName;
                         if (isProfile) {
-                            baseRequirementName = $PROFILE_PREFIX + requirement.getBaseRequirementName();
+                            baseRequirementName = PROFILE_PREFIX + requirement.getBaseRequirementName();
                         } else {
                             baseRequirementName = requirement.getBaseRequirementName();
                         }
@@ -814,7 +818,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     }
                 }
                 if (!required.asList().isEmpty()) {
-                    feature.get(ModelDescriptionConstants.REQUIRES).set(required);
+                    feature.get(REQUIRES).set(required);
                 }
             }
         }
@@ -982,7 +986,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
          * of the operation this handler is handling and the value is the full
          * read-resource response. Will not be {@code null}
          * @param accessControlContext context for tracking access control data
-         * @param accessControl type of access control output that is needed
          */
         private ReadFeatureAssemblyHandler(final ModelNode featureDescription, final Map<PathElement, ModelNode> childResources,
                 final ReadFeatureAccessControlContext accessControlContext) {
