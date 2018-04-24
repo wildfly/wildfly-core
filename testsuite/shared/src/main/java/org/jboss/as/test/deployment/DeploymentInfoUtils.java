@@ -176,10 +176,11 @@ public class DeploymentInfoUtils {
          */
         @Override
         public String toString() {
+            String result = this.getClass().getSimpleName() + "{command='" + command + "', outputs";
             if (isOutputEmpty()) {
-                return "<EMPTY>";
+                return result + "='<EMPTY>'}";
             }
-            return String.join(LINE_SEPARATOR, rows);
+            return result + ":{" + LINE_SEPARATOR + String.join(LINE_SEPARATOR, rows) + LINE_SEPARATOR +  "}}";
         }
 
         /**
@@ -258,6 +259,23 @@ public class DeploymentInfoUtils {
         }
 
         // &&&& END   Method for additional information about processing verify check
+
+        @Override
+        public int hashCode() {
+            int hash = 21 * command.hashCode();
+            hash += 37 * originalOutput.hashCode();
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof DeploymentInfoResult) {
+                DeploymentInfoResult result = (DeploymentInfoResult) obj;
+                return command.equals(result.command) && originalOutput.equals(result.originalOutput);
+            }
+            return false;
+        }
+
     }
 
     /**
