@@ -1,6 +1,6 @@
 <!--
   ~ JBoss, Home of Professional Open Source
-  ~ Copyright 2017, Red Hat, Inc., and individual contributors as indicated
+  ~ Copyright 2018, Red Hat, Inc., and individual contributors as indicated
   ~ by the @authors tag.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,12 @@
   ~ limitations under the License.
   -->
 
-<subsystem xmlns="urn:jboss:domain:io:2.0">
+<subsystem xmlns="urn:jboss:domain:io:3.0">
     <worker name="default" task-keepalive="100" stack-size="5000"/>
-    <worker name="second-worker" io-threads="5" stack-size="300" task-keepalive="100" task-max-threads="200"/>
+    <worker name="second-worker" io-threads="${some.property:5}" stack-size="${property.stack:300}" task-keepalive="${property.keepalive:100}" task-max-threads="${prop.max-threads:200}"/>
     <worker name="third-worker" task-max-threads="50"/>
+    <worker name="fourth-worker">
+        <outbound-bind-address name="outbound" match="192.168.10.0/32" bind-address="192.168.10.1" bind-port="55555"/>
+    </worker>
     <buffer-pool name="default" buffer-size="2048" buffers-per-slice="2048"/>
 </subsystem>
