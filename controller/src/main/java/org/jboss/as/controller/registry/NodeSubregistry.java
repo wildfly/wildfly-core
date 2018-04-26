@@ -516,6 +516,10 @@ final class NodeSubregistry {
         return processType;
     }
 
+    boolean isRuntimeOnly() {
+        return parent.isRuntimeOnly();
+    }
+
     /**
      * Encapsulates data and behavior to help with searches in both a specified child and in the wildcard child if
      * it exists and is different from the specified child

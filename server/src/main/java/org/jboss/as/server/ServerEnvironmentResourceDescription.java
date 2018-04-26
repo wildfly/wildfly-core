@@ -56,29 +56,29 @@ import org.jboss.dmr.ModelType;
 public class ServerEnvironmentResourceDescription extends SimpleResourceDefinition {
     public static final PathElement RESOURCE_PATH = PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, SERVER_ENVIRONMENT);
 
-    public static final AttributeDefinition BASE_DIR = SimpleAttributeDefinitionBuilder.create("base-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition CONFIG_DIR = SimpleAttributeDefinitionBuilder.create("config-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition CONFIG_FILE = SimpleAttributeDefinitionBuilder.create("config-file", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition CONTENT_DIR = SimpleAttributeDefinitionBuilder.create("content-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition DATA_DIR = SimpleAttributeDefinitionBuilder.create("data-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition DEPLOY_DIR = SimpleAttributeDefinitionBuilder.create("deploy-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition EXT_DIRS = SimpleAttributeDefinitionBuilder.create("ext-dirs", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition BASE_DIR = SimpleAttributeDefinitionBuilder.create("base-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition CONFIG_DIR = SimpleAttributeDefinitionBuilder.create("config-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition CONFIG_FILE = SimpleAttributeDefinitionBuilder.create("config-file", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition CONTENT_DIR = SimpleAttributeDefinitionBuilder.create("content-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition DATA_DIR = SimpleAttributeDefinitionBuilder.create("data-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition DEPLOY_DIR = SimpleAttributeDefinitionBuilder.create("deploy-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition EXT_DIRS = SimpleAttributeDefinitionBuilder.create("ext-dirs", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition HOME_DIR = SimpleAttributeDefinitionBuilder.create("home-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition HOST_NAME = SimpleAttributeDefinitionBuilder.create("host-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition INITIAL_RUNNING_MODE = SimpleAttributeDefinitionBuilder.create("initial-running-mode", ModelType.STRING)
-            .setValidator(new EnumValidator<RunningMode>(RunningMode.class, false, false)).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition INITIAL_RUNNING_MODE = SimpleAttributeDefinitionBuilder.create("initial-running-mode", ModelType.STRING)
+            .setValidator(new EnumValidator<RunningMode>(RunningMode.class)).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition LAUNCH_TYPE = SimpleAttributeDefinitionBuilder.create("launch-type", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition LOG_DIR = SimpleAttributeDefinitionBuilder.create("log-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition MODULES_DIR = SimpleAttributeDefinitionBuilder.create("modules-dir", ModelType.STRING)
+    static final AttributeDefinition LOG_DIR = SimpleAttributeDefinitionBuilder.create("log-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition MODULES_DIR = SimpleAttributeDefinitionBuilder.create("modules-dir", ModelType.STRING)
             .setFlags(AttributeAccess.Flag.STORAGE_RUNTIME)
             .setDeprecated(ModelVersion.create(2, 1))
             .build();
-    public static final AttributeDefinition NODE_NAME = SimpleAttributeDefinitionBuilder.create("node-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition QUALIFIED_HOST_NAME = SimpleAttributeDefinitionBuilder.create("qualified-host-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition NODE_NAME = SimpleAttributeDefinitionBuilder.create("node-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition QUALIFIED_HOST_NAME = SimpleAttributeDefinitionBuilder.create("qualified-host-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition SERVER_NAME = SimpleAttributeDefinitionBuilder.create("server-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
-    public static final AttributeDefinition TEMP_DIR = SimpleAttributeDefinitionBuilder.create("temp-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    static final AttributeDefinition TEMP_DIR = SimpleAttributeDefinitionBuilder.create("temp-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
 
-    public static final AttributeDefinition[] SERVER_ENV_ATTRIBUTES = {BASE_DIR, CONFIG_DIR, CONFIG_FILE, CONTENT_DIR, DATA_DIR,
+    private static final AttributeDefinition[] SERVER_ENV_ATTRIBUTES = {BASE_DIR, CONFIG_DIR, CONFIG_FILE, CONTENT_DIR, DATA_DIR,
             DEPLOY_DIR, EXT_DIRS, HOME_DIR, HOST_NAME, INITIAL_RUNNING_MODE, LAUNCH_TYPE, LOG_DIR, MODULES_DIR, NODE_NAME,
             QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR};
 
@@ -90,7 +90,8 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
      * @param environment the environment the resource is based on.
      */
     private ServerEnvironmentResourceDescription(final ServerEnvironment environment) {
-        super(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("server.env"));
+        super(new Parameters(RESOURCE_PATH, ServerDescriptions.getResourceDescriptionResolver("server.env"))
+                .setRuntime());
         osh = new ServerEnvironmentReadHandler(environment);
     }
 
@@ -133,7 +134,7 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
     private static class ServerEnvironmentReadHandler implements OperationStepHandler {
         private final ServerEnvironment environment;
 
-        public ServerEnvironmentReadHandler(final ServerEnvironment environment) {
+        ServerEnvironmentReadHandler(final ServerEnvironment environment) {
             this.environment = environment;
         }
 

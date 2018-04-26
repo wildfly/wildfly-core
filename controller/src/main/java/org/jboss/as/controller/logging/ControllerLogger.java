@@ -653,13 +653,13 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 53, value = "Cannot register submodels with a null PathElement")
     IllegalArgumentException cannotRegisterSubmodelWithNullPath();
 
-    /**
-     * Creates an exception indicating a non-runtime-only submodel cannot be registered with a runtime-only parent.
-     *
-     * @return an {@link IllegalArgumentException} for the error.
-     */
-    @Message(id = 54, value = "Cannot register non-runtime-only submodels with a runtime-only parent")
-    IllegalArgumentException cannotRegisterSubmodel();
+//    /**
+//     * Creates an exception indicating a non-runtime-only submodel cannot be registered with a runtime-only parent.
+//     *
+//     * @return an {@link IllegalArgumentException} for the error.
+//     */
+//    @Message(id = 54, value = "Cannot register non-runtime-only submodels with a runtime-only parent")
+//    IllegalArgumentException cannotRegisterSubmodel();
 
     /**
      * Creates an exception indicating the inability to remove the {@code name}.

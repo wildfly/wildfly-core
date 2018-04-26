@@ -96,7 +96,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;
-        this.runtimeOnly = definition.isRuntime();
+        this.runtimeOnly = definition.isRuntime(); // TODO can this ever correctly be true?
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = false;
         // For a root MRR we expect concurrent reads in critical performance code, i.e. boot
@@ -114,7 +114,8 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;
-        this.runtimeOnly = definition.isRuntime();
+        // If our parent is runtime-only, so are we, otherwise follow the definition
+        this.runtimeOnly = parent.isRuntimeOnly() || definition.isRuntime();
         this.accessConstraintDefinitions = buildAccessConstraints();
         this.ordered = ordered;
         // For non-root MRRs we don't expect much in the way of concurrent reads in performance
@@ -227,9 +228,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         final PathElement address = resourceDefinition.getPathElement();
         if (address == null) {
             throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodelWithNullPath();
-        }
-        if (isRuntimeOnly() && !resourceDefinition.isRuntime()) {
-            throw ControllerLogger.ROOT_LOGGER.cannotRegisterSubmodel();
         }
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {

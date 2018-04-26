@@ -181,7 +181,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     private PatchResourceDefinition() {
         super(new Parameters(PATH, getResourceDescriptionResolver(NAME))
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
-                .setFeature(false));
+                .setFeature(false)  // TODO this is not needed when setRuntime is set but just in case I'm wrong and removing it will break urgent Galleon work I'm leaving it
+                .setRuntime()
+        );
     }
 
     @Override
@@ -202,7 +204,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
         final StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.patch-stream", RESOURCE_NAME, PatchResourceDefinition.class.getClassLoader());
         resourceRegistration.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("patch-stream"), resolver)
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
+                .setRuntime()
+        ) {
 
             @Override
             public void registerAttributes(final ManagementResourceRegistration registry) {
@@ -262,7 +266,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
         StandardResourceDescriptionResolver resolver = new StandardResourceDescriptionResolver("patching.layer", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
         registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("layer"), resolver)
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)){
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
+                .setRuntime()
+        ){
 
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
@@ -294,7 +300,9 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
         resolver = new StandardResourceDescriptionResolver("patching.addon", "org.jboss.as.patching.management.LocalDescriptions", PatchResourceDefinition.class.getClassLoader());
         registry.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("addon"), resolver)
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)) {
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
+                .setRuntime()
+        ) {
             @Override
             public void registerAttributes(final ManagementResourceRegistration resource) {
                 resource.registerReadOnlyAttribute(CUMULATIVE_PATCH_ID, new ElementProviderAttributeReadHandler.AddOnAttributeReadHandler() {

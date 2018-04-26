@@ -80,7 +80,9 @@ public class ModuleLoadingResourceDefinition extends SimpleResourceDefinition {
         super(new Parameters(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING),
                 ServerDescriptions.getResourceDescriptionResolver("core", MODULE_LOADING))
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.MODULE_LOADING)
-                .setFeature(false));
+                .setFeature(false) // TODO this is not needed when setRuntime is set but just in case I'm wrong and removing it will break urgent Galleon work I'm leaving it
+                .setRuntime()
+        );
     }
 
     @Override
