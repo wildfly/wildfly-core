@@ -95,7 +95,6 @@ class KnownVersions {
         addSubsystemVersion(map, "modcluster", "2.0.0", CORE_MODEL_8_0_0);
         addSubsystemVersion(map, "naming", "1.1.0", CORE_MODEL_7_1_3);
         addSubsystemVersion(map, "naming", "1.2.0", CORE_MODEL_7_2_0);
-        addSubsystemVersion(map, "osgi", "1.0.0", CORE_MODEL_7_1_3);
         addSubsystemVersion(map, "pojo", "1.0.0", CORE_MODEL_7_2_0);
         addSubsystemVersion(map, "remoting", "1.1.0", CORE_MODEL_7_1_3);
         addSubsystemVersion(map, "remoting", "1.2.0", CORE_MODEL_7_2_0);

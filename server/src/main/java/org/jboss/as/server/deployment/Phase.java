@@ -187,6 +187,26 @@ public enum Phase {
     public static final int STRUCTURE_MOUNT                             = 0x0200;
     public static final int STRUCTURE_DEPLOYMENT_OVERLAY                = 0x0280;
     public static final int STRUCTURE_MANIFEST                          = 0x0300;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int STRUCTURE_OSGI_MANIFEST                     = 0x0400;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int STRUCTURE_OSGI_PROPERTIES                   = 0x0410;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int STRUCTURE_OSGI_WEBBUNDLE                    = 0x0420;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int STRUCTURE_OSGI_METADATA                     = 0x0430;
     public static final int STRUCTURE_REMOUNT_EXPLODED                  = 0x0450;
     public static final int STRUCTURE_EE_SPEC_DESC_PROPERTY_REPLACEMENT = 0x0500;
     public static final int STRUCTURE_EE_JBOSS_DESC_PROPERTY_REPLACEMENT= 0x0550;
@@ -226,6 +246,11 @@ public enum Phase {
     public static final int STRUCTURE_EJB_JAR_IN_EAR                    = 0x1200;
     public static final int STRUCTURE_APPLICATION_CLIENT_IN_EAR         = 0x1300;
     public static final int STRUCTURE_MANAGED_BEAN_JAR_IN_EAR           = 0x1400;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int STRUCTURE_BUNDLE_SUB_DEPLOYMENT             = 0x1450;
     public static final int STRUCTURE_SAR_SUB_DEPLOY_CHECK              = 0x1500;
     public static final int STRUCTURE_SAR                               = 0x1580;
     public static final int STRUCTURE_ADDITIONAL_MANIFEST               = 0x1600;
@@ -255,6 +280,11 @@ public enum Phase {
     public static final int PARSE_COMPOSITE_ANNOTATION_INDEX            = 0x0301;
     public static final int PARSE_EXTENSION_LIST                        = 0x0700;
     public static final int PARSE_EXTENSION_NAME                        = 0x0800;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int PARSE_OSGI_BUNDLE_INFO                      = 0x0900;
     public static final int PARSE_WEB_DEPLOYMENT                        = 0x0B00;
     public static final int PARSE_WEB_DEPLOYMENT_FRAGMENT               = 0x0C00;
     public static final int PARSE_JSF_VERSION                           = 0x0C50;
@@ -277,6 +307,11 @@ public enum Phase {
     public static final int PARSE_WELD_CONFIGURATION                    = 0x1C01;
     public static final int PARSE_WEB_COMPONENTS                        = 0x1F00;
     public static final int PARSE_WEB_MERGE_METADATA                    = 0x2000;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int PARSE_OSGI_COMPONENTS                       = 0x2010;
     public static final int PARSE_WEBSERVICES_CONTEXT_INJECTION         = 0x2040;
     public static final int PARSE_WEBSERVICES_LIBRARY_FILTER            = 0x2045;
     public static final int PARSE_WEBSERVICES_XML                       = 0x2049;
@@ -326,6 +361,21 @@ public enum Phase {
     public static final int PARSE_EJB_SECURITY_ROLE_REF_DD              = 0x3501;
     public static final int PARSE_EJB_ASSEMBLY_DESC_DD                  = 0x3600;
     public static final int PARSE_DISTINCT_NAME                         = 0x3601;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int PARSE_OSGI_DEPLOYMENT                       = 0x3700;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int PARSE_OSGI_SUBSYSTEM_ACTIVATOR              = 0x3800;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int PARSE_WAB_CONTEXT_FACTORY                   = 0x3900;
     // should be after all components are known
     public static final int PARSE_EJB_INJECTION_ANNOTATION              = 0x4000;
     public static final int PARSE_IIOP_OPENJDK                          = 0x4180;
@@ -348,6 +398,11 @@ public enum Phase {
     public static final int PARSE_MONGO_DRIVER                          = 0x4C03;
 
     // REGISTER
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int REGISTER_BUNDLE_INSTALL                     = 0x0100;
 
     // DEPENDENCIES
     public static final int DEPENDENCIES_EE_PERMISSIONS                 = 0x0100;
@@ -381,6 +436,16 @@ public enum Phase {
     public static final int DEPENDENCIES_JAXR                           = 0x1600;
     public static final int DEPENDENCIES_DRIVERS                        = 0x1700;
     public static final int DEPENDENCIES_JSF                            = 0x1800;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int DEPENDENCIES_BUNDLE                         = 0x1900;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int DEPENDENCIES_BUNDLE_CONTEXT_BINDING         = 0x1A00;
     public static final int DEPENDENCIES_BATCH                          = 0x1B00;
     public static final int DEPENDENCIES_CLUSTERING                     = 0x1C00;
     public static final int DEPENDENCIES_LOGGING                        = 0x1D00;
@@ -397,6 +462,11 @@ public enum Phase {
     public static final int DEPENDENCIES_SINGLETON_DEPLOYMENT           = 0x2300;
 
     // CONFIGURE_MODULE
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int CONFIGURE_RESOLVE_BUNDLE                    = 0x0100;
     public static final int CONFIGURE_MODULE_SPEC                       = 0x0200;
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
@@ -414,6 +484,11 @@ public enum Phase {
     // POST_MODULE
     public static final int POST_MODULE_INJECTION_ANNOTATION            = 0x0100;
     public static final int POST_MODULE_REFLECTION_INDEX                = 0x0200;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int POST_MODULE_WAB_FRAGMENTS                   = 0x0250;
     public static final int POST_MODULE_JSF_MANAGED_BEANS               = 0x0300;
     public static final int POST_MODULE_INTERCEPTOR_ANNOTATIONS         = 0x0301;
     public static final int POST_MODULE_JSF_CDI_EXTENSIONS              = 0x0302;
@@ -559,12 +634,27 @@ public enum Phase {
     // IMPORTANT: WS integration installs deployment aspects dynamically
     // so consider INSTALL 0x1C10 - 0x1CFF reserved for WS subsystem!
     public static final int INSTALL_WAR_DEPLOYMENT                      = 0x1D00;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int INSTALL_WAB_DEPLOYMENT                      = 0x1E00;
     public static final int INSTALL_DEPLOYMENT_REPOSITORY               = 0x1F00;
     public static final int INSTALL_EJB_MANAGEMENT_RESOURCES            = 0x2000;
     public static final int INSTALL_APPLICATION_CLIENT                  = 0x2010;
     public static final int INSTALL_CACHE_DEPENDENCIES                  = 0x2020;
     public static final int INSTALL_MESSAGING_XML_RESOURCES             = 0x2030;
     public static final int INSTALL_MDB_DELIVERY_DEPENDENCIES           = 0x2038;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int INSTALL_BUNDLE_ACTIVATE                     = 0x2040;
+    /**
+     * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
+     */
+    @Deprecated
+    public static final int INSTALL_WAB_SERVLETCONTEXT_SERVICE          = 0x2050;
     public static final int INSTALL_PERSISTENCE_SERVICES                = 0x2060;
     public static final int INSTALL_BATCH_RESOURCES                     = 0x2070;
     public static final int INSTALL_LOGGING_DEPLOYMENT_RESOURCES        = 0x207a;

@@ -61,7 +61,7 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         // If the log context is already defined, skip the rest of the processing
         if (!hasRegisteredLogContext(deploymentUnit)) {
-            if (deploymentUnit.hasAttachment(Attachments.MODULE) && deploymentUnit.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
+            if (deploymentUnit.hasAttachment(Attachments.DEPLOYMENT_ROOT)) {
                 // don't process sub-deployments as they are processed by processing methods
                 final ResourceRoot root = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
                 if (SubDeploymentMarker.isSubDeployment(root)) return;
@@ -80,24 +80,21 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
 
     @Override
     public final void undeploy(final DeploymentUnit context) {
-        // OSGi bundles deployments may not have a module attached
-        if (context.hasAttachment(Attachments.MODULE)) {
-            // don't process sub-deployments as they are processed by processing methods
-            final ResourceRoot root = context.getAttachment(Attachments.DEPLOYMENT_ROOT);
-            if (SubDeploymentMarker.isSubDeployment(root)) return;
-            // Remove any log context selector references
-            final Module module = context.getAttachment(Attachments.MODULE);
-            // Remove either the default log context or a defined log context. It's safe to attempt to remove a
-            // nonexistent context.
-            unregisterLogContext(context, DEFAULT_LOG_CONTEXT_KEY, module);
-            unregisterLogContext(context, LOG_CONTEXT_KEY, module);
-            // Unregister all sub-deployments
-            final List<DeploymentUnit> subDeployments = getSubDeployments(context);
-            for (DeploymentUnit subDeployment : subDeployments) {
-                final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
-                // Sub-deployment should never have a default log context
-                unregisterLogContext(subDeployment, LOG_CONTEXT_KEY, subDeploymentModule);
-            }
+        // don't process sub-deployments as they are processed by processing methods
+        final ResourceRoot root = context.getAttachment(Attachments.DEPLOYMENT_ROOT);
+        if (SubDeploymentMarker.isSubDeployment(root)) return;
+        // Remove any log context selector references
+        final Module module = context.getAttachment(Attachments.MODULE);
+        // Remove either the default log context or a defined log context. It's safe to attempt to remove a
+        // nonexistent context.
+        unregisterLogContext(context, DEFAULT_LOG_CONTEXT_KEY, module);
+        unregisterLogContext(context, LOG_CONTEXT_KEY, module);
+        // Unregister all sub-deployments
+        final List<DeploymentUnit> subDeployments = getSubDeployments(context);
+        for (DeploymentUnit subDeployment : subDeployments) {
+            final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
+            // Sub-deployment should never have a default log context
+            unregisterLogContext(subDeployment, LOG_CONTEXT_KEY, subDeploymentModule);
         }
     }
 

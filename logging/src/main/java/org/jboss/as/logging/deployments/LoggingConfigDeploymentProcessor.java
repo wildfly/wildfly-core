@@ -125,11 +125,9 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                             processDeployment(phaseContext, subDeployment, subDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT));
                         }
                         // No configuration file found, use the top-level configuration
-                        if (subDeployment.hasAttachment(Attachments.MODULE) && !hasRegisteredLogContext(subDeployment)) {
+                        if (!hasRegisteredLogContext(subDeployment)) {
                             final Module subDeploymentModule = subDeployment.getAttachment(Attachments.MODULE);
-                            if (subDeploymentModule != null) {
-                                registerLogContext(subDeployment, subDeploymentModule, logContext);
-                            }
+                            registerLogContext(subDeployment, subDeploymentModule, logContext);
                         }
                         // Add the parent's logging service if it should be inherited
                         if (!subDeployment.hasAttachment(LoggingDeploymentResourceProcessor.LOGGING_CONFIGURATION_SERVICE_KEY)) {
