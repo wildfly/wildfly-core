@@ -60,9 +60,7 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.value.Value;
 import org.jboss.stdio.StdioContext;
-import org.wildfly.common.Assert;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * This is the host controller counterpart to EmbeddedServerFactory which lives behind a module class loader.
@@ -98,11 +96,16 @@ public class EmbeddedHostControllerFactory {
     }
 
     public static HostController create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs) {
-        Assert.checkNotNullParam("jbossHomeDir", jbossHomeDir);
-        Assert.checkNotNullParam("moduleLoader", moduleLoader);
-        Assert.checkNotNullParam("systemProps", systemProps);
-        Assert.checkNotNullParam("systemEnv", systemEnv);
-        Assert.checkNotNullParam("cmdargs", cmdargs);
+        if (jbossHomeDir == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("jbossHomeDir");
+        if (moduleLoader == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("moduleLoader");
+        if (systemProps == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("systemProps");
+        if (systemEnv == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("systemEnv");
+        if (cmdargs == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
 
         setupCleanDirectories(jbossHomeDir, systemProps);
         return new HostControllerImpl(jbossHomeDir, cmdargs, systemProps, systemEnv, moduleLoader);
@@ -407,7 +410,7 @@ public class EmbeddedHostControllerFactory {
         }
 
         private static HostControllerEnvironment createHostControllerEnvironment(File jbossHome, String[] cmdargs, long startTime) {
-            WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
+            SecurityActions.setPropertyPrivileged(HostControllerEnvironment.HOME_DIR, jbossHome.getAbsolutePath());
 
             List<String> cmds = new ArrayList<String>(Arrays.asList(cmdargs));
 
@@ -415,11 +418,11 @@ public class EmbeddedHostControllerFactory {
             // Once WFCORE-938 is resolved, --admin-only will allow a connection back to the DC for slaves,
             // and support a method for setting the domain master address outside of -Djboss.domain.master.address
             // so we'll probably need a command line argument for this if its not specified as a system prop
-            if (WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, null) == null) {
-                WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, "127.0.0.1");
+            if (SecurityActions.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, null) == null) {
+                SecurityActions.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, "127.0.0.1");
             }
             cmds.add(MODULE_PATH);
-            cmds.add(WildFlySecurityManager.getPropertyPrivileged("module.path", ""));
+            cmds.add(SecurityActions.getPropertyPrivileged("module.path", ""));
             cmds.add(PC_ADDRESS);
             cmds.add("0");
             cmds.add(PC_PORT);
@@ -429,7 +432,7 @@ public class EmbeddedHostControllerFactory {
 
             for (final String prop : EmbeddedProcessFactory.DOMAIN_KEYS) {
                 // if we've started with any jboss.domain.base.dir etc, copy those in here.
-                String value = WildFlySecurityManager.getPropertyPrivileged(prop, null);
+                String value = SecurityActions.getPropertyPrivileged(prop, null);
                 if (value != null)
                     cmds.add("-D" + prop + "=" + value);
             }

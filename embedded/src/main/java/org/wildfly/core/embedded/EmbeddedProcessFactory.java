@@ -16,9 +16,17 @@ limitations under the License.
 
 package org.wildfly.core.embedded;
 
+import static java.lang.System.clearProperty;
+import static java.lang.System.getProperties;
+import static java.lang.System.getSecurityManager;
+import static java.lang.System.getenv;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.LogManager;
@@ -30,7 +38,6 @@ import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.log.JDKModuleLogger;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * <p>
@@ -136,7 +143,7 @@ public class EmbeddedProcessFactory {
         }
 
         if (modulePath == null)
-            modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
+            modulePath = SecurityActions.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
 
         return createStandaloneServer(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
     }
@@ -211,7 +218,7 @@ public class EmbeddedProcessFactory {
         }
 
         if (modulePath == null) {
-            modulePath = WildFlySecurityManager.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
+            modulePath = SecurityActions.getPropertyPrivileged("module.path", jbossHomeDir.getAbsolutePath() + File.separator + JBOSS_MODULES_DIR_NAME);
         }
 
         return createHostController(setupModuleLoader(modulePath, systemPackages), jbossHomeDir, cmdargs);
@@ -283,13 +290,13 @@ public class EmbeddedProcessFactory {
         }
 
         // deprecated property
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, moduleDir.getPath());
+        SecurityActions.setPropertyPrivileged(SYSPROP_KEY_JBOSS_MODULES_DIR, moduleDir.getPath());
 
-        final String classPath = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, null);
+        final String classPath = SecurityActions.getPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, null);
         try {
             // Set up sysprop env
-            WildFlySecurityManager.clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
-            WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
+            clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
+            SecurityActions.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
 
             StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
             if (systemPackages != null) {
@@ -298,13 +305,13 @@ public class EmbeddedProcessFactory {
                     packages.append(packageName);
                 }
             }
-            WildFlySecurityManager.setPropertyPrivileged("jboss.modules.system.pkgs", packages.toString());
+            SecurityActions.setPropertyPrivileged("jboss.modules.system.pkgs", packages.toString());
 
             // Get the module loader
             return Module.getBootModuleLoader();
         } finally {
             // Return to previous state for classpath prop
-            WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, classPath);
+            SecurityActions.setPropertyPrivileged(SYSPROP_KEY_CLASS_PATH, classPath);
         }
     }
 
@@ -329,10 +336,10 @@ public class EmbeddedProcessFactory {
         }
 
         final ModuleClassLoader logModuleClassLoader = logModule.getClassLoader();
-        final ClassLoader tccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        final ClassLoader tccl = getCurrentContextClassLoaderPrivileged();
         try {
-            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(logModuleClassLoader);
-            WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_LOGMANAGER, SYSPROP_VALUE_JBOSS_LOGMANAGER);
+            setCurrentContextClassLoaderPrivileged(logModuleClassLoader);
+            SecurityActions.setPropertyPrivileged(SYSPROP_KEY_LOGMANAGER, SYSPROP_VALUE_JBOSS_LOGMANAGER);
 
             final Class<?> actualLogManagerClass = LogManager.getLogManager().getClass();
             if (actualLogManagerClass == LogManager.class) {
@@ -342,15 +349,15 @@ public class EmbeddedProcessFactory {
             }
         } finally {
             // Reset TCCL
-            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(tccl);
+            setCurrentContextClassLoaderPrivileged(tccl);
         }
     }
 
     private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final ModuleLoader moduleLoader, final File jbossHomeDir, final String[] cmdargs) {
         Object serverImpl;
         try {
-            Properties sysprops = WildFlySecurityManager.getSystemPropertiesPrivileged();
-            Map<String, String> sysenv = WildFlySecurityManager.getSystemEnvironmentPrivileged();
+            Properties sysprops = getSystemPropertiesPrivileged();
+            Map<String, String> sysenv = getSystemEnvironmentPrivileged();
             String[] args = cmdargs != null ? cmdargs : new String[0];
             serverImpl = createServerMethod.invoke(null, jbossHomeDir, moduleLoader, sysprops, sysenv, args);
         } catch (final InvocationTargetException ite) {
@@ -369,12 +376,12 @@ public class EmbeddedProcessFactory {
 
     private static void resetEmbeddedServerProperties(final String jbossHomeDir, final ProcessType embeddedServerType) {
         assert jbossHomeDir != null;
-        String oldJbossHomeDir = WildFlySecurityManager.getPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, null);
+        String oldJbossHomeDir = SecurityActions.getPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, null);
         boolean shouldReset = oldJbossHomeDir != null && !jbossHomeDir.equals(oldJbossHomeDir);
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
+        SecurityActions.setPropertyPrivileged(SYSPROP_KEY_JBOSS_HOME_DIR, jbossHomeDir);
         // store this for the next server start, if we need it. This avoids having to mess with the environment restorer, if we were
         // started with JBOSS_HOME etc.
-        WildFlySecurityManager.setPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, jbossHomeDir);
+        SecurityActions.setPropertyPrivileged(SYSPROP_KEY_JBOSS_PREV_HOME_DIR, jbossHomeDir);
 
         if (shouldReset) {
             // we only reset in non-modular when --jboss-home is changed. In case we've started with -Djboss.server.base.dir (or similar) set,
@@ -413,6 +420,66 @@ public class EmbeddedProcessFactory {
     }
 
     private static void resetEmbeddedServerProperty(String propertyName, String value) {
-            WildFlySecurityManager.setPropertyPrivileged(propertyName, value);
+        SecurityActions.setPropertyPrivileged(propertyName, value);
+    }
+
+    private static void clearPropertyPrivileged(String name) {
+        final SecurityManager sm = getSecurityManager();
+        if (sm == null) {
+            clearProperty(name);
+        } else {
+            doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    clearProperty(name);
+                    return null;
+                }
+            });
+        }
+    }
+
+    private static ClassLoader getCurrentContextClassLoaderPrivileged() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            return currentThread().getContextClassLoader();
+        }
+        return doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return currentThread().getContextClassLoader();
+            }
+        });
+    }
+
+    private static void setCurrentContextClassLoaderPrivileged(ClassLoader newClassLoader) {
+        final SecurityManager sm = System.getSecurityManager();
+        final Thread thread = currentThread();
+        if (sm == null) {
+            thread.setContextClassLoader(newClassLoader);
+        } else {
+            doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    thread.setContextClassLoader(newClassLoader);
+                    return null;
+                }
+            });
+        }
+    }
+
+    private static Properties getSystemPropertiesPrivileged() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            return getProperties();
+        }
+        return doPrivileged((PrivilegedAction<Properties>) System::getProperties);
+    }
+
+    private static Map<String, String> getSystemEnvironmentPrivileged() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            return getenv();
+        }
+        return doPrivileged((PrivilegedAction<Map<String, String>>) System::getenv);
     }
 }
