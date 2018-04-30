@@ -22,6 +22,7 @@
 
 package org.jboss.as.host.controller.operations;
 
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -36,7 +37,7 @@ import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.host.controller.operations.ServerStartHandler.getOperationDefinition;
+import static org.jboss.as.host.controller.operations.ServerStartHandler.getOperationDefinitionBuilder;
 
 import java.util.Locale;
 
@@ -46,7 +47,9 @@ import java.util.Locale;
 public class ServerReloadHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = "reload";
-    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.START_MODE);
+    public static final OperationDefinition DEFINITION = getOperationDefinitionBuilder(OPERATION_NAME, ServerStartHandler.START_MODE)
+            .setDeprecated(ModelVersion.create(7,0,0))
+            .build();
 
     private final ServerInventory serverInventory;
     public ServerReloadHandler(ServerInventory serverInventory) {

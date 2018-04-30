@@ -73,6 +73,10 @@ public class ServerStartHandler implements OperationStepHandler {
     private final ServerInventory serverInventory;
 
     static OperationDefinition getOperationDefinition(String name, AttributeDefinition... additional) {
+        return getOperationDefinitionBuilder(name, additional).build();
+    }
+
+    static SimpleOperationDefinitionBuilder getOperationDefinitionBuilder(String name, AttributeDefinition... additional) {
         SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, HostResolver.getResolver("host.server"))
                 .setParameters(SERVER, BLOCKING)
                 .setReplyType(ModelType.STRING)
@@ -81,7 +85,7 @@ public class ServerStartHandler implements OperationStepHandler {
         for (AttributeDefinition param : additional) {
             builder.addParameter(param);
         }
-        return builder.build();
+        return builder;
     }
 
     /**
