@@ -45,6 +45,7 @@ import org.wildfly.extension.io.logging.IOLogger;
 public class IOExtension implements Extension {
 
     public static final String SUBSYSTEM_NAME = "io";
+    static final ModelVersion CURRENT_MODEL_VERSION = ModelVersion.create(5);
     protected static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     protected static final PathElement BUFFER_POOL_PATH = PathElement.pathElement(Constants.BUFFER_POOL);
     protected static final PathElement WORKER_PATH = PathElement.pathElement(Constants.WORKER);
@@ -70,7 +71,7 @@ public class IOExtension implements Extension {
 
     @Override
     public void initialize(ExtensionContext context) {
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(5));
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, CURRENT_MODEL_VERSION);
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(IORootDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE, false);
         subsystem.registerXMLElementWriter(new IOSubsystemParser_3_0());
