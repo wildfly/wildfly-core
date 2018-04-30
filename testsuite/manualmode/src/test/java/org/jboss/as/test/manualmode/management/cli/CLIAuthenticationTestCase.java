@@ -183,6 +183,7 @@ public class CLIAuthenticationTestCase {
     @Test
     public void testHttpAuth() throws Throwable {
         CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addCliArgument("--no-color-output")
                 .addCliArgument("--connect")
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"
@@ -249,6 +250,7 @@ public class CLIAuthenticationTestCase {
     @Test
     public void testSaslAuth() throws Throwable {
         CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addCliArgument("--no-color-output")
                 .addCliArgument("--connect")
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"

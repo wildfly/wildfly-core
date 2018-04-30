@@ -274,14 +274,14 @@ limitations under the License.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="enabled" type="xs:boolean" default="true" minOccurs="1" />
+            <xs:element name="enabled" type="xs:boolean" default="true" minOccurs="1"/>
+            <xs:element name="error-color" type="colorChoiceType" default="red"/>
+            <xs:element name="warn-color" type="colorChoiceType" default="yellow"/>
+            <xs:element name="success-color" type="colorChoiceType" default="default"/>
+            <xs:element name="required-color" type="colorChoiceType" default="magenta"/>
+            <xs:element name="workflow-color" type="colorChoiceType" default="green"/>
+            <xs:element name="prompt-color" type="colorChoiceType" default="blue"/>
         </xs:sequence>
-        <xs:attribute name="error-color" type="colorChoiceType" default="red" />
-        <xs:attribute name="warn-color" type="colorChoiceType" default="yellow" />
-        <xs:attribute name="success-color" type="colorChoiceType" default="default" />
-        <xs:attribute name="required-color" type="colorChoiceType" default="magenta" />
-        <xs:attribute name="workflow-color" type="colorChoiceType" default="green" />
-        <xs:attribute name="prompt-color" type="colorChoiceType" default="blue" />
     </xs:complexType>
 
     <xs:simpleType name="colorChoiceType">

@@ -511,8 +511,31 @@ public class CliConfigTestCase {
     }
 
     @Test
-    public void testColorOutputViaCliArgument() throws Exception {
+    public void testColorOutputDisabledViaConfigFile() throws Exception {
         File f = createConfigFile(false, 0, true, false, false);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("read-attribute");
+            String out = cli.getOutput();
+            assertTrue(out.contains("Required argument --name is not specified."));
+            assertFalse("Output contains ANSII color codes.", out.contains("\u001B["));
+        } finally {
+            cli.destroyProcess();
+            f.delete();
+        }
+    }
+
+    @Test
+    public void testColorOutputViaCliArgument() throws Exception {
+        File f = createConfigFile(false, 0, true, false, true);
         CliProcessWrapper cli = new CliProcessWrapper()
                 .setCliConfig(f.getAbsolutePath())
                 .addCliArgument("--controller="
@@ -535,6 +558,29 @@ public class CliConfigTestCase {
             assertTrue(out.contains("\"outcome\" => \"success\""));
             // Success message: default color, normal style and intensity with default background
             assertTrue(out.contains("\u001B[;39;49m") && out.contains("\u001B[0m" + LINE_SEPARATOR));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testColorOutputDisabledViaCliArgument() throws Exception {
+        File f = createConfigFile(false, 0, true, false, true);
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .setCliConfig(f.getAbsolutePath())
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--no-color-output");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("read-attribute");
+            String out = cli.getOutput();
+            assertTrue(out.contains("Required argument --name is not specified."));
+            assertFalse("Output contains ANSII color codes.", out.contains("\u001B["));
         } finally {
             cli.destroyProcess();
         }
@@ -648,9 +694,7 @@ public class CliConfigTestCase {
             writer.writeCharacters(outputJSON.toString());
             writer.writeEndElement(); //output-json
 
-            if (colorOutput) {
-                writeColorConfig(writer, true, "", "", "", "", "");
-            }
+            writeColorConfig(writer, colorOutput, "", "", "", "", "");
 
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
@@ -691,9 +735,7 @@ public class CliConfigTestCase {
             writer.writeCharacters(outputJSON.toString());
             writer.writeEndElement(); //output-json
 
-            if (colorOutput) {
-                writeColorConfig(writer, true, error, warn, success, required, batch);
-            }
+            writeColorConfig(writer, colorOutput, error, warn, success, required, batch);
 
             writer.writeEndElement(); //jboss-cli
             writer.writeEndDocument();
