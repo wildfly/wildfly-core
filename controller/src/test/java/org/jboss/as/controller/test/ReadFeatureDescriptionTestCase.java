@@ -110,7 +110,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
      * - param for extension which contains this subsystem,
      * - provided capability is listed in 'provides',
      * - 'refs' contain {feature = "extension", include = true},
-     * - packages contain "[extension name].main".
+     * - packages contain "[extension name]".
      */
     @Test
     public void testSubsystem() throws OperationFailedException {
@@ -140,7 +140,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         // check packages
         ModelNode packages = feature.require(PACKAGES);
         Assert.assertEquals(1, packages.asList().size());
-        Assert.assertEquals(TEST_EXTENSION + ".main", packages.get(0).require(PACKAGE).asString());
+        Assert.assertEquals(TEST_EXTENSION, packages.get(0).require(PACKAGE).asString());
     }
 
     /**
