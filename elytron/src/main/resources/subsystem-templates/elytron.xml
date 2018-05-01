@@ -100,7 +100,7 @@
             </properties-realm>
         </replacement>
         <replacement placeholder="HTTP_DEFINITIONS">
-            <http-authentication-factory name="application-http-authentication" http-server-mechanism-factory="global" security-domain="ApplicationDomain">
+            <http-authentication-factory name="application-http-authentication" security-domain="ApplicationDomain" http-server-mechanism-factory="global">
                 <mechanism-configuration>
                     <mechanism mechanism-name="BASIC" >
                         <mechanism-realm realm-name="Application Realm" />
@@ -148,7 +148,7 @@
             </properties-realm>
         </replacement>
         <replacement placeholder="HTTP_DEFINITIONS">
-            <http-authentication-factory name="management-http-authentication" http-server-mechanism-factory="global" security-domain="ManagementDomain">
+            <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
                 <mechanism-configuration>
                     <mechanism mechanism-name="BASIC" >
                         <mechanism-realm realm-name="Management Realm" />
@@ -199,14 +199,14 @@
         </replacement>
 
         <replacement placeholder="HTTP_DEFINITIONS">
-            <http-authentication-factory name="management-http-authentication" http-server-mechanism-factory="global" security-domain="ManagementDomain">
+            <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
                 <mechanism-configuration>
                     <mechanism mechanism-name="DIGEST">
                         <mechanism-realm realm-name="ManagementRealm"/>
                     </mechanism>
                 </mechanism-configuration>
             </http-authentication-factory>
-            <http-authentication-factory name="application-http-authentication" http-server-mechanism-factory="global" security-domain="ApplicationDomain">
+            <http-authentication-factory name="application-http-authentication" security-domain="ApplicationDomain" http-server-mechanism-factory="global">
                 <mechanism-configuration>
                     <mechanism mechanism-name="BASIC" >
                         <mechanism-realm realm-name="Application Realm" />
