@@ -109,8 +109,11 @@ public abstract class TestModelControllerService extends AbstractControllerServi
         return capabilityRegistry;
     }
 
-    protected static OperationDefinition getOD(String name) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
-                .build();
+    static OperationDefinition getOD(String name) {
+        return getODBuilder(name).build();
+    }
+
+    static SimpleOperationDefinitionBuilder getODBuilder(String name) {
+        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver());
     }
 }

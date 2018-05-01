@@ -28,9 +28,11 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
@@ -54,8 +56,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_MODIFICATION_COMPLETE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_UPDATE_SKIPPED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -92,6 +97,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -728,6 +734,55 @@ public class ModelControllerImplUnitTestCase {
         assertEquals(result.toString(), msg, result.get(FAILURE_DESCRIPTION).asString());
     }
 
+    @Test
+    public void testDeprecatedOpWarning() {
+        ModelNode rootOp = Util.createEmptyOperation("deprecated-op", PathAddress.EMPTY_ADDRESS);
+        ModelNode rootResponse = controller.execute(rootOp, null, null, null);
+        // Confirm all 3 steps ran
+        Assert.assertEquals(rootResponse.toString(), 3, rootResponse.get(RESULT).asInt());
+        ModelNode rootWarning = validateDeprecatedWarning(rootResponse, PathAddress.EMPTY_ADDRESS);
+
+        // Execute against non-root
+        PathAddress childAddr = PathAddress.EMPTY_ADDRESS.append(CHILD_ONE);
+        ModelNode childOp = Util.createEmptyOperation("deprecated-op", childAddr);
+        ModelNode childResponse = controller.execute(childOp, null, null, null);
+        Assert.assertEquals(childResponse.toString(), 3, childResponse.get(RESULT).asInt());
+        ModelNode childWarning = validateDeprecatedWarning(childResponse, childAddr);
+
+        ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        composite.get(STEPS).add(rootOp);
+        composite.get(STEPS).add(childOp);
+        ModelNode compositeResponse = controller.execute(composite, null, null, null);
+
+        String rspString = compositeResponse.toString();
+        // TODO the warnings for composite ops aren't structured as checked below; that may be a bug
+//        Assert.assertTrue(rspString, compositeResponse.hasDefined(RESPONSE_HEADERS, WARNINGS));
+//        Assert.assertEquals(rspString, ModelType.LIST, compositeResponse.get(RESPONSE_HEADERS, WARNINGS).getType());
+//        ModelNode warnings = compositeResponse.get(RESPONSE_HEADERS, WARNINGS);
+//        Assert.assertEquals(rspString, 2, warnings.asInt()); // one warn per op
+//        Assert.assertEquals(rspString, rootWarning, warnings.get(0));
+//        Assert.assertEquals(rspString, childWarning, warnings.get(1));
+        // Instead we validate that each step response is like the non-composite equivalent
+        // It's ok to change this if we decide the way response headers for composites work is incorrect
+        Assert.assertEquals(rspString, rootWarning, validateDeprecatedWarning(compositeResponse.get(RESULT, "step-1"), PathAddress.EMPTY_ADDRESS));
+        Assert.assertEquals(rspString, childWarning, validateDeprecatedWarning(compositeResponse.get(RESULT, "step-2"), childAddr));
+    }
+
+    private static ModelNode validateDeprecatedWarning(ModelNode response, PathAddress address) {
+        String rspString = response.toString();
+        Assert.assertTrue(rspString, response.hasDefined(RESPONSE_HEADERS, WARNINGS));
+        Assert.assertEquals(rspString, ModelType.LIST, response.get(RESPONSE_HEADERS, WARNINGS).getType());
+        ModelNode warnings = response.get(RESPONSE_HEADERS, WARNINGS);
+        Assert.assertEquals(rspString, 1, warnings.asInt()); // just one in list
+        ModelNode warning = warnings.get(0);
+        Assert.assertTrue(rspString, warning.get(WARNING).asString().contains("WFLYCTL0449"));
+        Assert.assertEquals(rspString, "deprecated-op", warning.get(OP, OP).asString());
+        Assert.assertEquals(rspString, "WARNING", warning.get(LEVEL).asString());
+        Assert.assertEquals(rspString, address, PathAddress.pathAddress(warning.get(OP, OP_ADDR)));
+
+        return warning;
+    }
+
     public static ModelNode getOperation(String opName, String attr, int val) {
         return getOperation(opName, attr, val, null, false);
     }
@@ -781,6 +836,7 @@ public class ModelControllerImplUnitTestCase {
             rootRegistration.registerOperationHandler(getOD("remove-dependent-service"), new ModelControllerImplUnitTestCase.RemoveDependentServiceHandler(),true);
             rootRegistration.registerOperationHandler(getOD("read-wildcards"), new ModelControllerImplUnitTestCase.WildcardReadHandler(),true);
             rootRegistration.registerOperationHandler(getOD("invalid-service-update"), new ModelControllerImplUnitTestCase.InvalidServiceUpdateHandler(),true);
+            rootRegistration.registerOperationHandler(getODBuilder("deprecated-op").setDeprecated(ModelVersion.create(1)).build(), new DeprecatedHandler(), true);
 
             GlobalOperationHandlers.registerGlobalOperations(rootRegistration, processType);
 
@@ -1255,6 +1311,17 @@ public class ModelControllerImplUnitTestCase {
                 }
             }, OperationContext.Stage.RUNTIME);
             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+        }
+    }
+
+    private static final class DeprecatedHandler implements OperationStepHandler {
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) {
+            context.getResult().set(1);
+            // Add child steps to prove that those steps don't result in duplicate warnings
+            context.addStep((context1, operation1) -> context.getResult().set(2), OperationContext.Stage.MODEL);
+            context.addStep((context1, operation1) -> context.getResult().set(3), OperationContext.Stage.RUNTIME);
         }
     }
 
