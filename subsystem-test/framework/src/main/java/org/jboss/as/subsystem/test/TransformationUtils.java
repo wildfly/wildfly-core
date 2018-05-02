@@ -188,8 +188,7 @@ class TransformationUtils {
 
     private static File getDmrFile(KernelServices kernelServices, ModelVersion modelVersion, String mainSubsystemName) {
 
-        File file = new File("target/test-classes").getAbsoluteFile();
-        Assert.assertTrue(file.exists());
+        File file = determineTestClassesDirectory();
         for (String part : kernelServices.getTestClass().getPackage().getName().split("\\.")) {
             file = new File(file, part);
             if (!file.exists()) {
@@ -197,6 +196,33 @@ class TransformationUtils {
             }
         }
         return new File(file, mainSubsystemName + "-" + modelVersion.getMajor() + "." + modelVersion.getMinor() + "." + modelVersion.getMicro() + ".dmr");
+    }
+
+    private static File determineTestClassesDirectory() {
+        File file = new File("target/test-classes").getAbsoluteFile();
+        if (!file.exists()) {
+            // In IntelliJ we often end up with the wrong directory so brute-force determining what it is
+            // Note this will not work for the tests testing the subsystem test framework itself but should work elsewhere
+            File stackTraceFile = null;
+            StackTraceElement[] elements = new Exception().getStackTrace();
+            for (StackTraceElement element : elements) {
+                if (!element.getClassName().startsWith("org.jboss.as.subsystem.test.")) {
+                    try {
+                        Class clazz = TransformationUtils.class.getClassLoader().loadClass(element.getClassName());
+                        stackTraceFile = new File(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    break;
+
+                }
+            }
+            Assert.assertNotNull("Could not determine test-classes directory", stackTraceFile);
+            file = stackTraceFile.getAbsoluteFile();
+        }
+        Assert.assertTrue("Could not determine test-classes directory" + file, file.exists());
+        return file;
     }
 
 }
