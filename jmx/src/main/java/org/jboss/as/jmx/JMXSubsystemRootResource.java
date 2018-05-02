@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import javax.management.MBeanServer;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
@@ -65,6 +66,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
 
     private static final SimpleAttributeDefinition SHOW_MODEL_ALIAS = SimpleAttributeDefinitionBuilder.create(CommonAttributes.SHOW_MODEL, ModelType.BOOLEAN, true)
             .addFlag(AttributeAccess.Flag.ALIAS)
+            .setDeprecated(ModelVersion.create(7,0,0))
             .build();
 
     public static final SimpleAttributeDefinition CORE_MBEAN_SENSITIVITY = new SimpleAttributeDefinitionBuilder(CommonAttributes.NON_CORE_MBEAN_SENSITIVITY, ModelType.BOOLEAN, true)
