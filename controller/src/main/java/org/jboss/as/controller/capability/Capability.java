@@ -110,7 +110,7 @@ public interface Capability {
     boolean isDynamicallyNamed();
 
     /**
-     * Gets the full name of a capbility, including a dynamic element
+     * Gets the full name of a capability, including a dynamic element
      * @param dynamicNameElement the dynamic portion of the name. Cannot be {@code null}
      * @return the full capability name
      *
@@ -119,4 +119,39 @@ public interface Capability {
     String getDynamicName(String dynamicNameElement);
 
     String getDynamicName(PathAddress address);
+
+    /**
+     * Gets the names of any "additional" Galleon packages that must be installed in order
+     * for this capability to function. The purpose of providing this information is to
+     * make it available to the Galleon tooling that produces Galleon feature-specs,
+     * in order to allow the tooling to include the package information in the relevant
+     * spec.
+     * <p>
+     * A package is "additional" if it is not one of the "standard" packages that must be
+     * installed. The names of "standard" packages should not be returned. The "standard"
+     * packages are:
+     *
+     *  <ol>
+     *      <li>
+     *          The root package for the process type; i.e. the package that provides
+     *          the main module whose name is passed to JBoss Modules when the process
+     *          is launched.
+     *      </li>
+     *      <li>
+     *          If this capability is provided by an {@code Extension}, the package
+     *          that installs the module that provides the extension.
+     *      </li>
+     *      <li>
+     *          Any package that is listed as an additional required package by capability
+     *          upon which this capability has a {@link #getRequirements() requirement}.
+     *      </li>
+     *      <li>
+     *          Any package that is non-optionally required, either directly or transitively,
+     *          by one of the other types of standard packages.
+     *      </li>
+     *  </ol>
+     *
+     * @return the additional package names. Will not return {@code null} but may be empty
+     */
+    Set<String> getAdditionalRequiredPackages();
 }

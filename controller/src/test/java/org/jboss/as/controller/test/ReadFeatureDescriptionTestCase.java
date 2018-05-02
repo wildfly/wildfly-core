@@ -86,6 +86,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String NON_FEATURE_RESOURCE = "non-feature-resource";
     private static final String TEST = "test";
     private static final String MAIN_RESOURCE_CAPABILITY_NAME = "main-resource-capability";
+    private static final String MAIN_RESOURCE_PACKAGE_NAME = "main-resource-package";
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
 
     private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
@@ -235,6 +236,11 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         // requires `root-capability` because `optional-attr` references it
         Assert.assertEquals(ROOT_CAPABILITY_NAME, requires.asList().get(0).require(NAME).asString());
         Assert.assertTrue(requires.asList().get(0).require(OPTIONAL).asBoolean());
+
+        // packages
+        ModelNode packages = feature.require(PACKAGES);
+        Assert.assertEquals(1, packages.asList().size());
+        Assert.assertEquals(MAIN_RESOURCE_PACKAGE_NAME, packages.asList().get(0).get(PACKAGE).asString());
     }
 
     /**
@@ -542,7 +548,9 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static class MainResourceDefinition extends SimpleResourceDefinition {
 
         private static final RuntimeCapability MAIN_RESOURCE_CAPABILITY =
-                RuntimeCapability.Builder.of(MAIN_RESOURCE_CAPABILITY_NAME, true).build();
+                RuntimeCapability.Builder.of(MAIN_RESOURCE_CAPABILITY_NAME, true)
+                        .addAdditionalRequiredPackages(MAIN_RESOURCE_PACKAGE_NAME)
+                        .build();
 
         private static final AttributeDefinition OPTIONAL_ATTRIBUTE =
                 new SimpleAttributeDefinitionBuilder("optional-attr", ModelType.INT, true)

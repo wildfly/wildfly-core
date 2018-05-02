@@ -78,6 +78,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     private volatile ServiceName serviceName;
     private final T runtimeAPI;
     private final boolean allowMultipleRegistrations;
+    private final Set<String> additionalPackages;
 
     /**
      * Constructor for use by the builder.
@@ -87,6 +88,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         this.runtimeAPI = builder.runtimeAPI;
         this.serviceValueType = builder.serviceValueType;
         this.allowMultipleRegistrations = builder.allowMultipleRegistrations;
+        this.additionalPackages = builder.additionalPackages == null
+                ? Collections.emptySet() : Collections.unmodifiableSet(builder.additionalPackages);
     }
 
     /**
@@ -95,7 +98,9 @@ public class RuntimeCapability<T> extends AbstractCapability  {
     private RuntimeCapability(String baseName, Class<?> serviceValueType, ServiceName baseServiceName, T runtimeAPI,
                               Set<String> requirements,
                               boolean allowMultipleRegistrations,
-                              Function<PathAddress, String[]> dynamicNameMapper, String... dynamicElement
+                              Function<PathAddress, String[]> dynamicNameMapper,
+                              Set<String> additionalPackages,
+                              String... dynamicElement
     ) {
         super(buildDynamicCapabilityName(baseName, dynamicElement), false, requirements, dynamicNameMapper);
         this.runtimeAPI = runtimeAPI;
@@ -107,6 +112,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
             assert baseServiceName == null;
         }
         this.allowMultipleRegistrations = allowMultipleRegistrations;
+        this.additionalPackages = additionalPackages;
     }
 
     /**
@@ -256,7 +262,8 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         assert dynamicElement != null;
         assert dynamicElement.length > 0;
         return new RuntimeCapability<T>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations,dynamicNameMapper, additionalPackages,
+                dynamicElement);
 
     }
 
@@ -284,7 +291,13 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         String[] dynamicElement = dynamicNameMapper.apply(path);
         assert dynamicElement.length > 0;
         return new RuntimeCapability<>(getName(), serviceValueType, getServiceName(), runtimeAPI,
-                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, dynamicElement);
+                getRequirements(), allowMultipleRegistrations, dynamicNameMapper, additionalPackages,
+                dynamicElement);
+    }
+
+    @Override
+    public Set<String> getAdditionalRequiredPackages() {
+        return additionalPackages;
     }
 
     /**
@@ -301,6 +314,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         @SuppressWarnings("deprecation")
         private Function<PathAddress, String[]> dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
+        private Set<String> additionalPackages;
 
         /**
          * Create a builder for a non-dynamic capability with no custom runtime API.
@@ -423,6 +437,28 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         public Builder<T> setDynamicNameMapper(Function<PathAddress,String[]> mapper) {
             assert mapper != null;
             this.dynamicNameMapper = mapper;
+            return this;
+        }
+
+        /**
+         * Adds the names of any "additional" Galleon packages that must be installed in order
+         * for this capability to function. The purpose of providing this information is to
+         * make it available to the Galleon tooling that produces Galleon feature-specs,
+         * in order to allow the tooling to include the package information in the relevant
+         * spec. It is not necessary to provide the names of "standard" packages here and
+         * because of this, this method is not expected to be frequently used.
+         * See {@link Capability#getAdditionalRequiredPackages()} for more information
+         * on what makes a package "standard" versus "additional".
+         *
+         * @param packages the package names
+         * @return the builder
+         */
+        public Builder<T> addAdditionalRequiredPackages(String... packages) {
+            assert packages != null;
+            if (this.additionalPackages == null) {
+                this.additionalPackages = new HashSet<>(packages.length);
+            }
+            Collections.addAll(this.additionalPackages, packages);
             return this;
         }
 
