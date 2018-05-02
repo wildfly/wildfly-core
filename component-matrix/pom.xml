@@ -59,7 +59,7 @@
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.0.4.Final</version.io.undertow>
+        <version.io.undertow>2.0.6.Final</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.javax.json.javax-json-api>1.1.2</version.javax.json.javax-json-api>
         <version.junit>4.12</version.junit>
