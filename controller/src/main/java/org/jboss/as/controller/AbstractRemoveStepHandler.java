@@ -51,13 +51,15 @@ public abstract class AbstractRemoveStepHandler implements OperationStepHandler 
     private final Set<RuntimeCapability> capabilities;
 
     protected AbstractRemoveStepHandler() {
-        this(AbstractAddStepHandler.NULL_CAPABILITIES);
+        this.capabilities = AbstractAddStepHandler.NULL_CAPABILITIES;
     }
 
+    @Deprecated
     protected AbstractRemoveStepHandler(RuntimeCapability... capabilities) {
         this(capabilities.length == 0 ? AbstractAddStepHandler.NULL_CAPABILITIES : new HashSet<RuntimeCapability>(Arrays.asList(capabilities)));
     }
 
+    @Deprecated
     protected AbstractRemoveStepHandler(Set<RuntimeCapability> capabilities) {
         this.capabilities = capabilities == null ? AbstractAddStepHandler.NULL_CAPABILITIES : capabilities;
     }

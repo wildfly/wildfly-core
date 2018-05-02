@@ -54,10 +54,13 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
     public ReloadRequiredAddStepHandler(Collection<AttributeDefinition> attributes) {
         super(attributes);
     }
+
+    @Deprecated
     public ReloadRequiredAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
         super(capability, attributes);
     }
 
+    @Deprecated
     public ReloadRequiredAddStepHandler(Set<RuntimeCapability> capabilities, Collection<AttributeDefinition> attributes) {
         super(capabilities, attributes);
     }

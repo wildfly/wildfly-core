@@ -72,7 +72,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      *                     {@code null} is allowed
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use {@link #AbstractAddStepHandler(Collection) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
      */
+    @Deprecated
     public AbstractAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
         this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes );
     }
@@ -83,7 +85,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      *                     {@code null} is allowed
      * @param attributes   attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use {@link #AbstractAddStepHandler(Collection) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
      */
+    @Deprecated
     public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
         //Please don't add more constructors, instead use the Parameters variety
         this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
@@ -96,7 +100,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      *                     {@code null} is allowed
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use {@link #AbstractAddStepHandler(AttributeDefinition...) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
      */
+    @Deprecated
     public AbstractAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
         this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes);
     }
@@ -116,7 +122,9 @@ public class AbstractAddStepHandler implements OperationStepHandler {
      * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      *                     {@code null} is allowed
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
+     * @deprecated Use {@link #AbstractAddStepHandler(AttributeDefinition...) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
      */
+    @Deprecated
     public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
         this(capabilities, attributes.length > 0 ? Arrays.asList(attributes) : NULL_ATTRIBUTES);
     }
@@ -472,6 +480,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         public Parameters() {
         }
 
+        @Deprecated
         public Parameters addRuntimeCapability(RuntimeCapability...capabilities) {
             Set<RuntimeCapability> capabilitySet = getOrCreateCapabilities();
             for (RuntimeCapability capability : capabilities) {
@@ -480,6 +489,7 @@ public class AbstractAddStepHandler implements OperationStepHandler {
             return this;
         }
 
+        @Deprecated
         public Parameters addRuntimeCapability(Set<RuntimeCapability> capabilities) {
             getOrCreateCapabilities().addAll(capabilities);
             return this;
