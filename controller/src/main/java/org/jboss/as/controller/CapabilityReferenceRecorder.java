@@ -107,25 +107,47 @@ public interface CapabilityReferenceRecorder {
     class DefaultCapabilityReferenceRecorder extends ContextDependencyRecorder {
 
         private final String baseDependentName;
+        private final Boolean dynamicDependent;
 
         DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName) {
             super(baseRequirementName);
             this.baseDependentName = baseDependentName;
+            this.dynamicDependent = null;
         }
 
         @Deprecated DefaultCapabilityReferenceRecorder(String baseRequirementName, String baseDependentName, boolean dynamicDependent) {
-            this(baseRequirementName, baseDependentName);
+            super(baseRequirementName);
+            this.baseDependentName = baseDependentName;
+            this.dynamicDependent = dynamicDependent;
         }
 
         @Override
-        protected RuntimeCapability<?> getDependentCapability(OperationContext context) {
+        String getDependentName(OperationContext context) {
+            RuntimeCapability<?> cap = getDependentCapability(context);
+            if (cap != null) {
+                // If the cap is registered with the mrr, we ignore any dynamicDependent setting
+                return getDependentName(cap, context);
+            } else if (dynamicDependent != null) {
+                // Use the legacy approach
+                if (dynamicDependent) {
+                    return RuntimeCapability.buildDynamicCapabilityName(baseDependentName, context.getCurrentAddressValue());
+                } else {
+                    return baseDependentName;
+                }
+            }
+            // No cap registered and no legacy info on how to construct the full name. Fail!
+            throw ControllerLogger.ROOT_LOGGER.unknownCapability(this.baseDependentName);
+        }
+
+        @Override
+        RuntimeCapability<?> getDependentCapability(OperationContext context) {
             ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
             for (RuntimeCapability<?> capability : mrr.getCapabilities()) {
                 if (this.baseDependentName.equals(capability.getName())) {
                     return capability;
                 }
             }
-            throw ControllerLogger.ROOT_LOGGER.unknownCapability(this.baseDependentName);
+            return null;
         }
 
         @Override
@@ -171,8 +193,7 @@ public interface CapabilityReferenceRecorder {
         }
 
         void processCapabilityRequirement(OperationContext context, Resource resource, String attributeName, boolean remove, String... attributeValues) {
-            RuntimeCapability<?> cap = getDependentCapability(context);
-            String dependentName = getDependentName(cap, context);
+            String dependentName = getDependentName(context);
             for (String attributeValue : attributeValues) {
                 //if (attributeValue != null || !cap.getDynamicOptionalRequirements().contains(baseRequirementName)) { //once we figure out what to do with optional requirements
                 if (attributeValue != null) {
@@ -186,14 +207,19 @@ public interface CapabilityReferenceRecorder {
             }
         }
 
-        protected RuntimeCapability<?> getDependentCapability(OperationContext context) {
+        String getDependentName(OperationContext context) {
+            RuntimeCapability<?> cap = getDependentCapability(context);
+            return getDependentName(cap, context);
+        }
+
+        RuntimeCapability<?> getDependentCapability(OperationContext context) {
             ImmutableManagementResourceRegistration mrr = context.getResourceRegistration();
             Set<RuntimeCapability> capabilities = mrr.getCapabilities();
             assert capabilities != null && capabilities.size() == 1;
             return capabilities.iterator().next();
         }
 
-        String getDependentName(RuntimeCapability<?> cap, OperationContext context) {
+        final String getDependentName(RuntimeCapability<?> cap, OperationContext context) {
             if (cap.isDynamicallyNamed()) {
                 return cap.fromBaseCapability(context.getCurrentAddress()).getName();
             }
