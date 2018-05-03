@@ -50,7 +50,9 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
@@ -63,6 +65,8 @@ public class CliCompletionTestCase {
 
     private static CommandContext ctx;
 
+    @ClassRule
+    public static final TemporaryFolder temporaryDir = new TemporaryFolder();
     /**
      * Initialize CommandContext before all tests
      */
@@ -593,6 +597,53 @@ public class CliCompletionTestCase {
         assertEquals(expectedParameters, candidates.stream().map(String::toString).collect(Collectors.toSet()));
     }
 
+    private static void cleanupSecurityCompletion(CommandContext ctx, boolean roleDecoder, boolean fsRealm, boolean ksRealm, boolean ks) throws Exception {
+        Exception ex = null;
+        if (roleDecoder) {
+            try {
+                ctx.handle("/subsystem=elytron/simple-role-decoder=from-roles-attribute:remove");
+            } catch (Exception e) {
+                ex = e;
+            }
+        }
+        if (fsRealm) {
+            try {
+                ctx.handle("/subsystem=elytron/filesystem-realm=foo-fs-realm:remove");
+            } catch (Exception e) {
+                if (ex == null) {
+                    ex = e;
+                } else {
+                    ex.addSuppressed(e);
+                }
+            }
+        }
+        if (ksRealm) {
+            try {
+                ctx.handle("/subsystem=elytron/key-store-realm=koko:remove");
+            } catch (Exception e) {
+                if (ex == null) {
+                    ex = e;
+                } else {
+                    ex.addSuppressed(e);
+                }
+            }
+        }
+        if (ks) {
+            try {
+                ctx.handle("/subsystem=elytron/key-store=foo:remove");
+            } catch (Exception e) {
+                if (ex == null) {
+                    ex = e;
+                } else {
+                    ex.addSuppressed(e);
+                }
+            }
+        }
+        if (ex != null) {
+            throw ex;
+        }
+    }
+
     @Test
     public void securityCommandsCompletion() throws Exception {
         CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
@@ -601,13 +652,38 @@ public class CliCompletionTestCase {
         // add a key-store.
         ctx.handle("/subsystem=elytron/key-store=foo:add(type=JKS, credential-reference={clear-text=secret})");
         try {
+            ctx.handle("/subsystem=elytron/key-store-realm=koko:add(key-store=foo)");
+        } catch (Exception ex) {
+            cleanupSecurityCompletion(ctx, false, false, false, true);
+            throw ex;
+        }
+        // add a file system realm and decoder
+        try {
+            ctx.handle("/subsystem=elytron/filesystem-realm=foo-fs-realm:add(path="
+                    + escapePath(temporaryDir.newFolder("identities").getAbsolutePath()));
+        } catch (Exception ex) {
+            cleanupSecurityCompletion(ctx, false, false, true, true);
+            throw ex;
+        }
+        try {
+            ctx.handle("/subsystem=elytron/simple-role-decoder=from-roles-attribute:add(attribute=Roles)");
+        } catch (Exception ex) {
+            cleanupSecurityCompletion(ctx, false, true, true, true);
+            throw ex;
+        }
+        try {
 
             {
                 String cmd = "security ";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
-                List<String> res = Arrays.asList("disable-ssl-management", "enable-ssl-management");
+                List<String> res = Arrays.asList("disable-http-auth-management",
+                        "disable-sasl-management",
+                        "disable-ssl-management",
+                        "enable-http-auth-management",
+                        "enable-sasl-management",
+                        "enable-ssl-management", "reorder-sasl-management");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);
                 assertEquals(candidates.toString(), res, candidates);
@@ -833,14 +909,507 @@ public class CliCompletionTestCase {
                 assertEquals(candidates.toString(), res, candidates);
             }
 
+            // Authentication
+            {
+                String cmd = "security enable-http-auth-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--mechanism=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("BASIC", "CLIENT_CERT",
+                        "DIGEST", "DIGEST-SHA-256", "FORM");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=CLIENT_CERT ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--key-store-name=",
+                        "--key-store-realm-name=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=CLIENT_CERT "
+                        + "--key-store-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=CLIENT_CERT "
+                        + "--key-store-name=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--new-auth-factory-name=",
+                        "--new-realm-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=CLIENT_CERT "
+                        + "--key-store-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("koko");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=CLIENT_CERT "
+                        + "--key-store-realm-name=koko ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--file-system-realm-name=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--properties-realm-name=",
+                        "--user-properties-file=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--file-system-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo-fs-realm");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--file-system-realm-name=foo-fs-realm ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--user-role-decoder=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--file-system-realm-name=foo-fs-realm --user-role-decoder=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("from-roles-attribute", "groups-to-roles");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=DIGEST-MD5 "
+                        + "--properties-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("ApplicationRealm", "ManagementRealm");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=DIGEST-MD5 "
+                        + "--properties-realm-name=ApplicationRealm ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--user-properties-file=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--user-properties-file=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--group-properties-file=",
+                        "--new-auth-factory-name=",
+                        "--new-realm-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--relative-to=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-http-auth-management --mechanism=BASIC "
+                        + "--user-properties-file=foo --group-properties-file=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security disable-http-auth-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--mechanism=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--mechanism=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=EXTERNAL ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--key-store-name=",
+                        "--key-store-realm-name=",
+                        "--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=EXTERNAL "
+                        + "--key-store-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=EXTERNAL "
+                        + "--key-store-name=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-realm-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=EXTERNAL "
+                        + "--key-store-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("koko");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=EXTERNAL "
+                        + "--key-store-realm-name=koko ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload", "--roles=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=JBOSS-LOCAL-USER ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList(
+                        "--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--super-user");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--file-system-realm-name=",
+                        "--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--properties-realm-name=",
+                        "--user-properties-file=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--file-system-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("foo-fs-realm");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--file-system-realm-name=foo-fs-realm ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--user-role-decoder=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--file-system-realm-name=foo-fs-realm --user-role-decoder=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("from-roles-attribute", "groups-to-roles");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--properties-realm-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("ApplicationRealm", "ManagementRealm");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--properties-realm-name=ApplicationRealm ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--management-interface=", "--new-auth-factory-name=",
+                        "--new-security-domain-name=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--user-properties-file=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--user-properties-file=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--exposed-realm=",
+                        "--group-properties-file=",
+                        "--management-interface=",
+                        "--new-auth-factory-name=",
+                        "--new-realm-name=",
+                        "--new-security-domain-name=",
+                        "--no-reload",
+                        "--relative-to=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--user-properties-file=foo --group-properties-file=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security enable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--management-interface=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "security disable-sasl-management ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--management-interface=", "--mechanism=", "--no-reload");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security disable-sasl-management --mechanism=DIGEST-MD5 "
+                        + "--management-interface=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertFalse(candidates.toString(), candidates.isEmpty());
+            }
+
         } finally {
-            ctx.handle("/subsystem=elytron/key-store=foo:remove");
-            ctx.handle("reload");
-            ctx.terminateSession();
+            try {
+                cleanupSecurityCompletion(ctx, true, true, true, true);
+            } finally {
+                try {
+                    ctx.handle("reload");
+                } finally {
+                    ctx.terminateSession();
+                }
+            }
         }
     }
 
-    private String escapePath(String filePath) {
+    public static String escapePath(String filePath) {
         if (Util.isWindows()) {
             StringBuilder builder = new StringBuilder();
             for (char c : filePath.toCharArray()) {

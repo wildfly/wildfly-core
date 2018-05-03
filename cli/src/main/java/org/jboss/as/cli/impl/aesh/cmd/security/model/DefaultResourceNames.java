@@ -30,6 +30,10 @@ import org.jboss.as.cli.operation.OperationFormatException;
  */
 public class DefaultResourceNames {
 
+    private static final String SECURITY_DOMAIN_NAME = "security-domain";
+    public static final String ROLE_MAPPER_NAME = "role-mapper";
+    private static final String FACTORY_NAME = "factory";
+
     public static String buildDefaultKeyStoreName(String name, CommandContext ctx) throws OperationFormatException, IOException {
         int i = 1;
         String computedName = name;
@@ -94,5 +98,47 @@ public class DefaultResourceNames {
 
     static String getDefaultApplicationLegacyRealm() {
         return Util.APPLICATION_REALM;
+    }
+
+    public static String buildUserPropertiesDefaultRealmName(CommandContext ctx,
+            PropertiesRealmConfiguration config) throws OperationFormatException, IOException {
+        String name = new File(config.getUserPropertiesFile()).getName();
+        int i = 1;
+        String computedName = name;
+        while (ElytronUtil.serverPropertiesRealmExists(ctx, computedName)) {
+            computedName = name + "_" + i;
+            i += 1;
+        }
+        return computedName;
+    }
+
+    public static String buildDefaultSecurityDomainName(Realm realm, CommandContext ctx) throws OperationFormatException, IOException {
+        int i = 1;
+        String computedName = SECURITY_DOMAIN_NAME;
+        while (ElytronUtil.securityDomainExists(ctx, computedName)) {
+            computedName = SECURITY_DOMAIN_NAME + "_" + i;
+            i += 1;
+        }
+        return computedName;
+    }
+
+    public static String buildConstantRoleMapperName(Realm realm, CommandContext ctx) throws OperationFormatException, IOException {
+        int i = 1;
+        String computedName = ROLE_MAPPER_NAME;
+        while (ElytronUtil.constantRoleMapperExists(ctx, computedName)) {
+            computedName = ROLE_MAPPER_NAME + "_" + i;
+            i += 1;
+        }
+        return computedName;
+    }
+
+    public static String buildDefaultAuthFactoryName(AuthMechanism meca, AuthFactorySpec spec, CommandContext ctx) throws OperationFormatException, IOException {
+        int i = 1;
+        String computedName = spec.getName() + "-" + FACTORY_NAME;
+        while (ElytronUtil.factoryExists(ctx, computedName, spec)) {
+            computedName = spec.getName() + "-" + FACTORY_NAME + "_" + i;
+            i += 1;
+        }
+        return computedName;
     }
 }

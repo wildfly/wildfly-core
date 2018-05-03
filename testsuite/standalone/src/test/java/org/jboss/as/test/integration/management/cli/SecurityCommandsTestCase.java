@@ -392,11 +392,11 @@ public class SecurityCommandsTestCase {
 
     @Test
     public void testEnableSSLNative() throws Exception {
-        enableNative();
+        enableNative(ctx);
         try {
             testEnableSSL("native-interface");
         } finally {
-            disableNative();
+            disableNative(ctx);
         }
     }
 
@@ -478,11 +478,11 @@ public class SecurityCommandsTestCase {
 
     @Test
     public void testEnableSSLInteractiveConfirmNative() throws Exception {
-        enableNative();
+        enableNative(ctx);
         try {
             testEnableSSLInteractiveConfirm("native-interface");
         } finally {
-            disableNative();
+            disableNative(ctx);
         }
     }
 
@@ -672,12 +672,12 @@ public class SecurityCommandsTestCase {
         ctx.handle("security disable-ssl-management --no-reload");
     }
 
-    private static void enableNative() throws CommandLineException {
+    public static void enableNative(CommandContext ctx) throws CommandLineException {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:add(port=9999,interface=management)");
         ctx.handle("/core-service=management/management-interface=native-interface:add(security-realm=ManagementRealm, socket-binding=management-native)");
     }
 
-    private static void disableNative() throws CommandLineException {
+    public static void disableNative(CommandContext ctx) throws CommandLineException {
         ctx.handle("/core-service=management/management-interface=native-interface:remove()");
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:remove()");
     }

@@ -138,4 +138,40 @@ public class HTTPServer {
         return Util.isSuccess(response);
     }
 
+    public static void enableHTTPAuthentication(AuthSecurityBuilder builder, String securityDomain, CommandContext ctx) throws Exception {
+        final DefaultOperationRequestBuilder reqBuilder = new DefaultOperationRequestBuilder();
+        reqBuilder.setOperationName(Util.ADD);
+        reqBuilder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        reqBuilder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
+        reqBuilder.addProperty(Util.HTTP_AUTHENTICATION_FACTORY, builder.getAuthFactory().getName());
+        builder.getSteps().add(reqBuilder.buildRequest());
+    }
+
+    public static ModelNode disableHTTPAuthentication(String securityDomain, CommandContext ctx) throws Exception {
+        final DefaultOperationRequestBuilder reqBuilder = new DefaultOperationRequestBuilder();
+        reqBuilder.setOperationName(Util.REMOVE);
+        reqBuilder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        reqBuilder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
+        return reqBuilder.buildRequest();
+    }
+
+    public static String getSecurityDomainFactoryName(String securityDomain, CommandContext ctx) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        final ModelNode request;
+        builder.setOperationName(Util.READ_ATTRIBUTE);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
+        builder.addProperty(Util.NAME, Util.HTTP_AUTHENTICATION_FACTORY);
+        request = builder.buildRequest();
+
+        final ModelNode outcome = ctx.getModelControllerClient().execute(request);
+        if (isSuccess(outcome)) {
+            if (outcome.hasDefined(Util.RESULT)) {
+                return outcome.get(Util.RESULT).asString();
+            }
+        }
+
+        return null;
+    }
+
 }

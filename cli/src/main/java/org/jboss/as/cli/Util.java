@@ -80,9 +80,11 @@ public class Util {
     public static final String ALLOW_RESOURCE_SERVICE_RESTART = "allow-resource-service-restart";
     public static final String ALTERNATIVES = "alternatives";
     public static final String APPLICATION_REALM = "ApplicationRealm";
+    public static final String APPLICATION_SECURITY_DOMAIN = "application-security-domain";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
+    public static final String AVAILABLE_MECHANISMS = "available-mechanisms";
     public static final String AUTHENTICATION_OPTIONAL = "authentication-optional";
     public static final String BLOCKING_TIMEOUT = "blocking-timeout";
     public static final String BROWSE_CONTENT = "browse-content";
@@ -95,12 +97,16 @@ public class Util {
     public static final String COMBINED_DESCRIPTIONS = "combined-descriptions";
     public static final String COMPOSITE = "composite";
     public static final String CONCURRENT_GROUPS = "concurrent-groups";
+    public static final String CONFIGURED = "configured";
+    public static final String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
+    public static final String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
     public static final String CONTENT = "content";
     public static final String CORE_SERVICE = "core-service";
     public static final String CREDENTIAL_REFERENCE = "credential-reference";
     public static final String CIPHER_SUITE_FILTER = "cipher-suite-filter";
     public static final String DATASOURCES = "datasources";
     public static final String DEFAULT = "default";
+    public static final String DEFAULT_PERMISSION_MAPPER = "default-permission-mapper";
     public static final String DEPLOY = "deploy";
     public static final String DEPLOYMENT = "deployment";
     public static final String DEPLOYMENTS = "deployments";
@@ -108,6 +114,7 @@ public class Util {
     public static final String DEPLOYMENT_OVERLAY = "deployment-overlay";
     public static final String DEPTH = "depth";
     public static final String DESCRIPTION = "description";
+    public static final String DIGEST_REALM_NAME = "digest-realm-name";
     public static final String DISTINGUISHED_NAME = "distinguished-name";
     public static final String DOMAIN_FAILURE_DESCRIPTION = "domain-failure-description";
     public static final String DOMAIN_RESULTS = "domain-results";
@@ -121,6 +128,7 @@ public class Util {
     public static final String EXTENSION = "extension";
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String FILESYSTEM_PATH = "filesystem-path";
+    public static final String FILESYSTEM_REALM = "filesystem-realm";
     public static final String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     public static final String POST_REALM_PRINCIPAL_TRANSFORMER = "post-realm-principal-transformer";
     public static final String PROVIDER_NAME = "provider-name";
@@ -129,12 +137,22 @@ public class Util {
     public static final String FALSE = "false";
     public static final String GENERATE_KEY_PAIR = "generate-key-pair";
     public static final String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
+    public static final String GET_PROVIDER_POINTS = "get-provider-points";
+    public static final String GLOBAL = "global";
+    public static final String GROUPS = "groups";
+    public static final String GROUPS_ATTRIBUTE = "groups-attribute";
+    public static final String GROUPS_PROPERTIES = "groups-properties";
+    public static final String GROUPS_TO_ROLES = "groups-to-roles";
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
     public static final String HOST = "host";
+    public static final String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
     public static final String HTTP_INTERFACE = "http-interface";
+    public static final String HTTP_SERVER_MECHANISM_FACTORY = "http-server-mechanism-factory";
+    public static final String HTTP_UPGRADE = "http-upgrade";
     public static final String HTTPS = "https";
     public static final String HTTPS_LISTENER = "https-listener";
     public static final String ID = "id";
+    public static final String IDENTITY_REALM = "identity-realm";
     public static final String IMPORT_CERTIFICATE = "import-certificate";
     public static final String IN_SERIES = "in-series";
     public static final String INCLUDE_DEFAULTS = "include-defaults";
@@ -147,6 +165,7 @@ public class Util {
     public static final String KEY_SIZE = "key-size";
     public static final String KEY_STORE = "key-store";
     public static final String KEY_STORE_REALM = "key-store-realm";
+    public static final String LOCAL = "local";
     public static final String LOCAL_HOST_NAME = "local-host-name";
     public static final String MANAGEMENT = "management";
     public static final String MANAGEMENT_CLIENT_CONTENT = "management-client-content";
@@ -156,6 +175,9 @@ public class Util {
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";
     public static final String MAX_FAILURE_PERCENTAGE = "max-failure-percentage";
     public static final String MAX_OCCURS = "max-occurs";
+    public static final String MECHANISM_CONFIGURATIONS = "mechanism-configurations";
+    public static final String MECHANISM_NAME = "mechanism-name";
+    public static final String MECHANISM_REALM_CONFIGURATIONS = "mechanism-realm-configurations";
     public static final String METRIC = "metric";
     public static final String MIN_OCCURS = "min-occurs";
     public static final String MODULE = "module";
@@ -171,11 +193,13 @@ public class Util {
     public static final String OUTCOME = "outcome";
     public static final String PATH = "path";
     public static final String PEM = "pem";
+    public static final String PERMISSION_MAPPER = "permission-mapper";
     public static final String PERSISTENT = "persistent";
     public static final String PROBLEM = "problem";
     public static final String PRODUCT_NAME = "product-name";
     public static final String PRODUCT_VERSION = "product-version";
     public static final String PROFILE = "profile";
+    public static final String PROPERTIES_REALM = "properties-realm";
     public static final String PROTOCOLS = "protocols";
     public static final String PROVIDERS = "providers";
     public static final String READ = "read";
@@ -189,6 +213,9 @@ public class Util {
     public static final String READ_WRITE = "read-write";
     public static final String READ_RESOURCE = "read-resource";
     public static final String READ_RESOURCE_DESCRIPTION = "read-resource-description";
+    public static final String REALMS = "realms";
+    public static final String REALM = "realm";
+    public static final String REALM_NAME = "realm-name";
     public static final String REALM_MAPPER = "realm-mapper";
     public static final String REDEPLOY = "redeploy";
     public static final String REDEPLOY_AFFECTED = "redeploy-affected";
@@ -207,6 +234,9 @@ public class Util {
     public static final String RESTART = "restart";
     public static final String RESTART_REQUIRED = "restart-required";
     public static final String RESULT = "result";
+    public static final String ROLES = "roles";
+    public static final String ROLE_DECODER = "role-decoder";
+    public static final String ROLE_MAPPER = "role-mapper";
     public static final String ROLLED_BACK = "rolled-back";
     public static final String ROLLBACK_ACROSS_GROUPS = "rollback-across-groups";
     public static final String ROLLBACK_FAILURE_DESCRIPTION = "rollback-failure-description";
@@ -216,6 +246,8 @@ public class Util {
     public static final String ROLLOUT_PLANS = "rollout-plans";
     public static final String RUNTIME_NAME = "runtime-name";
     public static final String RUNNING_MODE = "running-mode";
+    public static final String SASL_AUTHENTICATION_FACTORY = "sasl-authentication-factory";
+    public static final String SASL_SERVER_FACTORY = "sasl-server-factory";
     public static final String SECURE_SOCKET_BINDING = "secure-socket-binding";
     public static final String SECURITY_DOMAIN = "security-domain";
     public static final String SECURITY_REALM = "security-realm";
@@ -223,6 +255,7 @@ public class Util {
     public static final String SERVER_GROUP = "server-group";
     public static final String SERVER_SSL_CONTEXT = "server-ssl-context";
     public static final String SHUTDOWN = "shutdown";
+    public static final String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     public static final String SOCKET_BINDING = "socket-binding";
     public static final String SOCKET_BINDING_GROUP = "socket-binding-group";
     public static final String SSL_CONTEXT = "ssl-context";
@@ -238,6 +271,7 @@ public class Util {
     public static final String SUBDEPLOYMENT = "subdeployment";
     public static final String SUBSYSTEM = "subsystem";
     public static final String SUCCESS = "success";
+    public static final String SUPER_USER_MAPPER = "super-user-mapper";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
     public static final String TIMEOUT = "timeout";
     public static final String TRIM_DESCRIPTIONS = "trim-descriptions";
@@ -250,6 +284,7 @@ public class Util {
     public static final String UNDERTOW = "undertow";
     public static final String UPLOAD_DEPLOYMENT_STREAM = "upload-deployment-stream";
     public static final String URL = "url";
+    public static final String USERS_PROPERTIES = "users-properties";
     public static final String USE_CIPHER_SUITES_ORDER = "use-cipher-suites-order";
     public static final String UUID = "uuid";
     public static final String VALID = "valid";
@@ -1666,5 +1701,29 @@ public class Util {
         } else {
             return null;
         }
+    }
+
+    public static List<String> getUndertowSecurityDomains(ModelControllerClient client) {
+
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        final ModelNode request;
+        try {
+            builder.setOperationName(Util.READ_CHILDREN_NAMES);
+            builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+            builder.addProperty(Util.CHILD_TYPE, APPLICATION_SECURITY_DOMAIN);
+            request = builder.buildRequest();
+        } catch (OperationFormatException e) {
+            throw new IllegalStateException("Failed to build operation", e);
+        }
+
+        try {
+            final ModelNode outcome = client.execute(request);
+            if (isSuccess(outcome)) {
+                return getList(outcome);
+            }
+        } catch (Exception e) {
+        }
+
+        return Collections.emptyList();
     }
 }
