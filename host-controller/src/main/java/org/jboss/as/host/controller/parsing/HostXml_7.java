@@ -177,15 +177,16 @@ final class HostXml_7 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartDocument();
         writer.writeStartElement(Element.HOST.getLocalName());
 
+        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
+        writeNamespaces(writer, modelNode);
+        writeSchemaLocation(writer, modelNode);
+
         if (modelNode.hasDefined(NAME)) {
             HostResourceDefinition.NAME.marshallAsAttribute(modelNode, writer);
         }
         if (modelNode.hasDefined(ORGANIZATION)) {
             HostResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
         }
-        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
-        writeNamespaces(writer, modelNode);
-        writeSchemaLocation(writer, modelNode);
 
         if (modelNode.hasDefined(EXTENSION)) {
             extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));

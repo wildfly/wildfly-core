@@ -212,7 +212,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 feature.get(FEATURE).get(PARAMS).add(extensionParam);
                 ModelNode packages = feature.get(FEATURE).get(PACKAGES).setEmptyList();
                 ModelNode packageNode = new ModelNode();
-                packageNode.get(PACKAGE).set(extension + ".main");
+                packageNode.get(PACKAGE).set(extension);
                 packages.add(packageNode);
             }
         }
