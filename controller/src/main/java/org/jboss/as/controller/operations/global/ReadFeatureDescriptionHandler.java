@@ -394,7 +394,9 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             String capabilityName = cap.getName();
             if (cap.isDynamicallyNamed()) {
                 PathAddress aliasAddress = createAliasPathAddress(registration, pa);
-                capabilityName = cap.getDynamicName(aliasAddress);
+                if (aliasAddress.size() > 0) {
+                    capabilityName = cap.getDynamicName(aliasAddress);
+                }
             }
             if (isProfile) {
                 capabilityName = PROFILE_PREFIX + capabilityName;
@@ -408,7 +410,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 provide.add(cap);
             }
         }
-        processComplexAttributes(feature, registration);
+        processComplexAttributes(feature, isProfile, registration);
         addReferences(feature, registration);
         addRequiredCapabilities(feature, registration, requestProperties, capabilityScope, isProfile, capabilities,
                 featureParamMappings);
@@ -423,7 +425,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         return result;
     }
 
-    private void processComplexAttributes(final ModelNode parentFeature, final ImmutableManagementResourceRegistration registration) {
+    private void processComplexAttributes(final ModelNode parentFeature, final boolean isProfile, final ImmutableManagementResourceRegistration registration) {
         for (AttributeAccess attAccess : registration.getAttributes(PathAddress.EMPTY_ADDRESS).values()) {
             if(attAccess.getStorageType() != CONFIGURATION || attAccess.getAccessType() != AttributeAccess.AccessType.READ_WRITE) {
                 continue;
@@ -441,7 +443,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 case OBJECT:
                     if (ObjectTypeAttributeDefinition.class.isAssignableFrom(attDef.getClass())) {
                         ObjectTypeAttributeDefinition objAttDef = (ObjectTypeAttributeDefinition) attDef;
-                        processObjectAttribute(parentFeature, registration, objAttDef);
+                        processObjectAttribute(parentFeature, isProfile, registration, objAttDef);
                     }
                     break;
                 default:
@@ -449,7 +451,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         }
     }
 
-    private void processObjectAttribute(final ModelNode parentFeature, final ImmutableManagementResourceRegistration registration, ObjectTypeAttributeDefinition objAttDef) {
+    private void processObjectAttribute(final ModelNode parentFeature, final boolean isProfile, final ImmutableManagementResourceRegistration registration, ObjectTypeAttributeDefinition objAttDef) {
         // we need a non resource feature
         final ModelNode attFeature = new ModelNode();
         final String specName = parentFeature.require(NAME).asString() + "." + objAttDef.getName();
@@ -487,6 +489,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         final AttributeDefinition[] attrs = objAttDef.getValueTypes();
         Map<String, String> opParamMapping = Collections.emptyMap();
         final ModelNode requestProps = new ModelNode();
+        ModelNode required = new ModelNode().setEmptyList();
         for(AttributeDefinition attr : attrs) {
             final ModelNode param = new ModelNode();
             String paramName = attr.getName();
@@ -513,6 +516,15 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 param.get(TYPE).set("List<String>");
             }
             params.add(param);
+            final ModelNode attrDescription = attr.getNoTextDescription(false);
+            if (attrDescription.hasDefined(CAPABILITY_REFERENCE)) {
+                ModelNode capability = getRequiredCapabilityDefinition(attrDescription, CapabilityScope.GLOBAL, isProfile, paramName);
+                required.add(capability);
+            }
+        }
+
+        if (!required.asList().isEmpty()) {
+            attFeature.get(REQUIRES).set(required);
         }
         addOpParam(annotation, requestProps, opParamMapping);
 
@@ -748,42 +760,22 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         break;
                     }
                 }
+                if(!filteredOut) {
                 for (Property att : request) {
+                    ModelNode attrDescription = att.getValue();
                     if (att.getValue().hasDefined(CAPABILITY_REFERENCE)) {
-                        ModelNode capability = new ModelNode();
-                        String capabilityName = att.getValue().get(CAPABILITY_REFERENCE).asString();
-                        final String baseName;
-                        if (capabilityName.indexOf('$') > 0) {
-                            baseName = capabilityName.substring(0, capabilityName.indexOf('$') - 1);
-                        } else {
-                            baseName = capabilityName;
-                        }
-                        CapabilityRegistration<?> capReg = getCapability(new CapabilityId(baseName, scope));
                         String attributeName = featureParamMappings.containsKey(att.getName()) ? featureParamMappings.get(att.getName()) : att.getName();
-                        if (capReg == null || capReg.getCapability().isDynamicallyNamed() && capabilityName.indexOf('$') <= 0) {
-                            capabilityName = baseName + ".$" + attributeName;
-                        }
-                        if (filteredOut) {
-                            continue;
-                        }
-                        if (att.getValue().hasDefined(CAPABILITY_REFERENCE_PATTERN_ELEMENTS)) {
-                            List<String> elements = new ArrayList<>();
-                            for (ModelNode elt : att.getValue().get(CAPABILITY_REFERENCE_PATTERN_ELEMENTS).asList()) {
-                                elements.add("$" + elt.asString());
-                            }
-                            capabilityName = RuntimeCapability.buildDynamicCapabilityName(baseName, elements.toArray(new String[elements.size()]));
-                        }
-                        capability.get(OPTIONAL).set(att.getValue().hasDefined(NILLABLE) && att.getValue().get(NILLABLE).asBoolean());
-                        if (isProfile) {
-                            if (!capabilityName.startsWith("org.wildfly.network.socket-binding")) {
-                                capabilityName = PROFILE_PREFIX + capabilityName;
-                            }
-                        }
-                        capability.get(NAME).set(capabilityName);
+                        ModelNode capability = getRequiredCapabilityDefinition(attrDescription, scope, isProfile, attributeName);
+                        String capabilityName = capability.require(NAME).asString();
                         if (!capabilityName.startsWith("org.wildfly.domain.server-group.")
                                 && !capabilityName.startsWith("org.wildfly.domain.socket-binding-group.")) {
                             required.add(capability);
                         }
+                        String baseName = attrDescription.get(CAPABILITY_REFERENCE).asString();
+                        if (capabilityName.indexOf('$') > 0) {
+                            baseName = capabilityName.substring(0, capabilityName.indexOf('$') - 1);
+                        }
+                        CapabilityRegistration<?> capReg = getCapability(new CapabilityId(baseName, scope));
                         if (att.getValue().hasDefined(FEATURE_REFERENCE) && att.getValue().require(FEATURE_REFERENCE).asBoolean()) {
                             if (capReg != null) {
                                 ImmutableManagementResourceRegistration root = getRootRegistration(registration);
@@ -804,7 +796,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                             }
                         }
                     }
-                }
+                }}
                 if (!registration.getRequirements().isEmpty()) {
                     PathAddress aliasAddress = createAliasPathAddress(registration, registration.getPathAddress());
                     for (CapabilityReferenceRecorder requirement : registration.getRequirements()) {
@@ -838,6 +830,36 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 }
             }
         }
+    }
+
+    private ModelNode getRequiredCapabilityDefinition(ModelNode attrDescription, CapabilityScope scope, boolean isProfile, String attributeName) {
+        ModelNode capability = new ModelNode();
+        String capabilityName = attrDescription.get(CAPABILITY_REFERENCE).asString();
+        final String baseName;
+        if (capabilityName.indexOf('$') > 0) {
+            baseName = capabilityName.substring(0, capabilityName.indexOf('$') - 1);
+        } else {
+            baseName = capabilityName;
+        }
+        CapabilityRegistration<?> capReg = getCapability(new CapabilityId(baseName, scope));
+        if (capReg == null || capReg.getCapability().isDynamicallyNamed() && capabilityName.indexOf('$') <= 0) {
+            capabilityName = baseName + ".$" + attributeName;
+        }
+        if (attrDescription.hasDefined(CAPABILITY_REFERENCE_PATTERN_ELEMENTS)) {
+            List<String> elements = new ArrayList<>();
+            for (ModelNode elt : attrDescription.get(CAPABILITY_REFERENCE_PATTERN_ELEMENTS).asList()) {
+                elements.add("$" + elt.asString());
+            }
+            capabilityName = RuntimeCapability.buildDynamicCapabilityName(baseName, elements.toArray(new String[elements.size()]));
+        }
+        capability.get(OPTIONAL).set(attrDescription.hasDefined(NILLABLE) && attrDescription.get(NILLABLE).asBoolean());
+        if (isProfile) {
+            if (!capabilityName.startsWith("org.wildfly.network.socket-binding")) {
+                capabilityName = PROFILE_PREFIX + capabilityName;
+            }
+        }
+        capability.get(NAME).set(capabilityName);
+        return capability;
     }
 
     private ImmutableManagementResourceRegistration getRootRegistration(final ImmutableManagementResourceRegistration registration) {
