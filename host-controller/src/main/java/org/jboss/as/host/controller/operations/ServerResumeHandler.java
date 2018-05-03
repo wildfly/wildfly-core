@@ -25,6 +25,7 @@ package org.jboss.as.host.controller.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -87,6 +88,7 @@ public class ServerResumeHandler implements OperationStepHandler {
         return new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host.server"))
                 .setRuntimeOnly()
                 .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+                .setDeprecated(ModelVersion.create(7,0,0))
                 .build();
     }
 }

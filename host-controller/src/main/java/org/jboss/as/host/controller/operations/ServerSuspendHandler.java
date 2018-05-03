@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -99,6 +100,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 .setParameters(TIMEOUT)
                 .setRuntimeOnly()
                 .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
+                .setDeprecated(ModelVersion.create(7,0,0))
                 .build();
     }
 }
