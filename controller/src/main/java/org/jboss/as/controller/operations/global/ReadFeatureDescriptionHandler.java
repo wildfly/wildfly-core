@@ -388,7 +388,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 featureParamMappings = Collections.emptyMap();
             }
         }
-        Set<String> capabilities = new HashSet<>();
+        Set<String> capabilities = new TreeSet<>();
         Set<String> additionalPackages = new TreeSet<>();
         for (RuntimeCapability<?> cap : registration.getCapabilities()) {
             String capabilityName = cap.getName();
@@ -400,8 +400,13 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 capabilityName = PROFILE_PREFIX + capabilityName;
             }
             capabilities.add(capabilityName);
-            feature.get(PROVIDES).add(capabilityName);
             additionalPackages.addAll(cap.getAdditionalRequiredPackages());
+        }
+        if (!capabilities.isEmpty()) {
+            ModelNode provide = feature.get(PROVIDES);
+            for (String cap : capabilities) {
+                provide.add(cap);
+            }
         }
         processComplexAttributes(feature, registration);
         addReferences(feature, registration);
