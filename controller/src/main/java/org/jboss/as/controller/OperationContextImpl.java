@@ -2079,6 +2079,20 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
 
+        public ServiceBuilder<?> addService(final ServiceName name) {
+            final ServiceBuilder<?> realBuilder = delegate.addService(name);
+            // If done() has been called we are no longer associated with a management op and should just
+            // return the builder from delegate
+            synchronized (this) {
+                if (builderSupplier == null) {
+                    return realBuilder;
+                }
+                ContextServiceBuilder<?> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
+                builders.add(csb);
+                return csb;
+            }
+        }
+
         public <T> ServiceBuilder<T> addServiceValue(final ServiceName name, final Value<? extends Service<T>> value) {
             final ServiceBuilder<T> realBuilder = delegate.addServiceValue(name, value);
             // If done() has been called we are no longer associated with a management op and should just
@@ -2471,6 +2485,10 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         public Set<ServiceName> getImmediateUnavailableDependencies() {
             return controller.getImmediateUnavailableDependencies();
+        }
+
+        public Collection<ServiceName> getUnavailableDependencies() {
+            return controller.getUnavailableDependencies();
         }
 
         public S awaitValue() throws IllegalStateException, InterruptedException {
