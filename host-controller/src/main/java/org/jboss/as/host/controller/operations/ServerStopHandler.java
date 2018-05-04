@@ -18,27 +18,20 @@
  */
 package org.jboss.as.host.controller.operations;
 
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 
 import java.util.EnumSet;
+
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * Stops a server.
@@ -46,16 +39,6 @@ import org.jboss.dmr.ModelType;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ServerStopHandler implements OperationStepHandler {
-
-    private static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
-            .setDefaultValue(new ModelNode(0))
-            .setRequired(false)
-            .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .build();
-
-    public static final String OPERATION_NAME = "stop";
-    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME, TIMEOUT);
-
 
     private final ServerInventory serverInventory;
 
@@ -72,10 +55,8 @@ public class ServerStopHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
-        final boolean blocking = operation.get(BLOCKING).asBoolean(false);
+        final String serverName = context.getCurrentAddressValue();
+        final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
         final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
         context.addStep(new OperationStepHandler() {
             @Override

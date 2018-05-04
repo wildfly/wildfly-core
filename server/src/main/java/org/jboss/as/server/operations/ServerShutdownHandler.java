@@ -25,10 +25,13 @@ package org.jboss.as.server.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
@@ -54,9 +57,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
-
 /**
  * Handler that shuts down the standalone server.
  *
@@ -68,13 +68,8 @@ public class ServerShutdownHandler implements OperationStepHandler {
             .setDefaultValue(new ModelNode(false))
             .setRequired(false)
             .build();
-    protected static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
-            .setDefaultValue(new ModelNode(0))
-            .setRequired(false)
-            .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .build();
 
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver())
+    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
             .setParameters(RESTART, TIMEOUT)
             .setRuntimeOnly()
             .build();

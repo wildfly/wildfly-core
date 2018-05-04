@@ -26,14 +26,10 @@ package org.jboss.as.server.operations;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.RunningModeControl;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.DomainServerCommunicationServices;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -43,11 +39,6 @@ import org.jboss.msc.service.ServiceName;
  * @author Emanuel Muckenhuber
  */
 public class ServerDomainProcessReloadHandler extends ServerProcessReloadHandler {
-
-    public static final OperationDefinition DOMAIN_DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver("server"))
-            .setPrivateEntry() // For now
-            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY, OperationEntry.Flag.RUNTIME_ONLY)
-            .build();
 
     private final DomainServerCommunicationServices.OperationIDUpdater operationIDUpdater;
 

@@ -143,6 +143,7 @@ public class ModelDescriptionConstants {
     public static final String DEPRECATED = "deprecated";
     public static final String DESCRIBE = "describe";
     public static final String DESCRIPTION = "description";
+    public static final String DESTROY = "destroy";
     public static final String DETAILS = "details";
     public static final String DESTINATION_ADDRESS = "destination-address";
     public static final String DESTROY_SERVERS = "destroy-servers";
@@ -273,6 +274,7 @@ public class ModelDescriptionConstants {
     public static final String KEYSTORE_PROVIDER = "keystore-provider";
     public static final String KEYSTORE_RELATIVE_TO = "keystore-relative-to";
     public static final String KEYTAB = "keytab";
+    public static final String KILL = "kill";
     public static final String KILL_SERVERS = "kill-servers";
     public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
@@ -329,12 +331,13 @@ public class ModelDescriptionConstants {
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";
-    public static final String NO_SERVICES = "no-services";
+    public static final String NORMAL = "normal";
     public static final String NOT = "not";
     public static final String NOTIFICATION = "notification";
     public static final String NOTIFICATION_DATA_TYPE = "data-type";
     public static final String NOTIFICATION_TYPE = "notification-type";
     public static final String NOTIFICATIONS = "notifications";
+    public static final String NO_SERVICES = "no-services";
     /** Use this as the standard operation name field in the operation *request* ModelNode */
     public static final String OP = "operation";
     /** Use this standard operation address field in the operation *request* ModelNode */

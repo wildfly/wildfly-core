@@ -22,35 +22,22 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
-import org.jboss.as.controller.BlockingTimeout;
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.host.controller.ServerInventory;
-import org.jboss.as.host.controller.descriptions.HostResolver;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.dmr.ModelNode;
-
 import java.util.Collections;
 import java.util.List;
+
+import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.host.controller.ServerInventory;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author Stuart Douglas
  */
 public class ServerResumeHandler implements OperationStepHandler {
-
-    public static final String OPERATION_NAME = ModelDescriptionConstants.RESUME;
-    public static final OperationDefinition DEFINITION = getOperationDefinition();
 
     private final ServerInventory serverInventory;
 
@@ -65,9 +52,7 @@ public class ServerResumeHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
+        final String serverName = context.getCurrentAddressValue();
         final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {
@@ -82,13 +67,5 @@ public class ServerResumeHandler implements OperationStepHandler {
                 }
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    static OperationDefinition getOperationDefinition() {
-        return new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host.server"))
-                .setRuntimeOnly()
-                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-                .setDeprecated(ModelVersion.create(7,0,0))
-                .build();
     }
 }

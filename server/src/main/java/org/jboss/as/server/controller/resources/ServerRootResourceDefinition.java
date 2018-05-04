@@ -21,8 +21,16 @@
 */
 package org.jboss.as.server.controller.resources;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTROY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KILL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBDEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -31,6 +39,9 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.NoopOperationStepHandler;
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
@@ -39,10 +50,12 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
@@ -72,6 +85,7 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.domain.management.CoreManagementResourceDefinition;
@@ -121,6 +135,7 @@ import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 /**
  *
@@ -213,6 +228,25 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeServiceNotRequired()
             .build();
 
+    /** The 'blocking' parameter for domain server lifecycle ops executed on the HC */
+    public static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN)
+            .setRequired(false)
+            .setDefaultValue(ModelNode.FALSE)
+            .build();
+
+    /** The 'start-mode' parameter for domain server lifecycle ops executed on the HC */
+    public static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING)
+            .setRequired(false)
+            .setDefaultValue(new ModelNode(ModelDescriptionConstants.NORMAL))
+            .setValidator(EnumValidator.create(StartMode.class))
+            .build();
+
+    /** The 'timeout' parameter for server lifecycle ops */
+    public static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
+            .setDefaultValue(new ModelNode(0))
+            .setRequired(false)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .build();
 
     private final boolean isDomain;
     private final ContentRepository contentRepository;
@@ -331,8 +365,10 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(WriteConfigHandler.DEFINITION, WriteConfigHandler.INSTANCE);
         }
 
+        // Ops for internal control of the server by the HC
         if (isDomain) {
             resourceRegistration.registerOperationHandler(ServerProcessStateHandler.RELOAD_DEFINITION, ServerProcessStateHandler.SET_RELOAD_REQUIRED_HANDLER);
+            resourceRegistration.registerOperationHandler(SetServerGroupHostHandler.DEFINITION, SetServerGroupHostHandler.INSTANCE);
         }
         // Keep the set-restart-required for backwards compatibility
         resourceRegistration.registerOperationHandler(ServerProcessStateHandler.RESTART_DEFINITION, ServerProcessStateHandler.SET_RESTART_REQUIRED_HANDLER);
@@ -345,29 +381,34 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(InstallationReportHandler.DEFINITION, InstallationReportHandler.createOperation(serverEnvironment), false);
         resourceRegistration.registerOperationHandler(CleanObsoleteContentHandler.DEFINITION, CleanObsoleteContentHandler.createOperation(contentRepository), false);
 
-        // Reload op available in standalone and domain
+        // Lifecycle ops
         if (isDomain) {
+            // WFCORE-3804 Include OperationDefinition data for the ops on the /host=*/server=* resource
+            // that are handled directly by the HC. Just register a no-op handler as these ops are
+            // not actually executed in the domain server process. We're just getting the operation
+            // description info recorded so /host=x/server=y:read-resource-description etc, which are executed
+            // in this process, can report it.
+            //
+            // We don't register 'start' because for this code to even run the user already started the server
+            // and we don't need to offer 'start' any more
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(STOP, ModelType.STRING, null, BLOCKING, TIMEOUT), NoopOperationStepHandler.WITHOUT_RESULT);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESTART, ModelType.STRING, null, BLOCKING, START_MODE), NoopOperationStepHandler.WITHOUT_RESULT);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(DESTROY, null, null), NoopOperationStepHandler.WITHOUT_RESULT);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(KILL, null, null), NoopOperationStepHandler.WITHOUT_RESULT);
 
-            // TODO enable the descriptions so that they show up in the resource description
+            // For other lifecycle ops, we register functioning handlers. The OperationDefinition for the ops
+            // however reflects what the HC /host=x/server=y resource exposes, not necessarily what these
+            // handlers process.
             final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater, serverEnvironment);
-            resourceRegistration.registerOperationHandler(ServerDomainProcessReloadHandler.DOMAIN_DEFINITION, reloadHandler, false);
-            resourceRegistration.registerOperationHandler(SetServerGroupHostHandler.DEFINITION, SetServerGroupHostHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RELOAD, ModelType.STRING, null, BLOCKING, START_MODE), reloadHandler);
 
-            final ServerSuspendHandler suspendHandler = new ServerSuspendHandler();
-            resourceRegistration.registerOperationHandler(ServerSuspendHandler.DOMAIN_DEFINITION, suspendHandler, false);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(SUSPEND, null, null, TIMEOUT), ServerSuspendHandler.INSTANCE);
 
-            final ServerResumeHandler resumeHandler = new ServerResumeHandler();
-            resourceRegistration.registerOperationHandler(ServerResumeHandler.DOMAIN_DEFINITION, resumeHandler, false);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESUME, null, null), ServerResumeHandler.INSTANCE);
 
-            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler(), false);
+            // This one is completely private, only for use by the HC
+            resourceRegistration.registerOperationHandler(ServerDomainProcessShutdownHandler.DOMAIN_DEFINITION, new ServerDomainProcessShutdownHandler());
 
-
-//            // Trick the resource-description for domain servers to be included in the server-resource
-//            resourceRegistration.registerOperationHandler(getOperationDefinition("start"), NOOP);
-//            resourceRegistration.registerOperationHandler(getOperationDefinition("stop"), NOOP);
-//            resourceRegistration.registerOperationHandler(getOperationDefinition("restart"), NOOP);
-//            resourceRegistration.registerOperationHandler(getOperationDefinition("destroy"), NOOP);
-//            resourceRegistration.registerOperationHandler(getOperationDefinition("kill"), NOOP);
         } else {
             final ServerProcessReloadHandler reloadHandler = new ServerProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerProcessReloadHandler.DEFINITION, reloadHandler, false);
@@ -517,6 +558,39 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         // Util
         resourceRegistration.registerOperationHandler(DeployerChainAddHandler.DEFINITION, DeployerChainAddHandler.INSTANCE, false);
+    }
+
+    public static OperationDefinition getDomainServerLifecycleDefinition(String name, ModelType replyType,
+                                                                         ModelVersion deprecatedSince, AttributeDefinition... parameters) {
+        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
+                .setRuntimeOnly()
+                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY);
+        for (AttributeDefinition param : parameters) {
+            builder.addParameter(param);
+        }
+        if (replyType != null) {
+            builder.setReplyType(replyType);
+        }
+        if (deprecatedSince != null) {
+            builder.setDeprecated(deprecatedSince);
+        }
+        return builder.build();
+    }
+
+    private enum StartMode {
+        NORMAL(ModelDescriptionConstants.NORMAL),
+        SUSPEND(ModelDescriptionConstants.SUSPEND);
+
+        private final String localName;
+
+        StartMode(String localName) {
+            this.localName = localName;
+        }
+
+        @Override
+        public String toString() {
+            return localName;
+        }
     }
 
 }
