@@ -27,6 +27,8 @@
         <property name="jboss.api" value="private"/>
     </properties>
 
+    <main-class name="org.jboss.jandex.Main"/>
+
     <resources>
         <artifact name="${org.jboss:jandex}"/>
     </resources>
