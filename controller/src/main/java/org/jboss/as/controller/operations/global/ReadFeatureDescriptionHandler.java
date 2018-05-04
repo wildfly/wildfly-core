@@ -75,6 +75,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeSet;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
@@ -210,7 +211,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 extensionParam.get(ModelDescriptionConstants.NAME).set(EXTENSION);
                 extensionParam.get(DEFAULT).set(extension);
                 feature.get(FEATURE).get(PARAMS).add(extensionParam);
-                ModelNode packages = feature.get(FEATURE).get(PACKAGES).setEmptyList();
+                ModelNode packages = feature.get(FEATURE).get(PACKAGES);
                 ModelNode packageNode = new ModelNode();
                 packageNode.get(PACKAGE).set(extension);
                 packages.add(packageNode);
@@ -387,7 +388,8 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 featureParamMappings = Collections.emptyMap();
             }
         }
-        Set<String> capabilities = new HashSet<>();
+        Set<String> capabilities = new TreeSet<>();
+        Set<String> additionalPackages = new TreeSet<>();
         for (RuntimeCapability<?> cap : registration.getCapabilities()) {
             String capabilityName = cap.getName();
             if (cap.isDynamicallyNamed()) {
@@ -398,12 +400,26 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 capabilityName = PROFILE_PREFIX + capabilityName;
             }
             capabilities.add(capabilityName);
-            feature.get(PROVIDES).add(capabilityName);
+            additionalPackages.addAll(cap.getAdditionalRequiredPackages());
+        }
+        if (!capabilities.isEmpty()) {
+            ModelNode provide = feature.get(PROVIDES);
+            for (String cap : capabilities) {
+                provide.add(cap);
+            }
         }
         processComplexAttributes(feature, registration);
         addReferences(feature, registration);
         addRequiredCapabilities(feature, registration, requestProperties, capabilityScope, isProfile, capabilities,
                 featureParamMappings);
+        if (additionalPackages.size() > 0) {
+            ModelNode packages = feature.get(PACKAGES);
+            for (String pkg : additionalPackages) {
+                ModelNode pkgNode = new ModelNode();
+                pkgNode.get(PACKAGE).set(pkg);
+                packages.add(pkgNode);
+            }
+        }
         return result;
     }
 

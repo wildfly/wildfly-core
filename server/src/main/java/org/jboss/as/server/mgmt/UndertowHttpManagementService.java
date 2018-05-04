@@ -73,7 +73,9 @@ import org.xnio.XnioWorker;
 public class UndertowHttpManagementService implements Service<HttpManagement> {
 
     public static final RuntimeCapability<Void> EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.management.http.extensible", ExtensibleHttpManagement.class).build();
+            RuntimeCapability.Builder.of("org.wildfly.management.http.extensible", ExtensibleHttpManagement.class)
+                    .addAdditionalRequiredPackages("org.jboss.as.domain-http-error-content")
+                    .build();
     public static final ServiceName SERVICE_NAME = EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getCapabilityServiceName();
 
     public static final String SERVER_NAME = "wildfly-managment";
