@@ -72,6 +72,8 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManager;
@@ -114,6 +116,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         return true;
     }
 
+
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
         super.populateModel(operation, model);
@@ -125,7 +128,18 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         // Install another RUNTIME handler to actually install the services. This will run after the
         // RUNTIME handler for any child resources. Doing this will ensure that child resource handlers don't
         // see the installed services and can just ignore doing any RUNTIME stage work
-        context.addStep(ServiceInstallStepHandler.INSTANCE, OperationContext.Stage.RUNTIME);
+        if(!context.isBooting() && context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+            context.reloadRequired();
+        } else {
+            context.addStep(ServiceInstallStepHandler.INSTANCE, OperationContext.Stage.RUNTIME);
+        }
+    }
+
+    @Override
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
+        if (!context.isBooting() && context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+            context.revertReloadRequired();
+        }
     }
 
     @Override
