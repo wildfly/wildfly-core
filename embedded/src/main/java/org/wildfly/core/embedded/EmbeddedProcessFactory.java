@@ -298,7 +298,7 @@ public class EmbeddedProcessFactory {
             clearPropertyPrivileged(SYSPROP_KEY_CLASS_PATH);
             SecurityActions.setPropertyPrivileged(SYSPROP_KEY_MODULE_PATH, modulePath);
 
-            StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.msc,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
+            StringBuilder packages = new StringBuilder("org.jboss.modules,org.jboss.dmr,org.jboss.threads,org.jboss.as.controller.client");
             if (systemPackages != null) {
                 for (String packageName : systemPackages) {
                     packages.append(",");
