@@ -168,7 +168,7 @@
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
-      </licenses>-
+      </licenses>
     </dependency>
     <dependency>
       <groupId>org.jboss.classfilewriter</groupId>
