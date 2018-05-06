@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.wildfly.extension.io.WorkerResourceDefinition.ATTRIBUTES;
 import static org.wildfly.extension.io.WorkerResourceDefinition.IO_WORKER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
+import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_CORE_THREADS;
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
 
 import java.lang.management.ManagementFactory;
@@ -187,14 +188,16 @@ class WorkerAdd extends AbstractAddStepHandler {
         builder.setWorkerName(name);
 
         ModelNode ioThreadsModel = WORKER_IO_THREADS.resolveModelAttribute(context, model);
+        ModelNode coreTaskThreadsModel = WORKER_TASK_CORE_THREADS.resolveModelAttribute(context, model);
         ModelNode maxTaskThreadsModel = WORKER_TASK_MAX_THREADS.resolveModelAttribute(context, model);
         int cpuCount = getCpuCount();
         int ioThreadsCalculated = getSuggestedIoThreadCount();
         int workerThreads = builder.getMaxWorkerPoolSize();
+        int coreWorkerThreads = coreTaskThreadsModel.asInt();
         if (!ioThreadsModel.isDefined() && !maxTaskThreadsModel.isDefined()) {
             workerThreads = getWorkerThreads(name, allWorkerCount);
             builder.setWorkerIoThreads(ioThreadsCalculated);
-            builder.setCoreWorkerPoolSize(workerThreads);
+            builder.setCoreWorkerPoolSize(coreWorkerThreads);
             builder.setMaxWorkerPoolSize(workerThreads);
             IOLogger.ROOT_LOGGER.printDefaults(name, ioThreadsCalculated, workerThreads, cpuCount);
         } else {
@@ -204,7 +207,7 @@ class WorkerAdd extends AbstractAddStepHandler {
             }
             if (!maxTaskThreadsModel.isDefined()) {
                 workerThreads = getWorkerThreads(name, allWorkerCount);
-                builder.setCoreWorkerPoolSize(workerThreads);
+                builder.setCoreWorkerPoolSize(coreWorkerThreads);
                 builder.setMaxWorkerPoolSize(workerThreads);
                 IOLogger.ROOT_LOGGER.printDefaultsWorkerThreads(name, workerThreads, cpuCount);
             }

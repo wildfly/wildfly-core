@@ -23,6 +23,11 @@ import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.extension.io.IOExtension.SUBSYSTEM_PATH;
 import static org.wildfly.extension.io.IOExtension.WORKER_PATH;
+import static org.wildfly.extension.io.WorkerResourceDefinition.STACK_SIZE;
+import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_IO_THREADS;
+import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_CORE_THREADS;
+import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_KEEPALIVE;
+import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,6 +36,7 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
+import org.jboss.as.model.test.FailedOperationTransformationConfig.ChainedConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
@@ -53,13 +59,13 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("io-2.0-transformer.xml");
+        return readResource("io-3.0-transformer.xml");
     }
 
 
     @Test
     public void testTransformerEAP700() throws Exception {
-        testTransformation(ModelTestControllerVersion.EAP_7_0_0);
+        testTransformation(EAP_7_0_0);
     }
 
     @Test
@@ -85,11 +91,12 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         return services;
     }
 
-    private void testTransformation(final ModelTestControllerVersion controller) throws Exception {
-        final ModelVersion version = controller.getSubsystemModelVersion(getMainSubsystemName());
+    private void testTransformation(final ModelTestControllerVersion controllerVersion) throws Exception {
+        final ModelVersion version = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
+        final String xml = readResource(String.format("io-%d.0-transformer.xml", version.getMajor()));
 
-        KernelServices services = this.buildKernelServices(controller, version,
-                controller.getCoreMavenGroupId() + ":wildfly-io:" + controller.getCoreVersion());
+        KernelServices services = this.buildKernelServices(xml, controllerVersion, version,
+                controllerVersion.getCoreMavenGroupId() + ":wildfly-io:" + controllerVersion.getCoreVersion());
 
         // check that both versions of the legacy model are the same and valid
         checkSubsystemModelTransformation(services, version, null, false);
@@ -100,11 +107,42 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testRejectingTransformersEAP_7_0_0() throws Exception {
-        testRejectingTransformers(EAP_7_0_0);
+        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
+        FailedOperationTransformationConfig config = new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
+                        ChainedConfig.createBuilder(STACK_SIZE, WORKER_IO_THREADS, WORKER_TASK_KEEPALIVE, WORKER_TASK_MAX_THREADS, WORKER_TASK_CORE_THREADS)
+                            .addConfig(
+                                    new FailedOperationTransformationConfig.RejectExpressionsConfig(
+                                            STACK_SIZE,
+                                            WORKER_IO_THREADS,
+                                            WORKER_TASK_KEEPALIVE,
+                                            WORKER_TASK_MAX_THREADS
+                                    )
+                            )
+                            .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(WORKER_TASK_CORE_THREADS))
+                            .build()
+                )
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(WORKER_PATH.getKey(), "fourth-worker"), PathElement.pathElement("outbound-bind-address")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                );
+        testRejectingTransformers(EAP_7_0_0, config);
     }
 
-    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
+    @Test
+    public void testRejectingTransformersEAP_7_1_0() throws Exception {
+        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
+        FailedOperationTransformationConfig config = new FailedOperationTransformationConfig()
+                .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(
+                                WORKER_TASK_CORE_THREADS
+                        )
+                );
+        testRejectingTransformers(EAP_7_1_0, config);
+    }
+
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, FailedOperationTransformationConfig config) throws Exception {
         ModelVersion modelVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
+
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
         KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization());
         builder.createLegacyKernelServicesBuilder(createAdditionalInitialization(), controllerVersion, modelVersion)
@@ -115,21 +153,7 @@ public class IOSubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(modelVersion).isSuccessfulBoot());
 
-        List<ModelNode> ops = builder.parseXmlResource("io-1.1-reject.xml");
-        PathAddress subsystemAddress = PathAddress.pathAddress(SUBSYSTEM_PATH);
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(WORKER_PATH),
-                        new FailedOperationTransformationConfig.RejectExpressionsConfig(
-                                WorkerResourceDefinition.STACK_SIZE,
-                                WorkerResourceDefinition.WORKER_IO_THREADS,
-                                WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
-                                WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
-                        )
-                )
-                .addFailedAttribute(subsystemAddress.append(WORKER_PATH, PathElement.pathElement("outbound-bind-address")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-        );
+        List<ModelNode> ops = builder.parseXmlResource("io-reject.xml");
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, config);
     }
-
 }
