@@ -341,6 +341,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     private CLICommandInvocation invocationContext;
     private final CommandCompleter legacyCmdCompleter;
 
+    private boolean colourOutput;
+
     /**
      * Version mode - only used when --version is called from the command line.
      *
@@ -375,10 +377,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         cliPrintStream = new CLIPrintStream();
         initSSLContext();
         initJaasConfig();
-
-        if (config.isColorOutput()) {
-            Util.configureColors(this);
-        }
 
         addShutdownHook();
         CliLauncher.runcom(this);
@@ -424,6 +422,10 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             aeshCommands.setLegacyCommandCompleter(legacyCmdCompleter);
             cmdCompleter = aeshCommands.getCommandCompleter();
             this.operationCandidatesProvider = new DefaultOperationCandidatesProvider();
+            if (config.isColorOutput()) {
+                colourOutput = true;
+                Util.configureColors(this);
+            }
         } else {
             aeshCommands = new AeshCommands(this, new OperationCommandContainer(this));
             this.cmdRegistry = aeshCommands.getRegistry();
@@ -434,9 +436,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
         try {
             initCommands();
-            if (config.isColorOutput()) {
-                Util.configureColors(this);
-            }
         } catch (CommandLineException | CommandLineParserException e) {
             throw new CliInitializationException("Failed to initialize commands", e);
         }
@@ -971,11 +970,11 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void printDMR(ModelNode node) {
-        if (getConfig().isOutputJSON() && getConfig().isColorOutput()) {
+        if (getConfig().isOutputJSON() && isColorOutput()) {
             printLine(node.toJSONString(false), node.get("outcome").asString());
         } else if (getConfig().isOutputJSON()) {
             printLine(node.toJSONString(false));
-        } else if (getConfig().isColorOutput()) {
+        } else if (isColorOutput()) {
             printLine(node.toString(), node.get("outcome").asString());
         } else {
             printLine(node.toString());
@@ -1001,9 +1000,13 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         return message;
     }
 
+    public final boolean isColorOutput() {
+        return colourOutput;
+    }
+
     @Override
     public void printLine(String message) {
-        if (getConfig().isColorOutput()) {
+        if (isColorOutput()) {
             message = colorizeMessage(message, "");
         }
 
@@ -1011,7 +1014,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     public void printLine(String message, String outcome) {
-        if (getConfig().isColorOutput()) {
+        if (isColorOutput()) {
             message = colorizeMessage(message, outcome);
         }
 
@@ -1020,7 +1023,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void print(String message) {
-        if (getConfig().isColorOutput()) {
+        if (isColorOutput()) {
             message = colorizeMessage(message, "");
         }
 
@@ -1532,7 +1535,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             buffer.append(promptConnectPart);
         }
 
-        if (getConfig().isColorOutput()) {
+        if (isColorOutput()) {
             Util.formatPrompt(buffer);
         }
 
@@ -1547,7 +1550,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         }
 
         if (isBatchMode()) {
-            if (getConfig().isColorOutput()) {
+            if (isColorOutput()) {
                 buffer.append(Util.formatWorkflowPrompt(" #"));
             } else {
                 buffer.append(" #");
@@ -1555,7 +1558,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         }
 
         if (isWorkflowMode()) {
-            if (getConfig().isColorOutput()) {
+            if (isColorOutput()) {
                 buffer.append(Util.formatWorkflowPrompt(" ..."));
             } else {
                 buffer.append(" ...");

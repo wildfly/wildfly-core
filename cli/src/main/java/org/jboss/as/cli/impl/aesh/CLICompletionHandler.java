@@ -68,7 +68,7 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
         LOG.debugf("Completing {0}", co.getBuffer());
         cliCompleter.complete(ctx, co, this);
 
-        if (ctx.getConfig().isColorOutput()) {
+        if (ctx.isColorOutput()) {
             List<TerminalString> completionCandidates = co.getCompletionCandidates();
             List<TerminalString> requiredCandidates = new ArrayList<>();
             for (TerminalString candidate : completionCandidates) {
