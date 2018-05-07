@@ -22,11 +22,31 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.List;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.extension.TestExtension;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -49,6 +69,14 @@ import org.junit.Test;
 public class ExtensionManagementTestCase {
 
     private static final String ADDRESS = "extension=" + TestExtension.MODULE_NAME;
+    private static final PathElement EXTENSION_ELEMENT = PathElement.pathElement(EXTENSION, TestExtension.MODULE_NAME);
+    private static final PathAddress EXTENSION_ADDRESS = PathAddress.pathAddress(EXTENSION_ELEMENT);
+    private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, "1");
+    private static final PathAddress PROFILE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(PROFILE, DEFAULT).append(SUBSYSTEM_ELEMENT);
+    private static final PathAddress SERVER_ONE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, MASTER).append(SERVER, "main-one").append(SUBSYSTEM_ELEMENT);
+    private static final PathAddress SERVER_THREE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three").append(SUBSYSTEM_ELEMENT);
+    private static final PathAddress SERVER_ONE_EXT_ADDRESS = PathAddress.pathAddress(HOST, MASTER).append(SERVER, "main-one").append(EXTENSION_ELEMENT);
+    private static final PathAddress SERVER_THREE_EXT_ADDRESS = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three").append(EXTENSION_ELEMENT);
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
@@ -88,6 +116,89 @@ public class ExtensionManagementTestCase {
         extensionRemovalTest(masterClient, "host=master/server=main-one");
         extensionRemovalTest(masterClient, "host=slave/server=main-three");
         extensionRemovalTest(slaveClient, null);
+    }
+
+    @Test
+    public void testExtensionSubsystemComposite() throws Exception {
+        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        Exception err = null;
+        try {
+            // 1) Sanity check -- subsystem not there
+            ModelNode read = Util.getReadAttributeOperation(PROFILE_SUBSYSTEM_ADDRESS, NAME);
+            testBadOp(read);
+
+            // 2) Sanity check -- Confirm slave has resources
+            verifyNotOnSlave();
+
+            // 3) Sanity check -- Confirm servers no longer have resource
+            verifyNotOnServers();
+
+            // 4) sanity check -- subsystem add w/o extension -- fail
+            ModelNode subAdd = Util.createAddOperation(PROFILE_SUBSYSTEM_ADDRESS);
+            subAdd.get(NAME).set(TestExtension.MODULE_NAME);
+            testBadOp(subAdd);
+
+            // 5) ext add + sub add + sub read in composite
+            ModelNode extAdd = Util.createAddOperation(EXTENSION_ADDRESS);
+            ModelNode goodAdd = buildComposite(extAdd, subAdd, read);
+            testGoodComposite(goodAdd);
+
+            // 6) Sanity check -- try read again outside the composite
+            ModelNode response = executeOp(read, "success");
+            assertTrue(response.toString(), response.has("result"));
+            assertEquals(response.toString(), TestExtension.MODULE_NAME, response.get("result").asString());
+
+            // 7) Confirm slave has resources
+            verifyOnSlave();
+
+            // 8) Confirm servers have the resources
+            verifyOnServers();
+
+            // 9) sub remove + ext remove + sub add in composite -- fail
+            ModelNode subRemove = Util.createRemoveOperation(PROFILE_SUBSYSTEM_ADDRESS);
+            ModelNode extRemove = Util.createRemoveOperation(EXTENSION_ADDRESS);
+            ModelNode badRemove = buildComposite(read, subRemove, extRemove, subAdd);
+            testBadOp(badRemove);
+
+            // 10) Confirm servers still have resources
+            verifyOnServers();
+
+            // 11) sub remove + ext remove in composite
+            ModelNode goodRemove = buildComposite(read, subRemove, extRemove);
+            response = executeOp(goodRemove, "success");
+            validateInvokePublicStep(response, 1, false);
+
+            // 12) Confirm slave no longer has resources
+            verifyNotOnSlave();
+
+            // 13) Confirm servers no longer have resource
+            verifyNotOnServers();
+
+            // 14) confirm ext add + sub add + sub read still works
+            testGoodComposite(goodAdd);
+
+            // 15) Sanity check -- try read again outside the composite
+            response = executeOp(read, "success");
+            assertTrue(response.toString(), response.has("result"));
+            assertEquals(response.toString(), TestExtension.MODULE_NAME, response.get("result").asString());
+
+            // 16) Confirm slave again has resources
+            verifyOnSlave();
+
+            // 17) Confirm servers again have resources
+            verifyOnServers();
+
+        } catch (Exception e) {
+            err = e;
+        } finally {
+            //Cleanup
+            removeIgnoreFailure(masterClient, PROFILE_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(masterClient, EXTENSION_ADDRESS);
+        }
+
+        if (err != null) {
+            throw err;
+        }
     }
 
     private void extensionVersionTest(ModelControllerClient client, String addressPrefix) throws Exception {
@@ -149,6 +260,113 @@ public class ExtensionManagementTestCase {
             System.out.println("with result");
             System.out.println(e.getResult());
             throw e;
+        }
+    }
+
+    private ModelNode executeOp(ModelNode op, String outcome) throws IOException {
+        ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        assertTrue(response.toString(), response.hasDefined(OUTCOME));
+        assertEquals(response.toString(), outcome, response.get(OUTCOME).asString());
+        return response;
+    }
+
+    private void testGoodComposite(ModelNode composite) throws IOException {
+        ModelNode result = executeOp(composite, "success");
+        validateInvokePublicStep(result, 3, false);
+    }
+
+    private void testBadOp(ModelNode badOp) throws IOException {
+        ModelNode response = executeOp(badOp, "failed");
+        String msg = response.toString();
+        assertTrue(msg, response.has("failure-description"));
+        ModelNode failure = response.get("failure-description");
+        assertTrue(msg, failure.asString().contains("WFLYCTL0030"));
+    }
+
+    private void verifyOnSlave() throws IOException, MgmtOperationException {
+        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        ModelNode readExt = Util.createEmptyOperation(READ_RESOURCE_OPERATION, EXTENSION_ADDRESS);
+        ModelNode result = executeForResult(readExt, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.get(MODULE).asString());
+        ModelNode read = Util.getReadAttributeOperation(PROFILE_SUBSYSTEM_ADDRESS, NAME);
+        result = executeForResult(read, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
+    }
+
+    private void verifyOnServers() throws IOException, MgmtOperationException {
+        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+
+        ModelNode readExtOne = Util.getReadAttributeOperation(SERVER_ONE_EXT_ADDRESS, MODULE);
+        ModelNode result = executeForResult(readExtOne, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
+
+        ModelNode readSubOne = Util.getReadAttributeOperation(SERVER_ONE_SUBSYSTEM_ADDRESS, NAME);
+        result = executeForResult(readSubOne, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
+
+        ModelNode readExtThree = Util.getReadAttributeOperation(SERVER_THREE_EXT_ADDRESS, MODULE);
+        result = executeForResult(readExtThree, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
+
+        ModelNode readSubThree = Util.getReadAttributeOperation(SERVER_THREE_SUBSYSTEM_ADDRESS, NAME);
+        result = executeForResult(readSubThree, client);
+        assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
+    }
+
+    private void verifyNotOnSlave() throws IOException {
+        ModelNode readExt = Util.createEmptyOperation(READ_RESOURCE_OPERATION, EXTENSION_ADDRESS);
+        executeOp(readExt, FAILED);
+        ModelNode read = Util.getReadAttributeOperation(PROFILE_SUBSYSTEM_ADDRESS, NAME);
+        executeOp(read, FAILED);
+    }
+
+    private void verifyNotOnServers() throws IOException {
+        ModelNode readExtOne = Util.getReadAttributeOperation(SERVER_ONE_EXT_ADDRESS, MODULE);
+        executeOp(readExtOne, FAILED);
+
+        ModelNode readSubOne = Util.getReadAttributeOperation(SERVER_ONE_SUBSYSTEM_ADDRESS, NAME);
+        executeOp(readSubOne, FAILED);
+
+        ModelNode readExtThree = Util.getReadAttributeOperation(SERVER_THREE_EXT_ADDRESS, MODULE);
+        executeOp(readExtThree, FAILED);
+
+        ModelNode readSubThree = Util.getReadAttributeOperation(SERVER_THREE_SUBSYSTEM_ADDRESS, NAME);
+        executeOp(readSubThree, FAILED);
+
+    }
+
+    private static ModelNode buildComposite(ModelNode... steps) {
+        ModelNode result = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+        ModelNode stepsParam = result.get("steps");
+        for (ModelNode step : steps) {
+            stepsParam.add(step);
+        }
+        return result;
+    }
+
+    private static void validateInvokePublicStep(ModelNode response, int step, boolean expectRollback) {
+        String msg = response.toString();
+        assertTrue(msg, response.has("result"));
+        ModelNode result = response.get("result");
+        assertTrue(msg, result.isDefined());
+        String stepKey = "step-"+step;
+        assertEquals(msg, expectRollback ? "failed" : "success", result.get(stepKey, "outcome").asString());
+        assertTrue(msg, result.has(stepKey, "result"));
+        assertEquals(msg, TestExtension.MODULE_NAME, result.get(stepKey, "result").asString());
+        if (expectRollback) {
+            assertTrue(msg, result.has(stepKey, "rolled-back"));
+            assertTrue(msg, result.get(stepKey, "rolled-back").asBoolean());
+        } else {
+            assertFalse(msg, result.has(stepKey, "rolled-back"));
+        }
+    }
+
+    private void removeIgnoreFailure(ModelControllerClient client, PathAddress subsystemAddress) throws Exception {
+        try {
+            ModelNode op = Util.createRemoveOperation(subsystemAddress);
+            client.execute(op);
+        } catch (Exception ignore) {
+
         }
     }
 }

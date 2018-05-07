@@ -396,6 +396,7 @@ public class OperationErrorTestCase {
     }
 
     private void errorTest(String host, String server, ErrorExtension.ErrorPoint errorPoint, boolean addRolloutPlan, boolean expectFailure) throws Exception {
+        boolean multiphase = true;
         ModelNode op = ERROR_OP.clone();
         op.get(TARGET_HOST.getName()).set(host);
         if (server != null) {
@@ -410,6 +411,7 @@ public class OperationErrorTestCase {
             // retarget the op to the HC subsystem
             PathAddress addr = host.equals("master") ? MASTER_ADDRESS : SLAVE_ADDRESS;
             op.get(OP_ADDR).set(addr.append(SUBSYSTEM_ELEMENT).toModelNode());
+            multiphase = false;
         }
 
         ModelNode response;
@@ -419,11 +421,12 @@ public class OperationErrorTestCase {
             response = executeForResponse(op, masterClient);
         }
         if (errorPoint != ErrorExtension.ErrorPoint.SERVICE_STOP) {
-            validateResponseDetails(response, host, server, errorPoint);
+            validateResponseDetails(response, host, server, errorPoint, multiphase);
         } // else it's a success and I'm too lazy to write the code to verify the response
     }
 
-    private void validateResponseDetails(ModelNode response, String host, String server, ErrorExtension.ErrorPoint errorPoint) {
+    private void validateResponseDetails(ModelNode response, String host, String server,
+                                         ErrorExtension.ErrorPoint errorPoint, boolean multiphase) {
         ModelNode unmodified = response.clone();
         ModelNode fd;
         if (server != null) {
@@ -439,6 +442,8 @@ public class OperationErrorTestCase {
                 // simple structure and want this test to enforce that. OTOH it shouldn't be changed lightly
                 // as it would be easy to mess up.
                 fd = response.get(FAILURE_DESCRIPTION);
+            } else if (!multiphase) {
+                fd = response.get(FAILURE_DESCRIPTION);
             } else if (RUNTIME_POINTS.contains(errorPoint)) {
                 fd = response.get(FAILURE_DESCRIPTION, HOST_FAILURE_DESCRIPTIONS, host);
             } else {
@@ -450,7 +455,7 @@ public class OperationErrorTestCase {
                 assertFalse(unmodified.toString(), response.hasDefined(FAILURE_DESCRIPTION));
                 return;
             }
-            fd = response.get(FAILURE_DESCRIPTION, HOST_FAILURE_DESCRIPTIONS, host);
+            fd = multiphase ? response.get(FAILURE_DESCRIPTION, HOST_FAILURE_DESCRIPTIONS, host) : response.get(FAILURE_DESCRIPTION);
         }
         ModelType errorType = errorPoint == ErrorExtension.ErrorPoint.SERVICE_START ? ModelType.OBJECT : ModelType.STRING;
         assertEquals(unmodified.toString(), errorType, fd.getType());
