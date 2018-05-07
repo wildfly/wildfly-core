@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
+    <delete path="domain/configuration/domain_xml_history" recursive="true"/>
+    <delete path="domain/configuration/host_xml_history" recursive="true"/>
+</tasks>

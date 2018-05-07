@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="domain-interfaces" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="domain.interface">
+        <param name="interface" value="management"/>
+    </feature>
+    <feature spec="domain.interface">
+        <param name="interface" value="public"/>
+    </feature>
+    <feature spec="domain.interface">
+        <param name="interface" value="unsecure"/>
+    </feature>
+</feature-group-spec>

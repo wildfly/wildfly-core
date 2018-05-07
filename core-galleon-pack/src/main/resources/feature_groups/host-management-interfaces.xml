@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="host-management-interfaces" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="host.core-service.management.management-interface.http-interface">
+        <param name="interface" value="management"/>
+        <param name="port" value="${jboss.management.http.port:9990}"/>
+        <param name="security-realm" value="ManagementRealm"/>
+         <feature spec="host.core-service.management.management-interface.http-interface.http-upgrade">
+            <param name="enabled" value="true"/>
+        </feature>
+    </feature>
+</feature-group-spec>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="host-profile" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.core-management"/>
+    <feature spec="subsystem.elytron">
+        <param name="final-providers" value="combined-providers"/>
+        <param name="disallowed-providers" value="[OracleUcrypto]"/>
+        <feature-group name="host-elytron-common">
+            <include feature-id="subsystem.elytron.file-audit-log:file-audit-log=local-audit">
+                <param name="relative-to" value="jboss.domain.log.dir"/>
+            </include>
+        </feature-group>
+        <feature-group name="elytron-management">
+            <include feature-id="subsystem.elytron.properties-realm:properties-realm=ManagementRealm">
+                <param name="users-properties" value="{path=mgmt-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ManagementRealm}"/>
+                <param name="groups-properties" value="{path=mgmt-groups.properties,relative-to=jboss.domain.config.dir}"/>
+            </include>
+            <include feature-id="subsystem.elytron.http-authentication-factory:http-authentication-factory=management-http-authentication">
+                <param name="mechanism-configurations" value="[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Management Realm}]}]"/>
+            </include>
+        </feature-group>
+    </feature>
+    <feature-group name="jmx"/>
+</feature-group-spec>

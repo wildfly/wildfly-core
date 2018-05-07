@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="domain-elytron-management" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <!-- management.cli -->
+    <feature spec="subsystem.elytron.properties-realm">
+        <param name="properties-realm" value="ManagementRealm"/>
+        <param name="users-properties" value="{path=mgmt-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ManagementRealm}"/>
+        <param name="groups-properties" value="{path=mgmt-groups.properties,relative-to=jboss.server.config.dir}"/>
+    </feature>
+    <feature spec="subsystem.elytron.security-domain">
+        <param name="security-domain" value="ManagementDomain"/>
+        <param name="default-realm" value="ManagementRealm"/>
+        <param name="permission-mapper" value="default-permission-mapper"/>
+        <param name="realms" value="[{realm=ManagementRealm,role-decoder=groups-to-roles},{realm=local,role-mapper=super-user-mapper}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.sasl-authentication-factory">
+        <param name="sasl-authentication-factory" value="management-sasl-authentication"/>
+        <param name="sasl-server-factory" value="configured"/>
+        <param name="security-domain" value="ManagementDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.http-authentication-factory">
+        <param name="http-authentication-factory" value="management-http-authentication"/>
+        <param name="http-server-mechanism-factory" value="global"/>
+        <param name="security-domain" value="ManagementDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=DIGEST,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}]"/>
+    </feature>
+</feature-group-spec>

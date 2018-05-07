@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="domain-profile" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature-group name="basic-profile"/>
+
+    <feature spec="subsystem.elytron">
+        <param name="final-providers" value="combined-providers"/>
+        <param name="disallowed-providers" value="[OracleUcrypto]"/>
+        <feature-group name="elytron-app">
+            <include feature-id="subsystem.elytron.properties-realm:properties-realm=ApplicationRealm">
+                <param name="users-properties" value="{path=application-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ApplicationRealm}"/>
+                <param name="groups-properties" value="{path=application-roles.properties,relative-to=jboss.domain.config.dir}"/>
+            </include>
+        </feature-group>
+    </feature>
+
+    <feature-group name="domain-server-groups"/>
+
+</feature-group-spec>

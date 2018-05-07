@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+	<?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ JBoss, Home of Professional Open Source.
   ~ Copyright 2013, Red Hat, Inc., and individual contributors
@@ -56,7 +56,7 @@
         <developerConnection>scm:git:${wildfly.core.scm.connection}</developerConnection>
         <url>${wildfly.core.scm.url}</url>
     </scm>
-    
+
     <!--
         Build configuration.  Override JBoss Parent settings as necessary.
         For example: <version.surefire.plugin>2.11</version.surefire.plugin>
@@ -101,8 +101,10 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
+        <version.org.jboss.galleon>1.0.0.Alpha11</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.10.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.galleon-plugins>1.0.0.Alpha19</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
@@ -122,8 +124,11 @@
         <module>controller</module>
         <module>controller-client</module>
         <module>build</module>
+        <module>build-legacy</module>
         <module>dist</module>
+        <module>dist-legacy</module>
         <module>core-feature-pack</module>
+        <module>core-galleon-pack</module>
         <module>core-management</module>
         <module>core-model-test</module>
         <module>core-security</module>
@@ -493,6 +498,11 @@
                     <version>${version.xml.plugin}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.jboss.galleon</groupId>
+                    <artifactId>galleon-maven-plugins</artifactId>
+                    <version>${version.org.jboss.galleon}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
                     <version>${version.org.wildfly.build-tools}</version>
@@ -507,6 +517,11 @@
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                     <version>${version.org.wildfly.build-tools}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.galleon-plugins</groupId>
+                    <artifactId>wildfly-galleon-maven-plugins</artifactId>
+                    <version>${version.org.wildfly.galleon-plugins}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

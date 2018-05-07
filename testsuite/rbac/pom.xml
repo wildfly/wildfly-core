@@ -45,8 +45,8 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
-            <type>zip</type>
+            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.apache.directory.server</groupId>
@@ -64,18 +64,34 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugins</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
                         <goals>
-                            <goal>build</goal>
+                            <goal>provision</goal>
                         </goals>
                         <phase>generate-test-resources</phase>
                         <configuration>
-                            <config-file>server-provisioning.xml</config-file>
-                            <server-name>wildfly-core</server-name>
+                            <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <inherit-configs>false</inherit-configs>
+                                    <included-configs>
+                                        <config>
+                                            <model>standalone</model>
+                                            <name>standalone.xml</name>
+                                        </config>
+                                    </included-configs>
+                                    <excludedPackages>
+                                        <param>product.conf</param>
+                                    </excludedPackages>
+                                </feature-pack>
+                            </feature-packs>
                         </configuration>
                     </execution>
                 </executions>

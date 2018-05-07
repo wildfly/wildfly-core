@@ -64,8 +64,8 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-vault-test-feature-pack</artifactId>
-            <type>zip</type>
+            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -103,23 +103,39 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>server-provisioning</id>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                        <phase>process-test-resources</phase>
-                        <configuration>
-                            <config-file>server-provisioning.xml</config-file>
-                            <server-name>wildfly-core</server-name>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+                <plugin>
+                    <groupId>org.jboss.galleon</groupId>
+                    <artifactId>galleon-maven-plugins</artifactId>
+                    <executions>
+                        <execution>
+                            <id>server-provisioning</id>
+                            <goals>
+                                <goal>provision</goal>
+                            </goals>
+                            <phase>process-test-resources</phase>
+                            <configuration>
+                                <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                                <feature-packs>
+                                    <feature-pack>
+                                        <groupId>org.wildfly.core</groupId>
+                                        <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                        <version>${project.version}</version>
+                                        <inherit-configs>false</inherit-configs>
+                                        <included-configs>
+                                            <config>
+                                                <model>standalone</model>
+                                                <name>standalone.xml</name>
+                                            </config>
+                                        </included-configs>
+                                        <excluded-packages>
+                                            <name>product.conf</name>
+                                        </excluded-packages>
+                                    </feature-pack>
+                                </feature-packs>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
         </plugins>
     </build>
 

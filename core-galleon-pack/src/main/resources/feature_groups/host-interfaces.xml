@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="host-interfaces" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="host.interface">
+        <param name="interface" value="management"/>
+        <param name="inet-address" value="${jboss.bind.address.management:127.0.0.1}"/>
+    </feature>
+    <feature spec="host.interface">
+        <param name="interface" value="public"/>
+        <param name="inet-address" value="${jboss.bind.address:127.0.0.1}"/>
+    </feature>
+    <feature spec="host.interface">
+        <param name="interface" value="unsecure"/>
+        <param name="inet-address" value="${jboss.bind.address.unsecure:127.0.0.1}"/>
+    </feature>
+</feature-group-spec>
