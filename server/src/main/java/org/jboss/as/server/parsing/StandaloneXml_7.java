@@ -62,7 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
@@ -77,7 +76,6 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
@@ -92,7 +90,6 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -764,21 +761,7 @@ final class StandaloneXml_7 extends CommonXml implements ManagementXmlDelegate {
         }
 
         writer.writeStartElement(Element.PROFILE.getLocalName());
-        Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
-        if (subsystemNames.size() > 0) {
-            String defaultNamespace = writer.getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX);
-            for (String subsystemName : subsystemNames) {
-                try {
-                    ModelNode subsystem = profileNode.get(SUBSYSTEM, subsystemName);
-                    XMLElementWriter<SubsystemMarshallingContext> subsystemWriter = context.getSubsystemWriter(subsystemName);
-                    if (subsystemWriter != null) { // FIXME -- remove when extensions are doing the registration
-                        subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
-                    }
-                } finally {
-                    writer.setDefaultNamespace(defaultNamespace);
-                }
-            }
-        }
+        writeSubsystems(profileNode, writer, context);
         writer.writeEndElement();
     }
 
