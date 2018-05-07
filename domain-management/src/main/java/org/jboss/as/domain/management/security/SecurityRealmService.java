@@ -36,14 +36,18 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.Subject;
@@ -51,6 +55,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
+import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslServerFactory;
 
 import org.ietf.jgss.GSSCredential;
@@ -151,6 +156,9 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     private DomainManagedServerCallbackHandler domainManagedServersCallback;
 
+    private Map<String, String> mechanismConfiguration = new HashMap<>();
+    private MechanismConfigurationSelector mechanismConfigurationSelector;
+
     public SecurityRealmService(String name, boolean mapGroupsToRoles) {
         this.name = name;
         this.mapGroupsToRoles = mapGroupsToRoles;
@@ -180,7 +188,6 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
          * Create the Elytron authentication factories.
          */
 
-        final Map<String, String> mechanismConfiguration = new HashMap<>();
         final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
 
         SubjectSupplementalService subjectSupplementalService = this.subjectSupplemental.getOptionalValue();
@@ -260,7 +267,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         SecurityDomain securityDomain = domainBuilder.build();
 
-        MechanismConfigurationSelector mcs = (mi) -> {
+        mechanismConfigurationSelector = (mi) -> {
             AuthMechanism mechanism = toAuthMechanism(mi.getMechanismType(), mi.getMechanismName());
             if (mechanism != null) {
                 final MechanismConfiguration resolved = configurationMap.get(mechanism);
@@ -294,7 +301,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         httpServerFactory = new SortedServerMechanismFactory(httpServerFactory, SecurityRealmService::compare);
 
         httpBuilder.setFactory(httpServerFactory);
-        httpBuilder.setMechanismConfigurationSelector(mcs);
+        httpBuilder.setMechanismConfigurationSelector(mechanismConfigurationSelector);
         httpAuthenticationFactory = httpBuilder.build();
 
         SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
@@ -309,7 +316,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         saslServerFactory = new SortedMechanismSaslServerFactory(saslServerFactory, SecurityRealmService::compare);
 
         saslBuilder.setFactory(saslServerFactory);
-        saslBuilder.setMechanismConfigurationSelector(mcs);
+        saslBuilder.setMechanismConfigurationSelector(mechanismConfigurationSelector);
         saslAuthenticationFactory = saslBuilder.build();
     }
 
@@ -568,6 +575,76 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     @Override
     public SaslAuthenticationFactory getSaslAuthenticationFactory() {
         return saslAuthenticationFactory;
+    }
+
+    @Override
+    public SaslAuthenticationFactory getSaslAuthenticationFactory(final String[] mechanismNames, final Boolean policyNoanonymous) throws StartException {
+
+        //check that all requested mechanisms are supported by security realm
+        if(mechanismNames != null && mechanismNames.length > 0) {
+            Set<String> requestedMechanisms = new HashSet<>(Arrays.asList(mechanismNames));
+            Set<AuthMechanism> authMechanisms = getSupportedAuthenticationMechanisms();
+
+            //ANONYMOUS is not listed in toAuthMechanism
+            requestedMechanisms.remove("ANONYMOUS");
+
+            for(Iterator<String> iter = requestedMechanisms.iterator();iter.hasNext();) {
+                AuthMechanism authMechanism = toAuthMechanism("SASL", iter.next());
+                if(authMechanism != null) {
+                   iter.remove();
+                }
+            }
+
+            if(!requestedMechanisms.isEmpty()) {
+                throw ROOT_LOGGER.legacyMechanismsAreNotSupported(requestedMechanisms.stream().collect(Collectors.joining(", ")), getName());
+            }
+
+        }
+
+        if((mechanismNames != null && mechanismNames.length > 0) || policyNoanonymous != null) {
+            SaslAuthenticationFactory.Builder saslBuilder = SaslAuthenticationFactory.builder();
+            saslBuilder.setSecurityDomain(saslAuthenticationFactory.getSecurityDomain());
+
+            SaslServerFactory saslServerFactory = new SecurityProviderSaslServerFactory(() -> new Provider[]{new WildFlyElytronProvider()});
+
+            Map<String, String> tmpMechanismConfiguration = new HashMap<>(mechanismConfiguration);
+            if(getSupportedAuthenticationMechanisms() != null) {
+                tmpMechanismConfiguration.put(Sasl.POLICY_NOANONYMOUS, String.valueOf(policyNoanonymous));
+            }
+
+            if(mechanismNames != null && mechanismNames.length > 0) {
+                final HashSet<String> set = new HashSet(Arrays.asList(mechanismNames));
+                saslServerFactory = new FilterMechanismSaslServerFactory(saslServerFactory, set::contains);
+                saslServerFactory = new PropertiesSaslServerFactory(saslServerFactory, tmpMechanismConfiguration);
+                saslServerFactory = new SortedMechanismSaslServerFactory(saslServerFactory, SecurityRealmService::compare);
+
+                saslServerFactory = new SortedMechanismSaslServerFactory(saslServerFactory, mechanismNames);
+            }
+
+            saslBuilder.setFactory(saslServerFactory);
+
+            if(mechanismNames != null && mechanismNames.length > 0) {
+
+                ArrayList<MechanismConfigurationSelector> mechanismConfigurationSelectors = new ArrayList<>(mechanismNames.length);
+                for (String mechanismName : mechanismNames) {
+                    MechanismConfiguration.Builder builder = MechanismConfiguration.builder();
+
+                    mechanismConfigurationSelectors.add(MechanismConfigurationSelector.predicateSelector(i -> mechanismName.equalsIgnoreCase(i.getMechanismName()), builder.build()));
+                }
+
+                MechanismConfigurationSelector mechanismNamesSelector =  MechanismConfigurationSelector.aggregate(mechanismConfigurationSelectors.toArray(new MechanismConfigurationSelector[mechanismConfigurationSelectors.size()]));
+
+                saslBuilder.setMechanismConfigurationSelector(mechanismNamesSelector);
+            } else {
+                saslBuilder.setMechanismConfigurationSelector(mechanismConfigurationSelector);
+            }
+
+            SaslAuthenticationFactory onDemandFactory = saslBuilder.build();
+
+            return onDemandFactory;
+        }
+
+        return getSaslAuthenticationFactory();
     }
 
     @Override

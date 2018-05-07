@@ -52,9 +52,13 @@ import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.ChannelListener;
+import org.xnio.Option;
 import org.xnio.OptionMap;
+import org.xnio.Options;
+import org.xnio.Sequence;
 import org.xnio.StreamConnection;
 
 /**
@@ -153,7 +157,34 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
 
             org.jboss.as.domain.management.SecurityRealm securityRealm = null;
             if (saslAuthenticationFactory == null && (securityRealm = injectedSecurityRealm.getOptionalValue()) != null) {
-                saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory();
+
+                final ClassLoader loader = WildFlySecurityManager.getClassLoaderPrivileged(ConnectorUtils.class);
+
+                Option<?> optionMechanismNames = Option.fromString("org.xnio.Options."+ Options.SASL_MECHANISMS.getName(), loader);
+                String[] mechanismNames = null;
+                if(connectorPropertiesOptionMap.contains(optionMechanismNames)) {
+                    Object o = connectorPropertiesOptionMap.get(optionMechanismNames);
+                    if (o instanceof Sequence) {
+                        Sequence<String> sequence = (Sequence<String>) connectorPropertiesOptionMap.get(optionMechanismNames);
+                        mechanismNames = sequence.toArray(new String[sequence.size()]);
+                    }
+                }
+
+                Option<?> optionPolicyNonanonymous = Option.fromString("org.xnio.Options."+ Options.SASL_POLICY_NOANONYMOUS.getName(), loader);
+                //in case that legacy sasl mechanisms are used, noanonymous default value is true
+                Boolean policyNonanonymous = mechanismNames == null ? null: true;
+                if(connectorPropertiesOptionMap.contains(optionPolicyNonanonymous)) {
+                    Object o = connectorPropertiesOptionMap.get(optionPolicyNonanonymous);
+                    if (o instanceof Boolean) {
+                        policyNonanonymous = (Boolean) o;
+                    }
+                }
+
+                if(mechanismNames != null || policyNonanonymous != null) {
+                    saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory(mechanismNames, policyNonanonymous);
+                } else {
+                    saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory();
+                }
             }
 
             if (saslAuthenticationFactory == null) {

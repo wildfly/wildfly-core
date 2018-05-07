@@ -32,6 +32,7 @@ import org.jboss.as.domain.management.security.SecurityRealmResourceDefinition;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartException;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 
@@ -100,6 +101,16 @@ public interface SecurityRealm {
      * @return a {@link SaslAuthenticationFactory} backed by this {@link SecurityRealm}.
      */
     SaslAuthenticationFactory getSaslAuthenticationFactory();
+
+    /**
+     * Get a {@link SaslAuthenticationFactory} backed by this {@link SecurityRealm}.
+     *
+     * @param mechanismNames Allowed mechanisms defined in remoting subsystem by property SASL_MECHANISMS
+     * @param policyNoanonymous Value of parameter SASL_POLICY_NOANONYMOUS
+     * @return a {@link SaslAuthenticationFactory} backed by this {@link SecurityRealm}.
+     * @throws StartException When any of mechanismNames is not suuported.
+     */
+    SaslAuthenticationFactory getSaslAuthenticationFactory(String[] mechanismNames, Boolean policyNoanonymous) throws StartException;
 
     /**
      * Get a {@link HttpAuthenticationFactory} backed by this {@link SecurityRealm}.
