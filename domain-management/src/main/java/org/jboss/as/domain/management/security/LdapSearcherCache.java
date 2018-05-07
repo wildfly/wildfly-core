@@ -176,9 +176,7 @@ interface LdapSearcherCache<R, K> {
         public static <R, K> ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Class injectorType,
                 Injector<LdapSearcherCache<R, K>> injector, final boolean forAuthentication, final boolean forUserSearch,
                 String realmName) {
-            sb.addDependency(ServiceBuilder.DependencyType.REQUIRED,
-                    createServiceName(forAuthentication, forUserSearch, realmName), injectorType, injector);
-
+            sb.addDependency(createServiceName(forAuthentication, forUserSearch, realmName), injectorType, injector);
             return sb;
         }
     }

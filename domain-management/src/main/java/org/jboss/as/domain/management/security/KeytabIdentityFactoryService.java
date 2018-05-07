@@ -175,9 +175,7 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
 
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<KeytabIdentityFactoryService> injector,
                 String realmName) {
-            ServiceBuilder.DependencyType type = ServiceBuilder.DependencyType.REQUIRED;
-            sb.addDependency(type, createServiceName(realmName), KeytabIdentityFactoryService.class, injector);
-
+            sb.addDependency(createServiceName(realmName), KeytabIdentityFactoryService.class, injector);
             return sb;
         }
 
