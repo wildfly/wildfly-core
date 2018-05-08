@@ -182,7 +182,6 @@ import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -833,10 +832,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         .install();
 
                 // demand http mgmt services
-                serviceTarget.addService(ServiceName.JBOSS.append("http-mgmt-startup"), Service.NULL)
-                        .addDependency(ServiceBuilder.DependencyType.OPTIONAL, UndertowHttpManagementService.SERVICE_NAME)
-                        .setInitialMode(ServiceController.Mode.ACTIVE)
-                        .install();
+                if (capabilityRegistry.hasCapability(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getName(), CapabilityScope.GLOBAL)) {
+                    serviceTarget.addService(ServiceName.JBOSS.append("http-mgmt-startup"), Service.NULL)
+                            .addDependency(UndertowHttpManagementService.SERVICE_NAME)
+                            .setInitialMode(ServiceController.Mode.ACTIVE)
+                            .install();
+                }
 
                 reachedServers = true;
                 if (currentRunningMode == RunningMode.NORMAL) {

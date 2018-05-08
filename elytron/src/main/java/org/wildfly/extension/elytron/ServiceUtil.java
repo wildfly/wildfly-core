@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.msc.service.ServiceBuilder.DependencyType.REQUIRED;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import org.jboss.as.controller.PathAddress;
@@ -97,8 +96,7 @@ final class ServiceUtil<T> {
     }
 
     ServiceBuilder<?> addInjection(ServiceBuilder<?> sb, Injector<T> injector, ServiceName serviceName) {
-        sb.addDependency(REQUIRED, serviceName, clazz, injector);
-
+        sb.addDependency(serviceName, clazz, injector);
         return sb;
     }
 

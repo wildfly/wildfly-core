@@ -250,9 +250,7 @@ public class KeytabService implements Service<KeytabService> {
 
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<KeytabService> injector,
                 String realmName, String principal) {
-            ServiceBuilder.DependencyType type = ServiceBuilder.DependencyType.REQUIRED;
-            sb.addDependency(type, createServiceName(realmName, principal), KeytabService.class, injector);
-
+            sb.addDependency(createServiceName(realmName, principal), KeytabService.class, injector);
             return sb;
         }
 
