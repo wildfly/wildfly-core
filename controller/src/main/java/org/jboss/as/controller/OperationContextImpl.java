@@ -49,13 +49,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,21 +106,18 @@ import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.AbstractServiceListener;
-import org.jboss.msc.service.BatchServiceTarget;
 import org.jboss.msc.service.DelegatingServiceBuilder;
-import org.jboss.msc.service.LifecycleListener;
+import org.jboss.msc.service.DelegatingServiceController;
+import org.jboss.msc.service.DelegatingServiceRegistry;
+import org.jboss.msc.service.DelegatingServiceTarget;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceListener;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StabilityMonitor;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.Value;
 import org.wildfly.security.auth.server.SecurityIdentity;
@@ -131,6 +126,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * Operation context implementation.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class OperationContextImpl extends AbstractOperationContext {
 
@@ -2048,15 +2044,14 @@ final class OperationContextImpl extends AbstractOperationContext {
      * Service target that delegates to another target for most calls, but during execution of the
      * management op that created it does management specific integration and limits the available API.
      */
-    private static class ContextServiceTarget implements CapabilityServiceTarget {
+    private static class ContextServiceTarget extends DelegatingServiceTarget implements CapabilityServiceTarget {
 
-        private final ServiceTarget delegate;
         private final Set<ContextServiceBuilder> builders = new HashSet<>();
         private volatile ContextServiceBuilderSupplier builderSupplier;
         private final PathAddress targetAddress;
 
         ContextServiceTarget(final ServiceTarget delegate, final ContextServiceBuilderSupplier builderSupplier, final PathAddress targetAddress) {
-            this.delegate = delegate;
+            super(delegate);
             this.builderSupplier = builderSupplier;
             this.targetAddress = targetAddress;
         }
@@ -2073,14 +2068,9 @@ final class OperationContextImpl extends AbstractOperationContext {
             builders.clear();
         }
 
-        private void checkNotInManagementOperation() {
-            if (this.builderSupplier != null) {
-                throw new UnsupportedOperationException(); // TODO most calls to this are things we could perhaps support.
-            }
-        }
-
+        @Override
         public ServiceBuilder<?> addService(final ServiceName name) {
-            final ServiceBuilder<?> realBuilder = delegate.addService(name);
+            final ServiceBuilder<?> realBuilder = super.getDelegate().addService(name);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
@@ -2093,8 +2083,9 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
 
+        @Override
         public <T> ServiceBuilder<T> addServiceValue(final ServiceName name, final Value<? extends Service<T>> value) {
-            final ServiceBuilder<T> realBuilder = delegate.addServiceValue(name, value);
+            final ServiceBuilder<T> realBuilder = super.getDelegate().addServiceValue(name, value);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
@@ -2107,6 +2098,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
 
+        @Override
         public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
             return new CapabilityServiceBuilderImpl<>(addServiceValue(name, new ImmediateValue<>(service)), targetAddress);
         }
@@ -2120,100 +2112,16 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
         }
 
-        public ServiceTarget addMonitor(final StabilityMonitor monitor) {
+        @Override
+        protected ServiceTarget getDelegate() {
             checkNotInManagementOperation();
-            return delegate.addMonitor(monitor);
+            return super.getDelegate();
         }
 
-        public ServiceTarget addMonitors(final StabilityMonitor... monitors) {
-            checkNotInManagementOperation();
-            return delegate.addMonitors(monitors);
-        }
-
-        public ServiceTarget removeMonitor(final StabilityMonitor monitor) {
-            checkNotInManagementOperation();
-            return delegate.removeMonitor(monitor);
-        }
-
-        public Set<StabilityMonitor> getMonitors() {
-            checkNotInManagementOperation();
-            return delegate.getMonitors();
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceTarget addListener(final ServiceListener<Object> listener) {
-            checkNotInManagementOperation();
-            return delegate.addListener(listener);
-        }
-
-        @SafeVarargs
-        @SuppressWarnings("deprecation")
-        public final ServiceTarget addListener(final ServiceListener<Object>... listeners) {
-            checkNotInManagementOperation();
-            return delegate.addListener(listeners);
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceTarget addListener(final Collection<ServiceListener<Object>> listeners) {
-            checkNotInManagementOperation();
-            return delegate.addListener(listeners);
-        }
-
-        public ServiceTarget addListener(final LifecycleListener lifecycleListener) {
-            checkNotInManagementOperation();
-            return delegate.addListener(lifecycleListener);
-        }
-
-        @SuppressWarnings("deprecation")
-        public ServiceTarget removeListener(final ServiceListener<Object> listener) {
-            checkNotInManagementOperation();
-            return delegate.removeListener(listener);
-        }
-
-        public ServiceTarget removeListener(final LifecycleListener lifecycleListener) {
-            checkNotInManagementOperation();
-            return delegate.removeListener(lifecycleListener);
-        }
-
-        @SuppressWarnings("deprecation")
-        public Set<ServiceListener<Object>> getListeners() {
-            checkNotInManagementOperation();
-            return delegate.getListeners();
-        }
-
-        public ServiceTarget addDependency(final ServiceName dependency) {
-            checkNotInManagementOperation();
-            return delegate.addDependency(dependency);
-        }
-
-        public ServiceTarget addDependency(final ServiceName... dependencies) {
-            checkNotInManagementOperation();
-            return delegate.addDependency(dependencies);
-        }
-
-        public ServiceTarget addDependency(final Collection<ServiceName> dependencies) {
-            checkNotInManagementOperation();
-            return delegate.addDependency(dependencies);
-        }
-
-        public ServiceTarget removeDependency(final ServiceName dependency) {
-            checkNotInManagementOperation();
-            return delegate.removeDependency(dependency);
-        }
-
-        public Set<ServiceName> getDependencies() {
-            checkNotInManagementOperation();
-            return delegate.getDependencies();
-        }
-
-        public ServiceTarget subTarget() {
-            checkNotInManagementOperation();
-            return delegate.subTarget();
-        }
-
-        public BatchServiceTarget batchTarget() {
-            checkNotInManagementOperation();
-            return delegate.batchTarget();
+        private void checkNotInManagementOperation() {
+            if (this.builderSupplier != null) {
+                throw new UnsupportedOperationException(); // TODO most calls to this are things we could perhaps support.
+            }
         }
     }
 
@@ -2324,13 +2232,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
     }
 
-    private static class OperationContextServiceRegistry implements ServiceRegistry {
-        private final ServiceRegistry registry;
+    private static class OperationContextServiceRegistry extends DelegatingServiceRegistry {
         private final Set<OperationContextServiceController> controllers = Collections.synchronizedSet(new HashSet<>());
         private Step registryActiveStep;
 
-        private OperationContextServiceRegistry(ServiceRegistry registry, Step registryActiveStep) {
-            this.registry = registry;
+        private OperationContextServiceRegistry(final ServiceRegistry registry, final Step registryActiveStep) {
+            super(registry);
             this.registryActiveStep = registryActiveStep;
         }
 
@@ -2348,8 +2255,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         @SuppressWarnings("unchecked")
-        public ServiceController<?> getRequiredService(ServiceName serviceName) throws ServiceNotFoundException {
-            ServiceController<?> result = registry.getRequiredService(serviceName);
+        public ServiceController<?> getRequiredService(final ServiceName serviceName) throws ServiceNotFoundException {
+            ServiceController<?> result = getDelegate().getRequiredService(serviceName);
             synchronized (this) {
                 if (registryActiveStep != null) {
                     OperationContextServiceController ocsc = new OperationContextServiceController(result, registryActiveStep);
@@ -2362,8 +2269,8 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         @SuppressWarnings("unchecked")
-        public ServiceController<?> getService(ServiceName serviceName) {
-            ServiceController<?> result = registry.getService(serviceName);
+        public ServiceController<?> getService(final ServiceName serviceName) {
+            ServiceController<?> result = getDelegate().getService(serviceName);
             if (result != null) {
                 synchronized (this) {
                     if (registryActiveStep != null) {
@@ -2375,19 +2282,13 @@ final class OperationContextImpl extends AbstractOperationContext {
             }
             return result;
         }
-
-        @Override
-        public List<ServiceName> getServiceNames() {
-            return registry.getServiceNames();
-        }
     }
 
-    private static class OperationContextServiceController<S> implements ServiceController<S> {
-        private final ServiceController<S> controller;
+    private static class OperationContextServiceController<S> extends DelegatingServiceController<S> {
         private volatile Step registryActiveStep;
 
-        private OperationContextServiceController(ServiceController<S> controller, Step registryActiveStep) {
-            this.controller = controller;
+        private OperationContextServiceController(final ServiceController<S> controller, final Step registryActiveStep) {
+            super(controller);
             this.registryActiveStep = registryActiveStep;
         }
 
@@ -2395,108 +2296,29 @@ final class OperationContextImpl extends AbstractOperationContext {
             this.registryActiveStep = null;
         }
 
-        public ServiceController<?> getParent() {
-            return controller.getParent();
-        }
-
-        public ServiceContainer getServiceContainer() {
-            return controller.getServiceContainer();
-        }
-
-        public Mode getMode() {
-            return controller.getMode();
-        }
-
-        public boolean compareAndSetMode(Mode expected,
-                                         org.jboss.msc.service.ServiceController.Mode newMode) {
+        public boolean compareAndSetMode(final Mode expected, final Mode newMode) {
             checkModeTransition(newMode);
-            boolean changed = controller.compareAndSetMode(expected, newMode);
+            boolean changed = getDelegate().compareAndSetMode(expected, newMode);
             Step step = registryActiveStep;
             if (changed && step != null) {
-                step.serviceModeChanged(controller);
+                step.serviceModeChanged(getDelegate());
             }
             return changed;
         }
 
-        public void setMode(Mode mode) {
+        public void setMode(final Mode mode) {
             checkModeTransition(mode);
-            controller.setMode(mode);
+            getDelegate().setMode(mode);
             Step step = registryActiveStep;
             if (step != null) {
-                step.serviceModeChanged(controller);
+                step.serviceModeChanged(getDelegate());
             }
         }
 
-        private void checkModeTransition(Mode mode) {
+        private void checkModeTransition(final Mode mode) {
             if (mode == Mode.REMOVE) {
                 throw ControllerLogger.ROOT_LOGGER.useOperationContextRemoveService();
             }
-        }
-
-        public org.jboss.msc.service.ServiceController.State getState() {
-            return controller.getState();
-        }
-
-        public org.jboss.msc.service.ServiceController.Substate getSubstate() {
-            return controller.getSubstate();
-        }
-
-        public S getValue() throws IllegalStateException {
-            return controller.getValue();
-        }
-
-        public Service<S> getService() throws IllegalStateException {
-            return controller.getService();
-        }
-
-        public ServiceName getName() {
-            return controller.getName();
-        }
-
-        public ServiceName[] getAliases() {
-            return controller.getAliases();
-        }
-
-        public void addListener(final LifecycleListener lifecycleListener) {
-            controller.addListener(lifecycleListener);
-        }
-
-        @SuppressWarnings("deprecation")
-        public void addListener(ServiceListener<? super S> serviceListener) {
-            controller.addListener(serviceListener);
-        }
-
-        public void removeListener(final LifecycleListener lifecycleListener) {
-            controller.removeListener(lifecycleListener);
-        }
-
-        @SuppressWarnings("deprecation")
-        public void removeListener(ServiceListener<? super S> serviceListener) {
-            controller.removeListener(serviceListener);
-        }
-
-        public StartException getStartException() {
-            return controller.getStartException();
-        }
-
-        public void retry() {
-            controller.retry();
-        }
-
-        public Set<ServiceName> getImmediateUnavailableDependencies() {
-            return controller.getImmediateUnavailableDependencies();
-        }
-
-        public Collection<ServiceName> getUnavailableDependencies() {
-            return controller.getUnavailableDependencies();
-        }
-
-        public S awaitValue() throws IllegalStateException, InterruptedException {
-            return controller.awaitValue();
-        }
-
-        public S awaitValue(long time, TimeUnit unit) throws IllegalStateException, InterruptedException, TimeoutException {
-            return controller.awaitValue(time, unit);
         }
     }
 

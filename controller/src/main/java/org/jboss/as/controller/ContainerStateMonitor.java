@@ -166,7 +166,7 @@ final class ContainerStateMonitor {
             missingDeps =new HashMap<ServiceName, Set<ServiceName>>(problems.size());
             for (ServiceController<?> controller : problems) {
                 if (controller.getState() != ServiceController.State.REMOVED) {
-                    for (ServiceName missing : controller.getImmediateUnavailableDependencies()) {
+                    for (ServiceName missing : controller.getUnavailableDependencies()) {
                         Set<ServiceName> dependents = missingDeps.get(missing);
                         if (dependents == null) {
                             dependents = new HashSet<ServiceName>();
