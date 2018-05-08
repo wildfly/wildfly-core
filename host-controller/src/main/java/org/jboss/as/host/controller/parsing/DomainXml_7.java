@@ -42,7 +42,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
@@ -67,7 +66,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.HashUtil;
@@ -84,7 +82,6 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.DomainRootDefinition;
@@ -100,7 +97,6 @@ import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -704,23 +700,8 @@ final class DomainXml_7 extends CommonXml implements ManagementXmlDelegate {
         writer.writeAttribute(Attribute.NAME.getLocalName(), profileName);
         ProfileResourceDefinition.INCLUDES.getMarshaller().marshallAsAttribute(ProfileResourceDefinition.INCLUDES, profileNode, false, writer);
 
-        if (profileNode.hasDefined(SUBSYSTEM)) {
-            final Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
-            if (subsystemNames.size() > 0) {
-                String defaultNamespace = writer.getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX);
-                for (String subsystemName : subsystemNames) {
-                    try {
-                        ModelNode subsystem = profileNode.get(SUBSYSTEM, subsystemName);
-                        XMLElementWriter<SubsystemMarshallingContext> subsystemWriter = context.getSubsystemWriter(subsystemName);
-                        if (subsystemWriter != null) { // FIXME -- remove when extensions are doing the registration
-                            subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
-                        }
-                    } finally {
-                        writer.setDefaultNamespace(defaultNamespace);
-                    }
-                }
-            }
-        }
+        writeSubsystems(profileNode, writer, context);
+
         writer.writeEndElement();
     }
 

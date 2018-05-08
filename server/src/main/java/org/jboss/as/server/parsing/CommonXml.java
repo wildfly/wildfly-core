@@ -24,13 +24,18 @@ package org.jboss.as.server.parsing;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SCHEMA_LOCATIONS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.parsing.ExtensionXml.isOrderExtensions;
 import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -40,10 +45,13 @@ import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.WriteUtils;
+import org.jboss.as.controller.persistence.ModelMarshallingContext;
+import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -246,6 +254,38 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
     protected void writeProperties(final XMLExtendedStreamWriter writer, final ModelNode modelNode, Element element,
             boolean standalone) throws XMLStreamException {
         systemPropertiesXml.writeProperties(writer, modelNode, element, standalone);
+    }
+
+    protected static void writeSubsystems(final ModelNode profileNode, final XMLExtendedStreamWriter writer,
+                                          final ModelMarshallingContext context) throws XMLStreamException {
+
+        if (profileNode.hasDefined(SUBSYSTEM)) {
+            Set<String> subsystemNames = profileNode.get(SUBSYSTEM).keys();
+            if (subsystemNames.size() > 0) {
+                if (isOrderExtensions()) {
+                    Set<String> alphabetical = new TreeSet<>(subsystemNames);
+                    if (alphabetical.contains("logging")) {
+                        subsystemNames = new LinkedHashSet<>();
+                        subsystemNames.add("logging");
+                        subsystemNames.addAll(alphabetical);
+                    } else {
+                        subsystemNames = alphabetical;
+                    }
+                }
+                String defaultNamespace = writer.getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX);
+                for (String subsystemName : subsystemNames) {
+                    try {
+                        ModelNode subsystem = profileNode.get(SUBSYSTEM, subsystemName);
+                        XMLElementWriter<SubsystemMarshallingContext> subsystemWriter = context.getSubsystemWriter(subsystemName);
+                        if (subsystemWriter != null) { // FIXME -- remove when extensions are doing the registration
+                            subsystemWriter.writeContent(writer, new SubsystemMarshallingContext(subsystem, writer));
+                        }
+                    } finally {
+                        writer.setDefaultNamespace(defaultNamespace);
+                    }
+                }
+            }
+        }
     }
 
     /**

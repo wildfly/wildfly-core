@@ -36,6 +36,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 
 import javax.xml.stream.XMLStreamException;
@@ -79,6 +80,9 @@ public class ExtensionXml {
     public void writeExtensions(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
         Set<String> keys = modelNode.keys();
         if (keys.size() > 0) {
+            if (isOrderExtensions()) {
+                keys = new TreeSet<>(keys);
+            }
             writer.writeStartElement(Element.EXTENSIONS.getLocalName());
             for (final String extension : keys) {
                 writer.writeEmptyElement(Element.EXTENSION.getLocalName());
@@ -134,6 +138,11 @@ public class ExtensionXml {
         add.get(OP_ADDR).set(address).add(EXTENSION, moduleName);
         add.get(OP).set(ADD);
         list.add(add);
+    }
+
+    public static boolean isOrderExtensions() {
+        // TODO perhaps make this configurable
+        return true;
     }
 
 }
