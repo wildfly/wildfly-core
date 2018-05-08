@@ -108,6 +108,7 @@
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
+        <version.org.wildfly.component-matrix-plugin>1.0.1.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>1.0.1</version.org.wildfly.plugins>
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
@@ -213,6 +214,7 @@
         <module>build-legacy</module>
         <module>dist</module>
         <module>dist-legacy</module>
+        <module>component-matrix-builder</module>
         <module>core-feature-pack</module>
         <module>core-galleon-pack</module>
         <module>core-management</module>
