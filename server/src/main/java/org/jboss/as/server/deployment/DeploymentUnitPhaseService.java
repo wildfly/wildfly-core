@@ -30,7 +30,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceRegistry;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -50,6 +51,7 @@ import org.jboss.msc.value.InjectedValue;
  * @param <T> the public type of this deployment unit phase
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class DeploymentUnitPhaseService<T> implements Service<T> {
 
@@ -96,11 +98,10 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
                 serviceName = deploymentUnit.getParent().getServiceName();
             }
             ServiceController<?> controller = context.getController().getServiceContainer().getRequiredService(serviceName);
-            controller.addListener(new AbstractServiceListener<Object>() {
-
+            controller.addListener(new LifecycleListener() {
                 @Override
-                public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                    if(transition.getAfter().equals(ServiceController.Substate.DOWN)) {
+                public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                    if (event == LifecycleEvent.DOWN) {
                         controller.setMode(Mode.ACTIVE);
                         controller.removeListener(this);
                     }

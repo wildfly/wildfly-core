@@ -21,6 +21,7 @@
  */
 package org.jboss.as.server.moduleservice;
 
+import org.jboss.as.controller.UninterruptibleCountDownLatch;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.Services;
@@ -29,7 +30,8 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleSpec;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -64,32 +66,29 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
      * @author Stuart Douglas
      *
      */
-    private class ModuleSpecLoadListener extends AbstractServiceListener<ModuleDefinition> {
+    private class ModuleSpecLoadListener implements LifecycleListener {
 
+        private final UninterruptibleCountDownLatch latch;
         private volatile StartException startException;
         private volatile ModuleSpec moduleSpec;
 
-        @Override
-        public void listenerAdded(ServiceController<? extends ModuleDefinition> controller) {
-            log.tracef("listenerAdded: %s", controller);
-            State state = controller.getState();
-            if (state == State.UP || state == State.START_FAILED) {
-                done(controller, controller.getStartException());
-            }
+        private ModuleSpecLoadListener(final UninterruptibleCountDownLatch latch) {
+            this.latch = latch;
         }
 
         @Override
-        public void transition(final ServiceController<? extends ModuleDefinition> controller, final ServiceController.Transition transition) {
-            switch (transition) {
-                case STARTING_to_UP:
+        public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+            latch.awaitUninterruptibly();
+            switch (event) {
+                case UP:
                     log.tracef("serviceStarted: %s", controller);
                     done(controller, null);
                     break;
-                case STARTING_to_START_FAILED:
+                case FAILED:
                     log.tracef(controller.getStartException(), "serviceFailed: %s", controller);
                     done(controller, controller.getStartException());
                     break;
-                case STOP_REQUESTED_to_STOPPING: {
+                case DOWN: {
                     log.tracef("serviceStopping: %s", controller);
                     ModuleSpec moduleSpec = this.moduleSpec;
                     String identifier = moduleSpec.getName();
@@ -103,10 +102,11 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
             }
         }
 
-        private void done(ServiceController<? extends ModuleDefinition> controller, StartException reason) {
+        @SuppressWarnings("unchecked")
+        private void done(ServiceController<?> controller, StartException reason) {
             startException = reason;
             if (startException == null) {
-                moduleSpec = controller.getValue().getModuleSpec();
+                moduleSpec = ((ServiceController<ModuleDefinition>)controller).getValue().getModuleSpec();
             }
         }
 
@@ -153,8 +153,19 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
             ServerLogger.MODULE_SERVICE_LOGGER.debugf("Could not load module '%s' as corresponding module spec service '%s' was not found", identifier, identifier);
             return null;
         }
-        ModuleSpecLoadListener listener = new ModuleSpecLoadListener();
-        controller.addListener(listener);
+        UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
+        ModuleSpecLoadListener listener = new ModuleSpecLoadListener(latch);
+        try {
+            synchronized (controller) {
+                final State state = controller.getState();
+                if (state == State.UP || state == State.START_FAILED) {
+                    listener.done(controller, controller.getStartException());
+                }
+            }
+            controller.addListener(listener);
+        } finally {
+            latch.countDown();
+        }
         return listener.getModuleSpec();
     }
 

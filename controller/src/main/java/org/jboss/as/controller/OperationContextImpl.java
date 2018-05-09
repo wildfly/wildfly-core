@@ -105,7 +105,8 @@ import org.jboss.as.controller.transform.ContextAttachments;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.DelegatingServiceBuilder;
 import org.jboss.msc.service.DelegatingServiceController;
 import org.jboss.msc.service.DelegatingServiceRegistry;
@@ -686,31 +687,37 @@ final class OperationContextImpl extends AbstractOperationContext {
     private void doRemove(final ServiceController<?> controller) {
         final Step removalStep = activeStep;
         removalStep.hasRemovals = true;
-        controller.addListener(new AbstractServiceListener<Object>() {
-            public void listenerAdded(final ServiceController<?> controller) {
-                synchronized (realRemovingControllers) {
-                    realRemovingControllers.put(controller.getName(), controller);
-                    controller.setMode(ServiceController.Mode.REMOVE);
-                }
-            }
-
-            public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                switch (transition) {
-                    case REMOVING_to_REMOVED:
-                    case REMOVING_to_DOWN: {
-                        synchronized (realRemovingControllers) {
-                            ServiceName name = controller.getName();
-                            if (realRemovingControllers.get(name) == controller) {
-                                realRemovingControllers.remove(name);
-                                removalSteps.put(name, removalStep);
-                                realRemovingControllers.notifyAll();
-                            }
+        final UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
+        controller.addListener(new LifecycleListener() {
+            public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                latch.awaitUninterruptibly();
+                if (event == LifecycleEvent.REMOVED) {
+                    synchronized (realRemovingControllers) {
+                        ServiceName name = controller.getName();
+                        if (realRemovingControllers.get(name) == controller) {
+                            realRemovingControllers.remove(name);
+                            removalSteps.put(name, removalStep);
+                            realRemovingControllers.notifyAll();
                         }
-                        break;
                     }
                 }
             }
         });
+        try {
+            final ServiceController<?> realController = unwrap(controller);
+            synchronized (realRemovingControllers) {
+                realRemovingControllers.put(controller.getName(), realController);
+                realController.setMode(ServiceController.Mode.REMOVE);
+            }
+        } finally {
+            latch.countDown();
+        }
+    }
+
+    private ServiceController unwrap(final ServiceController<?> controller) {
+        if (controller instanceof OperationContextServiceController) {
+            return ((OperationContextServiceController) controller).getDelegate();
+        } else return controller;
     }
 
     @Override
@@ -2313,6 +2320,10 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (step != null) {
                 step.serviceModeChanged(getDelegate());
             }
+        }
+
+        protected ServiceController<S> getDelegate() {
+            return super.getDelegate();
         }
 
         private void checkModeTransition(final Mode mode) {
