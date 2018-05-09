@@ -445,6 +445,17 @@ public class ReadlineConsole {
             Attributes attr = connection.getAttributes();
             attr.setLocalFlag(Attributes.LocalFlag.ECHOCTL, false);
             connection.setAttributes(attr);
+            /**
+             * On some terminal (Mac terminal), when the terminal switches to
+             * the original mode (the mode in place prior readline is called
+             * with echo ON) when executing a command, then, if there are still
+             * some characters to read in the buffer (eg: large copy/paste of
+             * commands) these characters are displayed by the terminal. It has
+             * been observed on some platforms (eg: Mac OS). By entering the raw
+             * mode we are not impacted by this behavior. That is tracked by
+             * AESH-463.
+             */
+            connection.enterRawMode();
         }
     }
 
