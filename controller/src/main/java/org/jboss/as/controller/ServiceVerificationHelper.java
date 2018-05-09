@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -93,7 +94,7 @@ class ServiceVerificationHelper implements OperationStepHandler {
             // generate lists of problems and missing services
             List<String> problemList = new ArrayList<>();
             for (ServiceController<?> controller : problems) {
-                Set<ServiceName> immediatelyUnavailable = controller.getImmediateUnavailableDependencies();
+                Collection<ServiceName> immediatelyUnavailable = controller.getUnavailableDependencies();
                 if (!immediatelyUnavailable.isEmpty()) {
                     StringBuilder missing = new StringBuilder();
                     boolean direct = false;
@@ -230,8 +231,8 @@ class ServiceVerificationHelper implements OperationStepHandler {
         for (ServiceName serviceName : container.getServiceNames()) {
             ServiceController<?> controller = container.getService(serviceName);
             if (controller != null && controller.getMode() != ServiceController.Mode.NEVER && controller.getMode() != ServiceController.Mode.REMOVE
-                    && controller.getSubstate() == ServiceController.Substate.PROBLEM) {
-                result.addAll(controller.getImmediateUnavailableDependencies());
+                    && controller.getState() == ServiceController.State.DOWN) {
+                result.addAll(controller.getUnavailableDependencies());
             }
         }
         return result;
