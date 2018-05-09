@@ -108,7 +108,6 @@
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
-        <version.build.helper.plugin>3.0.0</version.build.helper.plugin>
         <version.org.wildfly.plugins>1.0.1</version.org.wildfly.plugins>
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
@@ -492,11 +491,6 @@
                     <configuration>
                         <processAllModules>true</processAllModules>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>${version.build.helper.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
