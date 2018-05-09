@@ -16,7 +16,6 @@
    </supplement>   
    <supplement name="domain">
       <replacement placeholder="REMOTING-CONNECTOR">
-         <!--<remoting-connector use-management-endpoint="false"/>-->
       </replacement>   
    </supplement>
    
