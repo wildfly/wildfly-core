@@ -828,7 +828,8 @@ public class SecurityAuthCommandsTestCase {
 
     private static void testEmbedded(String enable, String disable) throws Exception {
         CliProcessWrapper cli = new CliProcessWrapper()
-                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString());
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addCliArgument("--no-color-output");
         try {
             cli.executeInteractive();
             cli.clearOutput();

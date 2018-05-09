@@ -15,6 +15,7 @@ Usage:
                      [--command-timeout=timeout]
                      [--no-operation-validation]
                      [--output-json]
+                     [--no-color-output]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -69,7 +70,7 @@ Usage:
                    can be used to specify the user name as a command line
                    argument. If the argument isn't specified and the
                    authentication is required the user will be prompted to enter
-                   the user name when the connect command is issued.  Local 
+                   the user name when the connect command is issued.  Local
                    authentication is automatically disabled if a user is specified.
 
  --password (-p) - specifies the password for authentication while connecting to
@@ -83,19 +84,19 @@ Usage:
                    The properties file uses a standard KEY=VALUE syntax.
 
  --no-local-auth - disable the local authentication mechanism which allows the CLI
-                   to demonstrate that it is being executed locally to the server 
+                   to demonstrate that it is being executed locally to the server
                    being managed through an exchange of tokens using the filesystem.
 
- --timeout       - specifies the maximum amount of milliseconds the CLI will wait for a 
+ --timeout       - specifies the maximum amount of milliseconds the CLI will wait for a
                    connection to succeed. Defaults to 5000 milliseconds when not provided.
 
  --bind          - specifies to which address the CLI is going to be bound.
                    If none is provided then the CLI will choose one automatically as needed.
 
- --echo-command  - include the prompt with the command into the output 
+ --echo-command  - include the prompt with the command into the output
                    for each command executed in non-interactive mode.
 
- --command-timeout  - The maximum amount of seconds the CLI will wait for a 
+ --command-timeout  - The maximum amount of seconds the CLI will wait for a
                       command to complete.
 
  --output-json      - causes the CLI to display operation responses using JSON syntax.
@@ -103,6 +104,8 @@ Usage:
 
  --no-operation-validation  - disable the pre validation of the operations from the CLI.
                               Operations will be only validated by the server.
+
+ --no-color-output  - disable CLI output and prompt colors.
 
 For a list of available commands, once the CLI is started, execute:
 

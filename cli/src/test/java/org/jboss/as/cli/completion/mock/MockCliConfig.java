@@ -23,6 +23,7 @@ package org.jboss.as.cli.completion.mock;
 
 
 import org.jboss.as.cli.CliConfig;
+import org.jboss.as.cli.ColorConfig;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.SSLConfig;
 
@@ -132,5 +133,15 @@ public class MockCliConfig implements CliConfig {
     @Override
     public boolean isOutputJSON() {
         return false;
+    }
+
+    @Override
+    public boolean isColorOutput() {
+        return false;
+    }
+
+    @Override
+    public ColorConfig getColorConfig() {
+        return null;
     }
 }

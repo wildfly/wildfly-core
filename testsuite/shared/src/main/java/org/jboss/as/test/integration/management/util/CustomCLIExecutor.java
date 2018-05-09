@@ -123,6 +123,7 @@ public class CustomCLIExecutor {
         commandBuilder.addJavaOption("-Djboss.cli.config=" + cliConfigPath);
         commandBuilder.addCliArgument("--timeout="+CLI_PROC_TIMEOUT);
         commandBuilder.addCliArgument("--error-on-interact"); // if server prompt for certificate to accept
+        commandBuilder.addCliArgument("--no-color-output");
 
         // propagate JVM args to the CLI
         String cliJvmArgs = System.getProperty("cli.jvm.args");

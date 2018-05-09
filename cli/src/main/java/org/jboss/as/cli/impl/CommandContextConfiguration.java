@@ -43,12 +43,11 @@ public class CommandContextConfiguration {
     private final boolean echoCommand;
     private final Integer commandTimeout;
     private final boolean outputJSON;
+    private final boolean colorOutput;
 
-    private CommandContextConfiguration(String controller, String username,
-            char[] password, String clientBindAddress,
-            boolean disableLocalAuth, boolean initConsole, int connectionTimeout,
-            InputStream consoleInput, OutputStream consoleOutput,
-            boolean echoCommand, Integer commandTimeout, boolean outputJSON) {
+    private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress,
+            boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput,
+            boolean echoCommand, Integer commandTimeout, boolean outputJSON, boolean colorOutput) {
         this.controller = controller;
         this.username = username;
         this.password = password;
@@ -61,6 +60,7 @@ public class CommandContextConfiguration {
         this.echoCommand = echoCommand;
         this.commandTimeout = commandTimeout;
         this.outputJSON = outputJSON;
+        this.colorOutput = colorOutput;
     }
 
     public Integer getCommandTimeout() {
@@ -123,6 +123,10 @@ public class CommandContextConfiguration {
         return outputJSON;
     }
 
+    public boolean isColorOutput() {
+        return colorOutput;
+    }
+
     public static class Builder {
         private String controller;
         private String username;
@@ -140,6 +144,7 @@ public class CommandContextConfiguration {
         private boolean echoCommand;
         private Integer commandTimeout;
         private boolean outputJSON;
+        private boolean colorOutput;
 
         public Builder() {
         }
@@ -148,8 +153,9 @@ public class CommandContextConfiguration {
             if(disableLocalAuthUnset) {
                 this.disableLocalAuth = username != null;
             }
-            final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password, clientBindAddress, disableLocalAuth,
-                    initConsole, connectionTimeout, consoleInput, consoleOutput, echoCommand, commandTimeout, outputJSON);
+            final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password,
+                    clientBindAddress, disableLocalAuth, initConsole, connectionTimeout, consoleInput, consoleOutput,
+                    echoCommand, commandTimeout, outputJSON, colorOutput);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
             config.validateOperationRequests = validateOperationRequests;
@@ -233,6 +239,11 @@ public class CommandContextConfiguration {
 
         public Builder setOutputJSON(boolean outputJSON) {
             this.outputJSON = outputJSON;
+            return this;
+        }
+
+        public Builder setColorOutput(boolean colorOutput) {
+            this.colorOutput = colorOutput;
             return this;
         }
     }

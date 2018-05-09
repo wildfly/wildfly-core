@@ -15,14 +15,18 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
+
 import org.aesh.complete.AeshCompleteOperation;
 import org.aesh.readline.completion.Completion;
 import org.aesh.readline.completion.CompletionHandler;
 import org.aesh.readline.terminal.formatting.TerminalString;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineCompleter;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.CLICommandCompleter;
 import org.jboss.as.cli.impl.CLICommandCompleter.Completer;
 import org.jboss.as.cli.impl.CommandContextImpl;
@@ -63,6 +67,25 @@ class CLICompletionHandler extends CompletionHandler<AeshCompleteOperation> impl
 
         LOG.debugf("Completing {0}", co.getBuffer());
         cliCompleter.complete(ctx, co, this);
+
+        if (ctx.isColorOutput()) {
+            List<TerminalString> completionCandidates = co.getCompletionCandidates();
+            List<TerminalString> requiredCandidates = new ArrayList<>();
+            for (TerminalString candidate : completionCandidates) {
+                if (candidate.toString().endsWith("*") && !"*".equals(candidate.toString())) {
+                    TerminalString newCandidate = Util.formatRequired(candidate);
+                    requiredCandidates.add(newCandidate);
+                }
+            }
+            completionCandidates.removeIf(new Predicate<TerminalString>() {
+                @Override
+                public boolean test(TerminalString candidate) {
+                    return candidate.toString().endsWith("*");
+                }
+            });
+            completionCandidates.addAll(requiredCandidates);
+        }
+
         LOG.debugf("Completion candidates {0}", co.getCompletionCandidates());
     }
 

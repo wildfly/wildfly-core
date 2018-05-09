@@ -91,6 +91,22 @@ public class CLITestUtil {
                 .build());
     }
 
+    public static CommandContext getCommandContext(String address, int port, InputStream in, OutputStream out, boolean colorOutput, boolean echoCommand)
+            throws CliInitializationException {
+        setJBossCliConfig();
+        return CommandContextFactory.getInstance().newCommandContext(new CommandContextConfiguration.Builder()
+                .setController(address + ":" + port)
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setConsoleInput(in)
+                .setConsoleOutput(out)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false)
+                .setColorOutput(colorOutput)
+                .setEchoCommand(echoCommand)
+                .build());
+    }
+
     public static CommandContext getCommandContext(String protocol, String address, int port)
             throws CliInitializationException {
         setJBossCliConfig();

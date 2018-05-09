@@ -297,7 +297,8 @@ public class CliControllerConfigTestCase {
     private CliProcessWrapper getTestCliProcessWrapper(boolean connectToAlias) {
         CliProcessWrapper cli = new CliProcessWrapper()
                 .addCliArgument("-Djboss.cli.config=" + tempJbossConfigFile.getAbsolutePath())
-                .addCliArgument("--echo-command");
+                .addCliArgument("--echo-command")
+                .addCliArgument("--no-color-output");
         if (connectToAlias) {
             cli.addCliArgument("--controller=" + CONTROLLER_ALIAS_NAME);
         }

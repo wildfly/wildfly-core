@@ -41,6 +41,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.aesh.readline.terminal.formatting.CharacterType;
+import org.aesh.readline.terminal.formatting.Color;
+import org.aesh.readline.terminal.formatting.TerminalColor;
+import org.aesh.readline.terminal.formatting.TerminalString;
+import org.aesh.readline.terminal.formatting.TerminalTextStyle;
+
+
 import org.jboss.as.cli.CommandContext.Scope;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.operation.OperationFormatException;
@@ -301,19 +308,112 @@ public class Util {
 
     public static final String NOT_OPERATOR = "!";
 
-    private static final String ENCODING_EXCEPTION_MESSAGE = "Encoding exception.";
+    private static TerminalColor ERROR_COLOR;
+    private static TerminalColor SUCCESS_COLOR;
+    private static TerminalColor WARN_COLOR;
+    private static TerminalColor REQUIRED_COLOR;
+    private static TerminalColor WORKFLOW_COLOR;
+    private static TerminalColor PROMPT_COLOR;
+    private static TerminalTextStyle BOLD_STYLE = new TerminalTextStyle(CharacterType.BOLD);
+    private static String ENCODING_EXCEPTION_MESSAGE = "Encoding exception.";
 
     private static Logger LOG = Logger.getLogger(Util.class);
+
+    public static final String formatErrorMessage(String message) {
+        return new TerminalString(message, ERROR_COLOR, BOLD_STYLE).toString();
+    }
+
+    public static final String formatSuccessMessage(String message) {
+        return new TerminalString(message, SUCCESS_COLOR).toString();
+    }
+
+    public static final String formatWarnMessage(String message) {
+        return new TerminalString(message, WARN_COLOR, BOLD_STYLE).toString();
+    }
+
+    public static TerminalString formatRequired(TerminalString name) {
+        return new TerminalString(name.toString(), REQUIRED_COLOR, BOLD_STYLE);
+    }
+
+    public static String formatWorkflowPrompt(String prompt) {
+        return new TerminalString(prompt, WORKFLOW_COLOR).toString();
+    }
 
     public static boolean isWindows() {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
     }
 
     public static boolean isSuccess(ModelNode operationResponse) {
-        if(operationResponse != null) {
+        if (operationResponse != null) {
             return operationResponse.hasDefined(Util.OUTCOME) && operationResponse.get(Util.OUTCOME).asString().equals(Util.SUCCESS);
         }
         return false;
+    }
+
+    public static void formatPrompt(StringBuilder buffer) {
+        if (buffer.toString().contains("@")) {
+            int at = buffer.indexOf("@");
+            int space = buffer.lastIndexOf(" ");
+            String preAt = buffer.substring(1, at);
+            String postAt = buffer.substring(at + 1, space + 1);
+            buffer.delete(1, space + 1);
+            buffer.append(
+                    new TerminalString(preAt, PROMPT_COLOR).toString());
+            buffer.append("@");
+            buffer.append(
+                    new TerminalString(postAt, PROMPT_COLOR).toString());
+            buffer.append(" ");
+        } else if (buffer.toString().contains("disconnected")) {
+            String prompt = buffer.substring(1);
+            buffer.replace(1, buffer.lastIndexOf(" "),
+                           new TerminalString(prompt, ERROR_COLOR).toString());
+        } else {
+            String prompt = buffer.substring(1);
+            buffer.replace(1, buffer.lastIndexOf(" "),
+                    new TerminalString(prompt, PROMPT_COLOR).toString());
+        }
+    }
+
+    public static void configureColors(CommandContext ctx) {
+        ColorConfig colorConfig = ctx.getConfig().getColorConfig();
+        if (colorConfig != null) {
+            ERROR_COLOR = new TerminalColor((colorConfig.getErrorColor() != null) ? colorConfig.getErrorColor() : Color.RED,
+                    Color.DEFAULT, Color.Intensity.BRIGHT);
+
+            if (!isWindows()) {
+                WARN_COLOR = new TerminalColor((colorConfig.getWarnColor() != null) ? colorConfig.getWarnColor() : Color.YELLOW,
+                        Color.DEFAULT, Color.Intensity.NORMAL);
+            } else {
+                WARN_COLOR = new TerminalColor((colorConfig.getWarnColor() != null) ? colorConfig.getWarnColor() : Color.YELLOW,
+                        Color.DEFAULT, Color.Intensity.BRIGHT);
+            }
+
+            SUCCESS_COLOR = new TerminalColor(
+                    (colorConfig.getSuccessColor() != null) ? colorConfig.getSuccessColor() : Color.DEFAULT, Color.DEFAULT,
+                    Color.Intensity.NORMAL);
+            REQUIRED_COLOR = new TerminalColor(
+                    (colorConfig.getRequiredColor() != null) ? colorConfig.getRequiredColor() : Color.CYAN, Color.DEFAULT,
+                    Color.Intensity.BRIGHT);
+            WORKFLOW_COLOR = new TerminalColor(
+                    (colorConfig.getWorkflowColor() != null) ? colorConfig.getWorkflowColor() : Color.GREEN, Color.DEFAULT,
+                    Color.Intensity.BRIGHT);
+            PROMPT_COLOR = new TerminalColor(
+                    (colorConfig.getWorkflowColor() != null) ? colorConfig.getPromptColor() : Color.BLUE, Color.DEFAULT,
+                    Color.Intensity.BRIGHT);
+        } else {
+            ERROR_COLOR = new TerminalColor(Color.RED, Color.DEFAULT, Color.Intensity.BRIGHT);
+
+            if (!isWindows()) {
+                WARN_COLOR = new TerminalColor(Color.YELLOW, Color.DEFAULT, Color.Intensity.NORMAL);
+            } else {
+                WARN_COLOR = new TerminalColor(Color.YELLOW, Color.DEFAULT, Color.Intensity.BRIGHT);
+            }
+
+            SUCCESS_COLOR = new TerminalColor(Color.DEFAULT, Color.DEFAULT, Color.Intensity.NORMAL);
+            REQUIRED_COLOR = new TerminalColor(Color.MAGENTA, Color.DEFAULT, Color.Intensity.BRIGHT);
+            WORKFLOW_COLOR = new TerminalColor(Color.GREEN, Color.DEFAULT, Color.Intensity.BRIGHT);
+            PROMPT_COLOR = new TerminalColor(Color.BLUE, Color.DEFAULT, Color.Intensity.BRIGHT);
+        }
     }
 
     public static String getFailureDescription(ModelNode operationResponse) {

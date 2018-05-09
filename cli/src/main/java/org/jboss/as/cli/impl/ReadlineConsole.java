@@ -955,7 +955,7 @@ public class ReadlineConsole {
     }
 
     /**
-     * Public for testing prupose only.
+     * Public for testing purpose only.
      *
      * @return
      */

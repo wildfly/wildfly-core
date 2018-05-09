@@ -37,8 +37,10 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.aesh.readline.terminal.formatting.Color;
 import org.jboss.as.cli.CliConfig;
 import org.jboss.as.cli.CliInitializationException;
+import org.jboss.as.cli.ColorConfig;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.SSLConfig;
@@ -84,6 +86,7 @@ class CliConfigImpl implements CliConfig {
     private static final String ECHO_COMMAND = "echo-command";
     private static final String COMMAND_TIMEOUT = "command-timeout";
     private static final String OUTPUT_JSON = "output-json";
+    private static final String COLOR_OUTPUT = "color-output";
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
@@ -188,6 +191,15 @@ class CliConfigImpl implements CliConfig {
         cliConfig.commandTimeout            = configuration.getCommandTimeout() != null           ? configuration.getCommandTimeout()           : cliConfig.commandTimeout;
         cliConfig.validateOperationRequests = configuration.isValidateOperationRequests() != null ? configuration.isValidateOperationRequests() : cliConfig.validateOperationRequests;
         cliConfig.outputJSON                = configuration.isOutputJSON()                        ? configuration.isOutputJSON()                : cliConfig.isOutputJSON();
+
+        if (!configuration.isColorOutput()) {
+            cliConfig.colorOutput = false;
+        } else if (configuration.isColorOutput() && cliConfig.colorConfig == null) {
+            cliConfig.colorOutput = true;
+        } else if (configuration.isColorOutput() && cliConfig.colorConfig != null) {
+            cliConfig.colorOutput = cliConfig.isColorOutput();
+        }
+
         return cliConfig;
     }
 
@@ -252,6 +264,9 @@ class CliConfigImpl implements CliConfig {
     private Integer commandTimeout;
 
     private boolean outputJSON;
+
+    private boolean colorOutput;
+    private ColorConfigImpl colorConfig;
 
     @Override
     public String getDefaultControllerProtocol() {
@@ -355,6 +370,16 @@ class CliConfigImpl implements CliConfig {
         return outputJSON;
     }
 
+    @Override
+    public boolean isColorOutput() {
+        return colorOutput;
+    }
+
+    @Override
+    public ColorConfig getColorConfig() {
+        return colorConfig;
+    }
+
     static class SslConfig implements SSLConfig {
 
         private String alias = null;
@@ -422,6 +447,104 @@ class CliConfigImpl implements CliConfig {
         }
     }
 
+    static class ColorConfigImpl implements ColorConfig {
+        private boolean enabled = false;
+        private Color errorColor;
+        private Color warnColor;
+        private Color successColor;
+        private Color requiredColor;
+        private Color batchColor;
+        private Color promptColor;
+
+        @Override
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        @Override
+        public Color getErrorColor() {
+            return errorColor;
+        }
+
+        public void setErrorColor(Color errorColor) {
+            this.errorColor = errorColor;
+        }
+
+        @Override
+        public Color getWarnColor() {
+            return warnColor;
+        }
+
+        public void setWarnColor(Color warnColor) {
+            this.warnColor = warnColor;
+        }
+
+        @Override
+        public Color getSuccessColor() {
+            return successColor;
+        }
+
+        public void setSuccessColor(Color successColor) {
+            this.successColor = successColor;
+        }
+
+        @Override
+        public Color getRequiredColor() {
+            return requiredColor;
+        }
+
+        public void setBatchColor(Color batchColor) {
+            this.batchColor = batchColor;
+        }
+
+        @Override
+        public Color getWorkflowColor() {
+            return batchColor;
+        }
+
+        @Override
+        public Color getPromptColor() {
+            return promptColor;
+        }
+
+        public void setPromptColor(Color promptColor) {
+            this.promptColor = promptColor;
+        }
+
+        public void setRequiredColor(Color requiredColor) {
+            this.requiredColor = requiredColor;
+        }
+
+        public Color convertColor(String name) throws CliInitializationException {
+            switch (name.toLowerCase()) {
+                case "black":
+                    return Color.BLACK;
+                case "red":
+                    return Color.RED;
+                case "green":
+                    return Color.GREEN;
+                case "yellow":
+                    return Color.YELLOW;
+                case "blue":
+                    return Color.BLUE;
+                case "magenta":
+                    return Color.MAGENTA;
+                case "cyan":
+                    return Color.CYAN;
+                case "white":
+                    return Color.WHITE;
+                case "default":
+                    return Color.DEFAULT;
+                default:
+                    throw new CliInitializationException("Invalid color \"" + name + "\".");
+            }
+        }
+    }
+
     static class CliConfigReader implements XMLElementReader<CliConfigImpl> {
 
         public void readElement(XMLExtendedStreamReader reader, CliConfigImpl config) throws XMLStreamException {
@@ -453,8 +576,11 @@ class CliConfigImpl implements CliConfig {
                         case CLI_3_1:
                             readCLIElement_3_1(reader, readerNS, config);
                             break;
-                        default:
+                        case CLI_3_2:
                             readCLIElement_3_2(reader, readerNS, config);
+                            break;
+                        default:
+                            readCLIElement_3_3(reader, readerNS, config);
                     }
                     return;
                 }
@@ -763,6 +889,65 @@ class CliConfigImpl implements CliConfig {
             }
         }
 
+        // Added the color-output element
+        public void readCLIElement_3_3(XMLExtendedStreamReader reader, Namespace expectedNs, CliConfigImpl config) throws XMLStreamException {
+            boolean jbossCliEnded = false;
+            while (reader.hasNext() && !jbossCliEnded) {
+                int tag = reader.nextTag();
+                assertExpectedNamespace(reader, expectedNs);
+                if(tag == XMLStreamConstants.START_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(DEFAULT_PROTOCOL)) {
+                        readDefaultProtocol_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(DEFAULT_CONTROLLER)) {
+                        readDefaultController_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(CONTROLLERS)) {
+                        readControllers_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(VALIDATE_OPERATION_REQUESTS)) {
+                        config.validateOperationRequests = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(ECHO_COMMAND)) {
+                        config.echoCommand = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(OUTPUT_JSON)) {
+                        config.outputJSON = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(COLOR_OUTPUT)) {
+                        ColorConfigImpl colorConfig = new ColorConfigImpl();
+                        readColorElement_3_3(reader, expectedNs, colorConfig);
+                        config.colorConfig = colorConfig;
+                        config.colorOutput = colorConfig.isEnabled();
+                    } else if (localName.equals(COMMAND_TIMEOUT)) {
+                        config.commandTimeout = resolveInteger(reader.getElementText());
+                    } else if (localName.equals(HISTORY)) {
+                        readHistory(reader, expectedNs, config);
+                    } else if(localName.equals(RESOLVE_PARAMETER_VALUES)) {
+                        config.resolveParameterValues = resolveBoolean(reader.getElementText());
+                    } else if (CONNECTION_TIMEOUT.equals(localName)) {
+                        final String text = reader.getElementText();
+                        try {
+                            config.connectionTimeout = Integer.parseInt(text);
+                        } catch(NumberFormatException e) {
+                            throw new XMLStreamException("Failed to parse " + JBOSS_CLI + " " + CONNECTION_TIMEOUT + " value '" + text + "'", e);
+                        }
+                    } else if (localName.equals("ssl")) {
+                        SslConfig sslConfig = new SslConfig();
+                        readSSLElement_3_0(reader, expectedNs, sslConfig);
+                        config.sslConfig = sslConfig;
+                    } else if(localName.equals(SILENT)) {
+                        config.silent = resolveBoolean(reader.getElementText());
+                    } else if(localName.equals(ACCESS_CONTROL)) {
+                        config.accessControl = resolveBoolean(reader.getElementText());
+                        logAccessControl(config.accessControl);
+                    } else {
+                        throw new XMLStreamException("Unexpected element: " + localName);
+                    }
+                } else if(tag == XMLStreamConstants.END_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(JBOSS_CLI)) {
+                        jbossCliEnded = true;
+                    }
+                }
+            }
+        }
+
         private void readDefaultProtocol_2_0(XMLExtendedStreamReader reader, Namespace expectedNs, CliConfigImpl config)
                 throws XMLStreamException {
             final int attributes = reader.getAttributeCount();
@@ -1036,6 +1221,36 @@ class CliConfigImpl implements CliConfig {
                 }
             }
         }
+
+        public void readColorElement_3_3(XMLExtendedStreamReader reader, Namespace expectedNs, ColorConfigImpl config)
+                throws XMLStreamException {
+            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                assertExpectedNamespace(reader, expectedNs);
+                final String localName = reader.getLocalName();
+                try {
+                    if ("enabled".equals(localName)) {
+                        config.setEnabled(resolveBoolean(reader.getElementText()));
+                    } else if ("error-color".equals(localName)) {
+                        config.setErrorColor(config.convertColor(reader.getElementText()));
+                    } else if ("warn-color".equals(localName)) {
+                        config.setWarnColor(config.convertColor(reader.getElementText()));
+                    } else if ("success-color".equals(localName)) {
+                        config.setSuccessColor(config.convertColor(reader.getElementText()));
+                    } else if ("required-color".equals(localName)) {
+                        config.setRequiredColor(config.convertColor(reader.getElementText()));
+                    } else if ("workflow-color".equals(localName)) {
+                        config.setBatchColor(config.convertColor(reader.getElementText()));
+                    } else if ("prompt-color".equals(localName)) {
+                        config.setPromptColor(config.convertColor(reader.getElementText()));
+                    } else {
+                        throw new XMLStreamException("Unexpected child of color-output: " + localName);
+                    }
+                } catch (CliInitializationException ciex) {
+                    throw new XMLStreamException("Error parsing color-output", ciex);
+                }
+            }
+        }
+
 
         private String getPassword(CLIVaultReader vaultReader, String str) throws XMLStreamException {
             if(vaultReader != null && vaultReader.isVaultFormat(str)) {
