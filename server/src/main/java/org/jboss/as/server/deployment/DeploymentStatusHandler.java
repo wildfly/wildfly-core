@@ -47,15 +47,14 @@ public class DeploymentStatusHandler implements OperationStepHandler {
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, deployment).asString();
         context.addStep(new OperationStepHandler() {
             @Override
-            public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            public void execute(final OperationContext context, final ModelNode operation) {
                 final ModelNode result = context.getResult();
                 if (!isEnabled) {
                     result.set(AbstractDeploymentUnitService.DeploymentStatus.STOPPED.toString());
                 } else {
                     final ServiceController<?> controller = context.getServiceRegistry(false).getService(Services.deploymentUnitName(runtimeName));
                     if (controller != null) {
-                        if (controller.getSubstate() == ServiceController.Substate.WONT_START &&
-                                controller.getState() == ServiceController.State.DOWN) {
+                        if (controller.getState() == ServiceController.State.DOWN && controller.getUnavailableDependencies().size() == 0) {
                             result.set(AbstractDeploymentUnitService.DeploymentStatus.STOPPED.toString());
                         } else {
                             result.set(((AbstractDeploymentUnitService) controller.getService()).getStatus().toString());

@@ -548,7 +548,7 @@ public class ModelControllerImplUnitTestCase {
             } else {
                 System.out.println(sc.getName());
                 System.out.println("Mode = " + sc.getMode());
-                System.out.println("Substate = " + sc.getSubstate());
+                System.out.println("State = " + sc.getState());
             }
 
             sc = container.getService(ServiceName.JBOSS.append("dependent-service"));
@@ -557,7 +557,7 @@ public class ModelControllerImplUnitTestCase {
             } else {
                 System.out.println(sc.getName());
                 System.out.println("Mode = " + sc.getMode());
-                System.out.println("Substate = " + sc.getSubstate());
+                System.out.println("State = " + sc.getState());
             }
         }
 

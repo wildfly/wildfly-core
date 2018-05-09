@@ -50,15 +50,8 @@ public class ManagementUtil {
     }
 
     static boolean isSecurityRealmReloadRequired(final OperationContext context, final ServiceController<?> controller) {
-        boolean reloadRequired = false;
-        ServiceController.Substate substate = controller == null ? null : controller.getSubstate();
-        if (substate != null && substate.isRestState() && substate.getState() == ServiceController.State.UP) {
-            if (!context.isResourceServiceRestartAllowed()) {
-                reloadRequired = true;
-            }
-        }
-
-        return reloadRequired;
+        final ServiceController.State state = controller == null ? null : controller.getState();
+        return state == ServiceController.State.UP && !context.isResourceServiceRestartAllowed();
     }
 
     static ServiceController<?> getSecurityRealmService(final OperationContext context, final ModelNode operation, final boolean forUpdate) {
