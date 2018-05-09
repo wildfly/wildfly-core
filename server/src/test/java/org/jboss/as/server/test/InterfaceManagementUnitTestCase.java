@@ -147,7 +147,8 @@ public class InterfaceManagementUnitTestCase {
         this.controller = svc.getValue();
 
         container.awaitStability(20, TimeUnit.SECONDS);
-        Assert.assertEquals(ServiceController.Substate.PROBLEM, dependentController.getSubstate());
+        Assert.assertTrue(dependentController.getState() == ServiceController.State.DOWN
+                && dependentController.getUnavailableDependencies().size() > 0);
     }
 
     @After

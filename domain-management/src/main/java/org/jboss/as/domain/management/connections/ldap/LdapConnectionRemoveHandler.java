@@ -64,8 +64,8 @@ public class LdapConnectionRemoveHandler extends AbstractRemoveStepHandler {
         ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController<?> controller = registry.getService(svcName);
         boolean removeIt;
-        ServiceController.Substate substate = controller == null ? null : controller.getSubstate();
-        if (substate != null && substate.getState() == ServiceController.State.UP && substate.isRestState()) {
+        ServiceController.State state = controller == null ? null : controller.getState();
+        if (state == ServiceController.State.UP) {
             removeIt = operation.hasDefined(OPERATION_HEADERS)
                     && operation.get(OPERATION_HEADERS).hasDefined(ALLOW_RESOURCE_SERVICE_RESTART)
                     && operation.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).asBoolean();
