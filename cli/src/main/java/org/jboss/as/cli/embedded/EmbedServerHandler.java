@@ -49,6 +49,7 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.embedded.EmbeddedManagedProcess;
 import org.wildfly.core.embedded.EmbeddedProcessFactory;
 import org.wildfly.core.embedded.EmbeddedProcessStartException;
@@ -224,13 +225,20 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
 
             String[] cmds = cmdsList.toArray(new String[cmdsList.size()]);
 
-            EmbeddedManagedProcess server;
+            final Configuration.Builder configBuilder;
             if (this.jbossHome == null) {
-                // Modular environment
-                server = EmbeddedProcessFactory.createStandaloneServer(ModuleLoader.forClass(getClass()), jbossHome, cmds);
+                // Modular environment, note that the jbossHome here is resolved from the JBOSS_HOME environment
+                // variable and should never be null according to the getJBossHome() method.
+                configBuilder = Configuration.Builder.of(jbossHome)
+                        .setModuleLoader(ModuleLoader.forClass(getClass()))
+                        .setCommandArguments(cmds);
             } else {
-                server = EmbeddedProcessFactory.createStandaloneServer(jbossHome.getAbsolutePath(), null, null, cmds);
+                configBuilder = Configuration.Builder.of(jbossHome.getAbsoluteFile())
+                        .setCommandArguments(cmds);
             }
+            // Disables the logging subsystem from registering an embedded log context if the subsystem is present
+            WildFlySecurityManager.setPropertyPrivileged("org.wildfly.logging.embedded", "false");
+            final EmbeddedManagedProcess server = EmbeddedProcessFactory.createStandaloneServer(configBuilder.build());
             server.start();
             serverReference.set(new EmbeddedProcessLaunch(server, restorer, false));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);

@@ -59,7 +59,6 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.value.Value;
-import org.jboss.stdio.StdioContext;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
@@ -230,7 +229,6 @@ public class EmbeddedHostControllerFactory {
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
-        private boolean uninstallStdIo;
 
         public HostControllerImpl(final File jbossHomeDir, String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
             this.cmdargs = cmdargs;
@@ -261,13 +259,6 @@ public class EmbeddedHostControllerFactory {
                         HostControllerImpl.this.exit();
                     }
                 });
-                // Take control of stdio
-                try {
-                    StdioContext.install();
-                    uninstallStdIo = true;
-                } catch (IllegalStateException ignored) {
-                    // already installed
-                }
 
                 // Determine the ServerEnvironment
                 HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
@@ -284,7 +275,7 @@ public class EmbeddedHostControllerFactory {
                 final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
                 controlledProcessStateService = processStateServiceValue.getValue();
                 controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState(), false);
+                establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
             } catch (RuntimeException rte) {
                 if (hostControllerBootstrap != null) {
                     hostControllerBootstrap.failed();
@@ -395,14 +386,6 @@ public class EmbeddedHostControllerFactory {
                     Thread.currentThread().interrupt();
                 } catch (Exception ex) {
                     ServerLogger.ROOT_LOGGER.error(ex.getLocalizedMessage(), ex);
-                }
-            }
-
-            if (uninstallStdIo) {
-                try {
-                    StdioContext.uninstall();
-                } catch (IllegalStateException ignored) {
-                    // something else already did
                 }
             }
 

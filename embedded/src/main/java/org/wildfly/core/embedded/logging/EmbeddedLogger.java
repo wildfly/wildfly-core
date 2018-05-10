@@ -28,9 +28,11 @@ import java.lang.reflect.Method;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.modules.ModuleLoader;
+import org.wildfly.core.embedded.Context;
 import org.wildfly.core.embedded.EmbeddedProcessStartException;
 
 /**
@@ -208,4 +210,12 @@ public interface EmbeddedLogger extends BasicLogger {
 
     @Message(id = 143, value = "No directory called '%s' exists under '%s'")
     IllegalArgumentException embeddedServerDirectoryNotFound(String string, String absolutePath);
+
+    @Message(id = 145, value = "The module loader has already been configured. Changing the %s property will have no effect.")
+    @LogMessage(level = Logger.Level.WARN)
+    void moduleLoaderAlreadyConfigured(String propertyName);
+
+    @Message(id = 146, value = "Failed to restore context %s")
+    @LogMessage(level = Logger.Level.ERROR)
+    void failedToRestoreContext(@Cause Throwable cause, Context context);
 }

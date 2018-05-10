@@ -52,7 +52,6 @@ import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.value.Value;
-import org.jboss.stdio.StdioContext;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
@@ -216,7 +215,6 @@ public class EmbeddedStandaloneServerFactory {
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
-        private boolean uninstallStdIo;
 
         public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
             this.cmdargs = cmdargs;
@@ -258,14 +256,6 @@ public class EmbeddedStandaloneServerFactory {
                         StandaloneServerImpl.this.exit();
                     }
                 });
-
-                // Take control of stdio
-                try {
-                    StdioContext.install();
-                    uninstallStdIo = true;
-                } catch (IllegalStateException ignored) {
-                    // already installed
-                }
 
                 // Determine the ServerEnvironment
                 ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime).getServerEnvironment();
@@ -366,13 +356,6 @@ public class EmbeddedStandaloneServerFactory {
                 }
             }
 
-            if (uninstallStdIo) {
-                try {
-                    StdioContext.uninstall();
-                } catch (IllegalStateException ignored) {
-                    // something else already did
-                }
-            }
 
             SystemExiter.initialize(SystemExiter.Exiter.DEFAULT);
         }
