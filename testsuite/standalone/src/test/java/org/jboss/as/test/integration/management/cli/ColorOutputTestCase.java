@@ -39,7 +39,7 @@ public class ColorOutputTestCase {
      * Initialize CommandContext before all tests
      */
     @BeforeClass
-    public static void init() throws Exception {
+    public static void init() {
         cli = new CliProcessWrapper()
                 .addCliArgument("--connect")
                 .addCliArgument("--controller=" + hostAndPort);
@@ -50,7 +50,7 @@ public class ColorOutputTestCase {
      * Terminate CommandContext after all tests are executed
      */
     @AfterClass
-    public static void close() throws Exception {
+    public static void close() {
         cli.destroyProcess();
     }
 
@@ -84,7 +84,7 @@ public class ColorOutputTestCase {
     }
 
     @Test
-    public void flowControlPrompt() throws Exception {
+    public void ifPrompt() throws Exception {
 
         cli.pushLineAndWaitForResults("if outcome==failed of /system-property=test:read-resource");
         try {
@@ -93,6 +93,33 @@ public class ColorOutputTestCase {
                     cli.getCurrentPrompt().trim());
         } finally {
             cli.pushLineAndWaitForResults("end-if");
+        }
+    }
+
+    @Test
+    public void forPrompt() throws Exception {
+
+        cli.pushLineAndWaitForResults("for PROP in :read-children-names(child-type=system-property)");
+        try {
+            cli.pushLineAndWaitForResults("echo $PROP");
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m ...\u001B[0m]",
+                    cli.getCurrentPrompt().trim());
+        } finally {
+            cli.pushLineAndWaitForResults("done");
+        }
+    }
+
+    @Test
+    public void tryPrompt() throws Exception {
+
+        cli.pushLineAndWaitForResults("try");
+        try {
+            cli.pushLineAndWaitForResults("echo \"Trying\"");
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m ...\u001B[0m]",
+                    cli.getCurrentPrompt().trim());
+        } finally {
+            cli.pushLineAndWaitForResults("finally");
+            cli.pushLineAndWaitForResults("end-try");
         }
     }
 
