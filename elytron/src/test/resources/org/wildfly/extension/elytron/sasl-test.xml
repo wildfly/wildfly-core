@@ -14,10 +14,16 @@
         </filesystem-realm>
     </security-realms>
     <mappers>
-        <simple-permission-mapper name="PermMapper">
+        <simple-permission-mapper name="PermMapperLegacy">
             <permission-mapping>
                 <principal name="firstUser"/>
                 <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
+            </permission-mapping>
+        </simple-permission-mapper>
+        <simple-permission-mapper name="PermMapper">
+            <permission-mapping>
+                <principal name="firstUser"/>
+                <permission-set name="login-permission" />
             </permission-mapping>
         </simple-permission-mapper>
     </mappers>
@@ -38,4 +44,9 @@
             </mechanism-configuration>
         </sasl-authentication-factory>
     </sasl>
+    <permission-sets>
+        <permission-set name="login-permission">
+            <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+        </permission-set>
+    </permission-sets>
 </subsystem>

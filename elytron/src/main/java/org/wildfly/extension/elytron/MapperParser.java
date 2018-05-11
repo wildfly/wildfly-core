@@ -52,7 +52,13 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
  * @author Tomaz Cerar
  */
 class MapperParser {
-    private final boolean legacyVersion10;
+    enum Version {
+        VERSION_1_0,
+        VERSION_1_1,
+        CURRENT // permission-sets in permission-mappings and constant-permission-mappers
+    }
+
+    private final Version version;
 
     private PersistentResourceXMLDescription simpleMapperParser = PersistentResourceXMLDescription.builder(PermissionMapperDefinitions.getSimplePermissionMapper().getPathElement())
             .addAttribute(PermissionMapperDefinitions.MAPPING_MODE)
@@ -64,12 +70,22 @@ class MapperParser {
             .addAttribute(PermissionMapperDefinitions.PERMISSION_MAPPINGS_1_0)
             .build();
 
+    private PersistentResourceXMLDescription simpleMapperParser_1_1 = PersistentResourceXMLDescription.builder(PermissionMapperDefinitions.getSimplePermissionMapper().getPathElement())
+            .addAttribute(PermissionMapperDefinitions.MAPPING_MODE)
+            .addAttribute(PermissionMapperDefinitions.PERMISSION_MAPPINGS_1_1)
+            .build();
+
     private PersistentResourceXMLDescription logicalPermissionMapper = PersistentResourceXMLDescription.builder(PermissionMapperDefinitions.getLogicalPermissionMapper().getPathElement())
             .addAttribute(PermissionMapperDefinitions.LOGICAL_OPERATION)
             .addAttribute(PermissionMapperDefinitions.LEFT)
             .addAttribute(PermissionMapperDefinitions.RIGHT)
             .build();
     private PersistentResourceXMLDescription constantPermissionMapper = PersistentResourceXMLDescription.builder(PermissionMapperDefinitions.getConstantPermissionMapper().getPathElement())
+            .addAttribute(PermissionMapperDefinitions.PERMISSIONS)
+            .addAttribute(PermissionMapperDefinitions.PERMISSION_SETS)
+            .build();
+
+    private PersistentResourceXMLDescription constantPermissionMapper_1_0 = PersistentResourceXMLDescription.builder(PermissionMapperDefinitions.getConstantPermissionMapper().getPathElement())
             .addAttribute(PermissionMapperDefinitions.PERMISSIONS)
             .build();
 
@@ -171,21 +187,31 @@ class MapperParser {
             .addAttribute(RoleMapperDefinitions.RIGHT)
             .build();
 
-    MapperParser(boolean legacyVersion10) {
-        this.legacyVersion10 = legacyVersion10;
+    MapperParser(Version version) {
+        this.version = version;
     }
 
     MapperParser() {
-        this.legacyVersion10 = false;
+        this.version = Version.CURRENT;
     }
 
     //1.0 version of parser is different at simple mapperParser
 
     private PersistentResourceXMLDescription getSimpleMapperParser() {
-        if (legacyVersion10) {
+        if (version.equals(Version.VERSION_1_0)) {
             return simpleMapperParser_1_0;
+        } else if (version.equals(Version.VERSION_1_1)) {
+            return simpleMapperParser_1_1;
         }
         return simpleMapperParser;
+    }
+
+    private PersistentResourceXMLDescription getConstantPermissionMapperParser() {
+        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1)) {
+            return constantPermissionMapper_1_0;
+        } else {
+            return constantPermissionMapper;
+        }
     }
 
 
@@ -203,7 +229,7 @@ class MapperParser {
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
                 .addChild(getSimpleMapperParser())
-                .addChild(constantPermissionMapper)
+                .addChild(getConstantPermissionMapperParser())
                 .addChild(aggregatePrincipalDecoderParser)
                 .addChild(concatenatingPrincipalDecoderParser)
                 .addChild(constantPrincipalDecoderParser)

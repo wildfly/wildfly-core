@@ -177,6 +177,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(PermissionMapperDefinitions.getSimplePermissionMapper());
         resourceRegistration.registerSubModel(PermissionMapperDefinitions.getConstantPermissionMapper());
 
+        // Permission Sets
+        resourceRegistration.registerSubModel(PermissionSetDefinition.getPermissionSet());
+
         // Principal Decoders
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getAggregatePrincipalDecoderDefinition());
         resourceRegistration.registerSubModel(PrincipalDecoderDefinitions.getConcatenatingPrincipalDecoder());

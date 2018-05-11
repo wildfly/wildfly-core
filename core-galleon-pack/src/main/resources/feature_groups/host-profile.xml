@@ -4,7 +4,7 @@
     <feature spec="subsystem.elytron">
         <param name="final-providers" value="combined-providers"/>
         <param name="disallowed-providers" value="[OracleUcrypto]"/>
-        <feature-group name="host-elytron-common">
+        <feature-group name="elytron-common">
             <include feature-id="subsystem.elytron.file-audit-log:file-audit-log=local-audit">
                 <param name="relative-to" value="jboss.domain.log.dir"/>
             </include>

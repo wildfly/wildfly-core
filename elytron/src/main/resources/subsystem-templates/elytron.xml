@@ -44,11 +44,11 @@
             <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
                 <permission-mapping>
                     <principal name="anonymous"/>
-                    <?ADDITIONAL_PERMISSIONS?>
+                    <permission-set name="default-permissions"/>
                 </permission-mapping>
                 <permission-mapping match-all="true">
-                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
-                    <?ADDITIONAL_PERMISSIONS?>
+                    <permission-set name="login-permission" />
+                    <permission-set name="default-permissions"/>
                 </permission-mapping>
             </simple-permission-mapper>
 
@@ -60,6 +60,15 @@
                 <role name="SuperUser"/>
             </constant-role-mapper>
         </mappers>
+        
+        <permission-sets>
+            <permission-set name="login-permission">
+                <permission class-name="org.wildfly.security.auth.permission.LoginPermission" />
+            </permission-set>
+            <permission-set name="default-permissions">
+                <?ADDITIONAL_PERMISSIONS?>
+            </permission-set>
+        </permission-sets>
 
         <http>
             <?HTTP_DEFINITIONS?>

@@ -34,7 +34,7 @@ class ElytronSubsystemParser1_1 extends ElytronSubsystemParser1_0 {
     }
 
     protected PersistentResourceXMLDescription getMapperParser() {
-        return new MapperParser().getParser();
+        return new MapperParser(MapperParser.Version.VERSION_1_1).getParser();
     }
 
 

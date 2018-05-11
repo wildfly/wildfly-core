@@ -89,7 +89,7 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
             .build();
 
     PersistentResourceXMLDescription getMapperParser() {
-        return new MapperParser(true).getParser();
+        return new MapperParser(MapperParser.Version.VERSION_1_0).getParser();
     }
 
     PersistentResourceXMLDescription getDomainParser() {
