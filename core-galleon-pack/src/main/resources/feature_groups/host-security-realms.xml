@@ -2,9 +2,6 @@
 <feature-group-spec name="host-security-realms" xmlns="urn:jboss:galleon:feature-group:1.0">
     <feature-group name="base-security-realms">
         <include feature-id="core-service.management.security-realm:core-service=management,security-realm=ManagementRealm">
-            <feature spec="core-service.management.security-realm.authentication.local">
-                <param name="skip-group-loading" value="true"/>
-            </feature>
             <feature spec="core-service.management.security-realm.authentication.properties">
                 <param name="relative-to" value="jboss.domain.config.dir"/>
             </feature>
@@ -13,9 +10,6 @@
             </feature>
         </include>
         <include feature-id="core-service.management.security-realm:core-service=management,security-realm=ApplicationRealm">
-            <feature spec="core-service.management.security-realm.authentication.local">
-                <param name="skip-group-loading" value="true"/>
-            </feature>
             <feature spec="core-service.management.security-realm.authentication.properties">
                 <param name="relative-to" value="jboss.domain.config.dir"/>
             </feature>

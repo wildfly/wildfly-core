@@ -6,6 +6,7 @@
             <param name="map-groups-to-roles" value="false"/>
             <feature spec="core-service.management.security-realm.authentication.local">
                 <param name="default-user" value="&quot;\$local&quot;"/>
+                <param name="skip-group-loading" value="true"/>
             </feature>
             <feature spec="core-service.management.security-realm.authentication.properties">
                 <param name="path" value="mgmt-users.properties"/>
@@ -19,6 +20,7 @@
             <feature spec="core-service.management.security-realm.authentication.local">
                 <param name="default-user" value="&quot;\$local&quot;"/>
                 <param name="allowed-users" value="*"/>
+                <param name="skip-group-loading" value="true"/>
             </feature>
             <feature spec="core-service.management.security-realm.authentication.properties">
                 <param name="path" value="application-users.properties"/>
