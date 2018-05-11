@@ -3,7 +3,7 @@
         <custom-permission-mapper name="CustomPermissionMapper" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <custom-permission-mapper name="CustomPermissionMapper2" class-name="org.wildfly.elytron.CustomPermissionMapper" module="l.m" />
         <logical-permission-mapper name="LogicalPermissionMapper" logical-operation="unless" left="CustomPermissionMapper" right="CustomPermissionMapper2" />
-        <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
+        <simple-permission-mapper name="SimplePermissionMapperLegacy" mapping-mode="and">
             <permission-mapping>
                 <principal name="John"/>
                 <principal name="Joe"/>
@@ -22,8 +22,29 @@
             </permission-mapping>
             <permission-mapping match-all="true"/>
         </simple-permission-mapper>
-        <constant-permission-mapper name="ConstantPermissionMapper">
+        <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
+            <permission-mapping>
+                <principal name="John"/>
+                <principal name="Joe"/>
+                <role name="User"/>
+                <role name="Administrator"/>
+                <permission-set name="my-permissions" />
+            </permission-mapping>
+            <permission-mapping match-all="false">
+                <principal name="John Doe"/>
+                <permission-set name="john-permissions" />
+            </permission-mapping>
+            <permission-mapping>
+                <principal name="User"/>
+                <permission-set name="user-permissions" />
+            </permission-mapping>
+            <permission-mapping match-all="true"/>
+        </simple-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapperLegacy">
             <permission class-name="a.b.UserPermission" />
+        </constant-permission-mapper>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission-set name="user-permissions" />
         </constant-permission-mapper>
 
         <aggregate-principal-decoder name="AggregatePrincipalDecoder">
@@ -85,4 +106,16 @@
         <custom-role-mapper name="CustomRoleOne" class-name="org.wildfly.elytron.CustomRoleMapper" module="i.j" />
         <logical-role-mapper name="AdditionalRoles" logical-operation="and" left="ConstantRoles" right="CustomRoleOne" />
     </mappers>
+    <permission-sets>
+        <permission-set name="my-permissions">
+            <permission class-name="a.b.MyPermission" />
+            <permission class-name="a.b.MyOtherPermission" target-name="../c" action="delete" />
+        </permission-set>
+        <permission-set name="john-permissions">
+            <permission class-name="a.b.JohnPermission" />
+        </permission-set>
+        <permission-set name="user-permissions">
+            <permission class-name="a.b.UserPermission" />
+        </permission-set>
+    </permission-sets>
 </subsystem>

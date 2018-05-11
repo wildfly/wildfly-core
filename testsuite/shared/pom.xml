@@ -144,6 +144,10 @@
                     <groupId>com.fasterxml.woodstox</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.slf4j</groupId>
+                    <artifactId>slf4j-jboss-logmanager</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

@@ -34,7 +34,7 @@
         <param name="simple-permission-mapper" value="default-permission-mapper" />
         <param name="mapping-mode" value="first" />
         <param name="permission-mappings"
-            value="[{principals=[anonymous]},{match-all=true,permissions=[class-name=org.wildfly.security.auth.permission.LoginPermission]}]" />
+            value="[{principals=[anonymous],permission-sets=[permission-set=default-permissions]},{match-all=true,permission-sets=[permission-set=login-permission,permission-set=default-permissions]}]" />
         <!-- <feature spec="subsystem.elytron.simple-permission-mapper.permission-mappings"> 
             <param name="principals" value="[anonymous]"/> </feature> <feature spec="subsystem.elytron.simple-permission-mapper.permission-mappings"> 
             <param name="match-all" value="true"/> <param name="permissions" value="[class-name=org.wildfly.security.auth.permission.LoginPermission]"/> 
@@ -60,5 +60,13 @@
     <feature spec="subsystem.elytron.constant-role-mapper">
         <param name="constant-role-mapper" value="super-user-mapper" />
         <param name="roles" value="[SuperUser]" />
+    </feature>
+    <feature spec="subsystem.elytron.permission-set">
+        <param name="permission-set" value="login-permission" />
+        <param name="permissions" value="[class-name=org.wildfly.security.auth.permission.LoginPermission]" />
+    </feature>
+    <feature spec="subsystem.elytron.permission-set">
+        <param name="permission-set" value="default-permissions" />
+        <param name="permissions" value="[]" />
     </feature>
 </feature-group-spec>

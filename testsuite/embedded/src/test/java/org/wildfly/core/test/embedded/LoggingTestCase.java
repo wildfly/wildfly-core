@@ -149,7 +149,7 @@ public abstract class LoggingTestCase extends AbstractTestCase {
                 System.out.flush();
                 System.err.flush();
                 Assert.assertEquals(String.format("The following messages were found on the console: %n%s", STDOUT.toString()), 0, STDOUT.size());
-                Assert.assertEquals(String.format("The following messages were found on the console: %n%s", STDERR.toString()), 0, STDERR.size());
+                Assert.assertEquals(String.format("The following messages were found on the error console: %n%s", STDERR.toString()), 0, STDERR.size());
             }
         } finally {
             server.stop();
