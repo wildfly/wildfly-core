@@ -30,7 +30,11 @@ import java.util.Set;
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
@@ -171,14 +175,30 @@ public interface ServerInventory {
     /**
      * Re-establishes management communications with a server following a restart of the Host Controller process.
      *
+     * <p>The servers, which are still stopping, can be requested to be restarted using {@code requestRestart} parameter.
+     * This restart operation will be done in background once the servers are completely stopped, a new {@code authKey} will
+     * be generate for the delayed start. Similarly, the {@code domainModel} used in the delayed start will be the one that exits
+     * at that moment.
+     *
+     * <p> The servers, which are already started or stopped, are not affected by this parameter.
+     * For those cases, use {@link #startServer(String, ModelNode)} or any overloaded method.
+     *
+     * <p> The delayed start will be done always acquiring the Host Controller lock, the {@code restartBlocking} param on this method, can
+     * be used to limit the time of that lock, if it is {@code true}, then the lock will be released when the server is
+     * in STARTED state, otherwise when the server is in STARTING state.
+     *
      * @param serverName the name of the server
      * @param domainModel the configuration model for the domain
      * @param authKey the authentication key
      * @param running whether the process was running. If {@code false}, the existence of the server will be
      *                recorded but no attempt to contact it will be made
      * @param stopping whether the process is currently stopping
+     * @param blockUntilStopped wait until the server is stopped
+     * @param requestRestart whether the server will be restarted in background once it is stopped
+     * @param restartBlocking whether the server will be restarted in background in a thread waiting until the server is started, otherwise the thread
+     *                        will wait until the server is starting.
      */
-    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping);
+    void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping, boolean blockUntilStopped, boolean requestRestart, boolean restartBlocking);
 
     /**
      * Reload a server with the given name.
@@ -344,4 +364,28 @@ public interface ServerInventory {
      * all error responses. Will not be {@code null}
      */
     List<ModelNode> suspendServers(Set<String> serverNames, int timeoutInSeconds, BlockingTimeout blockingTimeout);
+
+
+    /**
+     * Notification that a server is ready to be restarted after being selected to be restarted using
+     * {@link #reconnectServer(String, ModelNode, String, boolean, boolean, boolean, boolean, boolean)}
+     *
+     * @param processName the process name.
+     */
+    void restartRequested(String processName, boolean blocking);
+
+    interface OperationExecutor {
+
+        /**
+         * Execute the operation.
+         *
+         * @param operation operation
+         * @param handler the message handler
+         * @param control the transaction control
+         * @param step the step to be executed
+         * @return the result
+         */
+        ModelNode execute(Operation operation, OperationMessageHandler handler, ModelController.OperationTransactionControl control, OperationStepHandler step);
+    }
+
 }

@@ -129,7 +129,9 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
                 @Override
                 public void handleProcessStopped(final ProcessControllerClient client, final String processName, final long uptimeMillis) {
                     if (serverInventory == null){
-                        throw HostControllerLogger.ROOT_LOGGER.noServerInventory();
+                        //If the servers are restarted with a Host Controller reload operation, we could be notifying a process stopping
+                        //before than the new ServerInventory is established due to the Host Controller reload, we return here.
+                        return;
                     }
                     if(ManagedServer.isServerProcess(processName)) {
                         serverInventory.serverProcessStopped(processName);
@@ -187,6 +189,17 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
                         serverInventory.operationFailed(processName, operation);
                     }
                 }
+
+                @Override
+                public void handleRestartRequested(final ProcessControllerClient client, final String processName, final boolean blocking) {
+                    if (serverInventory == null){
+                        return;
+                    }
+                    if(ManagedServer.isServerProcess(processName)) {
+                        serverInventory.restartRequested(processName, blocking);
+                    }
+                }
+
             });
         } catch(IOException e) {
             throw new StartException(e);

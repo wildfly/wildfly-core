@@ -122,3 +122,8 @@ ARGUMENTS
                  after the reload, the changes will still be persisted to the
                  original server configuration file that was used to first
                  boot up the server.
+
+ --blocking        - optional, allowed only in the domain mode. Only has an
+                 effect if --restart-servers is true. In that case, if --blocking
+                 is set to true, the operation blocks and waits until the servers
+                 are stopped. If not present, true value is assumed.

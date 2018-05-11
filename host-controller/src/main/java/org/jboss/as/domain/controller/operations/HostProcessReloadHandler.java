@@ -76,10 +76,13 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             .setAlternatives(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG)
             .build();
 
+    private static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(true))
+            .build();
 
-    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] MASTER_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG, BLOCKING};
 
-    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG};
+    private static final AttributeDefinition[] SLAVE_ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG, BLOCKING};
 
     private final HostControllerEnvironment environment;
     private final LocalHostControllerInfo hostControllerInfo;
@@ -123,6 +126,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
         final boolean restartServers = RESTART_SERVERS.resolveModelAttribute(context, operation).asBoolean(true);
         final boolean useCurrentHostConfig = USE_CURRENT_HOST_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
         final boolean useCurrentDomainConfig = hostControllerInfo.isMasterDomainController() && USE_CURRENT_DOMAIN_CONFIG.resolveModelAttribute(context, operation).asBoolean(true);
+        final boolean blockUntilStopped = BLOCKING.resolveModelAttribute(context, operation).asBoolean(true);
         final String domainConfig = hostControllerInfo.isMasterDomainController() && operation.hasDefined(DOMAIN_CONFIG.getName()) ? DOMAIN_CONFIG.resolveModelAttribute(context, operation).asString() : null;
         final String hostConfig = operation.hasDefined(HOST_CONFIG.getName()) ? HOST_CONFIG.resolveModelAttribute(context, operation).asString() : null;
         // we use the same name as the current one on a reload. If a host has been added with a specific name, it stays with that name until it is stopped and reloaded
@@ -146,6 +150,8 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
             @Override
             public void reloadInitiated(HostRunningModeControl runningModeControl) {
                 runningModeControl.setRestartMode(restartServers ? RestartMode.SERVERS : RestartMode.HC_ONLY);
+                runningModeControl.setReloadByHandler(true);
+                runningModeControl.setBlockUntilStopped(blockUntilStopped);
             }
 
             @Override
@@ -157,6 +163,7 @@ public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningMo
                 runningModeControl.setNewDomainBootFileName(domainConfig);
                 runningModeControl.setNewBootFileName(hostConfig);
                 runningModeControl.setReloadHostName(hostName);
+                runningModeControl.setReloadByHandler(false);
             }
         };
     }

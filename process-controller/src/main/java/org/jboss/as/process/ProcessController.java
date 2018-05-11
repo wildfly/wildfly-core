@@ -251,6 +251,26 @@ public final class ProcessController {
         }
     }
 
+    public void restartRequested(final String processName, final boolean blocking) {
+        synchronized (lock) {
+            for (Connection connection : managedConnections) {
+                try {
+                    final OutputStream os = connection.writeMessage();
+                    try {
+                        os.write(Protocol.RESTART_REQUESTED);
+                        StreamUtils.writeUTFZBytes(os, processName);
+                        StreamUtils.writeBoolean(os, blocking);
+                        os.close();
+                    } finally {
+                        StreamUtils.safeClose(os);
+                    }
+                } catch (IOException e) {
+                    ProcessLogger.ROOT_LOGGER.failedToWriteMessage("RESTART_REQUESTED", e);
+                }
+            }
+        }
+    }
+
     void processAdded(final String processName) {
         synchronized (lock) {
             for (Connection connection : managedConnections) {

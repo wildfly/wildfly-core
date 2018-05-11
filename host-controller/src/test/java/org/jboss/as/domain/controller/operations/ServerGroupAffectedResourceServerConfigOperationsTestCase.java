@@ -583,7 +583,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         @Override
-        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping) {
+        public void reconnectServer(String serverName, ModelNode domainModel, String authKey, boolean running, boolean stopping, boolean blockUntilStopped, boolean requestRestart, boolean restartBlocking) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -684,6 +684,11 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
         @Override
         public List<ModelNode> suspendServers(Set<String> serverNames, int timeout, BlockingTimeout blockingTimeout) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void restartRequested(String processName, boolean blocking) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }

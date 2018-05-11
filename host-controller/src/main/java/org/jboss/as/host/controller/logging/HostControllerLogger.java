@@ -1421,4 +1421,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 212, value = "Fetch of missing configuration from the master Host Controller failed without explanation. Fetch operation outcome was %s")
     OperationFailedException fetchOfMissingConfigurationFailed(String failedOutcome);
 
+    @LogMessage(level = Level.ERROR)
+    @Message(id = 213, value = "Failed to restart (%s) in background.")
+    void failedToRestartServer(@Cause Throwable cause, String serverName);
 }

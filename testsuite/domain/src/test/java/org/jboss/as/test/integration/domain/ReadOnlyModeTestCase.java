@@ -16,17 +16,26 @@
 package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.impl.DomainClientImpl;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
@@ -49,6 +58,7 @@ public class ReadOnlyModeTestCase {
     private DomainLifecycleUtil domainSlaveLifecycleUtil;
     private static final long TIMEOUT_S = TimeoutUtil.adjust(30);
     private static final int TIMEOUT_SLEEP_MILLIS = 50;
+    private static final int FAILED_RELOAD_TIMEOUT_MILLIS = 10000;
 
     @Before
     public void setupDomain() throws Exception {
@@ -95,6 +105,7 @@ public class ReadOnlyModeTestCase {
             op = new ModelNode();
             op.get(OP_ADDR).add(HOST, "master");
             op.get(OP).set("reload");
+            op.get(ModelDescriptionConstants.BLOCKING).set(false);
             domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
             // Try to reconnect to the hc
             domainMasterLifecycleUtil.connect();
@@ -102,6 +113,7 @@ public class ReadOnlyModeTestCase {
 
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
+            awaitHostControllerRegistration(domainMasterLifecycleUtil.getDomainClient(), "slave");
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
 
             // reload slave HC
@@ -115,6 +127,7 @@ public class ReadOnlyModeTestCase {
 
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
+            awaitHostControllerRegistration(domainMasterLifecycleUtil.getDomainClient(), "slave");
             Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
         }
         domainManager.stop();
@@ -128,6 +141,7 @@ public class ReadOnlyModeTestCase {
             waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
             Assert.assertTrue(Operations.getFailureDescription(clientMaster.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asString().contains("WFLYCTL0216"));
             Assert.assertTrue(Operations.getFailureDescription(clientMaster.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asString().contains("WFLYCTL0216"));
+            awaitHostControllerRegistration(domainMasterLifecycleUtil.getDomainClient(), "slave");
             Assert.assertTrue(Operations.readResult(clientMaster.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
         }
     }
@@ -170,4 +184,36 @@ public class ReadOnlyModeTestCase {
         return new DomainClientImpl(protocol, address, port);
     }
 
+    private boolean awaitHostControllerRegistration(final ModelControllerClient client, final String host) throws Exception {
+        final long time = System.currentTimeMillis() + FAILED_RELOAD_TIMEOUT_MILLIS;
+        do {
+            Thread.sleep(100);
+            if (lookupHostInModel(client, host)) {
+                return true;
+            }
+        } while (System.currentTimeMillis() < time);
+        return false;
+    }
+
+    // mechanism to wait for the the slave to register with the master HC so it is present in the model
+    // before continuing.
+    private boolean lookupHostInModel(final ModelControllerClient client, final String host) throws Exception {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        operation.get(OP_ADDR).add(HOST, host);
+        operation.get(NAME).set(HOST_STATE);
+
+        try {
+            final ModelNode result = client.execute(operation);
+            if (result.get(OUTCOME).asString().equals(SUCCESS)){
+                final ModelNode model = result.require(RESULT);
+                if (model.asString().equalsIgnoreCase("running")) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            //
+        }
+        return false;
+    }
 }

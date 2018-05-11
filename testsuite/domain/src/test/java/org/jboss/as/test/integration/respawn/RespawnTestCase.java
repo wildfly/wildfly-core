@@ -218,8 +218,16 @@ public class RespawnTestCase {
 
     @Test
     public void testReloadHc() throws Exception {
+        testReloadHc(null);
+    }
 
-        System.out.println("testReloadHc()");
+    @Test
+    public void testReloadHcUnblocking() throws Exception {
+        testReloadHc(Boolean.TRUE);
+    }
+
+    private void testReloadHc(Boolean blocking) throws Exception {
+        System.out.println("testReloadHc("+blocking+")");
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
         Set<String> serverIds = new HashSet<String>();
@@ -229,7 +237,7 @@ public class RespawnTestCase {
             }
         }
 
-        executeReloadOperation(null, null);
+        executeReloadOperation(null, null, blocking);
 
         List<RunningProcess> reloaded = waitForAllProcesses(serverIds);
         Assert.assertEquals(original.size(), reloaded.size());
@@ -246,13 +254,21 @@ public class RespawnTestCase {
 
     @Test
     public void testReloadHcButNotServers() throws Exception {
+        testReloadHcButNotServers(null);
+    }
 
-        System.out.println("testReloadHcButNotServers()");
+    @Test
+    public void testReloadHcButNotServersUnblocking() throws Exception {
+        testReloadHcButNotServers(Boolean.TRUE);
+    }
+
+    private void testReloadHcButNotServers(Boolean blocking) throws Exception {
+        System.out.println("testReloadHcButNotServers("+blocking+")");
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
 
         //Execute reload w/ restart-servers=false, admin-only=true
-        executeReloadOperation(false, true);
+        executeReloadOperation(false, true, blocking);
 
         //Read HC model until there are no servers
         long start = System.currentTimeMillis();
@@ -272,7 +288,7 @@ public class RespawnTestCase {
         System.out.println("reloaded into admin-only after " + (System.currentTimeMillis() - start) + " ms");
 
         //Execute reload w/ restart-servers=false, admin-only=false
-        executeReloadOperation(false, false);
+        executeReloadOperation(false, false, blocking);
         System.out.println("reloaded out of admin-only; waiting for servers");
         //Wait for servers
         readHostControllerServers();
@@ -290,8 +306,17 @@ public class RespawnTestCase {
 
     @Test
     public void testReloadHcButNotServersWithFailedServer() throws Exception {
+        testReloadHcButNotServersWithFailedServer(null);
+    }
 
-        System.out.println("testReloadHcButNotServersWithFailedServer()");
+    @Test
+    public void testReloadHcButNotServersWithFailedServerUnbocking() throws Exception {
+        testReloadHcButNotServersWithFailedServer(Boolean.TRUE);
+    }
+
+    private void testReloadHcButNotServersWithFailedServer(Boolean blocking) throws Exception {
+
+        System.out.println("testReloadHcButNotServersWithFailedServer("+blocking+")");
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
 
@@ -302,7 +327,7 @@ public class RespawnTestCase {
         processUtil.killProcess(serverOne);
 
         //Execute reload w/ restart-servers=false, admin-only=false
-        executeReloadOperation(false, false);
+        executeReloadOperation(false, false, blocking);
         //Wait for servers
         readHostControllerServer(SERVER_TWO);
 
@@ -335,8 +360,17 @@ public class RespawnTestCase {
 
     @Test
     public void testHCReloadAbortPreservesServers() throws Exception {
+        testHCReloadAbortPreservesServers(null);
+    }
 
-        System.out.println("testHCReloadAbortPreservesServers()");
+    @Test
+    public void testHCReloadAbortPreservesServersUnblocking() throws Exception {
+        testHCReloadAbortPreservesServers(Boolean.TRUE);
+    }
+
+    private void testHCReloadAbortPreservesServers(Boolean blocking) throws Exception {
+
+        System.out.println("testHCReloadAbortPreservesServers("+blocking+")");
 
         List<RunningProcess> original = waitForAllProcessesFullyStarted();
 
@@ -347,7 +381,7 @@ public class RespawnTestCase {
 
             // Execute reload w/ restart-servers=false, admin-only=false
             // The reload should abort the HC due to bad xml
-            executeReloadOperation(false, false);
+            executeReloadOperation(false, false, blocking);
 
             long deadline = System.currentTimeMillis() + 30000;
             boolean origHCGone;
@@ -379,7 +413,6 @@ public class RespawnTestCase {
         }
     }
 
-
     private RunningProcess findProcess(List<RunningProcess> processes, String name) {
         RunningProcess proc = null;
         for (RunningProcess cur : processes) {
@@ -393,7 +426,7 @@ public class RespawnTestCase {
     }
 
 
-    private void executeReloadOperation(Boolean restartServers, Boolean adminOnly) throws Exception {
+    private void executeReloadOperation(Boolean restartServers, Boolean adminOnly, Boolean blocking) throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(OP).set("reload");
         operation.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(HOST, "master")).toModelNode());
@@ -402,6 +435,9 @@ public class RespawnTestCase {
         }
         if (adminOnly != null) {
             operation.get(ModelDescriptionConstants.ADMIN_ONLY).set(adminOnly);
+        }
+        if (blocking != null) {
+            operation.get(ModelDescriptionConstants.BLOCKING).set(blocking);
         }
         final TestControllerClient client = getControllerClient();
         try {
