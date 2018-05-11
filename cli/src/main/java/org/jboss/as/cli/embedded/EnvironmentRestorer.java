@@ -22,6 +22,10 @@
 
 package org.jboss.as.cli.embedded;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogContextSelector;
 import org.jboss.stdio.SimpleStdioContextSelector;
@@ -35,10 +39,19 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 class EnvironmentRestorer {
 
-    private final String jbossHome = WildFlySecurityManager.getPropertyPrivileged("jboss.home.dir", null);
-    private final String bootLog = WildFlySecurityManager.getPropertyPrivileged("org.jboss.boot.log.file", null);
     private final Contexts defaultContexts = new Contexts(LogContext.getLogContext(), StdioContext.getStdioContext());
+    private final Map<String, String> propertiesToReset;
     private boolean logContextSelectorRestored;
+
+    EnvironmentRestorer(final String... propertyKeys) {
+        this.propertiesToReset = new HashMap<>();
+        for (String key : propertyKeys) {
+            final String value = WildFlySecurityManager.getPropertyPrivileged(key, null);
+            propertiesToReset.put(key, value);
+        }
+        propertiesToReset.put("jboss.home.dir", WildFlySecurityManager.getPropertyPrivileged("jboss.home.dir", null));
+        propertiesToReset.put("org.jboss.boot.log.file", WildFlySecurityManager.getPropertyPrivileged("org.jboss.boot.log.file", null));
+    }
 
     Contexts getDefaultContexts() {
         return defaultContexts;
@@ -63,15 +76,16 @@ class EnvironmentRestorer {
     }
 
     void restoreEnvironment() {
-        if (jbossHome == null) {
-            WildFlySecurityManager.clearPropertyPrivileged("jboss.home.dir");
-        } else {
-            WildFlySecurityManager.setPropertyPrivileged("jboss.home.dir", jbossHome);
-        }
-        if (bootLog == null) {
-            WildFlySecurityManager.clearPropertyPrivileged("org.jboss.boot.log.file");
-        } else {
-            WildFlySecurityManager.setPropertyPrivileged("org.jboss.boot.log.file", bootLog);
+        final Iterator<Map.Entry<String, String>> iter = propertiesToReset.entrySet().iterator();
+        while (iter.hasNext()) {
+            final Map.Entry<String, String> entry = iter.next();
+            final String value = entry.getValue();
+            if (value == null) {
+                WildFlySecurityManager.clearPropertyPrivileged(entry.getKey());
+            } else {
+                WildFlySecurityManager.setPropertyPrivileged(entry.getKey(), value);
+            }
+            iter.remove();
         }
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(defaultContexts.getStdioContext()));
         restoreLogContextSelector();

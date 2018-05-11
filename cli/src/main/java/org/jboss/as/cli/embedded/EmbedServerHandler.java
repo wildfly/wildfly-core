@@ -157,7 +157,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             }
         }
 
-        final EnvironmentRestorer restorer = new EnvironmentRestorer();
+        final EnvironmentRestorer restorer = new EnvironmentRestorer(JBOSS_SERVER_LOG_DIR);
         boolean ok = false;
         ThreadLocalContextSelector contextSelector = null;
         try {
