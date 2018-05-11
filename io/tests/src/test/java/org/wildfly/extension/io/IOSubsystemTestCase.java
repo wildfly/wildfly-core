@@ -24,7 +24,10 @@
 
 package org.wildfly.extension.io;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.PathAddress;
@@ -80,16 +83,8 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testRuntime() throws Exception {
-        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization())
-                .setSubsystemXml(getSubsystemXml());
-        KernelServices mainServices = builder.build();
-        if (!mainServices.isSuccessfulBoot()) {
-            Assert.fail(String.valueOf(mainServices.getBootError()));
-        }
-        ServiceController<XnioWorker> workerServiceController = (ServiceController<XnioWorker>) mainServices.getContainer().getService(IOServices.WORKER.append("default"));
-        workerServiceController.setMode(ServiceController.Mode.ACTIVE);
-        workerServiceController.awaitValue();
-        XnioWorker worker = workerServiceController.getService().getValue();
+        KernelServices mainServices = startKernelServices(getSubsystemXml());
+        XnioWorker worker = startXnioWorker(mainServices);
         Assert.assertEquals(ProcessorInfo.availableProcessors() * 2, worker.getIoThreadCount());
         Assert.assertEquals(ProcessorInfo.availableProcessors() * 16, worker.getOption(Options.WORKER_TASK_MAX_THREADS).intValue());
         PathAddress addr = PathAddress.parseCLIStyleAddress("/subsystem=io/worker=default");
@@ -130,4 +125,46 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     }
 
+    @Test
+    public void testThreadPoolAttrPropagation() throws Exception {
+        KernelServices kernelServices = startKernelServices(getSubsystemXml());
+        startXnioWorker(kernelServices);
+
+        int coreThreads = 4; // default = 2
+        int maxThreads = 64; // default = 128
+        int keepAliveMillis = 5000; // default = 100 (0 in seconds)
+        PathAddress addr = PathAddress.parseCLIStyleAddress("/subsystem=io/worker=default");
+        ModelNode maxThreadsOp = Util.getWriteAttributeOperation(addr, Constants.WORKER_TASK_MAX_THREADS, maxThreads);
+        ModelNode coreThreadsOp = Util.getWriteAttributeOperation(addr, Constants.WORKER_TASK_CORE_THREADS, coreThreads);
+        ModelNode keepAliveOp = Util.getWriteAttributeOperation(addr, Constants.WORKER_TASK_KEEPALIVE, keepAliveMillis);
+
+        kernelServices.executeOperation(maxThreadsOp);
+        kernelServices.executeOperation(coreThreadsOp);
+        kernelServices.executeOperation(keepAliveOp);
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        ObjectName threadPoolName = new ObjectName("jboss.threads:name=default,type=thread-pool");
+        Assert.assertEquals(coreThreads, (int) mbs.getAttribute(threadPoolName, "CorePoolSize"));
+        Assert.assertEquals(maxThreads, (int) mbs.getAttribute(threadPoolName, "MaximumPoolSize"));
+        Assert.assertEquals(keepAliveMillis / 1000, (long) mbs.getAttribute(threadPoolName, "KeepAliveTimeSeconds"));
+    }
+
+    protected KernelServices startKernelServices(String subsystemXml) throws Exception {
+        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization())
+                .setSubsystemXml(subsystemXml);
+
+        KernelServices kernelServices = builder.build();
+        if (!kernelServices.isSuccessfulBoot()) {
+            Assert.fail(String.valueOf(kernelServices.getBootError()));
+        }
+
+        return kernelServices;
+    }
+
+    protected XnioWorker startXnioWorker(KernelServices kernelServices) throws InterruptedException {
+        ServiceController<XnioWorker> workerServiceController = (ServiceController<XnioWorker>) kernelServices.getContainer().getService(IOServices.WORKER.append("default"));
+        workerServiceController.setMode(ServiceController.Mode.ACTIVE);
+        workerServiceController.awaitValue();
+        return workerServiceController.getService().getValue();
+    }
 }
