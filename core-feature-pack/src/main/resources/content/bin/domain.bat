@@ -5,6 +5,9 @@ rem -------------------------------------------------------------------------
 
 rem $Id$
 
+rem Assume successful run by default
+set JBOSS_STATUS=0
+
 @if not "%ECHO%" == ""  echo %ECHO%
 @if "%OS%" == "Windows_NT" setlocal
 rem Set to all parameters by default
@@ -211,11 +214,34 @@ echo.
     -default-jvm "%JAVA%" ^
     %*
 
-if %errorlevel% equ 10 (
-	goto RESTART
+set JBOSS_STATUS=%errorlevel%
+
+rem 130 is exit code returned by Oracle Java when it is stopped by Ctrl+C / Ctrl+Break
+rem This sort of stop is handled correctly so there is no need to report non zero exit code
+if %JBOSS_STATUS% equ 130 (
+  set JBOSS_STATUS=0
+)
+
+rem 143 is exit code returned by Oracle Java when it is stopped by OS shutdown (CTRL_LOGOFF_EVENT event / SIGTERM signal)
+rem This sort of stop is handled correctly so there is no need to report non zero exit code
+if %JBOSS_STATUS% equ 143 (
+  set JBOSS_STATUS=0
+)
+
+if %JBOSS_STATUS% equ 10 (
+  goto RESTART
 )
 
 :END
 if "x%NOPAUSE%" == "x" pause
 
 :END_NO_PAUSE
+if not "x%ISSERVICE%" == "x" (
+  if %JBOSS_STATUS% neq 0 (
+    rem Transform exit code to Windows service-specific exit code
+    rem to not interleave with standard Windows System Error Codes
+    rem which are used by Windows SCM with Apache Commons Daemon Procrun
+    set /a JBOSS_STATUS=%JBOSS_STATUS%+2000000
+  )
+)
+exit /B %JBOSS_STATUS%

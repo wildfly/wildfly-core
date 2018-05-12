@@ -491,13 +491,13 @@ if /I "%IS_DOMAIN%" == "true" (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\domain"
   if "%CONFIG%"=="" set CONFIG=domain.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=domain.bat
-  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.domain.base.dir=!BASE!#--domain-config=!CONFIG!#--host-config=!HOSTCONFIG!"
+  set STARTPARAM="/c#set#NOPAUSE=Y#&&#set#ISSERVICE=Y#&&#!START_SCRIPT!#-Djboss.domain.base.dir=!BASE!#--domain-config=!CONFIG!#--host-config=!HOSTCONFIG!"
   set STOPPARAM="/c %STOP_SCRIPT% --controller=%CONTROLLER% --connect %CREDENTIALS% --command=/host=!DC_HOST!:shutdown"
 ) else (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\standalone"
   if "%CONFIG%"=="" set CONFIG=standalone.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=standalone.bat
-  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!"
+  set STARTPARAM="/c#set#NOPAUSE=Y#&&#set#ISSERVICE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!"
   set STOPPARAM="/c !STOP_SCRIPT! --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown"
 )
 
@@ -551,10 +551,18 @@ if errorlevel 8 (
 )
 if errorlevel 0 (
   echo Service %SHORTNAME% installed
-  goto endBatch
+  goto turnOnFailureActionsFlag
 )
 goto cmdEnd
 
+:turnOnFailureActionsFlag
+sc failureflag %SHORTNAME% 1 > nul
+if errorlevel 1 (
+  echo ERROR: Failed to turn on failure actions flag for service %SHORTNAME%
+) else (
+  echo Failure actions flag turned on for service %SHORTNAME%
+)
+goto endBatch
 
 REM the other commands take a /name parameter - if there is no ^<servicename^> passed as second parameter,
 REM we silently ignore this and use the default SHORTNAME
