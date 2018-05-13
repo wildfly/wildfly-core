@@ -562,25 +562,6 @@
                             </resources>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>copy-licenses-xml-package</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/resources/content/docs/licenses</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${feature-pack.license.directory}</directory>
-                                    <includes>
-                                        <include>*licenses.xml</include>
-                                    </includes>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -596,7 +577,7 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
-                            <licensesOutputDirectory>${license.directory}</licensesOutputDirectory>
+                            <licensesConfigFile>${feature-pack.license.directory}/src/license/core-feature-pack-licenses.xml</licensesConfigFile>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedScopes>system,provided</excludedScopes>
                         </configuration>
