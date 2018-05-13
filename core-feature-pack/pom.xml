@@ -518,7 +518,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <executions></executions>
+                <executions/>
             </plugin>
             <plugin>
                 <groupId>org.wildfly.build</groupId>
@@ -563,7 +563,7 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <profiles>
         <profile>
             <id>update-licenses-xml</id>
@@ -575,44 +575,19 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-licenses-xml</id>
-                                <phase>prepare-package</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${license.directory}</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${project.basedir}/src/license</directory>
-                                            <includes>
-                                                <include>*licenses.xml</include>
-                                            </includes>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.wildfly.maven.plugins</groupId>
                         <artifactId>licenses-plugin</artifactId>
                         <inherited>false</inherited>
                         <executions>
                             <execution>
-                                <id>update-licenses-xml</id>
+                                <id>generate-licenses-xml</id>
                                 <goals>
                                     <goal>insert-versions</goal>
                                 </goals>
-                                <phase>prepare-package</phase>
+                                <phase>prepare-package</phase><!-- TODO why not generate-resources? -->
                                 <configuration>
                                     <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
-                                    <licensesOutputDirectory>${license.directory}</licensesOutputDirectory>
+                                    <licensesConfigFile>${project.basedir}/src/license/core-feature-pack-licenses.xml</licensesConfigFile>
                                     <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                                     <excludedScopes>system,provided</excludedScopes>
                                 </configuration>
