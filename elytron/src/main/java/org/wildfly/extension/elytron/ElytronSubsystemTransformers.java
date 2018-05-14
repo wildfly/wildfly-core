@@ -18,14 +18,25 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_5_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
+import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERY;
 
 import java.util.Collections;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -73,7 +84,22 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from5(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
+        Map<String, RejectAttributeChecker> keyMapperChecker = new HashMap<>();
+        keyMapperChecker.put(HASH_ENCODING, RejectAttributeChecker.DEFINED);
+        keyMapperChecker.put(SALT_ENCODING, RejectAttributeChecker.DEFINED);
 
+        Map<String, RejectAttributeChecker> principalQueryCheckers = new HashMap<>();
+        principalQueryCheckers.put(BCRYPT_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
+        principalQueryCheckers.put(SALTED_SIMPLE_DIGEST_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
+        principalQueryCheckers.put(SIMPLE_DIGEST_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
+        principalQueryCheckers.put(SCRAM_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
+        principalQueryCheckers.put(MODULAR_CRYPT_MAPPER, RejectAttributeChecker.DEFINED);
+
+        builder.addChildResource(PathElement.pathElement(JDBC_REALM))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(
+                        new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(principalQueryCheckers)
+                ), PRINCIPAL_QUERY);
     }
 
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {

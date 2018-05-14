@@ -16,8 +16,10 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECTED_RESOURCE;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 
 import java.io.IOException;
 import java.util.List;
@@ -87,7 +89,18 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testRejectingTransformersEAP720() throws Exception {
         // TODO Once the controller version EAP_7_2_0 is available this should switch to use it.
-        testRejectingTransformers(EAP_7_1_0, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig());
+        testRejectingTransformers(EAP_7_1_0, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(KerberosSecurityFactoryDefinition.FAIL_CACHE)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcBcryptHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcBcryptSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSaltedSimpleDigestHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSaltedSimpleDigestSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSimpleDigestHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcScramHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcScramSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcModularCrypt")), REJECTED_RESOURCE));
     }
 
     @Test

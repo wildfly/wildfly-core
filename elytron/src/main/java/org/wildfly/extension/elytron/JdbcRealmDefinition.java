@@ -20,8 +20,11 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLEAR_PASSWORD_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
@@ -82,8 +85,6 @@ import org.wildfly.security.password.interfaces.SimpleDigestPassword;
  */
 class JdbcRealmDefinition extends SimpleResourceDefinition {
 
-    static final ServiceUtil<SecurityRealm> REALM_SERVICE_UTIL = ServiceUtil.newInstance(SECURITY_REALM_RUNTIME_CAPABILITY, ElytronDescriptionConstants.JDBC_REALM, SecurityRealm.class);
-
     /**
      * {@link ElytronDescriptionConstants#CLEAR_PASSWORD_MAPPER} complex attribute;
      */
@@ -111,17 +112,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public ObjectTypeAttributeDefinition getObjectDefinition() {
-            return OBJECT_DEFINITION;
-        }
-
-        @Override
-        public SimpleAttributeDefinition[] getAttributes() {
-            return new SimpleAttributeDefinition[] { PASSWORD };
-        }
-
-        @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
             String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
             int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
 
@@ -165,34 +156,44 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT)
+                ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         @Override
-        public ObjectTypeAttributeDefinition getObjectDefinition() {
-            return OBJECT_DEFINITION;
-        }
-
-        @Override
-        public SimpleAttributeDefinition[] getAttributes() {
-            return new SimpleAttributeDefinition[] { PASSWORD, SALT, ITERATION_COUNT};
-        }
-
-        @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
             String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
             int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
             int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
             int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
+            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
                     .build();
         }
     }
@@ -234,32 +235,42 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT)
+                ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         @Override
-        public ObjectTypeAttributeDefinition getObjectDefinition() {
-            return OBJECT_DEFINITION;
-        }
-
-        @Override
-        public SimpleAttributeDefinition[] getAttributes() {
-            return new SimpleAttributeDefinition[] { ALGORITHM, PASSWORD, SALT};
-        }
-
-        @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
             String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
             int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
             int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
                     .build();
         }
     }
@@ -291,30 +302,30 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
-                ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD)
+                ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, HASH_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         @Override
-        public ObjectTypeAttributeDefinition getObjectDefinition() {
-            return OBJECT_DEFINITION;
-        }
-
-        @Override
-        public SimpleAttributeDefinition[] getAttributes() {
-            return new SimpleAttributeDefinition[] { ALGORITHM, PASSWORD };
-        }
-
-        @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
             String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
             int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
                     .build();
         }
     }
@@ -356,40 +367,75 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+        static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final SimpleAttributeDefinition SALT_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SALT_ENCODING, ModelType.STRING)
+                .setRequired(false)
+                .setDefaultValue(new ModelNode(BASE64))
+                .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         @Override
-        public ObjectTypeAttributeDefinition getObjectDefinition() {
-            return OBJECT_DEFINITION;
-        }
-
-        @Override
-        public SimpleAttributeDefinition[] getAttributes() {
-            return new SimpleAttributeDefinition[] { ALGORITHM, PASSWORD, SALT, ITERATION_COUNT };
-        }
-
-        @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException {
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
             String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
             int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
             int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
             int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
+            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .build();
+        }
+    }
+
+    /**
+     * {@link ElytronDescriptionConstants#MODULAR_CRYPT_MAPPER} complex attribute;
+     */
+    static class ModularCryptMapperObjectDefinition implements PasswordMapperObjectDefinition {
+
+        static final SimpleAttributeDefinition PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PASSWORD_INDEX, ModelType.INT, false)
+                .setMinSize(1)
+                .setValidator(new IntRangeValidator(1))
+                .setAllowExpression(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER, PASSWORD)
+                .setRequired(false)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        @Override
+        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
+            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+
+            return PasswordKeyMapper.builder()
+                    .setHashColumn(password)
                     .build();
         }
     }
 
     interface PasswordMapperObjectDefinition {
-        ObjectTypeAttributeDefinition getObjectDefinition();
-        SimpleAttributeDefinition[] getAttributes();
         PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException, InvalidKeyException;
     }
 
@@ -443,6 +489,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             supportedMappers.put(SALTED_SIMPLE_DIGEST_MAPPER, new SaltedSimpleDigestObjectDefinition());
             supportedMappers.put(SIMPLE_DIGEST_MAPPER, new SimpleDigestMapperObjectDefinition());
             supportedMappers.put(SCRAM_MAPPER, new ScramMapperObjectDefinition());
+            supportedMappers.put(MODULAR_CRYPT_MAPPER, new ModularCryptMapperObjectDefinition());
 
             SUPPORTED_PASSWORD_MAPPERS = Collections.unmodifiableMap(supportedMappers);
         }
@@ -456,7 +503,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 BcryptPasswordObjectDefinition.OBJECT_DEFINITION,
                 SaltedSimpleDigestObjectDefinition.OBJECT_DEFINITION,
                 SimpleDigestMapperObjectDefinition.OBJECT_DEFINITION,
-                ScramMapperObjectDefinition.OBJECT_DEFINITION)
+                ScramMapperObjectDefinition.OBJECT_DEFINITION,
+                ModularCryptMapperObjectDefinition.OBJECT_DEFINITION)
                 .setRequired(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
