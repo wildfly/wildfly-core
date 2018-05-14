@@ -84,7 +84,6 @@ import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationSupport;
@@ -393,9 +392,8 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     private void createWarning(final Level level, final ModelNode warning){
-        final ModelNode responseHeaders = getResponseHeaders();
-        final ModelNode warnings = responseHeaders.get(WARNINGS);
-        final ModelNode warningEntry = warnings.add();
+
+        final ModelNode warningEntry = new ModelNode();
         warningEntry.get(WARNING).set(warning);
         warningEntry.get(LEVEL).set(level.toString());
         final ModelNode operation = activeStep.operation;
@@ -403,6 +401,24 @@ abstract class AbstractOperationContext implements OperationContext {
             final ModelNode operationEntry =  warningEntry.get(OP);
             operationEntry.get(OP_ADDR).set(operation.get(OP_ADDR));
             operationEntry.get(OP).set(operation.get(OP));
+        }
+
+        final ModelNode warnings = getResponseHeaders().get(WARNINGS);
+        boolean unique = true;
+        if (warnings.isDefined()) {
+            // Don't repeat a warning. This is basically a secondard safeguard
+            // against different steps for the same op ending up reporting the
+            // same warning. List iteration is not efficient but > 1 warning
+            // in an op is an edge case
+            for (ModelNode existing : warnings.asList()) {
+                if (existing.equals(warningEntry)) {
+                    unique = false;
+                    break;
+                }
+            }
+        }
+        if (unique) {
+            warnings.add(warningEntry);
         }
     }
 
@@ -1031,14 +1047,17 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     private void checkDeprecatedOperation(Step step) {
-        DeprecationData deprecationData = step.operationDefinition != null ? step.operationDefinition.getDeprecationData() : null;
-        if (deprecationData != null && deprecationData.isNotificationUseful()
-                // This 'hasDefined(name)' check is carried from the never used WFCORE-611 code but it seems unnecessary
-                // But it does no obvious harm in the typical case so out of caution I bring it over
-                && step.operation.hasDefined(ModelDescriptionConstants.OPERATION_NAME)) {
-            String deprecatedMsg = ControllerLogger.DEPRECATED_LOGGER.operationDeprecatedMessage(step.operationDefinition.getName(),
-                    step.address.toCLIStyleString());
-            addResponseWarning(Level.INFO, new ModelNode(deprecatedMsg));
+        if (currentStage == Stage.MODEL // any user-specified op will have a Stage.MODEL step, so no need to check other stages
+                && step.operationDefinition != null
+                // Ignore cases where the step's definition is the same as it's parent, as we don't
+                // want to repeatedly log warnings from internal child steps added by a parent
+                && (step.parent == null || step.operationDefinition != step.parent.operationDefinition)) {
+            DeprecationData deprecationData = step.operationDefinition.getDeprecationData();
+            if (deprecationData != null && deprecationData.isNotificationUseful()) {
+                String deprecatedMsg = ControllerLogger.DEPRECATED_LOGGER.operationDeprecatedMessage(step.operationDefinition.getName(),
+                        step.address.toCLIStyleString());
+                addResponseWarning(Level.WARNING, new ModelNode(deprecatedMsg));
+            }
         }
     }
 
