@@ -577,7 +577,7 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
-                            <licensesConfigFile>${feature-pack.license.directory}/src/license/core-feature-pack-licenses.xml</licensesConfigFile>
+                            <licensesConfigFile>${feature-pack.license.directory}/core-feature-pack-licenses.xml</licensesConfigFile>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedScopes>system,provided</excludedScopes>
                         </configuration>
