@@ -197,6 +197,25 @@ Param(
 	return $res
 }
 
+Function Process-Java-Opts-Parameters {
+Param(
+   [Parameter(Mandatory=$false)]
+   [string[]]$Params
+
+) #end param
+    $res = @()
+	for($i=0; $i -lt $Params.Count; $i++){
+		$arg = $Params[$i]
+		if ($arg -contains '-Djava.security.manager'){
+			Write-Warning "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
+			exit
+		}else{
+			$res+=$arg
+		}
+	}
+	return $res
+}
+
 Function Start-WildFly-Process {
  Param(
    [Parameter(Mandatory=$true)]
