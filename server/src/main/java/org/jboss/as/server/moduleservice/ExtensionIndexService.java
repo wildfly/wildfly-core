@@ -91,6 +91,10 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                         final JarFile jarFile = new JarFile(jar);
                         try {
                             final Manifest manifest = jarFile.getManifest();
+                            if (manifest == null) {
+                                // jar lacks manifest file
+                                continue;
+                            }
                             final Attributes mainAttributes = manifest.getMainAttributes();
                             final String extensionName = mainAttributes.getValue(Attributes.Name.EXTENSION_NAME);
                             if (extensionName == null) {
