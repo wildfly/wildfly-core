@@ -362,14 +362,13 @@ public class Util {
             buffer.append("@");
             buffer.append(
                     new TerminalString(postAt, PROMPT_COLOR).toString());
-            buffer.append(" ");
         } else if (buffer.toString().contains("disconnected")) {
             String prompt = buffer.substring(1);
-            buffer.replace(1, buffer.lastIndexOf(" "),
+            buffer.replace(1, buffer.lastIndexOf(" ") + 1,
                            new TerminalString(prompt, ERROR_COLOR).toString());
         } else {
             String prompt = buffer.substring(1);
-            buffer.replace(1, buffer.lastIndexOf(" "),
+            buffer.replace(1, buffer.lastIndexOf(" ") + 1,
                     new TerminalString(prompt, PROMPT_COLOR).toString());
         }
     }

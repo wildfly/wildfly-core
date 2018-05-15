@@ -67,7 +67,7 @@ public class ColorOutputTestCase {
 
     @Test
     public void cliPrompt() {
-        Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /]",
+        Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m/]",
                 cli.getCurrentPrompt().trim());
     }
 
@@ -76,7 +76,7 @@ public class ColorOutputTestCase {
 
         cli.pushLineAndWaitForResults("batch");
         try {
-            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m #\u001B[0m]",
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m/\u001B[;92;109m #\u001B[0m]",
                     cli.getCurrentPrompt().trim());
         } finally {
             cli.pushLineAndWaitForResults("discard-batch");
@@ -89,7 +89,7 @@ public class ColorOutputTestCase {
         cli.pushLineAndWaitForResults("if outcome==failed of /system-property=test:read-resource");
         try {
             cli.pushLineAndWaitForResults("echo \"Not Exists\"");
-            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m ...\u001B[0m]",
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m/\u001B[;92;109m ...\u001B[0m]",
                     cli.getCurrentPrompt().trim());
         } finally {
             cli.pushLineAndWaitForResults("end-if");
@@ -102,7 +102,7 @@ public class ColorOutputTestCase {
         cli.pushLineAndWaitForResults("for PROP in :read-children-names(child-type=system-property)");
         try {
             cli.pushLineAndWaitForResults("echo $PROP");
-            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m ...\u001B[0m]",
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m/\u001B[;92;109m ...\u001B[0m]",
                     cli.getCurrentPrompt().trim());
         } finally {
             cli.pushLineAndWaitForResults("done");
@@ -115,7 +115,7 @@ public class ColorOutputTestCase {
         cli.pushLineAndWaitForResults("try");
         try {
             cli.pushLineAndWaitForResults("echo \"Trying\"");
-            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m /\u001B[;92;109m ...\u001B[0m]",
+            Assert.assertEquals("[\u001B[;94;109mstandalone\u001B[0m@\u001B[;94;109m" + hostAndPort + " \u001B[0m/\u001B[;92;109m ...\u001B[0m]",
                     cli.getCurrentPrompt().trim());
         } finally {
             cli.pushLineAndWaitForResults("finally");
