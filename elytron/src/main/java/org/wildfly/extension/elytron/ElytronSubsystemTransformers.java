@@ -16,6 +16,10 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
+
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -24,6 +28,8 @@ import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
@@ -34,9 +40,6 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry
  */
 public final class ElytronSubsystemTransformers implements ExtensionTransformerRegistration {
-    private static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
-    private static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2, 0);
-    private static final ModelVersion ELYTRON_3_0_0 = ModelVersion.create(3, 0);
 
     @Override
     public String getSubsystemName() {
@@ -47,24 +50,39 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        ResourceTransformationDescriptionBuilder builderCurrentTo2_0_0 = chainedBuilder.createBuilder(ELYTRON_3_0_0, ELYTRON_2_0_0);
-        builderCurrentTo2_0_0.discardChildResource(PathElement.pathElement(ElytronDescriptionConstants.PERMISSION_SET));
-        builderCurrentTo2_0_0
+        // 3.0.0 (WildFly 13) to 2.0.0 (WildFly 12)
+        from3(chainedBuilder);
+        // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
+        from2(chainedBuilder);
+
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_2_0_0, ELYTRON_1_2_0 });
+
+    }
+
+    private static void from3(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_3_0_0, ELYTRON_2_0_0);
+        builder.discardChildResource(PathElement.pathElement(ElytronDescriptionConstants.PERMISSION_SET));
+        builder
                 .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SIMPLE_PERMISSION_MAPPER))
                 .getAttributeBuilder()
                 .setValueConverter(MAPPING_PERMISSION_SET_CONVERTER, ElytronDescriptionConstants.PERMISSION_MAPPINGS)
                 .end();
-        builderCurrentTo2_0_0
+        builder
                 .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CONSTANT_PERMISSION_MAPPER))
                 .getAttributeBuilder()
                 .addRename(ElytronDescriptionConstants.PERMISSION_SETS, ElytronDescriptionConstants.PERMISSIONS)
                 .setValueConverter(CONSTANT_PERMISSION_SET_CONVERTER, ElytronDescriptionConstants.PERMISSION_SETS)
                 .end();
+    }
 
-        // 2.0.0 to 1.2.0, aka EAP 7.1.0
-        chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_2_0_0, ELYTRON_1_2_0 });
+    private static void from2(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_2_0_0, ELYTRON_1_2_0);
 
+        // Discard new "fail-cache" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY))
+            .getAttributeBuilder()
+            .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(0)), KerberosSecurityFactoryDefinition.FAIL_CACHE)
+            .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
     }
 
     private static final AttributeConverter MAPPING_PERMISSION_SET_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
