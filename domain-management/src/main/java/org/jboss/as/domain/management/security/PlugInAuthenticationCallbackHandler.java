@@ -63,6 +63,7 @@ import org.jboss.as.domain.management.plugin.ValidatePasswordCredential;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
+import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
@@ -76,7 +77,6 @@ import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.DigestPasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.wildfly.security.util.ByteIterator;
 
 
 /**
@@ -240,7 +240,7 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         final PasswordSpec passwordSpec;
                         if (credential instanceof DigestCredential && (algorithm == null || ALGORITHM_DIGEST_MD5.equals(algorithm))) {
                             passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
-                            byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                            byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
                             passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
                         } else if (credential instanceof PasswordCredential) {
                             if (algorithm == null || ALGORITHM_CLEAR.equals(algorithm)) {
@@ -413,7 +413,7 @@ public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService i
                         }
                     }
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
-                    byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                    byte[] hashed = ByteIterator.ofBytes(((DigestCredential) credential).getHash().getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
                     passwordSpec = new DigestPasswordSpec(userName, realmName, hashed);
                 } else if (credential instanceof PasswordCredential) {
                     if (algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) {

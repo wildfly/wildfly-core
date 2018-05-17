@@ -49,7 +49,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.wildfly.security.util.ByteIterator;
+import org.wildfly.common.iteration.ByteIterator;
 
 /**
  * A resource definition to represent a currently established SSL session.
@@ -198,7 +198,7 @@ class SSLSessionDefinition extends SimpleResourceDefinition {
         for (int i = pa.size() - 1; i > 0; i--) {
             PathElement pe = pa.getElement(i);
             if (ElytronDescriptionConstants.SSL_SESSION.equals(pe.getKey())) {
-                return ByteIterator.ofBytes(pe.getValue().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                return ByteIterator.ofBytes(pe.getValue().getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
             }
         }
 

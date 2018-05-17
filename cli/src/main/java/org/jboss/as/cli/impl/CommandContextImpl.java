@@ -196,6 +196,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.stdio.StdioContext;
+import org.wildfly.common.iteration.CodePointIterator;
 import org.wildfly.core.cli.command.BatchCompliantCommand;
 import org.wildfly.core.cli.command.DMRCommand;
 import org.wildfly.security.OneTimeSecurityFactory;
@@ -213,7 +214,6 @@ import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
-import org.wildfly.security.util.CodePointIterator;
 import org.xnio.http.RedirectException;
 
 /**

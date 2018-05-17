@@ -33,7 +33,7 @@ import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
-import org.wildfly.security.util.ByteIterator;
+import org.wildfly.common.iteration.ByteIterator;
 
 /**
  * A {@link Resource} to represent a server-ssl-context/client-ssl-context, the majority is actually model
@@ -77,7 +77,7 @@ class SSLContextResource extends DelegatingResource {
     public boolean hasChild(PathElement element) {
         SSLContext sslContext;
         if (ElytronDescriptionConstants.SSL_SESSION.equals(element.getKey()) && (sslContext = getSSLContext(sslContextServiceController)) != null) {
-            byte[] sessionId = ByteIterator.ofBytes(element.getValue().getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+            byte[] sessionId = ByteIterator.ofBytes(element.getValue().getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
             SSLSessionContext sslSessionContext = server ? sslContext.getServerSessionContext() : sslContext.getClientSessionContext();
             return sslSessionContext.getSession(sessionId) != null;
         }

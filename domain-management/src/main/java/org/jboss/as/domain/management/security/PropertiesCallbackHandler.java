@@ -61,6 +61,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.Assert;
+import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.CredentialCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
@@ -80,7 +81,6 @@ import org.wildfly.security.password.spec.DigestPasswordSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.wildfly.security.util.ByteIterator;
 
 /**
  * A CallbackHandler obtaining the users and their passwords from a properties file.
@@ -245,7 +245,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                     if ((algorithmName == null || ALGORITHM_CLEAR.equals(algorithmName)) && plainText) {
                         password = ClearPassword.createRaw(ALGORITHM_CLEAR, ((String) users.get(userName)).toCharArray());
                     } else if ((algorithmName == null || ALGORITHM_DIGEST_MD5.equals(algorithmName)) && plainText == false) {
-                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(userName)).getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        byte[] hashed = ByteIterator.ofBytes(((String) users.get(userName)).getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
                         password = DigestPassword.createRaw(ALGORITHM_DIGEST_MD5, userName, realm, hashed);
                     } else {
                         continue;
@@ -395,7 +395,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                         AlgorithmParameterSpec algorithmParameterSpec = new DigestPasswordAlgorithmSpec(principal.getName(), realm);
                         passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), algorithmParameterSpec);
                     } else {
-                        byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                        byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
                         passwordSpec = new DigestPasswordSpec(principal.getName(), realm, hashed);
                     }
                 }
@@ -428,7 +428,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
                 } else {
                     passwordFactory = getPasswordFactory(ALGORITHM_DIGEST_MD5);
 
-                    byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).hexDecode().drain();
+                    byte[] hashed = ByteIterator.ofBytes(password.getBytes(StandardCharsets.UTF_8)).asUtf8String().hexDecode().drain();
                     passwordSpec = new DigestPasswordSpec(principal.getName(), realm, hashed);
                 }
                 try {
