@@ -16,6 +16,9 @@
     <security-realms>
         <identity-realm name="identity" identity="identity" />
     </security-realms>
+    <credential-security-factories>
+        <kerberos-security-factory name="test" principal="aaa" path="aaa.keytab" fail-cache="0" />
+    </credential-security-factories>
     <mappers>
         <simple-permission-mapper name="SimplePermissionMapperLegacy" mapping-mode="and">
             <permission-mapping match-all="true">

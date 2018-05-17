@@ -109,7 +109,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         PathAddress subsystemAddress = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(AuthenticationClientDefinitions.FORWARDING_MODE)
+                        new FailedOperationTransformationConfig.NewAttributesConfig(KerberosSecurityFactoryDefinition.FAIL_CACHE)
                 )
         );
         /*ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
