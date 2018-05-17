@@ -53,6 +53,7 @@ public class ElytronExtension implements Extension {
     static final String NAMESPACE_1_2 = "urn:wildfly:elytron:1.2";
     static final String NAMESPACE_2_0 = "urn:wildfly:elytron:2.0";
     static final String NAMESPACE_3_0 = "urn:wildfly:elytron:3.0";
+    static final String NAMESPACE_4_0 = "urn:wildfly:elytron:4.0";
 
     /**
      * The name of our subsystem within the model.
@@ -67,8 +68,9 @@ public class ElytronExtension implements Extension {
     static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
     static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
     static final ModelVersion ELYTRON_3_0_0 = ModelVersion.create(3);
+    static final ModelVersion ELYTRON_4_0_0 = ModelVersion.create(4);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_3_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_4_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -103,6 +105,7 @@ public class ElytronExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_1_2, () -> new ElytronSubsystemParser1_2());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_2_0, () -> new ElytronSubsystemParser2_0());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_3_0, () -> new ElytronSubsystemParser3_0());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_4_0, () -> new ElytronSubsystemParser4_0());
     }
 
     @Override
@@ -115,7 +118,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser3_0());
+        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser4_0());
     }
 
     @SuppressWarnings("unchecked")

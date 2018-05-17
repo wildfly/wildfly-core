@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -50,12 +51,19 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 4.0.0 (WildFly 14) to 3.0.0 (WildFly 13)
+        from4(chainedBuilder);
         // 3.0.0 (WildFly 13) to 2.0.0 (WildFly 12)
         from3(chainedBuilder);
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+
+    }
+
+    private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_4_0_0, ELYTRON_3_0_0);
 
     }
 

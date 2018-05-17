@@ -43,7 +43,7 @@ public class ElytronSubsystem12TestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("elytron-subsystem-1.2.xml");
+        return readResource("legacy-elytron-subsystem-1.2.xml");
     }
 
     @Override

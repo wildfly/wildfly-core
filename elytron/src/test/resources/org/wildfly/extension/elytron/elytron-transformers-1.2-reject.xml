@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:3.0">
+<subsystem xmlns="urn:wildfly:elytron:4.0">
     <credential-security-factories>
         <kerberos-security-factory name="test" principal="aaa" path="aaa.keytab" fail-cache="5" />
     </credential-security-factories>
