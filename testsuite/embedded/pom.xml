@@ -30,7 +30,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>wildfly-core-testsuite-embedded</artifactId>
-    <description>WildFly Core Test Suite: Embedded Integration Tests</description>
+    <name>WildFly Core Test Suite: Embedded Integration Tests</name>
 
     <properties>
         <jboss.test.start.timeout>20</jboss.test.start.timeout>
