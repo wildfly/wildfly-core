@@ -63,6 +63,7 @@
                 <exclude>**/.ipr</exclude>
                 <exclude>**/.iws</exclude>
                 <exclude>**/.idea</exclude>
+                <exclude>**/.idea/**</exclude>
                 <exclude>nbactions.xml</exclude>
                 <exclude>nb-configuration.xml</exclude>
                 <exclude>catalog.xml</exclude>
