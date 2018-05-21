@@ -148,11 +148,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- added here as it is dep of embedded and needs to be included in shaded jar-->
-        <dependency>
-            <groupId>org.jboss.msc</groupId>
-            <artifactId>jboss-msc</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron</artifactId>
