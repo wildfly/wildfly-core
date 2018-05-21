@@ -325,8 +325,13 @@ public interface Configuration {
             final String[] systemPackages = this.systemPackages.toArray(new String[0]);
             final ModuleLoader moduleLoader;
             if (this.moduleLoader == null) {
-                final String modulePath = SecurityActions.getPropertyPrivileged(SYSPROP_KEY_MODULE_PATH,
-                        jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString());
+                final String modulePath;
+                if (this.modulePath == null) {
+                    modulePath = SecurityActions.getPropertyPrivileged(SYSPROP_KEY_MODULE_PATH,
+                            jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString());
+                } else {
+                    modulePath = this.modulePath;
+                }
                 moduleLoader = setupModuleLoader(modulePath, systemPackages);
                 MODULE_LOADER_CONFIGURED.set(true);
             } else {
