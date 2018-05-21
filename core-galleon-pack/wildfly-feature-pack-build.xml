@@ -43,11 +43,6 @@
             <package name="misc.standalone"/>
             <package name="org.jboss.as.standalone"/>
             <package name="org.jboss.as.domain-management"/>
-            <!--
-             This one is here to avoid
-             ERROR [org.jboss.as.domain.http.api.undertow] (MSC service thread 1-4) WFLYDMHTTP0004: Unable to load error context for slot main, disabling error context.
-              -->
-            <package name="org.jboss.as.domain-http-error-context"/>
             <!-- is not required but useful even if elytron subsystem is not installed -->
             <package name="org.wildfly.security.elytron"/>
             <!-- cleanup runtime dirs -->
@@ -71,7 +66,6 @@
             <package name="product.conf" optional="true"/>
             <package name="misc.domain"/>
             <package name="org.jboss.as.domain-management"/>
-            <package name="org.jboss.as.domain-http-error-context"/>
             <!-- is not required but useful even if elytron subsystem is not installed -->
             <package name="org.wildfly.security.elytron"/>
             <!-- cleanup runtime dirs -->
