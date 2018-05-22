@@ -62,6 +62,7 @@
                             <install-dir>${project.build.directory}/${project.build.finalName}</install-dir>
                             <plugin-options>
                                 <jboss-maven-dist/>
+                                <jboss-fork-embedded/>
                             </plugin-options>
                             <feature-packs>
                                 <feature-pack>
