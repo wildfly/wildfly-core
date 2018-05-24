@@ -67,6 +67,7 @@ import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A CallbackHandler for users within an LDAP directory.
@@ -132,6 +133,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
     @Override
     public Function<Principal, Principal> getPrincipalMapper() {
         return p -> {
+            final ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(UserLdapCallbackHandler.class);
             LdapConnectionHandler ldapConnectionHandler = createLdapConnectionHandler();
             try {
                 try {
@@ -140,10 +142,12 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                     return p instanceof RealmUser ? new MappedPrincipal(((RealmUser) p).getRealm(), searchResult.getResult().getSimpleName(), p.getName())
                             : new MappedPrincipal(searchResult.getResult().getSimpleName(), p.getName());
                 } catch (IllegalStateException | IOException | NamingException e) {
+                    SECURITY_LOGGER.trace("Unable to map principal.", e);
                     return p;
                 }
             } finally {
                 safeClose(ldapConnectionHandler);
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);
             }
         };
     }
@@ -282,6 +286,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 return false;
             }
         } else {
+            final ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(UserLdapCallbackHandler.class);
             try {
                 LdapConnectionHandler verificationHandler = ldapConnectionHandler;
                 URI referralUri = ldapEntry.getReferralUri();
@@ -309,6 +314,8 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
                 SECURITY_LOGGER.tracef("Password verification failed for user (using connection attempt) '%s'",
                         username);
                 return false;
+            } finally {
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);
             }
         }
     }
