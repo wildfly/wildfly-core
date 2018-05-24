@@ -65,8 +65,8 @@ public class ElytronExtension implements Extension {
     public static final AttachmentKey<AuthenticationContext> AUTHENTICATION_CONTEXT_KEY = AttachmentKey.create(AuthenticationContext.class);
 
     static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
-    private static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
-    private static final ModelVersion ELYTRON_3_0_0 = ModelVersion.create(3);
+    static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
+    static final ModelVersion ELYTRON_3_0_0 = ModelVersion.create(3);
 
     private static final ModelVersion ELYTRON_CURRENT = ELYTRON_3_0_0;
 
