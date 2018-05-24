@@ -21,6 +21,7 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import org.aesh.readline.util.Parser;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -121,6 +122,26 @@ public class ColorOutputTestCase {
             cli.pushLineAndWaitForResults("finally");
             cli.pushLineAndWaitForResults("end-try");
         }
+    }
+
+    /**
+     * This is regression test for WFCORE-3849
+     * @throws Exception
+     */
+    @Test
+    public void longCommand() throws Exception {
+
+        final int terminalWidth = 80;
+
+        cli.pushLineAndWaitForResults("security enable-ssl-management --key-store-path=target/server.keystore.jks --key-store-password=secret --new-key-store-name=nks --new-key-manager-name=nkm --new-ssl-context-name=nsslctx");
+
+        String printableChars = Parser.stripAwayAnsiCodes(cli.getOutput());
+        int lineLength = printableChars.indexOf('\r') - 1;
+
+        // Issue in WFCORE-3849 was that carriage return character was printed on wrong position.
+        // This assert checks that the position is correct.
+        Assert.assertEquals(0, lineLength % terminalWidth);
+
     }
 
 }

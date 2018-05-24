@@ -947,7 +947,11 @@ public class ReadlineConsole {
     }
 
     public void setPrompt(String prompt) {
-        this.prompt = new Prompt(prompt);
+        if (prompt.contains("\u001B[")) {
+            this.prompt = new Prompt(Parser.stripAwayAnsiCodes(prompt), prompt);
+        } else {
+            this.prompt = new Prompt(prompt);
+        }
     }
 
     public void setPrompt(Prompt prompt) {
