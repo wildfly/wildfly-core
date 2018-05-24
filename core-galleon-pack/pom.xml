@@ -596,6 +596,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
+                            <fork-embedded>true</fork-embedded>
                             <output-dir>${basedir}/target/resources/features</output-dir>
                             <standalone-extensions>
                                 <extension>org.jboss.as.deployment-scanner</extension>

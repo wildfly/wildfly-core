@@ -75,6 +75,9 @@
                         <phase>generate-test-resources</phase>
                         <configuration>
                             <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                            <plugin-options>
+                                <jboss-fork-embedded/>
+                            </plugin-options>
                             <feature-packs>
                                 <feature-pack>
                                     <groupId>org.wildfly.core</groupId>
