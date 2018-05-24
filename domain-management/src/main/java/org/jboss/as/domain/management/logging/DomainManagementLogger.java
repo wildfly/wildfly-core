@@ -1255,6 +1255,17 @@ public interface DomainManagementLogger extends BasicLogger {
 //    StartException unableToConfigureManagementSecurityDomain(@Cause Exception ex);
 
     /**
+     * StartException to indicate that some legacy mechanisms are not supported by security realm,
+     *
+     * @param mechanismNames - the names of the unsopported mechanisms
+     * @param realmName - the name of security realm
+     * @return an {@link StartException} for the failure.
+     */
+    @Message(id = 142, value = "Following mechanisms configured on the server (%s) are not supported by the realm '%s'.")
+    StartException legacyMechanismsAreNotSupported(String mechanismNames, String realmName);
+
+
+    /**
      * Information message saying the username and password must be different.
      *
      * @return an {@link String} for the error.
