@@ -1,4 +1,9 @@
 <subsystem xmlns="urn:wildfly:elytron:4.0">
+    <audit-logging>
+        <!-- flushed was added in 4.0 - should be rejected when different from synchronized -->
+        <file-audit-log name="auditTransformable" path="audit.log" synchronized="false" autoflush="false"/>
+        <file-audit-log name="auditUntransformable" path="audit.log" synchronized="false" autoflush="true"/>
+    </audit-logging>
     <credential-security-factories>
         <kerberos-security-factory name="test" principal="aaa" path="aaa.keytab" fail-cache="5" />
     </credential-security-factories>

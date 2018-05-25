@@ -8,6 +8,11 @@
             <credential-reference clear-text="supersecret!"/>
         </authentication-configuration>
     </authentication-client>
+    <audit-logging>
+        <!-- flushed was added in 4.0 - should be discarded if identical with synchronized or undefined -->
+        <file-audit-log name="audit1" path="audit.log" relative-to="jboss.home.dir" synchronized="false" autoflush="false" />
+        <file-audit-log name="audit2" path="audit.log" relative-to="jboss.home.dir" synchronized="false" />
+    </audit-logging>
     <security-domains>
         <security-domain name="TestDomain" default-realm="identity">
             <realm name="identity" />
@@ -27,6 +32,7 @@
         </simple-permission-mapper>
         <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
             <permission-mapping match-all="true">
+                <!-- permission-sets was added in 3.0 - should be inlined -->
                 <permission-set name="my-permission" />
             </permission-mapping>
         </simple-permission-mapper>
