@@ -16,4 +16,9 @@ $PROG_ARGS = Get-Java-Arguments -entryModule "org.jboss.as.cli" -serverOpts $SER
 
 & $JAVA $IBM_TLS_OPT $PROG_ARGS
 
+# Report errorlevel
+if ( "$?" -eq "false" ) {
+    Write-Host "$LASTEXITCODE"
+}
+
 Env-Clean-Up
