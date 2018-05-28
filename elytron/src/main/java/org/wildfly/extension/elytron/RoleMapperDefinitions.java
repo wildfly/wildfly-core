@@ -22,8 +22,12 @@ import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAP
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BinaryOperator;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -37,6 +41,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -52,6 +57,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.security.authz.MappedRoleMapper;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.authz.Roles;
 
@@ -94,6 +100,24 @@ class RoleMapperDefinitions {
         .setRestartAllServices()
         .build();
 
+    static final SimpleMapAttributeDefinition ROLE_MAPPING_MAP = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAP, ModelType.LIST, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition KEEP_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_MAPPED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition KEEP_NON_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_NON_MAPPED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
     static final StringListAttributeDefinition ROLES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLES)
             .setAllowExpression(true)
             .setMinSize(1)
@@ -106,6 +130,48 @@ class RoleMapperDefinitions {
     private static final AggregateComponentDefinition<RoleMapper> AGGREGATE_ROLE_MAPPER = AggregateComponentDefinition.create(RoleMapper.class,
             ElytronDescriptionConstants.AGGREGATE_ROLE_MAPPER, ElytronDescriptionConstants.ROLE_MAPPERS, ROLE_MAPPER_RUNTIME_CAPABILITY,
             (RoleMapper[] r) -> RoleMapper.aggregate(r));
+
+    static ResourceDefinition getMappedRoleMapperDefinition() {
+        AbstractAddStepHandler add = new RoleMapperAddHandler(ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED) {
+
+            @Override
+            protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+                ModelNode roleMappingMapNode = ROLE_MAPPING_MAP.resolveModelAttribute(context, model);
+                boolean keepMapped = KEEP_MAPPED.resolveModelAttribute(context, model).asBoolean();
+                boolean keepNonMapped = KEEP_NON_MAPPED.resolveModelAttribute(context, model).asBoolean();
+                Set<String> keys = roleMappingMapNode.keys();
+                final Map<String, Set<String>> roleMappingMap = new LinkedHashMap<>(keys.size());
+                for (String s : keys) {
+                    List<ModelNode> currentList = roleMappingMapNode.require(s).asList();
+                    Set<String> set = new LinkedHashSet<>();
+                    for (ModelNode m : currentList) {
+                        set.add(m.asString());
+                    }
+                    roleMappingMap.put(s, set);
+                }
+
+                final MappedRoleMapper roleMapper = MappedRoleMapper.builder()
+                        .setRoleMap(roleMappingMap)
+                        .build();
+
+                final Roles keyRoles = Roles.fromSet(roleMappingMap.keySet());
+
+                if (keepMapped && keepNonMapped) {
+                    return () -> roleMapper.or(RoleMapper.IDENTITY_ROLE_MAPPER);
+                }
+                if (keepMapped) {
+                    return () -> roleMapper.or(delegate -> delegate.and(keyRoles));
+                }
+                if (keepNonMapped) {
+                    return () -> roleMapper.or(delegate -> delegate.minus(keyRoles));
+                }
+                return () -> roleMapper;
+
+            }
+        };
+
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, add, ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED);
+    }
 
     static AggregateComponentDefinition<RoleMapper> getAggregateRoleMapperDefinition() {
         return AGGREGATE_ROLE_MAPPER;

@@ -14,4 +14,9 @@
             </principal-query>
         </jdbc-realm>
     </security-realms>
+    <mappers>
+        <mapped-role-mapper name="DisallowedMappedRoleMapper">
+            <role-mapping from="a" to="b c"/>
+        </mapped-role-mapper>
+    </mappers>
 </subsystem>

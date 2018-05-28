@@ -218,6 +218,8 @@ interface ElytronDescriptionConstants {
     String JOINER = "joiner";
     String JWT = "jwt";
 
+    String KEEP_MAPPED = "keep-mapped";
+    String KEEP_NON_MAPPED = "keep-non-mapped";
     String KERBEROS_SECURITY_FACTORY = "kerberos-security-factory";
     String KEY = "key";
     String KEY_ATTRIBUTE = "key-attribute";
@@ -248,6 +250,7 @@ interface ElytronDescriptionConstants {
     String LOGICAL_ROLE_MAPPER = "logical-role-mapper";
 
     String MAPPED_REGEX_REALM_MAPPER = "mapped-regex-realm-mapper";
+    String MAPPED_ROLE_MAPPER = "mapped-role-mapper";
     String MAPPERS = "mappers";
     String MAPPING_MODE = "mapping-mode";
     String MATCH = "match";
@@ -393,8 +396,10 @@ interface ElytronDescriptionConstants {
     String ROLE_DECODER = "role-decoder";
     String ROLE_RECURSION = "role-recursion";
     String ROLE_RECURSION_NAME = "role-recursion-name";
+    String ROLE_MAP = "role-map";
     String ROLE_MAPPER = "role-mapper";
     String ROLE_MAPPERS = "role-mappers";
+    String ROLE_MAPPING = "role-mapping";
     String ROLES = "roles";
     String ROTATE_SIZE = "rotate-size";
     String ROTATE_ON_BOOT = "rotate-on-boot";
