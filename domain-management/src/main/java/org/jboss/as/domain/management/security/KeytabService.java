@@ -54,6 +54,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A service used for loading Kerberos keytabs.
@@ -206,8 +207,13 @@ public class KeytabService implements Service<KeytabService> {
         final Subject theSubject = new Subject();
 
         final LoginContext lc = new LoginContext("KDC", theSubject, NO_CALLBACK_HANDLER, isClient ? clientConfiguration : serverConfiguration);
-        lc.login();
 
+        final ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(KeytabService.class);
+        try {
+            lc.login();
+        } finally {
+            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);
+        }
 
         return new SubjectIdentity() {
 

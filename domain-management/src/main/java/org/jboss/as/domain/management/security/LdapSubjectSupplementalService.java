@@ -56,6 +56,7 @@ import org.wildfly.security.authz.AuthorizationIdentity;
 import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A {@link SubjectSupplemental} for loading a users groups from LDAP.
@@ -156,20 +157,25 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
 
         @Override
         public void supplementSubject(Subject subject) throws IOException {
-            Set<RealmUser> users = subject.getPrincipals(RealmUser.class);
-            Set<Principal> principals = subject.getPrincipals();
+            final ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(LdapSubjectSupplemental.class);
+            try {
+                Set<RealmUser> users = subject.getPrincipals(RealmUser.class);
+                Set<Principal> principals = subject.getPrincipals();
 
-            Set<RealmGroup> set = new HashSet<>();
-            Set<String> result = new HashSet<>();
-            for (RealmUser user : users) {
-                String name = user.getName();
-                result.add(name);
+                Set<RealmGroup> set = new HashSet<>();
+                Set<String> result = new HashSet<>();
+                for (RealmUser user : users) {
+                    String name = user.getName();
+                    result.add(name);
+                }
+                for (String s : ldapGroupSearcher.loadGroups(result)) {
+                    RealmGroup realmGroup = new RealmGroup(realmName, s);
+                    set.add(realmGroup);
+                }
+                principals.addAll(set);
+            } finally {
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);
             }
-            for (String s : ldapGroupSearcher.loadGroups(result)) {
-                RealmGroup realmGroup = new RealmGroup(realmName, s);
-                set.add(realmGroup);
-            }
-            principals.addAll(set);
 
         }
 
@@ -346,10 +352,13 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
 
             private synchronized Set<String> getGroups() throws RealmUnavailableException {
                 if (groups == null) {
+                    final ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(LdapSubjectSupplemental.class);
                     try {
                         groups = ldapGroupSearcher.loadGroups(Collections.singleton(principal.getName()));
                     } catch (IOException e) {
                         throw new RealmUnavailableException(e);
+                    } finally {
+                        WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(old);
                     }
                 }
 
