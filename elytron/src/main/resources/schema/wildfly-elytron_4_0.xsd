@@ -4056,6 +4056,7 @@
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
             <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
+            <xs:element name="server-ssl-sni-contexts" type="serverSSLSNIContextsType" minOccurs="0" />
         </xs:all>
     </xs:complexType>
 
@@ -4251,6 +4252,64 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="serverSSLSNIContextsType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for Server SNI SSLContext definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="server-ssl-sni-context" type="serverSSLSNIContextType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="serverSSLSNIContextType">
+        <xs:annotation>
+            <xs:documentation>
+                Definitions of a single server side SNI SSLContext.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="sni-mapping" type="serverSSLSNIMappingType" minOccurs="0" maxOccurs="unbounded"  />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this Server side SNI SSLContext.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="default-ssl-context" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The SSLContext to use if SNI is not in use
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="serverSSLSNIMappingType">
+        <xs:annotation>
+            <xs:documentation>
+                Definitions of a single server side SNI SSLContext.
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The host name that this element matches. If it begins with a '*' it is considered a wildcard match.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ssl-context" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The SSLContext to use if the name matches.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="serverSSLContextType">
         <xs:annotation>
             <xs:documentation>

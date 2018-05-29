@@ -458,6 +458,8 @@ interface ElytronDescriptionConstants {
     String SERVER_ADDRESS = "server-address";
     String SERVER_SSL_CONTEXT = "server-ssl-context";
     String SERVER_SSL_CONTEXTS = "server-ssl-contexts";
+    String SERVER_SSL_SNI_CONTEXT = "server-ssl-sni-context";
+    String SERVER_SSL_SNI_CONTEXTS = "server-ssl-sni-contexts";
     String SESSION_TIMEOUT = "session-timeout";
     String SET_PASSWORD = "set-password";
     String SET_SECRET = "set-secret";
@@ -479,6 +481,7 @@ interface ElytronDescriptionConstants {
     String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     String SIZE = "size";
     String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
+    String SNI_MAPPING = "sni-mapping";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_SESSION = "ssl-session";
@@ -532,4 +535,5 @@ interface ElytronDescriptionConstants {
     String X509_CREDENTIAL_MAPPER = "x509-credential-mapper";
     String XOR = "xor";
 
+    String DEFAULT_SSL_CONTEXT = "default-ssl-context";
 }
