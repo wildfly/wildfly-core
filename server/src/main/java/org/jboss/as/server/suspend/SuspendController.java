@@ -103,6 +103,8 @@ public class SuspendController implements Service<SuspendController> {
                         timeout();
                     }
                 }, timeoutMillis);
+            } else if (timeoutMillis == 0) {
+                timeout();
             }
         }
     }
