@@ -1118,7 +1118,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * @return the CanonicalFile form for the given name.
      */
     private File getFileFromProperty(final String name, final Properties props) {
-        return getFileFromPath(props.getProperty(name));
+        String value = props.getProperty(name);
+        if (value != null) {
+            value = value.trim();
+        }
+        return getFileFromPath(value);
     }
 
     /**
