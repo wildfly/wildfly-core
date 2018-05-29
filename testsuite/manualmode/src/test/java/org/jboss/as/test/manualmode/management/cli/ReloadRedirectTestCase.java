@@ -55,6 +55,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 @ServerControl(manual = true)
 public class ReloadRedirectTestCase {
 
+    private static final String IBM_OVERRIDE_DEFAULT_TLS = "-Dcom.ibm.jsse2.overrideDefaultTLS=true";
     public static final int MANAGEMENT_NATIVE_PORT = 9999;
 
     @Inject
@@ -239,6 +240,7 @@ public class ReloadRedirectTestCase {
     @Test
     public void testReloadwithRedirect() throws Exception {
         CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
                 .addCliArgument("--connect")
                 .addCliArgument("--controller="
                         + TestSuiteEnvironment.getServerAddress() + ":"
@@ -257,6 +259,7 @@ public class ReloadRedirectTestCase {
     @Test
     public void testRedirectWithSecurityCommands() throws Throwable {
         CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
                 .addCliArgument("--connect")
                 .addCliArgument("--no-color-output")
                 .addCliArgument("--controller="

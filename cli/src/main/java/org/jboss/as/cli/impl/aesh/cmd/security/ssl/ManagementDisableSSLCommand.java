@@ -22,6 +22,7 @@ import org.aesh.command.CommandDefinition;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandResult;
 import org.aesh.command.option.Option;
+import org.jboss.as.cli.AwaiterModelControllerClient;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
@@ -98,17 +99,21 @@ public class ManagementDisableSSLCommand implements Command<CLICommandInvocation
 
     private void reload(CommandContext ctx) throws CommandException, OperationFormatException {
         DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        AwaiterModelControllerClient aclient = (AwaiterModelControllerClient) ctx.getModelControllerClient();
         try {
             String mode = Util.getRunningMode(ctx);
             builder.setOperationName(Util.RELOAD);
             builder.addProperty(Util.START_MODE, Util.ADMIN_ONLY.equals(mode) ? Util.ADMIN_ONLY : Util.NORMAL);
             ModelNode response;
-            response = ctx.getModelControllerClient().execute(builder.buildRequest());
+            response = aclient.execute(builder.buildRequest(), true);
             if (!Util.isSuccess(response)) {
                 throw new CommandException(Util.getFailureDescription(response));
             }
         } catch (IOException ex) {
-            throw new CommandException(ex);
+            // if it's not connected it's assumed the reload is in process
+            if (aclient.isConnected()) {
+                throw new CommandException(ex);
+            }
         }
     }
 
