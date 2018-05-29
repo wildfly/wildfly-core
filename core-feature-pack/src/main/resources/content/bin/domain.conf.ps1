@@ -25,33 +25,34 @@ if (-Not(test-path env:JBOSS_MODULES_SYSTEM_PKGS )) {
   $JBOSS_MODULES_SYSTEM_PKGS="org.jboss.byteman"
 }
 
+# Set default values if none have been set by the user
+if (-Not $JAVA_OPTS) {
+    $PRESERVE_JAVA_OPTS=true
 
-# Uncomment the following line to disable manipulation of JAVA_OPTS (JVM parameters)
-# $PRESERVE_JAVA_OPTS=true
+    $JAVA_OPTS = @()
 
-$JAVA_OPTS = @()
+    # JVM memory allocation pool parameters - modify as appropriate.
+    $JAVA_OPTS += '-Xms64M'
+    $JAVA_OPTS += '-Xmx512M'
+    $JAVA_OPTS += '-XX:MaxMetaspaceSize=256m'
 
-# JVM memory allocation pool parameters - modify as appropriate.
-$JAVA_OPTS += '-Xms64M'
-$JAVA_OPTS += '-Xmx512M'
-$JAVA_OPTS += '-XX:MaxMetaspaceSize=256m'
+    # Reduce the RMI GCs to once per hour for Sun JVMs.
+    # $JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
+    # $JAVA_OPTS += '-Dsun.rmi.dgc.server.gcInterval=3600000'
 
-# Reduce the RMI GCs to once per hour for Sun JVMs.
-# $JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'
-# $JAVA_OPTS += '-Dsun.rmi.dgc.server.gcInterval=3600000'
+    #prefer ipv4 stack
+    $JAVA_OPTS += '-Djava.net.preferIPv4Stack=true'
 
-#prefer ipv4 stack
-$JAVA_OPTS += '-Djava.net.preferIPv4Stack=true'
+    # Warn when resolving remote XML DTDs or schemas.
+    # $JAVA_OPTS += '-Dorg.jboss.resolver.warning=true'
 
-# Warn when resolving remote XML DTDs or schemas.
-# $JAVA_OPTS += '-Dorg.jboss.resolver.warning=true'
+    # Make Byteman classes visible in all module loaders
+    # This is necessary to inject Byteman rules into AS7 deployments
+    $JAVA_OPTS += "-Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS"
 
-# Make Byteman classes visible in all module loaders
-# This is necessary to inject Byteman rules into AS7 deployments
-$JAVA_OPTS += "-Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS"
-
-# Use JBoss Modules lockless mode
-# $JAVA_OPTS += '-Djboss.modules.lockless=true'
+    # Use JBoss Modules lockless mode
+    # $JAVA_OPTS += '-Djboss.modules.lockless=true'
+}
 
 # Uncomment this to run with a security manager enabled
 # $SECMGR=$true
