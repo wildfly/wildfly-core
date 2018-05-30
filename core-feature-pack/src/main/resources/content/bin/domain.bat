@@ -78,6 +78,43 @@ if "%OS%" == "Windows_NT" (
   set "PROGNAME=domain.bat"
 )
 
+setlocal EnableDelayedExpansion
+rem Add -server to the JVM options, if supported by JDK
+set JVM_OPTVERSION="-version"
+echo "%JAVA_OPTS%" | findstr /I \-d64 > nul
+if errorlevel == 0 (
+    set JVM_OPTVERSION="-d64 -version"
+    echo "%JAVA%" "%JVM_OPTVERSION%" 2>&1 | findstr /I /C:"Unrecognized option" > nul
+     if errorlevel == 0 (
+            set JVM_OPTVERSION="-version"
+      )
+) else (
+    echo "%JAVA_OPTS%" | findstr /I \-d32 > nul
+    if errorlevel == 0 (
+        set JVM_OPTVERSION="-d32 -version"
+        echo "%JAVA%" "%JVM_OPTVERSION%" 2>&1 | findstr /I /C:"Unrecognized option" > nul
+         if errorlevel == 0 (
+                set JVM_OPTVERSION="-version"
+          )
+    )
+)
+
+echo "%JAVA_OPTS%" | findstr /I \-server > nul
+if errorlevel == 1 (
+
+  echo "%JAVA%" "%JVM_OPTVERSION%" 2>&1 | findstr /I /C:"HotSpot" > nul
+  if errorlevel == 0 (
+    set JAVA_OPTS="-server %JAVA_OPTS%"
+  ) else (
+    echo "%JAVA%" "%JVM_OPTVERSION%" 2>&1 | findstr /I /C:"openJDK" > nul
+    if errorlevel == 0 (
+        set JAVA_OPTS="-server %JAVA_OPTS%"
+    )
+   )
+)
+
+setlocal DisableDelayedExpansion
+
 rem Setup JBoss specific properties
 set "JAVA_OPTS=-Dprogram.name=%PROGNAME% %JAVA_OPTS%"
 

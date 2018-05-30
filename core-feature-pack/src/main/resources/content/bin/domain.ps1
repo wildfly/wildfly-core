@@ -9,10 +9,14 @@ $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
 
+$JAVA_OPTS = Get-Java-Opts
+
 # Read an optional running configuration file
 $DOMAIN_CONF = $scripts +'\domain.conf.ps1'
 $DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
 . $DOMAIN_CONF
+
+Set-Java-HotSpot-Option $JAVA_OPTS
 
 Set-Global-Variables-Domain
 

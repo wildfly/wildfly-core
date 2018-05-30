@@ -167,6 +167,74 @@ Param(
   return $PROG_ARGS
 }
 
+# JBossws-cxf utilites require additional input args to be passed to the pgm
+Function Jbossws-Get-Java-Arguments {
+Param(
+   [Parameter(Mandatory=$true)]
+   [string]$scriptName,
+   [string]$entryModule,
+    [string]$javaOpts,
+   [string]$logFileProperties = "$JBOSS_CONFIG_DIR/logging.properties",
+   [string]$logFile = "$JBOSS_LOG_DIR/server.log",
+   [string[]]$serverOpts
+
+
+) #end param
+
+  $JAVA_OPTS = $javaOpts
+
+  $PROG_ARGS = @()
+  if ($scriptName) {
+    $PROG_ARGS +="-Dprogram.name=$scriptName"
+  }
+  if ([string]::IsNullOrWhitespace($JAVA_OPTS)) {
+    # null or empty string.  Do nothing
+  } else {
+  	$PROG_ARGS += $JAVA_OPTS
+  }
+  if ($logFile){
+  	$PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
+  }
+  if ($logFileProperties){
+  	$PROG_ARGS += "-Dlogging.configuration=file:$logFileProperties"
+  }
+  $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
+  $PROG_ARGS += "-Djboss.server.base.dir=$global:JBOSS_BASE_DIR"
+  $PROG_ARGS += "-Djboss.server.config.dir=$global:JBOSS_CONFIG_DIR"
+
+  if ($GC_LOG -eq $true){
+    if ($PROG_ARGS -notcontains "-verbose:gc"){
+        Rotate-GC-Logs
+		if (-not(Test-Path $JBOSS_LOG_DIR)) {
+			$dir = New-Item $JBOSS_LOG_DIR -type directory -ErrorAction SilentlyContinue
+		}
+        $PROG_ARGS += "-verbose:gc"
+        $PROG_ARGS += "-XX:+PrintGCDetails"
+        $PROG_ARGS += "-XX:+PrintGCDateStamps"
+        $PROG_ARGS += "-XX:+UseGCLogFileRotation"
+        $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
+        $PROG_ARGS += "-XX:GCLogFileSize=3M"
+        $PROG_ARGS += "-XX:-TraceClassUnloading"
+        $PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
+    }
+  }
+  $global:FINAL_JAVA_OPTS = $PROG_ARGS
+
+  $PROG_ARGS += "-jar"
+  $PROG_ARGS += "$JBOSS_HOME\jboss-modules.jar"
+  if ($MODULE_OPTS -ne $null){
+  	$PROG_ARGS += $MODULE_OPTS
+  }
+  $PROG_ARGS += "-mp"
+  $PROG_ARGS += "$JBOSS_MODULEPATH"
+  $PROG_ARGS += $entryModule
+
+  if ($serverOpts -ne $null){
+  	$PROG_ARGS += $serverOpts
+  }
+  return $PROG_ARGS
+}
+
 Function Process-Script-Parameters {
 Param(
    [Parameter(Mandatory=$false)]
@@ -258,6 +326,44 @@ Function Start-WildFly-Process {
 		}
 	}
 	Env-Clean-Up
+}
+
+# Check if can set option to use HotSpot VM
+Function Set-Java-HotSpot-Option ($javaOpts) {
+   if ( -Not ($javaOpts -match "[\s*]-server[\s*]") ) {
+
+      # Check user requested JDK 'data model'
+      $JVM_OPTVERSION='-version'
+      if ($JAVA_OPTS -match "[\s*]-d64[\s*]") {
+         $JVM_OPTVERSION='-d64 -version'
+      } elseif ($JAVA_OPTS -match "[\s*]-d32[\s*]") {
+         $JVM_OPTVERSION='-d32 -version'
+      }
+
+      # exec java cmd to get version
+      $lines = & $JAVA  $JVM_OPTVERSION  2>&1
+
+      foreach ($str in $lines) {
+         # Check if data model is supported by JDK
+         if ($str -match "^Error:") {
+            Write-Host $lines
+            break
+         } else {
+            # Identify HotSpot impl
+            if ($str -match 'HotSpot') {
+               $has_hotspot = 'true'
+            }elseif ($str -match 'OpenJDK') {
+               $has_openjdk = 'true'
+            }
+
+            if ( $has_hotspot -eq 'true' -or $has_openjdk -eq 'true') {
+               $javaOpts="-server $javaOpts"
+               break
+            }
+         }
+      }
+   }
+   return $javaOpts
 }
 
 Function Set-Global-Variables {

@@ -100,8 +100,12 @@ fi
 JVM_OPTVERSION="-version"
 JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`
 JVM_D32_OPTION=`echo $JAVA_OPTS | $GREP "\-d32"`
-test "x$JVM_D64_OPTION" != "x" && JVM_OPTVERSION="-d64 $JVM_OPTVERSION"
-test "x$JVM_D32_OPTION" != "x" && JVM_OPTVERSION="-d32 $JVM_OPTVERSION"
+
+if [ "x$JVM_D64_OPTION" != "x" ]; then
+    JVM_OPTVERSION="-d64 $JVM_OPTVERSION"
+ elif [ "x$JVM_D32_OPTION" != "x" ]; then
+    JVM_OPTVERSION="-d32 $JVM_OPTVERSION"
+fi
 
 # If -server not set in JAVA_OPTS, set it, if supported
 SERVER_SET=`echo $JAVA_OPTS | $GREP "\-server"`
@@ -109,7 +113,7 @@ if [ "x$SERVER_SET" = "x" ]; then
 
     # Check for SUN(tm) JVM w/ HotSpot support
     if [ "x$HAS_HOTSPOT" = "x" ]; then
-        HAS_HOTSPOT=`"$JAVA" $JVM_OPTVERSION -version 2>&1 | $GREP -i HotSpot`
+        HAS_HOTSPOT=`"$JAVA" $JVM_OPTVERSION 2>&1 | $GREP -i HotSpot`
     fi
 
     # Check for OpenJDK JVM w/server support
