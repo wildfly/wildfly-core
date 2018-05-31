@@ -25,7 +25,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
@@ -86,30 +85,6 @@ public class FilePermissionTestCase {
                 ctx.terminateSession();
                 cliOut.reset();
                 Files.delete(dir);
-            }
-        }
-    }
-
-    @Test
-    @Ignore("Un-ignore when WFCORE-3559 is fixed")
-    public void testFileDefaultPermissions() throws Exception {
-        // This is unix test only
-        if (!Util.isWindows()) {
-            CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                    TestSuiteEnvironment.getServerPort(), System.in, System.out);
-
-            String tmpFile = "tmpFile";
-            Path path = Paths.get(tmpFile);
-
-            try {
-                ctx.handle("echo \"aaa\" >> " + tmpFile);
-
-                Set<PosixFilePermission> set = Files.getPosixFilePermissions(path);
-                assertThat("The test file has unexpected permissions: " + PosixFilePermissions.toString(set),
-                        PosixFilePermissions.toString(set), CoreMatchers.is(CoreMatchers.equalTo("rw-rw-r--")));
-            } finally {
-                ctx.terminateSession();
-                Files.delete(path);
             }
         }
     }
