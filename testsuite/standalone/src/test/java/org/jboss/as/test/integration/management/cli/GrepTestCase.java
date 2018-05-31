@@ -151,6 +151,16 @@ public class GrepTestCase {
         testCommand("echo test\\$test | grep .*\\$", "test$test", true);
     }
 
+    @Test
+    public void testGrepCountMatches() throws Exception {
+        testCommand("echo foo | grep f --count", "1", true);
+    }
+
+    @Test
+    public void testGrepLineNumber() throws Exception {
+        testCommand("echo foo | grep f --line-number", "1: foo", true);
+    }
+
     private void testCommand(String cmd, String expectedOutput, boolean exactMatch) throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);

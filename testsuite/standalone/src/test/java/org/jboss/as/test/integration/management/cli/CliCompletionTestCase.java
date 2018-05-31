@@ -588,7 +588,7 @@ public class CliCompletionTestCase {
 
     @Test
     public void testGrepParametersCompletion() throws Exception {
-        Set<String> expectedParameters = new HashSet<>(Arrays.asList("--help", "--ignore-case"));
+        Set<String> expectedParameters = new HashSet<>(Arrays.asList("--only-matching", "--help", "--ignore-case", "--count", "--line-number"));
         String cmd = "grep --";
         List<String> candidates = new ArrayList<>();
         ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
