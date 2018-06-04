@@ -42,51 +42,51 @@ import org.jboss.logmanager.config.LogContextConfiguration;
  */
 class HandlerResourceDefinition extends SimpleResourceDefinition {
 
-    static final String NAME = "handler";
-    public static final PathElement PATH = PathElement.pathElement(NAME);
+    private static final String NAME = "handler";
+    private static final PathElement PATH = PathElement.pathElement(NAME);
 
-    static final SimpleAttributeDefinition CLASS_NAME = SimpleAttributeDefinitionBuilder.create("class-name", ModelType.STRING)
+    private static final SimpleAttributeDefinition CLASS_NAME = SimpleAttributeDefinitionBuilder.create("class-name", ModelType.STRING)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition ENCODING = SimpleAttributeDefinitionBuilder.create("encoding", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition ENCODING = SimpleAttributeDefinitionBuilder.create("encoding", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create("level", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create("level", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleListAttributeDefinition HANDLERS = SimpleListAttributeDefinition.Builder.of("handlers", HANDLER)
+    private static final SimpleListAttributeDefinition HANDLERS = SimpleListAttributeDefinition.Builder.of("handlers", HANDLER)
             .setRequired(false)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition FORMATTER = SimpleAttributeDefinitionBuilder.create("formatter", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition FORMATTER = SimpleAttributeDefinitionBuilder.create("formatter", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition FILTER = SimpleAttributeDefinitionBuilder.create("filter", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition FILTER = SimpleAttributeDefinitionBuilder.create("filter", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", ModelType.STRING, true)
+    private static final SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition ERROR_MANAGER = SimpleAttributeDefinitionBuilder.create("error-manager", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition ERROR_MANAGER = SimpleAttributeDefinitionBuilder.create("error-manager", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    public HandlerResourceDefinition() {
+    HandlerResourceDefinition() {
         super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver("deployment", NAME)).setRuntime());
     }
 

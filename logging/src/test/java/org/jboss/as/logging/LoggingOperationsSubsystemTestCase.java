@@ -1,40 +1,52 @@
 /*
-* JBoss, Home of Professional Open Source.
-* Copyright 2011, Red Hat Middleware LLC, and individual contributors
-* as indicated by the @author tags. See the copyright.txt file in the
-* distribution for a full listing of individual contributors.
-*
-* This is free software; you can redistribute it and/or modify it
-* under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of
-* the License, or (at your option) any later version.
-*
-* This software is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this software; if not, write to the Free
-* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2011, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.zip.CRC32;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
@@ -49,6 +61,7 @@ import org.junit.Test;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 // TODO (jrp) all these operations should be tested on loggers as well as root loggers
+@SuppressWarnings("SameParameterValue")
 public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
     private static final String PROFILE = "testProfile";
@@ -63,14 +76,12 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     };
 
-    private static File logDir;
+    private static Path logDir;
 
     @BeforeClass
-    public static void setupLoggingDir() {
+    public static void setupLoggingDir() throws Exception {
         logDir = LoggingTestEnvironment.get().getLogDir();
-        for (File file : logDir.listFiles()) {
-            file.delete();
-        }
+        clearDirectory(logDir);
     }
 
     @After
@@ -85,7 +96,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -142,7 +153,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final String fileHandlerName = "test-file-handler";
 
         // add new file logger so we can track logged messages
-        final File logFile = createLogFile();
+        final Path logFile = createLogFile();
         final ModelNode handlerAddress = createFileHandlerAddress(fileHandlerName).toModelNode();
         addFileHandler(kernelServices, null, fileHandlerName, org.jboss.logmanager.Level.TRACE, logFile, true);
         // Write legacy filters
@@ -254,8 +265,8 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final KernelServices kernelServices = boot();
         final String handlerName = "test-file-handler";
 
-        final File logFile = createLogFile();
-        final File profileLogFile = createLogFile("profile.log");
+        final Path logFile = createLogFile();
+        final Path profileLogFile = createLogFile("profile.log");
         final ModelNode handlerAddress = createFileHandlerAddress(handlerName).toModelNode();
         final ModelNode profileHandlerAddress = createFileHandlerAddress(PROFILE, handlerName).toModelNode();
 
@@ -289,15 +300,15 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         removeFileHandler(kernelServices, PROFILE, handlerName, true);
 
         // Read the files to a string
-        final String result = FileUtils.readFileToString(logFile);
-        final String profileResult = FileUtils.readFileToString(profileLogFile);
+        final List<String> result = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+        final List<String> profileResult = Files.readAllLines(profileLogFile, StandardCharsets.UTF_8);
 
         // Check generated log file
         assertTrue(result.contains(msg));
         assertTrue(profileResult.contains(msg));
 
         // The contents of the files should match
-        assertTrue(String.format("Contents don't match: %nResult:%n%s%nProfileResult%n%s", result, profileResult), result.equals(profileResult));
+        assertEquals(String.format("Contents don't match: %nResult:%n%s%nProfileResult%n%s", result, profileResult), result, profileResult);
     }
 
     @Test
@@ -324,7 +335,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final String fileHandlerName = "test-file-handler";
 
         // add new file logger so we can track logged messages
-        final File logFile = createLogFile();
+        final Path logFile = createLogFile();
         addFileHandler(kernelServices, loggingProfile, fileHandlerName, org.jboss.logmanager.Level.TRACE, logFile, true);
 
         final Level[] levels = {
@@ -335,7 +346,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
                 org.jboss.logmanager.Level.DEBUG,
                 org.jboss.logmanager.Level.TRACE
         };
-        final Map<Level, Integer> levelOrd = new HashMap<Level, Integer>();
+        final Map<Level, Integer> levelOrd = new HashMap<>();
         levelOrd.put(org.jboss.logmanager.Level.FATAL, 0);
         levelOrd.put(org.jboss.logmanager.Level.ERROR, 1);
         levelOrd.put(org.jboss.logmanager.Level.WARN, 2);
@@ -361,7 +372,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
         final boolean[][] logFound = new boolean[levelOrd.size()][levelOrd.size()];
 
-        final List<String> logLines = FileUtils.readLines(logFile);
+        final List<String> logLines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         for (String line : logLines) {
             if (!line.contains("RootLoggerTestCaseTST")) continue; // not our log
             final String[] words = line.split("\\s+");
@@ -388,7 +399,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final String fileHandlerName = "test-file-handler";
 
         // Add new file logger so we can test root logger change
-        final File logFile = createLogFile();
+        final Path logFile = createLogFile();
         addFileHandler(kernelServices, loggingProfile, fileHandlerName, org.jboss.logmanager.Level.INFO, logFile, false);
 
         // Read root logger
@@ -424,7 +435,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         removeFileHandler(kernelServices, loggingProfile, fileHandlerName, false);
 
         // check that root logger were changed - file logger was registered
-        String log = FileUtils.readFileToString(logFile);
+        String log = readFileToString(logFile);
         assertTrue(log.contains("Test123"));
     }
 
@@ -432,7 +443,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
-        File logFile = createLogFile();
+        Path logFile = createLogFile();
 
         // Add file handler
         addFileHandler(kernelServices, loggingProfile, fileHandlerName, org.jboss.logmanager.Level.INFO, logFile, true);
@@ -442,7 +453,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         ModelNode op = SubsystemOperations.createReadResourceOperation(rootLoggerAddress);
         ModelNode result = executeOperation(kernelServices, op);
         final ModelNode rootLoggerResource = SubsystemOperations.readResult(result);
-        validateResourceAttributes(rootLoggerResource, Logging.join(RootLoggerResourceDefinition.ATTRIBUTES, CommonAttributes.FILTER));
+        validateResourceAttributes(rootLoggerResource, Arrays.asList("filter", "filter-spec", "level", "handlers"));
 
 
         // Ensure the handler is listed
@@ -453,7 +464,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         doLog(loggingProfile, LEVELS, "Test123");
 
         // Remove handler from logger
-        op = SubsystemOperations.createOperation(RootLoggerResourceDefinition.ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME, rootLoggerAddress);
+        op = SubsystemOperations.createOperation("root-logger-unassign-handler", rootLoggerAddress);
         op.get(CommonAttributes.NAME.getName()).set(fileHandlerName);
         executeOperation(kernelServices, op);
 
@@ -467,19 +478,19 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         removeFileHandler(kernelServices, loggingProfile, fileHandlerName, false);
 
         // check generated log file
-        assertTrue(FileUtils.readFileToString(logFile).contains("Test123"));
+        assertTrue(readFileToString(logFile).contains("Test123"));
 
         // verify that the logger is stopped, no more logs are coming to the file
-        long checksum = FileUtils.checksumCRC32(logFile);
+        long checksum = checksumCRC32(logFile);
         doLog(loggingProfile, LEVELS, "Test123");
-        assertEquals(checksum, FileUtils.checksumCRC32(logFile));
+        assertEquals(checksum, checksumCRC32(logFile));
     }
 
     private void testDisableHandler(final String profileName, boolean legacy) throws Exception {
         final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
-        final File logFile = createLogFile();
+        final Path logFile = createLogFile();
 
         // Add file handler
         addFileHandler(kernelServices, profileName, fileHandlerName, org.jboss.logmanager.Level.INFO, logFile, true);
@@ -502,7 +513,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         // Disable the handler
         final ModelNode handlerAddress = createFileHandlerAddress(profileName, fileHandlerName).toModelNode();
         ModelNode disableOp = legacy ? Util.getEmptyOperation("disable", handlerAddress)
-                                     : SubsystemOperations.createWriteAttributeOperation(handlerAddress, CommonAttributes.ENABLED, false);
+                : SubsystemOperations.createWriteAttributeOperation(handlerAddress, CommonAttributes.ENABLED, false);
         executeOperation(kernelServices, disableOp);
 
         // The operation should set the enabled attribute to false
@@ -516,7 +527,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         logger.info("Test message 6");
 
         // Check the file, should only contain 3 lines
-        List<String> lines = FileUtils.readLines(logFile);
+        List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         assertEquals("Handler was not disable.", 3, lines.size());
 
         // Re-enable the handler
@@ -534,7 +545,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         logger.info("Test message 9");
 
         // Check the file, should contain 6 lines
-        lines = FileUtils.readLines(logFile);
+        lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         assertEquals("Handler was not disable.", 6, lines.size());
 
     }
@@ -543,7 +554,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
-        final File logFile = createLogFile();
+        final Path logFile = createLogFile();
 
         // Add file handler
         final ModelNode handlerAddress = addFileHandler(kernelServices, profileName, fileHandlerName, org.jboss.logmanager.Level.INFO, logFile, false);
@@ -575,7 +586,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         logger.info("Test message 3");
 
         // Check the file, should only contain 3 lines
-        final List<String> lines = FileUtils.readLines(logFile);
+        final List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         assertEquals("Additional messages written to handler that should not be there.", 3, lines.size());
 
         // Check each line
@@ -625,15 +636,18 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         op = SubsystemOperations.createReadResourceOperation(asyncHandlerAddress);
         ModelNode result = executeOperation(kernelServices, op);
         ModelNode resource = SubsystemOperations.readResult(result);
-        validateResourceAttributes(resource, Logging.join(AsyncHandlerResourceDefinition.ATTRIBUTES, CommonAttributes.NAME, CommonAttributes.FILTER));
+        validateResourceAttributes(resource, Arrays.asList("enabled", "level", "filter-spec", "queue-length",
+                "overflow-action", "subhandlers", "name", "filter"));
         op = SubsystemOperations.createReadResourceOperation(consoleHandlerAddress);
         result = executeOperation(kernelServices, op);
         resource = SubsystemOperations.readResult(result);
-        validateResourceAttributes(resource, Logging.join(ConsoleHandlerResourceDefinition.ATTRIBUTES, CommonAttributes.NAME, CommonAttributes.FILTER));
+        validateResourceAttributes(resource, Arrays.asList("enabled", "encoding", "level", "filter-spec", "formatter",
+                "autoflush", "target", "named-formatter", "name", "filter"));
         op = SubsystemOperations.createReadResourceOperation(loggerAddress);
         result = executeOperation(kernelServices, op);
         resource = SubsystemOperations.readResult(result);
-        validateResourceAttributes(resource, Logging.join(LoggerResourceDefinition.EXPRESSION_ATTRIBUTES, LoggerResourceDefinition.CATEGORY));
+        validateResourceAttributes(resource, Arrays.asList("category", "filter", "filter-spec", "level", "handlers",
+                "use-parent-handlers"));
 
         // Remove all the resources
         op = SubsystemOperations.CompositeOperationBuilder.create()
@@ -646,20 +660,20 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
 
     private ModelNode addFileHandler(final KernelServices kernelServices, final String loggingProfile, final String name,
-                                     final Level level, final File file, final boolean assign) throws Exception {
+                                     final Level level, final Path file, final boolean assign) {
         final ModelNode address = createFileHandlerAddress(loggingProfile, name).toModelNode();
 
         // add file handler
         ModelNode op = SubsystemOperations.createAddOperation(address);
         op.get(CommonAttributes.NAME.getName()).set(name);
         op.get(CommonAttributes.LEVEL.getName()).set(level.getName());
-        op.get(CommonAttributes.FILE.getName()).get(PathResourceDefinition.PATH.getName()).set(file.getAbsolutePath());
+        op.get(CommonAttributes.FILE.getName()).get(PathResourceDefinition.PATH.getName()).set(file.toAbsolutePath().toString());
         op.get(CommonAttributes.AUTOFLUSH.getName()).set(true);
         executeOperation(kernelServices, op);
 
         // register it with root logger
         if (assign) {
-            op = SubsystemOperations.createOperation(RootLoggerResourceDefinition.ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME, createRootLoggerAddress(loggingProfile).toModelNode());
+            op = SubsystemOperations.createOperation("root-logger-assign-handler", createRootLoggerAddress(loggingProfile).toModelNode());
             op.get(CommonAttributes.NAME.getName()).set(name);
             executeOperation(kernelServices, op);
         }
@@ -667,11 +681,11 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void removeFileHandler(final KernelServices kernelServices, final String loggingProfile, final String name,
-                                   final boolean unassign) throws Exception {
+                                   final boolean unassign) {
 
         if (unassign) {
             // Remove the handler from the logger
-            final ModelNode op = SubsystemOperations.createOperation(RootLoggerResourceDefinition.ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME, createRootLoggerAddress(loggingProfile).toModelNode());
+            final ModelNode op = SubsystemOperations.createOperation("root-logger-unassign-handler", createRootLoggerAddress(loggingProfile).toModelNode());
             op.get(CommonAttributes.NAME.getName()).set(name);
             executeOperation(kernelServices, op);
         }
@@ -687,7 +701,8 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     private ModelNode executeOperation(final KernelServices kernelServices, final ModelNode op, final boolean validateResult) {
         final ModelNode result = kernelServices.executeOperation(op);
-        if (validateResult) assertTrue(SubsystemOperations.getFailureDescriptionAsString(result), SubsystemOperations.isSuccessfulOutcome(result));
+        if (validateResult)
+            assertTrue(SubsystemOperations.getFailureDescriptionAsString(result), SubsystemOperations.isSuccessfulOutcome(result));
         return result;
     }
 
@@ -715,13 +730,31 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         return op;
     }
 
-    private static File createLogFile() {
+    private static Path createLogFile() throws IOException {
         return createLogFile("test-fh.log");
     }
 
-    private static File createLogFile(final String filename) {
-        final File logFile = new File(logDir, filename);
-        if (logFile.exists()) assertTrue("Log file was not deleted", logFile.delete());
+    private static Path createLogFile(final String filename) throws IOException {
+        final Path logFile = logDir.resolve(filename);
+        Files.deleteIfExists(logFile);
         return logFile;
+    }
+
+    private static String readFileToString(final Path file) throws IOException {
+        final ByteArrayOutputStream result = new ByteArrayOutputStream();
+        try (InputStream in = Files.newInputStream(file)) {
+            final byte[] buffer = new byte[512];
+            int len;
+            while ((len = in.read(buffer)) != -1) {
+                result.write(buffer, 0, len);
+            }
+        }
+        return result.toString("UTF-8");
+    }
+
+    private static long checksumCRC32(final Path file) throws IOException {
+        final CRC32 checksum = new CRC32();
+        checksum.update(Files.readAllBytes(file));
+        return checksum.getValue();
     }
 }

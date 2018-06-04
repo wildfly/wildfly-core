@@ -18,7 +18,7 @@ public enum KnownModelVersion {
     private final ModelVersion modelVersion;
     private final boolean hasTransformers;
 
-    private KnownModelVersion(final ModelVersion modelVersion, final boolean hasTransformers) {
+    KnownModelVersion(final ModelVersion modelVersion, final boolean hasTransformers) {
         this.modelVersion = modelVersion;
         this.hasTransformers = hasTransformers;
     }

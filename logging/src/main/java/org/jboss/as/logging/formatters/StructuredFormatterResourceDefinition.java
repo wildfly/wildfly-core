@@ -30,7 +30,6 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -278,12 +277,8 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
     private static final OperationStepHandler REMOVE = new LoggingOperations.LoggingRemoveOperationStepHandler() {
 
         @Override
-        protected void performRemove(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) {
-            context.removeResource(PathAddress.EMPTY_ADDRESS);
-        }
-
-        @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
             final FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             if (configuration == null) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.formatterNotFound(name));
@@ -363,26 +358,26 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
 
     private static class AddStructuredFormatterStepHandler extends LoggingOperations.LoggingAddOperationStepHandler {
         private final Class<? extends StructuredFormatter> type;
-        private final AttributeDefinition[] attributes;
 
         private AddStructuredFormatterStepHandler(final Class<? extends StructuredFormatter> type, final AttributeDefinition[] attributes) {
+            super(attributes);
             this.type = type;
-            this.attributes = attributes;
         }
 
         @SuppressWarnings({"OverlyStrongTypeCast", "StatementWithEmptyBody"})
         @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             String keyOverrides = null;
             if (model.hasDefined(KEY_OVERRIDES.getName())) {
                 keyOverrides = modelValueToMetaData(KEY_OVERRIDES.resolveModelAttribute(context, model));
             }
 
+            final String name = context.getCurrentAddressValue();
             FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             final String className = type.getName();
 
             if (configuration == null) {
-                LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, context.getCurrentAddress());
                 if (keyOverrides == null) {
                     configuration = logContextConfiguration.addFormatterConfiguration(null, className, name);
                 } else {
@@ -390,7 +385,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
                     configuration.setPropertyValueString("keyOverrides", keyOverrides);
                 }
             } else if (isSamePropertyValue(configuration, "keyOverrides", keyOverrides)) {
-                LoggingLogger.ROOT_LOGGER.tracef("Removing then adding formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                LoggingLogger.ROOT_LOGGER.tracef("Removing then adding formatter '%s' at '%s'", name, context.getCurrentAddress());
                 logContextConfiguration.removeFormatterConfiguration(name);
                 configuration = logContextConfiguration.addFormatterConfiguration(null, className, name, "keyOverrides");
                 configuration.setPropertyValueString("keyOverrides", keyOverrides);
@@ -423,13 +418,6 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
                         }
                     }
                 }
-            }
-        }
-
-        @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition attribute : attributes) {
-                attribute.validateAndSet(operation, model);
             }
         }
 

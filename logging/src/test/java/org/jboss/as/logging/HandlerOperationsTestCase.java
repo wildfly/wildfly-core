@@ -29,20 +29,27 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.Target;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
@@ -56,12 +63,13 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"MagicNumber", "SameParameterValue"})
 public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
-    static final String ENCODING = "UTF-8";
+    private static final String ENCODING = "UTF-8";
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -99,9 +107,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     public void testFormatsNoColor() throws Exception {
         final KernelServices kernelServices = boot();
 
-        final File logFile = new File(LoggingTestEnvironment.get().getLogDir(), "formatter.log");
+        final Path logFile = LoggingTestEnvironment.get().getLogDir().resolve("formatter.log");
         // Delete the file if it exists
-        if (logFile.exists()) logFile.delete();
+        Files.deleteIfExists(logFile);
 
         // Create a file handler
         final String fileHandlerName = "formatter-handler";
@@ -109,7 +117,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         ModelNode op = SubsystemOperations.createAddOperation(handlerAddress);
         op.get(CommonAttributes.LEVEL.getName()).set("INFO");
         op.get(CommonAttributes.ENCODING.getName()).set(ENCODING);
-        op.get(CommonAttributes.FILE.getName()).get(PathResourceDefinition.PATH.getName()).set(logFile.getAbsolutePath());
+        op.get(CommonAttributes.FILE.getName()).get(PathResourceDefinition.PATH.getName()).set(logFile.toAbsolutePath().toString());
         op.get(CommonAttributes.AUTOFLUSH.getName()).set(true);
         op.get(FileHandlerResourceDefinition.FORMATTER.getName()).set("%s%n");
         executeOperation(kernelServices, op);
@@ -127,7 +135,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         logger.log(Level.INFO, "Test message 2");
 
         // Read the file
-        List<String> lines = FileUtils.readLines(logFile, ENCODING);
+        List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         assertEquals("Number of lines logged and found in the file do not match", 2, lines.size());
 
         // Check the lines
@@ -156,7 +164,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         logger.log(Level.INFO, "Test message 4");
 
         // Read the file
-        lines = FileUtils.readLines(logFile, ENCODING);
+        lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         assertEquals("Number of lines logged and found in the file do not match", 4, lines.size());
 
         // Check the lines
@@ -229,7 +237,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
                 handlerConfiguration.getFormatterName());
     }
 
-    private void testAsyncHandler(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testAsyncHandler(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createAsyncHandlerAddress(profileName, "async").toModelNode();
         final ModelNode subhandlers = new ModelNode().setEmptyList().add("CONSOLE");
 
@@ -281,7 +289,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         op = SubsystemOperations.createReadResourceOperation(address);
         result = executeOperation(kernelServices, op);
         final ModelNode asyncHandlerResource = SubsystemOperations.readResult(result);
-        validateResourceAttributes(asyncHandlerResource, Logging.join(AsyncHandlerResourceDefinition.ATTRIBUTES, CommonAttributes.NAME, CommonAttributes.FILTER));
+        validateResourceAttributes(asyncHandlerResource, Arrays.asList("enabled", "level", "filter-spec", "queue-length",
+                "overflow-action", "subhandlers", "name", "filter"));
         // The name attribute should be the same as the last path element of the address
         assertEquals(asyncHandlerResource.get(CommonAttributes.NAME.getName()).asString(), PathAddress.pathAddress(address).getLastElement().getValue());
 
@@ -310,7 +319,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    private void testConsoleHandler(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testConsoleHandler(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createConsoleHandlerAddress(profileName, "CONSOLE").toModelNode();
 
         // Add the handler
@@ -491,7 +500,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
     // TODO (jrp) do syslog? only concern is will it active it
 
-    protected void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
         testWrite(kernelServices, address, CommonAttributes.ENABLED, true);
         testWrite(kernelServices, address, CommonAttributes.ENCODING, ENCODING);
@@ -505,7 +514,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         testWrite(kernelServices, address, AbstractHandlerDefinition.NAMED_FORMATTER, "PATTERN");
     }
 
-    protected void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         testUndefine(kernelServices, address, CommonAttributes.LEVEL);
         testUndefine(kernelServices, address, CommonAttributes.ENABLED);
         testUndefine(kernelServices, address, CommonAttributes.ENCODING);
@@ -517,14 +526,14 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         removePatternFormatter(kernelServices, LoggingProfileOperations.getLoggingProfileName(PathAddress.pathAddress(address)), "PATTERN");
     }
 
-    private void addPatternFormatter(final KernelServices kernelServices, final String profileName, final String name) throws Exception {
+    private void addPatternFormatter(final KernelServices kernelServices, final String profileName, final String name) {
         final ModelNode address = createPatternFormatterAddress(profileName, name).toModelNode();
         final ModelNode op = createAddOperation(address);
         op.get(PatternFormatterResourceDefinition.PATTERN.getName()).set("[test-pattern] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
         executeOperation(kernelServices, op);
     }
 
-    private void removePatternFormatter(final KernelServices kernelServices, final String profileName, final String name) throws Exception {
+    private void removePatternFormatter(final KernelServices kernelServices, final String profileName, final String name) {
         final ModelNode address = createPatternFormatterAddress(profileName, name).toModelNode();
         final ModelNode op = createRemoveOperation(address);
         executeOperation(kernelServices, op);
@@ -533,7 +542,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     private void testCommonFileOperations(final KernelServices kernelServices, final ModelNode address) throws Exception {
         // Create a directory a new directory
         final LoggingTestEnvironment env = LoggingTestEnvironment.get();
-        final Path dir = Paths.get(env.getLogDir().getAbsolutePath(), "file-dir");
+        final Path dir = env.getLogDir().toAbsolutePath().resolve("file-dir");
         Files.createDirectories(dir);
         // Attempt to add a file-handler with the dir for the path
         ModelNode op = OperationBuilder.createAddOperation(address)

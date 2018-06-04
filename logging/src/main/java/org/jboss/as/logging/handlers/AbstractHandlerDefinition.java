@@ -1,26 +1,23 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.handlers;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISABLE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLE;
@@ -32,7 +29,6 @@ import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.NAME;
 
 import java.util.logging.Handler;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -49,6 +45,14 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.ConfigurationProperty;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.LoggingExtension;
+import org.jboss.as.logging.LoggingOperations;
+import org.jboss.as.logging.PropertyAttributeDefinition;
+import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.logmanager.PropertySorter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -57,7 +61,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
+public abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
 
     public static final String UPDATE_OPERATION_NAME = "update-properties";
     public static final String CHANGE_LEVEL_OPERATION_NAME = "change-log-level";
@@ -120,14 +124,7 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
     protected AbstractHandlerDefinition(final PathElement path,
                                         final Class<? extends Handler> type,
                                         final AttributeDefinition[] attributes) {
-        this(path, type, PropertySorter.NO_OP, attributes);
-    }
-
-    protected AbstractHandlerDefinition(final PathElement path,
-                                        final Class<? extends Handler> type,
-                                        final PropertySorter propertySorter,
-                                        final AttributeDefinition[] attributes) {
-        this(path, type, propertySorter, attributes, null, attributes);
+        this(createParameters(path, type, PropertySorter.NO_OP, attributes), true, PropertySorter.NO_OP, null, attributes);
     }
 
     protected AbstractHandlerDefinition(final PathElement path,
@@ -135,38 +132,23 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
                                         final Class<? extends Handler> type,
                                         final PropertySorter propertySorter,
                                         final AttributeDefinition[] attributes) {
-        this(path, registerLegacyOps, type, propertySorter, attributes, null, attributes);
+        this(createParameters(path, type, propertySorter, attributes), registerLegacyOps, propertySorter, null, attributes);
     }
 
     protected AbstractHandlerDefinition(final PathElement path,
                                         final Class<? extends Handler> type,
                                         final AttributeDefinition[] attributes,
                                         final ConfigurationProperty<?>... constructionProperties) {
-        this(path, type, PropertySorter.NO_OP, attributes, null, attributes, constructionProperties);
+        this(createParameters(path, type, PropertySorter.NO_OP, attributes, constructionProperties),
+                true, PropertySorter.NO_OP, null, attributes);
     }
 
-    protected AbstractHandlerDefinition(final PathElement path,
-                                        final Class<? extends Handler> type,
-                                        final PropertySorter propertySorter,
-                                        final AttributeDefinition[] addAttributes,
-                                        final AttributeDefinition[] readOnlyAttributes,
-                                        final AttributeDefinition[] writableAttributes,
-                                        final ConfigurationProperty<?>... constructionProperties) {
-        this(path, true, type, propertySorter, addAttributes, readOnlyAttributes, writableAttributes, constructionProperties);
-    }
-
-    protected AbstractHandlerDefinition(final PathElement path,
+    protected AbstractHandlerDefinition(final Parameters parameters,
                                         final boolean registerLegacyOps,
-                                        final Class<? extends Handler> type,
                                         final PropertySorter propertySorter,
-                                        final AttributeDefinition[] addAttributes,
                                         final AttributeDefinition[] readOnlyAttributes,
-                                        final AttributeDefinition[] writableAttributes,
-                                        final ConfigurationProperty<?>... constructionProperties) {
-        super(path,
-                LoggingExtension.getResourceDescriptionResolver(path.getKey()),
-                new HandlerOperations.HandlerAddOperationStepHandler(propertySorter, type, addAttributes, constructionProperties),
-                HandlerOperations.REMOVE_HANDLER);
+                                        final AttributeDefinition[] writableAttributes) {
+        super(parameters);
         this.registerLegacyOps = registerLegacyOps;
         this.writableAttributes = writableAttributes;
         writeHandler = new HandlerOperations.LogHandlerWriteAttributeHandler(propertySorter, this.writableAttributes);
@@ -243,8 +225,28 @@ abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
      * @param loggingProfileBuilder the builder for the logging profile
      */
     protected void registerResourceTransformers(final KnownModelVersion modelVersion,
-                                                         final ResourceTransformationDescriptionBuilder resourceBuilder,
-                                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+                                                final ResourceTransformationDescriptionBuilder resourceBuilder,
+                                                final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
         // do nothing by default
+    }
+
+    /**
+     * Creates the default {@linkplain org.jboss.as.controller.SimpleResourceDefinition.Parameters parameters} for
+     * creating the source.
+     *
+     * @param path                   the resource path
+     * @param type                   the known type of the resource or {@code null} if the type is unknown
+     * @param propertySorter         the property sorter
+     * @param addAttributes          the attributes for the add operation step handler
+     * @param constructionProperties the construction properties required for the handler
+     *
+     * @return the default parameters
+     */
+    private static Parameters createParameters(final PathElement path, final Class<? extends Handler> type,
+                                               final PropertySorter propertySorter, final AttributeDefinition[] addAttributes,
+                                               final ConfigurationProperty<?>... constructionProperties) {
+        return new Parameters(path, LoggingExtension.getResourceDescriptionResolver(path.getKey()))
+                .setAddHandler(new HandlerOperations.HandlerAddOperationStepHandler(propertySorter, type, addAttributes, constructionProperties))
+                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER);
     }
 }

@@ -23,12 +23,19 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.subsystem.test.SubsystemOperations.OperationBuilder;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
@@ -37,10 +44,11 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"SameParameterValue", "MagicNumber"})
 public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase {
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -71,7 +79,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         testAsyncHandler(kernelServices, PROFILE);
     }
 
-    private void testAsyncHandler(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testAsyncHandler(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createAsyncHandlerAddress(profileName, "async").toModelNode();
 
         // Add a console handler for subhandler tests
@@ -101,7 +109,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         // The console handler should be present
         ModelNode result = executeOperation(kernelServices, SubsystemOperations.createReadAttributeOperation(address,
                 AsyncHandlerResourceDefinition.SUBHANDLERS));
-        assertTrue("Subhandlers should be empty: " + result, SubsystemOperations.readResultAsList(result)
+        assertTrue("Subhandlers should contain the CONSOLE handler: " + result, SubsystemOperations.readResultAsList(result)
                 .contains("CONSOLE"));
 
         // Unassign the subhandler
@@ -135,7 +143,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         verifyRemoved(kernelServices, address);
     }
 
-    private void testConsoleHandler(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testConsoleHandler(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createConsoleHandlerAddress(profileName, "CONSOLE").toModelNode();
 
         // Add the handler
@@ -310,7 +318,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         removeFile(newFilename);
     }
 
-    protected void testUpdateCommonHandlerAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testUpdateCommonHandlerAttributes(final KernelServices kernelServices, final ModelNode address) {
         testUpdateProperties(kernelServices, address, CommonAttributes.LEVEL, "TRACE");
         testUpdateProperties(kernelServices, address, CommonAttributes.ENABLED, false);
         testUpdateProperties(kernelServices, address, CommonAttributes.ENCODING, "utf-8");
@@ -318,7 +326,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         testUpdateProperties(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
     }
 
-    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final boolean value) throws Exception {
+    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final boolean value) {
         final ModelNode original = SubsystemOperations.readResult(executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address, true)));
         ModelNode op = OperationBuilder.create(AbstractHandlerDefinition.UPDATE_OPERATION_NAME, address)
                 .addAttribute(attribute, value)
@@ -336,7 +344,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         compare(original, newModel);
     }
 
-    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final int value) throws Exception {
+    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final int value) {
         final ModelNode original = SubsystemOperations.readResult(executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address, true)));
         ModelNode op = OperationBuilder.create(AbstractHandlerDefinition.UPDATE_OPERATION_NAME, address)
                 .addAttribute(attribute, value)
@@ -354,7 +362,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         compare(original, newModel);
     }
 
-    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final String value) throws Exception {
+    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final String value) {
         final ModelNode original = SubsystemOperations.readResult(executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address, true)));
         ModelNode op = OperationBuilder.create(AbstractHandlerDefinition.UPDATE_OPERATION_NAME, address)
                 .addAttribute(attribute, value)
@@ -376,7 +384,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         compare(original, newModel);
     }
 
-    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final ModelNode value) throws Exception {
+    private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final ModelNode value) {
         final ModelNode original = SubsystemOperations.readResult(executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address, true)));
         ModelNode op = OperationBuilder.create(AbstractHandlerDefinition.UPDATE_OPERATION_NAME, address)
                 .addAttribute(attribute, value)
@@ -394,7 +402,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         compare(original, newModel);
     }
 
-    private void testCommonOperations(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testCommonOperations(final KernelServices kernelServices, final ModelNode address) {
         ModelNode op = OperationBuilder.create("change-log-level", address)
                 .addAttribute(CommonAttributes.LEVEL, "DEBUG")
                 .build();
@@ -418,7 +426,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         assertTrue("Handler should be enabled", SubsystemOperations.readResult(result).asBoolean());
     }
 
-    protected void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         // filter attribute not on logging profiles
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             final ModelNode filter = new ModelNode().setEmptyObject();
@@ -431,7 +439,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         }
     }
 
-    protected void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             testUndefine(kernelServices, address, CommonAttributes.FILTER);
             // filter-spec should be undefined

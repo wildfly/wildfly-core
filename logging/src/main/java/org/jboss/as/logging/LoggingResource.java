@@ -22,8 +22,6 @@
 
 package org.jboss.as.logging;
 
-import static org.jboss.as.logging.LogFileResourceDefinition.LOG_FILE;
-
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
@@ -52,6 +50,10 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.ResourceFilter;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -62,21 +64,21 @@ import org.jboss.dmr.Property;
  */
 public class LoggingResource implements Resource {
     private static final List<String> FILE_RESOURCE_NAMES = Arrays.asList(
-            FileHandlerResourceDefinition.FILE_HANDLER,
-            PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER,
-            PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER,
-            SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER
+            FileHandlerResourceDefinition.NAME,
+            PeriodicHandlerResourceDefinition.NAME,
+            PeriodicSizeRotatingHandlerResourceDefinition.NAME,
+            SizeRotatingHandlerResourceDefinition.NAME
     );
 
     private final PathManager pathManager;
     private final Resource delegate;
     private final ModelNode fileHandlersModel;
 
-    public LoggingResource(final PathManager pathManager) {
+    LoggingResource(final PathManager pathManager) {
         this(Resource.Factory.create(), pathManager);
     }
 
-    public LoggingResource(final Resource delegate, final PathManager pathManager) {
+    private LoggingResource(final Resource delegate, final PathManager pathManager) {
         this(delegate, pathManager, null);
     }
 
@@ -104,7 +106,7 @@ public class LoggingResource implements Resource {
 
     @Override
     public boolean hasChild(final PathElement element) {
-        if (LOG_FILE.equals(element.getKey())) {
+        if (LogFileResourceDefinition.NAME.equals(element.getKey())) {
             return hasReadableFile(element.getValue());
         }
         return delegate.hasChild(element);
@@ -112,7 +114,7 @@ public class LoggingResource implements Resource {
 
     @Override
     public Resource getChild(final PathElement element) {
-        if (LOG_FILE.equals(element.getKey())) {
+        if (LogFileResourceDefinition.NAME.equals(element.getKey())) {
             if (hasReadableFile(element.getValue())) {
                 return PlaceholderResource.INSTANCE;
             }
@@ -123,7 +125,7 @@ public class LoggingResource implements Resource {
 
     @Override
     public Resource requireChild(final PathElement element) {
-        if (LOG_FILE.equals(element.getKey())) {
+        if (LogFileResourceDefinition.NAME.equals(element.getKey())) {
             if (hasReadableFile(element.getValue())) {
                 return PlaceholderResource.INSTANCE;
             }
@@ -134,7 +136,7 @@ public class LoggingResource implements Resource {
 
     @Override
     public boolean hasChildren(final String childType) {
-        if (LOG_FILE.equals(childType)) {
+        if (LogFileResourceDefinition.NAME.equals(childType)) {
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             if (logDir != null) {
                 final Path dir = Paths.get(logDir);
@@ -153,7 +155,7 @@ public class LoggingResource implements Resource {
                             // Walk the tree and look for the first possible match
                             Files.walkFileTree(dir, Collections.singleton(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
                                 @Override
-                                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
                                     final Path relativeFile = dir.relativize(file);
                                     final String resourceName = relativeFile.toString();
                                     // Check if the file may be a rotated file
@@ -180,7 +182,7 @@ public class LoggingResource implements Resource {
 
     @Override
     public Resource navigate(final PathAddress address) {
-        if (address.size() > 0 && LOG_FILE.equals(address.getElement(0).getKey())) {
+        if (address.size() > 0 && LogFileResourceDefinition.NAME.equals(address.getElement(0).getKey())) {
             if (address.size() > 1) {
                 throw new NoSuchResourceException(address.getElement(1));
             }
@@ -192,13 +194,13 @@ public class LoggingResource implements Resource {
     @Override
     public Set<String> getChildTypes() {
         final Set<String> result = new LinkedHashSet<>(delegate.getChildTypes());
-        result.add(LOG_FILE);
+        result.add(LogFileResourceDefinition.NAME);
         return result;
     }
 
     @Override
     public Set<String> getChildrenNames(final String childType) {
-        if (LOG_FILE.equals(childType)) {
+        if (LogFileResourceDefinition.NAME.equals(childType)) {
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             try {
                 final Set<Path> validPaths = findFiles(logDir, getFileHandlersModel(), true);
@@ -216,11 +218,11 @@ public class LoggingResource implements Resource {
 
     @Override
     public Set<ResourceEntry> getChildren(final String childType) {
-        if (LOG_FILE.equals(childType)) {
+        if (LogFileResourceDefinition.NAME.equals(childType)) {
             final Set<String> names = getChildrenNames(childType);
             final Set<ResourceEntry> result = new LinkedHashSet<>(names.size());
             for (String name : names) {
-                result.add(new PlaceholderResourceEntry(LOG_FILE, name));
+                result.add(new PlaceholderResourceEntry(LogFileResourceDefinition.NAME, name));
             }
             return result;
         }
@@ -230,7 +232,7 @@ public class LoggingResource implements Resource {
     @Override
     public void registerChild(final PathElement address, final Resource resource) {
         final String type = address.getKey();
-        if (LOG_FILE.equals(type)) {
+        if (LogFileResourceDefinition.NAME.equals(type)) {
             throw LoggingLogger.ROOT_LOGGER.cannotRegisterResourceOfType(type);
         }
         delegate.registerChild(address, resource);
@@ -239,7 +241,7 @@ public class LoggingResource implements Resource {
     @Override
     public void registerChild(PathElement address, int index, Resource resource) {
         final String type = address.getKey();
-        if (LOG_FILE.equals(type)) {
+        if (LogFileResourceDefinition.NAME.equals(type)) {
             throw LoggingLogger.ROOT_LOGGER.cannotRegisterResourceOfType(type);
         }
         delegate.registerChild(address, index, resource);
@@ -248,7 +250,7 @@ public class LoggingResource implements Resource {
     @Override
     public Resource removeChild(final PathElement address) {
         final String type = address.getKey();
-        if (LOG_FILE.equals(type)) {
+        if (LogFileResourceDefinition.NAME.equals(type)) {
             throw LoggingLogger.ROOT_LOGGER.cannotRemoveResourceOfType(type);
         }
         return delegate.removeChild(address);
@@ -269,6 +271,7 @@ public class LoggingResource implements Resource {
         return Collections.emptySet();
     }
 
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
     @Override
     public Resource clone() {
         return new LoggingResource(delegate.clone(), pathManager, fileHandlersModel);
@@ -327,7 +330,7 @@ public class LoggingResource implements Resource {
             boolean first = true;
 
             @Override
-            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) {
                 if (first || relativize) {
                     first = false;
                     return FileVisitResult.CONTINUE;
@@ -346,7 +349,7 @@ public class LoggingResource implements Resource {
             }
 
             @Override
-            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) {
                 final Path relativeFile = dir.relativize(file);
                 final String resourceName = relativeFile.toString();
                 // Check each valid file name, rotated files will just start with the name

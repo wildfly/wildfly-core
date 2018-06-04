@@ -1,26 +1,23 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.loggers;
 
 import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
@@ -40,7 +37,11 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
+import org.jboss.as.logging.TransformerResourceDefinition;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -48,59 +49,54 @@ import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
  */
 public class RootLoggerResourceDefinition extends TransformerResourceDefinition {
     public static final String ROOT_LOGGER_ADD_OPERATION_NAME = "set-root-logger";
-    public static final String ROOT_LOGGER_REMOVE_OPERATION_NAME = "remove-root-logger";
-    public static final String ROOT_LOGGER_CHANGE_LEVEL_OPERATION_NAME = "change-root-log-level";
-    public static final String ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME = "root-logger-assign-handler";
-    public static final String ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME = "root-logger-unassign-handler";
-    public static final String ROOT_LOGGER_PATH_NAME = "root-logger";
-    public static final String ROOT_LOGGER_ATTRIBUTE_NAME = "ROOT";
-    static final PathElement ROOT_LOGGER_PATH = PathElement.pathElement(ROOT_LOGGER_PATH_NAME, ROOT_LOGGER_ATTRIBUTE_NAME);
-    static final ResourceDescriptionResolver ROOT_RESOLVER = LoggingExtension.getResourceDescriptionResolver(ROOT_LOGGER_PATH_NAME);
+    public static final String NAME = "root-logger";
+    public static final String RESOURCE_NAME = "ROOT";
+    public static final PathElement ROOT_LOGGER_PATH = PathElement.pathElement(NAME, RESOURCE_NAME);
+
+    private static final String ROOT_LOGGER_CHANGE_LEVEL_OPERATION_NAME = "change-root-log-level";
+    private static final String ROOT_LOGGER_REMOVE_OPERATION_NAME = "remove-root-logger";
+    private static final String ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME = "root-logger-assign-handler";
+    private static final String ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME = "root-logger-unassign-handler";
+    private static final ResourceDescriptionResolver ROOT_RESOLVER = LoggingExtension.getResourceDescriptionResolver(NAME);
 
 
-    static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
+    private static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
             FILTER,
     };
 
-    static final AttributeDefinition[] ATTRIBUTES = {
+    private static final AttributeDefinition[] ATTRIBUTES = {
             FILTER_SPEC,
             LEVEL,
             HANDLERS
     };
 
-    static final AttributeDefinition[] EXPRESSION_ATTRIBUTES = {
-            FILTER,
-            FILTER_SPEC,
-            LEVEL
-    };
-
-    static final SimpleOperationDefinition ROOT_LOGGER_REMOVE_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_REMOVE_OPERATION_NAME, ROOT_RESOLVER)
+    public static final SimpleOperationDefinition ROOT_LOGGER_REMOVE_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_REMOVE_OPERATION_NAME, ROOT_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .build();
-    static final OperationDefinition ADD_ROOT_LOGGER_DEFINITION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_ADD_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition ADD_ROOT_LOGGER_DEFINITION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_ADD_OPERATION_NAME, ROOT_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setParameters(ATTRIBUTES)
             .build();
-    static final OperationDefinition CHANGE_LEVEL_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_CHANGE_LEVEL_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition CHANGE_LEVEL_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_CHANGE_LEVEL_OPERATION_NAME, ROOT_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setParameters(CommonAttributes.LEVEL)
             .build();
 
-    static final OperationDefinition LEGACY_ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition LEGACY_ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_ADD_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
-    static final OperationDefinition LEGACY_REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition LEGACY_REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ROOT_LOGGER_REMOVE_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
-    static final OperationDefinition ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
-    static final OperationDefinition REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
+    public static final OperationDefinition REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, ROOT_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
@@ -109,10 +105,11 @@ public class RootLoggerResourceDefinition extends TransformerResourceDefinition 
     private final OperationStepHandler writeHandler;
 
     public RootLoggerResourceDefinition(final boolean includeLegacy) {
-        super(ROOT_LOGGER_PATH,
-                ROOT_RESOLVER,
-                (includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(ATTRIBUTES, LEGACY_ATTRIBUTES)) : new LoggerOperations.LoggerAddOperationStepHandler(ATTRIBUTES)),
-                LoggerOperations.REMOVE_LOGGER);
+        super(new Parameters(ROOT_LOGGER_PATH, ROOT_RESOLVER)
+                .setAddHandler(includeLegacy ?
+                        new LoggerOperations.LoggerAddOperationStepHandler(join(ATTRIBUTES, LEGACY_ATTRIBUTES)) :
+                        new LoggerOperations.LoggerAddOperationStepHandler(ATTRIBUTES))
+                .setRemoveHandler(LoggerOperations.REMOVE_LOGGER));
         attributes = (includeLegacy ? join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES);
         addHandler = new LoggerOperations.LoggerAddOperationStepHandler(attributes);
         writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(attributes);

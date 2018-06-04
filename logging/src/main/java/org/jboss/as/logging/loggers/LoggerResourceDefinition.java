@@ -1,26 +1,23 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.loggers;
 
 import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
@@ -44,7 +41,12 @@ import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraint
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
+import org.jboss.as.logging.PropertyAttributeDefinition;
+import org.jboss.as.logging.TransformerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -53,35 +55,35 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class LoggerResourceDefinition extends TransformerResourceDefinition {
+    public static final String NAME = "logger";
 
-    public static final String CHANGE_LEVEL_OPERATION_NAME = "change-log-level";
-    public static final String LEGACY_ADD_HANDLER_OPERATION_NAME = "assign-handler";
-    public static final String LEGACY_REMOVE_HANDLER_OPERATION_NAME = "unassign-handler";
-    public static final String LOGGER = "logger";
-    static final PathElement LOGGER_PATH = PathElement.pathElement(LOGGER);
+    private static final String CHANGE_LEVEL_OPERATION_NAME = "change-log-level";
+    private static final String LEGACY_ADD_HANDLER_OPERATION_NAME = "assign-handler";
+    private static final String LEGACY_REMOVE_HANDLER_OPERATION_NAME = "unassign-handler";
+    private static final PathElement LOGGER_PATH = PathElement.pathElement(NAME);
 
-    static final ResourceDescriptionResolver LOGGER_RESOLVER = LoggingExtension.getResourceDescriptionResolver(LOGGER);
+    private static final ResourceDescriptionResolver LOGGER_RESOLVER = LoggingExtension.getResourceDescriptionResolver(NAME);
 
-    static final OperationDefinition CHANGE_LEVEL_OPERATION = new SimpleOperationDefinitionBuilder(CHANGE_LEVEL_OPERATION_NAME, LOGGER_RESOLVER)
+    public static final OperationDefinition CHANGE_LEVEL_OPERATION = new SimpleOperationDefinitionBuilder(CHANGE_LEVEL_OPERATION_NAME, LOGGER_RESOLVER)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setParameters(CommonAttributes.LEVEL)
             .build();
 
-    static final OperationDefinition LEGACY_ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(LEGACY_ADD_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
+    public static final OperationDefinition LEGACY_ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(LEGACY_ADD_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .build();
 
-    static final OperationDefinition LEGACY_REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(LEGACY_REMOVE_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
+    public static final OperationDefinition LEGACY_REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(LEGACY_REMOVE_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .build();
 
-    static final OperationDefinition ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
+    public static final OperationDefinition ADD_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(ADD_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
-    static final OperationDefinition REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
+    public static final OperationDefinition REMOVE_HANDLER_OPERATION = new SimpleOperationDefinitionBuilder(REMOVE_HANDLER_OPERATION_NAME, LOGGER_RESOLVER)
             .setParameters(CommonAttributes.HANDLER_NAME)
             .build();
 
@@ -96,34 +98,26 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
     // so DefaultResourceAddDescriptionProvider adds it to the param list
     public static final SimpleAttributeDefinition CATEGORY = SimpleAttributeDefinitionBuilder.create("category", ModelType.STRING, true).build();
 
-    static final AttributeDefinition[] WRITABLE_ATTRIBUTES = {
+    private static final AttributeDefinition[] WRITABLE_ATTRIBUTES = {
             FILTER_SPEC,
             LEVEL,
             HANDLERS,
             USE_PARENT_HANDLERS
     };
 
-    static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
+    private static final AttributeDefinition[] LEGACY_ATTRIBUTES = {
             FILTER,
-    };
-
-    static final AttributeDefinition[] EXPRESSION_ATTRIBUTES = {
-            FILTER,
-            FILTER_SPEC,
-            LEVEL,
-            HANDLERS,
-            USE_PARENT_HANDLERS
     };
 
     private final AttributeDefinition[] writableAttributes;
     private final OperationStepHandler writeHandler;
 
     public LoggerResourceDefinition(final boolean includeLegacy) {
-        super(new Parameters(LOGGER_PATH, LoggingExtension.getResourceDescriptionResolver(LOGGER))
+        super(new Parameters(LOGGER_PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
                 .setAddHandler(includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES))
                                : new LoggerOperations.LoggerAddOperationStepHandler(WRITABLE_ATTRIBUTES))
                 .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
-                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, LOGGER))));
+                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, NAME))));
         writableAttributes = (includeLegacy ? join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES) : WRITABLE_ATTRIBUTES);
         this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(writableAttributes);
     }

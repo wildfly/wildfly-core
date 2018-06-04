@@ -1,24 +1,24 @@
 /*
-* JBoss, Home of Professional Open Source.
-* Copyright 2011, Red Hat Middleware LLC, and individual contributors
-* as indicated by the @author tags. See the copyright.txt file in the
-* distribution for a full listing of individual contributors.
-*
-* This is free software; you can redistribute it and/or modify it
-* under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of
-* the License, or (at your option) any later version.
-*
-* This software is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this software; if not, write to the Free
-* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-*/
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2011, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.jboss.as.logging;
 
 import java.io.File;
@@ -37,6 +37,9 @@ import java.util.regex.Pattern;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.FailedOperationTransformationConfig.NewAttributesConfig;
@@ -148,9 +151,9 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         testEapFailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
                 new FailedOperationTransformationConfig()
                         .addFailedAttribute(SUBSYSTEM_ADDRESS, new NewAttributesConfig(LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG))
-                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("console-handler"),
                                 new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
-                        .addFailedAttribute(loggingProfileAddress.append(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER_PATH),
+                        .addFailedAttribute(loggingProfileAddress.append("console-handler"),
                                 new RejectExpressionsConfig(ConsoleHandlerResourceDefinition.TARGET))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
@@ -284,8 +287,8 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         @Override
         public ModelNode fixModel(final ModelNode modelNode) {
             // Find the async-handler
-            if (modelNode.hasDefined(AsyncHandlerResourceDefinition.ASYNC_HANDLER)) {
-                final ModelNode asyncHandlers = modelNode.get(AsyncHandlerResourceDefinition.ASYNC_HANDLER);
+            if (modelNode.hasDefined(AsyncHandlerResourceDefinition.NAME)) {
+                final ModelNode asyncHandlers = modelNode.get(AsyncHandlerResourceDefinition.NAME);
                 for (Property asyncHandler : asyncHandlers.asPropertyList()) {
                     final ModelNode async = asyncHandler.getValue();
                     async.remove(CommonAttributes.ENCODING.getName());

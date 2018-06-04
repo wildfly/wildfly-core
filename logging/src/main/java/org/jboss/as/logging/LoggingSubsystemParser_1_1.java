@@ -31,7 +31,7 @@ import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
-import static org.jboss.as.logging.CustomHandlerResourceDefinition.CUSTOM_HANDLER;
+import static org.jboss.as.logging.handlers.CustomHandlerResourceDefinition.NAME;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -157,7 +157,7 @@ class LoggingSubsystemParser_1_1 extends LoggingSubsystemParser_1_0 {
             throw duplicateNamedElement(reader, name);
         }
         // Setup the operation address
-        addOperationAddress(operation, address, CUSTOM_HANDLER, name);
+        addOperationAddress(operation, address, NAME, name);
 
 
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);

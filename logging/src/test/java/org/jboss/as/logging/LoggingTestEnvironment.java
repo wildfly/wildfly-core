@@ -22,15 +22,18 @@
 
 package org.jboss.as.logging;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Date: 06.01.2012
@@ -44,19 +47,18 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
     private static final LoggingTestEnvironment MANAGEMENT_INSTANCE;
 
     static {
-        final File configDir = new File(System.getProperty("jboss.server.config.dir", "target/config"));
-        final File logDir = new File(System.getProperty("jboss.server.log.dir", "target/logs"));
-        logDir.mkdirs();
-        configDir.mkdirs();
+        final Path configDir = getDirectory("jboss.server.config.dir", "target", "config");
+        final Path logDir = getDirectory("jboss.server.log.dir", "target", "logs");
         INSTANCE = new LoggingTestEnvironment(logDir, configDir, RunningMode.NORMAL);
         MANAGEMENT_INSTANCE = new LoggingTestEnvironment(logDir, configDir, RunningMode.ADMIN_ONLY);
     }
 
-    private final File logDir;
-    private final File configDir;
     private final RunningMode runningMode;
+    private transient Path logDir;
+    private transient Path configDir;
 
-    private LoggingTestEnvironment(final File logDir, final File configDir, final RunningMode runningMode) {
+
+    private LoggingTestEnvironment(final Path logDir, final Path configDir, final RunningMode runningMode) {
         this.logDir = logDir;
         this.configDir = configDir;
         this.runningMode = runningMode;
@@ -66,15 +68,15 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
         return INSTANCE;
     }
 
-    public static LoggingTestEnvironment getManagementInstance() {
+    static LoggingTestEnvironment getManagementInstance() {
         return MANAGEMENT_INSTANCE;
     }
 
-    public File getLogDir() {
+    Path getLogDir() {
         return logDir;
     }
 
-    public File getConfigDir() {
+    Path getConfigDir() {
         return configDir;
     }
 
@@ -94,12 +96,30 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
 
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
+        logDir = getDirectory("jboss.server.log.dir", "target", "logs");
+        configDir = getDirectory("jboss.server.config.dir", "target", "config");
     }
 
-    class LoggingInitializer extends ControllerInitializer {
-        public LoggingInitializer() {
-            addPath("jboss.server.log.dir", logDir.getAbsolutePath(), null);
-            addPath("jboss.server.config.dir", configDir.getAbsolutePath(), null);
+    final class LoggingInitializer extends ControllerInitializer {
+        LoggingInitializer() {
+            addPath("jboss.server.log.dir", logDir.toAbsolutePath().toString(), null);
+            addPath("jboss.server.config.dir", configDir.toAbsolutePath().toString(), null);
         }
+    }
+
+    private static Path getDirectory(final String propName, final String... paths) {
+        final String value = WildFlySecurityManager.getPropertyPrivileged(propName, null);
+        final Path dir;
+        if (value == null) {
+            dir = Paths.get(".", paths);
+        } else {
+            dir = Paths.get(value);
+        }
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create directory: " + propName, e);
+        }
+        return dir;
     }
 }

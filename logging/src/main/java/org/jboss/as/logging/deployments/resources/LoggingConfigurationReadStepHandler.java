@@ -23,7 +23,6 @@
 package org.jboss.as.logging.deployments.resources;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -42,7 +41,7 @@ import org.jboss.msc.service.ServiceName;
 abstract class LoggingConfigurationReadStepHandler implements OperationStepHandler {
 
     @Override
-    public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+    public void execute(final OperationContext context, final ModelNode operation) {
         LogContextConfiguration configuration = null;
         // Lookup the service
         final ServiceController<?> controller = context.getServiceRegistry(false).getService(getServiceName(context));

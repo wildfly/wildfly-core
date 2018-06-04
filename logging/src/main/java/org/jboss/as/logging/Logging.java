@@ -108,7 +108,4 @@ public final class Logging {
         return result;
     }
 
-    static String fixFormatPattern(final String currentPattern) {
-        return currentPattern.replaceAll("(%K\\{[a-zA-Z]*?})", "");
-    }
 }

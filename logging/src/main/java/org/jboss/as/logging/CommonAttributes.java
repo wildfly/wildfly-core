@@ -40,6 +40,7 @@ import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.logging.correctors.FileCorrector;
+import org.jboss.as.logging.handlers.LogHandlerListAttributeDefinition;
 import org.jboss.as.logging.resolvers.FileResolver;
 import org.jboss.as.logging.resolvers.LevelResolver;
 import org.jboss.as.logging.validators.FileValidator;

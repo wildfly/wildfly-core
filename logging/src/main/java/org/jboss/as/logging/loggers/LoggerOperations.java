@@ -1,35 +1,33 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.loggers;
 
 import static org.jboss.as.logging.CommonAttributes.FILTER;
 import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
+import static org.jboss.as.logging.CommonAttributes.HANDLER;
 import static org.jboss.as.logging.CommonAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.HANDLER_NAME;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
-import static org.jboss.as.logging.LoggerResourceDefinition.USE_PARENT_HANDLERS;
 import static org.jboss.as.logging.Logging.createOperationFailure;
-import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME;
+import static org.jboss.as.logging.loggers.LoggerResourceDefinition.USE_PARENT_HANDLERS;
+import static org.jboss.as.logging.loggers.RootLoggerResourceDefinition.RESOURCE_NAME;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +39,9 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.Filters;
+import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.config.LogContextConfiguration;
@@ -55,14 +56,13 @@ final class LoggerOperations {
 
     abstract static class LoggerUpdateOperationStepHandler extends LoggingOperations.LoggingUpdateOperationStepHandler {
 
-        @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-
+        LoggerUpdateOperationStepHandler(final AttributeDefinition... attributes) {
+            super(attributes);
         }
 
         @Override
-        public final void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
-            final String loggerName = getLogManagerLoggerName(name);
+        public final void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final String loggerName = getLogManagerLoggerName(context.getCurrentAddressValue());
             LoggerConfiguration configuration = logContextConfiguration.getLoggerConfiguration(loggerName);
             if (configuration == null) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.loggerConfigurationNotFound(loggerName));
@@ -92,11 +92,12 @@ final class LoggerOperations {
         private final AttributeDefinition[] attributes;
 
         LoggerAddOperationStepHandler(final AttributeDefinition[] attributes) {
+            super(attributes);
             this.attributes = attributes;
         }
 
         @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        public void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
             for (AttributeDefinition attribute : attributes) {
                 // Filter attribute needs to be converted to filter spec
                 if (CommonAttributes.FILTER.equals(attribute)) {
@@ -112,11 +113,12 @@ final class LoggerOperations {
         }
 
         @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
             final String loggerName = getLogManagerLoggerName(name);
             LoggerConfiguration configuration = logContextConfiguration.getLoggerConfiguration(loggerName);
             if (configuration == null) {
-                LoggingLogger.ROOT_LOGGER.tracef("Adding logger '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                LoggingLogger.ROOT_LOGGER.tracef("Adding logger '%s' at '%s'", name, context.getCurrentAddress());
                 configuration = logContextConfiguration.addLoggerConfiguration(loggerName);
             }
 
@@ -132,7 +134,7 @@ final class LoggerOperations {
      */
     static class LoggerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
 
-        protected LoggerWriteAttributeHandler(final AttributeDefinition[] attributes) {
+        LoggerWriteAttributeHandler(final AttributeDefinition[] attributes) {
             super(attributes);
         }
 
@@ -177,14 +179,9 @@ final class LoggerOperations {
     static final OperationStepHandler REMOVE_LOGGER = new LoggingOperations.LoggingRemoveOperationStepHandler() {
 
         @Override
-        public void performRemove(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
-            context.removeResource(PathAddress.EMPTY_ADDRESS);
-        }
-
-        @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             // Disable the logger before removing it
-            final String loggerName = getLogManagerLoggerName(name);
+            final String loggerName = getLogManagerLoggerName(context.getCurrentAddressValue());
             final LoggerConfiguration configuration = logContextConfiguration.getLoggerConfiguration(loggerName);
             if (configuration == null) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.loggerNotFound(loggerName));
@@ -196,11 +193,14 @@ final class LoggerOperations {
     /**
      * A step handler to add a handler.
      */
-    static final OperationStepHandler ADD_HANDLER = new LoggerUpdateOperationStepHandler() {
+    static final OperationStepHandler ADD_HANDLER = new LoggerUpdateOperationStepHandler(HANDLERS) {
 
         @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            model.get(HANDLERS.getName()).add(operation.get(HANDLER_NAME.getName()));
+        public void updateModel(final OperationContext context, final ModelNode operation, final ModelNode model) {
+            final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ModelNode handlerName = operation.get(HANDLER_NAME.getName());
+            model.get(HANDLERS.getName()).add(handlerName);
+            recordCapabilitiesAndRequirements(context, resource, HANDLERS, new ModelNode().setEmptyList().add(handlerName), new ModelNode());
         }
 
         @Override
@@ -211,7 +211,7 @@ final class LoggerOperations {
             if (configuration.getHandlerNames().contains(handlerName)) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.handlerAlreadyDefined(handlerName));
             }
-            LoggingLogger.ROOT_LOGGER.tracef("Adding handler '%s' to logger '%s' at '%s'", handlerName, getLogManagerLoggerName(loggerName), LoggingOperations.getAddress(operation));
+            LoggingLogger.ROOT_LOGGER.tracef("Adding handler '%s' to logger '%s' at '%s'", handlerName, getLogManagerLoggerName(loggerName), context.getCurrentAddress());
             configuration.addHandlerName(handlerName);
         }
     };
@@ -219,17 +219,19 @@ final class LoggerOperations {
     /**
      * A step handler to remove a handler.
      */
-    static final OperationStepHandler REMOVE_HANDLER = new LoggerUpdateOperationStepHandler() {
+    static final OperationStepHandler REMOVE_HANDLER = new LoggerUpdateOperationStepHandler(HANDLERS) {
 
         @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        public void updateModel(final OperationContext context, final ModelNode operation, final ModelNode model) {
+            final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final String handlerName = operation.get(HANDLER_NAME.getName()).asString();
             // Create a new handler list for the model
             boolean found = false;
             final List<ModelNode> handlers = model.get(HANDLERS.getName()).asList();
-            final List<ModelNode> newHandlers = new ArrayList<ModelNode>(handlers.size());
+            final List<ModelNode> newHandlers = new ArrayList<>(handlers.size());
             for (ModelNode handler : handlers) {
                 if (handlerName.equals(handler.asString())) {
+                    HANDLER.removeCapabilityRequirements(context, resource, new ModelNode().setEmptyList().add(handlerName));
                     found = true;
                 } else {
                     newHandlers.add(handler);
@@ -250,12 +252,7 @@ final class LoggerOperations {
     /**
      * A step handler to remove a handler.
      */
-    static final OperationStepHandler CHANGE_LEVEL = new LoggerUpdateOperationStepHandler() {
-
-        @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            LEVEL.validateAndSet(operation, model);
-        }
+    static final OperationStepHandler CHANGE_LEVEL = new LoggerUpdateOperationStepHandler(LEVEL) {
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final LoggerConfiguration configuration, final String name, final ModelNode model) throws OperationFailedException {
@@ -295,6 +292,6 @@ final class LoggerOperations {
      * @return the name of the logger
      */
     private static String getLogManagerLoggerName(final String name) {
-        return (name.equals(ROOT_LOGGER_ATTRIBUTE_NAME) ? CommonAttributes.ROOT_LOGGER_NAME : name);
+        return (name.equals(RESOURCE_NAME) ? CommonAttributes.ROOT_LOGGER_NAME : name);
     }
 }

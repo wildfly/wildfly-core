@@ -23,8 +23,7 @@
 package org.jboss.as.logging.resolvers;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.logging.Target;
+import org.jboss.as.logging.handlers.Target;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 
@@ -41,7 +40,7 @@ public class TargetResolver implements ModelNodeResolver<String> {
     }
 
     @Override
-    public String resolveValue(final OperationContext context, final ModelNode value) throws OperationFailedException {
+    public String resolveValue(final OperationContext context, final ModelNode value) {
         final String result;
         switch (Target.fromString(value.asString())) {
             case SYSTEM_ERR: {

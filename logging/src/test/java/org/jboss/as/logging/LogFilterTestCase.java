@@ -48,7 +48,7 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
     }
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -58,7 +58,7 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
     }
 
     @Test
-    public void addLoggingFilter() throws IOException {
+    public void addLoggingFilter() {
         ModelNode consoleAddress = createAddress("console-handler", "CONSOLE").toModelNode();
         ModelNode replaceValue = new ModelNode();
         replaceValue.get("pattern").set("JBAS");
@@ -68,10 +68,10 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
         filterAttributeValue.get("replace").set(replaceValue);
 
         final ModelNode writeOp = Operations.createWriteAttributeOperation(consoleAddress, "filter", filterAttributeValue);
-        ModelNode result = executeOperation(kernelServices, writeOp);
+        executeOperation(kernelServices, writeOp);
         // Create the read operation
         final ModelNode readAttributeOp = Operations.createReadAttributeOperation(consoleAddress, "filter");
-        result = executeOperation(kernelServices, readAttributeOp);
+        ModelNode result = executeOperation(kernelServices, readAttributeOp);
         assertThat(result, is(notNullValue()));
         assertThat(result.get(OUTCOME).asString(), is("success"));
         assertEquals("{\"replace\" => {\"replace-all\" => true,\"pattern\" => \"JBAS\",\"replacement\" => \"DUMMY\"}}",

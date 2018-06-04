@@ -26,7 +26,6 @@ import static org.jboss.as.logging.Logging.createOperationFailure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
@@ -46,7 +45,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public final class LogLevelValidator extends ModelTypeValidator implements AllowedValuesValidator {
-    public static final Level[] LEVELS = {
+    private static final Level[] LEVELS = {
             org.jboss.logmanager.Level.ALL,
             org.jboss.logmanager.Level.CONFIG,
             org.jboss.logmanager.Level.DEBUG,
@@ -70,19 +69,15 @@ public final class LogLevelValidator extends ModelTypeValidator implements Allow
         this(nullable, false);
     }
 
-    public LogLevelValidator(final boolean nullable, final Level... levels) {
-        this(nullable, false, levels);
-    }
-
-    public LogLevelValidator(final boolean nullable, final boolean allowExpressions) {
+    private LogLevelValidator(final boolean nullable, final boolean allowExpressions) {
         this(nullable, allowExpressions, LEVELS);
     }
 
-    public LogLevelValidator(final boolean nullable, final boolean allowExpressions, final Level... levels) {
+    private LogLevelValidator(final boolean nullable, final boolean allowExpressions, final Level... levels) {
         super(ModelType.STRING, nullable, allowExpressions);
         allowedValues = Arrays.asList(levels);
-        Collections.sort(allowedValues, LevelComparator.INSTANCE);
-        nodeValues = new ArrayList<ModelNode>(allowedValues.size());
+        allowedValues.sort(LevelComparator.INSTANCE);
+        nodeValues = new ArrayList<>(allowedValues.size());
         for (Level level : allowedValues) {
             nodeValues.add(new ModelNode(level.getName()));
         }

@@ -26,12 +26,10 @@ import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -51,21 +49,21 @@ import org.jboss.modules.ModuleLoader;
  */
 public class LoggingDependencyDeploymentProcessor implements DeploymentUnitProcessor {
 
-    private static final ModuleIdentifier[] LOGGING_MODULES = new ModuleIdentifier[] {
-            ModuleIdentifier.create("org.jboss.logging"),
-            ModuleIdentifier.create("org.apache.commons.logging"),
-            ModuleIdentifier.create("org.apache.log4j"),
-            ModuleIdentifier.create("org.slf4j"),
-            ModuleIdentifier.create("org.jboss.logging.jul-to-slf4j-stub"),
+    private static final String[] LOGGING_MODULES = new String[] {
+            "org.jboss.logging",
+            "org.apache.commons.logging",
+            "org.apache.log4j",
+            "org.slf4j",
+            "org.jboss.logging.jul-to-slf4j-stub",
     };
 
     @Override
-    public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+    public void deploy(final DeploymentPhaseContext phaseContext) {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
         // Add the logging modules
-        for (ModuleIdentifier moduleId : LOGGING_MODULES) {
+        for (String moduleId : LOGGING_MODULES) {
             try {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding module '%s' to deployment '%s'", moduleId, deploymentUnit.getName());
                 moduleLoader.loadModule(moduleId);

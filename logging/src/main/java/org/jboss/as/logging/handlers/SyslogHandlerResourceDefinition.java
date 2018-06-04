@@ -1,48 +1,50 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.handlers;
 
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.logging.HandlerOperations.HandlerAddOperationStepHandler;
-import org.jboss.as.logging.HandlerOperations.LogHandlerWriteAttributeHandler;
+import org.jboss.as.logging.Attribute;
+import org.jboss.as.logging.ElementAttributeMarshaller;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.LoggingExtension;
+import org.jboss.as.logging.PropertyAttributeDefinition;
+import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.handlers.HandlerOperations.HandlerAddOperationStepHandler;
+import org.jboss.as.logging.handlers.HandlerOperations.LogHandlerWriteAttributeHandler;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.as.logging.validators.Validators;
 import org.jboss.dmr.ModelNode;
@@ -54,40 +56,40 @@ import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
+public class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
 
-    static final String SYSLOG_HANDLER = "syslog-handler";
-    static final PathElement SYSLOG_HANDLER_PATH = PathElement.pathElement(SYSLOG_HANDLER);
+    public static final String NAME = "syslog-handler";
+    private static final PathElement SYSLOG_HANDLER_PATH = PathElement.pathElement(NAME);
 
-    static final PropertyAttributeDefinition APP_NAME = PropertyAttributeDefinition.Builder.of("app-name", ModelType.STRING, true)
+    public static final PropertyAttributeDefinition APP_NAME = PropertyAttributeDefinition.Builder.of("app-name", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setPropertyName("appName")
             .setValidator(Validators.NOT_EMPTY_NULLABLE_STRING_VALIDATOR)
             .build();
 
-    static final PropertyAttributeDefinition FACILITY = PropertyAttributeDefinition.Builder.of("facility", ModelType.STRING, true)
+    public static final PropertyAttributeDefinition FACILITY = PropertyAttributeDefinition.Builder.of("facility", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setDefaultValue(new ModelNode(FacilityAttribute.USER_LEVEL.toString()))
             .setResolver(FacilityResolver.INSTANCE)
-            .setValidator(EnumValidator.create(FacilityAttribute.class, true, true))
+            .setValidator(EnumValidator.create(FacilityAttribute.class, EnumSet.allOf(FacilityAttribute.class)))
             .build();
 
-    static final PropertyAttributeDefinition HOSTNAME = PropertyAttributeDefinition.Builder.of("hostname", ModelType.STRING, true)
+    public static final PropertyAttributeDefinition HOSTNAME = PropertyAttributeDefinition.Builder.of("hostname", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setValidator(Validators.NOT_EMPTY_NULLABLE_STRING_VALIDATOR)
             .build();
 
-    static final PropertyAttributeDefinition PORT = PropertyAttributeDefinition.Builder.of("port", ModelType.INT, true)
+    public static final PropertyAttributeDefinition PORT = PropertyAttributeDefinition.Builder.of("port", ModelType.INT, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setDefaultValue(new ModelNode(514))
             .setValidator(new IntRangeValidator(0, 65535, true, true))
             .build();
 
-    static final PropertyAttributeDefinition SERVER_ADDRESS = PropertyAttributeDefinition.Builder.of("server-address", ModelType.STRING, true)
+    public static final PropertyAttributeDefinition SERVER_ADDRESS = PropertyAttributeDefinition.Builder.of("server-address", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .setDefaultValue(new ModelNode("localhost"))
@@ -95,7 +97,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
             .setValidator(Validators.NOT_EMPTY_NULLABLE_STRING_VALIDATOR)
             .build();
 
-    static final PropertyAttributeDefinition SYSLOG_FORMATTER = PropertyAttributeDefinition.Builder.of("syslog-format", ModelType.STRING, true)
+    public static final PropertyAttributeDefinition SYSLOG_FORMATTER = PropertyAttributeDefinition.Builder.of("syslog-format", ModelType.STRING, true)
             .setAllowExpression(true)
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
                 @Override
@@ -112,13 +114,13 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
             })
             .setDefaultValue(new ModelNode(SyslogType.RFC5424.name()))
             .setPropertyName("syslogType")
-            .setValidator(EnumValidator.create(SyslogType.class, true, true))
+            .setValidator(EnumValidator.create(SyslogType.class, EnumSet.allOf(SyslogType.class)))
             .build();
 
     /*
-    * Attributes
-    */
-    static final AttributeDefinition[] ATTRIBUTES = {
+     * Attributes
+     */
+    private static final AttributeDefinition[] ATTRIBUTES = {
             APP_NAME,
             ENABLED,
             FACILITY,
@@ -129,16 +131,15 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
             SYSLOG_FORMATTER
     };
 
-    static final HandlerAddOperationStepHandler ADD_HANDLER = new HandlerAddOperationStepHandler(SyslogHandler.class, ATTRIBUTES);
-    static final LogHandlerWriteAttributeHandler WRITE_HANDLER = new LogHandlerWriteAttributeHandler(ATTRIBUTES);
+    private static final HandlerAddOperationStepHandler ADD_HANDLER = new HandlerAddOperationStepHandler(SyslogHandler.class, ATTRIBUTES);
+    private static final LogHandlerWriteAttributeHandler WRITE_HANDLER = new LogHandlerWriteAttributeHandler(ATTRIBUTES);
 
-    static final SyslogHandlerResourceDefinition INSTANCE = new SyslogHandlerResourceDefinition();
+    public static final SyslogHandlerResourceDefinition INSTANCE = new SyslogHandlerResourceDefinition();
 
-    public SyslogHandlerResourceDefinition() {
-        super(SYSLOG_HANDLER_PATH,
-                LoggingExtension.getResourceDescriptionResolver(SYSLOG_HANDLER),
-                ADD_HANDLER,
-                HandlerOperations.REMOVE_HANDLER);
+    private SyslogHandlerResourceDefinition() {
+        super(new Parameters(SYSLOG_HANDLER_PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
+                .setAddHandler(ADD_HANDLER)
+                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER));
     }
 
     @Override
@@ -153,7 +154,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
         //
     }
 
-    static enum FacilityAttribute {
+    public enum FacilityAttribute {
         KERNEL("kernel"),
         USER_LEVEL("user-level"),
         MAIL_SYSTEM("mail-system"),
@@ -182,7 +183,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
         private static final Map<String, FacilityAttribute> MAP;
 
         static {
-            MAP = new HashMap<String, FacilityAttribute>();
+            MAP = new HashMap<>();
             for (FacilityAttribute facilityAttribute : values()) {
                 MAP.put(facilityAttribute.toString(), facilityAttribute);
             }
@@ -209,7 +210,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
             return value;
         }
 
-        static FacilityAttribute fromString(final String value) {
+        public static FacilityAttribute fromString(final String value) {
             return MAP.get(value);
         }
     }
@@ -218,7 +219,7 @@ class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
         static final FacilityResolver INSTANCE = new FacilityResolver();
 
         @Override
-        public String resolveValue(final OperationContext context, final ModelNode value) throws OperationFailedException {
+        public String resolveValue(final OperationContext context, final ModelNode value) {
             return FacilityAttribute.fromString(value.asString()).getFacility().name();
         }
     }

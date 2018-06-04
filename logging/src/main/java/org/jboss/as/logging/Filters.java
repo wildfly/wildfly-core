@@ -42,19 +42,19 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class Filters {
+public class Filters {
 
-    public static final String ACCEPT = "accept";
-    public static final String ALL = "all";
-    public static final String ANY = "any";
-    public static final String DENY = "deny";
-    public static final String LEVELS = "levels";
-    public static final String LEVEL_CHANGE = "levelChange";
-    public static final String LEVEL_RANGE = "levelRange";
-    public static final String MATCH = "match";
-    public static final String NOT = "not";
-    public static final String SUBSTITUTE = "substitute";
-    public static final String SUBSTITUTE_ALL = "substituteAll";
+    static final String ACCEPT = "accept";
+    static final String ALL = "all";
+    static final String ANY = "any";
+    static final String DENY = "deny";
+    static final String LEVELS = "levels";
+    static final String LEVEL_CHANGE = "levelChange";
+    static final String LEVEL_RANGE = "levelRange";
+    static final String MATCH = "match";
+    static final String NOT = "not";
+    static final String SUBSTITUTE = "substitute";
+    static final String SUBSTITUTE_ALL = "substituteAll";
 
     /**
      * Converts the legacy {@link CommonAttributes#FILTER filter} to the new {@link CommonAttributes#FILTER_SPEC filter
@@ -65,10 +65,9 @@ class Filters {
      * @return the filter expression (filter spec) or an empty String the value is not
      * {@linkplain ModelNode#isDefined() defined}
      *
-     * @throws org.jboss.as.controller.OperationFailedException
-     *          if a conversion error occurs
+     * @throws org.jboss.as.controller.OperationFailedException if a conversion error occurs
      */
-    static String filterToFilterSpec(final ModelNode value) throws OperationFailedException {
+    public static String filterToFilterSpec(final ModelNode value) throws OperationFailedException {
         if (value.isDefined()) {
             final StringBuilder result = new StringBuilder();
             filterToFilterSpec(value, result, false);
@@ -95,6 +94,7 @@ class Filters {
         return filter;
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static void parseFilterExpression(final Iterator<String> iterator, final ModelNode model, final boolean outermost) {
         if (!iterator.hasNext()) {
             if (outermost) {
@@ -131,7 +131,7 @@ class Filters {
             expect(")", iterator);
         } else if (LEVELS.equals(token)) {
             expect("(", iterator);
-            final Set<String> levels = new HashSet<String>();
+            final Set<String> levels = new HashSet<>();
             do {
                 levels.add(expectName(iterator));
             } while (expect(",", ")", iterator));
@@ -232,8 +232,9 @@ class Filters {
     }
 
 
+    @SuppressWarnings("UnusedAssignment")
     private static List<String> tokens(final String source) {
-        final List<String> tokens = new ArrayList<String>();
+        final List<String> tokens = new ArrayList<>();
         final int length = source.length();
         int idx = 0;
         while (idx < length) {
@@ -442,11 +443,11 @@ class Filters {
         }
     }
 
-    private static String escapeString(final AttributeDefinition attribute, final ModelNode value) throws OperationFailedException {
+    private static String escapeString(final AttributeDefinition attribute, final ModelNode value) {
         return escapeString(value.get(attribute.getName()));
     }
 
-    private static String escapeString(final ModelNode value) throws OperationFailedException {
+    private static String escapeString(final ModelNode value) {
         return String.format("\"%s\"", value.asString().replace("\\", "\\\\"));
     }
 }

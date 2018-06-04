@@ -1,26 +1,23 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2013, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.formatters;
 
 import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
@@ -28,7 +25,6 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.Logging.createOperationFailure;
 
 import java.util.List;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -42,7 +38,11 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.LoggingExtension;
+import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.LoggingOperations.LoggingWriteAttributeHandler;
+import org.jboss.as.logging.TransformerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -52,9 +52,10 @@ import org.jboss.logmanager.config.LogContextConfiguration;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
+public class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
+    public static final String NAME = "custom-formatter";
 
-    public static final ObjectTypeAttributeDefinition CUSTOM_FORMATTER = ObjectTypeAttributeDefinition.Builder.of("custom-formatter", CLASS, MODULE, PROPERTIES)
+    public static final ObjectTypeAttributeDefinition CUSTOM_FORMATTER = ObjectTypeAttributeDefinition.Builder.of(NAME, CLASS, MODULE, PROPERTIES)
             .setAllowExpression(false)
             .setRequired(false)
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
@@ -78,9 +79,9 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
             })
             .build();
 
-    static final PathElement CUSTOM_FORMATTER_PATH = PathElement.pathElement(CUSTOM_FORMATTER.getName());
+    private static final PathElement PATH = PathElement.pathElement(NAME);
 
-    static final AttributeDefinition[] ATTRIBUTES = {
+    private static final AttributeDefinition[] ATTRIBUTES = {
             CLASS,
             MODULE,
             PROPERTIES
@@ -90,17 +91,11 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
     /**
      * A step handler to add a custom formatter
      */
-    static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler() {
+    private static final OperationStepHandler ADD = new LoggingOperations.LoggingAddOperationStepHandler(ATTRIBUTES) {
 
         @Override
-        public void updateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            for (AttributeDefinition attribute : ATTRIBUTES) {
-                attribute.validateAndSet(operation, model);
-            }
-        }
-
-        @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
             FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             final String className = CLASS.resolveModelAttribute(context, model).asString();
             final ModelNode moduleNameNode = MODULE.resolveModelAttribute(context, model);
@@ -108,12 +103,12 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
             final ModelNode properties = PROPERTIES.resolveModelAttribute(context, model);
             if (configuration != null) {
                 if (!className.equals(configuration.getClassName()) || (moduleName == null ? configuration.getModuleName() != null : !moduleName.equals(configuration.getModuleName()))) {
-                    LoggingLogger.ROOT_LOGGER.tracef("Replacing formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                    LoggingLogger.ROOT_LOGGER.tracef("Replacing formatter '%s' at '%s'", name, context.getCurrentAddress());
                     logContextConfiguration.removeFormatterConfiguration(name);
                     configuration = logContextConfiguration.addFormatterConfiguration(moduleName, className, name);
                 }
             } else {
-                LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, LoggingOperations.getAddress(operation));
+                LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, context.getCurrentAddress());
                 configuration = logContextConfiguration.addFormatterConfiguration(moduleName, className, name);
             }
             if (properties.isDefined()) {
@@ -124,7 +119,7 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
         }
     };
 
-    static final OperationStepHandler WRITE = new LoggingWriteAttributeHandler(ATTRIBUTES) {
+    private static final OperationStepHandler WRITE = new LoggingWriteAttributeHandler(ATTRIBUTES) {
 
         @Override
         protected boolean applyUpdate(final OperationContext context, final String attributeName, final String addressName, final ModelNode value, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -153,15 +148,11 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
     /**
      * A step handler to remove
      */
-    static final OperationStepHandler REMOVE = new LoggingOperations.LoggingRemoveOperationStepHandler() {
+    private static final OperationStepHandler REMOVE = new LoggingOperations.LoggingRemoveOperationStepHandler() {
 
         @Override
-        protected void performRemove(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
-            context.removeResource(PathAddress.EMPTY_ADDRESS);
-        }
-
-        @Override
-        public void performRuntime(final OperationContext context, final ModelNode operation, final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) throws OperationFailedException {
+        public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
             final FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             if (configuration == null) {
                 throw createOperationFailure(LoggingLogger.ROOT_LOGGER.formatterNotFound(name));
@@ -170,12 +161,12 @@ class CustomFormatterResourceDefinition extends TransformerResourceDefinition {
         }
     };
 
-    static final CustomFormatterResourceDefinition INSTANCE = new CustomFormatterResourceDefinition();
+    public static final CustomFormatterResourceDefinition INSTANCE = new CustomFormatterResourceDefinition();
 
-    public CustomFormatterResourceDefinition() {
-        super(CUSTOM_FORMATTER_PATH,
-                LoggingExtension.getResourceDescriptionResolver(CUSTOM_FORMATTER.getName()),
-                ADD, REMOVE);
+    private CustomFormatterResourceDefinition() {
+        super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
+                .setAddHandler(ADD)
+                .setRemoveHandler(REMOVE));
     }
 
     @Override
