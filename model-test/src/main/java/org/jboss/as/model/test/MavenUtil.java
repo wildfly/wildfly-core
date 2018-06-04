@@ -254,6 +254,14 @@ class MavenUtil {
                 repository.setProxy(httpProxy);
             }
             remoteRepositories.add(repository.build());
+            // add the jboss staging repository only if the system property exists
+            if (System.getProperty("jboss.staging.repository.group") != null) {
+                RemoteRepository.Builder stagingRepository = new RemoteRepository.Builder("jboss-staging-repository-group", "default", "https://repository.jboss.org/nexus/content/groups/staging/");
+                if (httpProxy != null) {
+                    stagingRepository.setProxy(httpProxy);
+                }
+                remoteRepositories.add(stagingRepository.build());
+            }
             //add repos from users settings.xml
             List<String> remoteRepositories1 = mavenSettings.getRemoteRepositories();
             for (int i = 0; i < remoteRepositories1.size(); i++) {
