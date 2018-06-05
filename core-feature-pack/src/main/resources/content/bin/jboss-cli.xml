@@ -3,7 +3,7 @@
 <!--
    WildFly Command-line Interface configuration.
 -->
-<jboss-cli xmlns="urn:jboss:cli:3.4">
+<jboss-cli xmlns="urn:jboss:cli:3.5">
 
     <default-protocol use-legacy-override="true">remote+http</default-protocol>
 
@@ -74,5 +74,8 @@
     When this option is set to false the paging will be disabled
     and the whole output of all commands will be written at once(useful e.g.for copy/paste).-->
     <!-- <output-paging>false</output-paging> -->
+
+    <!-- Uncomment to disable highlight of open/close brackets -->
+    <!-- <character-highlight>true</character-highlight> -->
 
 </jboss-cli>

@@ -149,4 +149,9 @@ public class MockCliConfig implements CliConfig {
     public boolean isOutputPaging() {
         return false;
     }
+
+    @Override
+    public boolean ischaracterHighlight() {
+        return false;
+    }
 }

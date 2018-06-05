@@ -172,6 +172,8 @@ public class CliLauncher {
                     ctxBuilder.setOutputPaging(false);
                 } else if (arg.equals("--resolve-parameter-values")) {
                     ctxBuilder.setResolveParameterValues(true);
+                } else if (arg.equals("--no-character-highlight")) {
+                    ctxBuilder.setCharacterHighlight(false);
                 } else if (arg.startsWith("--command-timeout=")) {
                     ctxBuilder.
                             setCommandTimeout(Integer.parseInt(arg.substring(18)));

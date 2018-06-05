@@ -346,6 +346,14 @@ public class Util {
         return WildFlySecurityManager.getPropertyPrivileged("os.name", null).toLowerCase(Locale.ENGLISH).indexOf("windows") >= 0;
     }
 
+    public static boolean isSolaris() {
+        String osName = System.getProperty("os.name");
+        if (osName == null) {
+            return false;
+        }
+        return (osName.indexOf("Solaris") > -1) || (osName.indexOf("solaris") > -1) || (osName.indexOf("SunOS") > -1);
+    }
+
     public static boolean isSuccess(ModelNode operationResponse) {
         if (operationResponse != null) {
             return operationResponse.hasDefined(Util.OUTCOME) && operationResponse.get(Util.OUTCOME).asString().equals(Util.SUCCESS);

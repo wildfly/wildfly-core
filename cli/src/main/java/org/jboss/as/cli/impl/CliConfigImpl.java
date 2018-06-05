@@ -88,6 +88,7 @@ class CliConfigImpl implements CliConfig {
     private static final String OUTPUT_JSON = "output-json";
     private static final String COLOR_OUTPUT = "color-output";
     private static final String OUTPUT_PAGING = "output-paging";
+    private static final String CHARACTER_HIGHLIGHT = "character-highlight";
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
@@ -194,6 +195,8 @@ class CliConfigImpl implements CliConfig {
         cliConfig.outputJSON                = configuration.isOutputJSON()                        ? configuration.isOutputJSON()                : cliConfig.isOutputJSON();
         cliConfig.outputPaging              = !configuration.isOutputPaging()                     ? configuration.isOutputPaging()              : cliConfig.isOutputPaging();
         cliConfig.resolveParameterValues    = configuration.isResolveParameterValues()            ? configuration.isResolveParameterValues()    : cliConfig.resolveParameterValues;
+        cliConfig.characterHighlight        = !configuration.isCharacterHighlight()                ? configuration.isCharacterHighlight()        : cliConfig.ischaracterHighlight();
+
         if (!configuration.isColorOutput()) {
             cliConfig.colorOutput = false;
         } else if (configuration.isColorOutput() && cliConfig.colorConfig == null) {
@@ -271,6 +274,8 @@ class CliConfigImpl implements CliConfig {
     private ColorConfigImpl colorConfig;
 
     private boolean outputPaging = true;
+
+    private boolean characterHighlight = true;
 
     @Override
     public String getDefaultControllerProtocol() {
@@ -387,6 +392,11 @@ class CliConfigImpl implements CliConfig {
     @Override
     public boolean isOutputPaging() {
         return outputPaging;
+    }
+
+    @Override
+    public boolean ischaracterHighlight() {
+        return characterHighlight;
     }
 
     static class SslConfig implements SSLConfig {
@@ -591,8 +601,11 @@ class CliConfigImpl implements CliConfig {
                         case CLI_3_3:
                             readCLIElement_3_3(reader, readerNS, config);
                             break;
-                        default:
+                        case CLI_3_4:
                             readCLIElement_3_4(reader, readerNS, config);
+                            break;
+                        default:
+                            readCLIElement_3_5(reader, readerNS, config);
                     }
                     return;
                 }
@@ -1010,6 +1023,70 @@ class CliConfigImpl implements CliConfig {
                     } else if (localName.equals(OUTPUT_PAGING)) {
                         config.outputPaging = resolveBoolean(reader.getElementText());
                     } else {
+                        throw new XMLStreamException("Unexpected element: " + localName);
+                    }
+                } else if(tag == XMLStreamConstants.END_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(JBOSS_CLI)) {
+                        jbossCliEnded = true;
+                    }
+                }
+            }
+        }
+
+        //Added character highlight element
+        public void readCLIElement_3_5(XMLExtendedStreamReader reader, Namespace expectedNs, CliConfigImpl config) throws XMLStreamException {
+            boolean jbossCliEnded = false;
+            while (reader.hasNext() && !jbossCliEnded) {
+                int tag = reader.nextTag();
+                assertExpectedNamespace(reader, expectedNs);
+                if(tag == XMLStreamConstants.START_ELEMENT) {
+                    final String localName = reader.getLocalName();
+                    if (localName.equals(DEFAULT_PROTOCOL)) {
+                        readDefaultProtocol_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(DEFAULT_CONTROLLER)) {
+                        readDefaultController_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(CONTROLLERS)) {
+                        readControllers_2_0(reader, expectedNs, config);
+                    } else if (localName.equals(VALIDATE_OPERATION_REQUESTS)) {
+                        config.validateOperationRequests = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(ECHO_COMMAND)) {
+                        config.echoCommand = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(OUTPUT_JSON)) {
+                        config.outputJSON = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(COLOR_OUTPUT)) {
+                        ColorConfigImpl colorConfig = new ColorConfigImpl();
+                        readColorElement_3_3(reader, expectedNs, colorConfig);
+                        config.colorConfig = colorConfig;
+                        config.colorOutput = colorConfig.isEnabled();
+                    } else if (localName.equals(COMMAND_TIMEOUT)) {
+                        config.commandTimeout = resolveInteger(reader.getElementText());
+                    } else if (localName.equals(HISTORY)) {
+                        readHistory(reader, expectedNs, config);
+                    } else if(localName.equals(RESOLVE_PARAMETER_VALUES)) {
+                        config.resolveParameterValues = resolveBoolean(reader.getElementText());
+                    } else if (CONNECTION_TIMEOUT.equals(localName)) {
+                        final String text = reader.getElementText();
+                        try {
+                            config.connectionTimeout = Integer.parseInt(text);
+                        } catch(NumberFormatException e) {
+                            throw new XMLStreamException("Failed to parse " + JBOSS_CLI + " " + CONNECTION_TIMEOUT + " value '" + text + "'", e);
+                        }
+                    } else if (localName.equals("ssl")) {
+                        SslConfig sslConfig = new SslConfig();
+                        readSSLElement_3_0(reader, expectedNs, sslConfig);
+                        config.sslConfig = sslConfig;
+                    } else if(localName.equals(SILENT)) {
+                        config.silent = resolveBoolean(reader.getElementText());
+                    } else if(localName.equals(ACCESS_CONTROL)) {
+                        config.accessControl = resolveBoolean(reader.getElementText());
+                        logAccessControl(config.accessControl);
+                    } else if (localName.equals(OUTPUT_PAGING)) {
+                        config.outputPaging = resolveBoolean(reader.getElementText());
+                    } else if (localName.equals(CHARACTER_HIGHLIGHT)) {
+                        config.characterHighlight = resolveBoolean(reader.getElementText());
+                    }
+                    else {
                         throw new XMLStreamException("Unexpected element: " + localName);
                     }
                 } else if(tag == XMLStreamConstants.END_ELEMENT) {

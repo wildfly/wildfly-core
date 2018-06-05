@@ -217,4 +217,10 @@ public interface CliConfig {
      * @return true, the output of commands is paged, false, whole output of commands is written at once.
      */
     boolean isOutputPaging();
+
+    /**
+     * Controls if character open/close highlight will be enabled
+     * @return true, character highlight is enabled, false, character highlight is disabled.
+     */
+    boolean ischaracterHighlight();
 }
