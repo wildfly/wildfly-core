@@ -47,7 +47,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -88,6 +90,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String MAIN_RESOURCE_CAPABILITY_NAME = "main-resource-capability";
     private static final String MAIN_RESOURCE_PACKAGE_NAME = "main-resource-package";
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
+    private static final String DYNAMIC_CAPABILITY_NAME = "dynamic-capability";
 
     private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
 
@@ -230,6 +233,26 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         assertFeatureIdParam(RESOURCE, MAIN_RESOURCE, params);
         Assert.assertTrue(params.containsKey("optional-attr"));
 
+        ModelNode complexObjectAttr = children.require("subsystem.testsubsystem.resource.main-resource.complex-object-attr");
+        Assert.assertEquals("subsystem.testsubsystem.resource.main-resource.complex-object-attr", complexObjectAttr.require(NAME).asString());
+        annotation = complexObjectAttr.require(ANNOTATION);
+        Assert.assertEquals("write-attribute", annotation.require(NAME).asString());
+        Assert.assertEquals("complex-object-attr", annotation.require(COMPLEX_ATTRIBUTE).asString());
+        Assert.assertArrayEquals(new String[] {SUBSYSTEM, RESOURCE}, annotation.require(ADDR_PARAMS).asString().split(","));
+        assertSortedArrayEquals(new String[] {"optional-attr", "dynamic-attr"}, annotation.require(OP_PARAMS).asString().split(","));
+        Assert.assertEquals("subsystem.testsubsystem.resource.main-resource", listAttr.require(REFS).asList().get(0).require(FEATURE).asString());
+        // requires
+        ModelNode attrRequires = complexObjectAttr.require(REQUIRES);
+        Assert.assertEquals(2, attrRequires.asList().size());
+        Map<String, ModelNode> caps = extractToMap(attrRequires, NAME);
+        Assert.assertTrue(caps.containsKey(ROOT_CAPABILITY_NAME));
+        Assert.assertTrue(caps.get(ROOT_CAPABILITY_NAME).require(OPTIONAL).asBoolean());
+        Assert.assertTrue(caps.containsKey(DYNAMIC_CAPABILITY_NAME + ".$dynamic-attr"));
+        params = extractParamsToMap(complexObjectAttr);
+        assertFeatureIdParam(SUBSYSTEM, TEST_SUBSYSTEM, params);
+        assertFeatureIdParam(RESOURCE, MAIN_RESOURCE, params);
+        Assert.assertTrue(params.containsKey("optional-attr"));
+
         // requires
         ModelNode requires = feature.require(REQUIRES);
         Assert.assertEquals(1, requires.asList().size());
@@ -355,8 +378,13 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         // capabilities
         ModelNode provides = feature.require(PROVIDES);
-        Assert.assertEquals(1, provides.asList().size());
-        Assert.assertEquals(ROOT_CAPABILITY_NAME, provides.asList().get(0).asString());
+        Assert.assertEquals(2, provides.asList().size());
+        Set<String> providedCaps = new HashSet<>(2);
+        for(ModelNode providedCap : provides.asList()) {
+            providedCaps.add(providedCap.asString());
+        }
+        Assert.assertTrue(providedCaps.contains(ROOT_CAPABILITY_NAME));
+        Assert.assertTrue(providedCaps.contains(DYNAMIC_CAPABILITY_NAME));
     }
 
     /**
@@ -497,6 +525,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         ModelOnlyWriteAttributeHandler writeHandler = new ModelOnlyWriteAttributeHandler();
         registration.registerReadWriteAttribute(new SimpleAttributeDefinitionBuilder(NAME, ModelType.STRING).build(), null, writeHandler);
         registration.registerCapability(RuntimeCapability.Builder.of(ROOT_CAPABILITY_NAME).build());
+        registration.registerCapability(RuntimeCapability.Builder.of(DYNAMIC_CAPABILITY_NAME, true).build());
 
         // register extension with child subsystem
         Resource extensionRes = Resource.Factory.create();
@@ -556,6 +585,10 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
                 new SimpleAttributeDefinitionBuilder("optional-attr", ModelType.INT, true)
                         .setCapabilityReference(ROOT_CAPABILITY_NAME)
                         .build();
+        private static final AttributeDefinition DYNAMIC_ATTRIBUTE =
+                new SimpleAttributeDefinitionBuilder("dynamic-attr", ModelType.STRING, true)
+                        .setCapabilityReference(DYNAMIC_CAPABILITY_NAME)
+                        .build();
         private static final AttributeDefinition MANDATORY_ATTRIBUTE =
                 new SimpleAttributeDefinitionBuilder("mandatory-attr", ModelType.INT)
                         .build();
@@ -565,6 +598,10 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
                         .build();
         private static final ObjectTypeAttributeDefinition OBJECT_ATTRIBUTE =
                 ObjectTypeAttributeDefinition.Builder.of("object-attr", OPTIONAL_ATTRIBUTE)
+                        .setResourceOnly()
+                        .build();
+        private static final ObjectTypeAttributeDefinition COMPLEX_OBJECT_ATTRIBUTE =
+                ObjectTypeAttributeDefinition.Builder.of("complex-object-attr", OPTIONAL_ATTRIBUTE, DYNAMIC_ATTRIBUTE)
                         .setResourceOnly()
                         .build();
         private static final ObjectListAttributeDefinition LIST_ATTRIBUTE =
@@ -583,6 +620,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
             resourceRegistration.registerReadWriteAttribute(MANDATORY_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadOnlyAttribute(READ_ONLY_ATTRIBUTE, null);
             resourceRegistration.registerReadWriteAttribute(OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
+            resourceRegistration.registerReadWriteAttribute(COMPLEX_OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadWriteAttribute(LIST_ATTRIBUTE, null, WRITE_HANDLER);
         }
 

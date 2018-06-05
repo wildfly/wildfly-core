@@ -113,11 +113,14 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
                 cap.get(NAME).set(capability.getName());
                 cap.get(DYNAMIC).set(capability.isDynamicallyNamed());
                 if (capability.isDynamicallyNamed()) {
-                    String[] elements = capability.getDynamicName(createAliasPathAddress(pa)).split("\\.\\$");
-                    String[] capabilityPatternElements = Arrays.copyOfRange(elements, 1, elements.length);
-                    if (capabilityPatternElements.length > 0) {
-                        for (String patternElement : capabilityPatternElements) {
-                            cap.get(DYNAMIC_ELEMENTS).add(patternElement);
+                    PathAddress aliasAddress = createAliasPathAddress(pa);
+                    if(aliasAddress.size() > 0) {
+                        String[] elements = capability.getDynamicName(aliasAddress).split("\\.\\$");
+                        String[] capabilityPatternElements = Arrays.copyOfRange(elements, 1, elements.length);
+                        if (capabilityPatternElements.length > 0) {
+                            for (String patternElement : capabilityPatternElements) {
+                                cap.get(DYNAMIC_ELEMENTS).add(patternElement);
+                            }
                         }
                     }
                 }
