@@ -29,11 +29,13 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.UninterruptibleCountDownLatch;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.remote.EarlyResponseSendListener;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
@@ -42,6 +44,7 @@ import org.jboss.msc.service.ServiceName;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class ProcessReloadHandler<T extends RunningModeControl> implements OperationStepHandler {
 
@@ -79,37 +82,39 @@ public abstract class ProcessReloadHandler<T extends RunningModeControl> impleme
                         final EarlyResponseSendListener sendListener = context.getAttachment(EarlyResponseSendListener.ATTACHMENT_KEY);
                         try {
                             if (resultAction == OperationContext.ResultAction.KEEP) {
-                                service.addListener(new AbstractServiceListener<Object>() {
+                                final UninterruptibleCountDownLatch latch = new UninterruptibleCountDownLatch(1);
+                                service.addListener(new LifecycleListener() {
                                     @Override
-                                    public void listenerAdded(final ServiceController<?> controller) {
-                                        reloadContext.reloadInitiated(runningModeControl);
-                                        processState.setStopping();
-                                        try {
-                                            // If we were interrupted during setStopping (i.e. while calling process state listeners)
-                                            // we want to clear that so we don't disrupt the reload of MSC services.
-                                            // Once we set STOPPING state we proceed. And we don't want this thread
-                                            // to have interrupted status as that will just mess up checking for
-                                            // container stability
-                                            Thread.interrupted();
-                                            // Now that we're in STOPPING state we can send the response to the caller
-                                            if (sendListener != null) {
-                                                sendListener.sendEarlyResponse(resultAction);
-                                            }
-                                        } finally {
-                                            // If we set the process state to STOPPING, we must stop
-                                            controller.setMode(ServiceController.Mode.NEVER);
-                                        }
-                                    }
-
-                                    @Override
-                                    public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
-                                        if (transition == ServiceController.Transition.STOPPING_to_DOWN) {
+                                    public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                                        latch.awaitUninterruptibly();
+                                        if (event == LifecycleEvent.DOWN) {
                                             controller.removeListener(this);
                                             reloadContext.doReload(runningModeControl);
                                             controller.setMode(ServiceController.Mode.ACTIVE);
                                         }
                                     }
                                 });
+                                try {
+                                    reloadContext.reloadInitiated(runningModeControl);
+                                    processState.setStopping();
+                                    try {
+                                        // If we were interrupted during setStopping (i.e. while calling process state listeners)
+                                        // we want to clear that so we don't disrupt the reload of MSC services.
+                                        // Once we set STOPPING state we proceed. And we don't want this thread
+                                        // to have interrupted status as that will just mess up checking for
+                                        // container stability
+                                        Thread.interrupted();
+                                        // Now that we're in STOPPING state we can send the response to the caller
+                                        if (sendListener != null) {
+                                            sendListener.sendEarlyResponse(resultAction);
+                                        }
+                                    } finally {
+                                        // If we set the process state to STOPPING, we must stop
+                                        service.setMode(ServiceController.Mode.NEVER);
+                                    }
+                                } finally {
+                                    latch.countDown();
+                                }
                             }
                         } finally {
                             if (sendListener != null) {

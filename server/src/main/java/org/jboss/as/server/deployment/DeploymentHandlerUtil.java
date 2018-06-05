@@ -55,7 +55,8 @@ import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -68,6 +69,7 @@ import org.jboss.vfs.VirtualFile;
  * This class is part of the runtime operation and should not have any reference to dmr.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentHandlerUtil {
 
@@ -215,10 +217,10 @@ public class DeploymentHandlerUtil {
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
 
-        contentService.addListener(new AbstractServiceListener<Object>() {
+        contentService.addListener(new LifecycleListener() {
             @Override
-            public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                if (transition == ServiceController.Transition.REMOVING_to_REMOVED) {
+            public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                if (event == LifecycleEvent.REMOVED) {
                     deploymentUnitController.setMode(REMOVE);
                 }
             }

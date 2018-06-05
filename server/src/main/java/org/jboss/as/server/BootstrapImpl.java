@@ -39,7 +39,8 @@ import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceContainer;
@@ -54,6 +55,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * The bootstrap implementation.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class BootstrapImpl implements Bootstrap {
 
@@ -122,27 +124,28 @@ final class BootstrapImpl implements Bootstrap {
         tracker.addService(Services.JBOSS_AS, applicationServerService)
             .install();
         final ServiceController<?> rootService = container.getRequiredService(Services.JBOSS_AS);
-        rootService.addListener(new AbstractServiceListener<Object>() {
+        rootService.addListener(new LifecycleListener() {
             @Override
-            public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                switch (transition) {
-                    case STARTING_to_UP: {
+            public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                switch (event) {
+                    case UP: {
                         controller.removeListener(this);
                         final ServiceController<?> controllerServiceController = controller.getServiceContainer().getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
-                        controllerServiceController.addListener(new AbstractServiceListener<Object>() {
-                            public void transition(final ServiceController<?> controller, final ServiceController.Transition transition) {
-                                switch (transition) {
-                                    case STARTING_to_UP: {
+                        controllerServiceController.addListener(new LifecycleListener() {
+                            @Override
+                            public void handleEvent(final ServiceController<?> controller, final LifecycleEvent event) {
+                                switch (event) {
+                                    case UP: {
                                         future.done();
                                         controller.removeListener(this);
                                         break;
                                     }
-                                    case STARTING_to_START_FAILED: {
+                                    case FAILED: {
                                         future.failed(controller.getStartException());
                                         controller.removeListener(this);
                                         break;
                                     }
-                                    case REMOVING_to_REMOVED: {
+                                    case REMOVED: {
                                         future.failed(ServerLogger.ROOT_LOGGER.serverControllerServiceRemoved());
                                         controller.removeListener(this);
                                         break;
@@ -152,12 +155,12 @@ final class BootstrapImpl implements Bootstrap {
                         });
                         break;
                     }
-                    case STARTING_to_START_FAILED: {
+                    case FAILED: {
                         controller.removeListener(this);
                         future.failed(controller.getStartException());
                         break;
                     }
-                    case REMOVING_to_REMOVED: {
+                    case REMOVED: {
                         controller.removeListener(this);
                         future.failed(ServerLogger.ROOT_LOGGER.rootServiceRemoved());
                         break;
