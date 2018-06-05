@@ -542,6 +542,9 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         permissions.setWritableOwnerOnly(true);
         settings.historyFilePermission(permissions);
 
+        settings.colorOutput(config.isColorOutput());
+        settings.characterHighlight(config.ischaracterHighlight());
+
         return settings.create();
     }
 

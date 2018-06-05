@@ -24,15 +24,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
 import org.aesh.readline.PagingSupport;
 import org.aesh.readline.Prompt;
 import org.aesh.readline.Readline;
@@ -42,7 +46,10 @@ import org.aesh.readline.alias.AliasCompletion;
 import org.aesh.readline.alias.AliasManager;
 import org.aesh.readline.alias.AliasPreProcessor;
 import org.aesh.readline.completion.Completion;
+import org.aesh.readline.cursor.CursorListener;
+import org.aesh.readline.cursor.Line;
 import org.aesh.readline.history.FileHistory;
+import org.aesh.readline.terminal.formatting.Color;
 import org.aesh.terminal.Terminal;
 import org.aesh.terminal.Attributes;
 import org.aesh.terminal.utils.ANSI;
@@ -88,6 +95,202 @@ public class ReadlineConsole {
     private static final Logger LOG = Logger.getLogger(ReadlineConsole.class.getName());
     private static final boolean isTraceEnabled = LOG.isTraceEnabled();
 
+    private static final class CharacterMatcher {
+
+        private static final List<Character> endSeparators = Arrays.asList('}', ']', ')');
+        private static final List<Character> startSeparators = Arrays.asList('{', '[', '(');
+        private static final Map<Character, Character> endStartSeparators = new HashMap<>();
+        private static final Map<Character, Character> startEndSeparators = new HashMap<>();
+        private final Settings settings;
+
+        static {
+            endStartSeparators.put('}', '{');
+            endStartSeparators.put(']', '[');
+            endStartSeparators.put(')', '(');
+            startEndSeparators.put('{', '}');
+            startEndSeparators.put('[', ']');
+            startEndSeparators.put('(', ')');
+        }
+
+        private int lastIndex = -1;
+        private final List<Integer> openPositions = new ArrayList<>();
+        private Line lastLine;
+
+        private CharacterMatcher(Settings settings) {
+            this.settings = settings;
+        }
+
+        void clear() {
+            if (lastLine != null) {
+                if (lastIndex >= 0) {
+                    Line.CursorTransactionBuilder builder = lastLine.newCursorTransactionBuilder();
+                    builder.colorize(lastIndex, Color.DEFAULT, Color.DEFAULT, false);
+                    builder.build().run();
+                }
+
+                if (openPositions.size() > 0) {
+                    for (int position : openPositions) {
+                        Line.CursorTransactionBuilder builder = lastLine.newCursorTransactionBuilder();
+                        builder.colorize(position, Color.DEFAULT, Color.DEFAULT, false);
+                        builder.build().run();
+                    }
+                    openPositions.clear();
+                }
+            }
+
+        }
+
+        void clear(int position) {
+            if (lastLine != null) {
+                Line.CursorTransactionBuilder builder = lastLine.newCursorTransactionBuilder();
+                builder.colorize(position, Color.DEFAULT, Color.DEFAULT, false);
+                builder.build().run();
+            }
+        }
+
+        void match(Line line) {
+            lastLine = line;
+            clear();
+
+            char separator = (char) line.getCharacterAtCursor();
+
+            if (endSeparators.contains(separator)) {
+                String l = line.getLineToCursor();
+                char startChar = endStartSeparators.get(separator);
+                int index = findStart(l, startChar, separator);
+                if (index == -1) {
+                    return;
+                }
+
+                markOpenPairs(line, index, line.getCurrentCharacterIndex());
+                lastIndex = colorize(line, index);
+            } else if (startSeparators.contains(separator)) {
+                String l = line.getLineFromCursor();
+                char endChar = startEndSeparators.get(separator);
+                int index = findEnd(l, line.toString().length(), separator, endChar);
+                if (index == -1) {
+                    return;
+                }
+
+                markOpenPairs(line, line.getCurrentCharacterIndex(), index);
+                lastIndex = colorize(line, index);
+            } else {
+                lastIndex = -1;
+            }
+        }
+
+        private void markOpenPairs(Line line, int start, int end) {
+            char[] chars = line.toString().toCharArray();
+            char[] returnPairs = findOpenPairs(chars, start, end);
+
+            if (returnPairs.length == 0) return;
+
+            for (int i = start; i < end ; i++) {
+                if (startSeparators.contains(returnPairs[i]) || endSeparators.contains(returnPairs[i])) {
+                    colorizeOpenPair(line, i);
+                    openPositions.add(i);
+                }
+            }
+        }
+
+        private char[] findOpenPairs(char[] chars, int start, int end) {
+            for (int i = start; i < end; i++) {
+                char current = chars[i];
+                char closing = 0;
+
+                if (startSeparators.contains(current)) {
+                    closing = startEndSeparators.get(current);
+                } else if (endSeparators.contains(current)) {
+                    closing = endStartSeparators.get(current);
+                }
+
+                if (closing != 0) {
+                    for (int j = i + 1; j <= end; j++) {
+                        char next = chars[j];
+
+                        if (next == closing && current != 0) {
+                            chars[i] = 0;
+                            chars[j] = 0;
+                            current = 0;
+                        }
+                    }
+                }
+            }
+
+            return chars;
+        }
+
+        private int findStart(String l, char start, char end) {
+            int endCount = 0;
+            char[] chars = l.toCharArray();
+
+            for (int i = chars.length - 1; i >= 0; i--) {
+                char c = chars[i];
+                if (c == start) {
+                    if (endCount == 0) {
+                        return i;
+                    } else {
+                        endCount--;
+                    }
+                }
+
+                if (c == end) {
+                    endCount += 1;
+                }
+            }
+
+            return -1;
+        }
+
+        private int findEnd(String l, int length, char start, char end) {
+            if (l.length() <= 1) {
+                return -1;
+            }
+
+            int endCount = 0;
+            char[] chars = l.toCharArray();
+            int pos = length - chars.length;
+
+            for (int i = 0; i < chars.length; i++) {
+                char c = chars[i];
+                if (c == end) {
+                    if (endCount == 1) {
+                        return pos + i;
+                    } else {
+                        endCount--;
+                    }
+                }
+
+                if (c == start) {
+                    endCount += 1;
+                }
+            }
+
+            return -1;
+        }
+
+        private int colorize(Line line, int index) {
+            Line.CursorTransactionBuilder builder = line.newCursorTransactionBuilder();
+            if (settings.isColorOutput()) {
+                builder.colorize(index, Color.DEFAULT, Color.GREEN, true);
+            } else {
+                builder.colorize(index, Color.BLACK, Color.WHITE, true);
+            }
+            builder.build().run();
+            return index;
+        }
+
+        private void colorizeOpenPair(Line line, int index) {
+            Line.CursorTransactionBuilder builder = line.newCursorTransactionBuilder();
+            if (settings.isColorOutput()) {
+                builder.colorize(index, Color.DEFAULT, Color.RED, true);
+            } else {
+                builder.colorize(index, Color.BLACK, Color.WHITE, true);
+            }
+            builder.build().run();
+        }
+    }
+
     public interface Settings {
 
         /**
@@ -131,9 +334,19 @@ public class ReadlineConsole {
         Runnable getInterrupt();
 
         /**
+         * @return if console is configured for colour output
+         */
+        boolean isColorOutput();
+
+        /**
          * @return the outputPaging
          */
         boolean isOutputPaging();
+
+        /**
+         * @return if user wants to disable character highlight
+         */
+        boolean ischaracterHighlight();
     }
 
     /**
@@ -221,7 +434,9 @@ public class ReadlineConsole {
         private final FileAccessPermission permission;
         private final Runnable interrupt;
         private final boolean outputRedefined;
+        private final boolean colorOutput;
         private final boolean outputPaging;
+        private final boolean characterHighlight;
 
         private SettingsImpl(InputStream inStream,
                 OutputStream outStream,
@@ -231,7 +446,9 @@ public class ReadlineConsole {
                 int historySize,
                 FileAccessPermission permission,
                 Runnable interrupt,
-                boolean outputPaging) {
+                boolean colorOutput,
+                boolean outputPaging,
+                boolean characterHighlight) {
             this.inStream = inStream;
             this.outStream = outStream;
             this.outputRedefined = outputRedefined;
@@ -240,7 +457,9 @@ public class ReadlineConsole {
             this.historySize = historySize;
             this.permission = permission;
             this.interrupt = interrupt;
+            this.colorOutput = colorOutput;
             this.outputPaging = outputPaging;
+            this.characterHighlight = characterHighlight;
         }
 
         /**
@@ -308,11 +527,26 @@ public class ReadlineConsole {
         }
 
         /**
+         * @return if console is configured for colour output
+         */
+        @Override
+        public boolean isColorOutput() {
+            return colorOutput;
+        }
+
+
+        /**
          * @return the outputPaging
          */
         @Override
         public boolean isOutputPaging() {
             return outputPaging;
+        }
+        /**
+         * @return if user wants to disable character highlight
+         */
+        public boolean ischaracterHighlight() {
+            return characterHighlight;
         }
     }
 
@@ -326,7 +560,9 @@ public class ReadlineConsole {
         private FileAccessPermission permission;
         private Runnable interrupt;
         private boolean outputRedefined;
+        private boolean colourOutput;
         private boolean outputPaging;
+        private boolean characterHighlight;
 
         public SettingsBuilder inputStream(InputStream inStream) {
             this.inStream = inStream;
@@ -368,14 +604,24 @@ public class ReadlineConsole {
             return this;
         }
 
+        public SettingsBuilder colorOutput(boolean colourOutput) {
+            this.colourOutput = colourOutput;
+            return this;
+        }
+
         public SettingsBuilder outputPaging(boolean outputPaging) {
             this.outputPaging = outputPaging;
             return this;
         }
 
+        public SettingsBuilder characterHighlight(boolean characterHighlight) {
+            this.characterHighlight = characterHighlight;
+            return this;
+        }
+
         public Settings create() {
             return new SettingsImpl(inStream, outStream, outputRedefined,
-                    disableHistory, historyFile, historySize, permission, interrupt, outputPaging);
+                    disableHistory, historyFile, historySize, permission, interrupt, colourOutput, outputPaging, characterHighlight);
         }
     }
 
@@ -448,6 +694,14 @@ public class ReadlineConsole {
     private boolean forcePaging;
     private PagingSupport pagingSupport;
 
+    private final CharacterMatcher matcher;
+    private CursorListener cursorListener = new CursorListener() {
+        @Override
+        public void moved(Line line) {
+            matcher.match(line);
+        }
+    };
+
     ReadlineConsole(Settings settings) throws IOException {
         this.settings = settings;
         readlineHistory = new FileHistory(settings.getHistoryFile(),
@@ -466,6 +720,10 @@ public class ReadlineConsole {
         preProcessors.add(aliasPreProcessor);
         completions.add(new AliasCompletion(aliasManager));
         readline = new Readline();
+        matcher = new CharacterMatcher(settings);
+        if (!settings.ischaracterHighlight()) {
+            cursorListener = null;
+        }
     }
 
     private void initializeConnection() throws IOException {
@@ -475,6 +733,7 @@ public class ReadlineConsole {
             interruptHandler = signal -> {
                 if (signal == Signal.INT) {
                     LOG.trace("Calling InterruptHandler");
+                    matcher.clear();
                     connection.write(Config.getLineSeparator());
                     // Put the console in closed state. No more readline
                     // input handler can be set when closed.
@@ -878,7 +1137,7 @@ public class ReadlineConsole {
                             }
                         }
                     });
-                }, completions, preProcessors, readlineHistory, null, READLINE_FLAGS);
+                }, completions, preProcessors, readlineHistory, cursorListener, READLINE_FLAGS);
             }
         } catch (Exception ex) {
             connection.write("Unexpected exception");

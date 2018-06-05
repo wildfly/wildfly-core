@@ -115,6 +115,8 @@ Usage:
  --resolve-parameter-values  - resolve system properties before sending 
                                the operation requests to the controller.
 
+ --no-character-highlight - disable highlighting of open/close brackets.
+
 For a list of available commands, once the CLI is started, execute:
 
   help --commands
