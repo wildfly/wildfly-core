@@ -10,6 +10,7 @@ import org.jboss.as.cli.impl.ReadlineConsole;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.logging.Logger;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -46,6 +47,7 @@ public class LongOutputTestCase {
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern morePattern = Pattern.compile(".*--More\\(\\d+%\\)--$");
     private static final Pattern promptPattern = Pattern.compile(".*\\[.*@.* /\\]\\s*$");
+    private static final Pattern notFoundPattern = Pattern.compile(".*" + Pattern.quote(ANSI.INVERT_BACKGROUND) + "Pattern not found" + Pattern.quote(ANSI.RESET) + "$");
     private static final AtomicBoolean readThreadActive = new AtomicBoolean(true);
     private static final List<Thread> threads = new ArrayList<>();
     private static final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
@@ -146,6 +148,16 @@ public class LongOutputTestCase {
         IOUtil.close(consoleWriter);
         IOUtil.close(consoleOutput);
         IOUtil.close(consoleReader);
+    }
+
+    @After
+    public void afterTest() throws Exception {
+        if (readlineConsole.isPagingOutputActive()) {
+            consoleWriter.print(Key.Q.getAsChar());
+            Assert.assertFalse(consoleWriter.checkError());
+            String window = queue.poll(10, TimeUnit.SECONDS);
+            Assert.assertNotNull(window);
+        }
     }
 
     @Test
@@ -369,13 +381,198 @@ public class LongOutputTestCase {
 
     }
 
+    /**
+     * Checks the search functionality.
+     * When /PATTERN[ENTER] is inserted, the view must jump on line with first occurrence of the pattern.
+     * When n is hit, the view must jump on line with next occurrence of the pattern.
+     * When N is hit, the view must jump on line with previous occurrence of the pattern.
+     * When N is hit again, user must be advertised that no match is found.
+     */
+    @Test
+    public void testSearchPattern() throws Exception {
+        final String pattern = "description";
+
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+
+        String window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
+
+        // tests /description
+        consoleWriter.print("/");
+        consoleWriter.flush();
+        Thread.sleep(100);
+        consoleWriter.println(pattern);
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
+        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
+        String firstMatch = getFirstLine(window);
+        Assert.assertTrue(firstMatch, firstMatch.contains(pattern));
+
+        // tests n
+        consoleWriter.print("n");
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
+        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
+        String secondMatch = getFirstLine(window);
+        Assert.assertTrue(secondMatch, firstMatch.contains(pattern));
+
+        // tests N
+        consoleWriter.print("N");
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
+        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
+        String thirdMatch = getFirstLine(window);
+        Assert.assertEquals(firstMatch, thirdMatch);
+
+        // tests Pattern not found
+        consoleWriter.print("N");
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, notFoundPattern);
+
+        consoleWriter.print(Key.Q.getAsChar());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+    }
+
+    /**
+     * Checks the highlight of matches.
+     * When /PATTERN[ENTER] is inserted, all occurrences of the pattern must be highlighted in the current view.
+     * When n is hit and the view is changed, all occurrences of the pattern must be highlighted in the current view.
+     */
+    @Test
+    public void testMatchHighlight() throws Exception {
+        final String pattern = "description";
+
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+
+        String window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
+
+        consoleWriter.print("/");
+        consoleWriter.flush();
+        Thread.sleep(100);
+        consoleWriter.println(pattern);
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
+        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
+        checkWithRegex(window, morePattern);
+        checkPatternIsHighlighted(window, pattern);
+
+        consoleWriter.print("n");
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
+        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
+        checkWithRegex(window, morePattern);
+        checkPatternIsHighlighted(window, pattern);
+
+        consoleWriter.print(Key.Q.getAsChar());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+    }
+
+    /**
+     * Checks history of search patterns.
+     * When /PATTERN[ENTER] is inserted, the pattern must be stored in history.
+     * When /PATTERN2[ENTER] is inserted, the pattern must be stored in history.
+     * When /[ARROW_UP] is inserted, the /PATTERN2 must be offered.
+     * When /[ARROW_UP] is inserted, the /PATTERN must be offered.
+     * When /[ARROW_DOWN] is inserted, the /PATTERN2 must be offered.
+     */
+    @Test
+    public void testSearchHistory() throws Exception {
+        final String pattern1 = "description";
+        final String pattern2 = "type";
+
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+
+        String window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
+
+        consoleWriter.print("/");
+        consoleWriter.flush();
+        Thread.sleep(100);
+        consoleWriter.println(pattern1);
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+
+        consoleWriter.print("/");
+        consoleWriter.flush();
+        Thread.sleep(100);
+        consoleWriter.println(pattern2);
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+
+        consoleWriter.print("/");
+        consoleWriter.flush();
+        Thread.sleep(100);
+        consoleWriter.print(Key.UP.getKeyValuesAsString());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        Assert.assertTrue(window, window.endsWith(pattern2));
+
+        consoleWriter.print(Key.UP.getKeyValuesAsString());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        Assert.assertTrue(window, window.endsWith(pattern1));
+
+        consoleWriter.print(Key.DOWN.getKeyValuesAsString());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        Assert.assertTrue(window, window.endsWith(pattern2));
+
+        consoleWriter.println();
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+
+        consoleWriter.print(Key.Q.getAsChar());
+        Assert.assertFalse(consoleWriter.checkError());
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+    }
+
     private static String getBeforeLastLine(String window) {
-        String[] lines = window.split(System.getProperty("line.separator"));
+        String[] lines = window.split(LINE_SEP);
         return (lines.length > 1) ? lines[lines.length-2] : "";
     }
 
     private static String removeFirstLine(String window) {
         return window.substring(window.indexOf(System.getProperty("line.separator")) + 1);
+    }
+
+    private static String getFirstLine(String window) {
+        return window.substring(0, window.indexOf(System.getProperty("line.separator")));
     }
 
     private static String getLastNumberOfLines(String window, int number) {
@@ -401,6 +598,13 @@ public class LongOutputTestCase {
     private static void checkWithRegex(String window, Pattern pattern) {
         Matcher m = pattern.matcher(window.replaceAll("\\R", " "));
         Assert.assertTrue(window, m.matches());
+    }
+
+    private static void checkPatternIsHighlighted(String window, String pattern) {
+        int occurencesOfPattern = StringUtils.countMatches(window, pattern);
+        int occurencesOfHighlightedPattern = StringUtils.countMatches(window, String.format("\u001B[7m%s\u001B[0m", pattern));
+
+        Assert.assertEquals(occurencesOfPattern, occurencesOfHighlightedPattern);
     }
 
     private static String stripAwayAnsiCodes(String str) {

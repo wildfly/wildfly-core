@@ -1360,6 +1360,10 @@ public class ReadlineConsole {
         return isSystemTerminal;
     }
 
+    public boolean isPagingOutputActive() {
+        return paging != null && paging.paging;
+    }
+
     public void forcePagingOutput(boolean forcePaging) {
         this.forcePaging = forcePaging;
     }
