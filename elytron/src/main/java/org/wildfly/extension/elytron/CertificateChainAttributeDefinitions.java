@@ -34,7 +34,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.wildfly.security.util.ByteIterator;
+import org.wildfly.common.iteration.ByteIterator;
 
 /**
  * Class to contain the attribute definitions for certificates and their chains.

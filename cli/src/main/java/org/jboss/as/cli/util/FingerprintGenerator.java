@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.cli.CommandLineException;
-import org.wildfly.security.util.ByteIterator;
+import org.wildfly.common.iteration.ByteIterator;
 
 public class FingerprintGenerator {
 
