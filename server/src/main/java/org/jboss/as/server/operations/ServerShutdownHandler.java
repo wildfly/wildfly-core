@@ -146,10 +146,6 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             };
                             suspendController.addListener(listener);
                             suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
-                            if(timeout == 0) {
-                                shutdown.shutdown();
-                            }
-
                         }
                     }
                 });
