@@ -127,4 +127,7 @@ public interface RemotingLogger extends BasicLogger {
 
     @Message(id = 27, value = "Failed to obtain SSLContext")
     StartException failedToObtainSSLContext(@Cause Exception cause);
+
+    @Message(id = 28, value = "Invalid option '%s'.")
+    OperationFailedException invalidOption(String message);
 }

@@ -75,6 +75,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
 
     private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
     private static final PathAddress ENDPOINT_CONFIG_ADDRESS = ROOT_ADDRESS.append("configuration", "endpoint");
+    private static final PathAddress CONNECTOR_ADDRESS = ROOT_ADDRESS.append("connector", "remoting-connector");
     private static final Map<String, ModelNode> ENDPOINT_CONFIG_TEST_DATA;
     static {
         Map<String, ModelNode> data = new LinkedHashMap<>();
@@ -345,5 +346,34 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         };
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCliAddProperty() throws Exception {
+        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+                .setSubsystemXml(readResource("remoting-cli.xml")).build();
 
+        ServiceName connectorServiceName = RemotingServices.serverServiceName("remoting-connector");
+        ServiceController<?> remotingConnectorController = services.getContainer().getRequiredService(connectorServiceName);
+        remotingConnectorController.setMode(ServiceController.Mode.ACTIVE);
+        assertNotNull("Connector was null", remotingConnectorController);
+        InjectedSocketBindingStreamServerService remotingConnector = (InjectedSocketBindingStreamServerService) remotingConnectorController.getService();
+        assertEquals("remote", remotingConnector.getEndpointInjector().getValue().getName());
+
+        ModelNode validAdd = Util.createAddOperation(CONNECTOR_ADDRESS.append("property", "BROADCAST"));
+        validAdd.get("value").set("aaa");
+        try {
+            services.executeForResult(validAdd);
+            assertTrue(true);
+        } catch (OperationFailedException ofe) {
+            Assert.fail("This operation is supposed to pass");
+        }
+
+        ModelNode invalidAdd = Util.createAddOperation(CONNECTOR_ADDRESS.append("property", "aaa"));
+        try {
+            services.executeForResult(invalidAdd);
+        } catch (OperationFailedException ofe) {
+            assertTrue(true);
+            assertTrue(ofe.getMessage().contains("WFLYRMT0028"));
+        }
+    }
 }
