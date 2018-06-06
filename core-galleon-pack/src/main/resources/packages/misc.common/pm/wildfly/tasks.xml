@@ -2,7 +2,7 @@
 
 <tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
     <mkdir name=".installation"/>
-    <file-permissions>
+    <file-permissions phase="FINALIZING">
         <permission value="755">
             <filter pattern="*.sh" include="true"/>
         </permission>
