@@ -84,8 +84,11 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
             case 6:
                 new HostXml_6(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
-            default:
+            case 7:
                 new HostXml_7(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                break;
+            default:
+                new HostXml_8(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
         }
     }
@@ -93,7 +96,7 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_7(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
+        new HostXml_8(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
     }
 
 }
