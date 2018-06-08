@@ -45,6 +45,7 @@ import org.jboss.as.logging.ElementAttributeMarshaller;
 import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.PropertyAttributeDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.resolvers.OverflowActionResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -92,6 +93,7 @@ public class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
 
     public static final LogHandlerListAttributeDefinition SUBHANDLERS = LogHandlerListAttributeDefinition.Builder.of("subhandlers")
             .setAllowExpression(false)
+            .setCapabilityReference(Capabilities.HANDLER_REFERENCE_RECORDER)
             .setRequired(false)
             .build();
 

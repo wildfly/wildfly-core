@@ -52,6 +52,7 @@ import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.logmanager.PropertySorter;
 import org.jboss.dmr.ModelNode;
@@ -101,6 +102,7 @@ public abstract class AbstractHandlerDefinition extends TransformerResourceDefin
                     }
                 }
             })
+            .setCapabilityReference(Capabilities.HANDLER_FORMATTER_REFERENCE_RECORDER)
             .build();
 
     static final AttributeDefinition[] DEFAULT_ATTRIBUTES = {
@@ -247,6 +249,7 @@ public abstract class AbstractHandlerDefinition extends TransformerResourceDefin
                                                final ConfigurationProperty<?>... constructionProperties) {
         return new Parameters(path, LoggingExtension.getResourceDescriptionResolver(path.getKey()))
                 .setAddHandler(new HandlerOperations.HandlerAddOperationStepHandler(propertySorter, type, addAttributes, constructionProperties))
-                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER);
+                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER)
+                .setCapabilities(Capabilities.HANDLER_CAPABILITY);
     }
 }

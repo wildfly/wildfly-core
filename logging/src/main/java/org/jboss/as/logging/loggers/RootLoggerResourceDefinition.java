@@ -42,6 +42,7 @@ import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
@@ -109,7 +110,8 @@ public class RootLoggerResourceDefinition extends TransformerResourceDefinition 
                 .setAddHandler(includeLegacy ?
                         new LoggerOperations.LoggerAddOperationStepHandler(join(ATTRIBUTES, LEGACY_ATTRIBUTES)) :
                         new LoggerOperations.LoggerAddOperationStepHandler(ATTRIBUTES))
-                .setRemoveHandler(LoggerOperations.REMOVE_LOGGER));
+                .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
+                .setCapabilities(Capabilities.LOGGER_CAPABILITY));
         attributes = (includeLegacy ? join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES);
         addHandler = new LoggerOperations.LoggerAddOperationStepHandler(attributes);
         writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(attributes);

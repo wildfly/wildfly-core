@@ -103,6 +103,9 @@ public final class Logging {
         } else if (base == null) {
             return add;
         }
+        if (add.length == 0) {
+            return base;
+        }
         final T[] result = Arrays.copyOf(base, base.length + add.length);
         System.arraycopy(add, 0, result, base.length, add.length);
         return result;

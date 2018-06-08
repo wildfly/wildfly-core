@@ -45,6 +45,7 @@ import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
@@ -292,13 +293,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
 
     StructuredFormatterResourceDefinition(final PathElement pathElement, final String descriptionPrefix,
                                           final Class<? extends StructuredFormatter> type) {
-        super(
-                new Parameters(pathElement, LoggingExtension.getResourceDescriptionResolver(descriptionPrefix))
-                        .setAddHandler(new AddStructuredFormatterStepHandler(type, DEFAULT_ATTRIBUTES))
-                        .setRemoveHandler(REMOVE)
-        );
-        attributes = DEFAULT_ATTRIBUTES;
-        writeHandler = new WriteStructuredFormatterStepHandler(attributes);
+        this(pathElement, descriptionPrefix, type, new AttributeDefinition[0]);
     }
 
     StructuredFormatterResourceDefinition(final PathElement pathElement, final String descriptionPrefix,
@@ -307,6 +302,7 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
                 new Parameters(pathElement, LoggingExtension.getResourceDescriptionResolver(descriptionPrefix))
                         .setAddHandler(new AddStructuredFormatterStepHandler(type, Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes)))
                         .setRemoveHandler(REMOVE)
+                        .setCapabilities(Capabilities.FORMATTER_CAPABILITY)
         );
         attributes = Logging.join(DEFAULT_ATTRIBUTES, additionalAttributes);
         writeHandler = new WriteStructuredFormatterStepHandler(attributes);

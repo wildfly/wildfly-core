@@ -43,6 +43,7 @@ import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.handlers.HandlerOperations.HandlerAddOperationStepHandler;
 import org.jboss.as.logging.handlers.HandlerOperations.LogHandlerWriteAttributeHandler;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
@@ -139,7 +140,8 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
     private SyslogHandlerResourceDefinition() {
         super(new Parameters(SYSLOG_HANDLER_PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
                 .setAddHandler(ADD_HANDLER)
-                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER));
+                .setRemoveHandler(HandlerOperations.REMOVE_HANDLER)
+                .setCapabilities(Capabilities.HANDLER_CAPABILITY));
     }
 
     @Override

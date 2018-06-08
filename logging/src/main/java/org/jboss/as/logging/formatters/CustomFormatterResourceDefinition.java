@@ -43,6 +43,7 @@ import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.LoggingOperations.LoggingWriteAttributeHandler;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -166,7 +167,8 @@ public class CustomFormatterResourceDefinition extends TransformerResourceDefini
     private CustomFormatterResourceDefinition() {
         super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
                 .setAddHandler(ADD)
-                .setRemoveHandler(REMOVE));
+                .setRemoveHandler(REMOVE)
+                .setCapabilities(Capabilities.FORMATTER_CAPABILITY));
     }
 
     @Override

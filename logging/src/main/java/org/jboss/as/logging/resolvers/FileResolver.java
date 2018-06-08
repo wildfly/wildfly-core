@@ -23,7 +23,7 @@
 package org.jboss.as.logging.resolvers;
 
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
+import static org.jboss.as.logging.CommonAttributes.RELATIVE_TO;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,8 +85,7 @@ public class FileResolver implements ModelNodeResolver<String> {
     private String resolve(final OperationContext context, final String relativeToPath, final String path) {
         // TODO it would be better if this came via the ExtensionContext
         ServiceName pathMgrSvc = context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class);
-        @SuppressWarnings("unchecked")
-        final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(pathMgrSvc);
+        @SuppressWarnings("unchecked") final ServiceController<PathManager> controller = (ServiceController<PathManager>) context.getServiceRegistry(false).getService(pathMgrSvc);
         if (controller == null) {
             return null;
         }

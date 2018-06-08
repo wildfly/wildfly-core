@@ -27,6 +27,11 @@
         <property name="jboss.api" value="private"/>
     </properties>
 
+    <exports>
+        <exclude path="org/jboss/as/logging/capabilities"/>
+        <exclude path="org/jboss/as/logging/logging"/>
+    </exports>
+
     <resources>
         <artifact name="${org.wildfly.core:wildfly-logging}"/>
     </resources>

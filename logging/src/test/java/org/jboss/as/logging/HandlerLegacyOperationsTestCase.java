@@ -128,7 +128,6 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         testUpdateProperties(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
         testUpdateProperties(kernelServices, address, AsyncHandlerResourceDefinition.OVERFLOW_ACTION, "BLOCK");
         testUpdateProperties(kernelServices, address, AsyncHandlerResourceDefinition.SUBHANDLERS, subhandlers);
-        testUpdateProperties(kernelServices, address, AsyncHandlerResourceDefinition.QUEUE_LENGTH, 20);
 
         // Clean-up
 
@@ -139,6 +138,10 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
 
         executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(consoleAddress));
         verifyRemoved(kernelServices, consoleAddress);
+
+        // This needs to execute after all other operations on the async-handler as it will put the state into reload
+        // required.
+        testWrite(kernelServices, address, AsyncHandlerResourceDefinition.QUEUE_LENGTH, 20);
         executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(address));
         verifyRemoved(kernelServices, address);
     }

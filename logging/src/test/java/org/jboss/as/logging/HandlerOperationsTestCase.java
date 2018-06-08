@@ -257,7 +257,6 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
         testWrite(kernelServices, address, AsyncHandlerResourceDefinition.OVERFLOW_ACTION, "BLOCK");
         testWrite(kernelServices, address, AsyncHandlerResourceDefinition.SUBHANDLERS, subhandlers);
-        testWrite(kernelServices, address, AsyncHandlerResourceDefinition.QUEUE_LENGTH, 20);
 
         // Undefine attributes
         testUndefine(kernelServices, address, CommonAttributes.LEVEL);
@@ -297,6 +296,10 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         // Clean-up
         executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(consoleAddress));
         verifyRemoved(kernelServices, consoleAddress);
+
+        // This needs to execute after all other operations on the async-handler as it will put the state into reload
+        // required.
+        testWrite(kernelServices, address, AsyncHandlerResourceDefinition.QUEUE_LENGTH, 20);
         executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(address));
         verifyRemoved(kernelServices, address);
 

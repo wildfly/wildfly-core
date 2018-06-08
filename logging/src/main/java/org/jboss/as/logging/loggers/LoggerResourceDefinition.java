@@ -47,6 +47,7 @@ import org.jboss.as.logging.LoggingExtension;
 import org.jboss.as.logging.LoggingOperations.ReadFilterOperationStepHandler;
 import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -117,7 +118,8 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
                 .setAddHandler(includeLegacy ? new LoggerOperations.LoggerAddOperationStepHandler(join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES))
                                : new LoggerOperations.LoggerAddOperationStepHandler(WRITABLE_ATTRIBUTES))
                 .setRemoveHandler(LoggerOperations.REMOVE_LOGGER)
-                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, NAME))));
+                .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(LoggingExtension.SUBSYSTEM_NAME, NAME)))
+                .setCapabilities(Capabilities.LOGGER_CAPABILITY));
         writableAttributes = (includeLegacy ? join(WRITABLE_ATTRIBUTES, LEGACY_ATTRIBUTES) : WRITABLE_ATTRIBUTES);
         this.writeHandler = new LoggerOperations.LoggerWriteAttributeHandler(writableAttributes);
     }

@@ -23,7 +23,6 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -39,6 +38,8 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
+import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.correctors.FileCorrector;
 import org.jboss.as.logging.handlers.LogHandlerListAttributeDefinition;
 import org.jboss.as.logging.resolvers.FileResolver;
@@ -83,6 +84,11 @@ public interface CommonAttributes {
             .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
             .build();
 
+    // Defined out of order as it needs to be used in the FILE
+    SimpleAttributeDefinition RELATIVE_TO = SimpleAttributeDefinitionBuilder.create(PathResourceDefinition.RELATIVE_TO)
+            .setCapabilityReference(Capabilities.PATH_CAPABILITY)
+            .build();
+
     PropertyObjectTypeAttributeDefinition FILE = PropertyObjectTypeAttributeDefinition.Builder.of("file", RELATIVE_TO, PATH)
             .setAllowExpression(false)
             .setRequired(true)
@@ -117,10 +123,13 @@ public interface CommonAttributes {
 
     LogHandlerListAttributeDefinition HANDLERS = LogHandlerListAttributeDefinition.Builder.of("handlers")
             .setAllowExpression(false)
+            .setCapabilityReference(Capabilities.LOGGER_HANDLER_REFERENCE_RECORDER)
             .setRequired(false)
             .build();
 
-    SimpleAttributeDefinition HANDLER_NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true).build();
+    SimpleAttributeDefinition HANDLER_NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
+            .setCapabilityReference(Capabilities.HANDLER_REFERENCE_RECORDER)
+            .build();
 
     // JUL doesn't allow for null levels. Use ALL as the default
     PropertyAttributeDefinition LEVEL = PropertyAttributeDefinition.Builder.of("level", ModelType.STRING, true)
