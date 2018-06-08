@@ -16,10 +16,15 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
+import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
+
+import java.util.Collections;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -34,6 +39,7 @@ import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.password.interfaces.ScramDigestPassword;
 
 /**
  * Registers transformers for the elytron subsystem.
@@ -64,7 +70,24 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_4_0_0, ELYTRON_3_0_0);
-
+        builder
+                .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(
+                        new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(SCRAM_MAPPER,
+                                new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ALGORITHM,
+                                        new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_384))
+                                ))
+                        ))
+                ), PRINCIPAL_QUERIES)
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(
+                        new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(SCRAM_MAPPER,
+                                new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ALGORITHM,
+                                        new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_512))
+                                ))
+                        ))
+                ), PRINCIPAL_QUERIES)
+                .end();
     }
 
     private static void from3(ChainedTransformationDescriptionBuilder chainedBuilder) {

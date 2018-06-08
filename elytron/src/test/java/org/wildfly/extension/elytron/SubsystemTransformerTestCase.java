@@ -25,6 +25,7 @@ import java.util.List;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
@@ -96,7 +97,9 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         ModelVersion elytronVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);
+        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.withCapabilities(
+                RuntimeCapability.buildDynamicCapabilityName(Capabilities.DATA_SOURCE_CAPABILITY_NAME, "ExampleDS")
+        ));
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controllerVersion.getCoreVersion())
                 .dontPersistXml();
@@ -110,6 +113,12 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
                         new FailedOperationTransformationConfig.NewAttributesConfig(KerberosSecurityFactoryDefinition.FAIL_CACHE)
+                )
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha384")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha512")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
                 )
         );
         /*ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()

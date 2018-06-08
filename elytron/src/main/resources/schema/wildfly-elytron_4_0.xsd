@@ -1290,11 +1290,13 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="scram-sha-1" />
-            		<xs:enumeration value="scram-sha-256" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="scram-sha-1" />
+                    <xs:enumeration value="scram-sha-256" />
+                    <xs:enumeration value="scram-sha-384" />
+                    <xs:enumeration value="scram-sha-512" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>

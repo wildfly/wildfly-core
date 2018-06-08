@@ -38,6 +38,16 @@
         </security-domain>
     </security-domains>
     <security-realms>
+        <jdbc-realm name="NewJdbcScramSha384">
+            <principal-query sql="SELECT" data-source="ExampleDS">
+                <scram-mapper algorithm="scram-sha-384" password-index="1" salt-index="2" iteration-count-index="10000"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="NewJdbcScramSha512">
+            <principal-query sql="SELECT" data-source="ExampleDS">
+                <scram-mapper algorithm="scram-sha-512" password-index="1" salt-index="2" iteration-count-index="10000"/>
+            </principal-query>
+        </jdbc-realm>
         <properties-realm name="PropRealm">
             <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
         </properties-realm>

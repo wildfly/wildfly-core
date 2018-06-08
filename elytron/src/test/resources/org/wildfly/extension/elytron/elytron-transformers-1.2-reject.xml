@@ -2,4 +2,16 @@
     <credential-security-factories>
         <kerberos-security-factory name="test" principal="aaa" path="aaa.keytab" fail-cache="5" />
     </credential-security-factories>
+    <security-realms>
+        <jdbc-realm name="DisallowedScramSha384">
+            <principal-query sql="SELECT" data-source="ExampleDS">
+                <scram-mapper algorithm="scram-sha-384" password-index="1" salt-index="2" iteration-count-index="10000"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="DisallowedScramSha512">
+            <principal-query sql="SELECT" data-source="ExampleDS">
+                <scram-mapper algorithm="scram-sha-512" password-index="1" salt-index="2" iteration-count-index="10000"/>
+            </principal-query>
+        </jdbc-realm>
+    </security-realms>
 </subsystem>
