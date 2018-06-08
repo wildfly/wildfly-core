@@ -44,7 +44,6 @@ import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.ResourceLoaders;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
@@ -68,14 +67,11 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
     private final File[] extensionRoots;
     private final Map<String, Set<ExtensionJar>> extensions = new HashMap<String, Set<ExtensionJar>>();
 
-    private volatile ServiceContainer serviceContainer;
-
     public ExtensionIndexService(final File... roots) {
         extensionRoots = roots;
     }
 
     public synchronized void start(final StartContext context) throws StartException {
-        serviceContainer = context.getController().getServiceContainer();
         // No point in throwing away the index once it is created.
         context.getController().compareAndSetMode(ServiceController.Mode.ON_DEMAND, ServiceController.Mode.ACTIVE);
         extensions.clear();
@@ -121,11 +117,11 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             // this makes it available for loading
                             ExternalModuleSpecService service = new ExternalModuleSpecService(moduleIdentifier, jar);
                             ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
-                            serviceContainer.addService(serviceName, service)
+                            context.getChildTarget().addService(serviceName, service)
                                     .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX)
                                     .setInitialMode(Mode.ON_DEMAND).install();
 
-                            ModuleLoadService.install(serviceContainer, moduleIdentifier, Collections
+                            ModuleLoadService.install(context.getChildTarget(), moduleIdentifier, Collections
                                     .<ModuleDependency> emptyList());
 
                             extensionJarSet.add(extensionJar);
@@ -142,7 +138,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
 
     public synchronized void stop(final StopContext context) {
         extensions.clear();
-        serviceContainer = null;
     }
 
     /** {@inheritDoc} */
