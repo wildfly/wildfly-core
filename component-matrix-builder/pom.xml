@@ -30,7 +30,7 @@
     </parent>
 
     <groupId>org.wildfly.core</groupId>
-    <artifactId>wildfly-component-matrix-builder</artifactId>
+    <artifactId>wildfly-core-component-matrix-builder</artifactId>
 
     <packaging>pom</packaging>
 
