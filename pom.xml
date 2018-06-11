@@ -184,7 +184,7 @@
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
         <version.org.mockito>2.18.0</version.org.mockito>
-        <version.org.picketbox>5.1.0.Final</version.org.picketbox>
+        <version.org.picketbox>5.0.2.Final</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.22.jbossorg-1</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
@@ -999,20 +999,6 @@
                 <groupId>org.picketbox</groupId>
                 <artifactId>picketbox</artifactId>
                 <version>${version.org.picketbox}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>jboss-security-spi</artifactId>
-                        <groupId>org.picketbox</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jbosssx</artifactId>
-                        <groupId>org.picketbox</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>picketbox-bare</artifactId>
-                        <groupId>org.picketbox</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- This isn't used in WildFly Core but we include it here to keep
                  it's version aligned with the core's use of related picketbox artifacts -->
