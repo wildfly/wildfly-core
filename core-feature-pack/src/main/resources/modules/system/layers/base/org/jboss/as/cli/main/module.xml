@@ -43,7 +43,6 @@
         <module name="java.prefs"/>
         <module name="java.security.sasl"/>
         <module name="java.xml"/>
-        <module name="jdk.jconsole"/>
 
         <!-- JAXP default dependencies. DO NOT REMOVE!!!
              These are loaded by the JAXP redirect facility in jboss-modules when this module is used
