@@ -116,6 +116,25 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>generate-jboss-stores</id>
+                                <phase>test-compile</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>org.jboss.as.test.manualmode.GenerateJBossStores</mainClass>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
                         <groupId>org.jboss.galleon</groupId>
                         <artifactId>galleon-maven-plugins</artifactId>
                         <executions>
@@ -165,8 +184,8 @@
                                 <module.path>${wildfly.home}/modules/</module.path>
                                 <jvm.args>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar},sys:${org.wildfly.core:wildfly-core-testsuite-shared:jar} -Dorg.jboss.byteman.transform.all -Dorg.jboss.byteman.verbose=true -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                                 <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
-                                <javax.net.ssl.trustStore>${basedir}/src/test/resources/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
-                                <javax.net.ssl.keyStore>${basedir}/src/test/resources/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
+                                <javax.net.ssl.trustStore>${basedir}/target/test-classes/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
+                                <javax.net.ssl.keyStore>${basedir}/target/test-classes/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
                                 <javax.net.ssl.keyStorePassword>clientPassword</javax.net.ssl.keyStorePassword>
                             </systemPropertyVariables>
@@ -258,7 +277,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
                 </plugins>
             </build>
         </profile>

@@ -30,9 +30,14 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.InetAddress;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.audit.SyslogAuditLogHandler.MessageTransfer;
@@ -45,8 +50,11 @@ import org.jboss.as.domain.management.audit.JsonAuditLogFormatterResourceDefinit
 import org.jboss.as.domain.management.audit.SyslogAuditLogHandlerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 
 /**
  * Don't use core-model test for this. It does not support runtime, and more importantly for backwards compatibility the audit logger cannot be used
@@ -56,6 +64,75 @@ import org.junit.Test;
 public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerTestCase {
     public AuditLogHandlerBootEnabledTestCase() {
         super(true, true);
+    }
+
+    private static final char[] KEYSTORE_CREATION_PASSWORD = "changeit".toCharArray();
+    private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/jboss/as/domain/management/security/auditlog";
+    private static final String ALIAS = "selfsigned";
+    private static final String CLIENT_DNS_STRING = "CN=localhost, OU=Test, L=Test, ST=Test, C=Test";
+    private static final String SERVER_DNS_STRING = "CN=localhost, OU=Unknown, L=Unknown, ST=Unknown, C=Unknown";
+
+    private static void createKeyStoreTrustStore(KeyStore keyStore, KeyStore trustStore, String DN) throws Exception {
+        X500Principal principal = new X500Principal(DN);
+
+        SelfSignedX509CertificateAndSigningKey selfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .setDn(principal)
+                .setKeySize(1024)
+                .build();
+        X509Certificate certificate = selfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+
+        keyStore.setKeyEntry(ALIAS, selfSignedX509CertificateAndSigningKey.getSigningKey(), KEYSTORE_CREATION_PASSWORD, new X509Certificate[]{certificate});
+        trustStore.setCertificateEntry(ALIAS, certificate);
+    }
+
+    private static KeyStore loadKeyStore() throws Exception {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        return ks;
+    }
+
+    private static void createTemporaryKeyStoreFile(KeyStore keyStore, File outputFile) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(outputFile)){
+            keyStore.store(fos, KEYSTORE_CREATION_PASSWORD);
+        }
+    }
+
+    @BeforeClass
+    public static void initTests() throws Exception {
+        KeyStore clientKeyStore = loadKeyStore();
+        KeyStore clientTrustStore = loadKeyStore();
+        KeyStore serverKeyStore = loadKeyStore();
+        KeyStore serverTrustStore = loadKeyStore();
+
+        createKeyStoreTrustStore(clientKeyStore, serverTrustStore, CLIENT_DNS_STRING);
+        createKeyStoreTrustStore(serverKeyStore, clientTrustStore, SERVER_DNS_STRING);
+
+        File clientKeyFile = new File(WORKING_DIRECTORY_LOCATION, "client-cert-store.jks");
+        File clientTrustFile = new File(WORKING_DIRECTORY_LOCATION, "client-trust-store.jks");
+        File serverKeyFile = new File(WORKING_DIRECTORY_LOCATION, "server-cert-store.jks");
+        File serverTrustFile = new File(WORKING_DIRECTORY_LOCATION, "server-trust-store.jks");
+
+        createTemporaryKeyStoreFile(clientKeyStore, clientKeyFile);
+        createTemporaryKeyStoreFile(clientTrustStore, clientTrustFile);
+        createTemporaryKeyStoreFile(serverKeyStore, serverKeyFile);
+        createTemporaryKeyStoreFile(serverTrustStore, serverTrustFile);
+    }
+
+    @AfterClass
+    public static void cleanUpTests() {
+        File[] testFiles = {
+            new File(WORKING_DIRECTORY_LOCATION, "client-cert-store.jks"),
+            new File(WORKING_DIRECTORY_LOCATION, "client-trust-store.jks"),
+            new File(WORKING_DIRECTORY_LOCATION, "server-cert-store.jks"),
+            new File(WORKING_DIRECTORY_LOCATION, "server-trust-store.jks")
+        };
+        for (File file : testFiles) {
+            if (file.exists()) {
+                file.delete();
+            }
+        }
     }
 
     @Test
