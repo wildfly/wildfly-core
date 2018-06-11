@@ -7,6 +7,7 @@
 $scripts = (Get-ChildItem $MyInvocation.MyCommand.Path).Directory.FullName;
 . $scripts'\common.ps1'
 $SERVER_OPTS = Process-Script-Parameters -Params $ARGS
+$JAVA_OPTS = Get-Java-Opts
 
 # Read an optional running configuration file
 $STANDALONE_CONF_FILE = $scripts + '\standalone.conf.ps1'
