@@ -13,7 +13,8 @@ public enum KnownModelVersion {
     VERSION_3_0_0(ModelVersion.create(3, 0, 0), false),
     VERSION_4_0_0(ModelVersion.create(4, 0, 0), false),
     VERSION_5_0_0(ModelVersion.create(5, 0, 0), true),
-    VERSION_6_0_0(ModelVersion.create(6, 0, 0), false),
+    VERSION_6_0_0(ModelVersion.create(6, 0, 0), true),
+    VERSION_7_0_0(ModelVersion.create(7, 0, 0), false),
     ;
     private final ModelVersion modelVersion;
     private final boolean hasTransformers;

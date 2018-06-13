@@ -97,7 +97,7 @@ public class LoggingExtension implements Extension {
 
     private static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 7;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -267,6 +267,7 @@ public class LoggingExtension implements Extension {
         setParser(context, Namespace.LOGGING_3_0, new LoggingSubsystemParser_3_0());
         setParser(context, Namespace.LOGGING_4_0, new LoggingSubsystemParser_4_0());
         setParser(context, Namespace.LOGGING_5_0, new LoggingSubsystemParser_5_0());
+        setParser(context, Namespace.LOGGING_6_0, new LoggingSubsystemParser_6_0());
 
         // Hack to ensure the Element and Attribute enums are loaded during this call which
         // is part of concurrent boot. These enums trigger a lot of classloading and static
