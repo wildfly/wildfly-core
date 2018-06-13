@@ -26,6 +26,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- uses wildfly-core-parent parent as wildfly-core-testsuite-shared
+         is a dependency of wildfly-core-testsuite and can not be its child
+    -->
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
@@ -37,6 +40,11 @@
     <name>WildFly: Test Runner</name>
     <description>A test runner used for running management integration tests.
         Arquillian is not used to avoid a circular dependency.</description>
+
+    <properties>
+        <!-- Don't deploy the testsuite modules -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
 
     <dependencies>
         <dependency>
