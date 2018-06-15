@@ -642,8 +642,8 @@
                 <version>${version.org.codehaus.woodstox.woodstox-core}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>stax-api</artifactId>
                         <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -653,12 +653,12 @@
                 <version>${version.com.io7m.xom}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>xalan</artifactId>
                         <groupId>xalan</groupId>
+                        <artifactId>xalan</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>xml-apis</artifactId>
                         <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -678,8 +678,8 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>undertow-build-config</artifactId>
                         <groupId>io.undertow</groupId>
+                        <artifactId>undertow-build-config</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -689,12 +689,12 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>undertow-build-config</artifactId>
                         <groupId>io.undertow</groupId>
+                        <artifactId>undertow-build-config</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jboss-jsp-api_2.2_spec</artifactId>
                         <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
+                        <artifactId>jboss-jsp-api_2.2_spec</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -704,8 +704,8 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>undertow-build-config</artifactId>
                         <groupId>io.undertow</groupId>
+                        <artifactId>undertow-build-config</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -741,8 +741,8 @@
                 <version>${version.org.apache.httpcomponents.httpclient}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -752,8 +752,8 @@
                 <version>${version.org.apache.httpcomponents.httpcore}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -763,8 +763,8 @@
                 <version>${version.org.apache.httpcomponents.httpcore}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -774,8 +774,8 @@
                 <version>${version.org.apache.httpcomponents.httpclient}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -832,8 +832,8 @@
                 <version>${version.org.codehaus.woodstox.stax2-api}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>stax-api</artifactId>
                         <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -865,8 +865,8 @@
                 <version>${version.org.jboss.jboss-vfs}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>jboss-logging</artifactId>
                         <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -941,12 +941,12 @@
                 <version>${version.org.jboss.remotingjmx.remoting-jmx}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>jboss-logging-processor</artifactId>
                         <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging-processor</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jboss-logmanager</artifactId>
                         <groupId>org.jboss.logmanager</groupId>
+                        <artifactId>jboss-logmanager</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1008,20 +1008,20 @@
                 <version>${version.org.picketbox}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.picketbox</groupId>
                         <artifactId>picketbox-spi-bare</artifactId>
-                        <groupId>org.picketbox</groupId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.picketbox</groupId>
                         <artifactId>jbosssx-bare</artifactId>
-                        <groupId>org.picketbox</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jboss-logging-spi</artifactId>
                         <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging-spi</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>infinispan-core</artifactId>
                         <groupId>org.infinispan</groupId>
+                        <artifactId>infinispan-core</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1066,8 +1066,8 @@
                 <version>${version.org.wildfly.common}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>wildfly-security-manager</artifactId>
                         <groupId>org.wildfly.security</groupId>
+                        <artifactId>wildfly-security-manager</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1327,8 +1327,8 @@
                 <version>${version.org.wildfly.discovery}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1383,8 +1383,8 @@
                 <version>${version.org.wildfly.security.elytron}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1394,8 +1394,8 @@
                 <version>${version.org.wildfly.security.elytron.tool}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1405,8 +1405,8 @@
                 <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>*</artifactId>
                         <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1416,8 +1416,8 @@
                 <version>${version.org.apache.xerces}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>xml-apis</artifactId>
                         <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1451,20 +1451,20 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
+                        <groupId>ant</groupId>
                         <artifactId>ant-nodeps</artifactId>
-                        <groupId>ant</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>ant-contrib</artifactId>
                         <groupId>ant-contrib</groupId>
+                        <artifactId>ant-contrib</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>ant-junit</artifactId>
                         <groupId>ant</groupId>
+                        <artifactId>ant-junit</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>tools</artifactId>
                         <groupId>sun.jdk</groupId>
+                        <artifactId>tools</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
