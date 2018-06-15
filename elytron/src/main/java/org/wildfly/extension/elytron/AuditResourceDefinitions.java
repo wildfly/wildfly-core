@@ -157,7 +157,7 @@ class AuditResourceDefinitions {
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
             .setRestartAllServices()
-            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY, true)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY)
             .build();
 
     private static final AggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = AggregateComponentDefinition.create(SecurityEventListener.class,

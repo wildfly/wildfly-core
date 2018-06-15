@@ -80,7 +80,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition DIR_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIR_CONTEXT, ModelType.STRING, false)
             .setAllowExpression(false)
             .setRestartAllServices()
-            .setCapabilityReference(DIR_CONTEXT_CAPABILITY, KEY_STORE_CAPABILITY, true)
+            .setCapabilityReference(DIR_CONTEXT_CAPABILITY, KEY_STORE_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition SEARCH_PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_PATH, ModelType.STRING, false)

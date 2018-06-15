@@ -108,19 +108,19 @@ class SaslServerDefinitions {
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, false)
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-        .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY, true)
+        .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY, true)
+        .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(PROVIDERS_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY, true)
+        .setCapabilityReference(PROVIDERS_CAPABILITY, SASL_SERVER_FACTORY_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLING, ModelType.BOOLEAN, true)

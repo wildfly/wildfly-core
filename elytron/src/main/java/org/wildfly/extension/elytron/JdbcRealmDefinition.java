@@ -422,7 +422,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         static final SimpleAttributeDefinition DATA_SOURCE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DATA_SOURCE, ModelType.STRING, false)
                 .setMinSize(1)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                .setCapabilityReference(Capabilities.DATA_SOURCE_CAPABILITY_NAME, Capabilities.SECURITY_REALM_CAPABILITY, true)
+                .setCapabilityReference(Capabilities.DATA_SOURCE_CAPABILITY_NAME, Capabilities.SECURITY_REALM_CAPABILITY)
                 .build();
 
         static final ObjectListAttributeDefinition ATTRIBUTE_MAPPINGS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ATTRIBUTE_MAPPING, AttributeMappingObjectDefinition.OBJECT_DEFINITION)

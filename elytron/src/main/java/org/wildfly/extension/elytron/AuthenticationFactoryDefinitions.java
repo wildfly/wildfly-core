@@ -105,13 +105,13 @@ class AuthenticationFactoryDefinitions {
     static final SimpleAttributeDefinition HTTP_SERVER_MECHANISM_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
-            .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY, true)
+            .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition SASL_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SASL_SERVER_FACTORY, ModelType.STRING, false)
             .setMinSize(1)
             .setRestartAllServices()
-            .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY, true)
+            .setCapabilityReference(SASL_SERVER_FACTORY_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition MECHANISM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MECHANISM_NAME, ModelType.STRING, true)
@@ -168,16 +168,16 @@ class AuthenticationFactoryDefinitions {
 
     static AttributeDefinition getMechanismConfiguration(String forCapability) {
         SimpleAttributeDefinition preRealmPrincipalTransformerAttribute = new SimpleAttributeDefinitionBuilder(BASE_PRE_REALM_PRINCIPAL_TRANSFORMER)
-                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability, true)
+                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability)
                 .build();
         SimpleAttributeDefinition postRealmPrincipalTransformerAttribute = new SimpleAttributeDefinitionBuilder(BASE_POST_REALM_PRINCIPAL_TRANSFORMER)
-                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability, true)
+                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability)
                 .build();
         SimpleAttributeDefinition finalprincipalTransformerAttribute = new SimpleAttributeDefinitionBuilder(BASE_FINAL_PRINCIPAL_TRANSFORMER)
-                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability, true)
+                .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, forCapability)
                 .build();
         SimpleAttributeDefinition realmMapperAttribute = new SimpleAttributeDefinitionBuilder(BASE_REALM_MAPPER)
-                .setCapabilityReference(REALM_MAPPER_CAPABILITY, forCapability, true)
+                .setCapabilityReference(REALM_MAPPER_CAPABILITY, forCapability)
                 .build();
 
         ObjectTypeAttributeDefinition mechanismRealmConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_REALM_CONFIGURATION, REALM_NAME, preRealmPrincipalTransformerAttribute, postRealmPrincipalTransformerAttribute, finalprincipalTransformerAttribute, realmMapperAttribute)
@@ -195,7 +195,7 @@ class AuthenticationFactoryDefinitions {
                 .build();
 
         SimpleAttributeDefinition credentialSecurityFactoryAttribute = new SimpleAttributeDefinitionBuilder(BASE_CREDENTIAL_SECURITY_FACTORY)
-                .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, forCapability, true)
+                .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, forCapability)
                 .build();
 
         ObjectTypeAttributeDefinition mechanismConfiguration = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_CONFIGURATION, MECHANISM_NAME, HOST_NAME, PROTOCOL,
@@ -364,7 +364,7 @@ class AuthenticationFactoryDefinitions {
     static ResourceDefinition getHttpAuthenticationFactory() {
 
         SimpleAttributeDefinition securityDomainAttribute = new SimpleAttributeDefinitionBuilder(BASE_SECURITY_DOMAIN_REF)
-                .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY, true)
+                .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, HTTP_AUTHENTICATION_FACTORY_CAPABILITY)
                 .setRestartAllServices()
                 .build();
 
@@ -448,7 +448,7 @@ class AuthenticationFactoryDefinitions {
 
     static ResourceDefinition getSaslAuthenticationFactory() {
         SimpleAttributeDefinition securityDomainAttribute = new SimpleAttributeDefinitionBuilder(BASE_SECURITY_DOMAIN_REF)
-                .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY, true)
+                .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SASL_AUTHENTICATION_FACTORY_CAPABILITY)
                 .setRestartAllServices()
                 .build();
 

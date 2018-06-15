@@ -80,7 +80,7 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
     public static final ListAttributeDefinition INCLUDES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.INCLUDES)
             .setRequired(false)
             .setElementValidator(new StringLengthValidator(1, true))
-            .setCapabilityReference(PROFILE_CAPABILITY_NAME, PROFILE_CAPABILITY_NAME, true)
+            .setCapabilityReference(PROFILE_CAPABILITY_NAME, PROFILE_CAPABILITY_NAME)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {INCLUDES};

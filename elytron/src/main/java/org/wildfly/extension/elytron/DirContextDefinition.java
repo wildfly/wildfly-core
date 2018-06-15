@@ -113,14 +113,14 @@ class DirContextDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
             .setRestartAllServices()
-            .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(AUTHENTICATION_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY)
             .setAlternatives(CredentialReference.CREDENTIAL_REFERENCE, ElytronDescriptionConstants.SSL_CONTEXT,ElytronDescriptionConstants.PRINCIPAL)
             .build();
 
     static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
             .setAllowExpression(false)
             .setRestartAllServices()
-            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY, DIR_CONTEXT_CAPABILITY)
             .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_CONTEXT)
             .build();
 

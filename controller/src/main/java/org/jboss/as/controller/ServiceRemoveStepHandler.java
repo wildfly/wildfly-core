@@ -52,6 +52,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      * @param unavailableCapabilities capabilities that will no longer be available once the remove occurs. Any services
      *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed
      */
+    @Deprecated
     public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
         super(unavailableCapabilities);
         this.baseServiceName = baseServiceName;
@@ -75,6 +76,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed.
      *          Cannot be {@code null} or empty.
      */
+    @Deprecated
     public ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
         this(null, addOperation, unavailableCapabilities);
     }

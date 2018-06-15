@@ -64,7 +64,7 @@ class RealmMapperDefinitions {
     static final SimpleAttributeDefinition DELEGATE_REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DELEGATE_REALM_MAPPER, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(REALM_MAPPER_CAPABILITY, REALM_MAPPER_CAPABILITY, true)
+        .setCapabilityReference(REALM_MAPPER_CAPABILITY, REALM_MAPPER_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_NAME, ModelType.STRING, false)

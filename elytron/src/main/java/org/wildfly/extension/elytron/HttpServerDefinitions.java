@@ -81,13 +81,13 @@ class HttpServerDefinitions {
     static final SimpleAttributeDefinition HTTP_SERVER_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_SERVER_MECHANISM_FACTORY, ModelType.STRING, false)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, true)
+        .setCapabilityReference(HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition PROVIDERS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PROVIDERS, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(PROVIDERS_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY, true)
+        .setCapabilityReference(PROVIDERS_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)

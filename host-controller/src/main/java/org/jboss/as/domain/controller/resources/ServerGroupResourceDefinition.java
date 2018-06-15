@@ -66,21 +66,20 @@ import org.jboss.dmr.ModelType;
 public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     public static final String SERVER_GROUP_CAPABILITY_NAME = "org.wildfly.domain.server-group";
-    public static final RuntimeCapability SERVER_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SERVER_GROUP_CAPABILITY_NAME, true)
-            .build();
+    public static final RuntimeCapability<Void> SERVER_GROUP_CAPABILITY = RuntimeCapability.Builder.of(SERVER_GROUP_CAPABILITY_NAME, true).build();
 
     public static final PathElement PATH = PathElement.pathElement(SERVER_GROUP);
 
     public static final SimpleAttributeDefinition PROFILE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PROFILE, ModelType.STRING)
             .setValidator(new StringLengthValidator(1))
-            .setCapabilityReference(ProfileResourceDefinition.PROFILE_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
+            .setCapabilityReference(ProfileResourceDefinition.PROFILE_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME)
             .addArbitraryDescriptor(FEATURE_REFERENCE, new ModelNode(true))
             .build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, false)
             .setXmlName(Attribute.REF.getLocalName())
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_BINDING_REF)
-            .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME, true)
+            .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_GROUP_CAPABILITY_NAME)
             .addArbitraryDescriptor(FEATURE_REFERENCE, new ModelNode(true))
             .build();
 

@@ -66,6 +66,7 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
         super(capability, attributes);
     }
@@ -73,6 +74,7 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
         super(capabilities, attributes);
     }
@@ -80,6 +82,7 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
         super(capability, attributes);
     }
@@ -94,6 +97,7 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
+    @Deprecated
     protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
         super(capabilities, attributes);
     }

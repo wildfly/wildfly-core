@@ -28,12 +28,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.mockito.Mockito.when;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jboss.as.controller.ModelOnlyRemoveStepHandler;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
@@ -299,6 +304,10 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
             this.rollback = rollback;
+            Set<RuntimeCapability> capabilities = new HashSet<>();
+            capabilities.add(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY);
+            capabilities.add(ProfileResourceDefinition.PROFILE_CAPABILITY);
+            when(this.registration.getCapabilities()).thenReturn(capabilities);
         }
 
         public void completeStep(ResultHandler resultHandler) {

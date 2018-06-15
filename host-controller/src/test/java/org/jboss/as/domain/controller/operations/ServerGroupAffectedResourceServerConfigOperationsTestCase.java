@@ -34,10 +34,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -62,6 +64,7 @@ import org.jboss.as.host.controller.discovery.DiscoveryOption;
 import org.jboss.as.host.controller.operations.ServerAddHandler;
 import org.jboss.as.host.controller.operations.ServerRemoveHandler;
 import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfigWriteAttributeHandler;
+import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -696,6 +699,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress, final boolean rollback) {
             super(root, booting, operationAddress);
             this.rollback = rollback;
+            when(this.registration.getCapabilities()).thenReturn(Collections.singleton(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY));
         }
 
         void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {

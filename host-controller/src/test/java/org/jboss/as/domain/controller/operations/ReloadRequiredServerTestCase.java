@@ -34,8 +34,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +48,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.registry.Resource;
@@ -53,6 +56,7 @@ import org.jboss.as.domain.controller.ServerIdentity;
 import org.jboss.as.domain.controller.operations.coordination.ServerOperationResolver;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.as.host.controller.operations.ServerRestartRequiredServerConfigWriteAttributeHandler;
+import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -518,6 +522,10 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
         private OperationStepHandler nextStep;
         protected MockOperationContext(final Resource root, final boolean booting, final PathAddress operationAddress) {
             super(root, booting, operationAddress);
+            Set<RuntimeCapability> capabilities = new HashSet<>();
+            capabilities.add(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY);
+            capabilities.add(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY);
+            when(this.registration.getCapabilities()).thenReturn(capabilities);
         }
 
         void executeStep(OperationStepHandler handler, ModelNode operation) throws OperationFailedException {

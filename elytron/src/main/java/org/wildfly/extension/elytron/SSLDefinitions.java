@@ -164,31 +164,31 @@ class SSLDefinitions {
 
     static final SimpleAttributeDefinition SECURITY_DOMAIN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECURITY_DOMAIN, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition PRE_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRE_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition POST_REALM_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.POST_REALM_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition FINAL_PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FINAL_PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     static final SimpleAttributeDefinition REALM_MAPPER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM_MAPPER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(REALM_MAPPER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(REALM_MAPPER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
@@ -261,14 +261,14 @@ class SSLDefinitions {
 
     static final SimpleAttributeDefinition KEY_MANAGER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_MANAGER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(KEY_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(KEY_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setRestartAllServices()
             .setAllowExpression(false)
             .build();
 
     static final SimpleAttributeDefinition TRUST_MANAGER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRUST_MANAGER, ModelType.STRING, true)
             .setMinSize(1)
-            .setCapabilityReference(TRUST_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+            .setCapabilityReference(TRUST_MANAGER_CAPABILITY, SSL_CONTEXT_CAPABILITY)
             .setRestartAllServices()
             .setAllowExpression(false)
             .build();
@@ -351,13 +351,13 @@ class SSLDefinitions {
         final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_MANAGER);
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_MANAGER_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, KEY_MANAGER_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();
 
         final SimpleAttributeDefinition keystoreDefinition = new SimpleAttributeDefinitionBuilder(KEYSTORE)
-                .setCapabilityReference(KEY_STORE_CAPABILITY, KEY_MANAGER_CAPABILITY, true)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, KEY_MANAGER_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();
@@ -494,13 +494,13 @@ class SSLDefinitions {
     static ResourceDefinition getTrustManagerDefinition() {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, TRUST_MANAGER_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, TRUST_MANAGER_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();
 
         final SimpleAttributeDefinition keystoreDefinition = new SimpleAttributeDefinitionBuilder(KEYSTORE)
-                .setCapabilityReference(KEY_STORE_CAPABILITY, TRUST_MANAGER_CAPABILITY, true)
+                .setCapabilityReference(KEY_STORE_CAPABILITY, TRUST_MANAGER_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();
@@ -818,7 +818,7 @@ class SSLDefinitions {
     static ResourceDefinition getServerSSLContextDefinition(boolean serverOrHostController) {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();
@@ -949,7 +949,7 @@ class SSLDefinitions {
     static ResourceDefinition getClientSSLContextDefinition(boolean serverOrHostController) {
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
-                .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY, true)
+                .setCapabilityReference(PROVIDERS_CAPABILITY, SSL_CONTEXT_CAPABILITY)
                 .setAllowExpression(false)
                 .setRestartAllServices()
                 .build();

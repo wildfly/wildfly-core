@@ -41,6 +41,7 @@ public class ReloadRequiredRemoveStepHandler extends AbstractRemoveStepHandler {
      *
      * @param unavailableCapabilities capabilities to deregister
      */
+    @Deprecated
     public ReloadRequiredRemoveStepHandler(RuntimeCapability... unavailableCapabilities) {
         super(unavailableCapabilities);
     }

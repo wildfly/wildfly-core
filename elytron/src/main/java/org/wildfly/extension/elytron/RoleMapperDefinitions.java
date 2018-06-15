@@ -77,13 +77,13 @@ class RoleMapperDefinitions {
     static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEFT, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY, true)
+        .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition RIGHT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RIGHT, ModelType.STRING, true)
         .setMinSize(1)
         .setRestartAllServices()
-        .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY, true)
+        .setCapabilityReference(ROLE_MAPPER_CAPABILITY, ROLE_MAPPER_CAPABILITY)
         .build();
 
     static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOGICAL_OPERATION, ModelType.STRING, false)
