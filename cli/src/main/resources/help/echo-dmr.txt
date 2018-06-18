@@ -1,12 +1,14 @@
 SYNOPSIS
 
-    echo-dmr command_line
+    echo-dmr [--compact] command_line
 
 DESCRIPTION
 
     Builds a DMR requests for the command or operation passed in as the argument
-    and echos in its toString() format.
+    and echos in its DMR string or JSON format according to the CLI configuration.
 
 ARGUMENTS
+
+ --compact      - If present, the content is displayed into a single line.
 
  command_line   - command or an operation to translate to DMR.

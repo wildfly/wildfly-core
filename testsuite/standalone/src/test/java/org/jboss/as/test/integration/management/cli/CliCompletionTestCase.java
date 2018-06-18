@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2016, Red Hat Middleware LLC, and individual contributors
+ * Copyright 2018, Red Hat Middleware LLC, and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -1406,6 +1406,70 @@ public class CliCompletionTestCase {
                     ctx.terminateSession();
                 }
             }
+        }
+    }
+
+    @Test
+    public void echoDMRCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        ctx.connectController();
+        try {
+            {
+                String cmd = "echo-dmr ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--compact"));
+                assertTrue(candidates.toString(), candidates.size() > 1);
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.toString(), candidates.contains("--compact"));
+                assertTrue(candidates.toString(), candidates.size() > 1);
+            }
+
+            {
+                String cmd = "echo-dmr --compact";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--compact "), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("--compact "), candidates);
+            }
+
+            {
+                String cmd = "echo-dmr --compact ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() > 1);
+                assertFalse(candidates.toString(), candidates.contains("--compact"));
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.toString(), candidates.size() > 1);
+                assertFalse(candidates.toString(), candidates.contains("--compact"));
+            }
+
+            {
+                String cmd = "echo-dmr version ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+                candidates = complete(ctx, cmd, null);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = "echo-dmr cl";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("clear"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("clear"), candidates);
+            }
+        } finally {
+            ctx.terminateSession();
         }
     }
 
