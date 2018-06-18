@@ -73,7 +73,7 @@ public class CLICommandCompleter {
     protected void doComplete(CommandContext ctx, AeshCompleteOperation op, Completer completer) {
         String buffer = op.getBuffer();
         int cursor = op.getCursor();
-        if (buffer.isEmpty()) {
+        if (buffer.isEmpty() || cursor == 0) {
             completer.addAllCommandNames(ctx, op);
             return;
         }
