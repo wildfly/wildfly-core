@@ -191,7 +191,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
     private final InjectedValue<ServerInventory> serverInventoryInjector = new InjectedValue<ServerInventory>();
     private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
     private final ExecutorService executor;
-    private final AtomicBoolean domainModelComplete;
+    private final AtomicBoolean domainConfigAvailable;
 
     private ManagementChannelHandler handler;
     private volatile ResponseAttachmentInputStreamSupport responseAttachmentSupport;
@@ -209,7 +209,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                           final ExecutorService executor,
                                           final RunningMode runningMode,
                                           final Map<String, ProxyController> serverProxies,
-                                          final AtomicBoolean domainModelComplete){
+                                          final AtomicBoolean domainConfigAvailable){
         this.controller = controller;
         this.extensionRegistry = extensionRegistry;
         this.productConfig = hostControllerEnvironment.getProductConfig();
@@ -225,7 +225,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
         this.runningMode = runningMode;
         this.tempDir = hostControllerEnvironment.getDomainTempDir();
         this.serverProxies = serverProxies;
-        this.domainModelComplete = domainModelComplete;
+        this.domainConfigAvailable = domainConfigAvailable;
     }
 
     static Future<MasterDomainControllerClient> install(final ServiceTarget serviceTarget,
@@ -243,11 +243,11 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
                                                         final ExecutorService executor,
                                                         final RunningMode currentRunningMode,
                                                         final Map<String, ProxyController> serverProxies,
-                                                        final AtomicBoolean domainModelComplete) {
+                                                        final AtomicBoolean domainConfigAvailable) {
         RemoteDomainConnectionService service = new RemoteDomainConnectionService(controller, extensionRegistry, localHostControllerInfo,
                 remoteFileRepository, contentRepository,
                 ignoredDomainResourceRegistry, operationExecutor, domainController,
-                hostControllerEnvironment, executor, currentRunningMode, serverProxies, domainModelComplete);
+                hostControllerEnvironment, executor, currentRunningMode, serverProxies, domainConfigAvailable);
         ServiceBuilder<MasterDomainControllerClient> builder = serviceTarget.addService(MasterDomainControllerClient.SERVICE_NAME, service)
                 .addDependency(ManagementRemotingServices.MANAGEMENT_ENDPOINT, Endpoint.class, service.endpointInjector)
                 .addDependency(ServerInventoryService.SERVICE_NAME, ServerInventory.class, service.serverInventoryInjector)
@@ -548,7 +548,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
                 @Override
                 public void registrationComplete(ManagementChannelHandler handler) {
-                    RemoteDomainConnectionService.this.domainModelComplete.set(true);
+                    RemoteDomainConnectionService.this.domainConfigAvailable.set(true);
                 }
             }, runningMode);
             // Setup the management channel handler
