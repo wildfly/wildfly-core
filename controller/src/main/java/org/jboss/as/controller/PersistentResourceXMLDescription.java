@@ -1,8 +1,8 @@
 package org.jboss.as.controller;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -156,33 +157,18 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
     }
 
     private void parseInternal(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
-        ModelNode op = Util.createAddOperation();
-        boolean wildcard = pathElement.isWildcard();
-        String name = parseAttributeGroups(reader, op);
-        if (wildcard && name == null) {
-            if (forcedName != null) {
-                name = forcedName;
-            } else {
-                throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(NAME), reader.getLocation());
-            }
-        }
-        PathElement path = wildcard ? PathElement.pathElement(pathElement.getKey(), name) : pathElement;
-        PathAddress address = parentAddress.append(path);
-        if (!noAddOperation) {
-            op.get(ADDRESS).set(address.toModelNode());
-            list.add(op);
-        }
+        ModelNode op = parseAttributeGroups(reader, parentAddress, list);
         if (additionalOperationsGenerator != null) {
-            additionalOperationsGenerator.additionalOperations(address, op, list);
+            additionalOperationsGenerator.additionalOperations(PathAddress.pathAddress(op.get(OP_ADDR)), op, list);
         }
         if (!reader.isEndElement()) { //only parse children if we are not on end of tag already
-            parseChildren(reader, address, list, op);
+            parseChildren(reader, list, op);
         }
     }
 
 
-    private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op) throws XMLStreamException {
-        String name = parseAttributes(reader, op, attributesByGroup.get(null)); //parse attributes not belonging to a group
+    private ModelNode parseAttributeGroups(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        ModelNode op = parseAttributes(reader, parentAddress, list); //parse attributes not belonging to a group
         if (!attributeGroups.isEmpty()) {
             while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 final String localName = reader.getLocalName();
@@ -206,12 +192,12 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                 } else {
                     //don't break, as we read all attributes, we set that child was already read so readChildren wont do .nextTag()
                     childAlreadyRead = true;
-                    return name;
+                    return op;
                 }
             }
             flushRequired = false;
         }
-        return name;
+        return op;
     }
 
     private void parseGroup(XMLExtendedStreamReader reader, ModelNode op) throws XMLStreamException {
@@ -233,14 +219,23 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         }
     }
 
-    private String parseAttributes(final XMLExtendedStreamReader reader, ModelNode op, Map<String, AttributeDefinition> attributes) throws XMLStreamException {
-        String name = null;
+    private ModelNode parseAttributes(XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
+        PathAddress address = parentAddress.append(this.parsePathElement(reader));
+        ModelNode op = Util.createAddOperation(address);
+        if (!this.noAddOperation) {
+            list.add(op);
+        }
+        parseAttributes(reader, op, attributesByGroup.get(null)); //parse attributes not belonging to a group
+        return op;
+    }
+
+    private void parseAttributes(final XMLExtendedStreamReader reader, ModelNode op, Map<String, AttributeDefinition> attributes) throws XMLStreamException {
         int attrCount = reader.getAttributeCount();
         for (int i = 0; i < attrCount; i++) {
             String attributeName = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
             if (this.pathElement.isWildcard() && nameAttributeName.equals(attributeName)) {
-                name = value;
+                // Already parsed
             } else if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
                 AttributeParser parser = attributeParsers.getOrDefault(attributeName, def.getParser());
@@ -263,15 +258,26 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                         parser.parseElement(ad, reader, op);
                     } else {
                         childAlreadyRead = true;
-                        return name;  //this means we only have children left, return so child handling logic can take over
+                        break;  //this means we only have children left, return so child handling logic can take over
                     }
                     childAlreadyRead = true;
                 } while (!reader.getLocalName().equals(originalStartElement) && reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT);
             }
         }
+    }
 
-
-        return name;
+    private PathElement parsePathElement(XMLExtendedStreamReader reader) throws XMLStreamException {
+        if (this.pathElement.isWildcard()) {
+            String name = reader.getAttributeValue(null, this.nameAttributeName);
+            if (name == null) {
+                name = this.forcedName;
+            }
+            if (name == null) {
+                throw ControllerLogger.ROOT_LOGGER.missingRequiredAttributes(new StringBuilder(this.nameAttributeName), reader.getLocation());
+            }
+            return PathElement.pathElement(this.pathElement.getKey(), name);
+        }
+        return this.pathElement;
     }
 
     private Map<String, PersistentResourceXMLDescription> getChildrenMap() {
@@ -284,6 +290,10 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
             }
         }
         return res;
+    }
+
+    private void parseChildren(final XMLExtendedStreamReader reader, List<ModelNode> list, ModelNode op) throws XMLStreamException {
+        this.parseChildren(reader, PathAddress.pathAddress(op.get(OP_ADDR)), list, op);
     }
 
     private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list, ModelNode op) throws XMLStreamException {
