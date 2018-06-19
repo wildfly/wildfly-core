@@ -1,8 +1,6 @@
 package org.jboss.as.test.integration.management.cli;
 
 import org.aesh.readline.terminal.Key;
-import org.aesh.readline.util.Parser;
-import org.aesh.utils.ANSI;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.jboss.as.cli.CommandContext;
@@ -37,6 +35,7 @@ import java.util.regex.Pattern;
 
 
 /**
+ * This test covers the minimal use-cases.
  * @author eduda@redhat.com
  */
 @RunWith(WildflyTestRunner.class)
@@ -46,8 +45,6 @@ public class LongOutputTestCase {
 
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern morePattern = Pattern.compile(".*--More\\(\\d+%\\)--$");
-    private static final Pattern promptPattern = Pattern.compile(".*\\[.*@.* /\\]\\s*$");
-    private static final Pattern notFoundPattern = Pattern.compile(".*" + Pattern.quote(ANSI.INVERT_BACKGROUND) + "Pattern not found" + Pattern.quote(ANSI.RESET) + "$");
     private static final AtomicBoolean readThreadActive = new AtomicBoolean(true);
     private static final List<Thread> threads = new ArrayList<>();
     private static final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
@@ -160,8 +157,11 @@ public class LongOutputTestCase {
         }
     }
 
+    /**
+     * Check for More prompt, 1 line up, 1 line down, search then exits.
+     */
     @Test
-    public void testUpDown() throws Exception {
+    public void testBasic() throws Exception {
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
 
@@ -187,220 +187,9 @@ public class LongOutputTestCase {
         checkWithRegex(window, morePattern);
         Assert.assertEquals(lastLine, getBeforeLastLine(window));
 
-        consoleWriter.print(Key.Q.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-    }
-
-    @Test
-    public void testPageUpDown() throws Exception {
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        // Remove first two lines
-        // The first one contains executed command
-        // The second one contains special characters for clearing screen
-        String firstWindow = removeFirstLine(window);
-        firstWindow = removeFirstLine(firstWindow);
-
-        consoleWriter.print(Key.SPACE.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-        Assert.assertNotEquals(firstWindow, window);
-
-        consoleWriter.print(Key.BACKSLASH.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-        Assert.assertEquals(firstWindow, removeFirstLine(window));
-
-        consoleWriter.print(Key.Q.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-    }
-
-    @Test
-    public void testHomeEnd() throws Exception {
-        consoleWriter.println("/subsystem=discovery:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        // Remove first two lines
-        // The first one contains executed command
-        // The second one contains special characters for clearing screen
-        String firstWindow = removeFirstLine(window);
-        firstWindow = removeFirstLine(firstWindow);
-
-        consoleWriter.print(Key.G);
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(30, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-        Assert.assertNotEquals(firstWindow, window);
-
-        consoleWriter.print(Key.g);
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-        Assert.assertEquals(firstWindow, removeFirstLine(window));
-
-        consoleWriter.print(Key.Q.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-    }
-
-    @Test
-    public void testComplexScenario() throws Exception {
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        // +1 is for command string which was sent to the CLI
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        // it sends key down to the console what should return only one new line
-        consoleWriter.print(Key.DOWN.getKeyValuesAsString());
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        // we expect 2 because on the second line there is --More(%)-- string
-        Assert.assertEquals(window,2, countLines(window));
-
-        //last output line should be the same after move 1 line down and move 1 line back up
-        String lastOutputLine = stripAwayAnsiCodes(getBeforeLastLine(window));
-        // it sends enter to the console what should return only one new line
-        consoleWriter.print(Key.ENTER.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        // we expect 2 because on the second line there is --More(%)-- string
-        Assert.assertEquals(window,2, countLines(window));
-
-        // it sends semicolon to the console what should move output one line up
-        consoleWriter.print(Key.SEMI_COLON.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        // The line above the --More(%)-- should be equal to the one before inserting ENTER
-        Assert.assertEquals(window,lastOutputLine, getBeforeLastLine(window));
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-
-        lastOutputLine = getBeforeLastLine(window);
-        consoleWriter.print(" ");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-
-        consoleWriter.print(Key.BACKSLASH.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-        Assert.assertEquals(lastOutputLine, getBeforeLastLine(window));
-
-        lastOutputLine = getBeforeLastLine(window);
-        consoleWriter.print("q");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, promptPattern);
-        Assert.assertEquals(window, lastOutputLine, getBeforeLastLine(window));
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-
-        lastOutputLine = getBeforeLastLine(window);
-        consoleWriter.print(Key.ESC.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, promptPattern);
-        Assert.assertEquals(window, lastOutputLine, getBeforeLastLine(window));
-        // the output should be printed into the main buffer as well after exiting
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        // +1 is for command string which was sent to the CLI
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        consoleWriter.print("Q");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, promptPattern);
-        // Check that the content displayed before 'Q' was printed is printed to
-        // the main buffer.
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
-
-    }
-
-    /**
-     * Checks the search functionality.
-     * When /PATTERN[ENTER] is inserted, the view must jump on line with first occurrence of the pattern.
-     * When n is hit, the view must jump on line with next occurrence of the pattern.
-     * When N is hit, the view must jump on line with previous occurrence of the pattern.
-     * When N is hit again, user must be advertised that no match is found.
-     */
-    @Test
-    public void testSearchPattern() throws Exception {
-        final String pattern = "description";
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
+        // Checks the search functionality.
         // tests /description
+        final String pattern = "description";
         consoleWriter.print("/");
         consoleWriter.flush();
         Thread.sleep(100);
@@ -414,148 +203,6 @@ public class LongOutputTestCase {
         String firstMatch = getFirstLine(window);
         Assert.assertTrue(firstMatch, firstMatch.contains(pattern));
 
-        // tests n
-        consoleWriter.print("n");
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
-        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
-        String secondMatch = getFirstLine(window);
-        Assert.assertTrue(secondMatch, firstMatch.contains(pattern));
-
-        // tests N
-        consoleWriter.print("N");
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
-        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
-        String thirdMatch = getFirstLine(window);
-        Assert.assertEquals(firstMatch, thirdMatch);
-
-        // tests Pattern not found
-        consoleWriter.print("N");
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, notFoundPattern);
-
-        consoleWriter.print(Key.Q.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-    }
-
-    /**
-     * Checks the highlight of matches.
-     * When /PATTERN[ENTER] is inserted, all occurrences of the pattern must be highlighted in the current view.
-     * When n is hit and the view is changed, all occurrences of the pattern must be highlighted in the current view.
-     */
-    @Test
-    public void testMatchHighlight() throws Exception {
-        final String pattern = "description";
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        consoleWriter.print("/");
-        consoleWriter.flush();
-        Thread.sleep(100);
-        consoleWriter.println(pattern);
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
-        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
-        checkWithRegex(window, morePattern);
-        checkPatternIsHighlighted(window, pattern);
-
-        consoleWriter.print("n");
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        window = getLastNumberOfLines(window, readlineConsole.getTerminalHeight());
-        Assert.assertEquals(readlineConsole.getTerminalHeight(), countLines(window));
-        checkWithRegex(window, morePattern);
-        checkPatternIsHighlighted(window, pattern);
-
-        consoleWriter.print(Key.Q.getAsChar());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-    }
-
-    /**
-     * Checks history of search patterns.
-     * When /PATTERN[ENTER] is inserted, the pattern must be stored in history.
-     * When /PATTERN2[ENTER] is inserted, the pattern must be stored in history.
-     * When /[ARROW_UP] is inserted, the /PATTERN2 must be offered.
-     * When /[ARROW_UP] is inserted, the /PATTERN must be offered.
-     * When /[ARROW_DOWN] is inserted, the /PATTERN2 must be offered.
-     */
-    @Test
-    public void testSearchHistory() throws Exception {
-        final String pattern1 = "description";
-        final String pattern2 = "type";
-
-        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
-        Assert.assertFalse(consoleWriter.checkError());
-
-        String window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        checkWithRegex(window, morePattern);
-        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
-
-        consoleWriter.print("/");
-        consoleWriter.flush();
-        Thread.sleep(100);
-        consoleWriter.println(pattern1);
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-
-        consoleWriter.print("/");
-        consoleWriter.flush();
-        Thread.sleep(100);
-        consoleWriter.println(pattern2);
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-
-        consoleWriter.print("/");
-        consoleWriter.flush();
-        Thread.sleep(100);
-        consoleWriter.print(Key.UP.getKeyValuesAsString());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        Assert.assertTrue(window, window.endsWith(pattern2));
-
-        consoleWriter.print(Key.UP.getKeyValuesAsString());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        Assert.assertTrue(window, window.endsWith(pattern1));
-
-        consoleWriter.print(Key.DOWN.getKeyValuesAsString());
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-        Assert.assertTrue(window, window.endsWith(pattern2));
-
-        consoleWriter.println();
-        Assert.assertFalse(consoleWriter.checkError());
-        window = queue.poll(10, TimeUnit.SECONDS);
-        Assert.assertNotNull(window);
-
         consoleWriter.print(Key.Q.getAsChar());
         Assert.assertFalse(consoleWriter.checkError());
         window = queue.poll(10, TimeUnit.SECONDS);
@@ -565,10 +212,6 @@ public class LongOutputTestCase {
     private static String getBeforeLastLine(String window) {
         String[] lines = window.split(LINE_SEP);
         return (lines.length > 1) ? lines[lines.length-2] : "";
-    }
-
-    private static String removeFirstLine(String window) {
-        return window.substring(window.indexOf(System.getProperty("line.separator")) + 1);
     }
 
     private static String getFirstLine(String window) {
@@ -598,19 +241,6 @@ public class LongOutputTestCase {
     private static void checkWithRegex(String window, Pattern pattern) {
         Matcher m = pattern.matcher(window.replaceAll("\\R", " "));
         Assert.assertTrue(window, m.matches());
-    }
-
-    private static void checkPatternIsHighlighted(String window, String pattern) {
-        int occurencesOfPattern = StringUtils.countMatches(window, pattern);
-        int occurencesOfHighlightedPattern = StringUtils.countMatches(window, String.format("\u001B[7m%s\u001B[0m", pattern));
-
-        Assert.assertEquals(occurencesOfPattern, occurencesOfHighlightedPattern);
-    }
-
-    private static String stripAwayAnsiCodes(String str) {
-        str = Parser.stripAwayAnsiCodes(str);
-        str = str.replace(ANSI.CURSOR_RESTORE, "");
-        return str;
     }
 
     private static void waitFor(Callable<Boolean> condition, long timeout) throws Exception {
