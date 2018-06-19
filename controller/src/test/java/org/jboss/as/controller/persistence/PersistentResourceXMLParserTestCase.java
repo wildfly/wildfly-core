@@ -466,6 +466,31 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+    @Test
+    public void testChildGroups() throws Exception {
+        PersistentResourceXMLParser parser = new ChildGroupParser();
+
+        String xml = readResource("child-groups-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(ChildGroupParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(operations.toString(), 6, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -1435,6 +1460,42 @@ public class PersistentResourceXMLParserTestCase {
                             .addAttribute(PROCESS_STATE_LISTENERS)
                             .addAttribute(UNWRAPPED_LISTENER, AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
                             .addAttribute(OBJECT_DEFINITION))
+                    .build();
+        }
+    }
+
+    static class ChildGroupParser extends PersistentResourceXMLParser {
+        static final String NAMESPACE = "urn:jboss:domain:jgroups:1.0";
+        private static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "jgroups");
+        private static final PathElement CHANNEL_PATH = PathElement.pathElement("channel");
+        private static final PathElement STACK_PATH = PathElement.pathElement("stack");
+        private static final PathElement POST_GROUP_PATH = PathElement.pathElement("component", "post-group");
+
+        static final AttributeDefinition DEFAULT_CHANNEL = new SimpleAttributeDefinitionBuilder("default-channel", ModelType.STRING)
+                .setRequired(true)
+                .setXmlName("default")
+                .setAttributeGroup("channels")
+                .build();
+
+        static final AttributeDefinition DEFAULT_STACK = new SimpleAttributeDefinitionBuilder("default-stack", ModelType.STRING)
+                .setRequired(false)
+                .setXmlName("default")
+                .setAttributeGroup("stacks")
+                .build();
+
+        static final AttributeDefinition STACK = new SimpleAttributeDefinitionBuilder("stack", ModelType.STRING)
+                .setRequired(true)
+                .build();
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return builder(SUBSYSTEM_PATH, NAMESPACE)
+                    .addAttribute(DEFAULT_CHANNEL)
+                    .addAttribute(DEFAULT_STACK)
+                    .setUseElementsForGroups(true)
+                    .addChild(DEFAULT_CHANNEL, builder(CHANNEL_PATH).addAttribute(STACK))
+                    .addChild(DEFAULT_STACK, builder(STACK_PATH))
+                    .addChild(builder(POST_GROUP_PATH).setXmlElementName(POST_GROUP_PATH.getValue()))
                     .build();
         }
     }
