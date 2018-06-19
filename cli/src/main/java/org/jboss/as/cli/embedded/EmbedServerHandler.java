@@ -234,6 +234,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                         .setCommandArguments(cmds);
             } else {
                 configBuilder = Configuration.Builder.of(jbossHome.getAbsoluteFile())
+                        .addSystemPackages(EmbeddedControllerHandlerRegistrar.EXTENDED_SYSTEM_PKGS)
                         .setCommandArguments(cmds);
             }
             // Disables the logging subsystem from registering an embedded log context if the subsystem is present
