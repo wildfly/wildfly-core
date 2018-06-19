@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
@@ -70,7 +71,7 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
     }
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -103,7 +104,7 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         testXmlFormatter(kernelServices, PROFILE);
     }
 
-    private void testPatternFormatter(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testPatternFormatter(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createPatternFormatterAddress(profileName, "PATTERN").toModelNode();
 
         // Add the pattern formatter
@@ -213,6 +214,7 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         validateValue(kernelServices, address, attributeName, value);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void testWrite(final KernelServices kernelServices, final ModelNode address, final String attributeName, final boolean value) {
         final ModelNode writeOp = SubsystemOperations.createWriteAttributeOperation(address, attributeName, value);
         executeOperation(kernelServices, writeOp);

@@ -142,7 +142,7 @@ public class PropertyAttributeDefinition extends SimpleAttributeDefinition imple
         }
 
         public PropertyAttributeDefinition build() {
-            if (propertyName == null) propertyName = name;
+            if (propertyName == null) propertyName = getName();
             return new PropertyAttributeDefinition(this);
         }
 

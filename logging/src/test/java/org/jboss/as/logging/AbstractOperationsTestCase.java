@@ -22,9 +22,13 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
@@ -41,14 +45,12 @@ public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsyste
 
     static final String PROFILE = "testProfile";
 
-    private static File logDir;
+    private static Path logDir;
 
     @BeforeClass
-    public static void setupLoggingDir() {
+    public static void setupLoggingDir() throws Exception {
         logDir = LoggingTestEnvironment.get().getLogDir();
-        for (File file : logDir.listFiles()) {
-            file.delete();
-        }
+        clearDirectory(logDir);
     }
 
     @After
@@ -141,12 +143,10 @@ public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsyste
     }
 
     static void verifyFile(final String filename) {
-        final File logFile = new File(logDir, filename);
-        assertTrue("Log file was not found", logFile.exists());
+        assertTrue("Log file was not found", Files.exists(logDir.resolve(filename)));
     }
 
-    static void removeFile(final String filename) {
-        final File logFile = new File(logDir, filename);
-        assertTrue("Log file was not deleted", logFile.delete());
+    static void removeFile(final String filename) throws IOException {
+        Files.delete(logDir.resolve(filename));
     }
 }

@@ -29,7 +29,7 @@ import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.logging.LoggingExtension;
-import org.jboss.as.logging.RootLoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.logmanager.config.LogContextConfiguration;
@@ -42,26 +42,26 @@ import org.jboss.logmanager.config.LoggerConfiguration;
  */
 class LoggerResourceDefinition extends SimpleResourceDefinition {
 
-    static final String NAME = "logger";
-    public static final PathElement PATH = PathElement.pathElement(NAME);
+    private static final String NAME = "logger";
+    private static final PathElement PATH = PathElement.pathElement(NAME);
 
-    static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create("level", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition LEVEL = SimpleAttributeDefinitionBuilder.create("level", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleListAttributeDefinition HANDLERS = SimpleListAttributeDefinition.Builder.of("handlers", HANDLER)
+    private static final SimpleListAttributeDefinition HANDLERS = SimpleListAttributeDefinition.Builder.of("handlers", HANDLER)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition FILTER = SimpleAttributeDefinitionBuilder.create("filter", ModelType.STRING, true)
+    private static final SimpleAttributeDefinition FILTER = SimpleAttributeDefinitionBuilder.create("filter", ModelType.STRING, true)
             .setStorageRuntime()
             .build();
 
-    static final SimpleAttributeDefinition USE_PARENT_HANDLERS = SimpleAttributeDefinitionBuilder.create("use-parent-handlers", ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition USE_PARENT_HANDLERS = SimpleAttributeDefinitionBuilder.create("use-parent-handlers", ModelType.BOOLEAN, true)
             .setStorageRuntime()
             .build();
 
@@ -103,7 +103,7 @@ class LoggerResourceDefinition extends SimpleResourceDefinition {
     abstract static class LoggerConfigurationReadStepHandler extends LoggingConfigurationReadStepHandler {
         @Override
         protected void updateModel(final LogContextConfiguration logContextConfiguration, final String name, final ModelNode model) {
-            final LoggerConfiguration configuration = logContextConfiguration.getLoggerConfiguration(RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME.equals(name) ? "" : name);
+            final LoggerConfiguration configuration = logContextConfiguration.getLoggerConfiguration(RootLoggerResourceDefinition.RESOURCE_NAME.equals(name) ? "" : name);
             updateModel(configuration, model);
 
         }

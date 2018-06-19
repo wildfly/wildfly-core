@@ -55,15 +55,27 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.logging.stdio.LogContextStdioContextSelector;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.stdio.StdioContext;
@@ -75,16 +87,15 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class LoggingExtension implements Extension {
 
+    public static final String SUBSYSTEM_NAME = "logging";
     private static final String RESOURCE_NAME = LoggingExtension.class.getPackage().getName() + ".LocalDescriptions";
 
     private static final String SKIP_LOG_MANAGER_PROPERTY = "org.wildfly.logging.skipLogManagerCheck";
     private static final String EMBEDDED_PROPERTY = "org.wildfly.logging.embedded";
 
-    public static final String SUBSYSTEM_NAME = "logging";
+    private static final PathElement LOGGING_PROFILE_PATH = PathElement.pathElement(CommonAttributes.LOGGING_PROFILE);
 
-    static final PathElement LOGGING_PROFILE_PATH = PathElement.pathElement(CommonAttributes.LOGGING_PROFILE);
-
-    static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
+    private static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
     private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
@@ -92,15 +103,15 @@ public class LoggingExtension implements Extension {
 
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
-    private static final ModuleIdentifier[] LOGGING_API_MODULES = new ModuleIdentifier[] {
-            ModuleIdentifier.create("org.apache.commons.logging"),
-            ModuleIdentifier.create("org.apache.log4j"),
-            ModuleIdentifier.create("org.jboss.logging"),
-            ModuleIdentifier.create("org.jboss.logging.jul-to-slf4j-stub"),
-            ModuleIdentifier.create("org.jboss.logmanager"),
-            ModuleIdentifier.create("org.slf4j"),
-            ModuleIdentifier.create("org.slf4j.ext"),
-            ModuleIdentifier.create("org.slf4j.impl"),
+    private static final String[] LOGGING_API_MODULES = new String[] {
+            "org.apache.commons.logging",
+            "org.apache.log4j",
+            "org.jboss.logging",
+            "org.jboss.logging.jul-to-slf4j-stub",
+            "org.jboss.logmanager",
+            "org.slf4j",
+            "org.slf4j.ext",
+            "org.slf4j.impl",
     };
 
     private static final List<String> DELEGATE_DESC_OPTS = Arrays.asList(
@@ -111,7 +122,7 @@ public class LoggingExtension implements Extension {
     /**
      * Returns a resource description resolver that uses common descriptions for some attributes.
      *
-     * @param keyPrefix the prefix to be appended to the {@link #SUBSYSTEM_NAME}
+     * @param keyPrefix the prefix to be appended to the {@link LoggingExtension#SUBSYSTEM_NAME}
      *
      * @return the resolver
      */
@@ -192,9 +203,9 @@ public class LoggingExtension implements Extension {
         // Load logging API modules
         try {
             final ModuleLoader moduleLoader = Module.forClass(LoggingExtension.class).getModuleLoader();
-            for (ModuleIdentifier moduleIdentifier : LOGGING_API_MODULES) {
+            for (String moduleName : LOGGING_API_MODULES) {
                 try {
-                    contextSelector.addLogApiClassLoader(moduleLoader.loadModule(moduleIdentifier).getClassLoader());
+                    contextSelector.addLogApiClassLoader(moduleLoader.loadModule(moduleName).getClassLoader());
                 } catch (Throwable ignore) {
                     // ignore
                 }
@@ -387,9 +398,8 @@ public class LoggingExtension implements Extension {
 
     public static class LoggingChildResourceComparator implements Comparator<PathElement> {
         static final LoggingChildResourceComparator INSTANCE = new LoggingChildResourceComparator();
-        static final int GREATER = 1;
-        static final int EQUAL = 0;
-        static final int LESS = -1;
+        private static final int GREATER = 1;
+        private static final int LESS = -1;
 
         @Override
         public int compare(final PathElement o1, final PathElement o2) {
@@ -408,25 +418,25 @@ public class LoggingExtension implements Extension {
                     result = LESS;
                 } else if (CommonAttributes.LOGGING_PROFILE.equals(key2)) {
                     result = GREATER;
-                } else if (PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName().equals(key1)) {
+                } else if (PatternFormatterResourceDefinition.NAME.equals(key1)) {
                     result = LESS;
-                } else if (PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName().equals(key2)) {
+                } else if (PatternFormatterResourceDefinition.NAME.equals(key2)) {
                     result = GREATER;
-                } else if (CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName().equals(key1)) {
+                } else if (CustomFormatterResourceDefinition.NAME.equals(key1)) {
                     result = LESS;
-                } else if (CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName().equals(key2)) {
+                } else if (CustomFormatterResourceDefinition.NAME.equals(key2)) {
                     result = GREATER;
-                } else if (RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME.equals(key1)) {
+                } else if (RootLoggerResourceDefinition.NAME.equals(key1)) {
                     result = GREATER;
-                } else if (RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME.equals(key2)) {
+                } else if (RootLoggerResourceDefinition.NAME.equals(key2)) {
                     result = LESS;
-                } else if (LoggerResourceDefinition.LOGGER.equals(key1)) {
+                } else if (LoggerResourceDefinition.NAME.equals(key1)) {
                     result = GREATER;
-                } else if (LoggerResourceDefinition.LOGGER.equals(key2)) {
+                } else if (LoggerResourceDefinition.NAME.equals(key2)) {
                     result = LESS;
-                } else if (AsyncHandlerResourceDefinition.ASYNC_HANDLER.equals(key1)) {
+                } else if (AsyncHandlerResourceDefinition.NAME.equals(key1)) {
                     result = GREATER;
-                } else if (AsyncHandlerResourceDefinition.ASYNC_HANDLER.equals(key2)) {
+                } else if (AsyncHandlerResourceDefinition.NAME.equals(key2)) {
                     result = LESS;
                 }
             }

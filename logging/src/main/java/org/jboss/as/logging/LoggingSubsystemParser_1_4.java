@@ -30,9 +30,9 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.logging.AbstractHandlerDefinition.FORMATTER;
-import static org.jboss.as.logging.AbstractHandlerDefinition.NAMED_FORMATTER;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
+import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FORMATTER;
+import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.NAMED_FORMATTER;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -44,6 +44,8 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -180,7 +182,7 @@ class LoggingSubsystemParser_1_4 extends LoggingSubsystemParser_1_3 {
                 case PATTERN_FORMATTER: {
                     final ModelNode operation = Util.createAddOperation();
                     // Setup the operation address
-                    addOperationAddress(operation, address, PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName(), name);
+                    addOperationAddress(operation, address, PatternFormatterResourceDefinition.NAME, name);
                     parsePatternFormatterElement(reader, operation);
                     operations.add(operation);
                     break;
@@ -188,7 +190,7 @@ class LoggingSubsystemParser_1_4 extends LoggingSubsystemParser_1_3 {
                 case CUSTOM_FORMATTER: {
                     final ModelNode operation = Util.createAddOperation();
                     // Setup the operation address
-                    addOperationAddress(operation, address, CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName(), name);
+                    addOperationAddress(operation, address, CustomFormatterResourceDefinition.NAME, name);
                     parseCustomFormatterElement(reader, operation);
                     operations.add(operation);
                     break;

@@ -92,41 +92,41 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
             .setFlags(Flag.RESTART_ALL_SERVICES)
             .build();
 
-    static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, false)
+    private static final SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, false)
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, false))
             .build();
 
-    static final SimpleAttributeDefinition LINES = SimpleAttributeDefinitionBuilder.create("lines", ModelType.INT, true)
+    private static final SimpleAttributeDefinition LINES = SimpleAttributeDefinitionBuilder.create("lines", ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(10))
             .setValidator(new IntRangeValidator(-1, true))
             .build();
 
-    static final SimpleAttributeDefinition SKIP = SimpleAttributeDefinitionBuilder.create("skip", ModelType.INT, true)
+    private static final SimpleAttributeDefinition SKIP = SimpleAttributeDefinitionBuilder.create("skip", ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
             .setValidator(new IntRangeValidator(0, true))
             .build();
 
-    static final SimpleAttributeDefinition TAIL = SimpleAttributeDefinitionBuilder.create("tail", ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition TAIL = SimpleAttributeDefinitionBuilder.create("tail", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(true))
             .build();
 
-    static final SimpleAttributeDefinition FILE_NAME = SimpleAttributeDefinitionBuilder.create("file-name", ModelType.STRING, false)
+    private static final SimpleAttributeDefinition FILE_NAME = SimpleAttributeDefinitionBuilder.create("file-name", ModelType.STRING, false)
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition FILE_SIZE = SimpleAttributeDefinitionBuilder.create("file-size", ModelType.LONG, false)
+    private static final SimpleAttributeDefinition FILE_SIZE = SimpleAttributeDefinitionBuilder.create("file-size", ModelType.LONG, false)
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition LAST_MODIFIED_DATE = SimpleAttributeDefinitionBuilder.create("last-modified-date", ModelType.STRING, false)
+    private static final SimpleAttributeDefinition LAST_MODIFIED_DATE = SimpleAttributeDefinitionBuilder.create("last-modified-date", ModelType.STRING, false)
             .setAllowExpression(false)
             .build();
 
-    static final SimpleOperationDefinition READ_LOG_FILE = new SimpleOperationDefinitionBuilder("read-log-file", LoggingExtension.getResourceDescriptionResolver())
+    private static final SimpleOperationDefinition READ_LOG_FILE = new SimpleOperationDefinitionBuilder("read-log-file", LoggingExtension.getResourceDescriptionResolver())
             .addAccessConstraint(LogFileResourceDefinition.VIEW_SERVER_LOGS)
             .setDeprecated(ModelVersion.create(3, 0, 0))
             .setParameters(NAME, CommonAttributes.ENCODING, LINES, SKIP, TAIL)
@@ -136,7 +136,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
             .setRuntimeOnly()
             .build();
 
-    static final SimpleOperationDefinition LIST_LOG_FILES = new SimpleOperationDefinitionBuilder("list-log-files", LoggingExtension.getResourceDescriptionResolver())
+    private static final SimpleOperationDefinition LIST_LOG_FILES = new SimpleOperationDefinitionBuilder("list-log-files", LoggingExtension.getResourceDescriptionResolver())
             .addAccessConstraint(LogFileResourceDefinition.VIEW_SERVER_LOGS)
             .setDeprecated(ModelVersion.create(3, 0, 0))
             .setReplyType(ModelType.LIST)
@@ -198,7 +198,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
     private class ListLogFilesOperation implements OperationStepHandler {
 
         @Override
-        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+        public void execute(final OperationContext context, final ModelNode operation) {
             final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             List<File> logFiles;
@@ -282,9 +282,9 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
         private List<String> readLines(final File file, final String encoding, final boolean tail, final int skip, final int numberOfLines) throws IOException {
             final List<String> lines;
             if (numberOfLines < 0) {
-                lines = new ArrayList<String>();
+                lines = new ArrayList<>();
             } else {
-                lines = new ArrayList<String>(numberOfLines);
+                lines = new ArrayList<>(numberOfLines);
             }
             final InputStream in;
             BufferedReader reader = null;

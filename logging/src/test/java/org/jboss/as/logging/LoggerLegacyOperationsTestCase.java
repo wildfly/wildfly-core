@@ -23,11 +23,15 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.subsystem.test.SubsystemOperations.OperationBuilder;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
@@ -39,7 +43,7 @@ import org.junit.Test;
 public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -59,7 +63,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         testLogger(kernelServices, PROFILE);
     }
 
-    private void testRootLogger(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testRootLogger(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createRootLoggerAddress(profileName).toModelNode();
         final ModelNode handlers = new ModelNode().setEmptyList().add("CONSOLE");
 
@@ -123,7 +127,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    private void testLogger(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testLogger(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createLoggerAddress(profileName, "org.jboss.as.logging").toModelNode();
         final ModelNode handlers = new ModelNode().setEmptyList().add("CONSOLE");
 
@@ -176,7 +180,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    protected void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         // filter attribute not on logging profiles
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             final ModelNode filter = new ModelNode().setEmptyObject();
@@ -189,7 +193,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         }
     }
 
-    protected void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             testUndefine(kernelServices, address, CommonAttributes.FILTER);
             // filter-spec should be undefined

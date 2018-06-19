@@ -64,15 +64,11 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
     private final PropertyConfigurator config;
     private final LogContextConfiguration delegate;
 
-    public ConfigurationPersistence() {
-        this(LogContext.getSystemLogContext());
-    }
-
-    public ConfigurationPersistence(final LogContext logContext) {
+    private ConfigurationPersistence(final LogContext logContext) {
         this(new PropertyConfigurator(logContext));
     }
 
-    public ConfigurationPersistence(final PropertyConfigurator config) {
+    private ConfigurationPersistence(final PropertyConfigurator config) {
         this.config = config;
         delegate = config.getLogContextConfiguration();
     }

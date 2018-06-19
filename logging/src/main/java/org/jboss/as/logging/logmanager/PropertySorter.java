@@ -1,7 +1,6 @@
 package org.jboss.as.logging.logmanager;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,7 +58,7 @@ public interface PropertySorter {
      * <i>Note: In most cases the {@link Comparator comparator} will impose orderings consistent with equals which is
      * acceptable usage for this sorter</i>
      */
-    public static class DefaultPropertySorter implements PropertySorter {
+    class DefaultPropertySorter implements PropertySorter {
 
         private final Comparator<String> comparator;
 
@@ -72,16 +71,16 @@ public interface PropertySorter {
         public boolean isReorderRequired(final PropertyConfigurable configurable) {
             // Get the current property names
             final List<String> names = configurable.getPropertyNames();
-            final List<String> sortedNames = new ArrayList<String>(names);
-            Collections.sort(sortedNames, comparator);
+            final List<String> sortedNames = new ArrayList<>(names);
+            sortedNames.sort(comparator);
             return !names.equals(sortedNames);
         }
 
         @Override
         public void sort(final PropertyConfigurable configurable) {
-            final List<String> sortedNames = new ArrayList<String>(configurable.getPropertyNames());
-            Collections.sort(sortedNames, comparator);
-            final Map<String, ValueExpression<String>> orderedValues = new LinkedHashMap<String, ValueExpression<String>>(sortedNames.size());
+            final List<String> sortedNames = new ArrayList<>(configurable.getPropertyNames());
+            sortedNames.sort(comparator);
+            final Map<String, ValueExpression<String>> orderedValues = new LinkedHashMap<>(sortedNames.size());
             // The properties need to be reordered
             for (String name : sortedNames) {
                 orderedValues.put(name, configurable.getPropertyValueExpression(name));

@@ -1,26 +1,23 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.handlers;
 
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 
@@ -30,6 +27,10 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker.SimpleRejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.ElementAttributeMarshaller;
+import org.jboss.as.logging.KnownModelVersion;
+import org.jboss.as.logging.Logging;
+import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.resolvers.TargetResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -39,10 +40,10 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
+public class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
 
-    public static final String CONSOLE_HANDLER = "console-handler";
-    static final PathElement CONSOLE_HANDLER_PATH = PathElement.pathElement(CONSOLE_HANDLER);
+    public static final String NAME = "console-handler";
+    private static final PathElement CONSOLE_HANDLER_PATH = PathElement.pathElement(NAME);
 
     public static final PropertyAttributeDefinition TARGET = PropertyAttributeDefinition.Builder.of("target", ModelType.STRING, true)
             .setAllowExpression(true)
@@ -52,7 +53,7 @@ class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition {
             .setValidator(EnumValidator.create(Target.class, true, false))
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, TARGET, NAMED_FORMATTER);
+    private static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, TARGET, NAMED_FORMATTER);
 
     public ConsoleHandlerResourceDefinition(final boolean includeLegacyAttributes) {
         super(CONSOLE_HANDLER_PATH, ConsoleHandler.class,

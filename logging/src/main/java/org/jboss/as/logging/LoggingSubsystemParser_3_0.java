@@ -35,12 +35,10 @@ import static org.jboss.as.logging.CommonAttributes.FILE;
 import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
-import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.SUFFIX;
-import static org.jboss.as.logging.PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER;
+import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -52,6 +50,8 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -200,7 +200,7 @@ class LoggingSubsystemParser_3_0 extends LoggingSubsystemParser_2_0 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, PERIODIC_SIZE_ROTATING_FILE_HANDLER, name);
+        addOperationAddress(operation, address, PeriodicSizeRotatingHandlerResourceDefinition.NAME, name);
 
         final EnumSet<Element> requiredElem = EnumSet.of(Element.FILE);
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -296,7 +296,7 @@ class LoggingSubsystemParser_3_0 extends LoggingSubsystemParser_2_0 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, SIZE_ROTATING_FILE_HANDLER, name);
+        addOperationAddress(operation, address, SizeRotatingHandlerResourceDefinition.NAME, name);
 
         final EnumSet<Element> requiredElem = EnumSet.of(Element.FILE);
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);

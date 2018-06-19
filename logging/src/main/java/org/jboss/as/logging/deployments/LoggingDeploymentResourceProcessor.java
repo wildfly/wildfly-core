@@ -29,7 +29,6 @@ import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentResourceSupport;
 import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
@@ -52,13 +51,13 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
     /**
      * The attachment key used to attach the service.
      */
-    public static final AttachmentKey<LoggingConfigurationService> LOGGING_CONFIGURATION_SERVICE_KEY = AttachmentKey.create(LoggingConfigurationService.class);
+    static final AttachmentKey<LoggingConfigurationService> LOGGING_CONFIGURATION_SERVICE_KEY = AttachmentKey.create(LoggingConfigurationService.class);
 
     @Override
-    public final void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+    public final void deploy(final DeploymentPhaseContext phaseContext) {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         if (deploymentUnit.hasAttachment(Attachments.MODULE)) {
-            LoggingConfigurationService loggingConfigurationService = null;
+            LoggingConfigurationService loggingConfigurationService;
             if (deploymentUnit.hasAttachment(LOGGING_CONFIGURATION_SERVICE_KEY)) {
                 loggingConfigurationService = deploymentUnit.getAttachment(LOGGING_CONFIGURATION_SERVICE_KEY);
                 // Remove the attachment as it should no longer be needed

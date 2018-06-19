@@ -23,11 +23,14 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.subsystem.test.SubsystemOperations.OperationBuilder;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
@@ -39,7 +42,7 @@ import org.junit.Test;
 public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -59,7 +62,7 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
         testLogger(kernelServices, PROFILE);
     }
 
-    private void testRootLogger(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testRootLogger(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createRootLoggerAddress(profileName).toModelNode();
         final ModelNode handlers = new ModelNode().setEmptyList().add("CONSOLE");
 
@@ -121,7 +124,7 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    private void testLogger(final KernelServices kernelServices, final String profileName) throws Exception {
+    private void testLogger(final KernelServices kernelServices, final String profileName) {
         final ModelNode address = createLoggerAddress(profileName, "org.jboss.as.logging").toModelNode();
         final ModelNode handlers = new ModelNode().setEmptyList().add("CONSOLE");
 
@@ -185,13 +188,13 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
         verifyRemoved(kernelServices, address);
     }
 
-    protected void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address, final ModelNode handlers) throws Exception {
+    private void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address, final ModelNode handlers) {
         testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
         testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
         testWrite(kernelServices, address, CommonAttributes.HANDLERS, handlers);
     }
 
-    protected void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) throws Exception {
+    private void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
         testUndefine(kernelServices, address, CommonAttributes.FILTER_SPEC);
         testUndefine(kernelServices, address, CommonAttributes.LEVEL);
         testUndefine(kernelServices, address, CommonAttributes.HANDLERS);

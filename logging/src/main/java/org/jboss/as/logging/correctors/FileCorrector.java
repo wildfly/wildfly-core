@@ -23,7 +23,7 @@
 package org.jboss.as.logging.correctors;
 
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.RELATIVE_TO;
+import static org.jboss.as.logging.CommonAttributes.RELATIVE_TO;
 
 import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.services.path.AbstractPathService;

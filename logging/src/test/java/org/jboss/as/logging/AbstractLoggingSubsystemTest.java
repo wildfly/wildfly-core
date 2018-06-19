@@ -22,9 +22,15 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,14 +39,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
-import org.jboss.as.logging.SyslogHandlerResourceDefinition.FacilityAttribute;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.FacilityAttribute;
+import org.jboss.as.logging.handlers.Target;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.logging.resolvers.SizeResolver;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
@@ -62,20 +81,21 @@ import org.junit.BeforeClass;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings("SameParameterValue")
 public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBaseTest {
 
-    static final String[] HANDLER_RESOURCE_KEYS = {
-            AsyncHandlerResourceDefinition.ASYNC_HANDLER,
-            ConsoleHandlerResourceDefinition.CONSOLE_HANDLER,
-            CustomHandlerResourceDefinition.CUSTOM_HANDLER,
-            FileHandlerResourceDefinition.FILE_HANDLER,
-            PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER,
-            PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER,
-            SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER,
-            SyslogHandlerResourceDefinition.SYSLOG_HANDLER,
+    private static final String[] HANDLER_RESOURCE_KEYS = {
+            AsyncHandlerResourceDefinition.NAME,
+            ConsoleHandlerResourceDefinition.NAME,
+            CustomHandlerResourceDefinition.NAME,
+            FileHandlerResourceDefinition.NAME,
+            PeriodicHandlerResourceDefinition.NAME,
+            PeriodicSizeRotatingHandlerResourceDefinition.NAME,
+            SizeRotatingHandlerResourceDefinition.NAME,
+            SyslogHandlerResourceDefinition.NAME,
     };
 
-    public static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, LoggingExtension.SUBSYSTEM_NAME);
+    private static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, LoggingExtension.SUBSYSTEM_NAME);
 
     static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SUBSYSTEM_PATH);
 
@@ -83,7 +103,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
     }
 
-    public AbstractLoggingSubsystemTest() {
+    AbstractLoggingSubsystemTest() {
         super(LoggingExtension.SUBSYSTEM_NAME, new LoggingExtension(), RemoveOperationComparator.INSTANCE);
     }
 
@@ -98,7 +118,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         clearLogContext(LogContext.getLogContext());
     }
 
-    protected void clearLogContext(final LogContext logContext) {
+    void clearLogContext(final LogContext logContext) {
         final ConfigurationPersistence configuration = ConfigurationPersistence.getConfigurationPersistence(logContext);
         if (configuration != null) {
             final LogContextConfiguration logContextConfiguration = configuration.getLogContextConfiguration();
@@ -140,7 +160,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         return PathAddress.pathAddress(
                 SUBSYSTEM_PATH,
                 PathElement.pathElement(resourceKey, resourceName)
-                                      );
+        );
     }
 
     static PathAddress createAddress(final String profileName, final String resourceKey, final String resourceName) {
@@ -151,97 +171,70 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                 SUBSYSTEM_PATH,
                 PathElement.pathElement(CommonAttributes.LOGGING_PROFILE, profileName),
                 PathElement.pathElement(resourceKey, resourceName)
-                                      );
+        );
     }
 
     static PathAddress createRootLoggerAddress() {
-        return createAddress(RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME, RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME);
+        return createAddress(RootLoggerResourceDefinition.NAME, RootLoggerResourceDefinition.RESOURCE_NAME);
     }
 
     static PathAddress createRootLoggerAddress(final String profileName) {
-        return createAddress(profileName, RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME, RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME);
+        return createAddress(profileName, RootLoggerResourceDefinition.NAME, RootLoggerResourceDefinition.RESOURCE_NAME);
     }
 
     static PathAddress createLoggerAddress(final String name) {
-        return createAddress(LoggerResourceDefinition.LOGGER, name);
+        return createAddress(LoggerResourceDefinition.NAME, name);
     }
 
     static PathAddress createLoggerAddress(final String profileName, final String name) {
-        return createAddress(profileName, LoggerResourceDefinition.LOGGER, name);
-    }
-
-    static PathAddress createAsyncHandlerAddress(final String name) {
-        return createAddress(AsyncHandlerResourceDefinition.ASYNC_HANDLER, name);
+        return createAddress(profileName, LoggerResourceDefinition.NAME, name);
     }
 
     static PathAddress createAsyncHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, AsyncHandlerResourceDefinition.ASYNC_HANDLER, name);
+        return createAddress(profileName, AsyncHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createConsoleHandlerAddress(final String name) {
-        return createAddress(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER, name);
+        return createAddress(ConsoleHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createConsoleHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, ConsoleHandlerResourceDefinition.CONSOLE_HANDLER, name);
+        return createAddress(profileName, ConsoleHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createFileHandlerAddress(final String name) {
-        return createAddress(FileHandlerResourceDefinition.FILE_HANDLER, name);
+        return createAddress(FileHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createFileHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, FileHandlerResourceDefinition.FILE_HANDLER, name);
-    }
-
-    static PathAddress createPeriodicRotatingFileHandlerAddress(final String name) {
-        return createAddress(PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER, name);
+        return createAddress(profileName, FileHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createPeriodicRotatingFileHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER, name);
-    }
-
-    static PathAddress createPeriodicSizeRotatingFileHandlerAddress(final String name) {
-        return createAddress(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER, name);
+        return createAddress(profileName, PeriodicHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createPeriodicSizeRotatingFileHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER, name);
-    }
-
-    static PathAddress createSizeRotatingFileHandlerAddress(final String name) {
-        return createAddress(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER, name);
+        return createAddress(profileName, PeriodicSizeRotatingHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createSizeRotatingFileHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER, name);
-    }
-
-    static PathAddress createSyslogHandlerAddress(final String name) {
-        return createAddress(SyslogHandlerResourceDefinition.SYSLOG_HANDLER, name);
-    }
-
-    static PathAddress createSyslogHandlerAddress(final String profileName, final String name) {
-        return createAddress(profileName, SyslogHandlerResourceDefinition.SYSLOG_HANDLER, name);
+        return createAddress(profileName, SizeRotatingHandlerResourceDefinition.NAME, name);
     }
 
     static PathAddress createPatternFormatterAddress(final String name) {
-        return createAddress(PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH.getKey(), name);
+        return createAddress("pattern-formatter", name);
     }
 
     static PathAddress createPatternFormatterAddress(final String profileName, final String name) {
-        return createAddress(profileName, PatternFormatterResourceDefinition.PATTERN_FORMATTER_PATH.getKey(), name);
+        return createAddress(profileName, "pattern-formatter", name);
     }
 
     protected KernelServices boot() throws Exception {
-        final KernelServices kernelServices = createKernelServicesBuilder(createAdditionalInitialization()).setSubsystemXml(getSubsystemXml()).build();
-        //final Throwable bootError = kernelServices.getBootError();
-        // Assert.assertTrue("Failed to boot: " + String.valueOf(bootError), kernelServices.isSuccessfulBoot());
-        return kernelServices;
+        return createKernelServicesBuilder(createAdditionalInitialization()).setSubsystemXml(getSubsystemXml()).build();
     }
 
-    protected void compare(final String profileName, final ModelNode node1, final ModelNode node2) {
+    void compare(final String profileName, final ModelNode node1, final ModelNode node2) {
         if (profileName == null) {
             compare(node1, node2);
         } else {
@@ -255,13 +248,13 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         }
     }
 
-    protected void compare(final ModelNode currentModel, final ConfigurationPersistence config) throws OperationFailedException {
+    void compare(final ModelNode currentModel, final ConfigurationPersistence config) throws OperationFailedException {
         final LogContextConfiguration logContextConfig = config.getLogContextConfiguration();
         final List<String> handlerNames = logContextConfig.getHandlerNames();
         final List<String> modelHandlerNames = getHandlerNames(currentModel);
-        final List<String> missingConfigHandlers = new ArrayList<String>(handlerNames);
+        final List<String> missingConfigHandlers = new ArrayList<>(handlerNames);
         missingConfigHandlers.removeAll(modelHandlerNames);
-        final List<String> missingModelHandlers = new ArrayList<String>(modelHandlerNames);
+        final List<String> missingModelHandlers = new ArrayList<>(modelHandlerNames);
         missingModelHandlers.removeAll(handlerNames);
 
         Assert.assertTrue("Configuration contains handlers not in the model: " + missingConfigHandlers, missingConfigHandlers.isEmpty());
@@ -275,7 +268,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
 
     }
 
-    protected void compare(final String profileName, final ModelNode currentModel, final ConfigurationPersistence config) throws OperationFailedException {
+    void compare(final String profileName, final ModelNode currentModel, final ConfigurationPersistence config) throws OperationFailedException {
         if (profileName == null) {
             compare(currentModel, config);
         } else {
@@ -286,12 +279,30 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         }
     }
 
-    protected void compareLoggers(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
+    /**
+     * Validates that there are no extra attributes on the resource.
+     *
+     * @param resource   the resource to check for additional attributes
+     * @param attributes the attributes that should be on the resource
+     */
+    void validateResourceAttributes(final ModelNode resource, final Collection<String> attributes) {
+        // Get the attribute names from the resource
+        final List<String> resourceAttributes = new ArrayList<>();
+        for (Property property : resource.asPropertyList()) {
+            resourceAttributes.add(property.getName());
+        }
+
+        // Remove all the known attributes
+        resourceAttributes.removeAll(attributes);
+        assertTrue(String.format("Additional attributes (%s) found on the resource %s", resourceAttributes, resource), resourceAttributes.isEmpty());
+    }
+
+    private void compareLoggers(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
         final List<String> loggerNames = logContextConfiguration.getLoggerNames();
         for (String name : loggerNames) {
             final LoggerConfiguration loggerConfig = logContextConfiguration.getLoggerConfiguration(name);
-            final ModelNode loggerModel = (name.isEmpty() ? model.get(RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME, RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME) :
-                    model.get(LoggerResourceDefinition.LOGGER, name));
+            final ModelNode loggerModel = (name.isEmpty() ? model.get(RootLoggerResourceDefinition.NAME, RootLoggerResourceDefinition.RESOURCE_NAME) :
+                    model.get(LoggerResourceDefinition.NAME, name));
             // Logger could be empty
             if (loggerModel.isDefined()) {
                 final Set<String> attributes = loggerModel.keys();
@@ -311,13 +322,13 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                         final List<String> handlerNames = loggerConfig.getHandlerNames();
                         final ModelNode handlers = loggerModel.get(attribute);
                         if (handlers.isDefined()) {
-                            final List<String> modelHandlerNames = new ArrayList<String>();
+                            final List<String> modelHandlerNames = new ArrayList<>();
                             for (ModelNode handler : handlers.asList()) {
                                 modelHandlerNames.add(handler.asString());
                             }
-                            final List<String> missingConfigHandlers = new ArrayList<String>(handlerNames);
+                            final List<String> missingConfigHandlers = new ArrayList<>(handlerNames);
                             missingConfigHandlers.removeAll(modelHandlerNames);
-                            final List<String> missingModelHandlers = new ArrayList<String>(modelHandlerNames);
+                            final List<String> missingModelHandlers = new ArrayList<>(modelHandlerNames);
                             missingModelHandlers.removeAll(handlerNames);
                             Assert.assertTrue("Logger in model contains handlers not in the configuration: " + missingConfigHandlers, missingConfigHandlers.isEmpty());
                             Assert.assertTrue("Logger in configuration contains handlers not in the model: " + missingModelHandlers, missingModelHandlers.isEmpty());
@@ -330,7 +341,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                         Assert.assertEquals(String.format("Use parent handler attributes do not match. Config Value: %s  Model Value: %s", configValue, modelValue), configValue, modelValue);
                     } else {
                         // Invalid
-                        Assert.assertTrue("Invalid attribute: " + attribute, false);
+                        Assert.fail("Invalid attribute: " + attribute);
                     }
                 }
             }
@@ -338,13 +349,13 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
     }
 
     // TODO (jrp) looking up property names is hard-coded, use a more dynamic approach
-    protected void compareHandlers(final LogContextConfiguration logContextConfig, final Collection<String> handlerNames, final ModelNode model) throws OperationFailedException {
+    private void compareHandlers(final LogContextConfiguration logContextConfig, final Collection<String> handlerNames, final ModelNode model) throws OperationFailedException {
         // Compare property values for the handlers
         for (String name : handlerNames) {
             final HandlerConfiguration handlerConfig = logContextConfig.getHandlerConfiguration(name);
             final ModelNode handlerModel = findHandlerModel(model, name);
-            final Set<String> modelPropertyNames = new HashSet<String>(handlerModel.keys());
-            final List<String> configPropertyNames = new ArrayList<String>(handlerConfig.getPropertyNames());
+            final Set<String> modelPropertyNames = new HashSet<>(handlerModel.keys());
+            final List<String> configPropertyNames = new ArrayList<>(handlerConfig.getPropertyNames());
 
             // Remove unneeded properties
             modelPropertyNames.remove(CommonAttributes.FILTER.getName());
@@ -412,13 +423,13 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                         final List<String> handlerHandlerNames = handlerConfig.getHandlerNames();
                         final ModelNode handlers = handlerModel.get(modelPropertyName);
                         if (handlers.isDefined()) {
-                            final List<String> modelHandlerNames = new ArrayList<String>();
+                            final List<String> modelHandlerNames = new ArrayList<>();
                             for (ModelNode handler : handlers.asList()) {
                                 modelHandlerNames.add(handler.asString());
                             }
-                            final List<String> missingConfigHandlers = new ArrayList<String>(handlerHandlerNames);
+                            final List<String> missingConfigHandlers = new ArrayList<>(handlerHandlerNames);
                             missingConfigHandlers.removeAll(modelHandlerNames);
-                            final List<String> missingModelHandlers = new ArrayList<String>(modelHandlerNames);
+                            final List<String> missingModelHandlers = new ArrayList<>(modelHandlerNames);
                             missingModelHandlers.removeAll(handlerHandlerNames);
                             Assert.assertTrue("Logger in model contains handlers not in the configuration: " + missingConfigHandlers, missingConfigHandlers.isEmpty());
                             Assert.assertTrue("Logger in configuration contains handlers not in the model: " + missingModelHandlers, missingModelHandlers.isEmpty());
@@ -449,29 +460,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         }
     }
 
-    /**
-     * Validates that there are no extra attributes on the resource.
-     *
-     * @param resource   the resource to check for additional attributes
-     * @param attributes the attributes that should be on the resource
-     */
-    protected void validateResourceAttributes(final ModelNode resource, final AttributeDefinition[] attributes) {
-        final List<String> validAttributes = new ArrayList<String>();
-        for (AttributeDefinition attribute : attributes) {
-            validAttributes.add(attribute.getName());
-        }
-        // Get the attribute names from the resource
-        final List<String> resourceAttributes = new ArrayList<String>();
-        for (Property property : resource.asPropertyList()) {
-            resourceAttributes.add(property.getName());
-        }
-
-        // Remove all the known attributes
-        resourceAttributes.removeAll(validAttributes);
-        assertTrue(String.format("Additional attributes (%s) found on the resource %s", resourceAttributes, resource), resourceAttributes.isEmpty());
-    }
-
-    protected ModelNode findHandlerModel(final ModelNode model, final String name) {
+    private ModelNode findHandlerModel(final ModelNode model, final String name) {
         for (String handler : HANDLER_RESOURCE_KEYS) {
             if (model.hasDefined(handler)) {
                 final ModelNode handlerModel = model.get(handler);
@@ -483,8 +472,8 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         return SubsystemOperations.UNDEFINED;
     }
 
-    protected List<String> getHandlerNames(final ModelNode currentModel) {
-        final List<String> result = new ArrayList<String>();
+    private List<String> getHandlerNames(final ModelNode currentModel) {
+        final List<String> result = new ArrayList<>();
         for (String handler : HANDLER_RESOURCE_KEYS) {
             if (currentModel.hasDefined(handler)) {
                 result.addAll(currentModel.get(handler).keys());
@@ -495,21 +484,21 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
 
     static List<String> modelNodeAsStringList(final ModelNode node) {
         if (node.getType() == ModelType.LIST) {
-            final List<String> result = new ArrayList<String>();
+            final List<String> result = new ArrayList<>();
             for (ModelNode n : node.asList()) result.add(n.asString());
             return result;
         }
         return Collections.emptyList();
     }
 
-    static ModelNode getSubsystemModel(final KernelServices kernelServices) throws OperationFailedException {
+    static ModelNode getSubsystemModel(final KernelServices kernelServices) {
         final ModelNode op = SubsystemOperations.createReadResourceOperation(SUBSYSTEM_ADDRESS.toModelNode(), true);
         final ModelNode result = kernelServices.executeOperation(op);
         Assert.assertTrue(SubsystemOperations.getFailureDescriptionAsString(result), SubsystemOperations.isSuccessfulOutcome(result));
         return SubsystemOperations.readResult(result);
     }
 
-    static String resolveRelativePath(final KernelServices kernelServices, final String relativeTo) throws OperationFailedException {
+    static String resolveRelativePath(final KernelServices kernelServices, final String relativeTo) {
         final PathAddress address = PathAddress.pathAddress(PathElement.pathElement(ClientConstants.PATH, relativeTo));
         final ModelNode op = SubsystemOperations.createReadAttributeOperation(address.toModelNode(), ClientConstants.PATH);
         final ModelNode result = kernelServices.executeOperation(op);
@@ -519,7 +508,27 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
         return null;
     }
 
-    static String convertModelPropertyName(final String xmlName) {
+    static void clearDirectory(final Path directory) throws IOException {
+        Assert.assertTrue(Files.isDirectory(directory));
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+                // Don't delete the base directory
+                if (!Files.isSameFile(directory, dir)) {
+                    Files.delete(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    private static String convertModelPropertyName(final String xmlName) {
         if (xmlName.contains("-")) {
             final StringBuilder result = new StringBuilder();
             boolean toUpper = false;
@@ -582,25 +591,25 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
                 result = LESS;
             } else if (CommonAttributes.LOGGING_PROFILE.equals(key2)) {
                 result = GREATER;
-            } else if (PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName().equals(key1)) {
+            } else if (PatternFormatterResourceDefinition.NAME.equals(key1)) {
                 result = LESS;
-            } else if (PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName().equals(key2)) {
+            } else if (PatternFormatterResourceDefinition.NAME.equals(key2)) {
                 result = GREATER;
-            } else if (CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName().equals(key1)) {
+            } else if (CustomFormatterResourceDefinition.NAME.equals(key1)) {
                 result = LESS;
-            } else if (CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName().equals(key2)) {
+            } else if (CustomFormatterResourceDefinition.NAME.equals(key2)) {
                 result = GREATER;
-            } else if (RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME.equals(key1)) {
+            } else if (RootLoggerResourceDefinition.NAME.equals(key1)) {
                 result = GREATER;
-            } else if (RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME.equals(key2)) {
+            } else if (RootLoggerResourceDefinition.NAME.equals(key2)) {
                 result = LESS;
-            } else if (LoggerResourceDefinition.LOGGER.equals(key1)) {
+            } else if (LoggerResourceDefinition.NAME.equals(key1)) {
                 result = GREATER;
-            } else if (LoggerResourceDefinition.LOGGER.equals(key2)) {
+            } else if (LoggerResourceDefinition.NAME.equals(key2)) {
                 result = LESS;
-            } else if (AsyncHandlerResourceDefinition.ASYNC_HANDLER.equals(key1)) {
+            } else if (AsyncHandlerResourceDefinition.NAME.equals(key1)) {
                 result = GREATER;
-            } else if (AsyncHandlerResourceDefinition.ASYNC_HANDLER.equals(key2)) {
+            } else if (AsyncHandlerResourceDefinition.NAME.equals(key2)) {
                 result = LESS;
             }
             return result;

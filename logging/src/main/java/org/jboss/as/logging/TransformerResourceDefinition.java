@@ -1,10 +1,6 @@
 package org.jboss.as.logging;
 
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 
 /**
@@ -14,25 +10,15 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
  */
 public abstract class TransformerResourceDefinition extends SimpleResourceDefinition {
 
-    protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver) {
-        super(new Parameters(pathElement, descriptionResolver));
-    }
-
-    protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(new Parameters(pathElement, descriptionResolver).setAddHandler(addHandler).setRemoveHandler(removeHandler));
-    }
-
-    protected TransformerResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver, final OperationStepHandler addHandler, final OperationStepHandler removeHandler, final Flag addRestartLevel, final Flag removeRestartLevel) {
-        super(new Parameters(pathElement, descriptionResolver)
-                .setAddHandler(addHandler)
-                .setRemoveHandler(removeHandler)
-                .setAddRestartLevel(addRestartLevel)
-                .setRemoveRestartLevel(removeRestartLevel));
-    }
-
+    /**
+     * Creates a new resource definition.
+     *
+     * @param parameters the parameters used to construct the resource
+     */
     protected TransformerResourceDefinition(final Parameters parameters) {
         super(parameters);
     }
+
     /**
      * Register the transformers for the resource.
      *

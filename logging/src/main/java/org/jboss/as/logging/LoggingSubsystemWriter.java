@@ -22,12 +22,6 @@
 
 package org.jboss.as.logging;
 
-import static org.jboss.as.logging.AbstractHandlerDefinition.FORMATTER;
-import static org.jboss.as.logging.AbstractHandlerDefinition.NAMED_FORMATTER;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.ASYNC_HANDLER;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.SUBHANDLERS;
 import static org.jboss.as.logging.CommonAttributes.APPEND;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.CLASS;
@@ -43,31 +37,25 @@ import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILES;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
 import static org.jboss.as.logging.CommonAttributes.NAME;
 import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
-import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.CONSOLE_HANDLER;
-import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.TARGET;
-import static org.jboss.as.logging.CustomFormatterResourceDefinition.CUSTOM_FORMATTER;
-import static org.jboss.as.logging.CustomHandlerResourceDefinition.CUSTOM_HANDLER;
-import static org.jboss.as.logging.FileHandlerResourceDefinition.FILE_HANDLER;
-import static org.jboss.as.logging.LoggerResourceDefinition.CATEGORY;
-import static org.jboss.as.logging.LoggerResourceDefinition.LOGGER;
-import static org.jboss.as.logging.LoggerResourceDefinition.USE_PARENT_HANDLERS;
-import static org.jboss.as.logging.PatternFormatterResourceDefinition.PATTERN_FORMATTER;
-import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.SUFFIX;
-import static org.jboss.as.logging.PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME;
-import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.APP_NAME;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.FACILITY;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.HOSTNAME;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.PORT;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SERVER_ADDRESS;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_FORMATTER;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_HANDLER;
+import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FORMATTER;
+import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.NAMED_FORMATTER;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.SUBHANDLERS;
+import static org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition.TARGET;
+import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.APP_NAME;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.FACILITY;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.HOSTNAME;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.PORT;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.SERVER_ADDRESS;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.SYSLOG_FORMATTER;
+import static org.jboss.as.logging.loggers.LoggerResourceDefinition.CATEGORY;
+import static org.jboss.as.logging.loggers.LoggerResourceDefinition.USE_PARENT_HANDLERS;
+import static org.jboss.as.logging.loggers.RootLoggerResourceDefinition.RESOURCE_NAME;
 
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
@@ -76,9 +64,21 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -121,8 +121,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
 
     private void writeContent(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
 
-        if (model.hasDefined(ASYNC_HANDLER)) {
-            final ModelNode handlers = model.get(ASYNC_HANDLER);
+        if (model.hasDefined(AsyncHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(AsyncHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -132,8 +132,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(CONSOLE_HANDLER)) {
-            final ModelNode handlers = model.get(CONSOLE_HANDLER);
+        if (model.hasDefined(ConsoleHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(ConsoleHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -143,8 +143,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(FILE_HANDLER)) {
-            final ModelNode handlers = model.get(FILE_HANDLER);
+        if (model.hasDefined(FileHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(FileHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -154,8 +154,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(CUSTOM_HANDLER)) {
-            final ModelNode handlers = model.get(CUSTOM_HANDLER);
+        if (model.hasDefined(CustomHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(CustomHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -165,8 +165,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(PERIODIC_ROTATING_FILE_HANDLER)) {
-            final ModelNode handlers = model.get(PERIODIC_ROTATING_FILE_HANDLER);
+        if (model.hasDefined(PeriodicHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(PeriodicHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -176,8 +176,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(PERIODIC_SIZE_ROTATING_FILE_HANDLER)) {
-            final ModelNode handlers = model.get(PERIODIC_SIZE_ROTATING_FILE_HANDLER);
+        if (model.hasDefined(PeriodicSizeRotatingHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(PeriodicSizeRotatingHandlerResourceDefinition.NAME);
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
                 final ModelNode handler = handlerProp.getValue();
@@ -186,8 +186,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(SIZE_ROTATING_FILE_HANDLER)) {
-            final ModelNode handlers = model.get(SIZE_ROTATING_FILE_HANDLER);
+        if (model.hasDefined(SizeRotatingHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(SizeRotatingHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -197,8 +197,8 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(SYSLOG_HANDLER)) {
-            final ModelNode handlers = model.get(SYSLOG_HANDLER);
+        if (model.hasDefined(SyslogHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(SyslogHandlerResourceDefinition.NAME);
 
             for (Property handlerProp : handlers.asPropertyList()) {
                 final String name = handlerProp.getName();
@@ -208,17 +208,17 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
-        if (model.hasDefined(LOGGER)) {
-            for (String name : model.get(LOGGER).keys()) {
-                writeLogger(writer, name, model.get(LOGGER, name));
+        if (model.hasDefined(LoggerResourceDefinition.NAME)) {
+            for (String name : model.get(LoggerResourceDefinition.NAME).keys()) {
+                writeLogger(writer, name, model.get(LoggerResourceDefinition.NAME, name));
             }
         }
-        if (model.hasDefined(ROOT_LOGGER_PATH_NAME)) {
-            writeRootLogger(writer, model.get(ROOT_LOGGER_PATH_NAME, ROOT_LOGGER_ATTRIBUTE_NAME));
+        if (model.hasDefined(RootLoggerResourceDefinition.NAME)) {
+            writeRootLogger(writer, model.get(RootLoggerResourceDefinition.NAME, RESOURCE_NAME));
         }
 
-        writeFormatters(writer, PATTERN_FORMATTER, model);
-        writeFormatters(writer, CUSTOM_FORMATTER, model);
+        writeFormatters(writer, PatternFormatterResourceDefinition.NAME, PatternFormatterResourceDefinition.PATTERN_FORMATTER, model);
+        writeFormatters(writer, CustomFormatterResourceDefinition.NAME, CustomFormatterResourceDefinition.CUSTOM_FORMATTER, model);
         writeStructuredFormatters(writer, JsonFormatterResourceDefinition.NAME, model);
         writeStructuredFormatters(writer, XmlFormatterResourceDefinition.NAME, model,
                 XmlFormatterResourceDefinition.PRINT_NAMESPACE, XmlFormatterResourceDefinition.NAMESPACE_URI);
@@ -362,12 +362,13 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         writer.writeEndElement();
     }
 
-    private void writeFormatters(final XMLExtendedStreamWriter writer, final AttributeDefinition attribute, final ModelNode model) throws XMLStreamException {
-        if (model.hasDefined(attribute.getName())) {
-            for (String name : model.get(attribute.getName()).keys()) {
+    private void writeFormatters(final XMLExtendedStreamWriter writer, final String resourceName,
+                                 final AttributeDefinition attribute, final ModelNode model) throws XMLStreamException {
+        if (model.hasDefined(resourceName)) {
+            for (String name : model.get(resourceName).keys()) {
                 writer.writeStartElement(Element.FORMATTER.getLocalName());
                 writer.writeAttribute(NAME.getXmlName(), name);
-                final ModelNode value = model.get(attribute.getName(), name);
+                final ModelNode value = model.get(resourceName, name);
                 attribute.marshallAsElement(value, writer);
                 writer.writeEndElement();
             }

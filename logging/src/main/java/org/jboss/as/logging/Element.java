@@ -26,8 +26,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 
 /**
  *
@@ -42,16 +55,16 @@ enum Element {
     ANY(CommonAttributes.ANY),
     APP_NAME(SyslogHandlerResourceDefinition.APP_NAME),
     APPEND(CommonAttributes.APPEND),
-    ASYNC_HANDLER(AsyncHandlerResourceDefinition.ASYNC_HANDLER),
+    ASYNC_HANDLER(AsyncHandlerResourceDefinition.NAME),
     CHANGE_LEVEL(CommonAttributes.CHANGE_LEVEL),
-    CONSOLE_HANDLER(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER),
+    CONSOLE_HANDLER(ConsoleHandlerResourceDefinition.NAME),
     CUSTOM_FORMATTER(CustomFormatterResourceDefinition.CUSTOM_FORMATTER),
-    CUSTOM_HANDLER(CustomHandlerResourceDefinition.CUSTOM_HANDLER),
+    CUSTOM_HANDLER(CustomHandlerResourceDefinition.NAME),
     DENY(CommonAttributes.DENY),
     ENCODING(CommonAttributes.ENCODING),
     FACILITY(SyslogHandlerResourceDefinition.FACILITY),
     FILE(CommonAttributes.FILE),
-    FILE_HANDLER(FileHandlerResourceDefinition.FILE_HANDLER),
+    FILE_HANDLER(FileHandlerResourceDefinition.NAME),
     FILTER(CommonAttributes.FILTER),
     FILTER_SPEC(CommonAttributes.FILTER_SPEC),
     FORMATTER(AbstractHandlerDefinition.FORMATTER),
@@ -61,7 +74,7 @@ enum Element {
     JSON_FORMATTER(JsonFormatterResourceDefinition.NAME),
     LEVEL(CommonAttributes.LEVEL),
     LEVEL_RANGE(CommonAttributes.LEVEL_RANGE_LEGACY),
-    LOGGER(LoggerResourceDefinition.LOGGER),
+    LOGGER(LoggerResourceDefinition.NAME),
     LOGGING_PROFILE(CommonAttributes.LOGGING_PROFILE),
     LOGGING_PROFILES(CommonAttributes.LOGGING_PROFILES),
     MATCH(CommonAttributes.MATCH),
@@ -70,25 +83,24 @@ enum Element {
     NOT(CommonAttributes.NOT),
     OVERFLOW_ACTION(AsyncHandlerResourceDefinition.OVERFLOW_ACTION),
     PATTERN_FORMATTER(PatternFormatterResourceDefinition.PATTERN_FORMATTER),
-    PERIODIC_ROTATING_FILE_HANDLER(PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER),
-    PERIODIC_SIZE_ROTATING_FILE_HANDLER(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER),
+    PERIODIC_ROTATING_FILE_HANDLER(PeriodicHandlerResourceDefinition.NAME),
+    PERIODIC_SIZE_ROTATING_FILE_HANDLER(PeriodicSizeRotatingHandlerResourceDefinition.NAME),
     PORT(SyslogHandlerResourceDefinition.PORT),
     PROPERTIES(CommonAttributes.PROPERTIES),
     PROPERTY("property"),
     QUEUE_LENGTH(AsyncHandlerResourceDefinition.QUEUE_LENGTH),
     REPLACE(CommonAttributes.REPLACE),
-    ROOT_LOGGER(RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME),
+    ROOT_LOGGER(RootLoggerResourceDefinition.NAME),
     ROTATE_SIZE(SizeRotatingHandlerResourceDefinition.ROTATE_SIZE),
     SERVER_ADDRESS(SyslogHandlerResourceDefinition.SERVER_ADDRESS),
-    SIZE_ROTATING_FILE_HANDLER(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER),
+    SIZE_ROTATING_FILE_HANDLER(SizeRotatingHandlerResourceDefinition.NAME),
     SUBHANDLERS(AsyncHandlerResourceDefinition.SUBHANDLERS),
     SUFFIX(PeriodicHandlerResourceDefinition.SUFFIX),
     SYSLOG_FORMATTER(SyslogHandlerResourceDefinition.SYSLOG_FORMATTER),
-    SYSLOG_HANDLER(SyslogHandlerResourceDefinition.SYSLOG_HANDLER),
+    SYSLOG_HANDLER(SyslogHandlerResourceDefinition.NAME),
     TARGET(ConsoleHandlerResourceDefinition.TARGET),
     USE_DEPLOYMENT_LOGGING_CONFIG(LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG),
-    XML_FORMATTER(XmlFormatterResourceDefinition.NAME),
-    ;
+    XML_FORMATTER(XmlFormatterResourceDefinition.NAME),;
 
     private final String name;
     private final AttributeDefinition definition;
@@ -112,10 +124,6 @@ enum Element {
         return name;
     }
 
-    public boolean hasDefinition() {
-        return definition != null;
-    }
-
     public AttributeDefinition getDefinition() {
         return definition;
     }
@@ -123,7 +131,7 @@ enum Element {
     private static final Map<String, Element> MAP;
 
     static {
-        final Map<String, Element> map = new HashMap<String, Element>();
+        final Map<String, Element> map = new HashMap<>();
         for (Element element : values()) {
             final String name = element.getLocalName();
             if (name != null) map.put(name, element);

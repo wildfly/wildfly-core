@@ -75,47 +75,47 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
     static final AccessConstraintDefinition VIEW_SERVER_LOGS = new SensitiveTargetAccessConstraintDefinition(
             new SensitivityClassification(LoggingExtension.SUBSYSTEM_NAME, "view-server-logs", false, false, false));
 
-    static final String LOG_FILE = "log-file";
+    static final String NAME = "log-file";
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
-    static final SimpleAttributeDefinition FILE_SIZE = SimpleAttributeDefinitionBuilder.create("file-size", ModelType.LONG, false)
+    private static final SimpleAttributeDefinition FILE_SIZE = SimpleAttributeDefinitionBuilder.create("file-size", ModelType.LONG, false)
             .setStorageRuntime()
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition LAST_MODIFIED_TIME = SimpleAttributeDefinitionBuilder.create("last-modified-time", ModelType.LONG, false)
+    private static final SimpleAttributeDefinition LAST_MODIFIED_TIME = SimpleAttributeDefinitionBuilder.create("last-modified-time", ModelType.LONG, false)
             .setStorageRuntime()
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition LAST_MODIFIED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create("last-modified-timestamp", ModelType.STRING, false)
+    private static final SimpleAttributeDefinition LAST_MODIFIED_TIMESTAMP = SimpleAttributeDefinitionBuilder.create("last-modified-timestamp", ModelType.STRING, false)
             .setStorageRuntime()
             .setAllowExpression(false)
             .build();
 
-    static final SimpleAttributeDefinition STREAM = SimpleAttributeDefinitionBuilder.create("stream", ModelType.STRING)
+    private static final SimpleAttributeDefinition STREAM = SimpleAttributeDefinitionBuilder.create("stream", ModelType.STRING)
             .setStorageRuntime()
             .setRequired(false)
             .build();
 
-    static final SimpleAttributeDefinition LINES = SimpleAttributeDefinitionBuilder.create("lines", ModelType.INT, true)
+    private static final SimpleAttributeDefinition LINES = SimpleAttributeDefinitionBuilder.create("lines", ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(10))
             .setValidator(new IntRangeValidator(-1, true))
             .build();
 
-    static final SimpleAttributeDefinition SKIP = SimpleAttributeDefinitionBuilder.create("skip", ModelType.INT, true)
+    private static final SimpleAttributeDefinition SKIP = SimpleAttributeDefinitionBuilder.create("skip", ModelType.INT, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(0))
             .setValidator(new IntRangeValidator(0, true))
             .build();
 
-    static final SimpleAttributeDefinition TAIL = SimpleAttributeDefinitionBuilder.create("tail", ModelType.BOOLEAN, true)
+    private static final SimpleAttributeDefinition TAIL = SimpleAttributeDefinitionBuilder.create("tail", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(true))
             .build();
 
-    static final SimpleOperationDefinition READ_LOG_FILE = new SimpleOperationDefinitionBuilder("read-log-file", LoggingExtension.getResourceDescriptionResolver())
+    private static final SimpleOperationDefinition READ_LOG_FILE = new SimpleOperationDefinitionBuilder("read-log-file", LoggingExtension.getResourceDescriptionResolver())
             .addAccessConstraint(VIEW_SERVER_LOGS)
             .setParameters(ENCODING, LINES, SKIP, TAIL)
             .setReplyType(ModelType.LIST)
@@ -124,11 +124,11 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
             .setRuntimeOnly()
             .build();
 
-    static final PathElement LOG_FILE_PATH = PathElement.pathElement("log-file");
+    private static final PathElement LOG_FILE_PATH = PathElement.pathElement("log-file");
 
     private final PathManager pathManager;
 
-    protected LogFileResourceDefinition(final PathManager pathManager) {
+    LogFileResourceDefinition(final PathManager pathManager) {
         super(new Parameters(LOG_FILE_PATH, LoggingExtension.getResourceDescriptionResolver("log-file"))
                 .setRuntime().setAccessConstraints(VIEW_SERVER_LOGS));
         assert pathManager != null : "PathManager cannot be null";
@@ -168,7 +168,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
         final OperationStepHandler streamHandler = new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                final String name = LoggingOperations.getAddressName(operation);
+                final String name = context.getCurrentAddressValue();
                 final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
                 validateFile(context, logDir, name);
                 final Path path = Paths.get(logDir, name);
@@ -188,7 +188,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             final ModelNode model = context.getResult();
-            final String name = LoggingOperations.getAddressName(operation);
+            final String name = context.getCurrentAddressValue();
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             validateFile(context, logDir, name);
             final Path path = Paths.get(logDir, name);
@@ -223,7 +223,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            final String fileName = LoggingOperations.getAddressName(operation);
+            final String fileName = context.getCurrentAddressValue();
             final String logDir = pathManager.getPathEntry(ServerEnvironment.SERVER_LOG_DIR).resolvePath();
             validateFile(context, logDir, fileName);
             // Validate the operation

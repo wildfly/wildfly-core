@@ -33,7 +33,7 @@ import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.logging.LoggingExtension;
-import org.jboss.as.logging.RootLoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.deployments.LoggingConfigurationService;
 import org.jboss.as.server.deployment.DeploymentResourceSupport;
 import org.jboss.dmr.ModelNode;
@@ -125,7 +125,7 @@ public class LoggingDeploymentResources {
     private static void registerDeploymentResource(final DeploymentResourceSupport deploymentResourceSupport, final PathElement base, final ResourceDefinition def, final Collection<String> names) {
         for (String name : names) {
             // Replace any blank values with the default root-logger name; this should only happen on loggers
-            final String resourceName = name.isEmpty() ? RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME : name;
+            final String resourceName = name.isEmpty() ? RootLoggerResourceDefinition.RESOURCE_NAME : name;
             final PathAddress address = PathAddress.pathAddress(base, PathElement.pathElement(def.getPathElement().getKey(), resourceName));
             deploymentResourceSupport.getDeploymentSubModel(LoggingExtension.SUBSYSTEM_NAME, address);
         }
@@ -145,7 +145,7 @@ public class LoggingDeploymentResources {
                 .setStorageRuntime()
                 .build();
 
-        public PropertiesResourceDefinition(final String name) {
+        PropertiesResourceDefinition(final String name) {
             super(new Parameters(PathElement.pathElement(name), LoggingExtension.getResourceDescriptionResolver("deployment", name)).setRuntime());
         }
 

@@ -22,13 +22,20 @@
 
 package org.jboss.as.logging;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -42,17 +49,17 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"SameParameterValue", "MagicNumber"})
 public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase {
     private final String msg = "Test message ";
 
     @Before
-    public void clearLogDir() {
-        final File dir = LoggingTestEnvironment.get().getLogDir();
-        deleteRecursively(dir);
+    public void clearLogDir() throws Exception {
+        clearDirectory(LoggingTestEnvironment.get().getLogDir());
     }
 
     @Override
-    protected void standardSubsystemTest(final String configId) throws Exception {
+    protected void standardSubsystemTest(final String configId) {
         // do nothing as this is not a subsystem parsing test
     }
 
@@ -91,16 +98,16 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         int expectedSize = resources.size();
 
         // Add a new file not in the jboss.server.log.dir directory
-        final File logFile = new File(LoggingTestEnvironment.get().getLogDir(), "fh.log");
+        final Path logFile = LoggingTestEnvironment.get().getLogDir().resolve("fh.log");
         final ModelNode fhAddress = createFileHandlerAddress("fh").toModelNode();
         op = SubsystemOperations.createAddOperation(fhAddress);
-        op.get("file").set(createFileValue(null, logFile.getAbsolutePath()));
+        op.get("file").set(createFileValue(null, logFile.toAbsolutePath().toString()));
         executeOperation(kernelServices, op);
 
         // Re-read the log-file resource, the size should be the same
         result = executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address));
         resources = SubsystemOperations.readResult(result).asList();
-        assertEquals("Log file " + logFile.getAbsolutePath() + " should not be a resource", expectedSize, resources.size());
+        assertEquals("Log file " + logFile + " should not be a resource", expectedSize, resources.size());
 
         // Change the file path of the file handler which should make it a log-file resource
         op = SubsystemOperations.createWriteAttributeOperation(fhAddress, "file", createFileValue("jboss.server.log.dir", "fh-2.log"));
@@ -127,7 +134,7 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         executeOperation(kernelServices, op);
         result = executeOperation(kernelServices, SubsystemOperations.createReadResourceOperation(address));
         resources = SubsystemOperations.readResult(result).asList();
-        assertEquals("Log file " + logFile.getAbsolutePath() + " should not be a resource", ++expectedSize, resources.size());
+        assertEquals("Log file " + logFile + " should not be a resource", ++expectedSize, resources.size());
 
     }
 
@@ -168,18 +175,18 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         assertTrue("profile-simple.log file was not found", foundProfile);
 
         // Change the permissions on the file so read is not allowed
-        final File file = new File(LoggingTestEnvironment.get().getLogDir(), "simple.log");
+        final Path file = LoggingTestEnvironment.get().getLogDir().resolve("simple.log");
         // The file should exist
-        assertTrue("File does not exist", file.exists());
+        assertTrue("File does not exist", Files.exists(file));
 
         // Only test if successfully set
-        if (file.setReadable(false)) {
+        if (setReadable(file, false)) {
             result = executeOperation(kernelServices, op);
             logFiles = SubsystemOperations.readResult(result).asList();
             // The simple.log should not be in the list
             assertEquals("Read permission was found to be true on the file.", 1, logFiles.size());
             // Reset the file permissions
-            assertTrue("Could not reset file permissions", file.setReadable(true));
+            assertTrue("Could not reset file permissions", setReadable(file, true));
         }
     }
 
@@ -195,19 +202,19 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         testReadLogFile(kernelServices, op, getLogger());
 
         // Change the permissions on the file so read is not allowed
-        final File file = new File(LoggingTestEnvironment.get().getLogDir(), op.get("name").asString());
+        final Path file = LoggingTestEnvironment.get().getLogDir().resolve(op.get("name").asString());
         // The file should exist
-        assertTrue("File does not exist", file.exists());
+        assertTrue("File does not exist", Files.exists(file));
 
 
         ModelNode result = null;
 
         // Only test if successfully set
-        if (file.setReadable(false)) {
+        if (setReadable(file, false)) {
             result = kernelServices.executeOperation(op);
             assertFalse("Should have failed due to denial of read permissions on the file.", SubsystemOperations.isSuccessfulOutcome(result));
             // Reset the file permissions
-            assertTrue("Could not reset file permissions", file.setReadable(true));
+            assertTrue("Could not reset file permissions", setReadable(file, true));
         }
 
         // Should be able to read profile-simple.log, but it should be empty
@@ -234,11 +241,12 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
 
     @Test
     public void testFailedLogFile() throws Exception {
-        final Path configDir = LoggingTestEnvironment.get().getConfigDir().toPath();
-        final Path logDir = LoggingTestEnvironment.get().getLogDir().toPath();
+        final Path configDir = LoggingTestEnvironment.get().getConfigDir();
+        final Path logDir = LoggingTestEnvironment.get().getLogDir();
 
         // Create the test log file
         final Path logFile = configDir.resolve("test-config.log");
+
         Files.deleteIfExists(logFile);
         Files.createFile(logFile);
         final Path relativeLogFile = logDir.relativize(logFile);
@@ -359,15 +367,21 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         return LoggingProfileContextSelector.getInstance().get(loggingProfile).getLogger("org.jboss.as.logging.test");
     }
 
-    static void deleteRecursively(final File dir) {
-        if (dir.isDirectory()) {
-            final File[] files = dir.listFiles();
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteRecursively(file);
-                }
-                file.delete();
+    private static boolean setReadable(final Path path, final boolean readable) throws IOException {
+        if (Files.getFileStore(path).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            final Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(path);
+            if (readable) {
+                permissions.add(PosixFilePermission.OWNER_READ);
+                permissions.add(PosixFilePermission.GROUP_READ);
+                Files.setPosixFilePermissions(path, EnumSet.copyOf(permissions));
+            } else {
+                permissions.remove(PosixFilePermission.OWNER_READ);
+                permissions.remove(PosixFilePermission.GROUP_READ);
+                permissions.remove(PosixFilePermission.OTHERS_READ);
+                Files.setPosixFilePermissions(path, EnumSet.copyOf(permissions));
             }
+            return true;
         }
+        return false;
     }
 }

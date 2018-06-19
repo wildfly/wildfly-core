@@ -157,14 +157,12 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
 
     static List<DeploymentUnit> getSubDeployments(final DeploymentUnit deploymentUnit) {
         if (deploymentUnit.hasAttachment(Attachments.SUB_DEPLOYMENTS)) {
-            final List<DeploymentUnit> result = new ArrayList<DeploymentUnit>();
-            result.addAll(deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS));
-            return result;
+            return new ArrayList<>(deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS));
         }
         return Collections.emptyList();
     }
 
-    protected static void safeClose(final Closeable closable) {
+    static void safeClose(final Closeable closable) {
         if (closable != null) try {
             closable.close();
         } catch (Exception e) {

@@ -27,11 +27,17 @@ import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 
 /**
  *
  */
-enum Attribute {
+public enum Attribute {
 
     UNKNOWN((String) null),
 
@@ -97,7 +103,7 @@ enum Attribute {
     private static final Map<String, Attribute> MAP;
 
     static {
-        final Map<String, Attribute> map = new HashMap<String, Attribute>();
+        final Map<String, Attribute> map = new HashMap<>();
         for (Attribute element : values()) {
             final String name = element.getLocalName();
             if (name != null) map.put(name, element);

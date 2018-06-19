@@ -39,7 +39,19 @@ import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDeploymentResourceProcessor;
 import org.jboss.as.logging.deployments.LoggingProfileDeploymentProcessor;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
@@ -102,8 +114,8 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         }
 
         // remove all configured loggers which aren't in the model
-        if (resource.hasChild(PathElement.pathElement(LoggerResourceDefinition.LOGGER))) {
-            final Set<String> loggerNames = resource.getChildrenNames(LoggerResourceDefinition.LOGGER);
+        if (resource.hasChild(PathElement.pathElement(LoggerResourceDefinition.NAME))) {
+            final Set<String> loggerNames = resource.getChildrenNames(LoggerResourceDefinition.NAME);
             final List<String> configuredLoggerNames = logContextConfiguration.getLoggerNames();
             // Always remove the root
             configuredLoggerNames.remove(CommonAttributes.ROOT_LOGGER_NAME);
@@ -115,15 +127,15 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         }
 
         // Create a collection of all subsystem handlers
-        final Collection<String> subsystemHandlers = new ArrayList<String>();
-        subsystemHandlers.addAll(resource.getChildrenNames(AsyncHandlerResourceDefinition.ASYNC_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(ConsoleHandlerResourceDefinition.CONSOLE_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(CustomHandlerResourceDefinition.CUSTOM_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(FileHandlerResourceDefinition.FILE_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(PeriodicSizeRotatingHandlerResourceDefinition.PERIODIC_SIZE_ROTATING_FILE_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER));
-        subsystemHandlers.addAll(resource.getChildrenNames(SyslogHandlerResourceDefinition.SYSLOG_HANDLER));
+        final Collection<String> subsystemHandlers = new ArrayList<>();
+        subsystemHandlers.addAll(resource.getChildrenNames(AsyncHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(ConsoleHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(CustomHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(FileHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(PeriodicHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(PeriodicSizeRotatingHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(SizeRotatingHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(SyslogHandlerResourceDefinition.NAME));
 
         // handlers
         final List<String> configuredHandlerNames = logContextConfiguration.getHandlerNames();
@@ -138,8 +150,8 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
 
         // Remove formatters
         final List<String> configuredFormatters = logContextConfiguration.getFormatterNames();
-        configuredFormatters.removeAll(resource.getChildrenNames(PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName()));
-        configuredFormatters.removeAll(resource.getChildrenNames(CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName()));
+        configuredFormatters.removeAll(resource.getChildrenNames(PatternFormatterResourceDefinition.NAME));
+        configuredFormatters.removeAll(resource.getChildrenNames(CustomFormatterResourceDefinition.NAME));
         configuredFormatters.removeAll(resource.getChildrenNames(JsonFormatterResourceDefinition.NAME));
         // Formatter names could also be the name of a handler if the formatter attribute is used rather than a named-formatter
         configuredFormatters.removeAll(subsystemHandlers);

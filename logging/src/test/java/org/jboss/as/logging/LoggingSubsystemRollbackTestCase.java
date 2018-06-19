@@ -27,6 +27,8 @@ import java.io.IOException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
@@ -70,10 +72,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
     @Test
     @BMRule(name = "Test logger rollback handler",
-            targetClass = "org.jboss.as.logging.LoggerOperations$LoggerAddOperationStepHandler",
+            targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerAddOperationStepHandler",
             targetMethod = "performRuntime",
             targetLocation = "AT EXIT",
-            condition = "$4.equals(\"org.jboss.as.logging.test\")",
+            condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging.test\")",
             action = "$1.setRollbackOnly()"
     )
     public void testRollbackLogger() throws Exception {
@@ -105,10 +107,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
     @Test
     @BMRule(name = "Test handler rollback handler",
-            targetClass = "org.jboss.as.logging.HandlerOperations$HandlerAddOperationStepHandler",
+            targetClass = "org.jboss.as.logging.handlers.HandlerOperations$HandlerAddOperationStepHandler",
             targetMethod = "performRuntime",
             targetLocation = "AT EXIT",
-            condition = "$4.equals(\"CONSOLE2\")",
+            condition = "$1.getCurrentAddressValue().equals(\"CONSOLE2\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackHandler() throws Exception {
         final KernelServices kernelServices = boot();
@@ -140,10 +142,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
     @Test
     @BMRule(name = "Test handler rollback handler",
-            targetClass = "org.jboss.as.logging.LoggerOperations$LoggerWriteAttributeHandler",
+            targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerWriteAttributeHandler",
             targetMethod = "applyUpdate",
             targetLocation = "AT EXIT",
-            condition = "$3.equals(\"org.jboss.as.logging\")",
+            condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackComposite() throws Exception {
         final KernelServices kernelServices = boot();
@@ -206,10 +208,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
     @Test
     @BMRule(name = "Test handler rollback handler",
-            targetClass = "org.jboss.as.logging.LoggerOperations$LoggerWriteAttributeHandler",
+            targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerWriteAttributeHandler",
             targetMethod = "applyUpdate",
             targetLocation = "AT EXIT",
-            condition = "$3.equals(\"org.jboss.as.logging\")",
+            condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackCompositeLoggingProfile() throws Exception {
         final KernelServices kernelServices = boot();
@@ -269,16 +271,16 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Test
     @BMRules(rules = {
             @BMRule(name = "Test handler rollback handler",
-                    targetClass = "org.jboss.as.logging.HandlerOperations$HandlerAddOperationStepHandler",
+                    targetClass = "org.jboss.as.logging.handlers.HandlerOperations$HandlerAddOperationStepHandler",
                     targetMethod = "performRuntime",
                     targetLocation = "AT EXIT",
-                    condition = "$4.equals(\"CONSOLE2\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"CONSOLE2\")",
                     action = "$1.setRollbackOnly()"),
             @BMRule(name = "Test logger rollback handler",
-                    targetClass = "org.jboss.as.logging.LoggerOperations$LoggerAddOperationStepHandler",
+                    targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerAddOperationStepHandler",
                     targetMethod = "performRuntime",
                     targetLocation = "AT EXIT",
-                    condition = "$4.equals(\"org.jboss.as.logging.test\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging.test\")",
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackAdd() throws Exception {
@@ -289,16 +291,16 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Test
     @BMRules(rules = {
             @BMRule(name = "Test handler write-attribute rollback handler",
-                    targetClass = "org.jboss.as.logging.HandlerOperations$LogHandlerWriteAttributeHandler",
+                    targetClass = "org.jboss.as.logging.handlers.HandlerOperations$LogHandlerWriteAttributeHandler",
                     targetMethod = "applyUpdate",
                     targetLocation = "AT EXIT",
-                    condition = "$3.equals(\"CONSOLE\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"CONSOLE\")",
                     action = "$1.setRollbackOnly()"),
             @BMRule(name = "Test logger write-attribute rollback handler",
-                    targetClass = "org.jboss.as.logging.LoggerOperations$LoggerWriteAttributeHandler",
+                    targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerWriteAttributeHandler",
                     targetMethod = "applyUpdate",
                     targetLocation = "AT EXIT",
-                    condition = "$3.equals(\"ROOT\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"ROOT\")",
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackWriteAttribute() throws Exception {
@@ -309,16 +311,16 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Test
     @BMRules(rules = {
             @BMRule(name = "Test handler rollback handler",
-                    targetClass = "org.jboss.as.logging.HandlerOperations$HandlerUpdateOperationStepHandler",
+                    targetClass = "org.jboss.as.logging.handlers.HandlerOperations$HandlerUpdateOperationStepHandler",
                     targetMethod = "performRuntime",
                     targetLocation = "AT EXIT",
-                    condition = "$4.equals(\"CONSOLE\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"CONSOLE\")",
                     action = "$1.setRollbackOnly()"),
             @BMRule(name = "Test logger rollback handler",
-                    targetClass = "org.jboss.as.logging.LoggerOperations$LoggerUpdateOperationStepHandler",
+                    targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerUpdateOperationStepHandler",
                     targetMethod = "performRuntime",
                     targetLocation = "AT EXIT",
-                    condition = "$4.equals(\"ROOT\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"ROOT\")",
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackUpdateAttribute() throws Exception {
@@ -329,10 +331,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Test
     @BMRules(rules = {
             @BMRule(name = "Test handler write-attribute rollback handler",
-                    targetClass = "org.jboss.as.logging.LoggerOperations$LoggerWriteAttributeHandler",
+                    targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerWriteAttributeHandler",
                     targetMethod = "applyUpdate",
                     targetLocation = "AT EXIT",
-                    condition = "$3.equals(\"ROOT\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"ROOT\")",
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackRemove() throws Exception {
@@ -343,10 +345,10 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     @Test
     @BMRules(rules = {
             @BMRule(name = "Test handler write-attribute rollback handler",
-                    targetClass = "org.jboss.as.logging.LoggerOperations$LoggerWriteAttributeHandler",
+                    targetClass = "org.jboss.as.logging.loggers.LoggerOperations$LoggerWriteAttributeHandler",
                     targetMethod = "applyUpdate",
                     targetLocation = "AT EXIT",
-                    condition = "$3.equals(\"ROOT\")",
+                    condition = "$1.getCurrentAddressValue().equals(\"ROOT\")",
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackRemoveProfile() throws Exception {
@@ -477,7 +479,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
         // Fail on a logger write attribute
         final PathAddress rootLoggerAddress = createRootLoggerAddress(profileName);
-        op = SubsystemOperations.createOperation(RootLoggerResourceDefinition.ROOT_LOGGER_CHANGE_LEVEL_OPERATION_NAME, rootLoggerAddress.toModelNode());
+        op = SubsystemOperations.createOperation("change-root-log-level", rootLoggerAddress.toModelNode());
         op.get(CommonAttributes.LEVEL.getName()).set("TRACE");
         result = kernelServices.executeOperation(op);
         Assert.assertFalse("The update operation should have failed, but was successful: " + result, SubsystemOperations.isSuccessfulOutcome(result));

@@ -34,7 +34,9 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -84,7 +86,7 @@ class LoggingSubsystemParser_5_0 extends LoggingSubsystemParser_4_0 {
                 case PATTERN_FORMATTER: {
                     final ModelNode operation = Util.createAddOperation();
                     // Setup the operation address
-                    addOperationAddress(operation, address, PatternFormatterResourceDefinition.PATTERN_FORMATTER.getName(), name);
+                    addOperationAddress(operation, address, PatternFormatterResourceDefinition.NAME, name);
                     parsePatternFormatterElement(reader, operation);
                     operations.add(operation);
                     break;
@@ -92,7 +94,7 @@ class LoggingSubsystemParser_5_0 extends LoggingSubsystemParser_4_0 {
                 case CUSTOM_FORMATTER: {
                     final ModelNode operation = Util.createAddOperation();
                     // Setup the operation address
-                    addOperationAddress(operation, address, CustomFormatterResourceDefinition.CUSTOM_FORMATTER.getName(), name);
+                    addOperationAddress(operation, address, CustomFormatterResourceDefinition.NAME, name);
                     parseCustomFormatterElement(reader, operation);
                     operations.add(operation);
                     break;

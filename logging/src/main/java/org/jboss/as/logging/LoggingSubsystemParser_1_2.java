@@ -31,10 +31,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.ASYNC_HANDLER;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
-import static org.jboss.as.logging.AsyncHandlerResourceDefinition.SUBHANDLERS;
 import static org.jboss.as.logging.CommonAttributes.APPEND;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.CLASS;
@@ -46,26 +42,21 @@ import static org.jboss.as.logging.CommonAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
-import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.CONSOLE_HANDLER;
-import static org.jboss.as.logging.ConsoleHandlerResourceDefinition.TARGET;
-import static org.jboss.as.logging.CustomHandlerResourceDefinition.CUSTOM_HANDLER;
-import static org.jboss.as.logging.FileHandlerResourceDefinition.FILE_HANDLER;
-import static org.jboss.as.logging.LoggerResourceDefinition.LOGGER;
-import static org.jboss.as.logging.LoggerResourceDefinition.USE_PARENT_HANDLERS;
-import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.PERIODIC_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.PeriodicHandlerResourceDefinition.SUFFIX;
-import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_ATTRIBUTE_NAME;
-import static org.jboss.as.logging.RootLoggerResourceDefinition.ROOT_LOGGER_PATH_NAME;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
-import static org.jboss.as.logging.SizeRotatingHandlerResourceDefinition.SIZE_ROTATING_FILE_HANDLER;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.APP_NAME;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.FACILITY;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.HOSTNAME;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.PORT;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SERVER_ADDRESS;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_FORMATTER;
-import static org.jboss.as.logging.SyslogHandlerResourceDefinition.SYSLOG_HANDLER;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.SUBHANDLERS;
+import static org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition.TARGET;
+import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
+import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.ROTATE_SIZE;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.APP_NAME;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.FACILITY;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.HOSTNAME;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.PORT;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.SERVER_ADDRESS;
+import static org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.SYSLOG_FORMATTER;
+import static org.jboss.as.logging.loggers.LoggerResourceDefinition.USE_PARENT_HANDLERS;
+import static org.jboss.as.logging.loggers.RootLoggerResourceDefinition.RESOURCE_NAME;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +70,15 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerResourceDefinition;
+import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -203,7 +203,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, LOGGER, name);
+        addOperationAddress(operation, address, LoggerResourceDefinition.NAME, name);
 
         // Element
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -265,7 +265,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, ASYNC_HANDLER, name);
+        addOperationAddress(operation, address, AsyncHandlerResourceDefinition.NAME, name);
 
         // Elements
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -314,7 +314,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
             throw unexpectedAttribute(reader, 0);
         }
 
-        final ModelNode operation = Util.createAddOperation(address.append(ROOT_LOGGER_PATH_NAME, ROOT_LOGGER_ATTRIBUTE_NAME));
+        final ModelNode operation = Util.createAddOperation(address.append(RootLoggerResourceDefinition.NAME, RESOURCE_NAME));
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
@@ -379,7 +379,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Set-up the operation address
-        addOperationAddress(operation, address, CONSOLE_HANDLER, name);
+        addOperationAddress(operation, address, ConsoleHandlerResourceDefinition.NAME, name);
 
         // Elements
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -455,7 +455,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, FILE_HANDLER, name);
+        addOperationAddress(operation, address, FileHandlerResourceDefinition.NAME, name);
 
         // Elements
         final EnumSet<Element> requiredElem = EnumSet.of(Element.FILE);
@@ -542,7 +542,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
             throw duplicateNamedElement(reader, name);
         }
         // Setup the operation address
-        addOperationAddress(operation, address, CUSTOM_HANDLER, name);
+        addOperationAddress(operation, address, CustomHandlerResourceDefinition.NAME, name);
 
 
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -617,7 +617,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, PERIODIC_ROTATING_FILE_HANDLER, name);
+        addOperationAddress(operation, address, PeriodicHandlerResourceDefinition.NAME, name);
 
         final EnumSet<Element> requiredElem = EnumSet.of(Element.FILE, Element.SUFFIX);
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -704,7 +704,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, SIZE_ROTATING_FILE_HANDLER, name);
+        addOperationAddress(operation, address, SizeRotatingHandlerResourceDefinition.NAME, name);
 
         final EnumSet<Element> requiredElem = EnumSet.of(Element.FILE);
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
@@ -786,16 +786,14 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
         }
 
         // Setup the operation address
-        addOperationAddress(operation, address, SYSLOG_HANDLER, name);
+        addOperationAddress(operation, address, SyslogHandlerResourceDefinition.NAME, name);
 
-        final EnumSet<Element> requiredElem = EnumSet.noneOf(Element.class);
         final EnumSet<Element> encountered = EnumSet.noneOf(Element.class);
         while (reader.nextTag() != END_ELEMENT) {
             final Element element = Element.forName(reader.getLocalName());
             if (!encountered.add(element)) {
                 throw unexpectedElement(reader);
             }
-            requiredElem.remove(element);
             switch (element) {
                 case APP_NAME: {
                     APP_NAME.parseAndSetParameter(readValueAttribute(reader), operation, reader);
