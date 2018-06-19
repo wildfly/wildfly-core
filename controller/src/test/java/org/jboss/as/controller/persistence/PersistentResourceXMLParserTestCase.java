@@ -466,6 +466,31 @@ public class PersistentResourceXMLParserTestCase {
         Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
     }
 
+    @Test
+    public void testChildGroups() throws Exception {
+        PersistentResourceXMLParser parser = new ChildGroupParser();
+
+        String xml = readResource("child-groups-subsystem.xml");
+        StringReader strReader = new StringReader(xml);
+
+        XMLMapper mapper = XMLMapper.Factory.create();
+        mapper.registerRootElement(new QName(ChildGroupParser.NAMESPACE, "subsystem"), parser);
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StreamSource(strReader));
+        List<ModelNode> operations = new ArrayList<>();
+        mapper.parseDocument(operations, reader);
+
+        Assert.assertEquals(operations.toString(), 5, operations.size());
+        ModelNode subsystem = opsToModel(operations);
+
+        StringWriter stringWriter = new StringWriter();
+        XMLExtendedStreamWriter xmlStreamWriter = createXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(stringWriter));
+        SubsystemMarshallingContext context = new SubsystemMarshallingContext(subsystem, xmlStreamWriter);
+        mapper.deparseDocument(parser, context, xmlStreamWriter);
+        String out = stringWriter.toString();
+        Assert.assertEquals(normalizeXML(xml), normalizeXML(out));
+    }
+
     private ModelNode opsToModel(List<ModelNode> operations) {
         ModelNode subsystem = new ModelNode();
 
@@ -670,7 +695,7 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
 
-        static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -689,7 +714,7 @@ public class PersistentResourceXMLParserTestCase {
             }
         };
 
-        static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -702,7 +727,7 @@ public class PersistentResourceXMLParserTestCase {
             }
         };
 
-        static final PersistentResourceDefinition OBJECT_TYPE_TEST = new PersistentResourceDefinition(PathElement.pathElement("object-type-test"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition OBJECT_TYPE_TEST = new PersistentResourceDefinition(PathElement.pathElement("object-type-test"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -712,7 +737,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -732,7 +757,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -749,7 +774,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -765,7 +790,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        PersistentResourceDefinition SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+        PersistentResourceDefinition SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(SUBSYSTEM_PATH, NonResolvingResourceDescriptionResolver.INSTANCE) {
 
             @Override
             public Collection<AttributeDefinition> getAttributes() {
@@ -1189,7 +1214,7 @@ public class PersistentResourceXMLParserTestCase {
         static final IIOPRootDefinition INSTANCE = new IIOPRootDefinition();
 
         private IIOPRootDefinition() {
-            super(PathElement.pathElement("subsystem", "orb"), new NonResolvingResourceDescriptionResolver());
+            super(PathElement.pathElement("subsystem", "orb"), NonResolvingResourceDescriptionResolver.INSTANCE);
         }
 
         @Override
@@ -1395,7 +1420,7 @@ public class PersistentResourceXMLParserTestCase {
                     .build();
         }
 
-    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), new NonResolvingResourceDescriptionResolver()) {
+    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), NonResolvingResourceDescriptionResolver.INSTANCE) {
         @Override
         public Collection<AttributeDefinition> getAttributes() {
             Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -1409,7 +1434,7 @@ public class PersistentResourceXMLParserTestCase {
 
     protected static final PathElement PROCESS_SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "process");
 
-    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, NonResolvingResourceDescriptionResolver.INSTANCE) {
 
               @Override
               public Collection<AttributeDefinition> getAttributes() {
@@ -1435,6 +1460,40 @@ public class PersistentResourceXMLParserTestCase {
                             .addAttribute(PROCESS_STATE_LISTENERS)
                             .addAttribute(UNWRAPPED_LISTENER, AttributeParsers.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
                             .addAttribute(OBJECT_DEFINITION))
+                    .build();
+        }
+    }
+
+    static class ChildGroupParser extends PersistentResourceXMLParser {
+        static final String NAMESPACE = "urn:jboss:domain:jgroups:1.0";
+        private static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "jgroups");
+        private static final PathElement CHANNEL_PATH = PathElement.pathElement("channel");
+        private static final PathElement STACK_PATH = PathElement.pathElement("stack");
+
+        static final AttributeDefinition DEFAULT_CHANNEL = new SimpleAttributeDefinitionBuilder("default-channel", ModelType.STRING)
+                .setRequired(true)
+                .setXmlName("default")
+                .setAttributeGroup("channels")
+                .build();
+
+        static final AttributeDefinition DEFAULT_STACK = new SimpleAttributeDefinitionBuilder("default-stack", ModelType.STRING)
+                .setRequired(true)
+                .setXmlName("default")
+                .setAttributeGroup("stacks")
+                .build();
+
+        static final AttributeDefinition STACK = new SimpleAttributeDefinitionBuilder("stack", ModelType.STRING)
+                .setRequired(true)
+                .build();
+
+        @Override
+        public PersistentResourceXMLDescription getParserDescription() {
+            return builder(SUBSYSTEM_PATH, NAMESPACE)
+                    .addAttribute(DEFAULT_CHANNEL)
+                    .addAttribute(DEFAULT_STACK)
+                    .setUseElementsForGroups(true)
+                    .addChild(DEFAULT_CHANNEL, builder(CHANNEL_PATH).addAttribute(STACK))
+                    .addChild(DEFAULT_STACK, builder(STACK_PATH))
                     .build();
         }
     }
