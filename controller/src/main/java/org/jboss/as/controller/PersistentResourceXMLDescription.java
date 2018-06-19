@@ -36,7 +36,7 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public final class PersistentResourceXMLDescription implements ResourceParser, ResourceMarshaller {
 
-    protected final PathElement pathElement;
+    private final PathElement pathElement;
     private final String xmlElementName;
     private final String xmlWrapperElement;
     private final LinkedHashMap<String, LinkedHashMap<String, AttributeDefinition>> attributesByGroup;
@@ -125,13 +125,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         return this.pathElement;
     }
 
-    /**
-     * Parse xml from provided <code>reader</code> and add resulting operations to passed list
-     * @param reader xml reader to parse from
-     * @param parentAddress address of the parent, used as base for all child elements
-     * @param list list of operations where result will be put to.
-     * @throws XMLStreamException if any error occurs while parsing
-     */
+    @Override
     public void parse(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         if (decoratorElement != null) {
             parseDecorator(reader, parentAddress, list);
@@ -327,12 +321,12 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         }
     }
 
-
+    @Override
     public void persist(XMLExtendedStreamWriter writer, ModelNode model) throws XMLStreamException {
         persist(writer, model, namespaceURI);
     }
 
-    private void writeStartElement(XMLExtendedStreamWriter writer, String namespaceURI, String localName) throws XMLStreamException {
+    private static void writeStartElement(XMLExtendedStreamWriter writer, String namespaceURI, String localName) throws XMLStreamException {
         if (namespaceURI != null) {
             writer.writeStartElement(namespaceURI, localName);
         } else {
@@ -340,7 +334,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         }
     }
 
-    private void startSubsystemElement(XMLExtendedStreamWriter writer, String namespaceURI, boolean empty) throws XMLStreamException {
+    private static void startSubsystemElement(XMLExtendedStreamWriter writer, String namespaceURI, boolean empty) throws XMLStreamException {
         if (writer.getNamespaceContext().getPrefix(namespaceURI) == null) {
             // Unknown namespace; it becomes default
             writer.setDefaultNamespace(namespaceURI);
