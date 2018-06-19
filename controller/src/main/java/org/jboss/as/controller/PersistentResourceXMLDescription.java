@@ -164,7 +164,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
     private void parseInternal(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list) throws XMLStreamException {
         ModelNode op = Util.createAddOperation();
         boolean wildcard = pathElement.isWildcard();
-        String name = parseAttributeGroups(reader, op, wildcard);
+        String name = parseAttributeGroups(reader, op);
         if (wildcard && name == null) {
             if (forcedName != null) {
                 name = forcedName;
@@ -187,8 +187,8 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
     }
 
 
-    private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
-        String name = parseAttributes(reader, op, attributesByGroup.get(null), wildcard); //parse attributes not belonging to a group
+    private String parseAttributeGroups(final XMLExtendedStreamReader reader, ModelNode op) throws XMLStreamException {
+        String name = parseAttributes(reader, op, attributesByGroup.get(null)); //parse attributes not belonging to a group
         if (!attributeGroups.isEmpty()) {
             while (reader.hasNext() && reader.nextTag() != XMLStreamConstants.END_ELEMENT) {
                 final String localName = reader.getLocalName();
@@ -200,13 +200,13 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
                         ad.getParser().parseElement(ad, reader, op);
                         final String newLocalName = reader.getLocalName();
                         if (attributeGroups.contains(newLocalName)) {
-                            parseGroup(reader, op, wildcard);
+                            parseGroup(reader, op);
                         } else if (reader.isEndElement() && !attributeGroups.contains(newLocalName) && !attributeElements.containsKey(newLocalName)) {
                             childAlreadyRead = true;
                             break;
                         }
                     } else {
-                        parseGroup(reader, op, wildcard);
+                        parseGroup(reader, op);
                     }
 
                 } else {
@@ -220,14 +220,14 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         return name;
     }
 
-    private void parseGroup(XMLExtendedStreamReader reader, ModelNode op, boolean wildcard) throws XMLStreamException {
+    private void parseGroup(XMLExtendedStreamReader reader, ModelNode op) throws XMLStreamException {
         Map<String, AttributeDefinition> groupAttrs = attributesByGroup.get(reader.getLocalName());
         for (AttributeDefinition attrGroup : groupAttrs.values()) {
             if (op.hasDefined(attrGroup.getName())) {
                 throw ParseUtils.unexpectedElement(reader);
             }
         }
-        parseAttributes(reader, op, groupAttrs, wildcard);
+        parseAttributes(reader, op, groupAttrs);
         // Check if there are also element attributes inside a group
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             AttributeDefinition ad = groupAttrs.get(reader.getLocalName());
@@ -239,13 +239,13 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
         }
     }
 
-    private String parseAttributes(final XMLExtendedStreamReader reader, ModelNode op, Map<String, AttributeDefinition> attributes, boolean wildcard) throws XMLStreamException {
+    private String parseAttributes(final XMLExtendedStreamReader reader, ModelNode op, Map<String, AttributeDefinition> attributes) throws XMLStreamException {
         String name = null;
         int attrCount = reader.getAttributeCount();
         for (int i = 0; i < attrCount; i++) {
             String attributeName = reader.getAttributeLocalName(i);
             String value = reader.getAttributeValue(i);
-            if (wildcard && nameAttributeName.equals(attributeName)) {
+            if (this.pathElement.isWildcard() && nameAttributeName.equals(attributeName)) {
                 name = value;
             } else if (attributes.containsKey(attributeName)) {
                 AttributeDefinition def = attributes.get(attributeName);
