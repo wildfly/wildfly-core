@@ -329,7 +329,9 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setDefaultValue(new ModelNode(ScramDigestPassword.ALGORITHM_SCRAM_SHA_256))
                 .setValidator(new StringAllowedValuesValidator(
                         ScramDigestPassword.ALGORITHM_SCRAM_SHA_1,
-                        ScramDigestPassword.ALGORITHM_SCRAM_SHA_256
+                        ScramDigestPassword.ALGORITHM_SCRAM_SHA_256,
+                        ScramDigestPassword.ALGORITHM_SCRAM_SHA_384,
+                        ScramDigestPassword.ALGORITHM_SCRAM_SHA_512
                 ))
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)

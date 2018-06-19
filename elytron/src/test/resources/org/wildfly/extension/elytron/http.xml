@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:3.0">
+<subsystem xmlns="urn:wildfly:elytron:4.0">
     <providers>
         <provider-loader name="TestProviderLoader" module="test.module" />
     </providers>
