@@ -19,4 +19,7 @@
             <role-mapping from="a" to="b c"/>
         </mapped-role-mapper>
     </mappers>
+    <audit-logging>
+        <custom-security-event-listener name="a" module="b" class-name="c.D"/>
+    </audit-logging>
 </subsystem>
