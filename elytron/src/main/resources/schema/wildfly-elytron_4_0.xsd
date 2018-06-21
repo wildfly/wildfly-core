@@ -497,7 +497,8 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListener" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListenerType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="custom-security-event-listener" type="customSecurityEventListenerType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="file-audit-log" type="fileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="periodic-rotating-file-audit-log" type="periodicRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="size-rotating-file-audit-log" type="sizeRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
@@ -545,7 +546,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="aggregateSecurityEventListener">
+    <xs:complexType name="aggregateSecurityEventListenerType">
         <xs:annotation>
             <xs:documentation>
                 A security event listener definition that is actually an aggregation of other security event listeners.
@@ -724,6 +725,31 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="customSecurityEventListenerType">
+        <xs:annotation>
+            <xs:documentation>
+                A security event listener definition for a custom security event listener implementation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="auditLogType">
+                <xs:sequence>
+                    <xs:element name="configuration"
+                                type="customComponentConfiguration" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The configuration to apply to the security event listener implementation.
+
+                                Note: If configuration is supplied the listener MUST implement a void initialize(Map&lt;String, String&gt;) method.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="customComponentAttributes" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

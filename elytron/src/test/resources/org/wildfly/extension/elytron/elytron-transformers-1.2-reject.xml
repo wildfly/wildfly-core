@@ -14,4 +14,7 @@
             </principal-query>
         </jdbc-realm>
     </security-realms>
+    <audit-logging>
+        <custom-security-event-listener name="a" module="b" class-name="c.D"/>
+    </audit-logging>
 </subsystem>

@@ -122,6 +122,7 @@ interface ElytronDescriptionConstants {
     String CREDENTIAL_STORES = "credential-stores";
     String CREDENTIALS = "credentials";
     String CRITICAL = "critical";
+
     String CUSTOM_CREDENTIAL_SECURITY_FACTORY = "custom-credential-security-factory";
     String CUSTOM_PERMISSION_MAPPER = "custom-permission-mapper";
     String CUSTOM_POLICY = "custom-policy";
@@ -132,6 +133,7 @@ interface ElytronDescriptionConstants {
     String CUSTOM_REALM_MAPPER = "custom-realm-mapper";
     String CUSTOM_ROLE_DECODER = "custom-role-decoder";
     String CUSTOM_ROLE_MAPPER = "custom-role-mapper";
+    String CUSTOM_SECURITY_EVENT_LISTENER = "custom-security-event-listener";
 
     String DATA_SOURCE = "data-source";
     String DEBUG = "debug";
