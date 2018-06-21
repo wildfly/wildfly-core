@@ -24,6 +24,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
@@ -153,14 +154,15 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
 
                 Class<? extends T> typeClazz = classLoader.loadClass(className).asSubclass(serviceType);
 
-                T component = typeClazz.newInstance();
+                T component = typeClazz.getDeclaredConstructor().newInstance();
 
                 if (configuration != null && !configuration.isEmpty()) {
-                    if (component instanceof Configurable == false) {
-                        throw ROOT_LOGGER.componentNotConfigurable(component.getClass().getName());
+                    try {
+                        Method method = component.getClass().getMethod("initialize", Map.class);
+                        method.invoke(component, configuration);
+                    } catch (NoSuchMethodException e) {
+                        throw ROOT_LOGGER.componentNotConfigurable(component.getClass().getName(), e);
                     }
-                    Configurable configurableComponent = (Configurable) component;
-                    configurableComponent.initialize(configuration);
                 }
 
                 return component;

@@ -1002,7 +1002,7 @@
 		                    <xs:documentation>
 		                        The configuration to apply to the SecurityRealm implementation.
 
-		                        Note: If configuration is supplied the realm MUST implement the Configurable interface.
+		                        Note: If configuration is supplied the realm MUST implement initialize(Map&lt;String, String&gt;) method.
 		                    </xs:documentation>
 		                </xs:annotation>
 		            </xs:element>
@@ -2068,7 +2068,7 @@
                             <xs:documentation>
                                 The configuration to apply to the SecurityFactory implementation.
 
-                                Note: If configuration is supplied the SecurityFactory MUST implement the Configurable interface.
+                                Note: If configuration is supplied the SecurityFactory MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2282,7 +2282,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PermissionMapper implementation.
 
-                                Note: If configuration is supplied the PermissionMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PermissionMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2533,7 +2533,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PrincipalDecoder implementation.
 
-                                Note: If configuration is supplied the PrincipalDecoder MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PrincipalDecoder MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2799,7 +2799,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PrincipalTransformer implementation.
 
-                                Note: If configuration is supplied the PrincipalTransformer MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PrincipalTransformer MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2883,7 +2883,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RealmMapper implementation.
 
-                                Note: If configuration is supplied the RealmMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RealmMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -3021,7 +3021,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RoleDecoder implementation.
 
-                                Note: If configuration is supplied the RoleDecoder MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RoleDecoder MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -3134,7 +3134,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RoleMapper implementation.
 
-                                Note: If configuration is supplied the RoleMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RoleMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
