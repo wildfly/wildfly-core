@@ -82,6 +82,11 @@ class SecurityActions {
         return iface.cast(clazz.newInstance());
     }
 
+    /**
+     * WARNING: Calling this method in non modular context has the side effect to load the Module class.
+     * This is problematic, the system packages required to properly execute an embedded-server will not
+     * be correct.
+     */
     static <T> T loadAndInstantiateFromModule(final String moduleId, final Class<T> iface, final String name) throws Exception {
         if (!WildFlySecurityManager.isChecking()) {
             return internalLoadAndInstantiateFromModule(moduleId, iface, name);

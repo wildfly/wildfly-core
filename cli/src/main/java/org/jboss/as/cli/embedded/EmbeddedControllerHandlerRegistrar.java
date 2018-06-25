@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2018, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -22,13 +22,12 @@
 
 package org.jboss.as.cli.embedded;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.CommandRegistry;
-import org.wildfly.security.manager.WildFlySecurityManager;
+import org.jboss.modules.ModuleClassLoader;
 
 /**
  * Registers handlers for the embedded ops if the CLI is running in an embedded environment.
@@ -37,50 +36,44 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class EmbeddedControllerHandlerRegistrar {
 
+    // logmanager.LogManager is installed as the JDK log manager, and it uses its
+    // LogContext class and the static field therein heavily. If the CLI-side LogContext
+    // class and the modular side LogContext class are different, nothing works properly.
+    // Since logmanager is a system pkg, the org.jboss.logging API stuff must be too
+    static final String[] EXTENDED_SYSTEM_PKGS = new String[] {"org.jboss.logging", "org.jboss.logmanager"};
     private static final boolean hasModules;
     private static final boolean modular;
 
     static {
         Class<?> clazz = null;
-        Object obj = null;
-        String systemPkgs = WildFlySecurityManager.getPropertyPrivileged("jboss.modules.system.pkgs", null);
+        ClassLoader cl = EmbeddedControllerHandlerRegistrar.class.getClassLoader();
         try {
-            // Set jboss.modules.system.pkgs before loading Module class, as it reads it in a static initializer
-            //
-            // Note that if it turns out we're already in a modular environment, setting this does
-            // nothing, as the prop has already been read. Does no harm either.
-            //
-            // Why these packages?
-            // 1) dmr, controller.client are part of the StandaloneServer API
-            // 2) org.jboss.threads is unfortunately part of the ModelControllerClient API
-            // 3) org.jboss.modules -- dunno, seems vaguely logical; the AS7 embedded code included this so I do too
-            // 4) org.jboss.logging and org.jboss.logmanager -- logmanager.LogManager is installed as
-            //    the JDK log manager, and it uses its LogContext class and the static field therein
-            //    heavily. If the CLI-side LogContext class and the modular side LogContext class are different,
-            //    nothing works properly. Since logmanager is a system pkg, the org.jboss.logging API stuff must be too
-            WildFlySecurityManager.setPropertyPrivileged("jboss.modules.system.pkgs",
-                    "org.jboss.modules,org.jboss.dmr,org.jboss.threads," +
-                    "org.jboss.as.controller.client,org.jboss.logging,org.jboss.logmanager");
-
             String classname = "org.jboss.modules.Module";
-            ClassLoader cl = EmbeddedControllerHandlerRegistrar.class.getClassLoader();
-            clazz = cl.loadClass(classname);
-            Class[] parameterTypes = {ClassLoader.class, boolean.class};
-            Method method = clazz.getDeclaredMethod("forClassLoader", parameterTypes);
-            Object[] args = {cl, Boolean.TRUE}; // TODO false?
-            obj = method.invoke(null, args);
+            /**
+             * WARNING: The class org.jboss.modules.Module MUST NOT be initialized prior to
+             * create an embedded server in a non modular context.
+             * The CLI could have loaded the module class during its initialization in 2 cases:
+             * 1) if running in modular context, Module is loaded first place. This doesn't affect embedded server.
+             * 2) if a module has been set in the VAULT Configuration. It only works in modular context, so we are fine.
+             */
+            clazz = Class.forName(classname, false, cl);
         } catch (Exception e) {
             // not available
-        } finally {
-            // Restore the system packages var
-            if (systemPkgs == null) {
-                WildFlySecurityManager.clearPropertyPrivileged("jboss.modules.system.pkgs");
-            } else {
-                WildFlySecurityManager.setPropertyPrivileged("jboss.modules.system.pkgs",systemPkgs);
-            }
         }
+        // hasModules is not strictly needed, we are running with JBOSS modules in all known cases
+        // keeping it to be safe.
         hasModules = clazz != null;
-        modular = obj != null;
+        modular = hasModules ? isModular(cl) : false;
+    }
+
+    private static boolean isModular(ClassLoader cl) {
+        if (cl instanceof ModuleClassLoader) {
+            return true;
+        } else if (cl != null) {
+            return isModular(cl.getParent());
+        } else {
+            return false;
+        }
     }
 
     public static final AtomicReference<EmbeddedProcessLaunch> registerEmbeddedCommands(CommandRegistry commandRegistry, CommandContext ctx) throws CommandLineException {
