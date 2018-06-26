@@ -300,7 +300,7 @@ public class ControllerInitializer {
      * @param ops the operations list to add our ops to
      */
     protected void initializeSocketBindingsOperations(List<ModelNode> ops) {
-        if (socketBindings.size() == 0) {
+        if (socketBindings.isEmpty() && outboundSocketBindings.isEmpty()) {
             return;
         }
 
