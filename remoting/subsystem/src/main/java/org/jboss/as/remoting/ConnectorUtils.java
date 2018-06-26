@@ -48,6 +48,7 @@ import java.util.Set;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.remoting3.RemotingOptions;
@@ -156,13 +157,20 @@ public class ConnectorUtils {
     private static void addOptions(OperationContext context, ModelNode properties, OptionMap.Builder builder) throws OperationFailedException {
         final ClassLoader loader = WildFlySecurityManager.getClassLoaderPrivileged(ConnectorUtils.class);
         for (Property property : properties.asPropertyList()) {
-            String name = property.getName();
-            if (!name.contains(".")) {
-                name = "org.xnio.Options." + name;
-            }
-            final Option option = Option.fromString(name, loader);
+            final Option option = getAndValidateOption(loader, property.getName());
             String value = PropertyResource.VALUE.resolveModelAttribute(context, property.getValue()).asString();
             builder.set(option, option.parseValue(value, loader));
+        }
+    }
+
+    static Option<?> getAndValidateOption(ClassLoader loader, String name) throws OperationFailedException {
+        if (!name.contains(".")) {
+            name = "org.xnio.Options." + name;
+        }
+        try {
+            return Option.fromString(name, loader);
+        } catch (IllegalArgumentException iae) {
+            throw RemotingLogger.ROOT_LOGGER.invalidOption(iae.getMessage());
         }
     }
 

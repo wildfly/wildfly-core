@@ -40,8 +40,8 @@
                <pass-credentials value="true"/>
             </policy>
             <properties>
-               <property name="sasl1" value="sasl one"/>
-               <property name="sasl2" value="sasl two"/>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
             </properties>
         </sasl>
     </connector>
@@ -66,8 +66,8 @@
                <pass-credentials value="true"/>
             </policy>
             <properties>
-               <property name="sasl1" value="sasl one"/>
-               <property name="sasl2" value="sasl two"/>
+               <property name="SASL_SERVER_AUTH" value="true"/>
+               <property name="SASL_POLICY_NOACTIVE" value="false"/>
             </properties>
         </sasl>
     </http-connector>

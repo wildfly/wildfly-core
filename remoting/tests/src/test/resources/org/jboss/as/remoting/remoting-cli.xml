@@ -1,0 +1,4 @@
+<subsystem xmlns="urn:jboss:domain:remoting:4.0">
+
+  <connector name="remoting-connector" socket-binding="remoting"/>
+</subsystem>

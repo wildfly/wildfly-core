@@ -18,6 +18,8 @@
 
 package org.jboss.as.remoting;
 
+import java.util.List;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -28,9 +30,12 @@ import org.jboss.as.controller.RestartParentResourceAddHandler;
 import org.jboss.as.controller.RestartParentResourceRemoveHandler;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
@@ -63,7 +68,25 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
 
         protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
             for (AttributeDefinition ad : attributes) {
+                validateProperty(operation);
                 ad.validateAndSet(operation, model);
+            }
+        }
+
+        /**
+         * Perform remoting specific validation.
+         * @param operation
+         */
+        private void validateProperty(ModelNode operation) throws OperationFailedException {
+            ModelNode addressModelNode = operation.get(ModelDescriptionConstants.ADDRESS);
+            final ClassLoader loader = WildFlySecurityManager.getClassLoaderPrivileged(ConnectorChildResource.class);
+            if (addressModelNode.isDefined()) {
+                List<Property> propertyListModelNode = addressModelNode.asPropertyList();
+                for (Property property : propertyListModelNode) {
+                    if (property.getName().equals(CommonAttributes.PROPERTY)) {
+                        ConnectorUtils.getAndValidateOption(loader, property.getValue().asString());
+                    }
+                }
             }
         }
 
@@ -110,5 +133,4 @@ abstract class ConnectorChildResource extends SimpleResourceDefinition {
             return ConnectorChildResource.getParentServiceName(parentAddress);
         }
     }
-
 }

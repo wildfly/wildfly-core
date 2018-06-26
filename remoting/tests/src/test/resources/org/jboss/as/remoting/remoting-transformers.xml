@@ -19,7 +19,7 @@
 <subsystem xmlns="urn:jboss:domain:remoting:3.0">
    <connector name="remoting-connector" socket-binding="remoting">
       <properties>
-         <property name="c1" value="${connector.prop:connector one}"/>
+         <property name="COMPRESSION_LEVEL" value="${connector.prop:3}"/>
       </properties>
        <sasl>
            <server-auth value="${sasl.server.auth:true}"/>
@@ -33,7 +33,7 @@
                <pass-credentials value="${pass.credentials:true}"/>
            </policy>
            <properties>
-               <property name="sasl1" value="${sasl.prop:sasl one}"/>
+               <property name="SASL_SERVER_AUTH" value="${sasl.prop:true}"/>
            </properties>
        </sasl>
    </connector>
