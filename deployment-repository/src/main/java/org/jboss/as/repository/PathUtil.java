@@ -147,7 +147,7 @@ public class PathUtil {
             String relativePath = removeSuperflousSlashes(path);
             resolvedPath = rootPath.resolve(relativePath).normalize();
         }
-        if(!resolvedPath.startsWith(rootPath))  {
+        if(!resolvedPath.startsWith(rootPath)) {
             throw DeploymentRepositoryLogger.ROOT_LOGGER.forbiddenPath(path);
         }
         return resolvedPath;
@@ -319,7 +319,7 @@ public class PathUtil {
         while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
             final String name = entry.getName();
-            final Path current = targetDir.resolve(name);
+            final Path current = resolveSecurely(targetDir, name);
             if (entry.isDirectory()) {
                 if (!Files.exists(current)) {
                     Files.createDirectories(current);
