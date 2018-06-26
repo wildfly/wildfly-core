@@ -44,6 +44,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.wildfly.extension.elytron.Configurable;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.x500.cert.acme.AcmeException;
 
 /**
  * Messages for the Elytron subsystem.
@@ -498,4 +499,44 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1042, value = "Unable to obtain Entry for alias '%s'")
     OperationFailedException unableToObtainEntry(String alias);
+
+    @Message(id = 1043, value = "Unable to create an account with the certificate authority: %s")
+    OperationFailedException unableToCreateAccountWithCertificateAuthority(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1044, value = "Unable to change the account key associated with the certificate authority: %s")
+    OperationFailedException unableToChangeAccountKeyWithCertificateAuthority(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1045, value = "Unable to deactivate the account associated with the certificate authority: %s")
+    OperationFailedException unableToDeactivateAccountWithCertificateAuthority(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1046, value = "Unable to obtain certificate authority account Certificate for alias '%s'")
+    StartException unableToObtainCertificateAuthorityAccountCertificate(String alias);
+
+    @Message(id = 1047, value = "Unable to obtain certificate authority account PrivateKey for alias '%s'")
+    StartException unableToObtainCertificateAuthorityAccountPrivateKey(String alias);
+
+    @Message(id = 1048, value = "Unable to update certificate authority account key store: %s")
+    OperationFailedException unableToUpdateCertificateAuthorityAccountKeyStore(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1049, value = "Unable to respond to challenge from certificate authority: %s")
+    AcmeException unableToRespondToCertificateAuthorityChallenge(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1050, value = "Invalid certificate authority challenge")
+    AcmeException invalidCertificateAuthorityChallenge();
+
+    @Message(id = 1051, value = "Invalid certificate revocation reason '%s'")
+    OperationFailedException invalidCertificateRevocationReason(String reason);
+
+    @Message(id = 1052, value = "Unable to instantiate AcmeClientSpi implementation")
+    IllegalStateException unableToInstatiateAcmeClientSpiImplementation();
+
+    @Message(id = 1053, value = "Unable to update the account with the certificate authority: %s")
+    OperationFailedException unableToUpdateAccountWithCertificateAuthority(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1054, value = "Unable to get the metadata associated with the certificate authority: %s")
+    OperationFailedException unableToGetCertificateAuthorityMetadata(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1055, value = "Invalid key size: %d")
+    OperationFailedException invalidKeySize(int keySize);
+
 }
