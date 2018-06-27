@@ -108,16 +108,6 @@
                 <groups-properties path="application-roles.properties" relative-to="jboss.domain.config.dir" />
             </properties-realm>
         </replacement>
-        <replacement placeholder="HTTP_DEFINITIONS">
-            <http-authentication-factory name="application-http-authentication" security-domain="ApplicationDomain" http-server-mechanism-factory="global">
-                <mechanism-configuration>
-                    <mechanism mechanism-name="BASIC" >
-                        <mechanism-realm realm-name="Application Realm" />
-                    </mechanism>
-                    <mechanism mechanism-name="FORM" />
-                </mechanism-configuration>
-            </http-authentication-factory>
-        </replacement>
         <replacement placeholder="SASL_DEFINITIONS">
             <sasl-authentication-factory name="application-sasl-authentication" sasl-server-factory="configured" security-domain="ApplicationDomain">
                 <mechanism-configuration>
@@ -208,14 +198,6 @@
         </replacement>
 
         <replacement placeholder="HTTP_DEFINITIONS">
-            <http-authentication-factory name="application-http-authentication" security-domain="ApplicationDomain" http-server-mechanism-factory="global">
-                <mechanism-configuration>
-                    <mechanism mechanism-name="BASIC" >
-                        <mechanism-realm realm-name="Application Realm" />
-                    </mechanism>
-                    <mechanism mechanism-name="FORM" />
-                </mechanism-configuration>
-            </http-authentication-factory>
             <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
                 <mechanism-configuration>
                     <mechanism mechanism-name="DIGEST">
