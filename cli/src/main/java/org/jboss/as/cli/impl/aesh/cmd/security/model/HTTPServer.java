@@ -138,12 +138,71 @@ public class HTTPServer {
         return Util.isSuccess(response);
     }
 
+    public static boolean isReferencedSecurityDomainSupported(CommandContext commandContext) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.READ_RESOURCE_DESCRIPTION);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.APPLICATION_SECURITY_DOMAIN, "?");
+        ModelNode response = commandContext.getModelControllerClient().execute(builder.buildRequest());
+        if (Util.isSuccess(response)) {
+            if (response.get(Util.RESULT).hasDefined(Util.ATTRIBUTES)) {
+                return response.get(Util.RESULT).get(Util.ATTRIBUTES).hasDefined(Util.SECURITY_DOMAIN);
+            }
+        }
+        return false;
+    }
+
+    public static ApplicationSecurityDomain getSecurityDomain(CommandContext ctx, String name) throws OperationFormatException, IOException {
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.READ_RESOURCE);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.APPLICATION_SECURITY_DOMAIN, name);
+        ModelNode mn = ctx.getModelControllerClient().execute(builder.buildRequest());
+        ApplicationSecurityDomain dom = null;
+        if (Util.isSuccess(mn)) {
+            ModelNode result = mn.get(Util.RESULT);
+            String factory = null;
+            String secDomain = null;
+            if (result.hasDefined(Util.HTTP_AUTHENTICATION_FACTORY)) {
+                factory = result.get(Util.HTTP_AUTHENTICATION_FACTORY).asString();
+            }
+            if (result.hasDefined(Util.SECURITY_DOMAIN)) {
+                secDomain = result.get(Util.SECURITY_DOMAIN).asString();
+            }
+            dom = new ApplicationSecurityDomain(name, factory, secDomain);
+        }
+        return dom;
+    }
+
+    public static void writeReferencedSecurityDomain(AuthSecurityBuilder authBuilder,
+            String securityDomain, CommandContext ctx) throws OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.WRITE_ATTRIBUTE);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
+        builder.addProperty(Util.NAME, Util.SECURITY_DOMAIN);
+        builder.addProperty(Util.VALUE, authBuilder.getReferencedSecurityDomain());
+        authBuilder.getSteps().add(builder.buildRequest());
+    }
+
+    public static boolean hasAuthFactory(CommandContext ctx, String securityDomain) throws OperationFormatException, IOException {
+        ApplicationSecurityDomain dom = getSecurityDomain(ctx, securityDomain);
+        if (dom != null) {
+            return dom.getFactory() != null;
+        }
+        return false;
+    }
+
     public static void enableHTTPAuthentication(AuthSecurityBuilder builder, String securityDomain, CommandContext ctx) throws Exception {
         final DefaultOperationRequestBuilder reqBuilder = new DefaultOperationRequestBuilder();
         reqBuilder.setOperationName(Util.ADD);
         reqBuilder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
         reqBuilder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
-        reqBuilder.addProperty(Util.HTTP_AUTHENTICATION_FACTORY, builder.getAuthFactory().getName());
+        if (builder.getReferencedSecurityDomain() == null) {
+            reqBuilder.addProperty(Util.HTTP_AUTHENTICATION_FACTORY, builder.getAuthFactory().getName());
+        } else {
+            reqBuilder.addProperty(Util.SECURITY_DOMAIN, builder.getReferencedSecurityDomain());
+        }
         builder.getSteps().add(reqBuilder.buildRequest());
     }
 
@@ -156,21 +215,18 @@ public class HTTPServer {
     }
 
     public static String getSecurityDomainFactoryName(String securityDomain, CommandContext ctx) throws IOException, OperationFormatException {
-        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
-        final ModelNode request;
-        builder.setOperationName(Util.READ_ATTRIBUTE);
-        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
-        builder.addNode(Util.APPLICATION_SECURITY_DOMAIN, securityDomain);
-        builder.addProperty(Util.NAME, Util.HTTP_AUTHENTICATION_FACTORY);
-        request = builder.buildRequest();
-
-        final ModelNode outcome = ctx.getModelControllerClient().execute(request);
-        if (isSuccess(outcome)) {
-            if (outcome.hasDefined(Util.RESULT)) {
-                return outcome.get(Util.RESULT).asString();
-            }
+        ApplicationSecurityDomain dom = getSecurityDomain(ctx, securityDomain);
+        if (dom != null) {
+            return dom.getFactory();
         }
+        return null;
+    }
 
+    public static String getReferencedSecurityDomainName(String securityDomain, CommandContext ctx) throws IOException, OperationFormatException {
+        ApplicationSecurityDomain dom = getSecurityDomain(ctx, securityDomain);
+        if (dom != null) {
+            return dom.getSecurityDomain();
+        }
         return null;
     }
 

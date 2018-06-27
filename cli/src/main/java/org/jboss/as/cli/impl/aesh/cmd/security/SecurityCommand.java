@@ -120,6 +120,7 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
     public static final String OPT_SERVER_NAME = "server-name";
     public static final String OPT_NO_OVERRIDE_SECURITY_REALM = "no-override-security-realm";
     public static final String OPT_SECURITY_DOMAIN = "security-domain";
+    public static final String OPT_REFERENCED_SECURITY_DOMAIN = "referenced-security-domain";
 
     private final CommandContext ctx;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
@@ -141,8 +142,8 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
         commands.add(new ManagementEnableSASLCommand());
         commands.add(new ManagementEnableHTTPCommand());
         commands.add(new ManagementReorderSASLCommand());
-        commands.add(new HTTPServerEnableAuthCommand());
-        commands.add(new HTTPServerDisableAuthCommand());
+        commands.add(new HTTPServerEnableAuthCommand(ctx));
+        commands.add(new HTTPServerDisableAuthCommand(ctx));
         return commands;
     }
 
@@ -207,8 +208,7 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
 
                 try {
                     return ElytronUtil.getMechanisms(completerInvocation.getCommandContext(),
-                            cmd.getFactorySpec(),
-                            cmd.getTargetedFactory(completerInvocation.getCommandContext()));
+                            cmd.getFactorySpec());
                 } catch (Exception ex) {
                     return Collections.emptyList();
                 }
@@ -271,6 +271,14 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
             @Override
             protected List<String> getItems(CLICompleterInvocation completerInvocation) {
                 return Util.getUndertowSecurityDomains(completerInvocation.getCommandContext().getModelControllerClient());
+            }
+        }
+
+        public static class ReferencedSecurityDomainCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getSecurityDomainNames(completerInvocation.getCommandContext().getModelControllerClient());
             }
         }
 

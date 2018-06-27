@@ -42,6 +42,7 @@ public class AuthSecurityBuilder {
     private final AuthFactory ootbFactory;
     private final List<String> order;
     private final AuthFactorySpec spec;
+    private final String securityDomain;
 
     public AuthSecurityBuilder(AuthMechanism mechanism, AuthFactorySpec spec) throws CommandException {
         Objects.requireNonNull(mechanism);
@@ -49,6 +50,7 @@ public class AuthSecurityBuilder {
         this.mechanism = mechanism;
         ootbFactory = null;
         order = null;
+        securityDomain = null;
         this.spec = spec;
         init();
     }
@@ -58,7 +60,18 @@ public class AuthSecurityBuilder {
         mechanism = null;
         this.ootbFactory = ootbFactory;
         order = null;
+        securityDomain = null;
         spec = ootbFactory.getSpec();
+        init();
+    }
+
+    public AuthSecurityBuilder(String securityDomain) throws CommandException {
+        Objects.requireNonNull(securityDomain);
+        this.securityDomain = securityDomain;
+        order = null;
+        mechanism = null;
+        ootbFactory = null;
+        spec = null;
         init();
     }
 
@@ -69,6 +82,7 @@ public class AuthSecurityBuilder {
         this.ootbFactory = null;
         init();
         spec = AuthFactorySpec.SASL;
+        securityDomain = null;
     }
 
     private void init() {
@@ -86,6 +100,10 @@ public class AuthSecurityBuilder {
 
     public AuthFactory getAuthFactory() {
         return ootbFactory == null ? authFactory : ootbFactory;
+    }
+
+    public String getReferencedSecurityDomain() {
+        return securityDomain;
     }
 
     public AuthSecurityBuilder setNewRealmName(String newRealmName) {
@@ -114,7 +132,7 @@ public class AuthSecurityBuilder {
 
     public void buildRequest(CommandContext ctx) throws Exception {
         // rely on existing resources, no request.
-        if (ootbFactory != null) {
+        if (ootbFactory != null || securityDomain != null) {
             return;
         }
 
