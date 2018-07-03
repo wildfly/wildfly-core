@@ -32,7 +32,7 @@ import org.jboss.as.cli.operation.OperationFormatException;
  * @author jdenise@redhat.com
  */
 @CommandDefinition(name = "enable-http-auth-management", description = "", activator = SecurityCommandActivator.class)
-public class ManagementEnableHTTPCommand extends AbstractEnableAuthenticationCommand {
+public class ManagementEnableHTTPCommand extends AbstractMgmtEnableAuthenticationCommand {
 
     public ManagementEnableHTTPCommand() {
         super(AuthFactorySpec.HTTP);
