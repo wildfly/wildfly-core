@@ -122,8 +122,8 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         executeOperation(Operations.createWriteAttributeOperation(SYSLOG_HANDLER_ADDR, "level", "ERROR"));
         queue.clear();
         makeLogs();
-        testLog(queue, Level.ERROR);
         testLog(queue, Level.FATAL);
+        testLog(queue, Level.ERROR);
         Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
     }
 

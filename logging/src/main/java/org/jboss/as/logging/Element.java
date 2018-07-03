@@ -38,6 +38,7 @@ import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
@@ -88,6 +89,7 @@ enum Element {
     PORT(SyslogHandlerResourceDefinition.PORT),
     PROPERTIES(CommonAttributes.PROPERTIES),
     PROPERTY("property"),
+    PROTOCOL(SocketHandlerResourceDefinition.PROTOCOL),
     QUEUE_LENGTH(AsyncHandlerResourceDefinition.QUEUE_LENGTH),
     REPLACE(CommonAttributes.REPLACE),
     ROOT_LOGGER(RootLoggerResourceDefinition.NAME),
@@ -96,6 +98,7 @@ enum Element {
     SIZE_ROTATING_FILE_HANDLER(SizeRotatingHandlerResourceDefinition.NAME),
     SUBHANDLERS(AsyncHandlerResourceDefinition.SUBHANDLERS),
     SUFFIX(PeriodicHandlerResourceDefinition.SUFFIX),
+    SOCKET_HANDLER(SocketHandlerResourceDefinition.NAME),
     SYSLOG_FORMATTER(SyslogHandlerResourceDefinition.SYSLOG_FORMATTER),
     SYSLOG_HANDLER(SyslogHandlerResourceDefinition.NAME),
     TARGET(ConsoleHandlerResourceDefinition.TARGET),

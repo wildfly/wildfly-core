@@ -54,6 +54,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper.ServerDeploymentException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -128,17 +129,26 @@ public abstract class AbstractLoggingTestCase {
     }
 
     public static ModelNode executeOperation(final ModelNode op) throws IOException {
-        ModelNode result = client.getControllerClient().execute(op);
-        if (!Operations.isSuccessfulOutcome(result)) {
-            Assert.assertTrue(Operations.getFailureDescription(result).toString(), false);
-        }
-        return result;
+        return executeOperation(Operation.Factory.create(op));
     }
 
     public static ModelNode executeOperation(final Operation op) throws IOException {
+        return executeOperation(op, true);
+    }
+
+    public static ModelNode executeOperation(final Operation op, final boolean reloadIfRequired) throws IOException {
         ModelNode result = client.getControllerClient().execute(op);
         if (!Operations.isSuccessfulOutcome(result)) {
-            Assert.assertTrue(Operations.getFailureDescription(result).toString(), false);
+            Assert.fail(Operations.getFailureDescription(result).toString());
+        }
+        // Reload if required
+        if (reloadIfRequired && result.hasDefined(ClientConstants.RESPONSE_HEADERS)) {
+            final ModelNode responseHeaders = result.get(ClientConstants.RESPONSE_HEADERS);
+            if (responseHeaders.hasDefined("process-state")) {
+                if (ClientConstants.CONTROLLER_PROCESS_STATE_RELOAD_REQUIRED.equals(responseHeaders.get("process-state").asString())) {
+                    ServerReload.executeReloadAndWaitForCompletion(client.getControllerClient());
+                }
+            }
         }
         return result;
     }

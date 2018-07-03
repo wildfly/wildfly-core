@@ -45,6 +45,7 @@
             <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
             <xs:element name="periodic-size-rotating-file-handler" type="periodicSizeFileHandlerType"/>
             <xs:element name="size-rotating-file-handler" type="sizeFileHandlerType"/>
+            <xs:element name="socket-handler" type="socketHandlerType"/>
             <xs:element name="async-handler" type="asyncHandlerType"/>
             <xs:element name="custom-handler" type="customHandlerType"/>
             <xs:element name="syslog-handler" type="syslogHandlerType"/>
@@ -96,6 +97,7 @@
             <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
             <xs:element name="periodic-size-rotating-file-handler" type="periodicSizeFileHandlerType"/>
             <xs:element name="size-rotating-file-handler" type="sizeFileHandlerType"/>
+            <xs:element name="socket-handler" type="socketHandlerType"/>
             <xs:element name="async-handler" type="asyncHandlerType"/>
             <xs:element name="custom-handler" type="customHandlerType"/>
             <xs:element name="syslog-handler" type="syslogHandlerType"/>
@@ -321,6 +323,39 @@
         <xs:attribute name="module" type="xs:string" use="required"/>
         <xs:attribute name="class" type="xs:string" use="required"/>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    </xs:complexType>
+
+    <xs:complexType name="socketHandlerType">
+        <xs:annotation>
+            <xs:documentation>
+                Defines a handler which writes to a socket.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="level" type="refType" minOccurs="0"/>
+            <xs:element name="encoding" type="valueType" minOccurs="0"/>
+            <xs:element name="filter-spec" type="valueType" minOccurs="0"/>
+            <xs:element name="named-formatter" type="namedFormatterType"/>
+            <xs:element name="protocol" minOccurs="0">
+                <xs:complexType>
+                    <xs:attribute name="value" use="required">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:token">
+                                <xs:enumeration value="SSL_TCP"/>
+                                <xs:enumeration value="TCP"/>
+                                <xs:enumeration value="UDP"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="autoflush" type="xs:boolean" default="true"/>
+        <xs:attribute name="block-on-reconnect" type="xs:boolean" default="false"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+        <xs:attribute name="outbound-socket-binding-ref" type="xs:string" use="required"/>
+        <xs:attribute name="ssl-context" type="xs:string"/>
     </xs:complexType>
 
     <xs:complexType name="syslogHandlerType">

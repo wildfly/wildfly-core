@@ -19,6 +19,8 @@
 
 package org.jboss.as.logging.capabilities;
 
+import java.util.logging.Handler;
+
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 
@@ -35,6 +37,21 @@ public class Capabilities {
     public static final String PATH_CAPABILITY = "org.wildfly.management.path";
 
     /**
+     * Reference for an outbound socket.
+     */
+    public static final String OUTBOUND_SOCKET_BINDING_CAPABILITY = "org.wildfly.network.outbound-socket-binding";
+
+    /**
+     * Reference for a socket binding.
+     */
+    public static final String SOCKET_BINDING_MANAGER_CAPABILITY = "org.wildfly.management.socket-binding-manager";
+
+    /**
+     * Reference to an SSL context.
+     */
+    public static final String SSL_CONTEXT_CAPABILITY = "org.wildfly.security.ssl-context";
+
+    /**
      * A capability for logging formatters.
      */
     public static final RuntimeCapability<Void> FORMATTER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.logging.formatter", true)
@@ -43,8 +60,12 @@ public class Capabilities {
 
     /**
      * A capability for logging handlers.
+     * <p>
+     * Note that while this capability can expose a {@linkplain Handler handler} it's not required. It's only used in
+     * cases where a handler might need to register a service. This is not needed in most cases.
+     * </p>
      */
-    public static final RuntimeCapability<Void> HANDLER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.logging.handler", true)
+    public static final RuntimeCapability<Void> HANDLER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.logging.handler", true, Handler.class)
             .setDynamicNameMapper(LoggingProfileNameMapper.INSTANCE)
             .build();
 

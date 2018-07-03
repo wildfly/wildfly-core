@@ -22,16 +22,11 @@
 
 package org.jboss.as.test.integration.logging;
 
-import static org.jboss.logging.Logger.Level.DEBUG;
-import static org.jboss.logging.Logger.Level.ERROR;
-import static org.jboss.logging.Logger.Level.FATAL;
-import static org.jboss.logging.Logger.Level.INFO;
-import static org.jboss.logging.Logger.Level.TRACE;
-import static org.jboss.logging.Logger.Level.WARN;
-
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import io.undertow.server.HttpHandler;
@@ -44,27 +39,31 @@ import org.wildfly.test.undertow.UndertowServiceActivator;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"SameParameterValue", "WeakerAccess"})
 public class LoggingServiceActivator extends UndertowServiceActivator {
     public static final String DEFAULT_MESSAGE = "Default log message";
-    public static final Logger.Level[] LOG_LEVELS = {DEBUG, TRACE, INFO, WARN, ERROR, FATAL};
+    public static final Logger.Level[] LOG_LEVELS = Logger.Level.values();
     public static final String MSG_KEY = "msg";
     public static final String INCLUDE_LEVEL_KEY = "includeLevel";
     public static final String LOG_INFO_ONLY_KEY = "logInfoOnly";
+    public static final String LOG_LEVELS_KEY = "logLevels";
     public static final String NDC_KEY = "ndc";
     public static final String LOG_EXCEPTION_KEY = "logException";
     public static final Logger LOGGER = Logger.getLogger(LoggingServiceActivator.class);
 
+    @SuppressWarnings("Convert2Lambda")
     @Override
     protected HttpHandler getHttpHandler() {
         return new HttpHandler() {
             @Override
-            public void handleRequest(final HttpServerExchange exchange) throws Exception {
+            public void handleRequest(final HttpServerExchange exchange) {
                 final Map<String, Deque<String>> params = new TreeMap<>(exchange.getQueryParameters());
                 final String msg = getValue(params, MSG_KEY, DEFAULT_MESSAGE);
                 final boolean includeLevel = getValue(params, INCLUDE_LEVEL_KEY, false);
                 final boolean logInfoOnly = getValue(params, LOG_INFO_ONLY_KEY, false);
                 final boolean logException = getValue(params, LOG_EXCEPTION_KEY, false);
                 final String ndcValue = getValue(params, NDC_KEY, null);
+                final Set<Logger.Level> logLevels = getLevels(params);
                 if (ndcValue != null) {
                     NDC.push(ndcValue);
                 }
@@ -73,21 +72,13 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
                     MDC.put(key, params.get(key).getFirst());
                 }
                 if (logInfoOnly) {
-                    LOGGER.info(msg);
+                    LOGGER.info(getMessage(msg, Logger.Level.INFO, includeLevel));
                 } else {
-                    for (Logger.Level level : LOG_LEVELS) {
-                        if (includeLevel) {
-                            if (logException) {
-                                LOGGER.log(level, formatMessage(msg, level), createMultiNestedCause());
-                            } else {
-                                LOGGER.log(level, formatMessage(msg, level));
-                            }
+                    for (Logger.Level level : logLevels) {
+                        if (logException) {
+                            LOGGER.log(level, getMessage(msg, level, includeLevel), createMultiNestedCause());
                         } else {
-                            if (logException) {
-                                LOGGER.log(level, msg, createMultiNestedCause());
-                            } else {
-                                LOGGER.log(level, msg);
-                            }
+                            LOGGER.log(level, getMessage(msg, level, includeLevel));
                         }
                     }
                 }
@@ -97,6 +88,13 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
                 exchange.getResponseSender().send("Response sent");
             }
         };
+    }
+
+    private static String getMessage(final String msg, final Logger.Level level, final boolean includeLevel) {
+        if (includeLevel) {
+            return formatMessage(msg, level);
+        }
+        return msg;
     }
 
     private static String getValue(final Map<String, Deque<String>> params, final String key, final String dft) {
@@ -113,6 +111,22 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
             return Boolean.parseBoolean(values.getFirst());
         }
         return dft;
+    }
+
+    private static Set<Logger.Level> getLevels(final Map<String, Deque<String>> params) {
+        final Deque<String> values = params.remove(LOG_LEVELS_KEY);
+        if (values != null) {
+            // We're only taking the first value which should be comma delimited
+            final String levelValue = values.getFirst();
+            if (levelValue != null) {
+                final EnumSet<Logger.Level> result = EnumSet.noneOf(Logger.Level.class);
+                for (String level : levelValue.split(",")) {
+                    result.add(Logger.Level.valueOf(level.toUpperCase(Locale.ROOT)));
+                }
+                return result;
+            }
+        }
+        return EnumSet.allOf(Logger.Level.class);
     }
 
     private static Throwable createMultiNestedCause() {

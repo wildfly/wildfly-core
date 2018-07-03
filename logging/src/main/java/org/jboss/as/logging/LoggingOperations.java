@@ -168,12 +168,51 @@ public final class LoggingOperations {
         }
 
         @Override
+        protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
+            super.populateModel(context, operation, resource);
+            final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
+            final OperationStepHandler additionalStep = additionalModelStep(configurationPersistence);
+            if (additionalStep != null) {
+                context.addStep(additionalStep, Stage.MODEL);
+            }
+        }
+
+        @Override
         protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
             final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
             final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
 
             performRuntime(context, operation, model, logContextConfiguration);
             addCommitStep(context, configurationPersistence);
+            final OperationStepHandler afterCommit = afterCommit(logContextConfiguration, model);
+            if (afterCommit != null) {
+                context.addStep(afterCommit, Stage.RUNTIME);
+            }
+        }
+
+        /**
+         * An {@link OperationStepHandler} to register after the commit step has been registered.
+         *
+         * @param logContextConfiguration the log context configuration used
+         * @param model                   the current model to use
+         *
+         * @return an operation step handler to register or {@code null} to not register a step after the commit step
+         */
+        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
+            return null;
+        }
+
+        /**
+         * An {@link OperationStepHandler} that will be registered after the {@link #populateModel(OperationContext, ModelNode, Resource)}
+         * is executed in the {@linkplain Stage#MODEL model stage}. If this method returns {@code null} the step will
+         * not be registered.
+         *
+         * @param logContextConfiguration the log context configuration to use
+         *
+         * @return an operation step handler to register or {@code null} to not register a step after the commit step
+         */
+        protected OperationStepHandler additionalModelStep(final LogContextConfiguration logContextConfiguration) {
+            return null;
         }
 
         /**
@@ -292,26 +331,35 @@ public final class LoggingOperations {
     public abstract static class LoggingRemoveOperationStepHandler extends AbstractRemoveStepHandler {
 
         @Override
-        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            super.execute(context, operation);
-            context.completeStep(new RollbackHandler() {
-                @Override
-                public void handleRollback(final OperationContext context, final ModelNode operation) {
-                    final ConfigurationPersistence configurationPersistence = getConfigurationPersistence(context);
-                    if (configurationPersistence != null) {
-                        configurationPersistence.rollback();
-                    }
-                }
-            });
-        }
-
-        @Override
         protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
             final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
             final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
 
             performRuntime(context, operation, model, logContextConfiguration);
             addCommitStep(context, configurationPersistence);
+        }
+
+        @Override
+        protected void recoverServices(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+            final ConfigurationPersistence configurationPersistence = getConfigurationPersistence(context);
+            if (configurationPersistence != null) {
+                configurationPersistence.rollback();
+                revertRuntime(context, operation, model, configurationPersistence);
+            }
+        }
+
+        /**
+         * Revert any runtime changes.
+         *
+         * @param context                 the operation context
+         * @param operation               the operation being executed
+         * @param model                   the model to update
+         * @param logContextConfiguration the logging context configuration
+         *
+         * @throws OperationFailedException if the revert fails
+         */
+        protected void revertRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
+            // Do nothing by default
         }
 
         /**
@@ -348,7 +396,30 @@ public final class LoggingOperations {
             handbackHolder.setHandback(configurationPersistence);
             final boolean restartRequired = applyUpdate(context, attributeName, name, resolvedValue, logContextConfiguration);
             addCommitStep(context, configurationPersistence);
+            final OperationStepHandler afterCommit = afterCommit(logContextConfiguration, attributeName, resolvedValue, currentValue);
+            if (afterCommit != null && !restartRequired) {
+                context.addStep(afterCommit, Stage.RUNTIME);
+            }
             return restartRequired;
+        }
+
+        /**
+         * An {@link OperationStepHandler} to register after the commit step has been registered.
+         * <p>
+         * If {@linkplain #applyUpdateToRuntime(OperationContext, ModelNode, String, ModelNode, ModelNode, HandbackHolder)}
+         * returns {@code true} this step will not be registered.
+         * </p>
+         *
+         * @param logContextConfiguration the log context configuration used
+         * @param attributeName           the name of the attribute being written
+         * @param currentValue            the current value of the attribute
+         * @param resolvedValue           the resolved value of the attribute
+         *
+         * @return an operation step handler to register or {@code null} to not register a step after the commit step
+         */
+        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration,
+                                                   final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue) {
+            return null;
         }
 
         /**

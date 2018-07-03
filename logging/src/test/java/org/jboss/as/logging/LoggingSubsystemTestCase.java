@@ -158,6 +158,10 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("xml-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("socket-handler"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(loggingProfileAddress.append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
@@ -177,6 +181,10 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("json-formatter"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("xml-formatter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("socket-handler"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
@@ -188,7 +196,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-logging:" + controllerVersion.getCoreVersion())
                 .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .addSingleChildFirstClass(LoggingTestEnvironment.class)
                 .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
 
         KernelServices mainServices = builder.build();
@@ -208,7 +216,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
                 .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
                 .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .addSingleChildFirstClass(LoggingTestEnvironment.class)
                 .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
 
         KernelServices mainServices = builder.build();
@@ -226,7 +234,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
                 .addMavenResourceURL("org.jboss.as:jboss-as-logging:" + controllerVersion.getMavenGavVersion())
                 .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .addSingleChildFirstClass(LoggingTestEnvironment.class)
                 .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
 
 
@@ -248,7 +256,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
         builder.createLegacyKernelServicesBuilder(LoggingTestEnvironment.getManagementInstance(), controllerVersion, legacyModelVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-logging:" + controllerVersion.getCoreVersion())
                 .dontPersistXml()
-                .addSingleChildFirstClass(LoggingTestEnvironment.class, LoggingTestEnvironment.LoggingInitializer.class)
+                .addSingleChildFirstClass(LoggingTestEnvironment.class)
                 .configureReverseControllerCheck(LoggingTestEnvironment.getManagementInstance(), null);
 
 

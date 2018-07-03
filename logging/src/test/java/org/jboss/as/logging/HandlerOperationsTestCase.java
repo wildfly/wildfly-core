@@ -39,6 +39,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -48,6 +49,7 @@ import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.Target;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
@@ -96,6 +98,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         testSizeRotatingFileHandler(kernelServices, null);
         testSizeRotatingFileHandler(kernelServices, PROFILE);
+
+        testSocketHandler(kernelServices, null);
+        testSocketHandler(kernelServices, PROFILE);
 
         // Run these last as they put the server in reload-required, and the later
         // ones will not update runtime once that is done
@@ -499,6 +504,52 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         removeFile(newFilename);
 
         testCommonFileOperations(kernelServices, address);
+    }
+
+    private void testSocketHandler(final KernelServices kernelServices, final String profileName) {
+        final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
+        final PathAddress formatterAddress = createPatternFormatterAddress(profileName, "log-pattern");
+        final ModelNode formatterAddOp = SubsystemOperations.createAddOperation(formatterAddress.toModelNode());
+        formatterAddOp.get("pattern").set("[log-server] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
+        builder.addStep(formatterAddOp);
+        final ModelNode jsonFormatterAddress = SUBSYSTEM_ADDRESS.append("json-formatter", "json").toModelNode();
+        builder.addStep(Operations.createAddOperation(jsonFormatterAddress));
+
+        final ModelNode address = createAddress(profileName, "socket-handler", "log-server-handler").toModelNode();
+
+        // Add the handler
+        final ModelNode addOp = SubsystemOperations.createAddOperation(address);
+        addOp.get("named-formatter").set(formatterAddress.getLastElement().getValue());
+        addOp.get("outbound-socket-binding-ref").set("log-server");
+        builder.addStep(addOp);
+
+        executeOperation(kernelServices, builder.build().getOperation());
+
+        // Write each attribute and check the value
+        testWrite(kernelServices, address, CommonAttributes.AUTOFLUSH, false);
+        testWrite(kernelServices, address, SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT, true);
+        testWrite(kernelServices, address, CommonAttributes.ENABLED, true);
+        testWrite(kernelServices, address, CommonAttributes.ENCODING, ENCODING);
+        testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
+        testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
+        testWrite(kernelServices, address, SocketHandlerResourceDefinition.PROTOCOL, "UDP");
+
+        // Undefine attributes
+        testUndefine(kernelServices, address, CommonAttributes.AUTOFLUSH);
+        testUndefine(kernelServices, address, SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT);
+        testUndefine(kernelServices, address, CommonAttributes.ENABLED);
+        testUndefine(kernelServices, address, CommonAttributes.ENCODING);
+        testUndefine(kernelServices, address, CommonAttributes.LEVEL);
+        testUndefine(kernelServices, address, CommonAttributes.FILTER_SPEC);
+        testUndefine(kernelServices, address, SocketHandlerResourceDefinition.PROTOCOL);
+
+        // Clean-up
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(address));
+        verifyRemoved(kernelServices, address);
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(formatterAddress.toModelNode()));
+        verifyRemoved(kernelServices, formatterAddress.toModelNode());
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(jsonFormatterAddress));
+        verifyRemoved(kernelServices, jsonFormatterAddress);
     }
 
     // TODO (jrp) do syslog? only concern is will it active it
