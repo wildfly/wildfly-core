@@ -220,7 +220,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
     }
 
     @Override
-    public String snapshot() throws ConfigurationPersistenceException {
+    public String snapshot(String name, String comment) throws ConfigurationPersistenceException {
         throw new UnsupportedOperationException();
     }
 
@@ -253,7 +253,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         final String defaultDomainConfig = WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_DEFAULT_CONFIG, "domain.xml");
         final String initialDomainConfig = environment.getInitialDomainConfig();
         return new ConfigurationFile(environment.getDomainConfigurationDir(), defaultDomainConfig,
-                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteractionPolicy());
+                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteractionPolicy(), false);
     }
 
     private ConfigurationFile getBackupDomainConfigurationFile() {

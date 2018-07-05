@@ -38,6 +38,8 @@ import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.BackupXmlConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
+import org.jboss.as.server.controller.git.GitConfigurationPersister;
+import org.jboss.as.controller.persistence.XmlConfigurationPersister;
 import org.jboss.as.server.parsing.StandaloneXml;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
@@ -207,8 +209,14 @@ public interface Bootstrap {
                         }
                         QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
                         StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-                        BackupXmlConfigurationPersister persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
-                                runningModeControl.isReloaded(), serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.EMBEDDED);
+                        XmlConfigurationPersister persister;
+                        if (configurationFile.useGit()) {
+                            persister = new GitConfigurationPersister(serverEnvironment.getGitRepository(), configurationFile, rootElement, parser, parser,
+                                    runningModeControl.isReloaded());
+                        } else {
+                            persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
+                                    runningModeControl.isReloaded(), serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.EMBEDDED);
+                        }
                         for (Namespace namespace : Namespace.domainValues()) {
                             if (!namespace.equals(Namespace.CURRENT)) {
                                 persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
@@ -216,11 +224,6 @@ public interface Bootstrap {
                         }
                         extensionRegistry.setWriterRegistry(persister);
                         return persister;
-                    }
-
-                    private boolean isNewConfiguration(ConfigurationFile.InteractionPolicy interactionPolicy) {
-                        return interactionPolicy == ConfigurationFile.InteractionPolicy.NEW
-                                || interactionPolicy == ConfigurationFile.InteractionPolicy.DISCARD;
                     }
                 };
             }

@@ -118,11 +118,6 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     }
 
     @Override
-    public String snapshot() throws ConfigurationPersistenceException{
-        return null;
-    }
-
-    @Override
     public SnapshotInfo listSnapshots() {
         return NULL_SNAPSHOT_INFO;
     }

@@ -48,6 +48,7 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.operations.common.ConfigurationPublishHandler;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
 import org.jboss.as.controller.operations.common.ProcessStateAttributeHandler;
@@ -315,6 +316,10 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, DeploymentFullReplaceHandler.create(contentRepository, vaultReader));
 
         if (!isDomain) {
+            if(serverEnvironment.useGit()) {
+                resourceRegistration.registerOperationHandler(ConfigurationPublishHandler.DEFINITION,
+                        new ConfigurationPublishHandler(extensibleConfigurationPersister));
+            }
             SnapshotDeleteHandler snapshotDelete = new SnapshotDeleteHandler(extensibleConfigurationPersister);
             resourceRegistration.registerOperationHandler(SnapshotDeleteHandler.DEFINITION, snapshotDelete);
             SnapshotListHandler snapshotList = new SnapshotListHandler(extensibleConfigurationPersister);

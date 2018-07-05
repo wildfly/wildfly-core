@@ -77,6 +77,14 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.START_MODE);
         instructions.add(ServerLogger.ROOT_LOGGER.argStartMode());
 
+        addArguments(CommandLineConstants.GIT_REPO + " <repo_url>", CommandLineConstants.GIT_REPO + "=<repo_url>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argGitRepo());
+
+        addArguments(CommandLineConstants.GIT_BRANCH + " <branch>", CommandLineConstants.GIT_BRANCH + "=<branch>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argGitBranch());
+
+        addArguments(CommandLineConstants.GIT_AUTH + " <auth_config>", CommandLineConstants.GIT_AUTH + "=<auth_config>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argGitAuth());
     }
 
     public static void printUsage(final PrintStream out) {
