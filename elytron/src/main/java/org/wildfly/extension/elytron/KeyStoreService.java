@@ -19,8 +19,8 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
-import static org.wildfly.extension.elytron.ProviderUtil.identifyProvider;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.util.ProviderUtil.findProvider;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +35,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.PathManager;
@@ -151,7 +152,8 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
     private Provider resolveProvider() throws StartException {
         Provider[] candidates = providers.getOptionalValue();
-        Provider identified = identifyProvider(candidates == null ? Security.getProviders() : candidates, provider, KeyStore.class, type);
+        Supplier<Provider[]> providersSupplier = () -> candidates == null ? Security.getProviders() : candidates;
+        Provider identified = findProvider(providersSupplier, provider, KeyStore.class, type);
         if (identified == null) {
             throw ROOT_LOGGER.noSuitableProvider(type);
         }
