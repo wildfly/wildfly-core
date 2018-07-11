@@ -351,7 +351,9 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
 
             final Set<String> servers = new HashSet<>();
             for (String group : affectedGroups) {
-                servers.addAll(serversByGroup.get(group));
+                if (serversByGroup.containsKey(group)) {
+                    servers.addAll(serversByGroup.get(group));
+                }
             }
             return servers;
         }
