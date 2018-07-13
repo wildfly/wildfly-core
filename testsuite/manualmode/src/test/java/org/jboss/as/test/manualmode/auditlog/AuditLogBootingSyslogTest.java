@@ -132,7 +132,7 @@ public class AuditLogBootingSyslogTest {
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
         queue.clear();
         container.start();
-        waitForExpectedQueueSize(18, queue);
+        waitForExpectedQueueSize(17, queue);
         queue.clear();
         makeOneLog();
         waitForExpectedQueueSize(1, queue);

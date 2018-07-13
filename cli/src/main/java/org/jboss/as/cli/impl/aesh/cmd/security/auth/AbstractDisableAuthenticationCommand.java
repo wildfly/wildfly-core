@@ -26,7 +26,6 @@ import org.aesh.command.option.Option;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_MECHANISM;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.ElytronUtil;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.DMRCommand;
@@ -40,9 +39,6 @@ import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NO_REL
  */
 @CommandDefinition(name = "abstract-auth-disable", description = "")
 public abstract class AbstractDisableAuthenticationCommand implements Command<CLICommandInvocation>, DMRCommand {
-    @Option(name = OPT_MECHANISM,
-            completer = SecurityCommand.OptionCompleters.MechanismDisableCompleter.class)
-    String mechanism;
 
     @Option(name = OPT_NO_RELOAD, hasValue = false)
     boolean noReload;
@@ -63,6 +59,8 @@ public abstract class AbstractDisableAuthenticationCommand implements Command<CL
 
     protected abstract String getSecuredEndpoint(CommandContext ctx);
 
+    protected abstract String getMechanism();
+
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
         CommandContext ctx = commandInvocation.getCommandContext();
@@ -75,7 +73,7 @@ public abstract class AbstractDisableAuthenticationCommand implements Command<CL
 
         SecurityCommand.execute(ctx, request, SecurityCommand.DEFAULT_FAILURE_CONSUMER, noReload);
         commandInvocation.getCommandContext().printLine("Command success.");
-        if (mechanism == null) {
+        if (getMechanism() == null) {
             commandInvocation.getCommandContext().printLine(factorySpec.getName()
                     + " authentication disabled for " + getSecuredEndpoint(commandInvocation.getCommandContext()));
         } else {
@@ -102,11 +100,11 @@ public abstract class AbstractDisableAuthenticationCommand implements Command<CL
         if (mn == null) {
             throw new CommandException("Invalid factory " + authFactory);
         }
-        if (mechanism == null) {
+        if (getMechanism() == null) {
             return disableFactory(context);
         }
         Set<String> set = new HashSet<>();
-        set.add(mechanism);
+        set.add(getMechanism());
         return ElytronUtil.removeMechanisms(context, mn, authFactory, factorySpec, set);
     }
 

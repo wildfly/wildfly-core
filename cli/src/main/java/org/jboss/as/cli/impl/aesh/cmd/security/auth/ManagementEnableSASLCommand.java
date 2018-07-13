@@ -35,7 +35,7 @@ import org.jboss.as.cli.operation.OperationFormatException;
  * @author jdenise@redhat.com
  */
 @CommandDefinition(name = "enable-sasl-management", description = "", activator = SecurityCommandActivator.class)
-public class ManagementEnableSASLCommand extends AbstractEnableAuthenticationCommand {
+public class ManagementEnableSASLCommand extends AbstractMgmtEnableAuthenticationCommand {
 
     @Option(name = OPT_MANAGEMENT_INTERFACE, activator = OptionActivators.DependsOnMechanism.class,
             completer = OptionCompleters.ManagementInterfaceCompleter.class)
