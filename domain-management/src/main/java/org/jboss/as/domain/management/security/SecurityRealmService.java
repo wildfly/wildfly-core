@@ -590,7 +590,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
             for(Iterator<String> iter = requestedMechanisms.iterator();iter.hasNext();) {
                 AuthMechanism authMechanism = toAuthMechanism("SASL", iter.next());
-                if(authMechanism != null) {
+                if(authMechanism != null && (registeredServices.containsKey(authMechanism) || (authMechanism == AuthMechanism.PLAIN && registeredServices.containsKey(AuthMechanism.DIGEST)))) {
                    iter.remove();
                 }
             }
@@ -627,9 +627,35 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
                 ArrayList<MechanismConfigurationSelector> mechanismConfigurationSelectors = new ArrayList<>(mechanismNames.length);
                 for (String mechanismName : mechanismNames) {
-                    MechanismConfiguration.Builder builder = MechanismConfiguration.builder();
+                    AuthMechanism authMechanism = toAuthMechanism("SASL", mechanismName);
+                    CallbackHandlerService currentService = registeredServices.get(authMechanism);
 
-                    mechanismConfigurationSelectors.add(MechanismConfigurationSelector.predicateSelector(i -> mechanismName.equalsIgnoreCase(i.getMechanismName()), builder.build()));
+                    Function<Principal, Principal> preRealmRewriter = p -> new RealmUser(this.name, p.getName());
+                    if(currentService != null) {
+                        preRealmRewriter = preRealmRewriter.andThen(currentService.getPrincipalMapper());
+                    }
+
+                    //preferred mechanism
+                    String preferredMechanism;
+                    if(authMechanism == AuthMechanism.PLAIN && !registeredServices.containsKey(AuthMechanism.PLAIN) && registeredServices.containsKey(AuthMechanism.DIGEST)) {
+                        preferredMechanism = AuthMechanism.DIGEST.name();
+                    } else {
+                        preferredMechanism = mechanismName;
+                    }
+
+                    MechanismConfiguration builder = MechanismConfiguration.builder()
+                            .setPreRealmRewriter(preRealmRewriter)
+                            .setRealmMapper((principal, evidence) -> {
+                                        if (domainManagedServersCallback != null && principal.getName().startsWith(DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX)) {
+                                            return DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_REALM;
+                                        }
+                                        return preferredMechanism;
+                                    }
+                            )
+                            .addMechanismRealm(MechanismRealmConfiguration.builder().setRealmName(name).build())
+                            .build();
+
+                    mechanismConfigurationSelectors.add(MechanismConfigurationSelector.predicateSelector(i -> mechanismName.equalsIgnoreCase(i.getMechanismName()), builder));
                 }
 
                 MechanismConfigurationSelector mechanismNamesSelector =  MechanismConfigurationSelector.aggregate(mechanismConfigurationSelectors.toArray(new MechanismConfigurationSelector[mechanismConfigurationSelectors.size()]));
