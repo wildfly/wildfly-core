@@ -107,6 +107,12 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 )
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG, "audit6")),
                         new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "SslTokenRealm")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "KeyMapTokenRealm")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
                 ));
     }
 

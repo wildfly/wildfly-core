@@ -15,4 +15,19 @@
         <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="true" autoflush="false" />
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
     </audit-logging>
+    <security-realms>
+        <token-realm name="SslTokenRealm">
+            <jwt host-name-verification-policy="ANY" client-ssl-context="ClientContext"/>
+        </token-realm>
+        <token-realm name="KeyMapTokenRealm">
+            <jwt>
+                <key kid="1" public-key="-----BEGIN PUBLIC KEY-----MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgF1mQenACcf3tWRJ8nugSIXXdlgaAh3xf6K1ak8r4fI7vigfzYa/+OfvJeKgWL/fO1PTkYAqyDfxi+k3AORQRE3I0zqQoZBhtm99ZPluZGRU9+COLlbIK3Uac0K/t1dEjo9Cb2EMHyHBaaX3mwmS296zHyDFVDEm7Sw1G98TLnz9AgMBAAE=-----END PUBLIC KEY-----"/>
+            </jwt>
+        </token-realm>
+    </security-realms>
+    <tls>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientContext"/>
+        </client-ssl-contexts>
+    </tls>
 </subsystem>
