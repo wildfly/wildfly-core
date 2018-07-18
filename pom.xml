@@ -101,10 +101,10 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
-        <version.org.jboss.galleon>1.0.1.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>2.0.0.Alpha4</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.10.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>1.0.1.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>2.0.0.Alpha5</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
@@ -586,7 +586,7 @@
                 </plugin>
                 <plugin>
                     <groupId>org.jboss.galleon</groupId>
-                    <artifactId>galleon-maven-plugins</artifactId>
+                    <artifactId>galleon-maven-plugin</artifactId>
                     <version>${version.org.jboss.galleon}</version>
                 </plugin>
                 <plugin>
@@ -607,7 +607,7 @@
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.galleon-plugins</groupId>
-                    <artifactId>wildfly-galleon-maven-plugins</artifactId>
+                    <artifactId>wildfly-galleon-maven-plugin</artifactId>
                     <version>${version.org.wildfly.galleon-plugins}</version>
                 </plugin>
                 <plugin>
