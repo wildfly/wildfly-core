@@ -17,6 +17,7 @@ limitations under the License.
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ONLINE_CERTIFICATE_STATUS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
@@ -87,6 +88,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                                 ))
                         ))
                 ), PRINCIPAL_QUERIES)
+                .end();
+        builder
+                .addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ONLINE_CERTIFICATE_STATUS)
                 .end();
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER));

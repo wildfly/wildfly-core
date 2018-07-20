@@ -42,18 +42,23 @@ import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -115,6 +120,7 @@ import org.wildfly.security.keystore.AliasFilter;
 import org.wildfly.security.keystore.FilteringKeyStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.ssl.CipherSuiteSelector;
+import org.wildfly.security.ssl.OcspExtendedTrustManager;
 import org.wildfly.security.ssl.Protocol;
 import org.wildfly.security.ssl.ProtocolSelector;
 import org.wildfly.security.ssl.SSLContextBuilder;
@@ -282,6 +288,60 @@ class SSLDefinitions {
 
     static final ObjectTypeAttributeDefinition CERTIFICATE_REVOCATION_LIST = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST, PATH, RELATIVE_TO, MAXIMUM_CERT_PATH)
             .setRequired(false)
+            .setAlternatives(ElytronDescriptionConstants.ONLINE_CERTIFICATE_STATUS)
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition RESPONDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition OCSP_TRUSTSTORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setCapabilityReference(KEY_STORE_CAPABILITY, TRUST_MANAGER_CAPABILITY)
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition ACCEPT_UNKNOWN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACCEPT_UNKNOWN, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition ACCEPT_WHEN_STATUS_UNAVAILABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACCEPT_WHEN_STATUS_UNAVAILABLE, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition CONNECTION_TIMEOUT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONNECTION_TIMEOUT, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(10000))
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition CACHE_ENABLED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_ENABLED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition CACHE_MAX_AGE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_MAX_AGE, ModelType.LONG, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(60*1000L))
+            .setRestartAllServices()
+            .build();
+
+    private static final SimpleAttributeDefinition CACHE_MAX_ENTRIES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CACHE_MAX_ENTRIES, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(16))
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectTypeAttributeDefinition ONLINE_CERTIFICATE_STATUS = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ONLINE_CERTIFICATE_STATUS, RESPONDER, OCSP_TRUSTSTORE, ACCEPT_UNKNOWN, ACCEPT_WHEN_STATUS_UNAVAILABLE, CONNECTION_TIMEOUT, CACHE_ENABLED, CACHE_MAX_AGE, CACHE_MAX_ENTRIES)
+            .setRequired(false)
+            .setAlternatives(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
             .setRestartAllServices()
             .build();
 
@@ -490,7 +550,7 @@ class SSLDefinitions {
                 .setRestartAllServices()
                 .build();
 
-        AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST};
+        AttributeDefinition[] attributes = new AttributeDefinition[] { ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, ONLINE_CERTIFICATE_STATUS};
 
         AbstractAddStepHandler add = new TrivialAddHandler<TrustManager>(TrustManager.class, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
 
@@ -519,6 +579,22 @@ class SSLDefinitions {
                 final String algorithm = algorithmName != null ? algorithmName : TrustManagerFactory.getDefaultAlgorithm();
 
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
+                ModelNode ocspNode = ONLINE_CERTIFICATE_STATUS.resolveModelAttribute(context, model);
+
+                String ocspResponderString = RESPONDER.resolveModelAttribute(context, ocspNode).asStringOrNull();
+                final String ocspKeyStoreName = keystoreDefinition.resolveModelAttribute(context, model).asStringOrNull();
+                final InjectedValue<KeyStore> ocspKeyStoreInjector = new InjectedValue<>();
+                if (ocspKeyStoreName != null) {
+                    serviceBuilder.addDependency(context.getCapabilityServiceName(
+                            buildDynamicCapabilityName(KEY_STORE_CAPABILITY, ocspKeyStoreName), KeyStore.class),
+                            KeyStore.class, ocspKeyStoreInjector);
+                }
+                boolean acceptUnknown = ACCEPT_UNKNOWN.resolveModelAttribute(context, ocspNode).asBoolean(false);
+                boolean acceptWhenStatusUnavailable = ACCEPT_WHEN_STATUS_UNAVAILABLE.resolveModelAttribute(context, ocspNode).asBoolean(false);
+                Integer connectionTimeout = CONNECTION_TIMEOUT.resolveModelAttribute(context, ocspNode).asIntOrNull();
+                boolean cacheEnable = CACHE_ENABLED.resolveModelAttribute(context, ocspNode).asBoolean(false);
+                Long cacheMaxAge = CACHE_MAX_AGE.resolveModelAttribute(context, ocspNode).asLongOrNull();
+                Integer cacheMaxEntries = CACHE_MAX_ENTRIES.resolveModelAttribute(context, ocspNode).asIntOrNull();
 
                 if (crlNode.isDefined()) {
                     String crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
@@ -565,11 +641,15 @@ class SSLDefinitions {
                     Provider[] providers = providersInjector.getOptionalValue();
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
-
+                    URL ocspResponder;
+                    List<X509Certificate> ocspTrusted;
                     try {
                         if (aliasFilter != null) {
                             keyStore = FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter));
                         }
+
+                        ocspResponder = ocspResponderString == null ? null : new URL(ocspResponderString);
+                        ocspTrusted = keystoreToCertList(ocspKeyStoreInjector.getOptionalValue());
 
                         if (ROOT_LOGGER.isTraceEnabled()) {
                             ROOT_LOGGER.tracef(
@@ -587,6 +667,20 @@ class SSLDefinitions {
                     TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
                     for (TrustManager trustManager : trustManagers) {
                         if (trustManager instanceof X509ExtendedTrustManager) {
+                            if (ocspNode.isDefined()) { // wrap by OCSP TrustManager
+                                OcspExtendedTrustManager.Builder builder = OcspExtendedTrustManager.builder()
+                                        .setDelegate((X509ExtendedTrustManager) trustManager)
+                                        .setResponder(ocspResponder)
+                                        .setTrusted(ocspTrusted)
+                                        .setAcceptUnknownCertificates(acceptUnknown)
+                                        .setAcceptWhenStatusUnavailable(acceptWhenStatusUnavailable)
+                                        .setCacheEnabled(cacheEnable);
+                                if (connectionTimeout != null) builder.setConnectionTimeout(connectionTimeout);
+                                if (cacheMaxAge != null) builder.setCacheMaxAge(cacheMaxAge);
+                                if (cacheMaxEntries != null) builder.setCacheMaxEntries(cacheMaxEntries);
+                                trustManager = builder.build();
+                            }
+
                             delegatingTrustManager.setTrustManager((X509ExtendedTrustManager) trustManager);
                             return delegatingTrustManager;
                         }
@@ -668,6 +762,19 @@ class SSLDefinitions {
                     resolvedPath = new File(path);
                 }
                 return resolvedPath;
+            }
+
+            private List<X509Certificate> keystoreToCertList(KeyStore keyStore) throws KeyStoreException {
+                if (keyStore == null) return null;
+                List<X509Certificate> list = new LinkedList<>();
+                Enumeration<String> aliases = keyStore.aliases();
+                while (aliases.hasMoreElements()) {
+                    Certificate certificate = keyStore.getCertificate(aliases.nextElement());
+                    if (certificate instanceof X509Certificate) {
+                        list.add((X509Certificate) certificate);
+                    }
+                }
+                return list;
             }
 
             private TrustManagerFactory createTrustManagerFactory(Provider[] providers, String providerName, String algorithm) throws StartException {

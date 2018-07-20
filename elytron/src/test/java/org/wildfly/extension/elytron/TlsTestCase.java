@@ -326,14 +326,14 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
-    public void testProviderTrustManager() throws Throwable {
+    public void testProviderTrustManager() {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("ProviderTrustManager");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(trustManager);
     }
 
     @Test
-    public void testRevocationLists() throws Throwable {
+    public void testRevocationLists() {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(trustManager);
@@ -345,7 +345,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
-    public void testRevocationListsDp() throws Throwable {
+    public void testRevocationListsDp() {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(trustManager);
@@ -362,7 +362,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Files.copy(Paths.get(TRUST_FILE.toString()), Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE), StandardCopyOption.REPLACE_EXISTING);
 
         ModelNode operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron")
+                .add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
         operation.get(ElytronDescriptionConstants.PATH).set(resources + INIT_TEST_FILE);
         operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
@@ -370,7 +371,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron")
+                .add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
         operation.get(ElytronDescriptionConstants.KEY_STORE).set(INIT_TEST_TRUSTSTORE);
         Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
@@ -384,22 +386,21 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(originalFoundDN.getIssuerX500Principal(), ISSUER_DN);
 
         // Update the trust store certificate
-        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
-                .setDn(NEW_DN)
-                .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
-                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
-                .build();
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey
+                .builder().setDn(NEW_DN).setKeyAlgorithmName("RSA").setSignatureAlgorithmName("SHA1withRSA")
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647").build();
         KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
         createTemporaryKeyStoreFile(trustStore, new File(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron")
+                .add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.LOAD);
         Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
 
         operation = new ModelNode();
-        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron")
+                .add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.INIT);
         Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
 
@@ -413,6 +414,20 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(newFoundDN.getIssuerX500Principal(), NEW_DN);
 
         Files.delete(Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
+    }
+
+    @Test
+    public void testOcsp() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+    }
+
+    @Test
+    public void testOcspSimple() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-simple");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
     }
 
     private SSLContext getSslContext(String contextName) {

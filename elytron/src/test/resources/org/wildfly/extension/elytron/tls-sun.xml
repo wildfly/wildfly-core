@@ -66,6 +66,12 @@
             <trust-manager name="trust-with-crl-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-list />
             </trust-manager>
+            <trust-manager name="trust-with-ocsp" algorithm="SunX509" key-store="ElytronCaTruststore">
+                <online-certificate-status responder="http://localhost/ocsp" key-store="ElytronCaTruststore" accept-unknown="true" accept-when-status-unavailable="true" connection-timeout="5000" cache-enabled="true" cache-max-age="1000" cache-max-entries="100"/>
+            </trust-manager>
+            <trust-manager name="trust-with-ocsp-simple" algorithm="SunX509" key-store="ElytronCaTruststore">
+                <online-certificate-status/>
+            </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="ServerSslContextNoAuth" key-manager="ServerKeyManager" trust-manager="CaTrustManager"/>

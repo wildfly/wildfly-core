@@ -26,6 +26,8 @@ package org.wildfly.extension.elytron;
 interface ElytronDescriptionConstants {
 
     String ACCOUNT_KEY = "account-key";
+    String ACCEPT_UNKNOWN = "accept-unknown";
+    String ACCEPT_WHEN_STATUS_UNAVAILABLE = "accept-when-status-unavailable";
     String ACTION = "action";
     String ACTIVE_SESSION_COUNT = "active-session-count";
     String ADD_IDENTITY = "add-identity";
@@ -77,6 +79,9 @@ interface ElytronDescriptionConstants {
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
     String CAA_IDENTITIES = "caa-identities";
+    String CACHE_ENABLED = "cache-enabled";
+    String CACHE_MAX_AGE = "cache-max-age";
+    String CACHE_MAX_ENTRIES = "cache-max-entries";
     String CACHING_REALM = "caching-realm";
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
@@ -325,6 +330,7 @@ interface ElytronDescriptionConstants {
     String OBTAIN_CERTIFICATE = "obtain-certificate";
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
     String OID = "oid";
+    String ONLINE_CERTIFICATE_STATUS = "online-certificate-status";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
@@ -410,6 +416,7 @@ interface ElytronDescriptionConstants {
     String REQUIRED = "required";
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
+    String RESPONDER = "responder";
     String REVERSE = "reverse";
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";

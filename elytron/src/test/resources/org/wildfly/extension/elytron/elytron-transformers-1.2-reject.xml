@@ -34,6 +34,11 @@
                 </account-key>
             </certificate-authority-account>
         </certificate-authority-accounts>
+        <trust-managers>
+            <trust-manager name="TestingTrustManager" key-store="accounts.keystore">
+                <online-certificate-status responder="http://localhost/" />
+            </trust-manager>
+        </trust-managers>
     </tls>
     <audit-logging>
         <custom-security-event-listener name="a" module="b" class-name="c.D"/>

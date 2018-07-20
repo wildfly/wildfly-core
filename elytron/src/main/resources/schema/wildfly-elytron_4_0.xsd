@@ -4155,9 +4155,10 @@
                 Definition of a single TrustManager.
             </xs:documentation>
         </xs:annotation>
-        <xs:all>
+        <xs:choice>
             <xs:element name="certificate-revocation-list" type="certificateRevocationListType" minOccurs="0" maxOccurs="1"/>
-        </xs:all>
+            <xs:element name="online-certificate-status" type="onlineCertificateStatusType" minOccurs="0" maxOccurs="1"/>
+        </xs:choice>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
@@ -4235,6 +4236,70 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="onlineCertificateStatusType">
+        <xs:annotation>
+            <xs:documentation>
+                Enables certificate status checks using OCSP.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="responder" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The URL of OCSP responder to use. Omit to use responder from the certificate.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="key-store" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the KeyStore to use as source of trusted OCSP responders certificates.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accept-unknown" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether should be certificate with UNKNOWN OCSP response accepted.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accept-when-status-unavailable" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether should be certificate accepted when it is not possible to contact an OCSP server.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connection-timeout" type="xs:integer">
+            <xs:annotation>
+                <xs:documentation>
+                    The timeout for contacting an OCSP responder in miliseconds.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether should be certificates status cache used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-max-age" type="xs:long">
+            <xs:annotation>
+                <xs:documentation>
+                    Maximum age of certificates in the cache in miliseconds.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cache-max-entries" type="xs:integer">
+            <xs:annotation>
+                <xs:documentation>
+                    Maximum amount of certificates in the cache.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
