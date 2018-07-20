@@ -521,12 +521,48 @@ class SSLDefinitions {
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
 
                 if (crlNode.isDefined()) {
-                    return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode);
+                    String crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
+                    String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(context, crlNode).asStringOrNull();
+                    int certPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, crlNode).asInt();
+                    final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
+
+                    if (crlPath != null) {
+                        if (crlRelativeTo != null) {
+                            serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
+                            serviceBuilder.addDependency(pathName(crlRelativeTo));
+                        }
+                    }
+
+                    return () -> {
+                        Provider[] providers = providersInjector.getOptionalValue();
+                        TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
+                        KeyStore keyStore = keyStoreInjector.getOptionalValue();
+
+                        try {
+                            if (aliasFilter != null) {
+                                keyStore = FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter));
+                            }
+
+                            if (ROOT_LOGGER.isTraceEnabled()) {
+                                ROOT_LOGGER.tracef(
+                                        "TrustManager supplying:  providers = %s  provider = %s  algorithm = %s  trustManagerFactory = %s  keyStoreName = %s  keyStore = %s  aliasFilter = %s  keyStoreSize = %d",
+                                        Arrays.toString(providers), providerName, algorithm, trustManagerFactory, keyStoreName, keyStore, aliasFilter, keyStore.size()
+                                );
+                            }
+                        } catch (Exception e) {
+                            throw new StartException(e);
+                        }
+
+                        if (crlPath != null) {
+                            return createReloadableX509CRLTrustManager(keyStore, trustManagerFactory, resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector), certPath);
+                        }
+
+                        return new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, null, certPath, null);
+                    };
                 }
 
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
-
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
 
@@ -559,47 +595,25 @@ class SSLDefinitions {
                 };
             }
 
-            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode) throws OperationFailedException {
-                String crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
-                String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(context, crlNode).asStringOrNull();
-                int certPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, crlNode).asInt();
-                final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
+            private TrustManager createReloadableX509CRLTrustManager(final KeyStore keyStore, final TrustManagerFactory trustManagerFactory, final File crlFile, final int certPath) throws StartException {
 
-                if (crlPath != null) {
-                    if (crlRelativeTo != null) {
-                        serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
-                        serviceBuilder.addDependency(pathName(crlRelativeTo));
-                    }
+                X509ExtendedTrustManager initialDelegate;
+                try {
+                    initialDelegate = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(crlFile), certPath, null);
+                } catch (FileNotFoundException e) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.unableToAccessCRL(e);
                 }
 
-                return () -> {
-                    TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providersInjector.getOptionalValue(), providerName, algorithm);
-                    KeyStore keyStore = keyStoreInjector.getOptionalValue();
-
-                    if (crlPath != null) {
-                        try {
-                            X509CRLExtendedTrustManager trustManager = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)), certPath, null);
-                            return createReloadableX509CRLTrustManager(crlPath, crlRelativeTo, certPath, pathManagerInjector, trustManagerFactory, keyStore, trustManager);
-                        } catch (FileNotFoundException e) {
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.unableToAccessCRL(e);
-                        }
-                    }
-
-                    return new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, null, certPath, null);
-                };
-            }
-
-            private TrustManager createReloadableX509CRLTrustManager(final String crlPath, final String crlRelativeTo, final int certPath, final InjectedValue<PathManager> pathManagerInjector, final TrustManagerFactory trustManagerFactory, final KeyStore keyStore, final X509CRLExtendedTrustManager trustManager) {
                 return new ReloadableX509ExtendedTrustManager() {
 
-                    private volatile X509ExtendedTrustManager delegate = trustManager;
+                    private volatile X509ExtendedTrustManager delegate = initialDelegate;
                     private AtomicBoolean reloading = new AtomicBoolean();
 
                     @Override
                     void reload() {
                         if (reloading.compareAndSet(false, true)) {
                             try {
-                                delegate = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)), certPath, null);
+                                delegate = new X509CRLExtendedTrustManager(keyStore, trustManagerFactory, new FileInputStream(crlFile), certPath, null);
                             } catch (FileNotFoundException cause) {
                                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToReloadCRL(cause);
                             } finally {
