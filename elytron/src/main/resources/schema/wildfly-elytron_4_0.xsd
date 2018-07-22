@@ -1602,6 +1602,20 @@
         </xs:choice>
     </xs:complexType>
 
+    <xs:simpleType name="referralModeType">
+        <xs:annotation>
+            <xs:documentation>
+                    Corresponds to REFERRAL ("java.naming.referral") environment property.
+                    Allowed values: "ignore", "follow", "throw".
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ignore" />
+            <xs:enumeration value="follow" />
+            <xs:enumeration value="throw" />
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="dirContextType">
         <xs:annotation>
             <xs:documentation>
@@ -1664,12 +1678,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="referral-mode" type="xs:string" default="ignore" use="optional">
+        <xs:attribute name="referral-mode" type="referralModeType" default="ignore" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     If LDAP referrals should be followed.
-                    Corresponds to REFERRAL ("java.naming.referral") environment property.
-                    Allowed values: "ignore", "follow", "throw".
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
