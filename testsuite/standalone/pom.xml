@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>6.0.0.Alpha4-SNAPSHOT</version>
+        <version>6.0.0.Alpha5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -111,7 +111,7 @@
             </plugin>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
-                <artifactId>galleon-maven-plugins</artifactId>
+                <artifactId>galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>

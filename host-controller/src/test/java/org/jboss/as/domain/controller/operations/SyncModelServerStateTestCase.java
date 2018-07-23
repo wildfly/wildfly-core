@@ -302,6 +302,34 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     }
 
     @Test
+    public void testUpdateDeploymentNotOnHostsServers() throws Exception {
+        final Resource root = rootResource.clone();
+        byte[] oldBytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+        registerRootDeployment(root, "test.jar", oldBytes);
+        // register deployment in a group that doesn't have any server on this host
+        registerServerGroupDeployment(root, "group-three", "test.jar");
+
+        executeTriggerSyncOperation(root);
+        reloadServers();
+
+        byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
+        replaceRootDeployment(root, "test.jar", bytes);
+        repository.clear(oldBytes);
+        executeTriggerSyncOperation(root);
+        Assert.assertEquals("running", serverProxies.get("server-one").state);
+        Assert.assertEquals("running", serverProxies.get("server-two").state);
+        Assert.assertEquals("running", serverProxies.get("server-three").state);
+        repository.checkAddedReferences(bytes, PathAddress.pathAddress(DEPLOYMENT, "test.jar"));
+        repository.checkRemovedReferences(oldBytes, PathAddress.pathAddress(DEPLOYMENT, "test.jar"));
+
+        ModelNode model = readResourceRecursive();
+        checkDeploymentBytes(model, "test.jar", bytes);
+        Assert.assertEquals("test.jar", model.get(SERVER_GROUP, "group-three", DEPLOYMENT, "test.jar", RUNTIME_NAME).asString());
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-one", DEPLOYMENT));
+        Assert.assertFalse(model.hasDefined(SERVER_GROUP, "group-two", DEPLOYMENT));
+    }
+
+    @Test
     public void testRemoveDeployment() throws Exception {
         final Resource root = rootResource.clone();
         byte[] bytes = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
@@ -746,12 +774,21 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             serverGroup2.getModel().get(SOCKET_BINDING_GROUP).set("binding-two");
             rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-two"), serverGroup2);
 
+            // group three has no servers assigned
+            final Resource serverGroup3 = Resource.Factory.create();
+            serverGroup3.getModel().get(PROFILE).set("profile-three");
+            serverGroup3.getModel().get(SOCKET_BINDING_GROUP).set("binding-three");
+            rootResource.registerChild(PathElement.pathElement(SERVER_GROUP, "group-three"), serverGroup3);
+
             final Resource profile1 = Resource.Factory.create();
             profile1.getModel().setEmptyObject();
             rootResource.registerChild(PathElement.pathElement(PROFILE, "profile-one"), profile1);
             final Resource profile2 = Resource.Factory.create();
             profile2.getModel().setEmptyObject();
             rootResource.registerChild(PathElement.pathElement(PROFILE, "profile-two"), profile2);
+            final Resource profile3 = Resource.Factory.create();
+            profile3.getModel().setEmptyObject();
+            rootResource.registerChild(PathElement.pathElement(PROFILE, "profile-three"), profile3);
 
             final Resource binding1 = Resource.Factory.create();
             binding1.getModel().setEmptyObject();
@@ -759,6 +796,9 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final Resource binding2 = Resource.Factory.create();
             binding2.getModel().setEmptyObject();
             rootResource.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-two"), binding2);
+            final Resource binding3 = Resource.Factory.create();
+            binding3.getModel().setEmptyObject();
+            rootResource.registerChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"), binding3);
 
             registerServer("server-one");
             registerServer("server-two");

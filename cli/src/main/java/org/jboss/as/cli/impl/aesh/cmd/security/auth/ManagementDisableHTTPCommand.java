@@ -29,7 +29,7 @@ import org.jboss.dmr.ModelNode;
  * @author jdenise@redhat.com
  */
 @CommandDefinition(name = "disable-http-auth-management", description = "", activator = SecurityCommandActivator.class)
-public class ManagementDisableHTTPCommand extends AbstractDisableAuthenticationCommand {
+public class ManagementDisableHTTPCommand extends AbstractMgmtDisableAuthenticationCommand {
 
     public ManagementDisableHTTPCommand() {
         super(AuthFactorySpec.HTTP);
