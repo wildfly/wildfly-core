@@ -44,13 +44,13 @@
         <module name="java.security.sasl"/>
         <module name="java.sql"/>
         <module name="java.xml"/>
+        <module name="javax.json.api"/>
         <module name="jdk.security.auth"/>
         <module name="jdk.unsupported"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
-        <module name="org.wildfly.javax.json"/>
         <module name="javax.security.jacc.api" optional="true"/>
         <module name="org.wildfly.common"/>
         <!--

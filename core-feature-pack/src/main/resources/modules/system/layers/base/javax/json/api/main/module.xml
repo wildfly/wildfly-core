@@ -31,4 +31,12 @@
     <resources>
         <artifact name="${javax.json:javax.json-api}"/>
     </resources>
+    <dependencies>
+        <!--
+            This is required as a circular dependency because the RI does not include a META-INF/services provider file.
+            It must also be exported so that modules that depend on the API, e.g. deployments, will be able to see the
+            implementation.
+        -->
+        <module name="org.glassfish.javax.json" export="true"/>
+    </dependencies>
 </module>
