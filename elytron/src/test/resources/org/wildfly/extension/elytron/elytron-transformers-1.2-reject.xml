@@ -14,4 +14,20 @@
             </principal-query>
         </jdbc-realm>
     </security-realms>
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+        </key-stores>
+        <certificate-authority-accounts>
+            <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
+                <account-key key-store="accounts.keystore" alias="server">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+        </certificate-authority-accounts>
+    </tls>
 </subsystem>
