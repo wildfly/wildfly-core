@@ -20,15 +20,17 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAME;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
-import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.ElytronDefinition.commonRequirements;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.lang.reflect.Method;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -57,7 +59,7 @@ import org.jboss.msc.service.StartException;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class CustomComponentDefinition<T> extends SimpleResourceDefinition {
+class CustomComponentDefinition<C, T> extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODULE = new SimpleAttributeDefinitionBuilder(ClassLoadingAttributeDefinitions.MODULE)
         .setRequired(true)
@@ -69,25 +71,17 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
         .setRestartAllServices()
         .build();
 
-    private final Class<T> serviceType;
-    private final RuntimeCapability<?>[] runtimeCapabilities;
-    private final String pathKey;
-
     static final AttributeDefinition[] ATTRIBUTES = {MODULE, CLASS_NAME, CONFIGURATION};
 
-    CustomComponentDefinition(Class<T> serviceType, String pathKey, @SuppressWarnings("rawtypes") RuntimeCapability ... runtimeCapabilities) {
+    CustomComponentDefinition(Class<C> serviceType, Function<C, T> wrapper, String pathKey, @SuppressWarnings("rawtypes") RuntimeCapability ... runtimeCapabilities) {
         super(addAddRemoveHandlers(new Parameters(PathElement.pathElement(pathKey), ElytronExtension.getResourceDescriptionResolver(pathKey))
             .setAddRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
             .setRemoveRestartLevel(OperationEntry.Flag.RESTART_RESOURCE_SERVICES)
-            .setCapabilities(runtimeCapabilities), serviceType, runtimeCapabilities));
-
-        this.serviceType = serviceType;
-        this.runtimeCapabilities = runtimeCapabilities;
-        this.pathKey = pathKey;
+            .setCapabilities(runtimeCapabilities), serviceType, wrapper, runtimeCapabilities));
     }
 
-    private static <T> Parameters addAddRemoveHandlers(Parameters parameters, Class<T> serviceType, RuntimeCapability<?> ... runtimeCapabilities) {
-        AbstractAddStepHandler add = new ComponentAddHandler<T>(serviceType, runtimeCapabilities);
+    private static <C, T> Parameters addAddRemoveHandlers(Parameters parameters, Class<C> serviceType, Function<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
+        AbstractAddStepHandler add = new ComponentAddHandler<>(serviceType, wrapper, runtimeCapabilities);
         OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, runtimeCapabilities);
 
         parameters.setAddHandler(add);
@@ -104,15 +98,17 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
         }
     }
 
-    private static class ComponentAddHandler<T> extends BaseAddHandler {
+    private static class ComponentAddHandler<C, T> extends BaseAddHandler {
 
         private final RuntimeCapability<?>[] runtimeCapabilities;
-        private final Class<T> serviceType;
+        private final Class<C> serviceType;
+        private final Function<C, T> wrapper;
 
-        private ComponentAddHandler(Class<T> serviceType, RuntimeCapability<?> ... runtimeCapabilities) {
-            super( new HashSet<RuntimeCapability>(Arrays.asList(runtimeCapabilities)), ATTRIBUTES);
+        private ComponentAddHandler(Class<C> serviceType, Function<C, T> wrapper, RuntimeCapability<?> ... runtimeCapabilities) {
+            super(new HashSet<>(Arrays.asList(runtimeCapabilities)), ATTRIBUTES);
             this.runtimeCapabilities = runtimeCapabilities;
             this.serviceType = serviceType;
+            this.wrapper = wrapper;
         }
 
         @Override
@@ -130,14 +126,13 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
             final Map<String, String> configurationMap;
             configurationMap = CONFIGURATION.unwrap(context, model);
 
-            TrivialService<T> customComponentService = new TrivialService<T>(() -> createValue(module, className, configurationMap));
-
-            ServiceBuilder<T> serviceBuilder = serviceTarget.addService(primaryServiceName, customComponentService);
-            for (int i=1;i<runtimeCapabilities.length;i++) {
+            ServiceBuilder<?> serviceBuilder = serviceTarget.addService(primaryServiceName);
+            for (int i = 1; i < runtimeCapabilities.length; i++) {
                 serviceBuilder.addAliases(toServiceName(runtimeCapabilities[i], address));
             }
 
-            commonDependencies(serviceBuilder)
+            commonRequirements(serviceBuilder)
+                .setInstance(new TrivialService<>(() -> createValue(module, className, configurationMap)))
                 .setInitialMode(Mode.ACTIVE)
                 .install();
         }
@@ -151,19 +146,20 @@ class CustomComponentDefinition<T> extends SimpleResourceDefinition {
             try {
                 classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
 
-                Class<? extends T> typeClazz = classLoader.loadClass(className).asSubclass(serviceType);
+                Class<? extends C> typeClazz = classLoader.loadClass(className).asSubclass(serviceType);
 
-                T component = typeClazz.newInstance();
+                C component = typeClazz.getDeclaredConstructor().newInstance();
 
                 if (configuration != null && !configuration.isEmpty()) {
-                    if (component instanceof Configurable == false) {
-                        throw ROOT_LOGGER.componentNotConfigurable(component.getClass().getName());
+                    try {
+                        Method method = component.getClass().getMethod("initialize", Map.class);
+                        method.invoke(component, configuration);
+                    } catch (NoSuchMethodException e) {
+                        throw ROOT_LOGGER.componentNotConfigurable(component.getClass().getName(), e);
                     }
-                    Configurable configurableComponent = (Configurable) component;
-                    configurableComponent.initialize(configuration);
                 }
 
-                return component;
+                return wrapper.apply(component);
             } catch (PrivilegedActionException e) {
                 throw new StartException(e.getCause());
             } catch (Exception e) {

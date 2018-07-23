@@ -105,6 +105,10 @@
         </constant-role-mapper>
         <custom-role-mapper name="CustomRoleOne" class-name="org.wildfly.elytron.CustomRoleMapper" module="i.j" />
         <logical-role-mapper name="AdditionalRoles" logical-operation="and" left="ConstantRoles" right="CustomRoleOne" />
+        <mapped-role-mapper name="MappedRoles">
+            <role-mapping from="From" to="To1 to2"/>
+            <role-mapping from="From2" to="To1 to3"/>
+        </mapped-role-mapper>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">

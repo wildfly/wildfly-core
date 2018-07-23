@@ -497,7 +497,8 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListener" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="aggregate-security-event-listener" type="aggregateSecurityEventListenerType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="custom-security-event-listener" type="customSecurityEventListenerType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="file-audit-log" type="fileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="periodic-rotating-file-audit-log" type="periodicRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="size-rotating-file-audit-log" type="sizeRotatingFileAuditLogType" minOccurs="0" maxOccurs="unbounded" />
@@ -545,7 +546,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="aggregateSecurityEventListener">
+    <xs:complexType name="aggregateSecurityEventListenerType">
         <xs:annotation>
             <xs:documentation>
                 A security event listener definition that is actually an aggregation of other security event listeners.
@@ -724,6 +725,31 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="customSecurityEventListenerType">
+        <xs:annotation>
+            <xs:documentation>
+                A security event listener definition for a custom security event listener implementation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="auditLogType">
+                <xs:sequence>
+                    <xs:element name="configuration"
+                                type="customComponentConfiguration" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The configuration to apply to the security event listener implementation.
+
+                                Note: If configuration is supplied the listener MUST implement a void initialize(Map&lt;String, String&gt;) method.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="customComponentAttributes" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1002,7 +1028,7 @@
 		                    <xs:documentation>
 		                        The configuration to apply to the SecurityRealm implementation.
 
-		                        Note: If configuration is supplied the realm MUST implement the Configurable interface.
+		                        Note: If configuration is supplied the realm MUST implement initialize(Map&lt;String, String&gt;) method.
 		                    </xs:documentation>
 		                </xs:annotation>
 		            </xs:element>
@@ -2068,7 +2094,7 @@
                             <xs:documentation>
                                 The configuration to apply to the SecurityFactory implementation.
 
-                                Note: If configuration is supplied the SecurityFactory MUST implement the Configurable interface.
+                                Note: If configuration is supplied the SecurityFactory MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2247,6 +2273,7 @@
             <xs:element name="constant-role-mapper" type="constantRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="custom-role-mapper" type="customRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="logical-role-mapper" type="logicalRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="mapped-role-mapper" type="mappedRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -2281,7 +2308,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PermissionMapper implementation.
 
-                                Note: If configuration is supplied the PermissionMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PermissionMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2532,7 +2559,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PrincipalDecoder implementation.
 
-                                Note: If configuration is supplied the PrincipalDecoder MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PrincipalDecoder MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2798,7 +2825,7 @@
                             <xs:documentation>
                                 The configuration to apply to the PrincipalTransformer implementation.
 
-                                Note: If configuration is supplied the PrincipalTransformer MUST implement the Configurable interface.
+                                Note: If configuration is supplied the PrincipalTransformer MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -2882,7 +2909,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RealmMapper implementation.
 
-                                Note: If configuration is supplied the RealmMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RealmMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -3020,7 +3047,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RoleDecoder implementation.
 
-                                Note: If configuration is supplied the RoleDecoder MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RoleDecoder MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -3133,7 +3160,7 @@
                             <xs:documentation>
                                 The configuration to apply to the RoleMapper implementation.
 
-                                Note: If configuration is supplied the RoleMapper MUST implement the Configurable interface.
+                                Note: If configuration is supplied the RoleMapper MUST implement initialize(Map&lt;String, String&gt;) method.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -3214,6 +3241,52 @@
                             Reference to the RoleMapper to use to the right of the operation.
 
                             If not set the identity role mapper will be used instead.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="mappedRoleMapperType">
+        <xs:annotation>
+            <xs:documentation>
+                A RoleMapper implementation that uses the configured mapping of role names.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="roleMapperType">
+                <xs:sequence>
+                    <xs:element name="role-mapping" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="from" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The role name to map from.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="to" type="stringListType" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Space separated list of roles to map to.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="keep-mapped" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            When set to 'true' the mapped roles will retain all roles, that have defined mappings.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="keep-non-mapped" type="xs:boolean" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            When set to 'true' the mapped roles will retain all roles, that have no defined mappings.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -3982,6 +4055,7 @@
             <xs:element name="trust-managers" type="trustManagersType" minOccurs="0"/>
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
+            <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
         </xs:all>
     </xs:complexType>
 
@@ -4704,6 +4778,85 @@
                     A filter to apply to the aliases made available by this KeyStore.
 
                     Can either be a comma separated list of aliases to return or one of the following formats ALL:-alias1:-alias2, NONE:+alias1:+alias2
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityAccountsType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for certificate authority account definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="certificate-authority-account" type="certificateAuthorityAccountType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityAccountType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single certificate authority account.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="account-key" type="accountKeyType" minOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this certificate authority account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="certificate-authority" default="LetsEncrypt">
+            <xs:annotation>
+                <xs:documentation>
+                    The certificate authority to use.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="LetsEncrypt"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="contact-urls" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A list of URLs that the certificate authority can contact about any issues related to this account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="accountKeyType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a certificate authority account key.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="credential-reference" type="credentialReferenceType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Credential to be used when accessing the certificate authority account key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="key-store" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the KeyStore that contains the certificate authority account key.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="alias" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The alias of the certificate authority account key in the KeyStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

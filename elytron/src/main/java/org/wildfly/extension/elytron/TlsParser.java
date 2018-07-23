@@ -19,6 +19,8 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERING_KEY_STORE;
@@ -136,6 +138,14 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
 
+    private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
+            .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
+            .addAttribute(CertificateAuthorityAccountDefinition.CERTIFICATE_AUTHORITY)
+            .addAttribute(CertificateAuthorityAccountDefinition.CONTACT_URLS)
+            .addAttribute(CertificateAuthorityAccountDefinition.KEY_STORE)
+            .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
+            .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE);
+
     final PersistentResourceXMLDescription tlsParser = decorator(TLS)
             .addChild(decorator(KEY_STORES)
                     .addChild(keyStoreParser)
@@ -147,6 +157,7 @@ class TlsParser {
             .addChild(trustManagerParser)
             .addChild(serverSslContextParser)
             .addChild(clientSslContextParser)
+            .addChild(certificateAuthorityAccountParser)
             .build();
 
 }

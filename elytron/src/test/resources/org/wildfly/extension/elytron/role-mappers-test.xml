@@ -1,0 +1,53 @@
+<!-- for needs of RealmsTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:4.0" initial-providers="elytron">
+    <providers>
+        <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
+    </providers>
+    <security-domains>
+        <security-domain name="TestDomain1" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
+            <realm name="ClearPropertyRealm" role-mapper="NonKeepingMappedRoleMapper" role-decoder="GroupsToRoles"/>
+        </security-domain>
+        <security-domain name="TestDomain2" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
+            <realm name="ClearPropertyRealm" role-mapper="KeepMappedRoleMapper" role-decoder="GroupsToRoles"/>
+        </security-domain>
+        <security-domain name="TestDomain3" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
+            <realm name="ClearPropertyRealm" role-mapper="KeepNonMappedRoleMapper" role-decoder="GroupsToRoles"/>
+        </security-domain>
+        <security-domain name="TestDomain4" default-realm="ClearPropertyRealm" permission-mapper="ConstantPermissionMapper">
+            <realm name="ClearPropertyRealm" role-mapper="KeepBothMappedRoleMapper" role-decoder="GroupsToRoles"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <properties-realm name="ClearPropertyRealm">
+            <users-properties path="users-clear.properties"  relative-to="jboss.server.config.dir" plain-text="true" />
+            <groups-properties path="groups.properties" relative-to="jboss.server.config.dir" />
+        </properties-realm>
+    </security-realms>
+    <mappers>
+        <constant-permission-mapper name="ConstantPermissionMapper">
+            <permission-set name="login-permission"/>
+        </constant-permission-mapper>
+        <simple-role-decoder attribute="groups" name="GroupsToRoles"/>
+        <mapped-role-mapper name="NonKeepingMappedRoleMapper" keep-mapped="false" keep-non-mapped="false">
+            <role-mapping from="firstGroup" to="mappedGroup"/>
+            <role-mapping from="dontMap" to="notInThisGroup"/>
+        </mapped-role-mapper>
+        <mapped-role-mapper name="KeepMappedRoleMapper" keep-mapped="true" keep-non-mapped="false">
+            <role-mapping from="firstGroup" to="mappedGroup"/>
+            <role-mapping from="dontMap" to="notInThisGroup"/>
+        </mapped-role-mapper>
+        <mapped-role-mapper name="KeepNonMappedRoleMapper" keep-mapped="false" keep-non-mapped="true">
+            <role-mapping from="firstGroup" to="mappedGroup"/>
+            <role-mapping from="dontMap" to="notInThisGroup"/>
+        </mapped-role-mapper>
+        <mapped-role-mapper name="KeepBothMappedRoleMapper" keep-mapped="true" keep-non-mapped="true">
+            <role-mapping from="firstGroup" to="mappedGroup"/>
+            <role-mapping from="dontMap" to="notInThisGroup"/>
+        </mapped-role-mapper>
+    </mappers>
+    <permission-sets>
+        <permission-set name="login-permission">
+            <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+        </permission-set>
+    </permission-sets>
+</subsystem>
