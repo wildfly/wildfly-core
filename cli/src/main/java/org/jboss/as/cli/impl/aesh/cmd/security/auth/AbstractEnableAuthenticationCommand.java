@@ -36,7 +36,6 @@ import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthSecurityBuilder;
 import org.jboss.as.cli.impl.aesh.cmd.RelativeFile;
 import org.jboss.as.cli.impl.aesh.cmd.RelativeFilePathConverter;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_GROUP_PROPERTIES_FILE;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_MECHANISM;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_AUTH_FACTORY_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SECURITY_DOMAIN_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NO_RELOAD;
@@ -71,10 +70,6 @@ import org.jboss.as.cli.impl.aesh.cmd.security.model.ExistingKeyStoreConfigurati
  */
 @CommandDefinition(name = "abstract-auth-enable", description = "")
 public abstract class AbstractEnableAuthenticationCommand implements Command<CLICommandInvocation>, DMRCommand {
-
-    @Option(name = OPT_MECHANISM,
-            completer = SecurityCommand.OptionCompleters.MechanismCompleter.class)
-    String mechanism;
 
     @Option(name = OPT_FILE_SYSTEM_REALM_NAME, activator = OptionActivators.FilesystemRealmActivator.class,
             completer = SecurityCommand.OptionCompleters.FileSystemRealmCompleter.class)
@@ -138,6 +133,8 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
         return factorySpec;
     }
 
+    protected abstract String getMechanism();
+
     protected abstract void secure(CommandContext ctx, AuthSecurityBuilder builder) throws Exception;
 
     protected abstract String getOOTBFactory(CommandContext ctx) throws Exception;
@@ -145,14 +142,6 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
     protected abstract String getSecuredEndpoint(CommandContext ctx);
 
     protected abstract String getEnabledFactory(CommandContext ctx) throws Exception;
-
-    public String getTargetedFactory(CommandContext ctx) throws Exception {
-        String factory = getEnabledFactory(ctx);
-        if (factory == null) {
-            factory = getOOTBFactory(ctx);
-        }
-        return factory;
-    }
 
     @Override
     public CommandResult execute(CLICommandInvocation commandInvocation) throws CommandException, InterruptedException {
@@ -168,10 +157,14 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
             commandInvocation.getCommandContext().printLine("Command success.");
             commandInvocation.getCommandContext().printLine("Authentication configured for "
                     + getSecuredEndpoint(commandInvocation.getCommandContext()));
-            commandInvocation.getCommandContext().printLine(factorySpec.getName()
-                    + " authentication-factory=" + builder.getAuthFactory().getName());
-            commandInvocation.getCommandContext().printLine("security-domain="
-                    + builder.getAuthFactory().getSecurityDomain().getName());
+            if (builder.getReferencedSecurityDomain() != null) {
+                commandInvocation.getCommandContext().printLine("security domain=" + builder.getReferencedSecurityDomain());
+            } else {
+                commandInvocation.getCommandContext().printLine(factorySpec.getName()
+                        + " authentication-factory=" + builder.getAuthFactory().getName());
+                commandInvocation.getCommandContext().printLine("security-domain="
+                        + builder.getAuthFactory().getSecurityDomain().getName());
+            }
         } else {
             commandInvocation.getCommandContext().
                     printLine("Authentication is already enabled for " + getSecuredEndpoint(commandInvocation.getCommandContext()));
@@ -189,7 +182,7 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
         }
     }
 
-    private AuthSecurityBuilder buildSecurityRequest(CommandContext context) throws Exception {
+    protected AuthSecurityBuilder buildSecurityRequest(CommandContext context) throws Exception {
         AuthSecurityBuilder builder = buildSecurityBuilder(context);
         //OOTB
         if (builder == null) {
@@ -304,29 +297,28 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
     private AuthMechanism buildAuthMechanism(CommandContext context)
             throws Exception {
         AuthMechanism mec = null;
-        if (mechanism == null) {
+        if (getMechanism() == null) {
             return null;
         }
         List<String> available = ElytronUtil.getAvailableMechanisms(context,
-                getFactorySpec(),
-                getTargetedFactory(context));
-        if (!available.contains(mechanism)) {
-            throw new CommandException("Unavialable mechanism " + mechanism);
+                getFactorySpec());
+        if (!available.contains(getMechanism())) {
+            throw new CommandException("Unavailable mechanism " + getMechanism());
         }
 
-        if (ElytronUtil.getMechanismsWithRealm().contains(mechanism)) {
+        if (ElytronUtil.getMechanismsWithRealm().contains(getMechanism())) {
             MechanismConfiguration config = buildUserPasswordConfiguration(userPropertiesFile,
                     fileSystemRealmName, userRoleDecoder, exposedRealm,
                     groupPropertiesFile, propertiesRealmName, relativeTo);
-            mec = new AuthMechanism(mechanism, config);
-        } else if (ElytronUtil.getMechanismsWithTrustStore().contains(mechanism)) {
+            mec = new AuthMechanism(getMechanism(), config);
+        } else if (ElytronUtil.getMechanismsWithTrustStore().contains(getMechanism())) {
             MechanismConfiguration config = buildExternalConfiguration(context, keyStoreName, keyStoreRealmName, roles);
-            mec = new AuthMechanism(mechanism, config);
-        } else if (ElytronUtil.getMechanismsLocalUser().contains(mechanism)) {
+            mec = new AuthMechanism(getMechanism(), config);
+        } else if (ElytronUtil.getMechanismsLocalUser().contains(getMechanism())) {
             MechanismConfiguration config = buildLocalUserConfiguration(context, superUser);
-            mec = new AuthMechanism(mechanism, config);
+            mec = new AuthMechanism(getMechanism(), config);
         } else {
-            mec = new AuthMechanism(mechanism, new EmptyConfiguration());
+            mec = new AuthMechanism(getMechanism(), new EmptyConfiguration());
         }
         return mec;
     }

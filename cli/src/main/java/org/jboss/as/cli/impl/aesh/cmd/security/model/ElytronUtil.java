@@ -68,6 +68,7 @@ public abstract class ElytronUtil {
     public static String OOTB_MANAGEMENT_SASL_FACTORY = "management-sasl-authentication";
     public static String OOTB_MANAGEMENT_HTTP_FACTORY = "management-http-authentication";
     public static String OOTB_APPLICATION_HTTP_FACTORY = "application-http-authentication";
+    public static String OOTB_APPLICATION_DOMAIN = "ApplicationDomain";
 
     public static final String SASL_SERVER_CAPABILITY = "org.wildfly.security.sasl-server-factory";
     public static final String HTTP_SERVER_CAPABILITY = "org.wildfly.security.http-server-mechanism-factory";
@@ -421,6 +422,10 @@ public abstract class ElytronUtil {
 
     public static List<String> getKeyStoreNames(ModelControllerClient client) {
         return getNames(client, Util.KEY_STORE);
+    }
+
+    public static List<String> getSecurityDomainNames(ModelControllerClient client) {
+        return getNames(client, Util.SECURITY_DOMAIN);
     }
 
     public static List<String> getConstantRoleMappers(ModelControllerClient client) {
@@ -1038,9 +1043,9 @@ public abstract class ElytronUtil {
         return getMechanismsWithRealm().contains(name) || getMechanismsWithTrustStore().contains(name) || getMechanismsLocalUser().contains(name);
     }
 
-    public static List<String> getMechanisms(CommandContext ctx, AuthFactorySpec spec, String factory) throws OperationFormatException, IOException {
+    public static List<String> getMechanisms(CommandContext ctx, AuthFactorySpec spec) throws OperationFormatException, IOException {
         List<String> lst = new ArrayList<>();
-        for (String m : getAvailableMechanisms(ctx, spec, factory)) {
+        for (String m : getAvailableMechanisms(ctx, spec)) {
             if (isMechanismSupported(m)) {
                 lst.add(m);
             }
@@ -1048,23 +1053,9 @@ public abstract class ElytronUtil {
         return lst;
     }
 
-    public static List<String> getAvailableMechanisms(CommandContext ctx, AuthFactorySpec spec, String factory) throws OperationFormatException, IOException {
+    public static List<String> getAvailableMechanisms(CommandContext ctx, AuthFactorySpec spec) throws OperationFormatException, IOException {
         List<String> lst = new ArrayList<>();
-        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
-        final ModelNode request;
-        builder.setOperationName(Util.READ_ATTRIBUTE);
-        builder.addNode(Util.SUBSYSTEM, Util.ELYTRON);
-        builder.addNode(spec.getResourceType(), factory);
-        builder.getModelNode().get(Util.NAME).set(spec.getServerType());
-        request = builder.buildRequest();
-        String mechanismFactory = null;
-        final ModelNode outcome = ctx.getModelControllerClient().execute(request);
-        if (Util.isSuccess(outcome)) {
-            mechanismFactory = outcome.get(Util.RESULT).asString();
-        } else {
-            return Collections.emptyList();
-        }
-        ModelNode resource = getServerFactory(mechanismFactory, spec, ctx);
+        ModelNode resource = getServerFactory(spec.getServerValue(), spec, ctx);
         if (resource == null) {
             return null;
         }

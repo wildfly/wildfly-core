@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>6.0.0.Alpha4-SNAPSHOT</version>
+        <version>6.0.0.Alpha5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-galleon-pack</artifactId>
@@ -587,7 +587,7 @@
 
             <plugin>
                 <groupId>org.wildfly.galleon-plugins</groupId>
-                <artifactId>wildfly-galleon-maven-plugins</artifactId>
+                <artifactId>wildfly-galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>feature-spec-build</id>

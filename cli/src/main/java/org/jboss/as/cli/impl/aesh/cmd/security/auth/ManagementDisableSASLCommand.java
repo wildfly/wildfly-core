@@ -32,7 +32,7 @@ import org.jboss.dmr.ModelNode;
  * @author jdenise@redhat.com
  */
 @CommandDefinition(name = "disable-sasl-management", description = "", activator = SecurityCommandActivator.class)
-public class ManagementDisableSASLCommand extends AbstractDisableAuthenticationCommand {
+public class ManagementDisableSASLCommand extends AbstractMgmtDisableAuthenticationCommand {
 
     @Option(name = OPT_MANAGEMENT_INTERFACE, hasValue = true,
             completer = OptionCompleters.ManagementInterfaceCompleter.class)
