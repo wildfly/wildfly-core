@@ -587,7 +587,7 @@
 
             <plugin>
                 <groupId>org.wildfly.galleon-plugins</groupId>
-                <artifactId>wildfly-galleon-maven-plugins</artifactId>
+                <artifactId>wildfly-galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>feature-spec-build</id>

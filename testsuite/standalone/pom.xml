@@ -111,7 +111,7 @@
             </plugin>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
-                <artifactId>galleon-maven-plugins</artifactId>
+                <artifactId>galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
