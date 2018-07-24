@@ -200,7 +200,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.4.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.5.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.2.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.elytron.tool>1.2.2.Final</version.org.wildfly.security.elytron.tool>
         <version.xml-resolver>1.2</version.xml-resolver>
