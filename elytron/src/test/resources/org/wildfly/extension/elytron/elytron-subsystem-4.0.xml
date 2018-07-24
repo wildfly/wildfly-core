@@ -162,6 +162,10 @@
             <role-mapper name="RolePrefixer"/>
             <role-mapper name="RoleSuffixer"/>
         </aggregate-role-mapper>
+        <mapped-role-mapper name="MappedRoleMapper" keep-mapped="false" keep-non-mapped="true">
+            <role-mapping from="Admin" to="Administrator"/>
+            <role-mapping from="foo" to="bar baz"/>
+        </mapped-role-mapper>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">
