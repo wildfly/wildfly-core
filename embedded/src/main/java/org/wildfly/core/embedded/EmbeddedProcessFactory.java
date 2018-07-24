@@ -175,12 +175,12 @@ public class EmbeddedProcessFactory {
         // Get a handle to the method which will create the server
         final Method createServerMethod;
         try {
-            createServerMethod = embeddedServerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class);
+            createServerMethod = embeddedServerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class, ClassLoader.class);
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedServerFactoryClass.getName());
         }
         // Create the server
-        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, configuration);
+        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, configuration, embeddedModuleCL);
         return new EmbeddedManagedProcessImpl(standaloneServerClass, standaloneServerImpl, context);
     }
 
@@ -266,13 +266,13 @@ public class EmbeddedProcessFactory {
         // Get a handle to the method which will create the server
         final Method createServerMethod;
         try {
-            createServerMethod = embeddedHostControllerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class);
+            createServerMethod = embeddedHostControllerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class, ClassLoader.class);
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedHostControllerFactoryClass.getName());
         }
 
         // Create the server
-        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration);
+        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration, embeddedModuleCL);
         return new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context);
     }
 
@@ -287,13 +287,13 @@ public class EmbeddedProcessFactory {
         Module.registerURLStreamHandlerFactoryModule(vfsModule);
     }
 
-    private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final Configuration configuration) {
+    private static Object createManagedProcess(final ProcessType embeddedType, final Method createServerMethod, final Configuration configuration, ModuleClassLoader embeddedModuleCL) {
         Object serverImpl;
         try {
             Properties sysprops = getSystemPropertiesPrivileged();
             Map<String, String> sysenv = getSystemEnvironmentPrivileged();
             String[] args = configuration.getCommandArguments();
-            serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args);
+            serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args, embeddedModuleCL);
         } catch (final InvocationTargetException ite) {
             if (embeddedType == ProcessType.HOST_CONTROLLER) {
                 throw EmbeddedLogger.ROOT_LOGGER.cannotCreateHostController(ite.getCause(), createServerMethod);

@@ -49,6 +49,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Standard implementation of {@link ModelControllerClientFactory}.
@@ -148,12 +149,12 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                     @Override
                     public OperationResponse run() {
                         SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
-                        return modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                        return executeInModelControllerCl(modelController::execute, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
                     }
                 });
 
             }  else {
-                response = modelController.execute(toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                response = executeInModelControllerCl(modelController::execute, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
             }
             return response;
         }
@@ -245,10 +246,24 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
                     attachments.isAutoCloseStreams());
             if (inVmCall) {
-                return SecurityActions.runInVm(() -> modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT));
+                return SecurityActions.runInVm(() -> executeInModelControllerCl(modelController::execute, op, messageHandler, ModelController.OperationTransactionControl.COMMIT));
             } else {
-                return modelController.execute(op, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                return executeInModelControllerCl(modelController::execute, op, messageHandler, ModelController.OperationTransactionControl.COMMIT);
             }
+        }
+
+        private <T, U, V, R> R executeInModelControllerCl(TriFunction<T, U, V, R> function, T t, U u, V v) {
+            final ClassLoader tccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+            try {
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(modelController.getClass().getClassLoader());
+                return function.apply(t,u,v);
+            } finally {
+                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(tccl);
+            }
+        }
+
+        private interface TriFunction<T, U, V, R> {
+            R apply(T t, U u, V v);
         }
     }
 

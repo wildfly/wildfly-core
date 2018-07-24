@@ -37,6 +37,13 @@
         <module name="java.logging"/>
         <module name="java.management"/>
         <module name="java.xml"/>
+        <!--
+            org.jboss.as.controller module is used as module class loader for the operations executed by
+            the embedded server. We need to declare org.codehaus.woodstox as dependency here to use in the
+            embedded server the woodstox XMLStreamWriter implementation instead of the implementation coming
+            from the JDK.
+        -->
+        <module name="org.codehaus.woodstox" services="import"/>
         <module name="org.jboss.as.controller-client" export="true"/>
         <module name="org.jboss.as.core-security"/>
         <module name="org.jboss.as.protocol"/>

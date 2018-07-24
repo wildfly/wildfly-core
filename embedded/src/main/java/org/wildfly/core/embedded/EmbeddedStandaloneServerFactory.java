@@ -84,7 +84,7 @@ public class EmbeddedStandaloneServerFactory {
     private EmbeddedStandaloneServerFactory() {
     }
 
-    public static StandaloneServer create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs) {
+    public static StandaloneServer create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs, final ClassLoader embeddedModuleCL) {
         if (jbossHomeDir == null)
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("jbossHomeDir");
         if (moduleLoader == null)
@@ -95,10 +95,12 @@ public class EmbeddedStandaloneServerFactory {
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("systemEnv");
         if (cmdargs == null)
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
+        if (embeddedModuleCL == null)
+            throw EmbeddedLogger.ROOT_LOGGER.nullVar("embeddedModuleCL");
 
         setupCleanDirectories(jbossHomeDir.toPath(), systemProps);
 
-        return new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader);
+        return new StandaloneServerImpl(cmdargs, systemProps, systemEnv, moduleLoader, embeddedModuleCL);
     }
 
     static void setupCleanDirectories(Path jbossHomeDir, Properties props) {
@@ -210,17 +212,20 @@ public class EmbeddedStandaloneServerFactory {
         private final Properties systemProps;
         private final Map<String, String> systemEnv;
         private final ModuleLoader moduleLoader;
+        private final ClassLoader embeddedModuleCL;
         private ServiceContainer serviceContainer;
         private ControlledProcessState.State currentProcessState;
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
 
-        public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
+        public StandaloneServerImpl(String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader, ClassLoader embeddedModuleCL) {
             this.cmdargs = cmdargs;
             this.systemProps = systemProps;
             this.systemEnv = systemEnv;
             this.moduleLoader = moduleLoader;
+            this.embeddedModuleCL = embeddedModuleCL;
+
             processStateListener = new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
@@ -244,79 +249,89 @@ public class EmbeddedStandaloneServerFactory {
 
         @Override
         public void start() throws EmbeddedProcessStartException {
-
-            Bootstrap bootstrap = null;
+            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
             try {
-                final long startTime = System.currentTimeMillis();
+                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                Bootstrap bootstrap = null;
+                try {
+                    final long startTime = System.currentTimeMillis();
 
-                // Take control of server use of System.exit
-                SystemExiter.initialize(new SystemExiter.Exiter() {
-                    @Override
-                    public void exit(int status) {
-                        StandaloneServerImpl.this.exit();
-                    }
-                });
-
-                // Determine the ServerEnvironment
-                ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime).getServerEnvironment();
-
-                bootstrap = Bootstrap.Factory.newInstance();
-
-                Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
-
-                /*
-                 * This would setup an {@link TransientConfigurationPersister} which does not persist anything
-                 *
-                final ExtensionRegistry extensionRegistry = configuration.getExtensionRegistry();
-                final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
-                    @Override
-                    public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                        final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
-                        final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-                        final File configurationFile = serverEnvironment.getServerConfigurationFile().getBootFile();
-                        XmlConfigurationPersister persister = new TransientConfigurationPersister(configurationFile, rootElement, parser, parser);
-                        for (Namespace namespace : Namespace.domainValues()) {
-                            if (!namespace.equals(Namespace.CURRENT)) {
-                                persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
-                            }
+                    // Take control of server use of System.exit
+                    SystemExiter.initialize(new SystemExiter.Exiter() {
+                        @Override
+                        public void exit(int status) {
+                            StandaloneServerImpl.this.exit();
                         }
-                        extensionRegistry.setWriterRegistry(persister);
-                        return persister;
+                    });
+
+                    // Determine the ServerEnvironment
+                    ServerEnvironment serverEnvironment = Main.determineEnvironment(cmdargs, systemProps, systemEnv, ServerEnvironment.LaunchType.EMBEDDED, startTime).getServerEnvironment();
+
+                    bootstrap = Bootstrap.Factory.newInstance();
+
+                    Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
+
+                    /*
+                     * This would setup an {@link TransientConfigurationPersister} which does not persist anything
+                     *
+                    final ExtensionRegistry extensionRegistry = configuration.getExtensionRegistry();
+                    final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
+                        @Override
+                        public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
+                            final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
+                            final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
+                            final File configurationFile = serverEnvironment.getServerConfigurationFile().getBootFile();
+                            XmlConfigurationPersister persister = new TransientConfigurationPersister(configurationFile, rootElement, parser, parser);
+                            for (Namespace namespace : Namespace.domainValues()) {
+                                if (!namespace.equals(Namespace.CURRENT)) {
+                                    persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
+                                }
+                            }
+                            extensionRegistry.setWriterRegistry(persister);
+                            return persister;
+                        }
+                    };
+                    configuration.setConfigurationPersisterFactory(configurationPersisterFactory);
+                    */
+
+                    configuration.setModuleLoader(moduleLoader);
+
+                    Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.<ServiceActivator>emptyList());
+
+                    serviceContainer = future.get();
+
+                    executorService = Executors.newCachedThreadPool();
+
+                    @SuppressWarnings("unchecked") final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
+                    controlledProcessStateService = processStateServiceValue.getValue();
+                    controlledProcessStateService.addPropertyChangeListener(processStateListener);
+                    establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
+
+                } catch (RuntimeException rte) {
+                    if (bootstrap != null) {
+                        bootstrap.failed();
                     }
-                };
-                configuration.setConfigurationPersisterFactory(configurationPersisterFactory);
-                */
-
-                configuration.setModuleLoader(moduleLoader);
-
-                Future<ServiceContainer> future = bootstrap.startup(configuration, Collections.<ServiceActivator>emptyList());
-
-                serviceContainer = future.get();
-
-                executorService = Executors.newCachedThreadPool();
-
-                @SuppressWarnings("unchecked")
-                final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
-                controlledProcessStateService = processStateServiceValue.getValue();
-                controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
-
-            } catch (RuntimeException rte) {
-                if (bootstrap != null) {
-                    bootstrap.failed();
+                    throw rte;
+                } catch (Exception ex) {
+                    if (bootstrap != null) {
+                        bootstrap.failed();
+                    }
+                    throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
                 }
-                throw rte;
-            } catch (Exception ex) {
-                if (bootstrap != null) {
-                    bootstrap.failed();
-                }
-                throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
+            } finally {
+                EmbeddedManagedProcess.setTccl(tccl);
             }
         }
 
         @Override
         public void stop() {
-            exit();
+            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
+            try {
+                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                exit();
+            } finally {
+                EmbeddedManagedProcess.setTccl(tccl);
+            }
         }
 
         private void exit() {
