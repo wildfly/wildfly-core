@@ -94,7 +94,7 @@ public class EmbeddedHostControllerFactory {
     private EmbeddedHostControllerFactory() {
     }
 
-    public static HostController create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs) {
+    public static HostController create(final File jbossHomeDir, final ModuleLoader moduleLoader, final Properties systemProps, final Map<String, String> systemEnv, final String[] cmdargs, ClassLoader embeddedModuleCL) {
         if (jbossHomeDir == null)
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("jbossHomeDir");
         if (moduleLoader == null)
@@ -107,7 +107,7 @@ public class EmbeddedHostControllerFactory {
             throw EmbeddedLogger.ROOT_LOGGER.nullVar("cmdargs");
 
         setupCleanDirectories(jbossHomeDir, systemProps);
-        return new HostControllerImpl(jbossHomeDir, cmdargs, systemProps, systemEnv, moduleLoader);
+        return new HostControllerImpl(jbossHomeDir, cmdargs, systemProps, systemEnv, moduleLoader, embeddedModuleCL);
     }
 
     static void setupCleanDirectories(File jbossHomeDir, Properties props) {
@@ -224,18 +224,21 @@ public class EmbeddedHostControllerFactory {
         private final Properties systemProps;
         private final Map<String, String> systemEnv;
         private final ModuleLoader moduleLoader;
+        private final ClassLoader embeddedModuleCL;
         private ServiceContainer serviceContainer;
         private ControlledProcessState.State currentProcessState;
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ControlledProcessStateService controlledProcessStateService;
 
-        public HostControllerImpl(final File jbossHomeDir, String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader) {
+        public HostControllerImpl(final File jbossHomeDir, String[] cmdargs, Properties systemProps, Map<String, String> systemEnv, ModuleLoader moduleLoader, ClassLoader embeddedModuleCL) {
             this.cmdargs = cmdargs;
             this.jbossHomeDir = jbossHomeDir;
             this.systemProps = systemProps;
             this.systemEnv = systemEnv;
             this.moduleLoader = moduleLoader;
+            this.embeddedModuleCL = embeddedModuleCL;
+
             processStateListener = new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
@@ -249,43 +252,48 @@ public class EmbeddedHostControllerFactory {
 
         @Override
         public void start() throws EmbeddedProcessStartException {
-            EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
+            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
             try {
-                final long startTime = System.currentTimeMillis();
-                // Take control of server use of System.exit
-                SystemExiter.initialize(new SystemExiter.Exiter() {
-                    @Override
-                    public void exit(int status) {
-                        HostControllerImpl.this.exit();
+                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                EmbeddedHostControllerBootstrap hostControllerBootstrap = null;
+                try {
+                    final long startTime = System.currentTimeMillis();
+                    // Take control of server use of System.exit
+                    SystemExiter.initialize(new SystemExiter.Exiter() {
+                        @Override
+                        public void exit(int status) {
+                            HostControllerImpl.this.exit();
+                        }
+                    });
+
+                    // Determine the ServerEnvironment
+                    HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
+
+                    FutureServiceContainer futureContainer = new FutureServiceContainer();
+                    final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
+                    new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
+                    final String authCode = Base64.getEncoder().encodeToString(authBytes);
+                    hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
+                    hostControllerBootstrap.bootstrap();
+                    serviceContainer = futureContainer.get();
+                    executorService = Executors.newCachedThreadPool();
+                    @SuppressWarnings("unchecked") final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
+                    controlledProcessStateService = processStateServiceValue.getValue();
+                    controlledProcessStateService.addPropertyChangeListener(processStateListener);
+                    establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
+                } catch (RuntimeException rte) {
+                    if (hostControllerBootstrap != null) {
+                        hostControllerBootstrap.failed();
                     }
-                });
-
-                // Determine the ServerEnvironment
-                HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
-
-                FutureServiceContainer futureContainer = new FutureServiceContainer();
-                final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_LENGTH];
-                new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
-                final String authCode = Base64.getEncoder().encodeToString(authBytes);
-                hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
-                hostControllerBootstrap.bootstrap();
-                serviceContainer = futureContainer.get();
-                executorService = Executors.newCachedThreadPool();
-                @SuppressWarnings("unchecked")
-                final Value<ControlledProcessStateService> processStateServiceValue = (Value<ControlledProcessStateService>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
-                controlledProcessStateService = processStateServiceValue.getValue();
-                controlledProcessStateService.addPropertyChangeListener(processStateListener);
-                establishModelControllerClient(controlledProcessStateService.getCurrentState(), true);
-            } catch (RuntimeException rte) {
-                if (hostControllerBootstrap != null) {
-                    hostControllerBootstrap.failed();
+                    throw rte;
+                } catch (Exception ex) {
+                    if (hostControllerBootstrap != null) {
+                        hostControllerBootstrap.failed();
+                    }
+                    throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
                 }
-                throw rte;
-            } catch (Exception ex) {
-                if (hostControllerBootstrap != null) {
-                    hostControllerBootstrap.failed();
-                }
-                throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
+            } finally {
+                EmbeddedManagedProcess.setTccl(tccl);
             }
         }
 
@@ -351,7 +359,13 @@ public class EmbeddedHostControllerFactory {
 
         @Override
         public void stop() {
-            exit();
+            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
+            try {
+                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                exit();
+            } finally {
+                EmbeddedManagedProcess.setTccl(tccl);
+            }
         }
 
         private void exit() {

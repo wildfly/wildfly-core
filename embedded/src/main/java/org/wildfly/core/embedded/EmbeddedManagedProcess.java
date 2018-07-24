@@ -16,6 +16,9 @@ limitations under the License.
 
 package org.wildfly.core.embedded;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import org.jboss.as.controller.client.ModelControllerClient;
 
 /**
@@ -44,4 +47,30 @@ public interface EmbeddedManagedProcess {
      * Stop the embedded process.
      */
     void stop();
+
+    static ClassLoader getTccl() {
+        if (System.getSecurityManager() == null) {
+            return Thread.currentThread().getContextClassLoader();
+        }
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
+    }
+
+    static void setTccl(final ClassLoader cl) {
+        if (System.getSecurityManager() == null) {
+            Thread.currentThread().setContextClassLoader(cl);
+        } else {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    Thread.currentThread().setContextClassLoader(cl);
+                    return null;
+                }
+            });
+        }
+    }
 }

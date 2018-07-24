@@ -207,6 +207,25 @@ public class LongOutputTestCase {
         Assert.assertFalse(consoleWriter.checkError());
         window = queue.poll(10, TimeUnit.SECONDS);
         Assert.assertNotNull(window);
+
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
+        // +1 is for command string which was sent to the CLI
+        Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
+
+        consoleWriter.print(Key.CTRL_C.getAsChar());
+        Assert.assertFalse(consoleWriter.checkError());
+
+        window = queue.poll(10, TimeUnit.SECONDS);
+        Assert.assertNotNull(window);
+
+        final Pattern promptPattern = Pattern.compile(".*\\[.*@.* /\\]\\s*$");
+        checkWithRegex(window, promptPattern);
+        Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
     }
 
     private static String getBeforeLastLine(String window) {

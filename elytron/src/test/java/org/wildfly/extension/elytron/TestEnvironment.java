@@ -21,20 +21,109 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+
+import javax.security.auth.x500.X500Principal;
 
 class TestEnvironment extends AdditionalInitialization {
 
     static final int LDAPS1_PORT = 11391;
     static final int LDAPS2_PORT = 11392;
+
+    private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
+    private static final char[] GENERATED_KEYSTORE_PASSWORD = "Elytron".toCharArray();
+    private static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA");
+    private static final X500Principal LOCALHOST_DN = new X500Principal("OU=Elytron, O=Elytron, C=CZ, ST=Elytron, CN=localhost");
+
+    private static KeyStore loadKeyStore() throws Exception{
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        return ks;
+    }
+
+    private static SelfSignedX509CertificateAndSigningKey createIssuer() {
+        return SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(ISSUER_DN)
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
+                .build();
+    }
+
+    private static KeyStore createTrustStore(SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey) throws Exception {
+        KeyStore trustStore = loadKeyStore();
+
+        X509Certificate issuerCertificate = issuerSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        trustStore.setCertificateEntry("mykey", issuerCertificate);
+
+        return trustStore;
+    }
+
+    private static KeyStore createLocalhostKeyStore(SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey) throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        KeyPair localhostKeys = keyPairGenerator.generateKeyPair();
+        PrivateKey localhostSigningKey = localhostKeys.getPrivate();
+        PublicKey localhostPublicKey = localhostKeys.getPublic();
+
+        KeyStore localhostKeyStore = loadKeyStore();
+
+        X509Certificate issuerCertificate = issuerSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        localhostKeyStore.setCertificateEntry("ca", issuerCertificate);
+
+        X509Certificate localhostCertificate = new X509CertificateBuilder()
+                .setIssuerDn(ISSUER_DN)
+                .setSubjectDn(LOCALHOST_DN)
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(localhostPublicKey)
+                .setSerialNumber(new BigInteger("3"))
+                .addExtension(new BasicConstraintsExtension(false, false, -1))
+                .build();
+        localhostKeyStore.setKeyEntry("localhost", localhostSigningKey, GENERATED_KEYSTORE_PASSWORD, new X509Certificate[]{localhostCertificate,issuerCertificate});
+
+        return localhostKeyStore;
+    }
+
+    private static void createTemporaryKeyStoreFile(KeyStore keyStore, File outputFile) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(outputFile)){
+            keyStore.store(fos, GENERATED_KEYSTORE_PASSWORD);
+        }
+    }
+
+    public static void setUpKeyStores() throws Exception {
+        File workingDir = new File(WORKING_DIRECTORY_LOCATION);
+        if (workingDir.exists() == false) {
+            workingDir.mkdirs();
+        }
+
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer();
+        File trustFile = new File(workingDir, "ca.truststore");
+        KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
+        File localhostFile = new File(workingDir, "localhost.keystore");
+        KeyStore localhostKeyStore = createLocalhostKeyStore(issuerSelfSignedX509CertificateAndSigningKey);
+
+        createTemporaryKeyStoreFile(trustStore, trustFile);
+        createTemporaryKeyStoreFile(localhostKeyStore, localhostFile);
+    }
 
     @Override
     protected ControllerInitializer createControllerInitializer() {
@@ -59,6 +148,7 @@ class TestEnvironment extends AdditionalInitialization {
 
     public static void startLdapService() {
         try {
+            setUpKeyStores();
             LdapService.builder()
                     .setWorkingDir(new File("./target/apache-ds/working1"))
                     .createDirectoryService("TestService1")
