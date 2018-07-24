@@ -26,8 +26,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRU
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.security.auth.x500.X500Principal;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.jboss.as.controller.PathAddress;
@@ -36,6 +41,8 @@ import org.jboss.as.test.syslogserver.TLSSyslogServerConfig;
 import org.jboss.dmr.ModelNode;
 import org.productivity.java.syslog4j.server.SyslogServerConfigIF;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+
 
 /**
  * {@link org.wildfly.core.testrunner.ServerSetupTask} implementation which configures syslog server and
@@ -55,6 +62,111 @@ public class AuditLogToTLSSyslogSetup extends AuditLogToSyslogSetup {
     public static final File CLIENT_TRUSTSTORE_FILE = new File(WORK_DIR, "client.truststore");
 
     private static String PASSWORD = "123456";
+
+    private static final String STANDALONE_KEYSTORE_DIRECTORY = "./target/test-classes/org/jboss/as/test/integration/auditlog";
+    private static final String MANUALMODE_KEYSTORE_DIRECTORY = "./target/test-classes/org/jboss/as/test/manualmode/auditlog";
+    private static final char[] KEYSTORE_CREATION_PASSWORD = "123456".toCharArray();
+
+    private static final File STANDALONE_CLIENT_KEY_FILE = new File(STANDALONE_KEYSTORE_DIRECTORY, "client.keystore");
+    private static final File STANDALONE_CLIENT_TRUST_FILE = new File(STANDALONE_KEYSTORE_DIRECTORY, "client.truststore");
+    private static final File STANDALONE_SERVER_KEY_FILE = new File(STANDALONE_KEYSTORE_DIRECTORY, "server.keystore");
+    private static final File STANDALONE_SERVER_TRUST_FILE = new File(STANDALONE_KEYSTORE_DIRECTORY, "server.truststore");
+
+    private static final File MANUALMODE_CLIENT_KEY_FILE = new File(MANUALMODE_KEYSTORE_DIRECTORY, "client.keystore");
+    private static final File MANUALMODE_CLIENT_TRUST_FILE = new File(MANUALMODE_KEYSTORE_DIRECTORY, "client.truststore");
+    private static final File MANUALMODE_SERVER_KEY_FILE = new File(MANUALMODE_KEYSTORE_DIRECTORY, "server.keystore");
+    private static final File MANUALMODE_SERVER_TRUST_FILE = new File(MANUALMODE_KEYSTORE_DIRECTORY, "server.truststore");
+
+    private KeyStore serverKeyStore = null;
+    private KeyStore clientKeyStore = null;
+    private KeyStore serverTrustStore = null;
+    private KeyStore clientTrustStore = null;
+
+    private void createKeyStoreTrustStore(KeyStore keyStore, KeyStore trustStore, String DN, String alias) throws Exception {
+        X500Principal principal = new X500Principal(DN);
+
+        SelfSignedX509CertificateAndSigningKey selfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
+                .setDn(principal)
+                .setKeySize(1024)
+                .build();
+        X509Certificate certificate = selfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+
+        keyStore.setKeyEntry(alias, selfSignedX509CertificateAndSigningKey.getSigningKey(), KEYSTORE_CREATION_PASSWORD, new X509Certificate[]{certificate});
+        trustStore.setCertificateEntry(alias, certificate);
+    }
+
+    private static KeyStore loadKeyStore() throws Exception{
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        return ks;
+    }
+
+    private static void createTemporaryKeyStoreFile(KeyStore keyStore, File outputFile) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(outputFile)){
+            keyStore.store(fos, KEYSTORE_CREATION_PASSWORD);
+        }
+    }
+
+    private void createStandaloneKeyStoresFiles() throws Exception {
+        File workingDir = new File(STANDALONE_KEYSTORE_DIRECTORY);
+        if (workingDir.exists() == false) {
+            workingDir.mkdirs();
+        }
+
+        createTemporaryKeyStoreFile(clientKeyStore, STANDALONE_CLIENT_KEY_FILE);
+        createTemporaryKeyStoreFile(clientTrustStore, STANDALONE_CLIENT_TRUST_FILE);
+        createTemporaryKeyStoreFile(serverKeyStore, STANDALONE_SERVER_KEY_FILE);
+        createTemporaryKeyStoreFile(serverTrustStore, STANDALONE_SERVER_TRUST_FILE);
+    }
+
+    private void createManualModeKeyStoresFiles() throws Exception {
+        File workingDir = new File(MANUALMODE_KEYSTORE_DIRECTORY);
+        if (workingDir.exists() == false) {
+            workingDir.mkdirs();
+        }
+
+        createTemporaryKeyStoreFile(clientKeyStore, MANUALMODE_CLIENT_KEY_FILE);
+        createTemporaryKeyStoreFile(clientTrustStore, MANUALMODE_CLIENT_TRUST_FILE);
+        createTemporaryKeyStoreFile(serverKeyStore, MANUALMODE_SERVER_KEY_FILE);
+        createTemporaryKeyStoreFile(serverTrustStore, MANUALMODE_SERVER_TRUST_FILE);
+    }
+
+    private void beforeTest() throws Exception {
+        clientKeyStore = loadKeyStore();
+        clientTrustStore = loadKeyStore();
+        serverKeyStore = loadKeyStore();
+        serverTrustStore = loadKeyStore();
+
+        createKeyStoreTrustStore(clientKeyStore, serverTrustStore, "CN=client", "cn=client");
+        createKeyStoreTrustStore(serverKeyStore, clientTrustStore, "CN=server", "cn=server");
+
+        createStandaloneKeyStoresFiles();
+
+        createKeyStoreTrustStore(clientKeyStore, serverTrustStore, "CN=JBAS", "client");
+        createKeyStoreTrustStore(serverKeyStore, clientTrustStore, "CN=Syslog", "server");
+
+        createManualModeKeyStoresFiles();
+    }
+
+    private static void deleteKeyStoreFiles() {
+        File[] testFiles = {
+                STANDALONE_CLIENT_KEY_FILE,
+                STANDALONE_CLIENT_TRUST_FILE,
+                STANDALONE_SERVER_KEY_FILE,
+                STANDALONE_SERVER_TRUST_FILE,
+                MANUALMODE_CLIENT_KEY_FILE,
+                MANUALMODE_CLIENT_TRUST_FILE,
+                MANUALMODE_SERVER_KEY_FILE,
+                MANUALMODE_SERVER_TRUST_FILE
+        };
+        for (File file : testFiles) {
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
 
     @Override
     protected String getSyslogProtocol() {
@@ -105,6 +217,7 @@ public class AuditLogToTLSSyslogSetup extends AuditLogToSyslogSetup {
     public void setup(ManagementClient managementClient) throws Exception {
         FileUtils.deleteDirectory(WORK_DIR);
         WORK_DIR.mkdirs();
+        beforeTest();
         createTestResource(SERVER_KEYSTORE_FILE);
         createTestResource(SERVER_TRUSTSTORE_FILE);
         createTestResource(CLIENT_KEYSTORE_FILE);
@@ -126,6 +239,7 @@ public class AuditLogToTLSSyslogSetup extends AuditLogToSyslogSetup {
     public void tearDown(ManagementClient managementClient) throws Exception {
         super.tearDown(managementClient);
         FileUtils.deleteDirectory(WORK_DIR);
+        deleteKeyStoreFiles();
     }
 
     /**
