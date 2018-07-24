@@ -38,6 +38,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.jar.Attributes;
+import java.util.zip.ZipException;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
@@ -1276,6 +1277,9 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 266, value = "Server home is set to '%s', but server real home is '%s' - unpredictable results may occur.")
     void serverHomeMismatch(Path passed, Path real);
+
+    @Message(id = 267, value = "Cannot mount resource root '%s', is it really an archive?")
+    XMLStreamException archiveMountFailed(String path, @Cause ZipException cause);
 
     ////////////////////////////////////////////////
     //Messages without IDs
