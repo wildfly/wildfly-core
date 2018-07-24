@@ -976,7 +976,9 @@ public class ReadlineConsole {
                             }
                         }
                     } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
+                        connection.write(ANSI.CURSOR_RESTORE);
+                        connection.stdoutHandler().accept(ANSI.ERASE_LINE_FROM_CURSOR);
+                        paging.exit();
                         throw new RuntimeException(ex);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
@@ -1012,9 +1014,17 @@ public class ReadlineConsole {
         // Keep a reference on the caller thread in case Ctrl-C is pressed
         // and thread needs to be interrupted.
         readingThread = Thread.currentThread();
-        // We need to set the interrupt SignalHandler to interrupt the CLI.
+        // We need to set the interrupt SignalHandler to interrupt the reading.
         Consumer<Signal> prevHandler = connection.getSignalHandler();
-        connection.setSignalHandler(interruptHandler);
+        connection.setSignalHandler((signal) -> {
+            // Interrupting the current reading thread.
+            switch (signal) {
+                case INT: {
+                    LOG.tracef("Interrupting reading thread.");
+                    readingThread.interrupt();
+                }
+            }
+        });
         CountDownLatch latch = new CountDownLatch(1);
         Attributes attributes = connection.enterRawMode();
         connection.setStdinHandler(keys -> {
@@ -1278,13 +1288,18 @@ public class ReadlineConsole {
                             connection.write("Unexpected exception");
                             thr.printStackTrace();
                         } finally {
-                            printCollectedOutput();
-                            // The current thread could have been interrupted.
-                            // Clear the flag to safely interact with aesh-readline
-                            Thread.interrupted();
-                            connection.setSignalHandler(handler);
-                            LOG.tracef("Done Executing command %s", line);
-                            loop();
+                            try{
+                                //This can throw an Exception and that would
+                                //cause the cli to hang, therefore it is enclosed in try+finally
+                                printCollectedOutput();
+                            } finally {
+                                // The current thread could have been interrupted.
+                                // Clear the flag to safely interact with aesh-readline
+                                Thread.interrupted();
+                                connection.setSignalHandler(handler);
+                                LOG.tracef("Done Executing command %s", line);
+                                loop();
+                            }
                         }
                     });
                 }, completions, preProcessors, readlineHistory, null, READLINE_FLAGS);
