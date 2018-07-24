@@ -24,11 +24,13 @@ import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
+import org.jboss.as.controller.transform.TransformerRegistry;
 import org.jboss.as.controller.transform.description.AttributeConverter;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
@@ -74,9 +76,15 @@ public class IOSubsystemTransformers implements ExtensionTransformerRegistration
                         WorkerResourceDefinition.WORKER_IO_THREADS,
                         WorkerResourceDefinition.WORKER_TASK_KEEPALIVE,
                         WorkerResourceDefinition.WORKER_TASK_MAX_THREADS
-                );
-
-
-
+                )
+        ;
+        final ResourceTransformationDescriptionBuilder bufferPoolResourceBuilder = builder
+                .addChildResource(BufferPoolResourceDefinition.INSTANCE.getPathElement());
+        bufferPoolResourceBuilder.getAttributeBuilder()
+                .addRename("slice-size", BufferPoolResourceDefinition.BUFFER_SIZE.getName()).end();
+        bufferPoolResourceBuilder.getAttributeBuilder()
+                .addRename("slices-per-buffer", BufferPoolResourceDefinition.BUFFER_PER_SLICE.getName()).end();
+        TransformationDescription.Tools.register(bufferPoolResourceBuilder.build(), TransformerRegistry.Factory.create()
+                .getServerRegistration(ModelVersion.create(2)));
     }
 }
