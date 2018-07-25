@@ -32,12 +32,18 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import javax.security.auth.message.config.AuthConfigFactory;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -66,6 +72,8 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -73,10 +81,13 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.security.SecurityContextAssociation;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.Version;
+import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
+import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
@@ -84,6 +95,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Top level {@link ResourceDefinition} for the Elytron subsystem.
@@ -313,6 +325,37 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .install();
     }
 
+    private static void registerAuthConfigFactory(final AuthConfigFactory authConfigFactory) {
+        doPrivileged((PrivilegedAction<Void>) () -> {
+            AuthConfigFactory.setFactory(authConfigFactory);
+            return null;
+        });
+    }
+
+    private static AuthConfigFactory getAuthConfigFactory() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(ElytronDefinition.class.getClassLoader());
+            return AuthConfigFactory.getFactory();
+        } finally {
+            Thread.currentThread().setContextClassLoader(classLoader);
+        }
+    }
+
+    private static boolean isPicketBoxAvailable() {
+        Module current = Module.getCallerModule();
+        if (current != null) {
+            try {
+                return current.getModule("org.picketbox") != null;
+            } catch (ModuleLoadException e) {
+                ROOT_LOGGER.trace("The module org.picketbox is not available.", e);
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     private static SecurityPropertyService uninstallSecurityPropertyService(OperationContext context) {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
 
@@ -370,6 +413,13 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
 
             builder.install();
+            if (doPrivileged((PrivilegedAction<Boolean>) ElytronDefinition::isPicketBoxAvailable)) {
+                registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(),
+                        doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory),
+                        ALLOW_DELEGATION));
+            } else {
+                registerAuthConfigFactory(new ElytronAuthConfigFactory());
+            }
 
             if (context.isNormalServer()) {
                 context.addStep(new AbstractDeploymentChainStep() {
@@ -405,6 +455,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             if (context.isResourceServiceRestartAllowed()) {
+                registerAuthConfigFactory(null);
                 SecurityPropertyService securityPropertyService = uninstallSecurityPropertyService(context);
                 if (securityPropertyService != null) {
                     context.attach(SECURITY_PROPERTY_SERVICE_KEY, securityPropertyService);
@@ -428,4 +479,16 @@ class ElytronDefinition extends SimpleResourceDefinition {
         }
 
     }
+
+    private static final Supplier<Boolean> ALLOW_DELEGATION = new Supplier<Boolean>() {
+
+        @Override
+        public Boolean get() {
+            if (WildFlySecurityManager.isChecking()) {
+                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityContextAssociation.getSecurityContext() != null);
+            } else {
+                return SecurityContextAssociation.getSecurityContext() != null;
+            }
+        }
+    };
 }
