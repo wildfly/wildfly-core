@@ -69,6 +69,7 @@ interface ElytronDescriptionConstants {
     String AUTHORIZATION = "authorization";
     String AUTHORIZATION_NAME = "authorization-name";
     String AUTHORIZATION_REALM = "authorization-realm";
+    String AUTOFLUSH = "autoflush";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
 
     String BCRYPT = "bcrypt";
@@ -174,9 +175,9 @@ interface ElytronDescriptionConstants {
     String FILTERS = "filters";
     String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     String FINAL_PROVIDERS = "final-providers";
-    String FORWARDING_MODE = "forwarding-mode";
     String FIRST = "first";
     String FORMAT = "format";
+    String FORWARDING_MODE = "forwarding-mode";
     String FROM = "from";
 
     String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
