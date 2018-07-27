@@ -131,6 +131,8 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
+$JAVA --add-modules java.se -version > /dev/null || JAVA_9_PLUS=no
+
 if $linux; then
     # consolidate the server and command line opts
     CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
@@ -271,7 +273,12 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             mv -f "$JBOSS_LOG_DIR/gc.log.3" "$JBOSS_LOG_DIR/backupgc.log.3" >/dev/null 2>&1
             mv -f "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
             mv -f "$JBOSS_LOG_DIR"/gc.log.*.current "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
-            "$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+
+            if [[ "x$JAVA_9_PLUS" = "x" ]]; then
+                "$JAVA" $JVM_OPTVERSION -verbose:gc -Xlog:gc*:file="$JBOSS_LOG_DIR/gc.log":time,uptimemillis:filecount=5,filesize=3M -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xlog:gc*:file=$JBOSS_LOG_DIR/gc.log:time,uptimemillis:filecount=5,filesize=3M"
+            else
+                "$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+            fi
         fi
     fi
 
