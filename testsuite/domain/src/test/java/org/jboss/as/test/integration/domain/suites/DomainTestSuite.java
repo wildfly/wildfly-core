@@ -53,6 +53,7 @@ import org.junit.runners.Suite;
         JMXHostSubsystemTestCase.class,
         ManagementAccessTestCase.class,
         ManagementClientContentTestCase.class,
+        ReloadWithRolloutPlanTestCase.class,
         ManagementReadsTestCase.class,
         ManagementVersionTestCase.class,
         ModuleLoadingManagementTestCase.class,

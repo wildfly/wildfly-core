@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2015, Red Hat, Inc., and individual contributors
+ * Copyright 2018, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -27,6 +27,8 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.impl.ArgumentWithValue;
+import org.jboss.as.cli.impl.ArgumentWithoutValue;
+import org.jboss.dmr.ModelNode;
 
 
 /**
@@ -35,12 +37,29 @@ import org.jboss.as.cli.impl.ArgumentWithValue;
  */
 public class EchoDMRHandler extends CommandHandlerWithHelp {
 
+    private static final String COMPACT_OPTION = "--compact";
+
+    private ArgumentWithoutValue compact = new ArgumentWithoutValue(this, COMPACT_OPTION) {
+        @Override
+        public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+            boolean appear = super.canAppearNext(ctx);
+            if (!appear) {
+                return false;
+            }
+            return ctx.getParsedCommandLine().getOtherProperties().isEmpty();
+        }
+    };
+
     public EchoDMRHandler() {
         super("echo-dmr");
 
         new ArgumentWithValue(this, new CommandLineCompleter() {
                 @Override
                 public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+                    // The completer will add ' ' separator.
+                    if (buffer.trim().equals(COMPACT_OPTION)) {
+                        return cursor;
+                    }
 
                     final String substituedLine = ctx.getParsedCommandLine().getSubstitutedLine();
                     boolean skipWS;
@@ -68,7 +87,7 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                         ++cmdStart;
                     }
 
-                    final String cmd;
+                    String cmd;
                     if(wordCount == 1) {
                         cmd = "";
                     } else if(wordCount != 2) {
@@ -76,6 +95,8 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
                     } else {
                         cmd = substituedLine.substring(cmdStart);
                     }
+
+                    cmd = clearCmd(cmd);
 
                     int cmdResult = ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
                     if(cmdResult < 0) {
@@ -112,6 +133,15 @@ public class EchoDMRHandler extends CommandHandlerWithHelp {
         if(argsStr == null) {
             throw new CommandFormatException("Missing the command or operation to translate to DMR.");
         }
-        ctx.printDMR(ctx.buildRequest(argsStr));
+        argsStr = clearCmd(argsStr);
+        ModelNode n = ctx.buildRequest(argsStr);
+        ctx.printDMR(n, compact.isPresent(ctx.getParsedCommandLine()));
+    }
+
+    private static String clearCmd(String argsStr) {
+        if(argsStr.startsWith(COMPACT_OPTION)) {
+            argsStr = argsStr.substring(COMPACT_OPTION.length()).trim();
+        }
+        return argsStr;
     }
 }

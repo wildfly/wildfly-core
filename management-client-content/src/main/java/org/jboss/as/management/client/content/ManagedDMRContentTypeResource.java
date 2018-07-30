@@ -44,7 +44,6 @@ import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
@@ -113,14 +112,10 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
 
     @Override
     public void writeModel(ModelNode newModel) {
-        if (model.hasDefined(ModelDescriptionConstants.HASH)) {
-            throw ControllerLogger.ROOT_LOGGER.immutableResource();
-        } else {
-            // ApplyRemoteMasterDomainModelHandler is writing us
-            byte[] initialHash = newModel.hasDefined(ModelDescriptionConstants.HASH) ? newModel.get(ModelDescriptionConstants.HASH).asBytes() : null;
-            if (initialHash != null) {
-                loadContent(initialHash);
-            }
+        // ApplyRemoteMasterDomainModelHandler is writing us
+        byte[] initialHash = newModel.hasDefined(ModelDescriptionConstants.HASH) ? newModel.get(ModelDescriptionConstants.HASH).asBytes() : null;
+        if (initialHash != null) {
+            loadContent(initialHash);
         }
     }
 
