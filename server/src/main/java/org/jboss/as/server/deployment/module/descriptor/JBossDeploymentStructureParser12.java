@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipException;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
@@ -766,6 +767,8 @@ public class JBossDeploymentStructureParser12 implements XMLElementReader<ParseR
                         }
                         resourceRoot.setUsePhysicalCodeSource(usePhysicalCodeSource);
                         specBuilder.addResourceRoot(resourceRoot);
+                    } catch (ZipException e) {
+                        throw ServerLogger.ROOT_LOGGER.archiveMountFailed(path, e);
                     } catch (IOException e) {
                         throw new XMLStreamException(e);
                     }

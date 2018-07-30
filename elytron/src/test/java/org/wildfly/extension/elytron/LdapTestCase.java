@@ -23,11 +23,14 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.common.iteration.CodePointIterator;
 import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
@@ -36,12 +39,28 @@ import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.evidence.X509PeerCertificateChainEvidence;
 import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
+import javax.security.auth.x500.X500Principal;
+
+import java.io.File;
 import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -51,6 +70,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -62,13 +82,79 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 public class LdapTestCase extends AbstractSubsystemTest {
 
     private KernelServices services;
+    private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
+    private static final String LDIF_LOCATION = "/ldap-data.ldif";
+    private static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA ");
+    private static final X500Principal SCARAB_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Scarab");
+    private static X509Certificate SCARAB_CERTIFICATE;
+
+    private static X509Certificate createScarabCertificate() throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        KeyPair scarabKeys = keyPairGenerator.generateKeyPair();
+        PublicKey scarabPublicKey = scarabKeys.getPublic();
+
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(ISSUER_DN)
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
+                .build();
+
+        return new X509CertificateBuilder()
+                .setIssuerDn(ISSUER_DN)
+                .setSubjectDn(SCARAB_DN)
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(scarabPublicKey)
+                .setSerialNumber(new BigInteger("4"))
+                .addExtension(new BasicConstraintsExtension(false, false, -1))
+                .build();
+    }
+
+    private static void rewriteLdapDataLdif(X509Certificate certificate) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        String digest = ByteIterator.ofBytes(md.digest(certificate.getEncoded())).hexEncode(true).drainToString();
+
+        CodePointIterator certificateBytes = ByteIterator.ofBytes(certificate.getEncoded()).base64Encode();
+        String certificateBaseString = "usercertificate:: " + certificateBytes.drainToString();
+        String certificateString = "";
+        int counter = 0;
+        for (int i = 0; i < certificateBaseString.length(); i++){
+            if(i == 78 || i == (78+77*counter)){
+                certificateString = certificateString + System.getProperty("line.separator");
+                certificateString = certificateString + " ";
+                counter += 1;
+            }
+            certificateString = certificateString + certificateBaseString.charAt(i);
+        }
+
+        // Read in the file and then replace the x509digest and usercertificate
+        Path filePath = Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION);
+        String ldapDataLdifString = new String(Files.readAllBytes(filePath),StandardCharsets.UTF_8);
+        ldapDataLdifString = ldapDataLdifString.replaceFirst("x509digest: (.*)", "x509digest: " + digest);
+        ldapDataLdifString = ldapDataLdifString.replaceFirst(Pattern.quote("usercertificate::"), certificateString);
+        Files.write(filePath, ldapDataLdifString.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void loadResources() throws Exception {
+        Files.copy(Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION), Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION + ".bak"), StandardCopyOption.REPLACE_EXISTING);
+        SCARAB_CERTIFICATE = createScarabCertificate();
+        rewriteLdapDataLdif(SCARAB_CERTIFICATE);
+    }
 
     @BeforeClass
-    public static void startLdapService() {
+    public static void startLdapService() throws Exception {
+        loadResources();
         TestEnvironment.startLdapService();
     }
 
-    public LdapTestCase() throws Exception {
+    @AfterClass
+    public static void restoreLdif() throws Exception {
+        Files.copy(Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION + ".bak"), Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION), StandardCopyOption.REPLACE_EXISTING);
+        new File(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION + ".bak").delete();
+    }
+
+    public LdapTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
@@ -144,8 +230,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
 
         RealmIdentity x509User = securityRealm.getRealmIdentity(new NamePrincipal("x509User"));
         Assert.assertTrue(x509User.exists());
-        X509Certificate scarab = loadCertificate("scarab.pem");
-        Assert.assertTrue(x509User.verifyEvidence(new X509PeerCertificateChainEvidence(scarab)));
+        Assert.assertTrue(x509User.verifyEvidence(new X509PeerCertificateChainEvidence(SCARAB_CERTIFICATE)));
     }
 
     @Test

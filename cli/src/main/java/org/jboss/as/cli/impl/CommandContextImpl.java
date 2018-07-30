@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2016, Red Hat, Inc., and individual contributors
+ * Copyright 2018, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -969,17 +969,26 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     }
 
     @Override
-    public void printDMR(ModelNode node) {
+    public void printDMR(ModelNode node, boolean compact) {
         if (getConfig().isOutputJSON() && isColorOutput()) {
-            printLine(node.toJSONString(false), node.get("outcome").asString());
+            printLine(node.toJSONString(compact), node.get("outcome").asString());
         } else if (getConfig().isOutputJSON()) {
-            printLine(node.toJSONString(false));
+            printLine(node.toJSONString(compact));
         } else if (isColorOutput()) {
-            printLine(node.toString(), node.get("outcome").asString());
+            if(compact) {
+                printLine(Util.compactToString(node), node.get("outcome").asString());
+            } else {
+                printLine(node.toString(), node.get("outcome").asString());
+            }
         } else {
-            printLine(node.toString());
+            if(compact) {
+                printLine(Util.compactToString(node));
+            } else {
+                printLine(node.toString());
+            }
         }
     }
+
     private String colorizeMessage(String message, String outcome) {
         if (outcome != null && !outcome.isEmpty()) {
             switch (outcome) {

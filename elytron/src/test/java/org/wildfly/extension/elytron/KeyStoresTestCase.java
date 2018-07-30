@@ -27,14 +27,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -61,7 +67,10 @@ import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.X500;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.KeyUsage;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 
 /**
@@ -75,6 +84,22 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private static final String KEYSTORE_NAME = "ModifiedKeystore";
     private static final String KEY_PASSWORD = "secret";
 
+    private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
+    private static final char[] KEYSTORE_PASSWORD = "Elytron".toCharArray();
+    private static final X500Principal ROOT_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA");
+    private static final X500Principal ANOTHER_ROOT_DN = new X500Principal("O=Another Root Certificate Authority, EMAILADDRESS=anotherca@wildfly.org, C=UK, ST=Elytron, CN=Another Elytron CA");
+    private static final X500Principal SALLY_DN = new X500Principal("CN=sally smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
+    private static final X500Principal SSMITH_DN = new X500Principal("CN=ssmith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
+    private static final X500Principal FIREFLY_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly");
+    private static final X500Principal INTERMEDIATE_DN = new X500Principal("O=Intermediate Certificate Authority, EMAILADDRESS=intermediateca@wildfly.org, C=UK, ST=Elytron, CN=Intermediate Elytron CA");
+    private static final File FIREFLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly.keystore");
+    private static final File TEST_FILE = new File(WORKING_DIRECTORY_LOCATION, "test.keystore");
+    private static final File TEST_SINGLE_CERT_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-single-cert-reply.cert");
+    private static final File TEST_CERT_CHAIN_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-cert-chain-reply.cert");
+    private static final File TEST_EXPORTED_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-exported.cert");
+    private static final File TEST_TRUSTED_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-trusted.cert");
+    private static final File TEST_UNTRUSTED_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-untrusted.cert");
+    private static final File TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-untrusted-cert-chain-reply.cert");
 
     public KeyStoresTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
@@ -96,8 +121,183 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         return response;
     }
 
+    private static KeyStore loadKeyStore() throws Exception {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        return ks;
+    }
+
+    private static void createTemporaryKeyStoreFile(KeyStore keyStore, File outputFile) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(outputFile)){
+            keyStore.store(fos, KEYSTORE_PASSWORD);
+        }
+    }
+
+    private static void createTemporaryCertFile(X509Certificate certificate, File outputFile) throws Exception {
+        try (FileOutputStream fos = new FileOutputStream(outputFile, true)){
+            fos.write(certificate.getEncoded());
+        }
+    }
+
+    private static KeyStore createFireflyKeyStore() throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        KeyPair fireflyKeys = keyPairGenerator.generateKeyPair();
+        PrivateKey fireflySigningKey = fireflyKeys.getPrivate();
+        PublicKey fireflyPublicKey = fireflyKeys.getPublic();
+
+        KeyStore fireflyKeyStore = loadKeyStore();
+
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(ROOT_DN)
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
+                .build();
+        X509Certificate issuerCertificate = issuerSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        fireflyKeyStore.setCertificateEntry("ca", issuerCertificate);
+
+        X509Certificate fireflyCertificate = new X509CertificateBuilder()
+                .setIssuerDn(ROOT_DN)
+                .setSubjectDn(FIREFLY_DN)
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(fireflyPublicKey)
+                .setSerialNumber(new BigInteger("1"))
+                .addExtension(new BasicConstraintsExtension(false, false, -1))
+                .build();
+        fireflyKeyStore.setKeyEntry("firefly", fireflySigningKey, KEY_PASSWORD.toCharArray(), new X509Certificate[]{fireflyCertificate,issuerCertificate});
+
+        return fireflyKeyStore;
+    }
+
+    private static SelfSignedX509CertificateAndSigningKey createCertRoot(X500Principal DN) {
+        return SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(DN)
+                .setKeyAlgorithmName("DSA")
+                .setSignatureAlgorithmName("SHA1withDSA")
+                .setKeySize(1024)
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
+                .build();
+    }
+
+    private static SelfSignedX509CertificateAndSigningKey createSallyCertificate() {
+        return SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(SALLY_DN)
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
+                .setKeySize(1024)
+                .addExtension(false, "ExtendedKeyUsage", "clientAuth")
+                .addExtension(true, "KeyUsage", "digitalSignature")
+                .addExtension(false, "SubjectAlternativeName", "email:sallysmith@example.com,DNS:sallysmith.example.com")
+                .build();
+    }
+
+    private static X509Certificate createSSmithCertificate(SelfSignedX509CertificateAndSigningKey rootSelfSignedX509CertificateAndSigningKey, PublicKey publicKey) throws Exception {
+        return new X509CertificateBuilder()
+                .setIssuerDn(ROOT_DN)
+                .setSubjectDn(SSMITH_DN)
+                .setSignatureAlgorithmName("SHA1withDSA")
+                .setSigningKey(rootSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(publicKey)
+                .build();
+    }
+
+    private static KeyStore createTestKeyStore(SelfSignedX509CertificateAndSigningKey rootSelfSignedX509CertificateAndSigningKey, SelfSignedX509CertificateAndSigningKey sallySelfSignedX509CertificateAndSigningKey) throws Exception {
+        KeyStore testKeyStore = loadKeyStore();
+
+        X509Certificate sallyCertificate = sallySelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        testKeyStore.setKeyEntry("ssmith", sallySelfSignedX509CertificateAndSigningKey.getSigningKey(), KEY_PASSWORD.toCharArray(), new X509Certificate[]{sallyCertificate});
+
+        X509Certificate rootCertificate = rootSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        testKeyStore.setKeyEntry("ca", rootSelfSignedX509CertificateAndSigningKey.getSigningKey(), KEY_PASSWORD.toCharArray(), new X509Certificate[]{rootCertificate});
+
+        return testKeyStore;
+    }
+
+    private static X509Certificate createTestTrustedCertificate(SelfSignedX509CertificateAndSigningKey rootSelfSignedX509CertificateAndSigningKey) throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        KeyPair keys = keyPairGenerator.generateKeyPair();
+        PublicKey publicKey = keys.getPublic();
+
+        return new X509CertificateBuilder()
+                .setIssuerDn(ROOT_DN)
+                .setSubjectDn(INTERMEDIATE_DN)
+                .setSignatureAlgorithmName("SHA1withDSA")
+                .setSigningKey(rootSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(publicKey)
+                .build();
+    }
+
+    private static X509Certificate createTestUntrustedCertChainReplyCertificate(SelfSignedX509CertificateAndSigningKey selfSignedX509CertificateAndSigningKey, PublicKey publicKey) throws Exception {
+        return new X509CertificateBuilder()
+                .setIssuerDn(ANOTHER_ROOT_DN)
+                .setSubjectDn(SSMITH_DN)
+                .setSignatureAlgorithmName("SHA1withDSA")
+                .setSigningKey(selfSignedX509CertificateAndSigningKey.getSigningKey())
+                .setPublicKey(publicKey)
+                .build();
+    }
+
+    private static void setUpFiles() throws Exception {
+        File workingDir = new File(WORKING_DIRECTORY_LOCATION);
+        if (workingDir.exists() == false) {
+            workingDir.mkdirs();
+        }
+
+        SelfSignedX509CertificateAndSigningKey rootSelfSignedX509CertificateAndSigningKey = createCertRoot(ROOT_DN);
+        SelfSignedX509CertificateAndSigningKey anotherRootSelfSignedX509CertificateAndSigningKey = createCertRoot(ANOTHER_ROOT_DN);
+        SelfSignedX509CertificateAndSigningKey sallySelfSignedX509CertificateAndSigningKey = createSallyCertificate();
+
+        PublicKey publicKey = sallySelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate().getPublicKey();
+
+        // Key Stores
+        KeyStore fireflyKeyStore = createFireflyKeyStore();
+        KeyStore testKeyStore = createTestKeyStore(rootSelfSignedX509CertificateAndSigningKey, sallySelfSignedX509CertificateAndSigningKey);
+
+        createTemporaryKeyStoreFile(fireflyKeyStore, FIREFLY_FILE);
+        createTemporaryKeyStoreFile(testKeyStore, TEST_FILE);
+
+        // Cert Files
+        X509Certificate sSmithCertificate = createSSmithCertificate(rootSelfSignedX509CertificateAndSigningKey, publicKey);
+
+        X509Certificate testTrustedCert = createTestTrustedCertificate(rootSelfSignedX509CertificateAndSigningKey);
+        X509Certificate testUntrustedCert = anotherRootSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
+        X509Certificate testUntrustedCertChainReplyCert = createTestUntrustedCertChainReplyCertificate(anotherRootSelfSignedX509CertificateAndSigningKey, publicKey);
+
+        createTemporaryCertFile(sSmithCertificate, TEST_SINGLE_CERT_REPLY_FILE);
+
+        createTemporaryCertFile(rootSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate(), TEST_CERT_CHAIN_REPLY_FILE);
+        createTemporaryCertFile(sSmithCertificate, TEST_CERT_CHAIN_REPLY_FILE);
+
+        createTemporaryCertFile(sallySelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate(), TEST_EXPORTED_FILE);
+        createTemporaryCertFile(testTrustedCert, TEST_TRUSTED_FILE);
+        createTemporaryCertFile(testUntrustedCert, TEST_UNTRUSTED_FILE);
+
+        createTemporaryCertFile(testUntrustedCertChainReplyCert, TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE);
+        createTemporaryCertFile(anotherRootSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate(), TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE);
+    }
+
+    private static void removeTestFiles() {
+        File[] testFiles = {
+                FIREFLY_FILE,
+                TEST_FILE,
+                TEST_SINGLE_CERT_REPLY_FILE,
+                TEST_CERT_CHAIN_REPLY_FILE,
+                TEST_EXPORTED_FILE,
+                TEST_TRUSTED_FILE,
+                TEST_UNTRUSTED_FILE,
+                TEST_UNTRUSTED_CERT_CHAIN_REPLY_FILE
+        };
+        for (File file : testFiles) {
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
     @BeforeClass
-    public static void initTests() {
+    public static void initTests() throws Exception {
+        setUpFiles();
         AccessController.doPrivileged(new PrivilegedAction<Integer>() {
             public Integer run() {
                 return Security.insertProviderAt(wildFlyElytronProvider, 1);
@@ -110,6 +310,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
 
     @AfterClass
     public static void cleanUpTests() {
+        removeTestFiles();
         csUtil.cleanUp();
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
@@ -303,7 +504,8 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         String csrFileName = "/generated-csr.csr";
         Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
         File csrFile = new File(resources + csrFileName);
-        addKeyStore();
+        // Use the original KeyStore since this test depends on the encoding being identical but not the expiration date
+        addOriginalKeyStore();
 
         try {
             ModelNode operation = new ModelNode();
@@ -575,7 +777,8 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         String certificateFileName = "/exported-cert.cert";
         Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
         File certificateFile = new File(resources + certificateFileName);
-        addKeyStore();
+        // Use the original KeyStore since this test depends on the encoding being identical but not the expiration date
+        addOriginalKeyStore();
 
         try {
             ModelNode operation = new ModelNode();
@@ -681,6 +884,19 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private void addKeyStore() throws Exception {
         Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
         Files.copy(resources.resolve("test.keystore"), resources.resolve("test-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", KEYSTORE_NAME);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test-copy.keystore");
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
+        assertSuccess(services.executeOperation(operation));
+    }
+
+    private void addOriginalKeyStore() throws Exception {
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        Files.copy(resources.resolve("test-original.keystore"), resources.resolve("test-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", KEYSTORE_NAME);

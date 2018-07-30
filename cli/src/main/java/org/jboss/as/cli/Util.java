@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2016, Red Hat, Inc., and individual contributors
+ * Copyright 2018, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -24,6 +24,8 @@ package org.jboss.as.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.CharacterCodingException;
@@ -1825,4 +1827,18 @@ public class Util {
 
         return Collections.emptyList();
     }
+
+    /**
+     * Build a compact representation of the ModelNode.
+     * @param node The model
+     * @return A single line containing the multi lines ModelNode.toString() content.
+     */
+    public static String compactToString(ModelNode node) {
+        Objects.requireNonNull(node);
+        final StringWriter stringWriter = new StringWriter();
+        final PrintWriter writer = new PrintWriter(stringWriter, true);
+        node.writeString(writer, true);
+        return stringWriter.toString();
+    }
+
 }
