@@ -42,7 +42,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
-import org.wildfly.extension.elytron.Configurable;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.x500.cert.acme.AcmeException;
 
@@ -181,13 +180,13 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     /**
      * A {@link StartException} where a custom component has been defined with configuration but does not implement
-     * the {@link Configurable} interface.
+     * the {@code initialize(Map<String, String>)} method.
      *
      * @param className the class name of the custom component implementation being loaded.
      * @return The {@link StartException} for the error.
      */
-    @Message(id = 15, value = "The custom component implementation '%s' doe not implement 'org.wildfly.extension.elytron.Configurable' however configuration has been supplied.")
-    StartException componentNotConfigurable(final String className);
+    @Message(id = 15, value = "The custom component implementation '%s' doe not implement method initialize(Map<String, String>), however configuration has been supplied.")
+    StartException componentNotConfigurable(final String className, @Cause Exception cause);
 
     /**
      * An {@link OperationFailedException} where validation of a specified regular expression has failed.

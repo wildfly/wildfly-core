@@ -7,6 +7,7 @@
             <security-event-listener name="local-file"/>
             <security-event-listener name="remote-syslog"/>
         </aggregate-security-event-listener>
+        <custom-security-event-listener name="a" module="b" class-name="c.D"/>
         <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
         <periodic-rotating-file-audit-log name="periodic-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" suffix="y-M-d"/>
         <size-rotating-file-audit-log name="size-rotating" path="audit.log" relative-to="jboss.server.log.dir" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d"/>

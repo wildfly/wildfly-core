@@ -25,8 +25,11 @@ import java.util.Map;
  * Where custom components implement this interface they can be dynamically be configured by the subsystem with
  * a {@link Map<String, String>}.
  *
+ * @deprecated it is sufficient to implement {@code initialize(Map&lt;String, String&gt;)} method in custom component
+ *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
+@Deprecated
 public interface Configurable {
 
     /**
