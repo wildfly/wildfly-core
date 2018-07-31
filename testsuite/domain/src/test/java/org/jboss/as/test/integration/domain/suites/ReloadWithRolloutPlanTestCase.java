@@ -23,7 +23,6 @@
 package org.jboss.as.test.integration.domain.suites;
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -36,7 +35,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
@@ -158,12 +157,14 @@ public class ReloadWithRolloutPlanTestCase {
         op.get(OP).set("reload");
         op.get(OP_ADDR).add(HOST, "master");
         op.get(ADMIN_ONLY).set(false);
+        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+        // Try to reconnect to the hc
+        domainMasterLifecycleUtil.connect();
         try {
-            masterClient.execute(new OperationBuilder(op).build());
-        } catch(IOException e) {
-            if (!(e.getCause() instanceof ExecutionException)) {
-                throw e;
-            } // else ignore, this might happen if the channel gets closed before we got the response
+            domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+            domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+        } catch (InterruptedException | TimeoutException e) {
+            throw new RuntimeException("Failed waiting for host controller and servers to start.", e);
         }
     }
 
