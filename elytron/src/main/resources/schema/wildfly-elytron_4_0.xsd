@@ -4029,6 +4029,7 @@
             <xs:element name="trust-managers" type="trustManagersType" minOccurs="0"/>
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
+            <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
         </xs:all>
     </xs:complexType>
 
@@ -4751,6 +4752,85 @@
                     A filter to apply to the aliases made available by this KeyStore.
 
                     Can either be a comma separated list of aliases to return or one of the following formats ALL:-alias1:-alias2, NONE:+alias1:+alias2
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityAccountsType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for certificate authority account definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="certificate-authority-account" type="certificateAuthorityAccountType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityAccountType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single certificate authority account.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="account-key" type="accountKeyType" minOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this certificate authority account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="certificate-authority" default="LetsEncrypt">
+            <xs:annotation>
+                <xs:documentation>
+                    The certificate authority to use.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="LetsEncrypt"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="contact-urls" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A list of URLs that the certificate authority can contact about any issues related to this account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="accountKeyType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a certificate authority account key.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="credential-reference" type="credentialReferenceType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Credential to be used when accessing the certificate authority account key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="key-store" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the KeyStore that contains the certificate authority account key.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="alias" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The alias of the certificate authority account key in the KeyStore.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
