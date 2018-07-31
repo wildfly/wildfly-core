@@ -101,7 +101,7 @@ public class DeploymentOverlayTestCase {
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(DeploymentOverlayTestCase.class.getSimpleName());
+        testSupport = CLITestSuite.createSupport(DeploymentOverlayTestCase.class.getSimpleName());
         masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
         slaveClient = testSupport.getDomainSlaveLifecycleUtil().getDomainClient();
         properties.clear();
@@ -118,7 +118,7 @@ public class DeploymentOverlayTestCase {
         masterClient = null;
         slaveClient.close();
         slaveClient = null;
-        DomainTestSuite.stopSupport();
+        CLITestSuite.stopSupport();
     }
 
     @After
