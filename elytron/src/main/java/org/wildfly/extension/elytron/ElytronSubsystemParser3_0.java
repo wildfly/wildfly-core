@@ -61,7 +61,7 @@ class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
                 .addChild(getRealmParser())
                 .addChild(getCredentialSecurityFactoryParser())
                 .addChild(getMapperParser())
-                .addChild(getPermissionSetParser())
+                .addChild(getPermissionSetParser()) // new
                 .addChild(getHttpParser())
                 .addChild(getSaslParser())
                 .addChild(getTlsParser())

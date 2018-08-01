@@ -18,7 +18,11 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.CertificateChainAttributeDefinitions.writeCertificate;
+import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
@@ -35,6 +39,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CRLReason;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -44,9 +49,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -58,22 +68,33 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.LongRangeValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.pem.Pem;
 import org.wildfly.security.util.ByteStringBuilder;
 import org.wildfly.security.x500.X500;
 import org.wildfly.security.x500.cert.PKCS10CertificateSigningRequest;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateChainAndSigningKey;
+import org.wildfly.security.x500.cert.acme.AcmeAccount;
+import org.wildfly.security.x500.cert.acme.AcmeClientSpi;
+import org.wildfly.security.x500.cert.acme.AcmeException;
 
 /**
  * A {@link ResourceDefinition} that wraps an existing resource and adds operations for advanced {@link KeyStore} manipulation.
@@ -125,6 +146,18 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             .setRequired(true)
             .build();
 
+    private static final AcmeClientSpi acmeClient;
+    static {
+        acmeClient = loadAcmeClient();
+    }
+
+    private static AcmeClientSpi loadAcmeClient() {
+        for (AcmeClientSpi acmeClient : ServiceLoader.load(AcmeClientSpi.class, ElytronSubsystemMessages.class.getClassLoader())) {
+            return acmeClient;
+        }
+        throw ROOT_LOGGER.unableToInstatiateAcmeClientSpiImplementation();
+    }
+
     static ResourceDefinition wrap(ResourceDefinition resourceDefinition) {
         return new AdvancedModifiableKeyStoreDecorator(resourceDefinition);
     }
@@ -153,6 +186,15 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
             // Move an existing entry to a new alias
             ChangeAliasHandler.register(resourceRegistration, resolver);
+
+            // Obtain a signed certificate from a certificate authority
+            ObtainCertificateHandler.register(resourceRegistration, resolver);
+
+            // Revoke a signed certificate
+            RevokeCertificateHandler.register(resourceRegistration, resolver);
+
+            // Check if a signed certificate is due for renewal
+            ShouldRenewCertificateHandler.register(resourceRegistration, resolver);
         }
     }
 
@@ -165,7 +207,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
                 .setAllowExpression(true)
-                .setValidator(new IntRangeValidator(1))
+                .setValidator(new KeySizeValidator())
                 .build();
 
         static final SimpleAttributeDefinition DISTINGUISHED_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DISTINGUISHED_NAME, ModelType.STRING)
@@ -680,6 +722,246 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         }
     }
 
+    static class ObtainCertificateHandler extends ElytronRuntimeOnlyHandler {
+
+        static final StringListAttributeDefinition DOMAIN_NAMES = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.DOMAIN_NAMES)
+                .build();
+
+        static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY_ACCOUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, ModelType.STRING, false)
+                .setMinSize(1)
+                .setRestartAllServices()
+                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_CAPABILITY, true)
+                .build();
+
+        static final SimpleAttributeDefinition AGREE_TO_TERMS_OF_SERVICE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AGREE_TO_TERMS_OF_SERVICE, ModelType.BOOLEAN, true)
+                .setAllowExpression(true)
+                .build();
+
+        static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)
+                .setAllowExpression(true)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
+        static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
+                .setAllowExpression(true)
+                .setValidator(new StringAllowedValuesValidator("RSA", "EC"))
+                .setDefaultValue(new ModelNode("RSA"))
+                .setMinSize(1)
+                .build();
+
+        static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
+                .setAllowExpression(true)
+                .setDefaultValue(new ModelNode(2048))
+                .setValidator(new KeySizeValidator())
+                .build();
+
+        static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
+            resourceRegistration.registerOperationHandler(
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.OBTAIN_CERTIFICATE, descriptionResolver)
+                            .setParameters(ALIAS, DOMAIN_NAMES, CERTIFICATE_AUTHORITY_ACCOUNT, AGREE_TO_TERMS_OF_SERVICE, STAGING, ALGORITHM, KEY_SIZE, CREDENTIAL_REFERENCE)
+                            .setRuntimeOnly()
+                            .build(),
+                    new ObtainCertificateHandler());
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            ModifiableKeyStoreService keyStoreService = getModifiableKeyStoreService(context);
+            KeyStore keyStore = keyStoreService.getModifiableValue();
+
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            List<String> domainNames = DOMAIN_NAMES.unwrap(context, operation);
+            String certificateAuthorityAccountName = CERTIFICATE_AUTHORITY_ACCOUNT.resolveModelAttribute(context, operation).asString();
+            Boolean agreeToTermsOfService = AGREE_TO_TERMS_OF_SERVICE.resolveModelAttribute(context, operation).asBooleanOrNull();
+            boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            String algorithm = ALGORITHM.resolveModelAttribute(context, operation).asString();
+            Integer keySize = KEY_SIZE.resolveModelAttribute(context, operation).asInt();
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
+            }
+            char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
+
+            try {
+                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName);
+                if (agreeToTermsOfService != null) {
+                    acmeAccount.setTermsOfServiceAgreed(agreeToTermsOfService);
+                }
+                // ensure we have an account with the certificate authority and that it's up to date
+                boolean created = false;
+                if (acmeAccount.getAccountUrl() == null) {
+                    created = acmeClient.createAccount(acmeAccount, staging);
+                }
+                if (! created) {
+                    acmeClient.updateAccount(acmeAccount, staging, acmeAccount.isTermsOfServiceAgreed(), acmeAccount.getContactUrls());
+                }
+                X509CertificateChainAndSigningKey certificateChainAndSigningKey = acmeClient.obtainCertificateChain(acmeAccount, staging, algorithm, keySize, domainNames.toArray(new String[domainNames.size()]));
+                keyStore.setKeyEntry(alias, certificateChainAndSigningKey.getSigningKey(), keyPassword, certificateChainAndSigningKey.getCertificateChain());
+                ((KeyStoreService) keyStoreService).save();
+            } catch (IllegalArgumentException e) {
+                throw new OperationFailedException(e);
+            } catch (KeyStoreException | AcmeException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    static class RevokeCertificateHandler extends ElytronRuntimeOnlyHandler {
+        static final String UNSPECIFIED = "UNSPECIFIED";
+        static final String KEY_COMPROMISE = "KEYCOMPROMISE";
+        static final String CA_COMPROMISE = "CACOMPROMISE";
+        static final String AFFILIATION_CHANGED = "AFFILIATIONCHANGED";
+        static final String SUPERSEDED = "SUPERSEDED";
+        static final String CESSATION_OF_OPERATION = "CESSATIONOFOPERATION";
+        static final String CERTIFICATE_HOLD = "CERTIFICATEHOLD";
+        static final String REMOVE_FROM_CRL = "REMOVEFROMCRL";
+        static final String PRIVILEGE_WITHDRAWN = "PRIVILEGEWITHDRAWN";
+        static final String AA_COMPROMISE = "AACOMPROMISE";
+        static final String[] ALLOWED_VALUES = { UNSPECIFIED, KEY_COMPROMISE, CA_COMPROMISE, AFFILIATION_CHANGED, SUPERSEDED,
+                CESSATION_OF_OPERATION, CERTIFICATE_HOLD, REMOVE_FROM_CRL, PRIVILEGE_WITHDRAWN, AA_COMPROMISE };
+
+        static final SimpleAttributeDefinition REASON = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REASON, ModelType.STRING, true)
+                .setAllowExpression(true)
+                .setAllowedValues(ALLOWED_VALUES)
+                .setMinSize(1)
+                .build();
+
+        static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY_ACCOUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, ModelType.STRING, false)
+                .setMinSize(1)
+                .setRestartAllServices()
+                .setCapabilityReference(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, KEY_STORE_CAPABILITY, true)
+                .build();
+
+        static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)
+                .setAllowExpression(true)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
+        static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
+            resourceRegistration.registerOperationHandler(
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REVOKE_CERTIFICATE, descriptionResolver)
+                            .setParameters(ALIAS, REASON, CERTIFICATE_AUTHORITY_ACCOUNT, STAGING)
+                            .setRuntimeOnly()
+                            .build(),
+                    new RevokeCertificateHandler());
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            ModifiableKeyStoreService keyStoreService = getModifiableKeyStoreService(context);
+            KeyStore keyStore = keyStoreService.getModifiableValue();
+
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            String reason = REASON.resolveModelAttribute(context, operation).asStringOrNull();
+            String certificateAuthorityAccountName = CERTIFICATE_AUTHORITY_ACCOUNT.resolveModelAttribute(context, operation).asString();
+            boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+
+            try {
+                if (! keyStore.containsAlias(alias)) {
+                    throw ROOT_LOGGER.keyStoreAliasDoesNotExist(alias);
+                }
+                X509Certificate certificateToRevoke = (X509Certificate) keyStore.getCertificate(alias);
+                if (certificateToRevoke == null) {
+                    throw ROOT_LOGGER.unableToObtainCertificate(alias);
+                }
+                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName);
+                if (reason != null) {
+                    acmeClient.revokeCertificate(acmeAccount, staging, certificateToRevoke, getCRLReason(reason));
+                } else {
+                    acmeClient.revokeCertificate(acmeAccount, staging, certificateToRevoke);
+                }
+                keyStore.deleteEntry(alias);
+                ((KeyStoreService) keyStoreService).save();
+            } catch (IllegalArgumentException e) {
+                throw new OperationFailedException(e);
+            } catch (KeyStoreException | AcmeException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        static CRLReason getCRLReason(String reason) throws OperationFailedException {
+            switch (reason.toUpperCase(Locale.ENGLISH)) {
+                case UNSPECIFIED:
+                    return CRLReason.UNSPECIFIED;
+                case KEY_COMPROMISE:
+                    return CRLReason.KEY_COMPROMISE;
+                case CA_COMPROMISE:
+                    return CRLReason.CA_COMPROMISE;
+                case AFFILIATION_CHANGED:
+                    return CRLReason.AFFILIATION_CHANGED;
+                case SUPERSEDED:
+                    return CRLReason.SUPERSEDED;
+                case CESSATION_OF_OPERATION:
+                    return CRLReason.CESSATION_OF_OPERATION;
+                case CERTIFICATE_HOLD:
+                    return CRLReason.CERTIFICATE_HOLD;
+                case REMOVE_FROM_CRL:
+                    return CRLReason.REMOVE_FROM_CRL;
+                case PRIVILEGE_WITHDRAWN:
+                    return CRLReason.PRIVILEGE_WITHDRAWN;
+                case AA_COMPROMISE:
+                    return CRLReason.AA_COMPROMISE;
+                default:
+                    throw ROOT_LOGGER.invalidCertificateRevocationReason(reason);
+            }
+        }
+    }
+
+    static class ShouldRenewCertificateHandler extends ElytronRuntimeOnlyHandler {
+        static final SimpleAttributeDefinition EXPIRATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EXPIRATION, ModelType.LONG, true)
+                .setAllowExpression(true)
+                .setValidator(new LongRangeValidator(1L))
+                .setDefaultValue(new ModelNode(30))
+                .build();
+
+        static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
+            resourceRegistration.registerOperationHandler(
+                    new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE, descriptionResolver)
+                            .setParameters(ALIAS, EXPIRATION)
+                            .setRuntimeOnly()
+                            .build(),
+                    new ShouldRenewCertificateHandler());
+        }
+
+        @Override
+        protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+            ModifiableKeyStoreService keyStoreService = getModifiableKeyStoreService(context);
+            KeyStore keyStore = keyStoreService.getModifiableValue();
+
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            Long expiration = EXPIRATION.resolveModelAttribute(context, operation).asLong();
+
+            try {
+                if (! keyStore.containsAlias(alias)) {
+                    throw ROOT_LOGGER.keyStoreAliasDoesNotExist(alias);
+                }
+                X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
+                if (certificate == null) {
+                    throw ROOT_LOGGER.unableToObtainCertificate(alias);
+                }
+                Date current = new Date();
+                Date notAfter = certificate.getNotAfter();
+                long difference = notAfter.getTime() - current.getTime();
+                long daysToExpiry = 0;
+                ModelNode result = context.getResult();
+                if (difference <= 0) {
+                    // already expired
+                    result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
+                } else {
+                    daysToExpiry = TimeUnit.DAYS.convert(difference, TimeUnit.MILLISECONDS);
+                    if (daysToExpiry <= expiration) {
+                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
+                    } else {
+                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(false));
+                    }
+                }
+                result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).set(new ModelNode(daysToExpiry));
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     static class NotBeforeValidator extends StringLengthValidator {
 
         NotBeforeValidator() {
@@ -699,12 +981,44 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         }
     }
 
+    static class KeySizeValidator extends IntRangeValidator {
+
+        KeySizeValidator() {
+            super(1);
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+            if (value.isDefined()) {
+                int intValue = value.asInt();
+                // check that the given value is a power of 2
+                if ((intValue & (intValue - 1)) != 0) {
+                    throw ROOT_LOGGER.invalidKeySize(intValue);
+                }
+            }
+        }
+    }
+
     private static char[] resolveKeyPassword(final KeyStoreService keyStoreService, final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier) throws RuntimeException {
         try {
             return keyStoreService.resolveKeyPassword(credentialSourceSupplier);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static AcmeAccount getAcmeAccount(OperationContext context, String certificateAuthorityAccountName) throws OperationFailedException {
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+        RuntimeCapability<Void> runtimeCapability = CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY.fromBaseCapability(certificateAuthorityAccountName);
+        ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
+
+        ServiceController<AcmeAccount> serviceContainer = getRequiredService(serviceRegistry, serviceName, AcmeAccount.class);
+        ServiceController.State serviceState = serviceContainer.getState();
+        if (serviceState != ServiceController.State.UP) {
+            throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
+        }
+        return serviceContainer.getService().getValue();
     }
 
 }

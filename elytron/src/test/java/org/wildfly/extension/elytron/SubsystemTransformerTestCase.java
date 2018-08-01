@@ -123,6 +123,12 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, "DisallowedMappedRoleMapper")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
                 )
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT)),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER)),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
         );
         /*ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
                ...
