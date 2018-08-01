@@ -247,6 +247,11 @@
                 <credential-reference clear-text="password"/>
                 <implementation type="PKCS#11" provider-name="SunPKCS#11" providers="custom-loader"/>
             </key-store>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="Custom_PKCS_11" alias-filter="NONE:+firefly"/>
         </key-stores>
         <key-managers>
@@ -280,6 +285,13 @@
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
                                 provider-name="first"/>
         </client-ssl-contexts>
+        <certificate-authority-accounts>
+            <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
+                <account-key key-store="accounts.keystore" alias="server">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+        </certificate-authority-accounts>
     </tls>
     <credential-stores>
         <credential-store name="test1" relative-to="jboss.server.data.dir" location="test1.store" create="true">

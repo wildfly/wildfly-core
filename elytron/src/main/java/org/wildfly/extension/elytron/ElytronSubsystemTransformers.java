@@ -88,6 +88,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                         ))
                 ), PRINCIPAL_QUERIES)
                 .end();
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER));
     }
 

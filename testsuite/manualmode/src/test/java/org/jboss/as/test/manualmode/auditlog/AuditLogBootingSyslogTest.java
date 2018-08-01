@@ -120,34 +120,51 @@ public class AuditLogBootingSyslogTest {
      * <li>Adding of extensions.
      * <li>Composite operation of initial configuration.
      * </ol>
-     *
-     * The event to add the extensions fits into a single syslog event. The composite operation is chopped to fit into multiple
-     * events, at the time of writing it is split across 17 events.
-     *
-     * Small differences between the expected count and actual count could be caused by configuration changes changing how many
-     * events it takes to hold the entire composite operation.
      */
     @Test
     public void testSyslog() throws Exception {
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
         queue.clear();
         container.start();
-        waitForExpectedQueueSize(17, queue);
+        waitForExpectedOperations(2, queue);
         queue.clear();
         makeOneLog();
-        waitForExpectedQueueSize(1, queue);
+        waitForExpectedOperations(1, queue);
         queue.clear();
     }
 
-    private void waitForExpectedQueueSize(int expectedSize, BlockingQueue<SyslogServerEventIF> queue) throws InterruptedException {
+    private void waitForExpectedOperations(int expectedOperations, BlockingQueue<SyslogServerEventIF> queue) throws InterruptedException {
+        int operations = 0;
+        int openClose = 0;
         long endTime = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
         do {
-            if (queue.size() == expectedSize) {
+            if (queue.isEmpty()) {
+                Thread.sleep(100);
+            }
+
+            while (!queue.isEmpty()) {
+                SyslogServerEventIF event = queue.take();
+                char[] messageChars = event.getMessage().toCharArray();
+                for (char character : messageChars) {
+                    if (character == '{' || character == '}') {
+                        if (character == '{') {
+                            openClose++;
+                        } else {
+                            openClose--;
+                        }
+                        Assert.assertTrue(openClose >= 0);
+
+                        if (openClose == 0) operations++;
+                    }
+                }
+            }
+
+            if (operations >= expectedOperations) {
                 break;
             }
-            Thread.sleep(100);
         } while (System.currentTimeMillis() < endTime);
-        Assert.assertEquals(expectedSize, queue.size());
+
+        Assert.assertEquals(expectedOperations, operations);
     }
 
     private boolean makeOneLog() throws IOException {
