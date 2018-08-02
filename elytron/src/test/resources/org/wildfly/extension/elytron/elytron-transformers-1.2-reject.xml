@@ -38,4 +38,11 @@
     <audit-logging>
         <custom-security-event-listener name="a" module="b" class-name="c.D"/>
     </audit-logging>
+    <jaspi>
+        <jaspi-servlet-configuration name="minimal">
+            <server-auth-modules>
+                <server-auth-module class-name="org.wildfly.Test3" />
+            </server-auth-modules>
+        </jaspi-servlet-configuration>
+    </jaspi>
 </subsystem>
