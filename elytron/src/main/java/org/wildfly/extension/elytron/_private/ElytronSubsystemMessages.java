@@ -538,4 +538,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1055, value = "Invalid key size: %d")
     OperationFailedException invalidKeySize(int keySize);
 
+    @Message(id = 1056, value = "Failed to create ServerAuthModule [%s]")
+    RuntimeException failedToCreateServerAuthModule(String className, @Cause Exception cause);
+
 }
