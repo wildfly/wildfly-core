@@ -3,16 +3,16 @@
         <jaspi-servlet-configuration name="test" description="Test Definition">
             <server-auth-modules>
                 <server-auth-module class-name="org.wildfly.Test" module="org.test" flag="REQUISITE">
-                    <properties>
+                    <options>
                         <property name="a" value="b"/>
                         <property name="c" value="d"/>
-                    </properties>
+                    </options>
                 </server-auth-module>
                 <server-auth-module class-name="org.wildfly.Test2" module="org.test2" flag="SUFFICIENT">
-                    <properties>
+                    <options>
                         <property name="e" value="f"/>
                         <property name="g" value="h"/>
-                    </properties>
+                    </options>
                 </server-auth-module>
             </server-auth-modules>
         </jaspi-servlet-configuration>

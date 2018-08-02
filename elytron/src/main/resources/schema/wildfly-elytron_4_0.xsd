@@ -5224,10 +5224,10 @@
     
     <xs:complexType name="serverAuthModuleType">
         <xs:sequence>
-            <xs:element name="properties" minOccurs="0">
+            <xs:element name="options" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configuration properties to be passed into the ServerAuthModule during initialisation.
+                        Configuration options to be passed into the ServerAuthModule during initialisation.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>

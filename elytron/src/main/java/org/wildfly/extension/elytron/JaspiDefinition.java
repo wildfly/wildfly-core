@@ -74,12 +74,12 @@ class JaspiDefinition {
             .setRestartAllServices()
             .build();
 
-    static final PropertiesAttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
+    static final PropertiesAttributeDefinition OPTIONS = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.OPTIONS, true)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
-    static final ObjectTypeAttributeDefinition SERVER_AUTH_MODULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULE, CLASS_NAME, MODULE, FLAG, PROPERTIES)
+    static final ObjectTypeAttributeDefinition SERVER_AUTH_MODULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULE, CLASS_NAME, MODULE, FLAG, OPTIONS)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .setXmlName(ElytronDescriptionConstants.SERVER_AUTH_MODULE)
             .build();
@@ -176,9 +176,9 @@ class JaspiDefinition {
                 final String className = CLASS_NAME.resolveModelAttribute(context, serverAuthModule).asString();
                 final String module = MODULE.resolveModelAttribute(context, serverAuthModule).asStringOrNull();
                 final Flag flag = Flag.valueOf(FLAG.resolveModelAttribute(context, serverAuthModule).asString());
-                final Map<String, String> properties = PROPERTIES.unwrap(context, serverAuthModule);
+                final Map<String, String> options = OPTIONS.unwrap(context, serverAuthModule);
 
-                builder.addAuthModuleFactory(createServerAuthModuleSupplier(className, module), flag, properties);
+                builder.addAuthModuleFactory(createServerAuthModuleSupplier(className, module), flag, options);
             }
 
 
