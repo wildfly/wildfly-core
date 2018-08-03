@@ -346,8 +346,6 @@ class SSLDefinitions {
 
     static ResourceDefinition getKeyManagerDefinition() {
 
-        final ServiceUtil<KeyManager> KEY_MANAGER_UTIL = ServiceUtil.newInstance(KEY_MANAGER_RUNTIME_CAPABILITY, ElytronDescriptionConstants.KEY_MANAGER, KeyManager.class);
-
         final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.KEY_MANAGER);
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
@@ -460,22 +458,7 @@ class SSLDefinitions {
             }
         };
 
-
-        OperationStepHandler init = new ElytronRuntimeOnlyHandler() {
-            @Override
-            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceName keyStoreName = KEY_MANAGER_UTIL.serviceName(operation);
-                ServiceController<KeyManager> serviceContainer = getRequiredService(context.getServiceRegistry(false), keyStoreName, KeyManager.class);
-                try {
-                    // fictive restart to recreate keyManager and exchange it in delegatingKeyManager
-                    serviceContainer.getService().stop(null);
-                    serviceContainer.getService().start(null);
-                } catch (Exception e) {
-                    throw new OperationFailedException(e);
-                }
-            }
-        };
-
+        final ServiceUtil<KeyManager> KEY_MANAGER_UTIL = ServiceUtil.newInstance(KEY_MANAGER_RUNTIME_CAPABILITY, ElytronDescriptionConstants.KEY_MANAGER, KeyManager.class);
         return TrivialResourceDefinition.builder()
                 .setPathKey(ElytronDescriptionConstants.KEY_MANAGER)
                 .setAddHandler(add)
@@ -483,7 +466,7 @@ class SSLDefinitions {
                 .setRuntimeCapabilities(KEY_MANAGER_RUNTIME_CAPABILITY)
                 .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
                         .setRuntimeOnly()
-                        .build(), init)
+                        .build(), init(KEY_MANAGER_UTIL))
                 .build();
     }
 
@@ -492,6 +475,8 @@ class SSLDefinitions {
     }
 
     static ResourceDefinition getTrustManagerDefinition() {
+
+        final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TRUST_MANAGER);
 
         final SimpleAttributeDefinition providersDefinition = new SimpleAttributeDefinitionBuilder(PROVIDERS)
                 .setCapabilityReference(PROVIDERS_CAPABILITY, TRUST_MANAGER_CAPABILITY)
@@ -562,10 +547,12 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
+                    DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                     TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
                     for (TrustManager trustManager : trustManagers) {
                         if (trustManager instanceof X509ExtendedTrustManager) {
-                            return trustManager;
+                            delegatingTrustManager.setTrustManager((X509ExtendedTrustManager) trustManager);
+                            return delegatingTrustManager;
                         }
                     }
                     throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
@@ -695,6 +682,7 @@ class SSLDefinitions {
         };
 
         ResourceDescriptionResolver resolver = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.TRUST_MANAGER);
+        final ServiceUtil<TrustManager> TRUST_MANAGER_UTIL = ServiceUtil.newInstance(TRUST_MANAGER_RUNTIME_CAPABILITY, ElytronDescriptionConstants.TRUST_MANAGER, TrustManager.class);
         return TrivialResourceDefinition.builder()
                 .setPathKey(ElytronDescriptionConstants.TRUST_MANAGER)
                 .setResourceDescriptionResolver(resolver)
@@ -719,7 +707,31 @@ class SSLDefinitions {
                                 ((ReloadableX509ExtendedTrustManager) trustManager).reload();
                             }
                         })
+                .addOperation(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.INIT, RESOURCE_RESOLVER)
+                        .setRuntimeOnly()
+                        .build(), init(TRUST_MANAGER_UTIL))
                 .build();
+    }
+
+    private static OperationStepHandler init(ServiceUtil<?> managerUtil) {
+        return new ElytronRuntimeOnlyHandler() {
+            @Override
+            protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+                try {
+                    ServiceName serviceName = managerUtil.serviceName(operation);
+                    ServiceController<?> serviceContainer = null;
+                    if(serviceName.getParent().getCanonicalName().equals(KEY_MANAGER_CAPABILITY)){
+                        serviceContainer = getRequiredService(context.getServiceRegistry(false), serviceName, KeyManager.class);
+                    } else if (serviceName.getParent().getCanonicalName().equals(TRUST_MANAGER_CAPABILITY)) {
+                        serviceContainer = getRequiredService(context.getServiceRegistry(false), serviceName, TrustManager.class);
+                    }
+                    serviceContainer.getService().stop(null);
+                    serviceContainer.getService().start(null);
+                } catch (Exception e) {
+                    throw new OperationFailedException(e);
+                }
+            }
+        };
     }
 
     private static class DelegatingKeyManager extends X509ExtendedKeyManager {
@@ -768,6 +780,50 @@ class SSLDefinitions {
         @Override
         public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
             return delegating.get().chooseEngineServerAlias(keyType, issuers, engine);
+        }
+    }
+
+    private static class DelegatingTrustManager extends X509ExtendedTrustManager {
+
+        private final AtomicReference<X509ExtendedTrustManager> delegating = new AtomicReference<>();
+
+        public void setTrustManager(X509ExtendedTrustManager trustManager){
+            delegating.set(trustManager);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+            delegating.get().checkClientTrusted(x509Certificates, s, socket);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s, Socket socket) throws CertificateException {
+            delegating.get().checkServerTrusted(x509Certificates, s, socket);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+            delegating.get().checkClientTrusted(x509Certificates, s, sslEngine);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s, SSLEngine sslEngine) throws CertificateException {
+            delegating.get().checkServerTrusted(x509Certificates, s, sslEngine);
+        }
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            delegating.get().checkClientTrusted(x509Certificates, s);
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            delegating.get().checkServerTrusted(x509Certificates, s);
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return delegating.get().getAcceptedIssuers();
         }
     }
 
