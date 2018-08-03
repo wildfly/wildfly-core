@@ -235,6 +235,7 @@ public enum Phase {
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_UNDERTOW_SHARED_SESSION = 0x0A1A;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_BATCH          = 0x0A1B;
     public static final int STRUCTURE_REGISTER_JBOSS_ALL_SINGLETON_DEPLOYMENT = 0x0A1C;
+    public static final int STRUCTURE_REGISTER_JBOSS_ALL_DISTRIBUTABLE_WEB = 0x0A1D;
     public static final int STRUCTURE_PARSE_JBOSS_ALL_XML               = 0x0AE0;
     public static final int STRUCTURE_EAR_APP_XML_PARSE                 = 0x0B00;
     public static final int STRUCTURE_JBOSS_EJB_CLIENT_XML_PARSE        = 0x0C00;
@@ -392,6 +393,7 @@ public enum Phase {
     public static final int PARSE_JSF_MANAGED_BEANS                     = 0x4900;
     public static final int PARSE_JSF_METADATA                          = 0x4A00;
     public static final int PARSE_SINGLETON_DEPLOYMENT                  = 0x4B00;
+    public static final int PARSE_DISTRIBUTABLE_WEB                     = 0x4B01;
     public static final int PARSE_NEO4J_DRIVER                          = 0x4C00;
     public static final int PARSE_ORIENT_DRIVER                         = 0x4C01;
     public static final int PARSE_CASSANDRA_DRIVER                      = 0x4C02;
@@ -407,6 +409,7 @@ public enum Phase {
     // DEPENDENCIES
     public static final int DEPENDENCIES_EE_PERMISSIONS                 = 0x0100;
     public static final int DEPENDENCIES_EJB_PERMISSIONS                = 0x0110;
+    public static final int DEPENDENCIES_DISTRIBUTABLE_WEB              = 0x0120;
     public static final int DEPENDENCIES_EJB                            = 0x0200;
     public static final int DEPENDENCIES_MODULE                         = 0x0300;
     public static final int DEPENDENCIES_RAR_CONFIG                     = 0x0400;
@@ -471,6 +474,7 @@ public enum Phase {
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
     public static final int CONFIGURE_AUTHENTICATION_CONTEXT            = 0x0500;
+    public static final int CONFIGURE_DISTRIBUTABLE_WEB                 = 0x0600;
 
     // FIRST_MODULE_USE
     public static final int FIRST_MODULE_USE_PERSISTENCE_CLASS_FILE_TRANSFORMER = 0x0100; // need to be before POST_MODULE_REFLECTION_INDEX
