@@ -5183,18 +5183,18 @@
     <xs:complexType name="jaspiType">
         <xs:annotation>
             <xs:documentation>
-                JASPI Configurations for the Servlet profile.
+                JASPI Configurations.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="jaspi-servlet-configuration" type="jaspiServletConfigurationType" maxOccurs="unbounded" />
+            <xs:element name="jaspi-configuration" type="jaspiConfigurationType" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="jaspiServletConfigurationType">
+    <xs:complexType name="jaspiConfigurationType">
         <xs:annotation>
             <xs:documentation>
-                An individual JASPI definition for the Servlet profile.
+                An individual JASPI configuration.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
@@ -5210,6 +5210,26 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of this JASPI configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="layer" type="xs:string" default="*">
+            <xs:annotation>
+                <xs:documentation>
+                    The layer this configuration should be associated with.
+
+                    If set to '*' this configuration will be associated with all layers and resolved according the the
+                    resolution rules defined within the JSR-196 specification.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="application-context" type="xs:string" default="*">
+            <xs:annotation>
+                <xs:documentation>
+                    The application context this configuration should be associated with.
+
+                    If set to '*' this configuration will be associated with all application contexts and resolved according the the
+                    resolution rules defined within the JSR-196 specification.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

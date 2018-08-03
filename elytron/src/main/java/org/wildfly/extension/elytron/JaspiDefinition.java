@@ -55,9 +55,21 @@ import org.wildfly.security.auth.jaspi.JaspicConfigurationBuilder;
  */
 class JaspiDefinition {
 
-    private static final String SERVLET_MESSAGE_LAYER = "HttpServlet";
-
     private static final Map<String, String> REGISTRATION_MAP = new ConcurrentHashMap<>();
+
+    static final SimpleAttributeDefinition LAYER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LAYER, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode("*"))
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition APPLICATION_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.APPLICATION_CONTEXT, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode("*"))
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
 
     static final SimpleAttributeDefinition DESCRIPTION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DESCRIPTION, ModelType.STRING, true)
             .setAllowExpression(true)
@@ -90,7 +102,7 @@ class JaspiDefinition {
             .setXmlName(ElytronDescriptionConstants.SERVER_AUTH_MODULES)
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { DESCRIPTION, SERVER_AUTH_MODULES };
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { LAYER, APPLICATION_CONTEXT, DESCRIPTION, SERVER_AUTH_MODULES };
 
     static final JaspiAddHandler ADD = new JaspiAddHandler();
 
@@ -125,7 +137,7 @@ class JaspiDefinition {
 
     static ResourceDefinition getJaspiServletConfigurationDefinition() {
         return TrivialResourceDefinition.builder()
-                .setPathKey(ElytronDescriptionConstants.JASPI_SERVLET_CONFIGURATION)
+                .setPathKey(ElytronDescriptionConstants.JASPI_CONFIGURATION)
                 .setAttributes(ATTRIBUTES)
                 .setAddHandler(ADD)
                 .setRemoveHandler(REMOVE)
@@ -165,10 +177,13 @@ class JaspiDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             System.out.println("Lets add this thing " + model.toString());
+            final String layer = LAYER.resolveModelAttribute(context, model).asString();
+            final String applicationContext = APPLICATION_CONTEXT.resolveModelAttribute(context, model).asString();
             final String description = DESCRIPTION.resolveModelAttribute(context, model).asStringOrNull();
 
             final String addressValue = context.getCurrentAddressValue();
-            final JaspicConfigurationBuilder builder = JaspicConfigurationBuilder.builder(SERVLET_MESSAGE_LAYER, "/" + addressValue)
+            final JaspicConfigurationBuilder builder = JaspicConfigurationBuilder.builder("*".equals(layer) ? null : layer,
+                    "*".equals(applicationContext) ? null : applicationContext)
                     .setDescription(description);
 
             final List<ModelNode> serverAuthModules = SERVER_AUTH_MODULES.resolveModelAttribute(context, model).asList();
@@ -181,9 +196,17 @@ class JaspiDefinition {
                 builder.addAuthModuleFactory(createServerAuthModuleSupplier(className, module), flag, options);
             }
 
-
             final String registrationId = builder.register();
             REGISTRATION_MAP.put(addressValue, registrationId);
+        }
+
+
+
+        @Override
+        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
+                throws OperationFailedException {
+            // TODO Auto-generated method stub
+            super.recordCapabilitiesAndRequirements(context, operation, resource);
         }
 
         @Override

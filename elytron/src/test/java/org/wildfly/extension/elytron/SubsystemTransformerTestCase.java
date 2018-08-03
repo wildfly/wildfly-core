@@ -129,7 +129,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
                 )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JASPI_SERVLET_CONFIGURATION, "minimal")),
+                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION, "minimal")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
                 )
         );

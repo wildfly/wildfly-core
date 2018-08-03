@@ -21,7 +21,7 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JASPI;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JASPI_SERVLET_CONFIGURATION;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JASPI_CONFIGURATION;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 
 import org.jboss.as.controller.AttributeMarshallers;
@@ -37,7 +37,7 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
  */
 public class ElytronSubsystemParser4_0 extends ElytronSubsystemParser3_0 {
 
-    final PersistentResourceXMLDescription jaspiConfigurationParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(JASPI_SERVLET_CONFIGURATION))
+    final PersistentResourceXMLDescription jaspiConfigurationParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(JASPI_CONFIGURATION))
             .setXmlWrapperElement(JASPI)
             .addAttributes(JaspiDefinition.ATTRIBUTES)
             .build();

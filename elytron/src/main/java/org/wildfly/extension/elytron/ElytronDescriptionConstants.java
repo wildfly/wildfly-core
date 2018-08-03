@@ -52,6 +52,7 @@ interface ElytronDescriptionConstants {
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
+    String APPLICATION_CONTEXT = "application-context";
     String ARGUMENT = "argument";
     String ATTRIBUTE = "attribute";
     String ATTRIBUTE_MAPPING = "attribute-mapping";
@@ -234,7 +235,7 @@ interface ElytronDescriptionConstants {
 
     String JACC_POLICY = "jacc-policy";
     String JASPI = "jaspi";
-    String JASPI_SERVLET_CONFIGURATION = "jaspi-servlet-configuration";
+    String JASPI_CONFIGURATION = "jaspi-configuration";
     String JDBC_REALM = "jdbc-realm";
     String JOINER = "joiner";
     String JWT = "jwt";
@@ -253,6 +254,7 @@ interface ElytronDescriptionConstants {
     String KEY_STORES = "key-stores";
 
     String LAST_ACCESSED_TIME = "last-accessed-time";
+    String LAYER = "layer";
     String LDAP_KEY_STORE = "ldap-key-store";
     String LDAP_MAPPING = "ldap-mapping";
     String LDAP_REALM = "ldap-realm";
