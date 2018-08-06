@@ -177,7 +177,7 @@ public class JvmOptionsBuilderFactory {
 
     private static class OracleJvmOptionsBuilder extends JvmOptionsBuilder {
         private static final int JVM_MAJOR_VERSION = JvmElement.getJVMMajorVersion();
-        private static final List<String> ALLOWED_JDK9_PARAMS = Arrays.asList("--permit-illegal-access", "--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
+        private static final List<String> ALLOWED_MODULAR_JDK_PARAMS = Arrays.asList("--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
 
         private OracleJvmOptionsBuilder(JvmType type) {
             super(type);
@@ -185,9 +185,9 @@ public class JvmOptionsBuilderFactory {
 
         @Override
         boolean checkAdditionalJvmOption(String option) {
-            if (JVM_MAJOR_VERSION >= 9 ) {//when java 11 comes, make sure this params are still fine.
+            if (JVM_MAJOR_VERSION >= 9 ) {
                 return true; //all params are fine
-            }else if (ALLOWED_JDK9_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)){ //drop jdk9 specific params on jdk 8
+            } else if (ALLOWED_MODULAR_JDK_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)){ //drop jdk9 specific params on jdk 8
                 return false;
             }
             return true;
