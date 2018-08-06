@@ -56,6 +56,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
+import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
@@ -115,7 +116,7 @@ public class SuspendOnSoftKillTestCase {
 
     @Test
     public void testSuspendOnSoftKillPositiveTimeout() throws Exception {
-        startContainer(TimeoutUtil.adjust(15));
+        startContainer(15);
         suspendOnSoftKillTest();
     }
 
@@ -167,65 +168,69 @@ public class SuspendOnSoftKillTestCase {
         final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-        // Send a request that will block
-        Future<Object> result = executorService.submit(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return HttpRequest.get(address, 60, TimeUnit.SECONDS);
-            }
-        });
-
-        Thread.sleep(TimeoutUtil.adjust(1000)); //nasty, but we need to make sure the HTTP request has started
-
-        softKillServer();
-
-        ModelNode op = new ModelNode();
-        op.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        op.get(NAME).set(SUSPEND_STATE);
-
-        String suspendState;
-        long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
-        do {
-            suspendState = serverController.getClient().executeForResult(op).asString();
-            if (!"SUSPENDING".equals(suspendState)) {
-                Thread.sleep(50);
-            } else {
-                break;
-            }
-        } while (System.currentTimeMillis() < timeout);
-        if ("RUNNING".equals(suspendState) && processUtil instanceof WindowsProcessUtil) {
-            // taskkill with no /f doesn't seem to soft kill Windows vms. I can't find
-            // any other way to test this than trying taskkill without the hard-kill /f arg.
-            // I tried wmic and terminate but that results in a hard kill.
-            // So just ignore this test. The point of this test is to test how the shutdown hook
-            // we install handles things. If the hook is never invoked by the VM we
-            // can't do anything about that anyway.
-            // I let the test run all the way to here before ignoring so that if
-            // taskkill happens to actually work in some Windows environment, then
-            // we get the coverage
-            throw new AssumptionViolatedException("taskkill did not produce a 'soft kill' of the server on Windows");
-        }
-        Assert.assertEquals("SUSPENDING", suspendState);
-
-        final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
         try {
-            conn.setDoInput(true);
-            int responseCode = conn.getResponseCode();
-            Assert.assertEquals(503, responseCode);
+            // Send a request that will block
+            Future<Object> result = executorService.submit(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return HttpRequest.get(address, 60, TimeUnit.SECONDS);
+                }
+            });
+
+            Thread.sleep(TimeoutUtil.adjust(1000)); //nasty, but we need to make sure the HTTP request has started
+
+            softKillServer();
+
+            ModelNode op = new ModelNode();
+            op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            op.get(NAME).set(SUSPEND_STATE);
+
+            String suspendState;
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+            do {
+                suspendState = serverController.getClient().executeForResult(op).asString();
+                if (!"SUSPENDING".equals(suspendState)) {
+                    Thread.sleep(50);
+                } else {
+                    break;
+                }
+            } while (System.currentTimeMillis() < timeout);
+            if ("RUNNING".equals(suspendState) && processUtil instanceof WindowsProcessUtil) {
+                // taskkill with no /f doesn't seem to soft kill Windows vms. I can't find
+                // any other way to test this than trying taskkill without the hard-kill /f arg.
+                // I tried wmic and terminate but that results in a hard kill.
+                // So just ignore this test. The point of this test is to test how the shutdown hook
+                // we install handles things. If the hook is never invoked by the VM we
+                // can't do anything about that anyway.
+                // I let the test run all the way to here before ignoring so that if
+                // taskkill happens to actually work in some Windows environment, then
+                // we get the coverage
+                throw new AssumptionViolatedException("taskkill did not produce a 'soft kill' of the server on Windows");
+            }
+            Assert.assertEquals("SUSPENDING", suspendState);
+
+            final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
+            try {
+                conn.setDoInput(true);
+                int responseCode = conn.getResponseCode();
+                Assert.assertEquals(503, responseCode);
+            } finally {
+                conn.disconnect();
+            }
+
+            // Send a request that will trigger the first request to complete
+            HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
+            // Confirm 1st request completed
+            Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
+
+            // Check server behaves like a suspended or stopped server; which it will be is unknown
+            try {
+                Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
+            } catch (UnsuccessfulOperationException | RuntimeException ok) {
+                // ignore; it's fine if the server's down
+            }
         } finally {
-            conn.disconnect();
-        }
-
-        // Send a request that will trigger the first request to complete
-        HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
-        // Confirm 1st request completed
-        Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
-
-        // Check server behaves like a suspended or stopped server; which it will be is unknown
-        try {
-            Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
-        } catch (RuntimeException ok) {
-            // ignore; it's fine if the server's down
+            executorService.shutdown();
         }
 
         waitForServerShutdown();
