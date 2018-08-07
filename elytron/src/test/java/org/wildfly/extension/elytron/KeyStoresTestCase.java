@@ -46,6 +46,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.ZoneOffset;
@@ -84,7 +85,6 @@ import org.wildfly.security.x500.cert.acme.AcmeException;
 import mockit.Mock;
 import mockit.MockUp;
 import mockit.integration.junit4.JMockit;
-import sun.security.ec.ECPublicKeyImpl;
 
 
 /**
@@ -1047,7 +1047,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             assertEquals(keyAlgorithmName, privateKey.getAlgorithm());
             assertEquals(keyAlgorithmName, signedCert.getPublicKey().getAlgorithm());
             if (keyAlgorithmName.equals("EC")) {
-                assertEquals(keySize, ((ECPublicKeyImpl) signedCert.getPublicKey()).getParams().getCurve().getField().getFieldSize());
+                assertEquals(keySize, ((ECPublicKey) signedCert.getPublicKey()).getParams().getCurve().getField().getFieldSize());
             } else if (keyAlgorithmName.equals("RSA")) {
                 assertEquals(keySize, ((RSAPublicKey) signedCert.getPublicKey()).getModulus().bitLength());
             }
