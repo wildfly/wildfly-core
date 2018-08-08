@@ -936,15 +936,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         if (message == null) {
             return;
         }
-        final Level logLevel;
-        if (exitCode != 0) {
-            logLevel = Level.ERROR;
-        } else {
-            logLevel = Level.INFO;
-        }
-        if (log.isEnabled(logLevel)) {
-            log.log(logLevel, message);
-        }
+        logMessage(message);
 
         // Could be a redirection at the aesh command or operation level
         if (invocationContext != null && invocationContext.getConfiguration().getOutputRedirection() != null) {
@@ -965,6 +957,19 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             } else { // non-interactive mode
                 cliPrintStream.println(message);
             }
+        }
+    }
+
+    @Override
+    public void logMessage(String message) {
+        final Level logLevel;
+        if (exitCode != 0) {
+            logLevel = Level.ERROR;
+        } else {
+            logLevel = Level.INFO;
+        }
+        if (log.isEnabled(logLevel)) {
+            log.log(logLevel, message);
         }
     }
 

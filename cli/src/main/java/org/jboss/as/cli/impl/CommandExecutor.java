@@ -339,6 +339,11 @@ public class CommandExecutor {
         }
 
         @Override
+        public void logMessage(String message) {
+            wrapped.logMessage(message);
+        }
+
+        @Override
         public void printColumns(Collection<String> col) {
             wrapped.printColumns(col);
         }

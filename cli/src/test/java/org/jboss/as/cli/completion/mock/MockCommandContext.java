@@ -119,6 +119,15 @@ public class MockCommandContext implements CommandContext {
     }
 
     /* (non-Javadoc)
+     * @see org.jboss.as.cli.CommandContext#logMessage(java.lang.String)
+     */
+    @Override
+    public void logMessage(String message) {
+        // TODO Auto-generated method stub
+
+    }
+
+    /* (non-Javadoc)
      * @see org.jboss.as.cli.CommandContext#printColumns(java.util.Collection<java.lang.String>)
      */
     @Override

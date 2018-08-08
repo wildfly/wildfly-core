@@ -86,6 +86,14 @@ public interface CommandContext {
     void printLine(String message);
 
     /**
+     * Logs the message to the appropriate output according
+     * to the logging properties
+     *
+     * @param message the message to be logged
+     */
+    void logMessage(String message);
+
+    /**
      * Prints a ModelNode according to the current configuration.
      *
      * @param node The ModelNode to print.
