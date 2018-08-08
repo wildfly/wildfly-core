@@ -44,7 +44,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.security.auth.jaspi.Flag;
-import org.wildfly.security.auth.jaspi.JaspicConfigurationBuilder;
+import org.wildfly.security.auth.jaspi.JaspiConfigurationBuilder;
 
 
 
@@ -182,7 +182,7 @@ class JaspiDefinition {
             final String description = DESCRIPTION.resolveModelAttribute(context, model).asStringOrNull();
 
             final String addressValue = context.getCurrentAddressValue();
-            final JaspicConfigurationBuilder builder = JaspicConfigurationBuilder.builder("*".equals(layer) ? null : layer,
+            final JaspiConfigurationBuilder builder = JaspiConfigurationBuilder.builder("*".equals(layer) ? null : layer,
                     "*".equals(applicationContext) ? null : applicationContext)
                     .setDescription(description);
 
