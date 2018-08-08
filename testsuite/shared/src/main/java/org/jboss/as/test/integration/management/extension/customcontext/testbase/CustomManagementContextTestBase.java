@@ -30,12 +30,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -141,14 +142,27 @@ public abstract class CustomManagementContextTestBase {
         final String staticUrlDirectory = urlBase + "static/";
         final String badStaticUrl = urlBase + "static/bad.txt";
         final String errorUrl = urlBase + "error/index.html";
+        final String securedDynamicUrl = urlBase + "secured-dynamic/";
+        final String unsecuredDynamicUrl = urlBase + "unsecured-dynamic/";
 
         // Sanity check
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpResponse resp = client.execute(new HttpGet(remapUrl));
+            CloseableHttpResponse resp = client.execute(new HttpGet(remapUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
+
             resp = client.execute(new HttpGet(staticUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
+
+            resp = client.execute(new HttpGet(securedDynamicUrl));
+            assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
+
+            resp = client.execute(new HttpGet(unsecuredDynamicUrl));
+            assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
         }
 
         // Add extension and subsystem
@@ -159,22 +173,46 @@ public abstract class CustomManagementContextTestBase {
         // Unauthenticated check
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpResponse resp = client.execute(new HttpGet(remapUrl));
+            CloseableHttpResponse resp = client.execute(new HttpGet(remapUrl));
             assertEquals(401, resp.getStatusLine().getStatusCode());
+            resp.close();
             resp = client.execute(new HttpGet(staticUrl));
             assertEquals(200, resp.getStatusLine().getStatusCode());
+            resp.close();
+            // secured handler must return 401 Unauthorized
+            resp = client.execute(new HttpGet(securedDynamicUrl));
+            System.out.println("resp = " + resp);
+            assertEquals(401, resp.getStatusLine().getStatusCode());
+            resp.close();
+            resp = client.execute(new HttpGet(unsecuredDynamicUrl));
+            assertEquals(200, resp.getStatusLine().getStatusCode());
+            resp.close();
+
+            // POST check for unsecured  dynamic URL
+            final String newValue = "MY NEW VALUE";
+            final HttpPost postDynamic = new HttpPost(unsecuredDynamicUrl);
+            postDynamic.setEntity(new StringEntity(newValue));
+            resp = client.execute(postDynamic);
+            assertEquals(204, resp.getStatusLine().getStatusCode());
+            resp.close();
+            resp = client.execute(new HttpGet(unsecuredDynamicUrl));
+            assertEquals(200, resp.getStatusLine().getStatusCode());
+            String text = EntityUtils.toString(resp.getEntity());
+            assertEquals(newValue, text);
+            resp.close();
         }
 
         try (CloseableHttpClient client = createAuthenticatingClient(managementClient)) {
 
             // Authenticated check
 
-            HttpResponse resp = client.execute(new HttpGet(remapUrl));
+            CloseableHttpResponse resp = client.execute(new HttpGet(remapUrl));
             assertEquals(200, resp.getStatusLine().getStatusCode());
             ModelNode respNode = ModelNode.fromJSONString(EntityUtils.toString(resp.getEntity()));
             assertEquals(respNode.toString(), CustomContextExtension.EXTENSION_NAME, respNode.get("module").asString());
             assertTrue(respNode.toString(), respNode.hasDefined("subsystem"));
             assertTrue(respNode.toString(), respNode.get("subsystem").has(CustomContextExtension.SUBSYSTEM_NAME));
+            resp.close();
 
             resp = client.execute(new HttpGet(staticUrl));
             assertEquals(200, resp.getStatusLine().getStatusCode());
@@ -194,23 +232,41 @@ public abstract class CustomManagementContextTestBase {
                     headersMap.getOrDefault("X-Frame-Options", "").contains("SAMEORIGIN"));
             Assert.assertTrue("Cache-Control header with max-age=2678400 is expected,",
                     headersMap.getOrDefault("Cache-Control", "").contains("max-age=2678400"));
+            resp.close();
 
             // directory listing is not allowed
             resp = client.execute(new HttpGet(staticUrlDirectory));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
 
             // POST check
             resp = client.execute(new HttpPost(remapUrl));
             assertEquals(405, resp.getStatusLine().getStatusCode());
+            resp.close();
             resp = client.execute(new HttpPost(staticUrl));
             assertEquals(200, resp.getStatusLine().getStatusCode());
+            resp.close();
+
+            // POST check for secured dynamic URL
+            final String newValue = "MY NEW VALUE";
+            final HttpPost postDynamic = new HttpPost(securedDynamicUrl);
+            postDynamic.setEntity(new StringEntity(newValue));
+            resp = client.execute(postDynamic);
+            assertEquals(204, resp.getStatusLine().getStatusCode());
+            resp.close();
+            resp = client.execute(new HttpGet(securedDynamicUrl));
+            assertEquals(200, resp.getStatusLine().getStatusCode());
+            text = EntityUtils.toString(resp.getEntity());
+            assertEquals(newValue, text);
 
             // Bad URL check
 
             resp = client.execute(new HttpGet(badRemapUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
             resp = client.execute(new HttpGet(badStaticUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
 
             // Remove subsystem
 
@@ -220,8 +276,16 @@ public abstract class CustomManagementContextTestBase {
 
             resp = client.execute(new HttpGet(remapUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
             resp = client.execute(new HttpGet(staticUrl));
             assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
+            resp = client.execute(new HttpGet(securedDynamicUrl));
+            assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
+            resp = client.execute(new HttpGet(unsecuredDynamicUrl));
+            assertEquals(404, resp.getStatusLine().getStatusCode());
+            resp.close();
 
             // Error Context
             resp = client.execute(new HttpGet(errorUrl));
@@ -234,6 +298,7 @@ public abstract class CustomManagementContextTestBase {
             }
             Assert.assertTrue("'X-Frame-Options: SAMEORIGIN' error context header is expected as well",
                               errorContextHeadersMap.getOrDefault("X-Frame-Options", "").contains("SAMEORIGIN"));
+            resp.close();
         }
     }
 

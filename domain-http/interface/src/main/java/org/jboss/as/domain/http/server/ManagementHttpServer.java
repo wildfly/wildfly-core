@@ -134,16 +134,20 @@ public class ManagementHttpServer {
     private volatile AcceptingChannel<SslConnection> secureServer;
     private final SSLContext sslContext;
     private final SslClientAuthMode sslClientAuthMode;
+    private final HttpAuthenticationFactory httpAuthenticationFactory;
+    private final SecurityRealm securityRealm;
     private final ExtensionHandlers extensionHandlers;
 
     private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
-                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker, ExtensionHandlers extensionExtensionHandlers) {
+                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker, HttpAuthenticationFactory httpAuthenticationFactory, SecurityRealm securityRealm, ExtensionHandlers extensionExtensionHandlers) {
         this.openListener = openListener;
         this.httpAddress = httpAddress;
         this.secureAddress = secureAddress;
         this.sslContext = sslContext;
         this.sslClientAuthMode = sslClientAuthMode;
         this.worker = worker;
+        this.httpAuthenticationFactory = httpAuthenticationFactory;
+        this.securityRealm = securityRealm;
         this.extensionHandlers = extensionExtensionHandlers;
     }
 
@@ -187,6 +191,26 @@ public class ManagementHttpServer {
         }
         ResourceHandlerDefinition def = DomainUtil.createStaticContentHandler(resourceManager, context);
         HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.readyFunction, def.getHandler(),
+                ErrorContextHandler.ERROR_CONTEXT);
+        extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
+    }
+
+    public void addManagementHandler(String contextName, boolean requireSecurity, HttpHandler managementHandler) {
+        Assert.checkNotNullParam("contextName", contextName);
+        Assert.checkNotNullParam("managementHandler", managementHandler);
+        String context = fixPath(contextName);
+        // Reject reserved contexts or duplicate extensions
+        if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
+            throw new IllegalStateException();
+        }
+        final Function<HttpServerExchange, Boolean> readyFunction;
+        if (requireSecurity) {
+            readyFunction = extensionHandlers.readyFunction;
+            managementHandler = secureDomainAccess(managementHandler, securityRealm, httpAuthenticationFactory);
+        } else {
+            readyFunction = ALWAYS_READY;
+        }
+        HttpHandler readinessHandler = new RedirectReadinessHandler(readyFunction, managementHandler,
                 ErrorContextHandler.ERROR_CONTEXT);
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
@@ -249,7 +273,7 @@ public class ManagementHttpServer {
         }
 
         final ExtensionHandlers extensionHandlers = setupOpenListener(openListener, secureRedirectPort, builder);
-        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker, extensionHandlers);
+        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker, builder.httpAuthenticationFactory, builder.securityRealm, extensionHandlers);
     }
 
     private static Function<HttpServerExchange, Boolean> createReadyFunction(Builder builder) {
@@ -389,12 +413,16 @@ public class ManagementHttpServer {
     }
 
     private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final Builder builder) {
-        if (builder.httpAuthenticationFactory != null) {
-            return secureDomainAccess(domainHandler, builder.httpAuthenticationFactory);
-        } else if (builder.securityRealm != null) {
-            HttpAuthenticationFactory httpAuthenticationFactory = builder.securityRealm.getHttpAuthenticationFactory();
-            if (httpAuthenticationFactory != null) {
-                return secureDomainAccess(domainHandler, httpAuthenticationFactory);
+        return secureDomainAccess(domainHandler, builder.securityRealm, builder.httpAuthenticationFactory);
+    }
+
+    private static HttpHandler secureDomainAccess(HttpHandler domainHandler, final SecurityRealm securityRealm, final HttpAuthenticationFactory httpAuthenticationFactory) {
+        if (httpAuthenticationFactory != null) {
+            return secureDomainAccess(domainHandler, httpAuthenticationFactory);
+        } else if (securityRealm != null) {
+            HttpAuthenticationFactory httpAuthFactory = securityRealm.getHttpAuthenticationFactory();
+            if (httpAuthFactory != null) {
+                return secureDomainAccess(domainHandler, httpAuthFactory);
             }
         }
 
@@ -443,6 +471,13 @@ public class ManagementHttpServer {
     private static HttpHandler wrapXFrameOptions(final HttpHandler toWrap) {
         return new SetHeaderHandler(toWrap, "X-Frame-Options", "SAMEORIGIN");
     }
+
+    private static Function<HttpServerExchange, Boolean> ALWAYS_READY = new Function<HttpServerExchange, Boolean>() {
+        @Override
+        public Boolean apply(HttpServerExchange httpServerExchange) {
+            return true;
+        }
+    };
 
     public static Builder builder() {
         return new Builder();
