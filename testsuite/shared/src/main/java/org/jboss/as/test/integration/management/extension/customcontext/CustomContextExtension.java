@@ -18,8 +18,12 @@ package org.jboss.as.test.integration.management.extension.customcontext;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import io.undertow.io.Receiver;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import io.undertow.server.handlers.resource.ResourceManager;
+import io.undertow.util.Methods;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.Extension;
@@ -141,6 +145,26 @@ public class CustomContextExtension implements Extension {
             };
             httpManagement.addManagementGetRemapContext("remap", remapper);
             log.info("Added context 'remap'");
+
+            httpManagement.addManagementHandler("dynamic", new HttpHandler() {
+
+                private String reply = "OK";
+                @Override
+                public void handleRequest(HttpServerExchange exchange) throws Exception {
+                    if (exchange.getRequestMethod() == Methods.GET) {
+                        exchange.getResponseSender().send(reply);
+                    } else if (exchange.getRequestMethod() == Methods.POST) {
+                        exchange.getRequestReceiver().receiveFullString(new Receiver.FullStringCallback() {
+                            @Override
+                            public void handle(HttpServerExchange exchange, String message) {
+                                reply = message;
+                                exchange.setStatusCode(204);
+                            }
+                        });
+                    }
+                }
+            });
+            log.info("Added context 'dynamic'");
         }
 
         @Override
@@ -150,6 +174,8 @@ public class CustomContextExtension implements Extension {
             log.info("Removed context 'static'");
             httpManagement.removeContext("remap");
             log.info("Removed context 'remap'");
+            httpManagement.removeContext("dynamic");
+            log.info("Removed context 'dynamic'");
         }
 
         @Override

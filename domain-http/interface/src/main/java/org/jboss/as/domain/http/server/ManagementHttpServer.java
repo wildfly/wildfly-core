@@ -191,6 +191,19 @@ public class ManagementHttpServer {
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
 
+    public void addManagementHandler(String contextName, HttpHandler managementHandler) {
+        Assert.checkNotNullParam("contextName", contextName);
+        Assert.checkNotNullParam("managementHandler", managementHandler);
+        String context = fixPath(contextName);
+        // Reject reserved contexts or duplicate extensions
+        if (extensionHandlers.reservedContexts.contains(context) || !extensionHandlers.extensionContexts.add(context)) {
+            throw new IllegalStateException();
+        }
+        HttpHandler readinessHandler = new RedirectReadinessHandler(extensionHandlers.readyFunction, managementHandler,
+                ErrorContextHandler.ERROR_CONTEXT);
+        extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
+    }
+
     public void addManagementGetRemapContext(String contextName, PathRemapper remapper) {
         Assert.checkNotNullParam("contextName", contextName);
         String context = fixPath(contextName);
