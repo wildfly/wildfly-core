@@ -112,7 +112,6 @@ class JaspiDefinition {
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
             if (context.isResourceServiceRestartAllowed()) {
-                System.out.println("Lets remove this thing " + model.toString());
                 removeRegistration(context);
             } else {
                 context.reloadRequired();
@@ -176,7 +175,6 @@ class JaspiDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            System.out.println("Lets add this thing " + model.toString());
             final String layer = LAYER.resolveModelAttribute(context, model).asString();
             final String applicationContext = APPLICATION_CONTEXT.resolveModelAttribute(context, model).asString();
             final String description = DESCRIPTION.resolveModelAttribute(context, model).asStringOrNull();
@@ -198,15 +196,6 @@ class JaspiDefinition {
 
             final String registrationId = builder.register();
             REGISTRATION_MAP.put(addressValue, registrationId);
-        }
-
-
-
-        @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            // TODO Auto-generated method stub
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
         }
 
         @Override
