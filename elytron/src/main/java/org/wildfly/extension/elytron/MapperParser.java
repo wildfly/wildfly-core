@@ -58,7 +58,8 @@ class MapperParser {
     enum Version {
         VERSION_1_0,
         VERSION_1_1,
-        CURRENT // permission-sets in permission-mappings and constant-permission-mappers
+        VERSION_3_0, // permission-sets in permission-mappings and constant-permission-mappers
+        CURRENT // mapped-role-mappers
     }
 
     private final Version version;
@@ -258,7 +259,7 @@ class MapperParser {
                 .build();
     }
 
-    public PersistentResourceXMLDescription getParser() {
+    private PersistentResourceXMLDescription getParser_1_0_to_3_0() {
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
@@ -288,6 +289,42 @@ class MapperParser {
                 .addChild(getCustomComponentParser(CUSTOM_ROLE_MAPPER))
                 .addChild(logicalRoleMapperParser)
                 .addChild(mappedRoleMapperParser)
+                .build();
+    }
+
+    public PersistentResourceXMLDescription getParser() {
+        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
+            return getParser_1_0_to_3_0();
+        }
+        return decorator(ElytronDescriptionConstants.MAPPERS)
+                .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
+                .addChild(logicalPermissionMapper)
+                .addChild(getSimpleMapperParser())
+                .addChild(getConstantPermissionMapperParser())
+                .addChild(aggregatePrincipalDecoderParser)
+                .addChild(concatenatingPrincipalDecoderParser)
+                .addChild(constantPrincipalDecoderParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_DECODER))
+                .addChild(x500AttributePrincipalDecoderParser)
+                .addChild(aggregatePrincipalTransformerParser)
+                .addChild(chainedPrincipalTransformersParser)
+                .addChild(constantPrincipalTransformersParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_TRANSFORMER))
+                .addChild(regexPrincipalTransformerParser)
+                .addChild(regexValidatingTransformerParser)
+                .addChild(constantRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_REALM_MAPPER))
+                .addChild(simpleRegexRealmMapperParser)
+                .addChild(mappedRegexRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_DECODER))
+                .addChild(simpleRoleDecoderParser)
+                .addChild(addPrefixRoleMapperParser)
+                .addChild(addSuffixRoleMapperParser)
+                .addChild(aggregateRoleMapperParser)
+                .addChild(constantRoleMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_MAPPER))
+                .addChild(logicalRoleMapperParser)
+                .addChild(mappedRoleMapperParser) // new
                 .build();
     }
 }

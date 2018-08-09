@@ -146,6 +146,7 @@ class TlsParser {
             .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
             .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE);
 
+    // 1_0 to 3_0
     final PersistentResourceXMLDescription tlsParser = decorator(TLS)
             .addChild(decorator(KEY_STORES)
                     .addChild(keyStoreParser)
@@ -157,7 +158,20 @@ class TlsParser {
             .addChild(trustManagerParser)
             .addChild(serverSslContextParser)
             .addChild(clientSslContextParser)
-            .addChild(certificateAuthorityAccountParser)
+            .build();
+
+    final PersistentResourceXMLDescription tlsParser_4_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+
+            )
+            .addChild(keyManagerParser)
+            .addChild(trustManagerParser)
+            .addChild(serverSslContextParser)
+            .addChild(clientSslContextParser)
+            .addChild(certificateAuthorityAccountParser) // new
             .build();
 
 }

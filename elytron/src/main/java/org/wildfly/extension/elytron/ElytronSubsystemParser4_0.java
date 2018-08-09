@@ -38,4 +38,14 @@ public class ElytronSubsystemParser4_0 extends ElytronSubsystemParser3_0 {
         return new AuditLoggingParser().parser4_0;
     }
 
+    @Override
+    protected PersistentResourceXMLDescription getMapperParser() {
+        return new MapperParser().getParser();
+    }
+
+    @Override
+    PersistentResourceXMLDescription getTlsParser() {
+        return new TlsParser().tlsParser_4_0;
+    }
+
 }
