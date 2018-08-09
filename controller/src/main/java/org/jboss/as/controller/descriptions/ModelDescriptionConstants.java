@@ -240,6 +240,7 @@ public class ModelDescriptionConstants {
     public static final String HTTP_UPGRADE = "http-upgrade";
     public static final String HTTP_UPGRADE_ENABLED = "http-upgrade-enabled";
     public static final String HTTP_INTERFACE = "http-interface";
+    public static final String ID = "id";
     public static final String IDENTITY = "identity";
     public static final String IGNORED = "ignored-by-unaffected-host-controller";
     public static final String IGNORED_RESOURCES = "ignored-resources";
@@ -275,6 +276,7 @@ public class ModelDescriptionConstants {
     public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
+    public static final String LIST_SNAPSHOTS_OPERATION = "list-snapshots";
     public static final String LOCAL = "local";
     public static final String LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING = "local-destination-outbound-socket-binding";
     public static final String LOCAL_HOST_NAME = "local-host-name";
@@ -359,10 +361,10 @@ public class ModelDescriptionConstants {
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PATHS = "paths";
+    public static final String PATTERN = "pattern";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
     public static final String PERSIST_NAME = "persist-name";
-    public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
     public static final String PLATFORM_MBEAN = "platform-mbean";
@@ -549,6 +551,7 @@ public class ModelDescriptionConstants {
      */
     public static final String SYNC_REMOVED_FOR_READD = "sync-dropped-for-readd";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
+    public static final String TAKE_SNAPSHOT_OPERATION = "take-snapshot";
     public static final String TARGET_PATH = "target-path";
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";
