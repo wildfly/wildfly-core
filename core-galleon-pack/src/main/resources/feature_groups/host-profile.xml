@@ -12,7 +12,10 @@
         <feature-group name="elytron-management">
             <include feature-id="subsystem.elytron.properties-realm:properties-realm=ManagementRealm">
                 <param name="users-properties" value="{path=mgmt-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ManagementRealm}"/>
-                <param name="groups-properties" value="{path=mgmt-groups.properties,relative-to=jboss.domain.config.dir}"/>
+                <feature spec="subsystem.elytron.properties-realm.groups-properties">
+                    <param name="path" value="mgmt-groups.properties"/>
+                    <param name="relative-to" value="jboss.domain.config.dir"/>
+                </feature>
             </include>
             <include feature-id="subsystem.elytron.http-authentication-factory:http-authentication-factory=management-http-authentication">
                 <param name="mechanism-configurations" value="[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Management Realm}]}]"/>
