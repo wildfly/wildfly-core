@@ -637,6 +637,7 @@ class SSLDefinitions {
                     };
                 }
 
+                DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providers, providerName, algorithm);
@@ -663,7 +664,6 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
-                    DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                     TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
                     for (TrustManager trustManager : trustManagers) {
                         if (trustManager instanceof X509ExtendedTrustManager) {
