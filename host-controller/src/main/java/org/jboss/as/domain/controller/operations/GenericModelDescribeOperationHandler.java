@@ -48,6 +48,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.PathAddressFilter;
 import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
