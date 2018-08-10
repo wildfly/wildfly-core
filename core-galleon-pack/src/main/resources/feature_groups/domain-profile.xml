@@ -9,7 +9,10 @@
         <feature-group name="elytron-app">
             <include feature-id="subsystem.elytron.properties-realm:properties-realm=ApplicationRealm">
                 <param name="users-properties" value="{path=application-users.properties,relative-to=jboss.domain.config.dir,digest-realm-name=ApplicationRealm}"/>
-                <param name="groups-properties" value="{path=application-roles.properties,relative-to=jboss.domain.config.dir}"/>
+                <feature spec="subsystem.elytron.properties-realm.groups-properties">
+                    <param name="path" value="application-roles.properties"/>
+                    <param name="relative-to" value="jboss.domain.config.dir"/>
+                </feature>
             </include>
         </feature-group>
     </feature>

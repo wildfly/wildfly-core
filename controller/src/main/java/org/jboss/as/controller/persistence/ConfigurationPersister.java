@@ -76,6 +76,7 @@ public interface ConfigurationPersister {
      *
      * @return callback to use to control whether the stored model should be flushed to permanent storage. Will not be
      *          {@code null}
+     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
      */
     PersistenceResource store(ModelNode model, Set<PathAddress> affectedAddresses) throws ConfigurationPersistenceException;
 
@@ -91,6 +92,8 @@ public interface ConfigurationPersister {
     /**
      * Load the configuration model, returning it as a list of updates to be
      * executed by the controller.
+     * @return the configuration model as a list of updates to be executed by the controller.
+     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
      */
     List<ModelNode> load() throws ConfigurationPersistenceException;
 
@@ -99,6 +102,7 @@ public interface ConfigurationPersister {
      * and all services have started successfully.
      *
      * @see #isPersisting()
+     * @throws org.jboss.as.controller.persistence.ConfigurationPersistenceException
      */
     void successfulBoot() throws ConfigurationPersistenceException;
 
@@ -107,8 +111,33 @@ public interface ConfigurationPersister {
      *
      * @return the file location of the snapshot
      * @throws ConfigurationPersistenceException if a problem happened when creating the snapshot
+     * @deprecated use #snapshot(String name, String message) instead.
      */
-    String snapshot() throws ConfigurationPersistenceException;
+    @Deprecated
+    default String snapshot() throws ConfigurationPersistenceException {
+         return snapshot(null, "");
+    }
+
+    /**
+     * Take a snapshot of the current configuration.
+     *
+     * @param message optionnal message
+     * @return the file location of the snapshot
+     * @throws ConfigurationPersistenceException if a problem happened when creating the snapshot
+     */
+    default String snapshot(String name, String message) throws ConfigurationPersistenceException {
+         return "";
+    }
+
+    /**
+     * Publish the current configuration
+     * @param target the target destination of the publication.
+     * @return the location of the published configuraiotn
+     * @throws ConfigurationPersistenceException if a problem happened when publishing
+     */
+    default String publish(String target) throws ConfigurationPersistenceException {
+         return null;
+    }
 
     /**
      * Gets the names of the snapshots in the snapshots directory

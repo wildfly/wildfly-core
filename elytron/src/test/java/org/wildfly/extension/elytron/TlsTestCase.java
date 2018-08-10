@@ -23,6 +23,10 @@ import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -45,6 +49,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -58,6 +63,7 @@ import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -92,10 +98,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final X500Principal FIREFLY_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly");
     private static final X500Principal LOCALHOST_DN = new X500Principal("OU=Elytron, O=Elytron, C=CZ, ST=Elytron, CN=localhost");
     private static final X500Principal MUNERASOFT_DN = new X500Principal("C=BR, ST=DF, O=MuneraSoft.io, CN=MuneraSoft.io Intermediate CA, emailAddress=contact@munerasoft.com");
+    private static final X500Principal NEW_DN = new X500Principal("O=Root Certificate Authority New, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA");
     private static final File TRUST_FILE = new File(WORKING_DIRECTORY_LOCATION, "ca.truststore");
     private static final File FIREFLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly.keystore");
     private static final File LOCALHOST_FILE = new File(WORKING_DIRECTORY_LOCATION, "localhost.keystore");
     private static final File CRL_FILE = new File(WORKING_DIRECTORY_LOCATION, "crl.pem");
+
+    private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
+    private static final String INIT_TEST_TRUSTSTORE = "myTS";
+    private static final String INIT_TEST_TRUSTMANAGER = "myTM";
 
     public TlsTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
@@ -343,6 +354,65 @@ public class TlsTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
         Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
+    }
+
+    @Test
+    public void testReloadTrustManager() throws Throwable {
+        Path resources = Paths.get(TlsTestCase.class.getResource(".").toURI());
+        Files.copy(Paths.get(TRUST_FILE.toString()), Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE), StandardCopyOption.REPLACE_EXISTING);
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + INIT_TEST_FILE);
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
+        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.KEY_STORE).set(INIT_TEST_TRUSTSTORE);
+        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName(INIT_TEST_TRUSTMANAGER);
+        X509ExtendedTrustManager trustManager = (X509ExtendedTrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+        Assert.assertEquals(trustManager.getAcceptedIssuers().length, 1);
+
+        X509Certificate originalFoundDN = trustManager.getAcceptedIssuers()[0];
+        Assert.assertEquals(originalFoundDN.getIssuerX500Principal(), ISSUER_DN);
+
+        // Update the trust store certificate
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                .setDn(NEW_DN)
+                .setKeyAlgorithmName("RSA")
+                .setSignatureAlgorithmName("SHA1withRSA")
+                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
+                .build();
+        KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
+        createTemporaryKeyStoreFile(trustStore, new File(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.LOAD);
+        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.INIT);
+        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+
+        serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName(INIT_TEST_TRUSTMANAGER);
+        trustManager = (X509ExtendedTrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+        Assert.assertEquals(trustManager.getAcceptedIssuers().length, 1);
+
+        // See if the trust manager contains the new certificate
+        X509Certificate newFoundDN = trustManager.getAcceptedIssuers()[0];
+        Assert.assertEquals(newFoundDN.getIssuerX500Principal(), NEW_DN);
+
+        Files.delete(Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
     }
 
     private SSLContext getSslContext(String contextName) {

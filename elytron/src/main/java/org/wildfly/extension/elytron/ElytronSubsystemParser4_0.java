@@ -73,8 +73,18 @@ public class ElytronSubsystemParser4_0 extends ElytronSubsystemParser3_0 {
                 .addChild(decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().parser))
                 .addChild(getDirContextParser())
                 .addChild(getPolicyParser())
-                .addChild(jaspiConfigurationParser)
+                .addChild(jaspiConfigurationParser) // new
                 .build();
+    }
+
+    @Override
+    protected PersistentResourceXMLDescription getMapperParser() {
+        return new MapperParser().getParser();
+    }
+
+    @Override
+    PersistentResourceXMLDescription getTlsParser() {
+        return new TlsParser().tlsParser_4_0;
     }
 
 }

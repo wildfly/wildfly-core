@@ -159,6 +159,9 @@ public interface ContentRepository {
     default void readOnly() {
     }
 
+    default void flush(boolean success) {
+    }
+
     /**
      * Clean content that is not referenced from the repository.
      *

@@ -25,6 +25,7 @@ package org.jboss.as.controller.persistence;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.File;
+import java.io.InputStream;
 
 import org.jboss.dmr.ModelNode;
 
@@ -48,7 +49,7 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
     }
 
     @Override
-    public void doCommit(ExposedByteArrayOutputStream marshalled) {
+    protected void doCommit(InputStream in) {
         final File tempFileName;
 
         if ( FilePersistenceUtils.isParentFolderWritable(fileName) ){
@@ -59,7 +60,7 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
 
         try {
             try {
-                FilePersistenceUtils.writeToTempFile(marshalled, tempFileName, fileName);
+                FilePersistenceUtils.writeToTempFile(in, tempFileName, fileName);
             } catch (Exception e) {
                 MGMT_OP_LOGGER.failedToStoreConfiguration(e, fileName.getName());
                 return;

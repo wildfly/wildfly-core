@@ -121,8 +121,8 @@ public class BackupXmlConfigurationPersister extends XmlConfigurationPersister {
     }
 
     @Override
-    public String snapshot() throws ConfigurationPersistenceException {
-        return configurationFile.snapshot();
+    public String snapshot(String name, String comment) throws ConfigurationPersistenceException {
+        return configurationFile.snapshot(name, comment);
     }
 
     @Override

@@ -4,7 +4,10 @@
     <feature spec="subsystem.elytron.properties-realm">
         <param name="properties-realm" value="ApplicationRealm"/>
         <param name="users-properties" value="{path=application-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ApplicationRealm}"/>
-        <param name="groups-properties" value="{path=application-roles.properties,relative-to=jboss.server.config.dir}"/>
+        <feature spec="subsystem.elytron.properties-realm.groups-properties">
+            <param name="path" value="application-roles.properties"/>
+            <param name="relative-to" value="jboss.server.config.dir"/>
+        </feature>
     </feature>
     <feature spec="subsystem.elytron.security-domain">
         <param name="security-domain" value="ApplicationDomain"/>

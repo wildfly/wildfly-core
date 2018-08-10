@@ -29,6 +29,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNER;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
@@ -173,7 +174,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
             DeploymentHandlerUtil.undeploy(context, operation, name, runtimeName, vaultReader);
         }
 
-        context.completeStep(new OperationContext.ResultHandler() {
+        addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {
             @Override
             public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                 if (resultAction == ResultAction.KEEP) {

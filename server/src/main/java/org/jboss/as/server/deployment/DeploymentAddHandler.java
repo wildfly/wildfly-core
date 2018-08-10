@@ -32,6 +32,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.OWNE
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.PERSISTENT;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.SERVER_ADD_ATTRIBUTES;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidContentAdditionParameterDefined;
@@ -150,7 +151,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
         if (contentItem.getHash() != null) {
             final byte[] contentHash = contentItem.getHash();
-            context.completeStep(new OperationContext.ResultHandler() {
+            addFlushHandler(context, contentRepository,new OperationContext.ResultHandler() {
                 @Override
                 public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                     if (resultAction == ResultAction.KEEP) {

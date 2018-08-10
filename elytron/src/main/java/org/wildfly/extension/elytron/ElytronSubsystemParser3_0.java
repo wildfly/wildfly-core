@@ -72,7 +72,7 @@ class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
     }
 
     protected PersistentResourceXMLDescription getMapperParser() {
-        return new MapperParser().getParser();
+        return new MapperParser(MapperParser.Version.VERSION_3_0).getParser();
     }
 
     PersistentResourceXMLDescription getPermissionSetParser() {

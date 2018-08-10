@@ -72,6 +72,11 @@ public class CommandLineConstants {
     public static final String HELP = "--help";
     public static final String SHORT_HELP = "-h";
 
+    /** Passed in to a SERVER to configure the git repository used for configuration history. */
+    public static final String GIT_REPO = "--git-repo";
+    public static final String GIT_BRANCH = "--git-branch";
+    public static final String GIT_AUTH = "--git-auth";
+
     /** Passed in to a DC to choose the domain.xml file. The location must be relative to the domain configuration directory */
     public static final String OLD_DOMAIN_CONFIG = "-domain-config";
     public static final String DOMAIN_CONFIG = "--domain-config";

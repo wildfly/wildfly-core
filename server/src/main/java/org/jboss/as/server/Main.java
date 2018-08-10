@@ -22,6 +22,8 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -40,7 +42,6 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
@@ -91,7 +92,7 @@ public final class Main {
                 StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
             }
 
-            Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule(ModuleIdentifier.create("org.jboss.vfs")));
+            Module.registerURLStreamHandlerFactoryModule(Module.getBootModuleLoader().loadModule("org.jboss.vfs"));
             ServerEnvironmentWrapper serverEnvironmentWrapper = determineEnvironment(args, WildFlySecurityManager.getSystemPropertiesPrivileged(),
                     WildFlySecurityManager.getSystemEnvironmentPrivileged(), ServerEnvironment.LaunchType.STANDALONE,
                     Module.getStartTime());
@@ -143,6 +144,9 @@ public final class Main {
                                                          ServerEnvironment.LaunchType launchType, long startTime) {
         final int argsLength = args.length;
         String serverConfig = null;
+        String gitRepository = null;
+        String gitBranch = MASTER;
+        String gitAuthConfiguration = null;
         RunningMode runningMode = RunningMode.NORMAL;
         ProductConfig productConfig;
         ConfigurationFile.InteractionPolicy configInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
@@ -322,7 +326,52 @@ public final class Main {
                     }
                 } else if (arg.equals(CommandLineConstants.SECMGR)) {
                     // do nothing, just need to filter out as Windows batch scripts cannot filter it out
-                } else {
+                } else if(arg.startsWith(CommandLineConstants.GIT_REPO)) {
+                    int idx = arg.indexOf("=");
+                    if (idx == -1) {
+                        final int next = i + 1;
+                        if (next < argsLength) {
+                            gitRepository = args[next];
+                            i++;
+                        } else {
+                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
+                            usage();
+                            return null;
+                        }
+                    } else {
+                        gitRepository = arg.substring(idx + 1, arg.length());
+                    }
+                } else if(arg.startsWith(CommandLineConstants.GIT_AUTH)) {
+                    int idx = arg.indexOf("=");
+                    if (idx == -1) {
+                       final int next = i + 1;
+                        if (next < argsLength) {
+                            gitAuthConfiguration = args[next];
+                            i++;
+                        } else {
+                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
+                            usage();
+                            return null;
+                        }
+                    } else {
+                        gitAuthConfiguration = arg.substring(idx + 1, arg.length());
+                    }
+                } else if(arg.startsWith(CommandLineConstants.GIT_BRANCH)) {
+                    int idx = arg.indexOf("=");
+                    if (idx == -1) {
+                       final int next = i + 1;
+                        if (next < argsLength) {
+                            gitBranch = args[next];
+                            i++;
+                        } else {
+                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
+                            usage();
+                            return null;
+                        }
+                    } else {
+                        gitBranch = arg.substring(idx + 1, arg.length());
+                    }
+                }else {
                     STDERR.println(ServerLogger.ROOT_LOGGER.invalidCommandLineOption(arg));
                     usage();
                     return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
@@ -337,7 +386,8 @@ public final class Main {
         String hostControllerName = null; // No host controller unless in domain mode.
         productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
-                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended));
+                serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended,
+                gitRepository, gitBranch, gitAuthConfiguration));
     }
 
     private static void assertSingleConfig(String serverConfig) {

@@ -21,7 +21,11 @@
 */
 package org.jboss.as.controller.persistence;
 
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+
 import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -55,7 +59,11 @@ public abstract class AbstractFilePersistenceResource implements ConfigurationPe
         if (marshalled == null) {
             throw ControllerLogger.ROOT_LOGGER.rollbackAlreadyInvoked();
         }
-        doCommit(marshalled);
+        try(InputStream in = getMarshalledInputStream()) {
+            doCommit(in);
+        } catch (IOException ioex) {
+            MGMT_OP_LOGGER.errorf(ioex, ioex.getMessage());
+        }
     }
 
     @Override
@@ -63,5 +71,9 @@ public abstract class AbstractFilePersistenceResource implements ConfigurationPe
         marshalled = null;
     }
 
-    protected abstract void doCommit(ExposedByteArrayOutputStream marshalled);
+    protected InputStream getMarshalledInputStream() {
+        return marshalled.getInputStream();
+    }
+
+    protected abstract void doCommit(InputStream marshalled);
 }

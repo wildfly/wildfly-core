@@ -7,7 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.as.patching.installation.PatchableTarget.TargetInfo;
@@ -129,7 +131,7 @@ public class InstallationManagerService implements Service<InstallationManager> 
     }
 
     private static List<File> getModulePath(final InstalledImage image) {
-        final List<File> path = new ArrayList<File>();
+        final Set<File> path = new LinkedHashSet<>();
         final String modulePath = SecurityActions.getSystemProperty(MODULE_PATH, SecurityActions.getEnv("JAVA_MODULEPATH"));
         if (modulePath != null) {
             final String[] paths = modulePath.split(Pattern.quote(File.pathSeparator));
@@ -140,7 +142,7 @@ public class InstallationManagerService implements Service<InstallationManager> 
         } else {
             path.add(image.getModulesDir());
         }
-        return path;
+        return new ArrayList<>(path);
     }
 
     private static List<File> getBundlePath(final InstalledImage image) {

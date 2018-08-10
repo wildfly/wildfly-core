@@ -64,11 +64,13 @@ public class DeploymentItemCompleter implements CommandLineCompleter {
         } else if (path.charAt(0) != '.') {
             path = "./" + path;
         }
-        String directory;
-        String subpath;
+        String directory = path;
+        String subpath = "";
         int directoryIndex = path.lastIndexOf("/");
-        directory = path.substring(0, directoryIndex + 1);
-        subpath = path.substring(directoryIndex + 1);
+        if (directoryIndex >= 0) {
+            directory = path.substring(0, directoryIndex + 1);
+            subpath = path.substring(directoryIndex + 1);
+        }
 
         String[] ret = {directory, subpath};
         return ret;

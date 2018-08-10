@@ -36,6 +36,9 @@
     <artifactId>wildfly-logging</artifactId>
 
     <name>WildFly: Logging Subsystem</name>
+    <properties>
+        <surefire.argLine>${surefire.system.args}</surefire.argLine>
+    </properties>
 
     <build>
         <plugins>
@@ -56,7 +59,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar} ${surefire.system.args}</argLine>
+                    <argLine>-javaagent:${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar} ${surefire.argLine}</argLine>
                     <systemPropertyVariables>
                         <jboss.server.log.dir>${project.build.directory}${file.separator}logs</jboss.server.log.dir>
                         <jboss.server.config.dir>${project.build.directory}${file.separator}config</jboss.server.config.dir>
@@ -246,6 +249,18 @@
             </activation>
             <properties>
                 <byteman.host>::1</byteman.host>
+            </properties>
+        </profile>
+        <profile>
+            <id>ibm-jdk</id>
+            <activation>
+                <property>
+                    <name>java.vendor</name>
+                    <value>IBM Corporation</value>
+                </property>
+            </activation>
+            <properties>
+                <surefire.argLine>-Xbootclasspath/a:${org.jboss.logmanager:jboss-logmanager} -Djava.util.logging.manager=org.jboss.logmanager.LogManager ${surefire.system.args}</surefire.argLine>
             </properties>
         </profile>
     </profiles>
