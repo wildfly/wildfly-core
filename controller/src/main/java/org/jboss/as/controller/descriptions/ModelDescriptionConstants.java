@@ -322,6 +322,7 @@ public class ModelDescriptionConstants {
     public static final String NATIVE = "native";
     public static final String NATIVE_INTERFACE = "native-interface";
     public static final String NATIVE_REMOTING_INTERFACE = "native-remoting-interface";
+    public static final String NESTED = "nested";
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";
@@ -393,6 +394,7 @@ public class ModelDescriptionConstants {
     public static final String READ_CHILDREN_NAMES_OPERATION = "read-children-names";
     public static final String READ_CHILDREN_TYPES_OPERATION = "read-children-types";
     public static final String READ_CHILDREN_RESOURCES_OPERATION = "read-children-resources";
+    public static final String READ_CONFIG_AS_FEATURES_OPERATION = "read-config-as-features";
     public static final String READ_CONFIG_AS_XML_OPERATION = "read-config-as-xml";
     public static final String READ_CONTENT = "read-content";
     public static final String READ_FEATURE_DESCRIPTION_OPERATION = "read-feature-description";
@@ -515,6 +517,7 @@ public class ModelDescriptionConstants {
     public static final String SOCKET_BINDING_REF = "socket-binding-ref";
     public static final String SOURCE_INTERFACE = "source-interface";
     public static final String SOURCE_PORT = "source-port";
+    public static final String SPEC = "spec";
     public static final String SSL = "ssl";
     public static final String SSL_CONTEXT = "ssl-context";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
