@@ -133,6 +133,7 @@ public class ConfigurationFile {
     /* Backup copy of the most recent configuration, stored in the history dir.
        May be used as {@link #bootFile}; see {@link #reloadUsingLast} */
     private volatile File lastFile;
+    private final boolean useGit;
 
     /**
      * Creates a new ConfigurationFile.
@@ -147,7 +148,7 @@ public class ConfigurationFile {
      *                                    to the configuration history directory
      */
     public ConfigurationFile(final File configurationDir, final String rawName, final String name, final boolean persistOriginal) {
-        this(configurationDir, rawName, name, persistOriginal ? InteractionPolicy.STANDARD : InteractionPolicy.READ_ONLY);
+        this(configurationDir, rawName, name, persistOriginal ? InteractionPolicy.STANDARD : InteractionPolicy.READ_ONLY, false);
     }
 
     /**
@@ -159,9 +160,10 @@ public class ConfigurationFile {
      *                Cannot be {@code null} or an empty string
      * @param name user provided name of the configuration file to use
      * @param interactionPolicy policy governing interaction with the configuration file
+     * @param useGit {@code true} if configuration is using Git to manage its history.
      */
     public ConfigurationFile(final File configurationDir, final String rawName, final String name,
-                             final InteractionPolicy interactionPolicy) {
+                             final InteractionPolicy interactionPolicy, boolean useGit) {
         if (!configurationDir.exists() || !configurationDir.isDirectory()) {
             throw ControllerLogger.ROOT_LOGGER.directoryNotFound(configurationDir.getAbsolutePath());
         }
@@ -172,6 +174,7 @@ public class ConfigurationFile {
         this.historyRoot = new File(configurationDir, rawName.replace('.', '_') + "_history");
         this.currentHistory = new File(historyRoot, "current");
         this.snapshotsDirectory = new File(historyRoot, "snapshot");
+        this.useGit = useGit;
         this.interactionPolicy = interactionPolicy == null ? InteractionPolicy.STANDARD : interactionPolicy;
         final File file = determineMainFile(rawName, name);
         try {
@@ -179,6 +182,10 @@ public class ConfigurationFile {
         } catch (IOException ioe) {
             throw ControllerLogger.ROOT_LOGGER.canonicalMainFileNotFound(ioe, file);
         }
+    }
+
+    public boolean useGit() {
+        return useGit;
     }
 
     public boolean checkCanFindNewBootFile(final String bootFileName) {
@@ -463,11 +470,11 @@ public class ConfigurationFile {
     }
 
     /** Gets the file to which modifications would be persisted, if this object is persisting changes outside the history directory */
-    File getMainFile() {
+    public File getMainFile() {
         return mainFile;
     }
 
-    File getConfigurationDir(){
+    public File getConfigurationDir(){
         return configurationDir;
     }
 
@@ -590,8 +597,10 @@ public class ConfigurationFile {
         Files.move(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    String snapshot() throws ConfigurationPersistenceException {
-        String name = getTimeStamp(new Date()) + mainFile.getName();
+    String snapshot(String prefix, String comment) throws ConfigurationPersistenceException {
+        String sanitizedComment = FilePersistenceUtils.sanitizeFileName(comment);
+        String fileName = (sanitizedComment == null || sanitizedComment.isEmpty()) ? mainFile.getName() : sanitizedComment + "-" + mainFile.getName();
+        String name = (prefix == null || prefix.isEmpty()) ? getTimeStamp(new Date()) + fileName : prefix + fileName;
         File snapshot = new File(snapshotsDirectory, name);
         File source = interactionPolicy.isReadOnly() ? lastFile : mainFile;
         try {

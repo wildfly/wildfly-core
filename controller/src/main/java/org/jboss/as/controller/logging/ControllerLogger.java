@@ -3526,4 +3526,30 @@ public interface ControllerLogger extends BasicLogger {
             "to learn more about the deprecation.")
     String operationDeprecatedMessage(String name, String address);
 
+    @Message(id = 450, value = "Failed to clone the repository %s")
+    RuntimeException failedToCloneRepository(@Cause Exception cause, String repository);
+
+    /**
+     * Logs an error message indicating a failure to store the configuration file.
+     *
+     * @param cause the cause of the error.
+     * @param name  the name of the configuration.
+     * @return ConfigurationPersistenceException
+     */
+    @Message(id = 451, value = "Failed to publish configuration to %s because of %s")
+    ConfigurationPersistenceException failedToPublishConfiguration(@Cause Throwable cause, String name, String error);
+
+    @Message(id = 452, value = "Failed to persist configuration to %s because of %s")
+    ConfigurationPersistenceException failedToPersistConfiguration(@Cause Throwable cause, String name, String error);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 453, value = "Failed to delete configuration snapshot %s")
+    void failedToDeleteConfigurationSnapshot(@Cause Throwable cause, String name);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 454, value = "Failed to list configuration snapshots %s")
+    void failedToListConfigurationSnapshot(@Cause Throwable cause, String name);
+
+    @Message(id = 455, value = "Can't take snapshot %s because it already exists")
+    ConfigurationPersistenceException snapshotAlreadyExistError(String name);
 }

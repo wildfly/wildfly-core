@@ -787,7 +787,7 @@ public class PersistanceResourceTestCase {
         checkFiles(null, "One", "std", "std", "One", "std");
 
         //Make sure that a reset to a snapshot loads that file
-        configurationFile.snapshot();
+        configurationFile.snapshot(null, null);
         ConfigurationPersister.SnapshotInfo snapshotInfo = configurationFile.listSnapshots();
         Assert.assertEquals(1, snapshotInfo.names().size());
         store(persister, "Two");
@@ -834,7 +834,7 @@ public class PersistanceResourceTestCase {
         checkFiles(null, "std", "std", "std", "One", "std");
 
         //Make sure that a reset to a snapshot loads that file
-        configurationFile.snapshot();
+        configurationFile.snapshot(null, null);
         ConfigurationPersister.SnapshotInfo snapshotInfo = configurationFile.listSnapshots();
         Assert.assertEquals(1, snapshotInfo.names().size());
         store(persister, "Two");

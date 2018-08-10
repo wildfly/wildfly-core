@@ -75,6 +75,10 @@
             <artifactId>syslog4j</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman</artifactId>
             <scope>test</scope>

@@ -38,6 +38,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.dmr.ModelNode;
@@ -145,5 +146,29 @@ public abstract class DeploymentHandlerUtils {
                 return -1;
             }
         };
+    }
+
+    private static final OperationContext.AttachmentKey<Boolean> CONTENT_REPOSITORY_FLUSH = OperationContext.AttachmentKey.create(Boolean.class);
+
+    /**
+     * Adds a new result handler that will flush (aka amend commit) the changes in the content repository.
+     * @param context
+     * @param contentRepository
+     * @param handler
+     */
+    public static void addFlushHandler(OperationContext context, ContentRepository contentRepository, OperationContext.ResultHandler handler) {
+        if (context.getAttachment(CONTENT_REPOSITORY_FLUSH) == null) {
+            context.attach(CONTENT_REPOSITORY_FLUSH, true);
+            context.completeStep(new OperationContext.ResultHandler() {
+                @Override
+                public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                    handler.handleResult(resultAction, context, operation);
+                    contentRepository.flush(resultAction == OperationContext.ResultAction.KEEP);
+                    context.detach(CONTENT_REPOSITORY_FLUSH);
+                }
+            });
+        } else {
+            context.completeStep(handler);
+        }
     }
 }

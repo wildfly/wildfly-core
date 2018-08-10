@@ -24,6 +24,7 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_PARAM_ALL_EXPLODED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.OVERWRITE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.TARGET_PATH;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
@@ -145,7 +146,7 @@ public class ExplodedDeploymentAddContentHandler implements OperationStepHandler
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.completeStep(new OperationContext.ResultHandler() {
+        addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {
             @Override
             public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                 if (resultAction == ResultAction.KEEP) {

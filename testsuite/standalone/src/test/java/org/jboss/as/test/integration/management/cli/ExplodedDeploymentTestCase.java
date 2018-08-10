@@ -166,6 +166,22 @@ public class ExplodedDeploymentTestCase {
 
             testCompletion(deploymentUnit + ":remove-content(paths=[");
 
+            {
+                String cmd = deploymentUnit + ":browse-content(path=..";
+                List<String> candidates = new ArrayList<>();
+                cli.getCommandContext().getDefaultCommandCompleter().complete(cli.getCommandContext(), cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
+            {
+                String cmd = deploymentUnit + ":browse-content(path=.foo";
+                List<String> candidates = new ArrayList<>();
+                cli.getCommandContext().getDefaultCommandCompleter().complete(cli.getCommandContext(), cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.isEmpty());
+            }
+
         } finally {
             cli.sendLine(deploymentUnit + ":remove");
         }

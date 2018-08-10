@@ -198,7 +198,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         return getDeploymentContentFile(deploymentHash, false);
     }
 
-    private Path getDeploymentContentFile(byte[] deploymentHash, boolean validate) {
+    protected Path getDeploymentContentFile(byte[] deploymentHash, boolean validate) {
         return getDeploymentHashDir(deploymentHash, validate).resolve(CONTENT);
     }
 
