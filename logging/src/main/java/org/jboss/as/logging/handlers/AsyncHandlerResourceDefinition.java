@@ -92,6 +92,7 @@ public class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
             .build();
 
     public static final LogHandlerListAttributeDefinition SUBHANDLERS = LogHandlerListAttributeDefinition.Builder.of("subhandlers")
+            .setAllowDuplicates(false)
             .setAllowExpression(false)
             .setCapabilityReference(Capabilities.HANDLER_REFERENCE_RECORDER)
             .setRequired(false)

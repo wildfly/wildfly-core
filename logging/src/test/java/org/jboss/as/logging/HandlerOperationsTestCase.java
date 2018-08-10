@@ -58,6 +58,7 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.jboss.logmanager.config.LoggerConfiguration;
 import org.junit.Test;
 
 /**
@@ -235,6 +236,63 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
                 configuration.getFormatterNames().contains("FILE"));
         assertEquals("Expected the handler named FILE to use the FILE formatter", "FILE",
                 handlerConfiguration.getFormatterName());
+    }
+
+    @Test
+    public void testAddHandlerComposite() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        final ModelNode handlerAddress = createFileHandlerAddress("FILE").toModelNode();
+        final String filename = "test-file-2.log";
+
+        final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
+
+        // Add the handler
+        builder.addStep(OperationBuilder.createAddOperation(handlerAddress)
+                .addAttribute(CommonAttributes.FILE, createFileValue("jboss.server.log.dir", filename))
+                .build());
+
+        // Create a formatter and add it
+        final ModelNode patternFormatterAddress = createPatternFormatterAddress("PATTERN").toModelNode();
+        builder.addStep(OperationBuilder.createAddOperation(patternFormatterAddress)
+                .addAttribute(PatternFormatterResourceDefinition.PATTERN, "%d{HH:mm:ss,SSS} %-5p [%c] %s%e%n")
+                .build());
+
+        // Write the named-formatter
+        builder.addStep(SubsystemOperations.createWriteAttributeOperation(handlerAddress, "named-formatter", "PATTERN"));
+
+        // Create an async-handler
+        final ModelNode asyncHandlerAddress = createAsyncHandlerAddress(null, "ASYNC").toModelNode();
+        builder.addStep(OperationBuilder.createAddOperation(asyncHandlerAddress)
+                .addAttribute(AsyncHandlerResourceDefinition.QUEUE_LENGTH, 100)
+                .build());
+
+        // Add the file-handler to the async-handler
+        ModelNode addHandlerOp = SubsystemOperations.createOperation("add-handler", asyncHandlerAddress);
+        addHandlerOp.get("name").set("FILE");
+        builder.addStep(addHandlerOp);
+
+        // Create a logger
+        final ModelNode loggerAddress = createLoggerAddress("org.jboss.as.logging").toModelNode();
+        builder.addStep(SubsystemOperations.createAddOperation(loggerAddress));
+
+        // Use the add-handler operation to add the handler to the logger
+        addHandlerOp = SubsystemOperations.createOperation("add-handler", loggerAddress);
+        addHandlerOp.get("name").set("ASYNC");
+        builder.addStep(addHandlerOp);
+
+        executeOperation(kernelServices, builder.build().getOperation());
+
+        // Get the log context configuration to validate what has been configured
+        final LogContextConfiguration configuration = ConfigurationPersistence.getConfigurationPersistence(LogContext.getLogContext());
+        assertNotNull("Expected to find the configuration", configuration);
+        final HandlerConfiguration handlerConfiguration = configuration.getHandlerConfiguration("FILE");
+        assertNotNull("Expected to find the configuration for the FILE handler", configuration);
+        assertEquals("Expected the handler named FILE to use the PATTERN formatter", "PATTERN",
+                handlerConfiguration.getFormatterName());
+        final LoggerConfiguration loggerConfiguration = configuration.getLoggerConfiguration("org.jboss.as.logging");
+        assertNotNull("Expected the logger configuration for org.jboss.as.logging to exist", loggerConfiguration);
+        assertTrue("Expected the FILE handler to be assigned", loggerConfiguration.getHandlerNames().contains("ASYNC"));
     }
 
     private void testAsyncHandler(final KernelServices kernelServices, final String profileName) {
