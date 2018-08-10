@@ -122,6 +122,7 @@ public interface CommonAttributes {
             .build();
 
     LogHandlerListAttributeDefinition HANDLERS = LogHandlerListAttributeDefinition.Builder.of("handlers")
+            .setAllowDuplicates(false)
             .setAllowExpression(false)
             .setCapabilityReference(Capabilities.LOGGER_HANDLER_REFERENCE_RECORDER)
             .setRequired(false)

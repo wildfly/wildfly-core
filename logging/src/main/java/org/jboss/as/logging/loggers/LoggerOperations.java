@@ -196,9 +196,16 @@ final class LoggerOperations {
     static final OperationStepHandler ADD_HANDLER = new LoggerUpdateOperationStepHandler(HANDLERS) {
 
         @Override
-        public void updateModel(final OperationContext context, final ModelNode operation, final ModelNode model) {
+        public void updateModel(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
             final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ModelNode handlerName = operation.get(HANDLER_NAME.getName());
+            // Get the current handlers, add the handler and set the model value
+            final ModelNode handlers = model.get(HANDLERS.getName()).clone();
+            if (!handlers.isDefined()) {
+                handlers.setEmptyList();
+            }
+            handlers.add(handlerName);
+            HANDLERS.getValidator().validateParameter(HANDLERS.getName(), handlers);
             model.get(HANDLERS.getName()).add(handlerName);
             recordCapabilitiesAndRequirements(context, resource, HANDLERS, new ModelNode().setEmptyList().add(handlerName), new ModelNode());
         }
@@ -209,10 +216,11 @@ final class LoggerOperations {
             final String handlerName = HANDLER_NAME.resolveModelAttribute(context, operation).asString();
             final String loggerName = getLogManagerLoggerName(name);
             if (configuration.getHandlerNames().contains(handlerName)) {
-                throw createOperationFailure(LoggingLogger.ROOT_LOGGER.handlerAlreadyDefined(handlerName));
+                LoggingLogger.ROOT_LOGGER.tracef("Handler %s is already assigned to logger %s", handlerName, loggerName);
+            } else {
+                LoggingLogger.ROOT_LOGGER.tracef("Adding handler '%s' to logger '%s' at '%s'", handlerName, getLogManagerLoggerName(loggerName), context.getCurrentAddress());
+                configuration.addHandlerName(handlerName);
             }
-            LoggingLogger.ROOT_LOGGER.tracef("Adding handler '%s' to logger '%s' at '%s'", handlerName, getLogManagerLoggerName(loggerName), context.getCurrentAddress());
-            configuration.addHandlerName(handlerName);
         }
     };
 
