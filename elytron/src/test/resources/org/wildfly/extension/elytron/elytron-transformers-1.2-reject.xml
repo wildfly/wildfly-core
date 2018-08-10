@@ -27,6 +27,11 @@
                 <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
             </key-store>
         </key-stores>
+        <key-managers>
+            <key-manager name="key1" key-store="accounts.keystore">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+        </key-managers>
         <certificate-authority-accounts>
             <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
                 <account-key key-store="accounts.keystore" alias="server">
@@ -34,6 +39,12 @@
                 </account-key>
             </certificate-authority-account>
         </certificate-authority-accounts>
+        <server-ssl-contexts>
+            <server-ssl-context name="ctx" key-manager="key1"/>
+        </server-ssl-contexts>
+        <server-ssl-sni-contexts>
+            <server-ssl-sni-context name="test" default-ssl-context="ctx"></server-ssl-sni-context>
+        </server-ssl-sni-contexts>
     </tls>
     <audit-logging>
         <custom-security-event-listener name="a" module="b" class-name="c.D"/>
