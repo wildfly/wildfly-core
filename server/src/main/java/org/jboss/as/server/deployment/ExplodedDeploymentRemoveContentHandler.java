@@ -21,6 +21,7 @@ import static org.jboss.as.server.Services.JBOSS_SERVER_EXECUTOR;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.REMOVED_PATHS;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
@@ -114,7 +115,7 @@ public class ExplodedDeploymentRemoveContentHandler implements OperationStepHand
                 }
             }, OperationContext.Stage.RUNTIME);
         }
-        context.completeStep(new OperationContext.ResultHandler() {
+        addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {
             @Override
             public void handleResult(ResultAction resultAction, OperationContext context, ModelNode operation) {
                 if (resultAction == ResultAction.KEEP) {

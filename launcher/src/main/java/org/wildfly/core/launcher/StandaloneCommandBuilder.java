@@ -22,6 +22,8 @@
 
 package org.wildfly.core.launcher;
 
+import static org.wildfly.core.launcher.logger.LauncherMessages.MESSAGES;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -399,6 +401,21 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      */
     public StandaloneCommandBuilder addSecurityProperties(final Map<String, String> properties) {
         securityProperties.putAll(properties);
+        return this;
+    }
+
+    public StandaloneCommandBuilder setGitRepository(final String gitRepository, final String gitBranch, final String gitAuthentication) {
+        if(gitRepository == null) {
+            throw MESSAGES.nullParam("git-repo");
+        }
+        addServerArg("--git-repo", gitRepository);
+        if (gitBranch != null) {
+            addServerArg("--git-branch", gitBranch);
+        }
+        if (gitAuthentication != null) {
+            addServerArg("--git-auth", gitAuthentication);
+        }
+
         return this;
     }
 

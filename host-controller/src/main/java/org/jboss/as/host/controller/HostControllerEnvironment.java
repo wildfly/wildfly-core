@@ -380,10 +380,6 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.domainConfigurationDir = tmp;
         WildFlySecurityManager.setPropertyPrivileged(DOMAIN_CONFIG_DIR, this.domainConfigurationDir.getAbsolutePath());
 
-        final String defaultHostConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOST_DEFAULT_CONFIG, "host.xml");
-
-        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, hostConfigInteractionPolicy);
-
         this.domainConfig = domainConfig;
         this.initialDomainConfig = initialDomainConfig;
 
@@ -474,6 +470,11 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         } else {
             this.defaultJVM = null;
         }
+
+        final String defaultHostConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOST_DEFAULT_CONFIG, "host.xml");
+
+        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, hostConfigInteractionPolicy, false);
+
         final Path filePath = this.domainDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
         UUID uuid;
         try {

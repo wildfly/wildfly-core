@@ -17,6 +17,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +74,11 @@ public class Server {
     private final URI authConfigUri;
     private final boolean readOnly;
 
+    // git backed configuration
+    private String gitRepository;
+    private String gitBranch;
+    private String gitAuthConfiguration;
+
     public Server() {
         this(null, false);
     }
@@ -127,6 +133,21 @@ public class Server {
         this.startMode = startMode;
     }
 
+    /**
+     * Enable git backed configuration repository
+     *
+     * @param gitRepository
+     * @param gitBranch
+     * @param gitAuthConfig
+     */
+    public void setGitRepository(final String gitRepository, final String gitBranch, final String gitAuthConfig) {
+        Objects.requireNonNull(gitRepository);
+
+        this.gitRepository = gitRepository;
+        this.gitBranch = gitBranch;
+        this.gitAuthConfiguration = gitAuthConfig;
+    }
+
     protected void start() {
         start(System.out);
     }
@@ -162,6 +183,10 @@ public class Server {
                 commandBuilder.setServerReadOnlyConfiguration(serverConfig);
             } else {
                 commandBuilder.setServerConfiguration(serverConfig);
+            }
+
+            if (gitRepository != null) {
+                commandBuilder.setGitRepository(gitRepository, gitBranch, gitAuthConfiguration);
             }
 
             //we are testing, of course we want assertions and set-up some other defaults

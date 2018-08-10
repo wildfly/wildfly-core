@@ -19,6 +19,7 @@ package org.jboss.as.server.deployment;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_ARCHIVE;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_HASH;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.getContentItem;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isArchive;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtil.isManaged;
@@ -91,7 +92,7 @@ public class DeploymentExplodeHandler implements OperationStepHandler {
         contentItem.get(CONTENT_HASH.getName()).set(newHash);
         contentItem.get(CONTENT_ARCHIVE.getName()).set(false);
 
-        context.completeStep(new OperationContext.ResultHandler() {
+        addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {
             @Override
             public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                 if (resultAction == OperationContext.ResultAction.KEEP) {

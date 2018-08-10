@@ -23,6 +23,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.CONTENT_RESOURCE_ALL;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENABLED;
 import static org.jboss.as.server.controller.resources.DeploymentAttributes.RUNTIME_NAME;
+import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHandler;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getContents;
 
 import java.util.Collections;
@@ -84,7 +85,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                         runtimeName = null;
                     }
                     final ModelNode contentNode = CONTENT_RESOURCE_ALL.resolveModelAttribute(context, model);
-                    context.completeStep(new OperationContext.ResultHandler() {
+                    addFlushHandler(context, contentRepository, new OperationContext.ResultHandler() {
                         @Override
                         public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
                             final String managementName = context.getCurrentAddressValue();

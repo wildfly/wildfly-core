@@ -58,5 +58,6 @@
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.threads"/>
         <module name="org.projectodd.vdx"/>
+        <module name="org.eclipse.jgit" export="true"/>
     </dependencies>
 </module>

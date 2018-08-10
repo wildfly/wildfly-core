@@ -36,6 +36,7 @@ import java.util.TreeSet;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.server.controller.git.GitContentRepository;
 import org.jboss.as.server.deployment.ContentCleanerService;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.logging.ServerLogger;
@@ -141,7 +142,11 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         // Install either a local or remote content repository
         if(standalone) {
             if ( ! selfContained ) {
-                ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
+                if(serverEnvironment.useGit()) {
+                    GitContentRepository.addService(serviceTarget, serverEnvironment.getGitRepository(), serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
+                } else {
+                    ContentRepository.Factory.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
+                }
             }
         } else {
             RemoteFileRepositoryService.addService(serviceTarget, serverEnvironment.getServerContentDir(), serverEnvironment.getServerTempDir());
