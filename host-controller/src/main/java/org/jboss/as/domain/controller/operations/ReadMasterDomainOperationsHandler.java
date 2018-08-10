@@ -34,6 +34,7 @@ import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.operations.PathAddressFilter;
 import org.jboss.as.controller.operations.common.OrderedChildTypesAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
