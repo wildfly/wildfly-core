@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.controller.operations;
+package org.jboss.as.domain.controller.operations;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,17 +33,17 @@ import org.jboss.as.controller.PathElement;
 /**
  * @author Emanuel Muckenhuber
  */
-public final class PathAddressFilter {
+class PathAddressFilter {
 
-    public static final OperationContext.AttachmentKey<PathAddressFilter> KEY = OperationContext.AttachmentKey.create(PathAddressFilter.class);
+    static final OperationContext.AttachmentKey<PathAddressFilter> KEY = OperationContext.AttachmentKey.create(PathAddressFilter.class);
 
     private final boolean accept;
     private final Node node = new Node(null);
-    public PathAddressFilter(boolean accept) {
+    protected PathAddressFilter(boolean accept) {
         this.accept = accept;
     }
 
-    public boolean accepts(PathAddress address) {
+    boolean accepts(PathAddress address) {
         final Iterator<PathElement> i = address.iterator();
         Node node = this.node;
         while (i.hasNext()) {
@@ -66,7 +66,7 @@ public final class PathAddressFilter {
         return accept;
     }
 
-    public void addReject(final PathAddress address) {
+    void addReject(final PathAddress address) {
         final Iterator<PathElement> i = address.iterator();
         Node node = this.node;
         while (i.hasNext()) {

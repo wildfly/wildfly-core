@@ -64,7 +64,6 @@ import org.jboss.as.controller.operations.common.ValidateOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.ReadAttributeHandler;
-import org.jboss.as.controller.operations.global.ReadConfigAsFeaturesOperationHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -347,7 +346,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(GlobalInstallationReportHandler.DEFINITION, GlobalInstallationReportHandler.INSTANCE, false);
         hostRegistration.registerOperationHandler(InstallationReportHandler.DEFINITION, InstallationReportHandler.createOperation(environment), false);
 
-        hostRegistration.registerOperationHandler(ReadConfigAsFeaturesOperationHandler.DEFINITION, new ReadConfigAsFeaturesOperationHandler(), true);
 
         hostRegistration.registerOperationHandler(ValidateAddressOperationHandler.DEFINITION, ValidateAddressOperationHandler.INSTANCE);
 

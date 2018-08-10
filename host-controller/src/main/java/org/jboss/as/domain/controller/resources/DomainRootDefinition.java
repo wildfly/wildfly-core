@@ -42,7 +42,6 @@ import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
@@ -58,7 +57,6 @@ import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
 import org.jboss.as.controller.extension.ExtensionResourceDefinition;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
-import org.jboss.as.controller.operations.PathAddressFilter;
 import org.jboss.as.controller.operations.common.NamespaceAddHandler;
 import org.jboss.as.controller.operations.common.NamespaceRemoveHandler;
 import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
@@ -69,7 +67,6 @@ import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
-import org.jboss.as.controller.operations.global.ReadConfigAsFeaturesOperationHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
@@ -275,11 +272,6 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
                 GlobalInstallationReportHandler.createDomainOperation(), false);
 
         resourceRegistration.registerOperationHandler(GenericModelDescribeOperationHandler.DEFINITION, GenericModelDescribeOperationHandler.INSTANCE, true);
-
-        final PathAddressFilter hostFilter = new PathAddressFilter(true);
-        hostFilter.addReject(PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.HOST)));
-        resourceRegistration.registerOperationHandler(ReadConfigAsFeaturesOperationHandler.DEFINITION, new ReadConfigAsFeaturesOperationHandler(hostFilter), true);
-
         if (isMaster) {
             DeploymentUploadURLHandler.registerMaster(resourceRegistration, contentRepo);
             DeploymentUploadStreamAttachmentHandler.registerMaster(resourceRegistration, contentRepo);
