@@ -538,4 +538,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1055, value = "Invalid key size: %d")
     OperationFailedException invalidKeySize(int keySize);
 
+    @Message(id = 1056, value = "A certificate authority account with this account key already exists. To update the contact" +
+            " information associated with this existing account, use %s. To change the key associated with this existing account, use %s.")
+    OperationFailedException certificateAuthorityAccountAlreadyExists(String updateAccount, String changeAccountKey);
+
 }
