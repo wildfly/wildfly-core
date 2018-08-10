@@ -16,6 +16,7 @@ limitations under the License.
 
 package org.jboss.as.server.mgmt.domain;
 
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.resource.ResourceManager;
 
@@ -53,6 +54,18 @@ public interface ExtensibleHttpManagement extends HttpManagement {
      *                               added via this interface or otherwise
      */
     void addManagementGetRemapContext(String contextName, PathRemapper remapper);
+
+    /**
+     * Add a context for a HTTP management handler.
+     * @param contextName the name of the context. Cannot be {@code null} or empty
+     * @param requiresSecurity {@code true} if the management handler requires a security realm.
+     * @param managementHandler HTTP management handler. Cannot be {@code null}
+     *
+     * @throws IllegalArgumentException if either parameter is invalid
+     * @throws IllegalStateException if there is already a context present named the same as {@code contextName}, either
+     *                               added via this interface or otherwise
+     */
+    void addManagementHandler(String contextName, boolean requiresSecurity, HttpHandler managementHandler);
 
     /**
      * Remove a previously added context
