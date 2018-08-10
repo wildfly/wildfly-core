@@ -8,7 +8,7 @@
                 <feature spec="core-service.management.access.authorization.role-mapping.include">
                     <param name="include" value="user-$local"/>
                     <param name="name" value="$local"/>
-                    <param name="type" value="user"/>
+                    <param name="type" value="USER"/>
                 </feature>
             </feature>
         </feature>
