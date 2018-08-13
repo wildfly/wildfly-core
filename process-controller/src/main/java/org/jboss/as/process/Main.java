@@ -48,6 +48,7 @@ import org.jboss.logging.MDC;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.modules.Module;
 import org.jboss.threads.JBossThreadFactory;
+import org.wildfly.jdk.version.JdkType;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -221,7 +222,8 @@ public final class Main {
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
         final List<String> initialCommand = new ArrayList<String>();
-        initialCommand.add(jvmName);
+        final JdkType jdkType = JdkType.createFromJavaExecutable(jvmName);
+        initialCommand.add(jdkType.getJavaExecutable());
         initialCommand.add("-D[" + HOST_CONTROLLER_PROCESS_NAME + "]");
         initialCommand.addAll(javaOptions);
         initialCommand.add("-jar");

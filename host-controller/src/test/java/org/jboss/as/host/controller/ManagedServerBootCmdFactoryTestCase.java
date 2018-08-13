@@ -123,7 +123,11 @@ public class ManagedServerBootCmdFactoryTestCase {
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
         List<String> result = instance.getServerLaunchCommand(true);
         Assert.assertThat(result.size(), is(notNullValue()));
-        Assert.assertThat(result.size(), is(16));
+        if (result.size() > 16) {
+            Assert.assertThat(result.size(), is(21));
+        } else {
+            Assert.assertThat(result.size(), is(16));
+        }
         boolean sawDServer = false;
         boolean sawDpcid = false;
         for (String arg : result) {

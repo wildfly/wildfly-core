@@ -60,13 +60,13 @@ import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
 import org.jboss.as.process.CommandLineConstants;
-import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService.SSLContextSupplier;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.wildfly.jdk.version.JdkType;
 
 /**
  * Combines the relevant parts of the domain-level and host-level models to
@@ -74,6 +74,7 @@ import org.jboss.dmr.Property;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ManagedServerBootCmdFactory implements ManagedServerBootConfiguration {
 
@@ -122,6 +123,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
     private final boolean suspend;
+    private final JdkType jdkType;
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver, boolean suspend) {
         this.serverName = serverName;
@@ -174,6 +176,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 resolveNilableExpressions(serverVM, expressionResolver, false));
 
         this.sslContextSupplier = createSSLContextSupplier(serverModel, expressionResolver);
+        this.jdkType = getJdkType();
     }
 
     private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
@@ -266,7 +269,9 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.addAll(commandPrefix);
         }
 
-        command.add(getJavaCommand());
+        command.add(jdkType.getJavaExecutable());
+
+        command.addAll(jdkType.getDefaultArguments());
 
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
 
@@ -415,19 +420,17 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         return processId;
     }
 
-    private String getJavaCommand() {
+    private JdkType getJdkType() {
         String javaHome = jvmElement.getJavaHome();
         if (javaHome == null) {
-            if(environment.getDefaultJVM() != null) {
-                String defaultJvm = environment.getDefaultJVM().getAbsolutePath();
-                if (!defaultJvm.equals("java") || (defaultJvm.equals("java") && System.getenv("JAVA_HOME") != null)) {
-                    return defaultJvm;
-                }
+            if (environment.getDefaultJVM() != null) {
+                String javaExecutable = environment.getDefaultJVM().getAbsolutePath();
+                return JdkType.createFromJavaExecutable(javaExecutable);
+            } else {
+                return JdkType.createFromSystemProperty();
             }
-            javaHome = DefaultJvmUtils.getCurrentJvmHome();
         }
-
-        return DefaultJvmUtils.findJavaExecutable(javaHome);
+        return JdkType.createFromJavaHome(javaHome);
     }
 
     private ArrayList<String> getLaunchPrefixCommands(){
