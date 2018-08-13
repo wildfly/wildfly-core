@@ -67,6 +67,10 @@ if (-Not $JAVA_OPTS) {
 
     # Use JBoss Modules lockless mode
     # $JAVA_OPTS += '-Djboss.modules.lockless=true'
+
+    # Uncomment to enable the experimental JDK 11 support for ByteBuddy
+    # ByteBuddy is the default bytecode provider of Hibernate ORM
+    # $JAVA_OPTS += '-Dnet.bytebuddy.experimental=true'
 }
 
 # Uncomment this to run with a security manager enabled
