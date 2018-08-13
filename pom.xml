@@ -210,6 +210,7 @@
         <version.org.wildfly.security.elytron>1.5.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.2.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.elytron.tool>1.3.0.Final</version.org.wildfly.security.elytron.tool>
+        <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
 
@@ -1619,6 +1620,12 @@
                 <groupId>org.syslog4j</groupId>
                 <artifactId>syslog4j</artifactId>
                 <version>${version.org.syslog4j}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>xalan</groupId>
+                <artifactId>xalan</artifactId>
+                <version>${version.xalan}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
