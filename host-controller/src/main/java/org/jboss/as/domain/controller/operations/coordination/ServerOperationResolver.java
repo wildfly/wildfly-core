@@ -111,6 +111,7 @@ public class ServerOperationResolver {
 
     public static final AttachmentKey<Set<ModelNode>> DONT_PROPAGATE_TO_SERVERS_ATTACHMENT = AttachmentKey.create(Set.class);
     private static final AttachmentKey<ModelNode> DOMAIN_MODEL_ATTACHMENT = AttachmentKey.create(ModelNode.class);
+    private static final AttachmentKey<ModelNode> ORIGINAL_DOMAIN_MODEL_ATTACHMENT = AttachmentKey.create(ModelNode.class);
 
     private enum DomainKey {
 
@@ -257,7 +258,7 @@ public class ServerOperationResolver {
                     return Collections.singletonMap(allServers, operation);
                 }
                 case DEPLOYMENT: {
-                    return getServerExplodedDeploymentOperations(operation, address, domain, host);
+                    return getServerExplodedDeploymentOperations(getOriginalDomainModel(context), operation, address, host);
                 }
                 case PATH: {
                     return getServerPathOperations(operation, address, host, true);
@@ -310,6 +311,14 @@ public class ServerOperationResolver {
         return model;
     }
 
+    private static ModelNode getOriginalDomainModel(OperationContext context) {
+        ModelNode model = context.getAttachment(ORIGINAL_DOMAIN_MODEL_ATTACHMENT);
+        if (model == null) {
+            model = Resource.Tools.readModel(context.getOriginalRootResource());
+            context.attach(ORIGINAL_DOMAIN_MODEL_ATTACHMENT, model);
+        }
+        return model;
+    }
 
     private Map<Set<ServerIdentity>, ModelNode> getServerProfileOperations(ModelNode operation, PathAddress address,
                                                                            ModelNode domain, ModelNode host) {
@@ -970,12 +979,11 @@ public class ServerOperationResolver {
         return result;
     }
 
-    private Map<Set<ServerIdentity>, ModelNode> getServerExplodedDeploymentOperations(ModelNode operation, PathAddress address,
-                                                                           ModelNode domain, ModelNode host) {
+    private Map<Set<ServerIdentity>, ModelNode> getServerExplodedDeploymentOperations(ModelNode originalDomain, ModelNode operation, PathAddress address, ModelNode host) {
         Map<Set<ServerIdentity>, ModelNode> result = null;
         if (isExplodedDeploymentOperation(operation)) {
             String deploymentName = address.getLastElement().getValue();
-            Set<String> groups = getServerGroupsForDeployment(deploymentName, domain);
+            Set<String> groups = getServerGroupsForDeployment(deploymentName, originalDomain);
             Set<ServerIdentity> allServers = new HashSet<>();
             for (String group : groups) {
                 allServers.addAll(getServersForGroup(group, host, localHostName, serverProxies));
