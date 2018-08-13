@@ -21,12 +21,12 @@
  */
 package org.jboss.as.test.integration.domain.management;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
 
@@ -117,16 +117,16 @@ public class ServerStartFailureTestCase {
     public void testDomainLifecycleMethods() throws Throwable {
 
         DomainClient client = domainMasterLifecycleUtil.getDomainClient();
-        executeLifecycleOperation(client, null, START_SERVERS);
+        executeLifecycleOperation(client, null, START_SERVERS, true);
         waitUntilState(client, "master", "main-one", "STARTED");
         waitUntilState(client, "master", "main-two", "STARTED");
         waitUntilState(client, "master", "other-one", "STARTED");
         waitUntilState(client, "slave", "main-three", "STARTED");
         waitUntilState(client, "slave", "failure-one", "STARTED");
-        waitUntilState(client, "slave", "failure-two", "FAILED");
-        waitUntilState(client, "slave", "failure-three", "FAILED");
+        waitUntilState(client, "slave", "failure-two", "DISABLED");
+        waitUntilState(client, "slave", "failure-three", "DISABLED");
 
-        executeLifecycleOperation(client, null, STOP_SERVERS);
+        executeLifecycleOperation(client, null, STOP_SERVERS, false);
         //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
         waitUntilState(client, "master", "main-one", "STOPPED");
         waitUntilState(client, "master", "main-two", "DISABLED");
@@ -136,10 +136,16 @@ public class ServerStartFailureTestCase {
         waitUntilState(client, "slave", "failure-three", "DISABLED");
 
         validateResponse(startServer(client, "master", "main-one"));
-        ModelNode result = validateResponse(startServer(client, "slave", "failure-two"));
-        Assert.assertThat(result.asString(), is("FAILED"));
-        result = validateResponse(startServer(client, "slave", "failure-three"));
-        Assert.assertThat(result.asString(), is("FAILED"));
+        ModelNode result = validateFailedResponse(startServer(client, "slave", "failure-two"));
+        String failureDescription = result.asString();
+        Assert.assertTrue(failureDescription.contains("IllegalStateException"));
+        Assert.assertTrue(failureDescription.contains("Java home"));
+        Assert.assertTrue(failureDescription.contains("does not exist"));
+        result = validateFailedResponse(startServer(client, "slave", "failure-three"));
+        failureDescription = result.asString();
+        Assert.assertTrue(failureDescription.contains("IllegalStateException"));
+        Assert.assertTrue(failureDescription.contains("Java home"));
+        Assert.assertTrue(failureDescription.contains("does not exist"));
     }
 
     private ModelNode startServer(final ModelControllerClient client, String host, String serverName) throws IOException {
@@ -149,7 +155,7 @@ public class ServerStartFailureTestCase {
         return client.execute(operation);
     }
 
-    private void executeLifecycleOperation(final ModelControllerClient client, String groupName, String opName) throws IOException {
+    private void executeLifecycleOperation(final ModelControllerClient client, String groupName, String opName, boolean shouldFail) throws IOException {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(opName);
         if (groupName == null) {
@@ -157,6 +163,10 @@ public class ServerStartFailureTestCase {
         } else {
             operation.get(OP_ADDR).add(SERVER_GROUP, groupName);
         }
-        validateResponse(client.execute(operation));
+        if (shouldFail) {
+            validateFailedResponse(client.execute(operation));
+        } else {
+            validateResponse(client.execute(operation));
+        }
     }
 }

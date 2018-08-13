@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.wildfly.core.launcher.Arguments.Argument;
@@ -42,21 +43,26 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
     static final String[] DEFAULT_VM_ARGUMENTS;
+    static final Collection<String> DEFAULT_MODULAR_VM_ARGUMENTS;
 
     static {
-        final Collection<String> javaOpts = new ArrayList<>();
         // Default JVM parameters for all versions
+        final Collection<String> javaOpts = new ArrayList<>();
         javaOpts.add("-Xms64m");
         javaOpts.add("-Xmx512m");
         javaOpts.add("-Djava.net.preferIPv4Stack=true");
         javaOpts.add("-Djava.awt.headless=true");
         javaOpts.add("-Djboss.modules.system.pkgs=org.jboss.byteman");
-
-        // Versions below 8 should add a MaxPermSize
-        if (Environment.supportsMaxPermSize()) {
-            javaOpts.add("-XX:MaxPermSize=256m");
-        }
         DEFAULT_VM_ARGUMENTS = javaOpts.toArray(new String[javaOpts.size()]);
+
+        // Default JVM parameters for all modular JDKs
+        final ArrayList<String> modularJavaOpts = new ArrayList<>();
+        modularJavaOpts.add("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
+        modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
+        modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
+        modularJavaOpts.add("--illegal-access=permit");
+        modularJavaOpts.add("--add-modules=java.se");
+        DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }
 
     protected final Environment environment;
@@ -662,6 +668,14 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
 
     protected static Path validateJavaHome(final Path javaHome) {
         return Environment.validateJavaHome(javaHome);
+    }
+
+    protected static boolean isModularJavaHome(final String javaHome) {
+        return Environment.isModularJavaHome(javaHome);
+    }
+
+    protected static boolean isModularJavaHome(final Path javaHome) {
+        return Environment.isModularJavaHome(javaHome);
     }
 
     protected static Path validateAndNormalizeDir(final String path, final boolean allowNull) {

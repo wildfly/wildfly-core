@@ -44,6 +44,7 @@ class Environment {
 
     static final String HOME_DIR = "jboss.home.dir";
     static final String MODULES_JAR_NAME = "jboss-modules.jar";
+    private static final String JMODS_DIR = "jmods";
 
     static {
         final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
@@ -350,5 +351,17 @@ class Environment {
             throw LauncherMessages.MESSAGES.invalidDirectory(exe.subpath(count - 2, count).toString(), javaHome);
         }
         return result;
+    }
+
+    static boolean isModularJavaHome(final String javaHome) {
+        final Path validatedJavaHome = validateJavaHome(javaHome);
+        final Path jmodsDir = validatedJavaHome.resolve(JMODS_DIR);
+        return Files.isDirectory(jmodsDir);
+    }
+
+    static boolean isModularJavaHome(final Path javaHome) {
+        final Path validatedJavaHome = validateJavaHome(javaHome);
+        final Path jmodsDir = validatedJavaHome.resolve(JMODS_DIR);
+        return Files.isDirectory(jmodsDir);
     }
 }
