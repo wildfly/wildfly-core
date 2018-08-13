@@ -55,6 +55,7 @@ import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition.FacilityAttribute;
 import org.jboss.as.logging.handlers.Target;
@@ -69,7 +70,9 @@ import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.FormatterConfiguration;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
@@ -92,6 +95,7 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
             PeriodicHandlerResourceDefinition.NAME,
             PeriodicSizeRotatingHandlerResourceDefinition.NAME,
             SizeRotatingHandlerResourceDefinition.NAME,
+            SocketHandlerResourceDefinition.NAME,
             SyslogHandlerResourceDefinition.NAME,
     };
 
@@ -114,36 +118,8 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
     }
 
     @After
-    public void clearLogContext() {
-        clearLogContext(LogContext.getLogContext());
-    }
-
-    void clearLogContext(final LogContext logContext) {
-        final ConfigurationPersistence configuration = ConfigurationPersistence.getConfigurationPersistence(logContext);
-        if (configuration != null) {
-            final LogContextConfiguration logContextConfiguration = configuration.getLogContextConfiguration();
-            // Remove all loggers
-            for (String loggerName : logContextConfiguration.getLoggerNames()) {
-                logContextConfiguration.removeLoggerConfiguration(loggerName);
-            }
-            // Remove all the handlers
-            for (String handlerName : logContextConfiguration.getHandlerNames()) {
-                logContextConfiguration.removeHandlerConfiguration(handlerName);
-            }
-            // Remove all the filters
-            for (String filterName : logContextConfiguration.getFilterNames()) {
-                logContextConfiguration.removeFilterConfiguration(filterName);
-            }
-            // Remove all the formatters
-            for (String formatterName : logContextConfiguration.getFormatterNames()) {
-                logContextConfiguration.removeFormatterConfiguration(formatterName);
-            }
-            // Remove all the error managers
-            for (String errorManager : logContextConfiguration.getErrorManagerNames()) {
-                logContextConfiguration.removeErrorManagerConfiguration(errorManager);
-            }
-            configuration.commit();
-        }
+    public void clearLogContext() throws Exception {
+        LogContext.getLogContext().close();
     }
 
     @Override
@@ -350,10 +326,20 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
 
     // TODO (jrp) looking up property names is hard-coded, use a more dynamic approach
     private void compareHandlers(final LogContextConfiguration logContextConfig, final Collection<String> handlerNames, final ModelNode model) throws OperationFailedException {
+        final ModelNode clonedModel = model.clone();
+        // Remove a socket-handler since it's wrapped in a DelayedHandler and the values will not match
+        if (clonedModel.hasDefined(SocketHandlerResourceDefinition.NAME)) {
+            final ModelNode socketHandlers = clonedModel.remove(SocketHandlerResourceDefinition.NAME);
+            for (Property socketHandler : socketHandlers.asPropertyList()) {
+                // Get the name of the socket-handler and remove it from the handler names
+                handlerNames.remove(socketHandler.getName());
+            }
+        }
+
         // Compare property values for the handlers
         for (String name : handlerNames) {
             final HandlerConfiguration handlerConfig = logContextConfig.getHandlerConfiguration(name);
-            final ModelNode handlerModel = findHandlerModel(model, name);
+            final ModelNode handlerModel = findHandlerModel(clonedModel, name);
             final Set<String> modelPropertyNames = new HashSet<>(handlerModel.keys());
             final List<String> configPropertyNames = new ArrayList<>(handlerConfig.getPropertyNames());
 
@@ -547,6 +533,18 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
             return result.toString();
         }
         return xmlName;
+    }
+
+    @SuppressWarnings("ChainOfInstanceofChecks")
+    private LogContextConfiguration getLogContextConfiguration(final LogContext logContext) {
+        final Configurator configurator = logContext.getAttachment(CommonAttributes.ROOT_LOGGER_NAME, Configurator.ATTACHMENT_KEY);
+        if (configurator instanceof LogContextConfiguration) {
+            return (LogContextConfiguration) configurator;
+        }
+        if (configurator instanceof PropertyConfigurator) {
+            return ((PropertyConfigurator) configurator).getLogContextConfiguration();
+        }
+        return null;
     }
 
 

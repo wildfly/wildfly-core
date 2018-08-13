@@ -403,15 +403,7 @@ final class HandlerOperations {
         }
     }
 
-    /**
-     * A step handler to remove a handler
-     */
-    static final OperationStepHandler CHANGE_LEVEL = new HandlerUpdateOperationStepHandler(PropertySorter.NO_OP, LEVEL);
-
-    /**
-     * A step handler to remove a handler
-     */
-    static final OperationStepHandler REMOVE_HANDLER = new LoggingOperations.LoggingRemoveOperationStepHandler() {
+    static class LogHandlerRemoveHandler extends LoggingOperations.LoggingRemoveOperationStepHandler {
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -462,7 +454,17 @@ final class HandlerOperations {
                 logContextConfiguration.removePojoConfiguration(name);
             }
         }
-    };
+    }
+
+    /**
+     * A step handler to remove a handler
+     */
+    static final OperationStepHandler CHANGE_LEVEL = new HandlerUpdateOperationStepHandler(PropertySorter.NO_OP, LEVEL);
+
+    /**
+     * A step handler to remove a handler
+     */
+    static final OperationStepHandler REMOVE_HANDLER = new LogHandlerRemoveHandler();
 
     /**
      * The handler for adding a subhandler to an {@link org.jboss.logmanager.handlers.AsyncHandler}.

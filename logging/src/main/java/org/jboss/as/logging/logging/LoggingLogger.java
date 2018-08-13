@@ -953,4 +953,27 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 91, value = "Exception output type %s is invalid.")
     OperationFailedException invalidExceptionOutputType(String value);
+
+    /**
+     * Creates an exception indicating the types is invalid.
+     *
+     * @param expected the expected type
+     * @param found    the found type
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 92, value = "Invalid type found. Expected %s but found %s.")
+    OperationFailedException invalidType(Class<?> expected, Class<?> found);
+
+    /**
+     * Creates an exception indicating a failure to configure the SSL context.
+     *
+     * @param cause         the cause of the error
+     * @param resourceName  the name of the resource
+     * @param resourceValue the resource value
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 93, value = "Failed to configure SSL context for %s %s.")
+    OperationFailedException failedToConfigureSslContext(@Cause Throwable cause, String resourceName, String resourceValue);
 }

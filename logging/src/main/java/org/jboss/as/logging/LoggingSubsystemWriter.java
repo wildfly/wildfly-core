@@ -76,6 +76,7 @@ import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
@@ -197,6 +198,17 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 }
             }
         }
+        if (model.hasDefined(SocketHandlerResourceDefinition.NAME)) {
+            final ModelNode handlers = model.get(SocketHandlerResourceDefinition.NAME);
+
+            for (Property handlerProp : handlers.asPropertyList()) {
+                final String name = handlerProp.getName();
+                final ModelNode handler = handlerProp.getValue();
+                if (handler.isDefined()) {
+                    writeSocketHandler(writer, handler, name);
+                }
+            }
+        }
         if (model.hasDefined(SyslogHandlerResourceDefinition.NAME)) {
             final ModelNode handlers = model.get(SyslogHandlerResourceDefinition.NAME);
 
@@ -315,6 +327,24 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         MAX_BACKUP_INDEX.marshallAsElement(model, writer);
         APPEND.marshallAsElement(model, writer);
         SizeRotatingHandlerResourceDefinition.SUFFIX.marshallAsElement(model, writer);
+
+        writer.writeEndElement();
+    }
+
+    private void writeSocketHandler(final XMLExtendedStreamWriter writer, final ModelNode model, final String name) throws XMLStreamException {
+        writer.writeStartElement(Element.SOCKET_HANDLER.getLocalName());
+        writer.writeAttribute(HANDLER_NAME.getXmlName(), name);
+        AUTOFLUSH.marshallAsAttribute(model, writer);
+        SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT.marshallAsAttribute(model, false, writer);
+        ENABLED.marshallAsAttribute(model, false, writer);
+        SocketHandlerResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.marshallAsAttribute(model, writer);
+        SocketHandlerResourceDefinition.SSL_CONTEXT.marshallAsAttribute(model, writer);
+
+        ENCODING.marshallAsElement(model, writer);
+        FILTER_SPEC.marshallAsElement(model, writer);
+        LEVEL.marshallAsElement(model, writer);
+        SocketHandlerResourceDefinition.NAMED_FORMATTER.marshallAsElement(model, writer);
+        SocketHandlerResourceDefinition.PROTOCOL.marshallAsElement(model, writer);
 
         writer.writeEndElement();
     }

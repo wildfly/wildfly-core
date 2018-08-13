@@ -31,6 +31,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -86,8 +92,23 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
     }
 
     @Override
-    protected ControllerInitializer createControllerInitializer() {
-        return new LoggingInitializer();
+    protected void setupController(final ControllerInitializer controllerInitializer) {
+        super.setupController(controllerInitializer);
+        controllerInitializer.addPath("jboss.server.log.dir", logDir.toAbsolutePath().toString(), null);
+        controllerInitializer.addPath("jboss.server.config.dir", configDir.toAbsolutePath().toString(), null);
+        if (runningMode == RunningMode.NORMAL) {
+            controllerInitializer.addRemoteOutboundSocketBinding("log-server", "localhost", 10514);
+        }
+    }
+
+    @Override
+    protected void initializeExtraSubystemsAndModel(final ExtensionRegistry extensionRegistry, final Resource rootResource, final ManagementResourceRegistration rootRegistration, final RuntimeCapabilityRegistry capabilityRegistry) {
+        super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+        if (runningMode == RunningMode.NORMAL) {
+            registerCapabilities(capabilityRegistry,
+                    RuntimeCapability.Builder.of("org.wildfly.network.outbound-socket-binding", true, OutboundSocketBinding.class).build()
+            );
+        }
     }
 
     private void writeObject(final ObjectOutputStream out) throws IOException {
@@ -98,13 +119,6 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
         in.defaultReadObject();
         logDir = getDirectory("jboss.server.log.dir", "target", "logs");
         configDir = getDirectory("jboss.server.config.dir", "target", "config");
-    }
-
-    final class LoggingInitializer extends ControllerInitializer {
-        LoggingInitializer() {
-            addPath("jboss.server.log.dir", logDir.toAbsolutePath().toString(), null);
-            addPath("jboss.server.config.dir", configDir.toAbsolutePath().toString(), null);
-        }
     }
 
     private static Path getDirectory(final String propName, final String... paths) {

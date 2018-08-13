@@ -86,11 +86,11 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     @After
     @Override
-    public void clearLogContext() {
+    public void clearLogContext() throws Exception {
         super.clearLogContext();
         final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
         if (contextSelector.exists(PROFILE)) {
-            clearLogContext(contextSelector.get(PROFILE));
+            contextSelector.get(PROFILE).close();
             contextSelector.remove(PROFILE);
         }
     }

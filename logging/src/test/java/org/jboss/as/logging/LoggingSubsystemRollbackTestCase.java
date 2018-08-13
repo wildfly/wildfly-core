@@ -61,11 +61,11 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
 
     @After
     @Override
-    public void clearLogContext() {
+    public void clearLogContext() throws Exception {
         super.clearLogContext();
         final LoggingProfileContextSelector contextSelector = LoggingProfileContextSelector.getInstance();
         if (contextSelector.exists(PROFILE_NAME)) {
-            clearLogContext(contextSelector.get(PROFILE_NAME));
+            contextSelector.get(PROFILE_NAME).close();
             contextSelector.remove(PROFILE_NAME);
         }
     }
