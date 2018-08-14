@@ -53,6 +53,8 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     private String defaultHostConfig;
     private ModelNode defaultDomainConfigAsFeatures;
     private ModelNode defaultHostConfigAsFeatures;
+    private ModelNode nonNestedDomainConfigAsFeatures;
+    private ModelNode nonNestedHostConfigAsFeatures;
 
     @BeforeClass
     public static void setupDomain() {
@@ -158,11 +160,115 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         doTest(Collections.singletonList(redefineJmxAttribute), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, MASTER));
     }
 
+    @Test
+    public void nonNestedDomainTest() {
+        ModelNode makeIgnoredSbUnused = Util.getWriteAttributeOperation(PathAddress.pathAddress(SERVER_GROUP, "ignored-sockets"), SOCKET_BINDING_GROUP, "standard-sockets");
+        ModelNode removeSocketBindingGroup = Util.createRemoveOperation(PathAddress.pathAddress(SOCKET_BINDING_GROUP, "ignored"));
+        ModelNode addSocketBindingGroup = Util.createAddOperation(PathAddress.pathAddress(SOCKET_BINDING_GROUP, "custom"));
+        addSocketBindingGroup.get(DEFAULT_INTERFACE).set("public");
+        ModelNode addSocketBinding = Util.createAddOperation(PathAddress.pathAddress(SOCKET_BINDING_GROUP, "custom").append(SOCKET_BINDING, "custom"));
+        addSocketBinding.get(INTERFACE).set("public");
+        addSocketBinding.get(PORT).set(4444);
+
+        ModelNode expectedDomainConfigAsFeatures = nonNestedDomainConfigAsFeatures.clone();
+
+        // remove the usage of ignored socket binding group
+        ModelNode serverGroupId = new ModelNode();
+        serverGroupId.get(SERVER_GROUP).set("ignored-sockets");
+        int serverGroupIndex = getListElementIndex(expectedDomainConfigAsFeatures, "domain.server-group", serverGroupId);
+        expectedDomainConfigAsFeatures.get(serverGroupIndex).get(PARAMS).get(SOCKET_BINDING_GROUP).set("standard-sockets");
+
+        // remove the ignored socket binding group and its sole socket binding
+        ModelNode ignoredSbgId = new ModelNode();
+        ignoredSbgId.get(SOCKET_BINDING_GROUP).set("ignored");
+        int ignoredSbgIndex = getListElementIndex(expectedDomainConfigAsFeatures, "domain.socket-binding-group", ignoredSbgId);
+        expectedDomainConfigAsFeatures.remove(ignoredSbgIndex);
+        ModelNode ignoredSbId = new ModelNode();
+        ignoredSbId.get(SOCKET_BINDING_GROUP).set("ignored");
+        ignoredSbId.get(SOCKET_BINDING).set("http");
+        int ignoredSbIndex = getListElementIndex(expectedDomainConfigAsFeatures, "domain.socket-binding-group.socket-binding", ignoredSbId);
+        expectedDomainConfigAsFeatures.remove(ignoredSbIndex);
+
+        // add the custom socket binding group and its sole socket binding
+        ModelNode customSocketBindingGroup = new ModelNode();
+        ModelNode customSocketBindingGroupId = new ModelNode();
+        ModelNode customSocketBindingGroupParams = new ModelNode();
+        customSocketBindingGroupParams.get(DEFAULT_INTERFACE).set("public");
+        customSocketBindingGroupId.get(SOCKET_BINDING_GROUP).set("custom");
+        customSocketBindingGroup.get(SPEC).set("domain.socket-binding-group");
+        customSocketBindingGroup.get(ID).set(customSocketBindingGroupId);
+        customSocketBindingGroup.get(PARAMS).set(customSocketBindingGroupParams);
+        ModelNode customSb = new ModelNode();
+        ModelNode customSbId = new ModelNode();
+        ModelNode customSbParams = new ModelNode();
+        customSbParams.get(INTERFACE).set("public");
+        customSbParams.get(PORT).set(4444);
+        customSbId.get(SOCKET_BINDING_GROUP).set("custom");
+        customSbId.get(SOCKET_BINDING).set("custom");
+        customSb.get(SPEC).set("domain.socket-binding-group.socket-binding");
+        customSb.get(ID).set(customSbId);
+        customSb.get(PARAMS).set(customSbParams);
+        expectedDomainConfigAsFeatures.add(customSocketBindingGroup);
+        expectedDomainConfigAsFeatures.add(customSb);
+
+        doTest(Arrays.asList(makeIgnoredSbUnused, removeSocketBindingGroup, addSocketBindingGroup, addSocketBinding), expectedDomainConfigAsFeatures, PathAddress.EMPTY_ADDRESS, false);
+    }
+
+    @Test
+    public void nonNestedHostTest() {
+        ModelNode removeJvm = Util.createRemoveOperation(PathAddress.pathAddress(HOST, MASTER).append(JVM, DEFAULT));
+        ModelNode addCustomJvm = Util.createAddOperation(PathAddress.pathAddress(HOST, MASTER).append(JVM, "custom"));
+        ModelNode environmentVariables = new ModelNode();
+        environmentVariables.get("DOMAIN_TEST_JVM").set("custom");
+        addCustomJvm.get("heap-size").set("64m");
+        addCustomJvm.get("jvm-options").add("-ea");
+        addCustomJvm.get("max-heap-size").set("128m");
+        addCustomJvm.get("environment-variables").set(environmentVariables);
+
+        ModelNode expectedHostConfigAsFeatures = nonNestedHostConfigAsFeatures.clone();
+
+        // remove the default jvm
+        ModelNode defaultJvmId = new ModelNode();
+        defaultJvmId.get(HOST).set(MASTER);
+        defaultJvmId.get(JVM).set(DEFAULT);
+        int defaultJvmIndex = getListElementIndex(expectedHostConfigAsFeatures, "host.jvm", defaultJvmId);
+        expectedHostConfigAsFeatures.remove(defaultJvmIndex);
+
+        // add the custom jvm
+        ModelNode customJvm = new ModelNode();
+        ModelNode customJvmId = new ModelNode();
+        ModelNode customJvmParams = new ModelNode();
+        ModelNode customJvmEnvVars = new ModelNode();
+        customJvmEnvVars.get("DOMAIN_TEST_JVM").set("custom");
+        customJvmParams.get("heap-size").set("64m");
+        customJvmParams.get("jvm-options").add("-ea");
+        customJvmParams.get("max-heap-size").set("128m");
+        customJvmParams.get("environment-variables").set(customJvmEnvVars);
+        customJvmId.get(HOST).set(MASTER);
+        customJvmId.get(JVM).set("custom");
+        customJvm.get(SPEC).set("host.jvm");
+        customJvm.get(ID).set(customJvmId);
+        customJvm.get(PARAMS).set(customJvmParams);
+        expectedHostConfigAsFeatures.add(customJvm);
+
+        doTest(Arrays.asList(removeJvm, addCustomJvm), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, MASTER), false);
+    }
+
+    @Test
+    public void ensureNoNestedSpecsTest() {
+        ensureNoNestedSpecs(nonNestedDomainConfigAsFeatures);
+        ensureNoNestedSpecs(nonNestedHostConfigAsFeatures);
+    }
+
     private void doTest(List<ModelNode> operations, ModelNode expectedConfigAsFeatures, PathAddress domainOrHostPath) {
+        doTest(operations, expectedConfigAsFeatures, domainOrHostPath, true);
+    }
+
+    private void doTest(List<ModelNode> operations, ModelNode expectedConfigAsFeatures, PathAddress domainOrHostPath, boolean nested) {
         for (ModelNode operation : operations) {
             domainMasterLifecycleUtil.executeForResult(operation);
         }
-        if (!equalsWithoutListOrder(expectedConfigAsFeatures, getConfigAsFeatures(domainOrHostPath))) {
+        if (!equalsWithoutListOrder(expectedConfigAsFeatures, getConfigAsFeatures(nested, domainOrHostPath))) {
             System.out.println("Actual:\n" + getConfigAsFeatures(domainOrHostPath).toJSONString(false) + "\nExpected:\n" + expectedConfigAsFeatures.toJSONString(false));
             Assert.fail("There are differences between the expected and the actual model, see the test output for details");
         }
@@ -194,16 +300,38 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     }
 
     @Override
+    protected void saveNonNestedResult() {
+        if (nonNestedDomainConfigAsFeatures == null || nonNestedHostConfigAsFeatures == null) {
+            nonNestedDomainConfigAsFeatures = getConfigAsFeatures(false, PathAddress.EMPTY_ADDRESS);
+            nonNestedHostConfigAsFeatures = getConfigAsFeatures(false, PathAddress.pathAddress(HOST, MASTER));
+        }
+    }
+
+    @Override
     protected void restoreDefaultConfig() throws TimeoutException, InterruptedException {
         ModelNode reloadWithSnapshots = Util.createEmptyOperation(RELOAD, PathAddress.pathAddress(HOST, MASTER));
         reloadWithSnapshots.get(DOMAIN_CONFIG).set(defaultDomainConfig);
         reloadWithSnapshots.get(HOST_CONFIG).set(defaultHostConfig);
         domainMasterLifecycleUtil.executeForResult(reloadWithSnapshots);
         domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+    }
+
+    private ModelNode getConfigAsFeatures() {
+        return getConfigAsFeatures(true, PathAddress.EMPTY_ADDRESS);
+    }
+
+    private ModelNode getConfigAsFeatures(boolean nested) {
+        return getConfigAsFeatures(nested, PathAddress.EMPTY_ADDRESS);
     }
 
     private ModelNode getConfigAsFeatures(PathAddress pathAddress) {
-        return domainMasterLifecycleUtil.executeForResult(
-                Util.createEmptyOperation(READ_CONFIG_AS_FEATURES_OPERATION, pathAddress));
+        return getConfigAsFeatures(true, pathAddress);
+    }
+
+    private ModelNode getConfigAsFeatures(boolean nested, PathAddress pathElements) {
+        ModelNode getConfigAsFeatures = Util.createEmptyOperation(READ_CONFIG_AS_FEATURES_OPERATION, pathElements);
+        getConfigAsFeatures.get(NESTED).set(nested);
+        return domainMasterLifecycleUtil.executeForResult(getConfigAsFeatures);
     }
 }
