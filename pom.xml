@@ -207,7 +207,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.5.3.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.5.4.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.2.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.elytron.tool>1.3.0.Final</version.org.wildfly.security.elytron.tool>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
