@@ -716,6 +716,7 @@
                                                 <!-- Ignore jdk jars because they are system scope -->
                                                 <exclude>com.sun:tools</exclude>
                                                 <exclude>sun.jdk:jconsole</exclude>
+                                                <exclude>xml-apis:xml-apis</exclude>
                                             </excludes>
                                         </banTransitiveDependencies>
                                     </rules>

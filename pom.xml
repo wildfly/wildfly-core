@@ -211,6 +211,7 @@
         <version.org.wildfly.security.elytron-web>1.2.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.elytron.tool>1.3.0.Final</version.org.wildfly.security.elytron.tool>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
+        <version.xml-apis>1.4.01</version.xml-apis>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
 
@@ -433,7 +434,7 @@
                                             <exclude>sun-jaxb:jaxb-api</exclude>
                                             <exclude>trove:trove</exclude>
                                             <exclude>woodstox:wstx-lgpl</exclude>
-                                            <exclude>xml-apis:xml-apis</exclude>
+                                            <!--<exclude>xml-apis:xml-apis</exclude>-->
                                         </excludes>
                                     </bannedDependencies>
                                     <dependencyConvergence></dependencyConvergence>
@@ -1470,12 +1471,11 @@
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${version.org.apache.xerces}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>xml-apis</groupId>
+                <artifactId>xml-apis</artifactId>
+                <version>${version.xml-apis}</version>
             </dependency>
             <dependency>
                 <groupId>xml-resolver</groupId>
