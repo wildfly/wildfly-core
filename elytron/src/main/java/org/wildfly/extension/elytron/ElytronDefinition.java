@@ -72,8 +72,6 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -340,23 +338,12 @@ class ElytronDefinition extends SimpleResourceDefinition {
         try {
             Thread.currentThread().setContextClassLoader(ElytronDefinition.class.getClassLoader());
             return AuthConfigFactory.getFactory();
+        } catch (Exception e) {
+            ROOT_LOGGER.trace("Unable to load default AuthConfigFactory.", e);
+            return null;
         } finally {
             Thread.currentThread().setContextClassLoader(classLoader);
         }
-    }
-
-    private static boolean isPicketBoxAvailable() {
-        Module current = Module.getCallerModule();
-        if (current != null) {
-            try {
-                return current.getModule("org.picketbox") != null;
-            } catch (ModuleLoadException e) {
-                ROOT_LOGGER.trace("The module org.picketbox is not available.", e);
-                return false;
-            }
-        }
-
-        return false;
     }
 
     private static SecurityPropertyService uninstallSecurityPropertyService(OperationContext context) {
@@ -416,10 +403,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
 
             builder.install();
-            if (doPrivileged((PrivilegedAction<Boolean>) ElytronDefinition::isPicketBoxAvailable)) {
-                registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(),
-                        doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory),
-                        ALLOW_DELEGATION));
+            AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
+            if (authConfigFactory != null) {
+                registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
             } else {
                 registerAuthConfigFactory(new ElytronAuthConfigFactory());
             }
