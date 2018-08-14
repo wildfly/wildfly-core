@@ -60,7 +60,7 @@ public class AbstractGitRepositoryTestCase {
     private final Path jbossServerBaseDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone");
     private static final String TEST_DEPLOYMENT_RUNTIME_NAME = "test.jar";
     private static final ModelNode TEST_SYSTEM_PROPERTY_ADDRESS = new ModelNode().add("system-property", "git-history-property");
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
     protected Repository emptyRemoteRepository;
     protected Repository repository;
     private Path emptyRemoteRoot;
@@ -247,9 +247,11 @@ public class AbstractGitRepositoryTestCase {
         container.getClient().executeForResult(op);
     }
 
-    protected void verifyDefaultSnapshotString(String string) {
-        String timestamp = FORMATTER.format(LocalDateTime.now());
-        Assert.assertTrue(string, string.startsWith("Snapshot-" + timestamp));
+    protected void verifyDefaultSnapshotString(LocalDateTime snapshot, String string) {
+        LocalDateTime timestamp = LocalDateTime.parse(string.substring("Snapshot-".length()), FORMATTER);
+        LocalDateTime now = LocalDateTime.now();
+        boolean valid = snapshot.isBefore(now) && snapshot.isBefore(timestamp) && timestamp.isBefore(now);
+        Assert.assertTrue(string + " doesn't start with Snapshot-" + FORMATTER.format(now), valid);
     }
 
     protected Path getDotGitDir() {

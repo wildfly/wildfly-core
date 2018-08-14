@@ -17,6 +17,7 @@ package org.jboss.as.test.manualmode.management.persistence;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -245,10 +246,11 @@ public class GitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         Assert.assertEquals(0, tags.size());
 
         // :take-snapshot => tag = timestamp
+        LocalDateTime snapshot = LocalDateTime.now();
         takeSnapshot(null, null);
         tags = listTags(repository);
         Assert.assertEquals(1, tags.size());
-        verifyDefaultSnapshotString(tags.get(0));
+        verifyDefaultSnapshotString(snapshot, tags.get(0));
         // this snapshot is not expected to have commit, as there is no uncommited remove of content data
         commits = listCommits(repository);
         Assert.assertEquals(expectedNumberOfCommits, commits.size());
@@ -274,12 +276,13 @@ public class GitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         }
 
         // :take-snapshot(description=bar) => tag = timestamp, commit msg=bar
+        snapshot = LocalDateTime.now();
         takeSnapshot(null, "bar");
         expectedNumberOfCommits++;
         tags = listTags(repository);
         Assert.assertEquals(3, tags.size());
         // tags are ordered alphabetically, so we want second with default name
-        verifyDefaultSnapshotString(tags.get(1));
+        verifyDefaultSnapshotString(snapshot, tags.get(1));
         commits = listCommits(repository);
         Assert.assertEquals(expectedNumberOfCommits, commits.size());
         Assert.assertEquals("bar", commits.get(0));
