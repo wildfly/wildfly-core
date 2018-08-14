@@ -524,6 +524,7 @@ class SSLDefinitions {
                     return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode);
                 }
 
+                DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                 return () -> {
                     Provider[] providers = providersInjector.getOptionalValue();
 
@@ -547,7 +548,6 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
-                    DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
                     TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
                     for (TrustManager trustManager : trustManagers) {
                         if (trustManager instanceof X509ExtendedTrustManager) {

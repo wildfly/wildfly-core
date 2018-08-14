@@ -32,6 +32,7 @@ import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 
 /**
@@ -43,6 +44,7 @@ public enum Attribute {
 
     APPEND(CommonAttributes.APPEND),
     AUTOFLUSH(CommonAttributes.AUTOFLUSH),
+    BLOCK_ON_RECONNECT(SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT),
     CATEGORY(LoggerResourceDefinition.CATEGORY),
     CLASS(CommonAttributes.CLASS),
     COLOR_MAP(PatternFormatterResourceDefinition.COLOR_MAP),
@@ -55,6 +57,7 @@ public enum Attribute {
     MODULE(CommonAttributes.MODULE),
     NAME("name"),
     NEW_LEVEL(CommonAttributes.NEW_LEVEL),
+    OUTBOUND_SOCKET_BINDING_REF(SocketHandlerResourceDefinition.OUTBOUND_SOCKET_BINDING_REF),
     OVERFLOW_ACTION(AsyncHandlerResourceDefinition.OVERFLOW_ACTION),
     PATH(PathResourceDefinition.PATH),
     PATTERN(PatternFormatterResourceDefinition.PATTERN),
@@ -64,6 +67,7 @@ public enum Attribute {
     REPLACE_ALL(CommonAttributes.REPLACE_ALL),
     ROTATE_ON_BOOT(SizeRotatingHandlerResourceDefinition.ROTATE_ON_BOOT),
     ROTATE_SIZE(SizeRotatingHandlerResourceDefinition.ROTATE_SIZE),
+    SSL_CONTEXT(SocketHandlerResourceDefinition.SSL_CONTEXT),
     SUFFIX(PeriodicHandlerResourceDefinition.SUFFIX),
     SYSLOG_TYPE("syslog-type"),
     TARGET(ConsoleHandlerResourceDefinition.TARGET),

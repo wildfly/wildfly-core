@@ -64,6 +64,9 @@ rem set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_shmem,address=jboss,s
 rem # Use JBoss Modules lockless mode
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djboss.modules.lockless=true"
 
+rem # Uncomment to enable the experimental JDK 11 support for ByteBuddy
+rem # ByteBuddy is the default bytecode provider of Hibernate ORM
+rem set "JAVA_OPTS=%JAVA_OPTS% -Dnet.bytebuddy.experimental=true"
 
 rem # Uncomment to run server in debug mode
 rem set "DEBUG_MODE=true"

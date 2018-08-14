@@ -18,8 +18,12 @@ package org.jboss.as.test.integration.management.extension.customcontext;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import io.undertow.io.Receiver;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.resource.ClassPathResourceManager;
 import io.undertow.server.handlers.resource.ResourceManager;
+import io.undertow.util.Methods;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.Extension;
@@ -141,6 +145,31 @@ public class CustomContextExtension implements Extension {
             };
             httpManagement.addManagementGetRemapContext("remap", remapper);
             log.info("Added context 'remap'");
+
+
+            HttpHandler dynamicHandler = new HttpHandler() {
+
+                private String reply = "OK";
+                @Override
+                public void handleRequest(HttpServerExchange exchange) {
+                    if (exchange.getRequestMethod() == Methods.GET) {
+                        exchange.getResponseSender().send(reply);
+                    } else if (exchange.getRequestMethod() == Methods.POST) {
+                        exchange.getRequestReceiver().receiveFullString(new Receiver.FullStringCallback() {
+                            @Override
+                            public void handle(HttpServerExchange exchange, String message) {
+                                reply = message;
+                                exchange.setStatusCode(204);
+                            }
+                        });
+                    }
+                }
+            };
+
+            httpManagement.addManagementHandler("secured-dynamic", true, dynamicHandler);
+            log.info("Added context 'secured-dynamic'");
+            httpManagement.addManagementHandler("unsecured-dynamic", false, dynamicHandler);
+            log.info("Added context 'unsecured-dynamic'");
         }
 
         @Override
@@ -150,6 +179,10 @@ public class CustomContextExtension implements Extension {
             log.info("Removed context 'static'");
             httpManagement.removeContext("remap");
             log.info("Removed context 'remap'");
+            httpManagement.removeContext("secured-dynamic");
+            log.info("Removed context 'secured-dynamic'");
+            httpManagement.removeContext("unsecured-dynamic");
+            log.info("Removed context 'unsecured-dynamic'");
         }
 
         @Override

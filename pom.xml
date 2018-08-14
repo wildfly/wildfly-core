@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>6.0.0.Alpha6-SNAPSHOT</version>
+    <version>6.0.0.Beta2-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -185,7 +185,7 @@
         <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.0.2.GA</version.org.jboss.stdio>
         <version.org.jboss.threads>2.3.2.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.6.4.Final</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.6.5.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
@@ -207,9 +207,10 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.5.2.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.5.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.2.1.Final</version.org.wildfly.security.elytron-web>
-        <version.org.wildfly.security.elytron.tool>1.2.2.Final</version.org.wildfly.security.elytron.tool>
+        <version.org.wildfly.security.elytron.tool>1.3.0.Final</version.org.wildfly.security.elytron.tool>
+        <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
 
@@ -1619,6 +1620,12 @@
                 <groupId>org.syslog4j</groupId>
                 <artifactId>syslog4j</artifactId>
                 <version>${version.org.syslog4j}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>xalan</groupId>
+                <artifactId>xalan</artifactId>
+                <version>${version.xalan}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

@@ -58,11 +58,15 @@ public abstract class AbstractLoggingOperationsTestCase extends AbstractLoggingT
     }
 
     protected ModelNode testWrite(final ModelNode address, final String attribute, final String value) throws IOException {
+        return testWrite(address, attribute, value, true);
+    }
+
+    protected ModelNode testWrite(final ModelNode address, final String attribute, final String value, final boolean reloadIfRequired) throws IOException {
         final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
         builder.addStep(Operations.createWriteAttributeOperation(address, attribute, value));
         // Create the read operation
         builder.addStep(Operations.createReadAttributeOperation(address, attribute));
-        final ModelNode result = executeOperation(builder.build());
+        final ModelNode result = executeOperation(builder.build(), reloadIfRequired);
         assertEquals(value, Operations.readResult(Operations.readResult(result).get("step-2")).asString());
         return result;
     }

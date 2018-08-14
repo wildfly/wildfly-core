@@ -74,8 +74,6 @@ public class CustomHandlerOperationsTestCase extends AbstractLoggingOperationsTe
         testWrite(address, "encoding", "utf-8");
         testWrite(address, "formatter", "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%E%n");
         testWrite(address, "filter-spec", "deny");
-        testWrite(address, "class", QueueHandler.class.getName());
-        testWrite(address, "module", "org.jboss.logmanager");
         // Create a properties value
         final ModelNode properties = new ModelNode().setEmptyObject();
         properties.get("autoFlush").set(true);
@@ -89,6 +87,10 @@ public class CustomHandlerOperationsTestCase extends AbstractLoggingOperationsTe
         testUndefine(address, "formatter");
         testUndefine(address, "filter-spec");
         testUndefine(address, "properties");
+
+        // Writing either of these requires a reload, but we want to skip the reload
+        testWrite(address, "class", QueueHandler.class.getName(), false);
+        testWrite(address, "module", "org.jboss.logmanager", false);
 
         // Clean-up
         executeOperation(Operations.createRemoveOperation(address));

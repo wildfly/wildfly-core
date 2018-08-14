@@ -240,6 +240,7 @@ public class ModelDescriptionConstants {
     public static final String HTTP_UPGRADE = "http-upgrade";
     public static final String HTTP_UPGRADE_ENABLED = "http-upgrade-enabled";
     public static final String HTTP_INTERFACE = "http-interface";
+    public static final String ID = "id";
     public static final String IDENTITY = "identity";
     public static final String IGNORED = "ignored-by-unaffected-host-controller";
     public static final String IGNORED_RESOURCES = "ignored-resources";
@@ -275,6 +276,7 @@ public class ModelDescriptionConstants {
     public static final String LEVEL = "level";
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
+    public static final String LIST_SNAPSHOTS_OPERATION = "list-snapshots";
     public static final String LOCAL = "local";
     public static final String LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING = "local-destination-outbound-socket-binding";
     public static final String LOCAL_HOST_NAME = "local-host-name";
@@ -322,6 +324,7 @@ public class ModelDescriptionConstants {
     public static final String NATIVE = "native";
     public static final String NATIVE_INTERFACE = "native-interface";
     public static final String NATIVE_REMOTING_INTERFACE = "native-remoting-interface";
+    public static final String NESTED = "nested";
     public static final String NETWORK = "network";
     public static final String NILLABLE = "nillable";
     public static final String NIL_SIGNIFICANT = "nil-significant";
@@ -358,10 +361,10 @@ public class ModelDescriptionConstants {
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PATHS = "paths";
+    public static final String PATTERN = "pattern";
     public static final String PERIODIC_ROTATING_FILE_HANDLER = "periodic-rotating-file-handler";
     public static final String PERMISSION_COMBINATION_POLICY = "permission-combination-policy";
     public static final String PERSIST_NAME = "persist-name";
-    public static final String PATTERN = "pattern";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
     public static final String PLATFORM_MBEAN = "platform-mbean";
@@ -393,6 +396,7 @@ public class ModelDescriptionConstants {
     public static final String READ_CHILDREN_NAMES_OPERATION = "read-children-names";
     public static final String READ_CHILDREN_TYPES_OPERATION = "read-children-types";
     public static final String READ_CHILDREN_RESOURCES_OPERATION = "read-children-resources";
+    public static final String READ_CONFIG_AS_FEATURES_OPERATION = "read-config-as-features";
     public static final String READ_CONFIG_AS_XML_OPERATION = "read-config-as-xml";
     public static final String READ_CONTENT = "read-content";
     public static final String READ_FEATURE_DESCRIPTION_OPERATION = "read-feature-description";
@@ -515,6 +519,7 @@ public class ModelDescriptionConstants {
     public static final String SOCKET_BINDING_REF = "socket-binding-ref";
     public static final String SOURCE_INTERFACE = "source-interface";
     public static final String SOURCE_PORT = "source-port";
+    public static final String SPEC = "spec";
     public static final String SSL = "ssl";
     public static final String SSL_CONTEXT = "ssl-context";
     public static final String STANDARD_ROLE_NAMES = "standard-role-names";
@@ -546,6 +551,7 @@ public class ModelDescriptionConstants {
      */
     public static final String SYNC_REMOVED_FOR_READD = "sync-dropped-for-readd";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
+    public static final String TAKE_SNAPSHOT_OPERATION = "take-snapshot";
     public static final String TARGET_PATH = "target-path";
     public static final String TCP = "tcp";
     public static final String TIMEOUT = "timeout";

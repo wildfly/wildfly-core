@@ -49,6 +49,7 @@ import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
@@ -135,6 +136,7 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         subsystemHandlers.addAll(resource.getChildrenNames(PeriodicHandlerResourceDefinition.NAME));
         subsystemHandlers.addAll(resource.getChildrenNames(PeriodicSizeRotatingHandlerResourceDefinition.NAME));
         subsystemHandlers.addAll(resource.getChildrenNames(SizeRotatingHandlerResourceDefinition.NAME));
+        subsystemHandlers.addAll(resource.getChildrenNames(SocketHandlerResourceDefinition.NAME));
         subsystemHandlers.addAll(resource.getChildrenNames(SyslogHandlerResourceDefinition.NAME));
 
         // handlers

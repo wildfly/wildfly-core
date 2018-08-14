@@ -39,6 +39,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -48,6 +49,7 @@ import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.Target;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
@@ -58,6 +60,7 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
+import org.jboss.logmanager.config.LoggerConfiguration;
 import org.junit.Test;
 
 /**
@@ -96,6 +99,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         testSizeRotatingFileHandler(kernelServices, null);
         testSizeRotatingFileHandler(kernelServices, PROFILE);
+
+        testSocketHandler(kernelServices, null);
+        testSocketHandler(kernelServices, PROFILE);
 
         // Run these last as they put the server in reload-required, and the later
         // ones will not update runtime once that is done
@@ -235,6 +241,63 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
                 configuration.getFormatterNames().contains("FILE"));
         assertEquals("Expected the handler named FILE to use the FILE formatter", "FILE",
                 handlerConfiguration.getFormatterName());
+    }
+
+    @Test
+    public void testAddHandlerComposite() throws Exception {
+        final KernelServices kernelServices = boot();
+
+        final ModelNode handlerAddress = createFileHandlerAddress("FILE").toModelNode();
+        final String filename = "test-file-2.log";
+
+        final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
+
+        // Add the handler
+        builder.addStep(OperationBuilder.createAddOperation(handlerAddress)
+                .addAttribute(CommonAttributes.FILE, createFileValue("jboss.server.log.dir", filename))
+                .build());
+
+        // Create a formatter and add it
+        final ModelNode patternFormatterAddress = createPatternFormatterAddress("PATTERN").toModelNode();
+        builder.addStep(OperationBuilder.createAddOperation(patternFormatterAddress)
+                .addAttribute(PatternFormatterResourceDefinition.PATTERN, "%d{HH:mm:ss,SSS} %-5p [%c] %s%e%n")
+                .build());
+
+        // Write the named-formatter
+        builder.addStep(SubsystemOperations.createWriteAttributeOperation(handlerAddress, "named-formatter", "PATTERN"));
+
+        // Create an async-handler
+        final ModelNode asyncHandlerAddress = createAsyncHandlerAddress(null, "ASYNC").toModelNode();
+        builder.addStep(OperationBuilder.createAddOperation(asyncHandlerAddress)
+                .addAttribute(AsyncHandlerResourceDefinition.QUEUE_LENGTH, 100)
+                .build());
+
+        // Add the file-handler to the async-handler
+        ModelNode addHandlerOp = SubsystemOperations.createOperation("add-handler", asyncHandlerAddress);
+        addHandlerOp.get("name").set("FILE");
+        builder.addStep(addHandlerOp);
+
+        // Create a logger
+        final ModelNode loggerAddress = createLoggerAddress("org.jboss.as.logging").toModelNode();
+        builder.addStep(SubsystemOperations.createAddOperation(loggerAddress));
+
+        // Use the add-handler operation to add the handler to the logger
+        addHandlerOp = SubsystemOperations.createOperation("add-handler", loggerAddress);
+        addHandlerOp.get("name").set("ASYNC");
+        builder.addStep(addHandlerOp);
+
+        executeOperation(kernelServices, builder.build().getOperation());
+
+        // Get the log context configuration to validate what has been configured
+        final LogContextConfiguration configuration = ConfigurationPersistence.getConfigurationPersistence(LogContext.getLogContext());
+        assertNotNull("Expected to find the configuration", configuration);
+        final HandlerConfiguration handlerConfiguration = configuration.getHandlerConfiguration("FILE");
+        assertNotNull("Expected to find the configuration for the FILE handler", configuration);
+        assertEquals("Expected the handler named FILE to use the PATTERN formatter", "PATTERN",
+                handlerConfiguration.getFormatterName());
+        final LoggerConfiguration loggerConfiguration = configuration.getLoggerConfiguration("org.jboss.as.logging");
+        assertNotNull("Expected the logger configuration for org.jboss.as.logging to exist", loggerConfiguration);
+        assertTrue("Expected the FILE handler to be assigned", loggerConfiguration.getHandlerNames().contains("ASYNC"));
     }
 
     private void testAsyncHandler(final KernelServices kernelServices, final String profileName) {
@@ -499,6 +562,52 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         removeFile(newFilename);
 
         testCommonFileOperations(kernelServices, address);
+    }
+
+    private void testSocketHandler(final KernelServices kernelServices, final String profileName) {
+        final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
+        final PathAddress formatterAddress = createPatternFormatterAddress(profileName, "log-pattern");
+        final ModelNode formatterAddOp = SubsystemOperations.createAddOperation(formatterAddress.toModelNode());
+        formatterAddOp.get("pattern").set("[log-server] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
+        builder.addStep(formatterAddOp);
+        final ModelNode jsonFormatterAddress = SUBSYSTEM_ADDRESS.append("json-formatter", "json").toModelNode();
+        builder.addStep(Operations.createAddOperation(jsonFormatterAddress));
+
+        final ModelNode address = createAddress(profileName, "socket-handler", "log-server-handler").toModelNode();
+
+        // Add the handler
+        final ModelNode addOp = SubsystemOperations.createAddOperation(address);
+        addOp.get("named-formatter").set(formatterAddress.getLastElement().getValue());
+        addOp.get("outbound-socket-binding-ref").set("log-server");
+        builder.addStep(addOp);
+
+        executeOperation(kernelServices, builder.build().getOperation());
+
+        // Write each attribute and check the value
+        testWrite(kernelServices, address, CommonAttributes.AUTOFLUSH, false);
+        testWrite(kernelServices, address, SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT, true);
+        testWrite(kernelServices, address, CommonAttributes.ENABLED, true);
+        testWrite(kernelServices, address, CommonAttributes.ENCODING, ENCODING);
+        testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
+        testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
+        testWrite(kernelServices, address, SocketHandlerResourceDefinition.PROTOCOL, "UDP");
+
+        // Undefine attributes
+        testUndefine(kernelServices, address, CommonAttributes.AUTOFLUSH);
+        testUndefine(kernelServices, address, SocketHandlerResourceDefinition.BLOCK_ON_RECONNECT);
+        testUndefine(kernelServices, address, CommonAttributes.ENABLED);
+        testUndefine(kernelServices, address, CommonAttributes.ENCODING);
+        testUndefine(kernelServices, address, CommonAttributes.LEVEL);
+        testUndefine(kernelServices, address, CommonAttributes.FILTER_SPEC);
+        testUndefine(kernelServices, address, SocketHandlerResourceDefinition.PROTOCOL);
+
+        // Clean-up
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(address));
+        verifyRemoved(kernelServices, address);
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(formatterAddress.toModelNode()));
+        verifyRemoved(kernelServices, formatterAddress.toModelNode());
+        executeOperation(kernelServices, SubsystemOperations.createRemoveOperation(jsonFormatterAddress));
+        verifyRemoved(kernelServices, jsonFormatterAddress);
     }
 
     // TODO (jrp) do syslog? only concern is will it active it

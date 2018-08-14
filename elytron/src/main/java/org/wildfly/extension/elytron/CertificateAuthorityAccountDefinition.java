@@ -79,7 +79,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
     enum CertificateAuthority {
 
-        LETS_ENCRYPT("LetsEncrypt", "https://acme-v02.api.letsencrypt.org/directory", "https://acme-staging.api.letsencrypt.org/directory");
+        LETS_ENCRYPT("LetsEncrypt", "https://acme-v02.api.letsencrypt.org/directory", "https://acme-staging-v02.api.letsencrypt.org/directory");
 
         private final String name;
         private final String url;
@@ -269,7 +269,10 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
             try {
                 acmeAccount.setTermsOfServiceAgreed(agreeToTermsOfService);
-                acmeClient.createAccount(acmeAccount, staging);
+                boolean created = acmeClient.createAccount(acmeAccount, staging);
+                if (! created) {
+                    throw ROOT_LOGGER.certificateAuthorityAccountAlreadyExists(ElytronDescriptionConstants.UPDATE_ACCOUNT, ElytronDescriptionConstants.CHANGE_ACCOUNT_KEY);
+                }
             } catch (AcmeException e) {
                 throw ROOT_LOGGER.unableToCreateAccountWithCertificateAuthority(e, e.getLocalizedMessage());
             }

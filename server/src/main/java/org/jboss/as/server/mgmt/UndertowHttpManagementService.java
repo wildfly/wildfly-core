@@ -21,6 +21,7 @@
 */
 package org.jboss.as.server.mgmt;
 
+import io.undertow.server.HttpHandler;
 import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 
@@ -129,6 +130,12 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     return remapper.remapPath(originalPath);
                 }
             });
+        }
+
+        @Override
+        public void addManagementHandler(String contextName, boolean requiresSecurity, HttpHandler managementHandler) {
+            Assert.assertNotNull(serverManagement);
+            serverManagement.addManagementHandler(contextName, requiresSecurity, managementHandler);
         }
 
         @Override
