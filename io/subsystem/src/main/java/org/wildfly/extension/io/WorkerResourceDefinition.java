@@ -166,7 +166,9 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 new WorkerWriteAttributeHandler(WORKER_TASK_MAX_THREADS){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
-                        worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt());
+                        if (value.isDefined()) {
+                            worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt());
+                        }
                         return true;
                     }
                 });
