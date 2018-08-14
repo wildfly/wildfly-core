@@ -52,6 +52,7 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
 
     private File defaultConfig;
     private ModelNode defaultConfigAsFeatures;
+    private ModelNode nonNestedconfigAsFeatures;
 
     @Inject
     private ManagementClient managementClient;
@@ -256,11 +257,52 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
         doTest(Collections.singletonList(removeCustomSocketBindingOperation), expectedConfigAsFeatures);
     }
 
+    @Test
+    public void nonNestedTest() throws UnsuccessfulOperationException {
+        ModelNode addLogger = Util.createAddOperation(PathAddress.pathAddress(SUBSYSTEM, "logging").append(LOGGER, "custom"));
+        addLogger.get(LEVEL).set("TRACE");
+        addLogger.get("handlers").add("CONSOLE");
+        ModelNode removeLogger = Util.createRemoveOperation(PathAddress.pathAddress(SUBSYSTEM, "logging").append(LOGGER, "sun.rmi"));
+
+        ModelNode expectedConfigAsFeatures = nonNestedconfigAsFeatures.clone();
+
+        // remove the sun.rmi logger
+        ModelNode sunRmiLoggerId = new ModelNode();
+        sunRmiLoggerId.get(SUBSYSTEM).set("logging");
+        sunRmiLoggerId.get(LOGGER).set("sun.rmi");
+        int sunRmiLoggerIndex = getListElementIndex(expectedConfigAsFeatures, "subsystem.logging.logger", sunRmiLoggerId);
+        expectedConfigAsFeatures.remove(sunRmiLoggerIndex);
+
+        // add the custom logger
+        ModelNode customLogger = new ModelNode();
+        ModelNode customLoggerId = new ModelNode();
+        ModelNode customLoggerParams = new ModelNode();
+        customLoggerId.get(SUBSYSTEM).set("logging");
+        customLoggerId.get(LOGGER).set("custom");
+        customLoggerParams.get(LEVEL).set("TRACE");
+        customLoggerParams.get("handlers").add("CONSOLE");
+        customLogger.get(SPEC).set("subsystem.logging.logger");
+        customLogger.get(ID).set(customLoggerId);
+        customLogger.get(PARAMS).set(customLoggerParams);
+        expectedConfigAsFeatures.add(customLogger);
+
+        doTest(Arrays.asList(addLogger, removeLogger), expectedConfigAsFeatures, false);
+    }
+
+    @Test
+    public void ensureNoNestedSpecsTest() {
+        ensureNoNestedSpecs(nonNestedconfigAsFeatures);
+    }
+
     private void doTest(List<ModelNode> operations, ModelNode expectedConfigAsFeatures) throws UnsuccessfulOperationException {
+        doTest(operations, expectedConfigAsFeatures, true);
+    }
+
+    private void doTest(List<ModelNode> operations, ModelNode expectedConfigAsFeatures, boolean nested) throws UnsuccessfulOperationException {
         for (ModelNode operation : operations) {
             managementClient.executeForResult(operation);
         }
-        if (!equalsWithoutListOrder(expectedConfigAsFeatures, getConfigAsFeatures())) {
+        if (!equalsWithoutListOrder(expectedConfigAsFeatures, getConfigAsFeatures(nested))) {
             System.out.println("Actual:\n" + getConfigAsFeatures().toJSONString(false) + "\nExpected:\n" + expectedConfigAsFeatures.toJSONString(false));
             Assert.fail("There are differences between the expected and the actual model, see the test output for details");
         }
@@ -283,12 +325,32 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
     }
 
     @Override
+    protected void saveNonNestedResult() throws UnsuccessfulOperationException {
+        if (nonNestedconfigAsFeatures == null) {
+            nonNestedconfigAsFeatures = getConfigAsFeatures(false);
+        }
+    }
+
+    @Override
     protected void restoreDefaultConfig() {
         serverController.reload(defaultConfig.getName());
     }
 
     private ModelNode getConfigAsFeatures() throws UnsuccessfulOperationException {
-        return managementClient.executeForResult(
-                Util.createEmptyOperation(READ_CONFIG_AS_FEATURES_OPERATION, PathAddress.EMPTY_ADDRESS));
+        return getConfigAsFeatures(true, PathAddress.EMPTY_ADDRESS);
+    }
+
+    private ModelNode getConfigAsFeatures(boolean nested) throws UnsuccessfulOperationException {
+        return getConfigAsFeatures(nested, PathAddress.EMPTY_ADDRESS);
+    }
+
+    private ModelNode getConfigAsFeatures(PathAddress address) throws UnsuccessfulOperationException {
+        return getConfigAsFeatures(true, address);
+    }
+
+    private ModelNode getConfigAsFeatures(boolean nested, PathAddress address) throws UnsuccessfulOperationException {
+        ModelNode getConfigAsFeatures = Util.createEmptyOperation(READ_CONFIG_AS_FEATURES_OPERATION, address);
+        getConfigAsFeatures.get(NESTED).set(nested);
+        return managementClient.executeForResult(getConfigAsFeatures);
     }
 }

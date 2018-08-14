@@ -45,6 +45,7 @@ public abstract class ReadConfigAsFeaturesTestBase {
     public void setUp() throws UnsuccessfulOperationException {
         saveDefaultConfig();
         saveDefaultResult();
+        saveNonNestedResult();
     }
 
     @After
@@ -55,6 +56,8 @@ public abstract class ReadConfigAsFeaturesTestBase {
     protected abstract void saveDefaultConfig() throws UnsuccessfulOperationException;
 
     protected abstract void saveDefaultResult() throws UnsuccessfulOperationException;
+
+    protected abstract void saveNonNestedResult() throws UnsuccessfulOperationException;
 
     protected abstract void restoreDefaultConfig() throws TimeoutException, InterruptedException;
 
@@ -109,8 +112,36 @@ public abstract class ReadConfigAsFeaturesTestBase {
 
     protected boolean isFeatureNode(ModelNode node) {
         return ModelType.OBJECT.equals(node.getType()) &&
-                node.hasDefined(SPEC) &&
-                node.hasDefined(ID);
+                node.hasDefined(SPEC);
+    }
+
+    protected boolean containsFeatureNodes(ModelNode node) {
+        switch (node.getType()) {
+            case OBJECT:
+                if (isFeatureNode(node)) return true;
+                for (String key : node.keys()) {
+                    if (containsFeatureNodes(node.get(key))) return true;
+                }
+                break;
+            case LIST:
+                for (ModelNode element : node.asList()) {
+                    if (containsFeatureNodes(element)) return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    protected void ensureNoNestedSpecs(ModelNode model) {
+        for (ModelNode element : model.asList()) {
+            if (ModelType.OBJECT.equals(element.getType()) &&
+                    isFeatureNode(element)) {
+                for (String key : element.keys()) {
+                    if (containsFeatureNodes(element.get(key)))
+                        Assert.fail("There should be no nested feature nodes when using nested=false");
+                }
+            }
+        }
     }
 
     /**
@@ -143,7 +174,9 @@ public abstract class ReadConfigAsFeaturesTestBase {
             if (isFeatureNode(element)) {
                 // if it's a feature node, we don't have to do a complicated comparison with every element of the other model
                 try {
-                    ModelNode model2Element = getListElement(model2, element.get(SPEC).asString(), element.get(ID));
+                    ModelNode model2Element = element.hasDefined(ID) ?
+                            getListElement(model2, element.get(SPEC).asString(), element.get(ID)) :
+                            getListElement(model2, element.get(SPEC).asString());
                     if (!equalsWithoutListOrder(element, model2Element)) return false;
                 } catch (IllegalArgumentException e) {
                     return false;
