@@ -166,7 +166,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 new WorkerWriteAttributeHandler(WORKER_TASK_MAX_THREADS){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
-                        return worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt()) == null;
+                        worker.setOption(Options.WORKER_TASK_MAX_THREADS, value.asInt());
+                        return true;
                     }
                 });
         resourceRegistration.registerReadWriteAttribute(WORKER_TASK_CORE_THREADS,
@@ -182,7 +183,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 new WorkerWriteAttributeHandler(WORKER_TASK_KEEPALIVE){
                     @Override
                     boolean setValue(XnioWorker worker, ModelNode value) throws IOException {
-                        return worker.setOption(Options.WORKER_TASK_KEEPALIVE, value.asInt()) == null;
+                        worker.setOption(Options.WORKER_TASK_KEEPALIVE, value.asInt());
+                        return true;
                     }
                 });
         resourceRegistration.registerReadWriteAttribute(STACK_SIZE,
