@@ -75,6 +75,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="register-jaspi-factory" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Should the WildFly Elytron AuthConfigFactory implementation be automatically registered.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!--

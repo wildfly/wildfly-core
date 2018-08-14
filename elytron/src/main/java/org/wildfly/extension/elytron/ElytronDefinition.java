@@ -130,6 +130,13 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .setElementValidator(new StringLengthValidator(1))
             .setAllowExpression(true)
             .build();
+
+    static final SimpleAttributeDefinition REGISTER_JASPI_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REGISTER_JASPI_FACTORY, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(true))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     static final PropertiesAttributeDefinition SECURITY_PROPERTIES = new PropertiesAttributeDefinition.Builder("security-properties", true)
             .build();
 
@@ -272,7 +279,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS);
+        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, REGISTER_JASPI_FACTORY);
         resourceRegistration.registerReadWriteAttribute(INITIAL_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(FINAL_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(DISALLOWED_PROVIDERS, null, writeHandler);
@@ -296,6 +303,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         });
         resourceRegistration.registerReadWriteAttribute(SECURITY_PROPERTIES, null, new SecurityPropertiesWriteHandler(SECURITY_PROPERTIES));
+        resourceRegistration.registerReadWriteAttribute(REGISTER_JASPI_FACTORY, null, writeHandler);
     }
 
     @Deprecated
@@ -364,7 +372,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
     private static class ElytronAdd extends AbstractBoottimeAddStepHandler implements ElytronOperationStepHandler {
 
         private ElytronAdd() {
-            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, SECURITY_PROPERTIES);
+            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, SECURITY_PROPERTIES, REGISTER_JASPI_FACTORY);
         }
 
         @Override
@@ -401,13 +409,15 @@ class ElytronDefinition extends SimpleResourceDefinition {
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, finalProviders, Provider[].class),
                         Provider[].class, prs.getFinalProviders());
             }
-
             builder.install();
-            AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
-            if (authConfigFactory != null) {
-                registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
-            } else {
-                registerAuthConfigFactory(new ElytronAuthConfigFactory());
+
+            if (REGISTER_JASPI_FACTORY.resolveModelAttribute(context, model).asBoolean()) {
+                final AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
+                if (authConfigFactory != null) {
+                    registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
+                } else {
+                    registerAuthConfigFactory(new ElytronAuthConfigFactory());
+                }
             }
 
             if (context.isNormalServer()) {

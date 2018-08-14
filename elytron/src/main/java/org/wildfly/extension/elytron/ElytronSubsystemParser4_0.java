@@ -59,6 +59,7 @@ public class ElytronSubsystemParser4_0 extends ElytronSubsystemParser3_0 {
                 .addAttribute(ElytronDefinition.FINAL_PROVIDERS)
                 .addAttribute(ElytronDefinition.DISALLOWED_PROVIDERS)
                 .addAttribute(ElytronDefinition.SECURITY_PROPERTIES, new AttributeParsers.PropertiesParser(null, SECURITY_PROPERTY, true), new AttributeMarshallers.PropertiesAttributeMarshaller(null, SECURITY_PROPERTY, true))
+                .addAttribute(ElytronDefinition.REGISTER_JASPI_FACTORY)
                 .addChild(getAuthenticationClientParser())
                 .addChild(getProviderParser())
                 .addChild(getAuditLoggingParser())

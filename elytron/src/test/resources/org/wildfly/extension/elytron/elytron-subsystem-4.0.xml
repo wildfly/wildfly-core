@@ -17,7 +17,7 @@
   -->
 
 <!-- for needs of DomainTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:4.0">
+<subsystem xmlns="urn:wildfly:elytron:4.0" register-jaspi-factory="false">
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm" realm-mapper="MyRealmMapper" permission-mapper="MyPermissionMapper"
                          pre-realm-principal-transformer="NameRewriterXY" post-realm-principal-transformer="NameRewriterYU" trusted-security-domains="AnotherDomain">
