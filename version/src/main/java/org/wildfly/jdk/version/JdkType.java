@@ -75,6 +75,10 @@ public final class JdkType {
         return javaExecutable;
     }
 
+    public boolean isModularJdk() {
+        return isModularJdk;
+    }
+
     public Collection<String> getDefaultArguments() {
         return isModularJdk ? DEFAULT_MODULAR_JDK_ARGUMENTS : Collections.EMPTY_LIST;
     }
