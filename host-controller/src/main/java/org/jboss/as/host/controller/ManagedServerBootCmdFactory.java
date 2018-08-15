@@ -279,7 +279,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
         }
 
-        JvmOptionsBuilderFactory.getInstance().addOptions(jvmElement, command);
+        JvmOptionsBuilderFactory.getInstance(jdkType).addOptions(jvmElement, command);
 
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
