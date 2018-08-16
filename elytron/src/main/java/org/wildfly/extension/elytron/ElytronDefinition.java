@@ -94,6 +94,7 @@ import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
  * Top level {@link ResourceDefinition} for the Elytron subsystem.
@@ -411,9 +412,11 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
             builder.install();
 
-            if (REGISTER_JASPI_FACTORY.resolveModelAttribute(context, model).asBoolean()) {
+            if (registerJaspiFactory(context, model)) {
                 final AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
                 if (authConfigFactory != null) {
+                    // TODO This wrapping is only temporary to allow us to delegate to the PicketBox impl, at a later point there really should only
+                    // be one AuthConfigFactory at a time.
                     registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
                 } else {
                     registerAuthConfigFactory(new ElytronAuthConfigFactory());
@@ -430,6 +433,17 @@ class ElytronDefinition extends SimpleResourceDefinition {
                     }
                 }, Stage.RUNTIME);
             }
+        }
+
+        /*
+         * Test if we should register our own AuthConfigFactory.
+         *
+         * If a System property has been set it will automatically be loaded on the first use so we don't need to register it.
+         */
+        private boolean registerJaspiFactory(final OperationContext context, final ModelNode model) throws OperationFailedException {
+            String jaspiFactory = doPrivileged(new ReadPropertyAction(AuthConfigFactory.DEFAULT_FACTORY_SECURITY_PROPERTY));
+
+            return jaspiFactory == null && REGISTER_JASPI_FACTORY.resolveModelAttribute(context, model).asBoolean();
         }
 
         @Override
