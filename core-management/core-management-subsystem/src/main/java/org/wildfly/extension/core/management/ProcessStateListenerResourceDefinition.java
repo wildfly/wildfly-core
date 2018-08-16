@@ -40,6 +40,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -91,7 +92,7 @@ public class ProcessStateListenerResourceDefinition extends PersistentResourceDe
     };
 
     ProcessStateListenerResourceDefinition() {
-        super(new Parameters(PROCESS_STATE_LISTENER_PATH, CoreManagementExtension.getResourceDescriptionResolver("process-state-listener"))
+        super(new SimpleResourceDefinition.Parameters(PROCESS_STATE_LISTENER_PATH, CoreManagementExtension.getResourceDescriptionResolver("process-state-listener"))
                 .setOrderedChild()
                 .setCapabilities(PROCESS_STATE_LISTENER_CAPABILITY)
                 .setAddHandler(new ProcessStateListenerResourceDefinition.ProcessStateListenerAddHandler())

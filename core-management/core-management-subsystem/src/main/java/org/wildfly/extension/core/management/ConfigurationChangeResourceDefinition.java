@@ -33,6 +33,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
@@ -48,6 +49,7 @@ import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -81,7 +83,7 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
     public static final ConfigurationChangeResourceDefinition INSTANCE = new ConfigurationChangeResourceDefinition();
 
     private ConfigurationChangeResourceDefinition() {
-        super(new PersistentResourceDefinition.Parameters(PATH, CoreManagementExtension.getResourceDescriptionResolver(CONFIGURATION_CHANGES))
+        super(new SimpleResourceDefinition.Parameters(PATH, CoreManagementExtension.getResourceDescriptionResolver(CONFIGURATION_CHANGES))
                 .setCapabilities(CONFIGURATION_CHANGES_CAPABILITY)
                 .setAddHandler(new ConfigurationChangeResourceAddHandler())
                 .setRemoveHandler(new ConfigurationChangeResourceRemoveHandler()));

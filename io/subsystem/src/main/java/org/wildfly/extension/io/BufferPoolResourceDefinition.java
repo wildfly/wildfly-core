@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import io.undertow.connector.ByteBufferPool;
+import io.undertow.server.XnioByteBufferPool;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
@@ -39,6 +41,7 @@ import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -52,9 +55,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.xnio.Pool;
-
-import io.undertow.connector.ByteBufferPool;
-import io.undertow.server.XnioByteBufferPool;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
@@ -122,7 +122,7 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
 
     private BufferPoolResourceDefinition() {
-        super(new Parameters(IOExtension.BUFFER_POOL_PATH,
+        super(new SimpleResourceDefinition.Parameters(IOExtension.BUFFER_POOL_PATH,
                 IOExtension.getResolver(Constants.BUFFER_POOL))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(new ReloadRequiredRemoveStepHandler())

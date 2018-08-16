@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.validation.InetAddressValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.MaskedAddressValidator;
@@ -70,7 +71,7 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
     static final OutboundBindAddressResourceDefinition INSTANCE = new OutboundBindAddressResourceDefinition();
 
     private OutboundBindAddressResourceDefinition() {
-        super(new Parameters(PathElement.pathElement(RESOURCE_NAME), IOExtension.getResolver(RESOURCE_NAME))
+        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(RESOURCE_NAME), IOExtension.getResolver(RESOURCE_NAME))
             .setAddHandler(new OutboundBindAddressAddHandler())
             .setRemoveHandler(new OutboundBindAddressRemoveHandler())
         );
