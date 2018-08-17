@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 
+import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.ProtocolServer;
 import org.jboss.as.version.ProductConfig;
@@ -48,7 +49,6 @@ import org.jboss.logging.MDC;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.modules.Module;
 import org.jboss.threads.JBossThreadFactory;
-import org.wildfly.jdk.version.JdkType;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
