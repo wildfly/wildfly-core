@@ -26,10 +26,10 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 import java.util.Arrays;
 import java.util.List;
 
+import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.wildfly.common.Assert;
-import org.wildfly.jdk.version.JdkType;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>

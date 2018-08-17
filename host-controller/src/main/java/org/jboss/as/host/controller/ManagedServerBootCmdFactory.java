@@ -59,6 +59,7 @@ import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
+import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
@@ -66,7 +67,6 @@ import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService.SSLContextSupplier;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.wildfly.jdk.version.JdkType;
 
 /**
  * Combines the relevant parts of the domain-level and host-level models to

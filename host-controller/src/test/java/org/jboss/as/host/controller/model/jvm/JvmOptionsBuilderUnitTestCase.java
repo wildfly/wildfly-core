@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.wildfly.jdk.version.JdkType;
+import org.jboss.as.process.jdk.JdkType;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
