@@ -20,13 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.jdk.version;
+package org.jboss.as.process.jdk;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
+
+import org.jboss.as.process.logging.ProcessLogger;
 
 /**
  * Jdk type detection utility.
@@ -89,19 +91,19 @@ public final class JdkType {
 
     public static JdkType createFromJavaHome(final String javaHome) {
         if (javaHome == null || javaHome.trim().equals("")) {
-            throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHome(javaHome);
+            throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHome);
         }
         final File javaHomeDir = new File(javaHome);
         if (!javaHomeDir.exists()) {
-            throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
+            throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
         }
         final File javaBinDir = new File(javaHomeDir, BIN_DIR);
         if (!javaBinDir.exists()) {
-            throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), javaHomeDir.getAbsolutePath());
+            throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), javaHomeDir.getAbsolutePath());
         }
         final File javaExecutable = new File(javaBinDir, JAVA_EXECUTABLE);
         if (!javaExecutable.exists()) {
-            throw JdkVersionLogger.ROOT_LOGGER.cannotFindJavaExe(javaBinDir.getAbsolutePath());
+            throw ProcessLogger.ROOT_LOGGER.cannotFindJavaExe(javaBinDir.getAbsolutePath());
         }
         return new JdkType(new File(javaHomeDir, JMODS_DIR).exists(), javaHomeDir.getAbsolutePath(), javaExecutable.getAbsolutePath());
     }
@@ -114,21 +116,21 @@ public final class JdkType {
         } else {
             final File javaExe = new File(javaExecutable);
             if (!javaExe.exists()) {
-                throw JdkVersionLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
+                throw ProcessLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
             }
             final File javaBinDir = javaExe.getParentFile();
             if (javaBinDir == null) {
-                throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHomeBin("null", "null");
+                throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin("null", "null");
             }
             if (!javaBinDir.exists()) {
-                throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), "null");
+                throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), "null");
             }
             final File javaHomeDir = javaBinDir.getParentFile();
             if (javaHomeDir == null) {
-                throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHome("null");
+                throw ProcessLogger.ROOT_LOGGER.invalidJavaHome("null");
             }
             if (!javaHomeDir.exists()) {
-                throw JdkVersionLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
+                throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
             }
             return createFromJavaHome(javaHomeDir);
         }

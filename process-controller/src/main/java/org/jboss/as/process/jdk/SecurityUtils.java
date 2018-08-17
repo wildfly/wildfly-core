@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.jdk.version;
+package org.jboss.as.process.jdk;
 
 import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;

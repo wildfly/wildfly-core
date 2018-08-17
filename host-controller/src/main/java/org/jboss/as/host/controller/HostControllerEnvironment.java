@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
@@ -39,7 +40,6 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.version.ProductConfig;
 import org.wildfly.common.Assert;
-import org.wildfly.jdk.version.JdkType;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
