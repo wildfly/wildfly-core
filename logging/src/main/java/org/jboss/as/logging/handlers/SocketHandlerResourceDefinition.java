@@ -22,7 +22,6 @@ package org.jboss.as.logging.handlers;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.Logging.createOperationFailure;
 
@@ -52,6 +51,7 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.ElementAttributeMarshaller;
 import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.Logging;
@@ -91,6 +91,10 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
     public static final SimpleAttributeDefinition BLOCK_ON_RECONNECT = SimpleAttributeDefinitionBuilder.create("block-on-reconnect", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final SimpleAttributeDefinition FILTER_SPEC = SimpleAttributeDefinitionBuilder.create(CommonAttributes.FILTER_SPEC)
+            .setAlternatives(new String[0])
             .build();
 
     public static final SimpleAttributeDefinition NAMED_FORMATTER = SimpleAttributeDefinitionBuilder.create(AbstractHandlerDefinition.NAMED_FORMATTER)
