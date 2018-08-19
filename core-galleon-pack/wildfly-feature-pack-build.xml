@@ -123,4 +123,46 @@
     <config name="host-slave.xml" model="host">
         <feature-group name="host-slave"/>
     </config>
+
+    <plugins>
+        <plugin artifact="org.wildfly.galleon-plugins:wildfly-galleon-plugins"/>
+    </plugins>
+
+    <resources>
+        <copy artifact="org.wildfly.galleon-plugins:wildfly-config-gen" to="wildfly/wildfly-config-gen.jar"/>
+    </resources>
+
+    <generate-feature-specs>
+        <extensions>
+            <standalone>
+                <extension>org.jboss.as.deployment-scanner</extension>
+                <extension>org.jboss.as.jmx</extension>
+                <extension>org.jboss.as.logging</extension>
+                <extension>org.jboss.as.remoting</extension>
+                <extension>org.wildfly.extension.core-management</extension>
+                <extension>org.wildfly.extension.discovery</extension>
+                <extension>org.wildfly.extension.elytron</extension>
+                <extension>org.wildfly.extension.io</extension>
+                <extension>org.wildfly.extension.request-controller</extension>
+                <extension>org.wildfly.extension.security.manager</extension>
+            </standalone>
+            <domain>
+                <extension>org.jboss.as.jmx</extension>
+                <extension>org.jboss.as.logging</extension>
+                <extension>org.jboss.as.remoting</extension>
+                <extension>org.wildfly.extension.core-management</extension>
+                <extension>org.wildfly.extension.discovery</extension>
+                <extension>org.wildfly.extension.elytron</extension>
+                <extension>org.wildfly.extension.io</extension>
+                <extension>org.wildfly.extension.request-controller</extension>
+                <extension>org.wildfly.extension.security.manager</extension>
+            </domain>
+            <host>
+                <extension>org.jboss.as.jmx</extension>
+                <extension>org.wildfly.extension.core-management</extension>
+                <extension>org.wildfly.extension.discovery</extension>
+                <extension>org.wildfly.extension.elytron</extension>
+            </host>
+        </extensions>
+    </generate-feature-specs>
 </build>
