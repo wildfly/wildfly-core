@@ -66,7 +66,7 @@
         <jvm name="default">
             <heap size="64m" max-size="128m"/>
             <jvm-options>
-                <option value="--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"/>
+                <option value="-ea"/>
             </jvm-options>
         </jvm>
     </jvms>
