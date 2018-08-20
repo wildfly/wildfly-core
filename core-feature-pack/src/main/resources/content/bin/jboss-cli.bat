@@ -50,6 +50,20 @@ if "x%JAVA_HOME%" == "x" (
   set "JAVA=%JAVA_HOME%\bin\java"
 )
 
+"%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+
+if "%MODULAR_JDK%" == "true" (
+  echo "%JAVA_OPTS%" | findstr /I "\-\-add\-modules" > nul
+  if errorlevel == 1 (
+    rem Set default modular jdk options
+    set JAVA_OPTS=%JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+    set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+    set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
+    set JAVA_OPTS=%JAVA_OPTS% --illegal-access=permit
+    set JAVA_OPTS=%JAVA_OPTS% --add-modules=java.se
+  )
+)
+
 rem Find jboss-modules.jar, or we can't continue
 set "JBOSS_RUNJAR=%JBOSS_HOME%\jboss-modules.jar"
 if not exist "%JBOSS_RUNJAR%" (
