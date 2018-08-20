@@ -98,6 +98,19 @@ Function Get-Java-Opts {
 			Write-Host "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 		}
 	}
+
+        & $JAVA_HOME\bin\java.exe --add-modules=java.se -version 2> $nul
+
+        if ($LASTEXITCODE -eq 0) {
+          if ($JAVA_OPTS -notcontains "--add-modules") {
+            $JAVA_OPTS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+            $JAVA_OPTS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+            $JAVA_OPTS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+            $JAVA_OPTS += "--illegal-access=permit"
+            $JAVA_OPTS += "--add-modules=java.se"
+          }
+        }
+
 	return $JAVA_OPTS
 }
 
@@ -151,6 +164,7 @@ Param(
         $PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
     }
   }
+
   $global:FINAL_JAVA_OPTS = $PROG_ARGS
 
   $PROG_ARGS += "-jar"
