@@ -67,6 +67,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
                     " Type 'connect' to connect to the server" +
                     " or 'help' for the list of supported commands.");
         }
+        ctx.logMessage(ctx.getParsedCommandLine().getOriginalLine());
         RequestWithAttachments reqWithAttachments
                 = (RequestWithAttachments) ctx.get(Scope.REQUEST, "OP_REQ");
         if (reqWithAttachments == null) {
@@ -78,6 +79,7 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
             opBuilder.addFileAsAttachment(new File(path));
         }
         Operation op = opBuilder.build();
+        ctx.logMessage(op.getOperation().toString());
 
         if(ctx.getConfig().isValidateOperationRequests()) {
             ModelNode opDescOutcome = Util.validateRequest(ctx, request);
