@@ -91,24 +91,32 @@ public class Common {
 
         }
         else {
-            StringWriter stringWriter = new StringWriter();
-            final PrintWriter print = new PrintWriter(stringWriter);
-            try {
-                msg.writeJSONString(print, false);
-            } finally {
-                print.flush();
-                stringWriter.flush();
-                print.close();
-            }
-
-            String msgString = stringWriter.toString();
-            byte[] bytes = msgString.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, APPLICATION_JSON + "; charset=" + UTF_8);
-            exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
-            exchange.setStatusCode(errorCode);
-
-            exchange.getResponseSender().send(msgString, IoCallback.END_EXCHANGE);
+            sendTextError(exchange, msg, errorCode, APPLICATION_JSON);
         }
+    }
+
+    public static void sendPlainTextError(HttpServerExchange exchange, String msg, int errorCode) {
+        sendTextError(exchange, new ModelNode(msg == null ? "" : msg), errorCode, TEXT_PLAIN);
+    }
+
+    private static void sendTextError(HttpServerExchange exchange, ModelNode msg, int errorCode, String contentType) {
+        StringWriter stringWriter = new StringWriter();
+        final PrintWriter print = new PrintWriter(stringWriter);
+        try {
+            msg.writeJSONString(print, false);
+        } finally {
+            print.flush();
+            stringWriter.flush();
+            print.close();
+        }
+
+        String msgString = stringWriter.toString();
+        byte[] bytes = msgString.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, contentType + "; charset=" + UTF_8);
+        exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, String.valueOf(bytes.length));
+        exchange.setStatusCode(errorCode);
+
+        exchange.getResponseSender().send(msgString, IoCallback.END_EXCHANGE);
     }
 
     private static int getErrorResponseCode(String failureMsg) {
