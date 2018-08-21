@@ -798,9 +798,9 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 X509CertificateChainAndSigningKey certificateChainAndSigningKey = acmeClient.obtainCertificateChain(acmeAccount, staging, algorithm, keySize, domainNames.toArray(new String[domainNames.size()]));
                 keyStore.setKeyEntry(alias, certificateChainAndSigningKey.getSigningKey(), keyPassword, certificateChainAndSigningKey.getCertificateChain());
                 ((KeyStoreService) keyStoreService).save();
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | AcmeException e) {
                 throw new OperationFailedException(e);
-            } catch (KeyStoreException | AcmeException e) {
+            } catch (KeyStoreException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -872,9 +872,9 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 }
                 keyStore.deleteEntry(alias);
                 ((KeyStoreService) keyStoreService).save();
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | AcmeException e) {
                 throw new OperationFailedException(e);
-            } catch (KeyStoreException | AcmeException e) {
+            } catch (KeyStoreException e) {
                 throw new RuntimeException(e);
             }
         }
