@@ -47,7 +47,4 @@ public class OperatingSystemDetector {
         return windows;
     }
 
-    public boolean isLinux() {
-        return !windows;
-    }
 }
