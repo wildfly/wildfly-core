@@ -45,7 +45,7 @@ public class RedirectReadinessHandler extends RealmReadinessHandler {
     }
 
     /**
-     * @see org.jboss.as.domain.http.server.RealmReadinessHandler#rejectRequest(org.jboss.com.sun.net.httpserver.HttpExchange)
+     * @see RealmReadinessHandler#rejectRequest(HttpServerExchange)
      */
     @Override
     void rejectRequest(HttpServerExchange exchange) throws Exception {

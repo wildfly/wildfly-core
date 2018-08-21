@@ -101,4 +101,10 @@ public interface HttpServerLogger extends BasicLogger {
     @Message(id = 15, value = "No SecurityRealm or SSLContext has been provided.")
     IllegalStateException noRealmOrSSLContext();
 
+    @Message(id = 16, value = "Your Application Server is running. However you have not yet added any users to be able " +
+            "to access the HTTP management interface. To add a new user execute the %s script within the bin folder of " +
+            "your WildFly installation and enter the requested information. By default the realm name used by WildFly is" +
+            " 'ManagementRealm' and this is already selected by default by the add-user tool.")
+    String realmNotReadyForSecuredManagementHandler(String scriptFile);
+
 }

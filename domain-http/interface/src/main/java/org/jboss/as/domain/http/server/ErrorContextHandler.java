@@ -21,8 +21,6 @@
  */
 package org.jboss.as.domain.http.server;
 
-import java.util.Locale;
-
 import io.undertow.attribute.ExchangeAttributes;
 import io.undertow.predicate.Predicates;
 import io.undertow.server.HttpHandler;
@@ -54,8 +52,8 @@ class ErrorContextHandler {
     private static final String DEFAULT_RESOURCE;
 
     static {
-        String os = System.getProperty("os.name");
-        if (os != null && os.toLowerCase(Locale.ENGLISH).contains("win")) {
+        boolean windows = OperatingSystemDetector.INSTANCE.isWindows();
+        if (windows) {
             DEFAULT_RESOURCE = "/" + INDEX_WIN_HTML;
         } else {
             DEFAULT_RESOURCE = "/" + INDEX_HTML;
