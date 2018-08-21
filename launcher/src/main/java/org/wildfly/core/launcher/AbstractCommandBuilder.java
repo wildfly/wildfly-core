@@ -60,7 +60,6 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         modularJavaOpts.add("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
-        modularJavaOpts.add("--illegal-access=permit");
         modularJavaOpts.add("--add-modules=java.se");
         DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }

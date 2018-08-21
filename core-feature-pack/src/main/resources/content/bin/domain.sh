@@ -105,7 +105,6 @@ if [ "$MODULAR_JDK" = "true" ]; then
         PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
         PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
         PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-        PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --illegal-access=permit"
         PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-modules=java.se"
     fi
 
@@ -115,7 +114,6 @@ if [ "$MODULAR_JDK" = "true" ]; then
         HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
         HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
         HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-        HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --illegal-access=permit"
         HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-modules=java.se"
     fi
 fi
