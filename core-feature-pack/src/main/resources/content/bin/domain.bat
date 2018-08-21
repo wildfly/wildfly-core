@@ -108,7 +108,6 @@ if "%MODULAR_JDK%" == "true" (
     set PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
     set PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
     set PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
-    set PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% --illegal-access=permit
     set PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% --add-modules=java.se
   )
   echo "%HOST_CONTROLLER_JAVA_OPTS%" | findstr /I "\-\-add\-modules" > nul
@@ -117,7 +116,6 @@ if "%MODULAR_JDK%" == "true" (
     set HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
     set HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
     set HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
-    set HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% --illegal-access=permit
     set HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% --add-modules=java.se
   )
 )

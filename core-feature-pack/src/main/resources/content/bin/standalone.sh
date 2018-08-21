@@ -284,7 +284,6 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             JAVA_OPTS="$JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
             JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
             JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-            JAVA_OPTS="$JAVA_OPTS --illegal-access=permit"
             JAVA_OPTS="$JAVA_OPTS --add-modules=java.se"
         fi
     fi
