@@ -54,6 +54,7 @@ import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
 import org.jboss.as.domain.http.server.security.ElytronIdentityHandler;
 import org.jboss.as.domain.http.server.security.LogoutHandler;
 import org.jboss.as.domain.http.server.security.RedirectReadinessHandler;
+import org.jboss.as.domain.http.server.security.ServerErrorReadinessHandler;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.modules.ModuleLoadException;
@@ -210,8 +211,7 @@ public class ManagementHttpServer {
         } else {
             readyFunction = ALWAYS_READY;
         }
-        HttpHandler readinessHandler = new RedirectReadinessHandler(readyFunction, managementHandler,
-                ErrorContextHandler.ERROR_CONTEXT);
+        HttpHandler readinessHandler = new ServerErrorReadinessHandler(contextName, readyFunction, managementHandler);
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
 
