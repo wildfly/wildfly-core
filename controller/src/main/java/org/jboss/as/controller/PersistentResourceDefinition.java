@@ -1,5 +1,9 @@
 package org.jboss.as.controller;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -7,10 +11,6 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A persistent resource definition. This needs to be combined with {@link PersistentResourceXMLDescription} to
@@ -29,7 +29,7 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
     }
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler, OperationStepHandler removeHandler, OperationEntry.Flag addRestartLevel, OperationEntry.Flag removeRestartLevel) {
-        super(new Parameters(pathElement, descriptionResolver)
+        super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
                         .setAddHandler(addHandler)
                         .setRemoveHandler(removeHandler)
                         .setAddRestartLevel(addRestartLevel)
@@ -39,7 +39,7 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
                                            OperationStepHandler removeHandler, boolean isRuntime) {
-        super(new Parameters(pathElement, descriptionResolver)
+        super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
                                .setAddHandler(addHandler)
                                .setRemoveHandler(removeHandler)
                                .setRuntime(isRuntime)
@@ -48,7 +48,7 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
 
     protected PersistentResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver, OperationStepHandler addHandler,
                                            OperationStepHandler removeHandler, OperationEntry.Flag addRestartLevel, OperationEntry.Flag removeRestartLevel, boolean isRuntime) {
-        super(new Parameters(pathElement, descriptionResolver)
+        super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
                         .setAddHandler(addHandler)
                         .setRemoveHandler(removeHandler)
                         .setAddRestartLevel(addRestartLevel)
@@ -57,7 +57,7 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
         );
     }
 
-    protected PersistentResourceDefinition(Parameters parameters){
+    protected PersistentResourceDefinition(SimpleResourceDefinition.Parameters parameters){
         super(parameters);
     }
 
@@ -87,6 +87,8 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
 
     public abstract Collection<AttributeDefinition> getAttributes();
 
+    /** @deprecated Use the superclass */
+    @Deprecated
     public static class Parameters extends SimpleResourceDefinition.Parameters {
 
         /**
@@ -94,7 +96,9 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
          *
          * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
          * @param descriptionResolver the description provider. Cannot be {@code null}
+         * @deprecated Use the superclass
          */
+        @Deprecated
         public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
             super(pathElement, descriptionResolver);
         }

@@ -40,6 +40,7 @@ import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -67,7 +68,7 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
     static final PersistentResourceDefinition INSTANCE = new RootResourceDefinition();
 
     private RootResourceDefinition() {
-        super(new Parameters(PathElement.pathElement(SUBSYSTEM, DependentExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
+        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SUBSYSTEM, DependentExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
                 .setAddHandler(AddSubsystemHandler.INSTANCE)
                 .setRemoveHandler(new ServiceRemoveStepHandler(AddSubsystemHandler.INSTANCE, RUNTIME_CAPABILITY))
                 .setCapabilities(RUNTIME_CAPABILITY));
