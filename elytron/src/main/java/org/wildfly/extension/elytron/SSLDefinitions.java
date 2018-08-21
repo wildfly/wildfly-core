@@ -1114,7 +1114,12 @@ class SSLDefinitions {
             return null;
         }
         if (trustManager instanceof X509ExtendedTrustManager) {
-            return (X509ExtendedTrustManager) trustManager;
+            X509ExtendedTrustManager x509TrustManager = (X509ExtendedTrustManager) trustManager;
+            if (x509TrustManager instanceof DelegatingTrustManager && IS_FIPS.getAsBoolean()) {
+                ROOT_LOGGER.trace("FIPS enabled on JVM, unwrapping TrustManager");
+                x509TrustManager = ((DelegatingTrustManager)x509TrustManager).delegating.get();
+            }
+            return x509TrustManager;
         }
         throw ROOT_LOGGER.invalidTypeInjected(X509ExtendedTrustManager.class.getSimpleName());
     }
