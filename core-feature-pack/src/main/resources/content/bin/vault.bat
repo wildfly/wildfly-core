@@ -52,7 +52,6 @@ if "%MODULAR_JDK%" == "true" (
     set JAVA_OPTS=%JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
     set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
     set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
-    set JAVA_OPTS=%JAVA_OPTS% --illegal-access=permit
     set JAVA_OPTS=%JAVA_OPTS% --add-modules=java.se
   )
 )
