@@ -216,6 +216,24 @@ Param(
 	return $res
 }
 
+# Java system variables musts be quoted (e.g. "-Dprogram.name=wsconsume.ps1")
+Function Format-Java-Sys-Vars($value) {
+  $res = @()
+  if (!$value){
+   return $res
+  }
+  $tmpArr = $value.split()
+
+  foreach ($str in $tmpArr) {
+    if ($str.StartsWith("-D")) {
+     $res += "`"$str`"  "
+   } else {
+       $res += $str
+   }
+  }
+  return $res
+}
+
 Function Start-WildFly-Process {
  Param(
    [Parameter(Mandatory=$true)]
