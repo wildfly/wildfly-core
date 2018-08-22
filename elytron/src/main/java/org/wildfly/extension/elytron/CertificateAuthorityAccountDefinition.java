@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.AdvancedModifiableKeyStoreDecorator.resetAcmeAccount;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
@@ -76,10 +77,11 @@ import org.wildfly.security.x500.cert.acme.AcmeMetadata;
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
 class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
+    private static final String DIRECTORY = "directory";
 
     enum CertificateAuthority {
 
-        LETS_ENCRYPT("LetsEncrypt", "https://acme-v02.api.letsencrypt.org/directory", "https://acme-staging-v02.api.letsencrypt.org/directory");
+        LETS_ENCRYPT("LetsEncrypt", "https://acme-v02.api.letsencrypt.org/" + DIRECTORY, "https://acme-staging-v02.api.letsencrypt.org/" + DIRECTORY);
 
         private final String name;
         private final String url;
@@ -263,9 +265,9 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            AcmeAccount acmeAccount = getAcmeAccountService(context).getValue();
             boolean agreeToTermsOfService = AGREE_TO_TERMS_OF_SERVICE.resolveModelAttribute(context, operation).asBoolean();
             boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            AcmeAccount acmeAccount = getAcmeAccount(context, staging);
 
             try {
                 acmeAccount.setTermsOfServiceAgreed(agreeToTermsOfService);
@@ -295,9 +297,9 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            AcmeAccount acmeAccount = getAcmeAccountService(context).getValue();
             Boolean agreeToTermsOfService = UPDATE_AGREE_TO_TERMS_OF_SERVICE.resolveModelAttribute(context, operation).asBooleanOrNull();
             boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            AcmeAccount acmeAccount = getAcmeAccount(context, staging);
 
             try {
                 if (agreeToTermsOfService != null) {
@@ -324,9 +326,9 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            AcmeAccountService acmeAccountService = getAcmeAccountService(context);
-            AcmeAccount acmeAccount = acmeAccountService.getValue();
             boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            AcmeAccountService acmeAccountService = getAcmeAccountService(context);
+            AcmeAccount acmeAccount = getAcmeAccount(acmeAccountService, staging);
 
             try {
                 acmeClient.changeAccountKey(acmeAccount, staging);
@@ -350,9 +352,8 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            AcmeAccountService acmeAccountService = getAcmeAccountService(context);
-            AcmeAccount acmeAccount = acmeAccountService.getValue();
             boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            AcmeAccount acmeAccount = getAcmeAccount(context, staging);
 
             try {
                 acmeClient.deactivateAccount(acmeAccount, staging);
@@ -375,9 +376,8 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            AcmeAccountService acmeAccountService = getAcmeAccountService(context);
-            AcmeAccount acmeAccount = acmeAccountService.getValue();
             boolean staging = STAGING.resolveModelAttribute(context, operation).asBoolean();
+            AcmeAccount acmeAccount = getAcmeAccount(context, staging);
 
             try {
                 AcmeMetadata metadata = acmeClient.getMetadata(acmeAccount, staging);
@@ -437,5 +437,14 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
         }
 
         return (AcmeAccountService) serviceContainer.getService();
+    }
+
+    private static AcmeAccount getAcmeAccount(final OperationContext context, boolean staging) throws OperationFailedException {
+        return getAcmeAccount(getAcmeAccountService(context), staging);
+    }
+
+    private static AcmeAccount getAcmeAccount(AcmeAccountService acmeAccountService, boolean staging) {
+        AcmeAccount acmeAccount = acmeAccountService.getValue();
+        return resetAcmeAccount(acmeAccount, staging);
     }
 }
