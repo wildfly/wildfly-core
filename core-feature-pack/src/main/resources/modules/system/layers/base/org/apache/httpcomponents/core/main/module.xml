@@ -31,4 +31,10 @@
         <artifact name="${org.apache.httpcomponents:httpclient}"/>
         <artifact name="${org.apache.httpcomponents:httpcore}"/>
     </resources>
+
+
+    <dependencies>
+        <module name="javax.api"/>
+        <module name="org.apache.commons.logging"/>
+    </dependencies>
 </module>
