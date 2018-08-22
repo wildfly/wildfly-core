@@ -359,6 +359,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="always-send-client-cert" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Where an LDAPS connection is established for the purpose of validating the provided credential by default the local servers certificate is not sent to 
+                    avoid inadvertently authenticating as the server.
+
+                    This attribute can be set to true to ensure the local servers certificate is always sent where this is required independently of the authentication 
+                    based on the credential.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="urlListType">
