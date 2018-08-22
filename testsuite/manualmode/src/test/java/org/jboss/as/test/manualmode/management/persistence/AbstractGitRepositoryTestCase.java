@@ -141,6 +141,7 @@ public class AbstractGitRepositoryTestCase {
                 }
             }
         }
+        Collections.sort(tags);
         return tags;
     }
 
@@ -248,10 +249,11 @@ public class AbstractGitRepositoryTestCase {
     }
 
     protected void verifyDefaultSnapshotString(LocalDateTime snapshot, String string) {
-        LocalDateTime timestamp = LocalDateTime.parse(string.substring("Snapshot-".length()), FORMATTER);
         LocalDateTime now = LocalDateTime.now();
-        boolean valid = snapshot.isBefore(now) && snapshot.isBefore(timestamp) && timestamp.isBefore(now);
-        Assert.assertTrue(string + " doesn't start with Snapshot-" + FORMATTER.format(now), valid);
+        assert snapshot.isBefore(now);
+        LocalDateTime timestamp = LocalDateTime.parse(string.substring("Snapshot-".length()), FORMATTER);
+        boolean valid = snapshot.isBefore(timestamp) && timestamp.isBefore(now);
+        Assert.assertTrue(string + " isn't before " + FORMATTER.format(now) + " or after " + FORMATTER.format(snapshot), valid);
     }
 
     protected Path getDotGitDir() {
