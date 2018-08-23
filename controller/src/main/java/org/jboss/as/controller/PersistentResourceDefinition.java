@@ -57,6 +57,13 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
         );
     }
 
+    /** @deprecated Use the {@link #PersistentResourceDefinition(SimpleResourceDefinition.Parameters)} */
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    protected PersistentResourceDefinition(Parameters parameters){
+        this((SimpleResourceDefinition.Parameters)parameters);
+    }
+
     protected PersistentResourceDefinition(SimpleResourceDefinition.Parameters parameters){
         super(parameters);
     }
