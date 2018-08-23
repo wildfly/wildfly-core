@@ -25,6 +25,7 @@
 <module xmlns="urn:jboss:module:1.8" name="org.apache.xerces">
 
     <resources>
+        <artifact name="${xml-apis:xml-apis}"/>
         <artifact name="${xerces:xercesImpl}"/>
     </resources>
 
