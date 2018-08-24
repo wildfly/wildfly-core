@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -798,7 +797,7 @@ class ManagedServer {
         @Override
         public boolean execute(ManagedServer server) throws Exception {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
-            final List<String> command = bootConfiguration.getServerLaunchCommand(true);
+            final List<String> command = bootConfiguration.getServerLaunchCommand();
             final Map<String, String> env = bootConfiguration.getServerLaunchEnvironment();
             final HostControllerEnvironment environment = bootConfiguration.getHostControllerEnvironment();
             final int processId = bootConfiguration.getServerProcessId();
@@ -839,7 +838,7 @@ class ManagedServer {
             assert Thread.holdsLock(ManagedServer.this); // Call under lock
             // Get the standalone boot updates
             final List<ModelNode> bootUpdates = Collections.emptyList(); // bootConfiguration.getBootUpdates();
-            final Map<String, String> launchProperties = parseLaunchProperties(bootConfiguration.getServerLaunchCommand(true));
+            final Map<String, String> launchProperties = bootConfiguration.getServerLaunchProperties();
             final boolean useSubsystemEndpoint = bootConfiguration.isManagementSubsystemEndpoint();
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
@@ -967,21 +966,6 @@ class ManagedServer {
             }
             return true;
         }
-    }
-
-    private static Map<String, String> parseLaunchProperties(final List<String> commands) {
-        final Map<String, String> result = new LinkedHashMap<String, String>();
-        for (String cmd : commands) {
-            if (cmd.startsWith("-D")) {
-                final String[] parts = cmd.substring(2).split("=");
-                if (parts.length == 2) {
-                    result.put(parts[0], parts[1]);
-                } else if (parts.length == 1) {
-                    result.put(parts[0], "true");
-                }
-            }
-        }
-        return result;
     }
 
     PathAddress getAddress(){
