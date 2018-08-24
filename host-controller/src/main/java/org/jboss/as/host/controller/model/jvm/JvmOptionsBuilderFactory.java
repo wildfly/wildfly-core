@@ -26,9 +26,9 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.host.controller.jvm.JvmType;
 import org.wildfly.common.Assert;
 
 /**
@@ -37,15 +37,15 @@ import org.wildfly.common.Assert;
  */
 public final class JvmOptionsBuilderFactory {
 
-    private static final List<String> MODULAR_JDK_PARAMS = Arrays.asList("--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
-    private final JdkType jdkType;
+    private static final List<String> MODULAR_JVM_PARAMS = Arrays.asList("--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
+    private final JvmType jvmType;
 
-    private JvmOptionsBuilderFactory(final JdkType jdkType) {
-        this.jdkType = jdkType;
+    private JvmOptionsBuilderFactory(final JvmType jvmType) {
+        this.jvmType = jvmType;
     }
 
-    public static JvmOptionsBuilderFactory getInstance(final JdkType jdkType) {
-        return new JvmOptionsBuilderFactory(jdkType);
+    public static JvmOptionsBuilderFactory getInstance(final JvmType jvmType) {
+        return new JvmOptionsBuilderFactory(jvmType);
     }
 
     public void addOptions(final JvmElement jvmElement, final List<String> command){
@@ -137,8 +137,8 @@ public final class JvmOptionsBuilderFactory {
     }
 
     boolean checkAdditionalJvmOption(final String option) {
-        if (!jdkType.isForLaunch() || jdkType.isModularJdk()) return true; // on modular jdk all options are fine
-        if (MODULAR_JDK_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)) {
+        if (!jvmType.isForLaunch() || jvmType.isModularJvm()) return true; // on modular jdk all options are fine
+        if (MODULAR_JVM_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)) {
             //drop jdk9 specific params on jdk 8
             return false;
         }

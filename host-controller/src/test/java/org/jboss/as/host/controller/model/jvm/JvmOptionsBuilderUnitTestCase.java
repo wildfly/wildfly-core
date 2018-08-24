@@ -27,7 +27,6 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.jboss.as.process.jdk.JdkType;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -35,7 +34,7 @@ import org.jboss.as.process.jdk.JdkType;
  */
 public class JvmOptionsBuilderUnitTestCase {
 
-    private static final JvmOptionsBuilderFactory FACTORY = JvmOptionsBuilderFactory.getInstance(JdkType.createFromSystemProperty(true));
+    private static final JvmOptionsBuilderFactory FACTORY = JvmOptionsBuilderFactory.getInstance(org.jboss.as.host.controller.jvm.JvmType.createFromSystemProperty(true));
 
     @Test
     public void testNoOptionsSun() {
