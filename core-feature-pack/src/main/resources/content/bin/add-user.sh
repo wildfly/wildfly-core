@@ -7,6 +7,7 @@
 #
 
 DIRNAME=`dirname "$0"`
+GREP="grep"
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
@@ -44,6 +45,19 @@ if [ "x$JAVA" = "x" ]; then
         JAVA="$JAVA_HOME/bin/java"
     else
         JAVA="java"
+    fi
+fi
+
+$JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
+
+if [ "$MODULAR_JDK" = "true" ]; then
+    MODULAR_OPTS=`echo $JAVA_OPTS | $GREP "\-\-add\-modules"`
+    if [ "x$MODULAR_OPTS" = "x" ]; then
+        # Set default modular jdk options
+        JAVA_OPTS="$JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+        JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+        JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+        JAVA_OPTS="$JAVA_OPTS --add-modules=java.se"
     fi
 fi
 

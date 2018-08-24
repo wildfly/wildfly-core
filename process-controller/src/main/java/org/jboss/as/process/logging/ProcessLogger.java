@@ -46,6 +46,7 @@ import org.jboss.marshalling.Unmarshaller;
  * Date: 29.06.2011
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 @MessageLogger(projectCode = "WFLYPC", length = 4)
 public interface ProcessLogger extends BasicLogger {
@@ -819,4 +820,5 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 67, value = "Process '%s' did not complete normal stop within %d ms; attempting to destroy process " +
             "using java.lang.Process.destroyForcibly()")
     void destroyingProcess(String process, long timeout);
+
 }

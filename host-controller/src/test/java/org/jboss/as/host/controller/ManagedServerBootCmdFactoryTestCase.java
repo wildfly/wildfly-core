@@ -121,9 +121,13 @@ public class ManagedServerBootCmdFactoryTestCase {
     public void testGetServerLaunchCommand() throws UnknownHostException {
         System.out.println("getServerLaunchCommand");
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
-        List<String> result = instance.getServerLaunchCommand(true);
+        List<String> result = instance.getServerLaunchCommand();
         Assert.assertThat(result.size(), is(notNullValue()));
-        Assert.assertThat(result.size(), is(16));
+        if (result.size() > 16) {
+            Assert.assertThat(result.size(), is(20));
+        } else {
+            Assert.assertThat(result.size(), is(16));
+        }
         boolean sawDServer = false;
         boolean sawDpcid = false;
         for (String arg : result) {

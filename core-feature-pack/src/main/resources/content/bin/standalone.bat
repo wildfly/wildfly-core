@@ -142,6 +142,8 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
+"%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
   rem Add -client to the JVM options, if supported (32 bit VM), and not overriden
   echo "%JAVA_OPTS%" | findstr /I \-server > nul
@@ -152,7 +154,6 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
     )
   )
 )
-
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
@@ -241,6 +242,16 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
 		set JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
         )
        )
+    )
+    if "%MODULAR_JDK%" == "true" (
+      echo "%JAVA_OPTS%" | findstr /I "\-\-add\-modules" > nul
+      if errorlevel == 1 (
+        rem Set default modular jdk options
+        set JAVA_OPTS=%JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+        set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+        set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
+        set JAVA_OPTS=%JAVA_OPTS% --add-modules=java.se
+      )
     )
 )
 

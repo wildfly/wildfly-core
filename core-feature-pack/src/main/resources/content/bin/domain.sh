@@ -96,6 +96,26 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
+$JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
+
+PROCESS_CONTROLLER_MODULAR_OPTS=`echo $PROCESS_CONTROLLER_JAVA_OPTS | $GREP "\-\-add\-modules"`
+if [ "x$PROCESS_CONTROLLER_MODULAR_OPTS" = "x" ]; then
+    # Set default modular jdk options
+    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+    PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS --add-modules=java.se"
+fi
+
+HOST_CONTROLLER_MODULAR_OPTS=`echo $HOST_CONTROLLER_JAVA_OPTS | $GREP "\-\-add\-modules"`
+if [ "x$HOST_CONTROLLER_MODULAR_OPTS" = "x" ]; then
+    # Set default modular jdk options
+    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+    HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS --add-modules=java.se"
+fi
+
 # Check for -d32/-d64 in JAVA_OPTS
 JVM_OPTVERSION="-version"
 JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`

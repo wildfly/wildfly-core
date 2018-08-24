@@ -131,6 +131,8 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
+$JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
+
 if $linux; then
     # consolidate the server and command line opts
     CONSOLIDATED_OPTS="$JAVA_OPTS $SERVER_OPTS"
@@ -272,6 +274,17 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             mv -f "$JBOSS_LOG_DIR/gc.log.4" "$JBOSS_LOG_DIR/backupgc.log.4" >/dev/null 2>&1
             mv -f "$JBOSS_LOG_DIR"/gc.log.*.current "$JBOSS_LOG_DIR/backupgc.log.current" >/dev/null 2>&1
             "$JAVA" $JVM_OPTVERSION -verbose:gc -Xloggc:"$JBOSS_LOG_DIR/gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading -version >/dev/null 2>&1 && mkdir -p $JBOSS_LOG_DIR && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+        fi
+    fi
+
+    if [ "$MODULAR_JDK" = "true" ]; then
+        MODULAR_OPTS=`echo $JAVA_OPTS | $GREP "\-\-add\-modules"`
+        if [ "x$MODULAR_OPTS" = "x" ]; then
+            # Set default modular jdk options
+            JAVA_OPTS="$JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+            JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+            JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+            JAVA_OPTS="$JAVA_OPTS --add-modules=java.se"
         fi
     fi
 
