@@ -40,7 +40,6 @@ import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 
-import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.process.logging.ProcessLogger;
 import org.jboss.as.process.protocol.ProtocolServer;
 import org.jboss.as.version.ProductConfig;
@@ -222,8 +221,7 @@ public final class Main {
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
         final List<String> initialCommand = new ArrayList<String>();
-        final JdkType jdkType = JdkType.createFromJavaExecutable(jvmName, true);
-        initialCommand.add(jdkType.getJavaExecutable());
+        initialCommand.add(jvmName);
         initialCommand.add("-D[" + HOST_CONTROLLER_PROCESS_NAME + "]");
         initialCommand.addAll(javaOptions);
         initialCommand.add("-jar");
