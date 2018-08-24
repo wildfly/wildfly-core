@@ -137,7 +137,7 @@ public final class JvmOptionsBuilderFactory {
     }
 
     boolean checkAdditionalJvmOption(final String option) {
-        if (jdkType.isModularJdk()) return true; // on modular jdk all options are fine
+        if (!jdkType.isForLaunch() || jdkType.isModularJdk()) return true; // on modular jdk all options are fine
         if (MODULAR_JDK_PARAMS.contains(option.contains("=") ? option.substring(0, option.indexOf("=")) : option)) {
             //drop jdk9 specific params on jdk 8
             return false;

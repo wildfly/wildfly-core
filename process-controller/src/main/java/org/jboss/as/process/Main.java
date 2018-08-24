@@ -222,7 +222,7 @@ public final class Main {
         final InetSocketAddress boundAddress = processController.getServer().getBoundAddress();
 
         final List<String> initialCommand = new ArrayList<String>();
-        final JdkType jdkType = JdkType.createFromJavaExecutable(jvmName);
+        final JdkType jdkType = JdkType.createFromJavaExecutable(jvmName, true);
         initialCommand.add(jdkType.getJavaExecutable());
         initialCommand.add("-D[" + HOST_CONTROLLER_PROCESS_NAME + "]");
         initialCommand.addAll(javaOptions);

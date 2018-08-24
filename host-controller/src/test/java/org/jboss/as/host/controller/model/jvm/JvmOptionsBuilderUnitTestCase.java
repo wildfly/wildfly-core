@@ -35,7 +35,7 @@ import org.jboss.as.process.jdk.JdkType;
  */
 public class JvmOptionsBuilderUnitTestCase {
 
-    private static final JvmOptionsBuilderFactory FACTORY = JvmOptionsBuilderFactory.getInstance(JdkType.createFromSystemProperty());
+    private static final JvmOptionsBuilderFactory FACTORY = JvmOptionsBuilderFactory.getInstance(JdkType.createFromSystemProperty(true));
 
     @Test
     public void testNoOptionsSun() {
