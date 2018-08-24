@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
@@ -783,7 +784,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
 
             try {
-                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName);
+                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName, staging);
                 if (agreeToTermsOfService != null) {
                     acmeAccount.setTermsOfServiceAgreed(agreeToTermsOfService);
                 }
@@ -864,7 +865,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 if (certificateToRevoke == null) {
                     throw ROOT_LOGGER.unableToObtainCertificate(alias);
                 }
-                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName);
+                final AcmeAccount acmeAccount = getAcmeAccount(context, certificateAuthorityAccountName, staging);
                 if (reason != null) {
                     acmeClient.revokeCertificate(acmeAccount, staging, certificateToRevoke, getCRLReason(reason));
                 } else {
@@ -1008,7 +1009,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         }
     }
 
-    private static AcmeAccount getAcmeAccount(OperationContext context, String certificateAuthorityAccountName) throws OperationFailedException {
+    private static AcmeAccount getAcmeAccount(OperationContext context, String certificateAuthorityAccountName, boolean staging) throws OperationFailedException {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
         RuntimeCapability<Void> runtimeCapability = CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY.fromBaseCapability(certificateAuthorityAccountName);
         ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
@@ -1018,7 +1019,30 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
         if (serviceState != ServiceController.State.UP) {
             throw ROOT_LOGGER.requiredServiceNotUp(serviceName, serviceState);
         }
-        return serviceContainer.getService().getValue();
+        AcmeAccount acmeAccount = serviceContainer.getService().getValue();
+        return resetAcmeAccount(acmeAccount, staging);
+    }
+
+    static AcmeAccount resetAcmeAccount(AcmeAccount acmeAccount, boolean staging) {
+        String accountUrl = acmeAccount.getAccountUrl();
+        if (accountUrl != null) {
+            String stagingEndpoint = acmeAccount.getStagingServerUrl().substring(0, acmeAccount.getStagingServerUrl().indexOf("/" + DIRECTORY));
+            if ((accountUrl.startsWith(stagingEndpoint) && ! staging) || (! accountUrl.startsWith(stagingEndpoint) && staging)) {
+                // need to reset the account information so it will get populated with the correct staging / non-staging account URL
+                AcmeAccount.Builder acmeAccountBuilder = AcmeAccount.builder();
+                acmeAccountBuilder
+                        .setServerUrl(acmeAccount.getServerUrl())
+                        .setStagingServerUrl(acmeAccount.getStagingServerUrl())
+                        .setDn(acmeAccount.getDn())
+                        .setKey(acmeAccount.getCertificate(), acmeAccount.getPrivateKey())
+                        .setTermsOfServiceAgreed(acmeAccount.isTermsOfServiceAgreed());
+                if (acmeAccount.getContactUrls() != null) {
+                    acmeAccountBuilder.setContactUrls(acmeAccount.getContactUrls());
+                }
+                return acmeAccountBuilder.build();
+            }
+        }
+        return acmeAccount;
     }
 
 }
