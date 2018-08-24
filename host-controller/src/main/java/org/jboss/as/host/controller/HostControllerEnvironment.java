@@ -463,7 +463,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         WildFlySecurityManager.setPropertyPrivileged(DOMAIN_TEMP_DIR, this.domainTempDir.getAbsolutePath());
 
         if (defaultJVM != null) {
-            defaultJdk = JdkType.createFromJavaExecutable(defaultJVM);
+            defaultJdk = JdkType.createFromJavaExecutable(defaultJVM, false);
         } else {
             defaultJdk = null;
         }
