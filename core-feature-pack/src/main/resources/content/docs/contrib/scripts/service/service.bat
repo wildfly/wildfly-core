@@ -7,6 +7,7 @@ REM    It is expecting that prunsrv.exe reside in:
 REM      %JBOSS_HOME%\bin\service\
 REM Easiest way to make it work is to copy whole "service" directory to %JBOSS_HOME%\bin
 REM
+REM  v10 2018-07-16 add environment variable support (Florent Amaridon)
 REM  v9 2016-02-16 customize for WildFly, fix working on paths with spaces (Tomaz Cerar)
 REM  v8 2016-01-20 customize for EAP 7 (Petr Sakar)
 REM  v7 2014-07-09 added /logpath /startup /config /hostconfig /base /debug
@@ -213,6 +214,12 @@ echo                                   %JBOSS_HOME%\standalone\log
 echo(
 echo     /debug                      : run the service install in debug mode
 echo(
+echo     /environement               : List of environment variables that will be
+echo                                 provided to the service in the form key=value.
+echo                                 They are separated using either # or ;
+echo                                 characters. If you need to embed either # or ;
+echo                                 character within a value put them inside single quotes.
+echo(
 echo Other commands:
 echo(
 echo   service uninstall [/name ^<servicename^>]
@@ -266,6 +273,22 @@ if /I "%~1"== "/hostconfig" (
   )
   if "!HOSTCONFIG!" == "" (
     echo ERROR: You need to specify a host-config name
+    goto endBatch
+  )
+  shift
+  shift
+  goto LoopArgs
+)
+if /I "%~1"== "/environement" (
+  set ENVIRONEMENT=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set ENVIRONEMENT=%~2
+    )
+  )
+  if "!ENVIRONEMENT!" == "" (
+    echo ERROR: You need to specify a environement values
     goto endBatch
   )
   shift
@@ -538,19 +561,19 @@ if /I "%ISDEBUG%" == "true" (
 )
 
 @rem quotes around the "%DESCRIPTION%" and "%DISPLAYNAME" but nowhere else
-echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
-%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
+echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENVIRONEMENT%
+%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENVIRONEMENT%
 
 @if /I "%ISDEBUG%" == "true" (
   @echo off
 )
 
 if errorlevel 8 (
-  echo ERROR: The service %SHORTNAME% already exists
+  echo     ERROR: The service %SHORTNAME% already exists
   goto endBatch
 )
 if errorlevel 0 (
-  echo Service %SHORTNAME% installed
+  echo      Service %SHORTNAME% installed
   goto endBatch
 )
 goto cmdEnd
