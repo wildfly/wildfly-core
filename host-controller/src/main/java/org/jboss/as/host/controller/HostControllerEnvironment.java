@@ -31,12 +31,12 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import org.jboss.as.process.jdk.JdkType;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.version.ProductConfig;
 import org.wildfly.common.Assert;
@@ -233,7 +233,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final File domainLogDir;
     private final File domainServersDir;
     private final File domainTempDir;
-    private final JdkType defaultJdk;
+    private final JvmType defaultJvm;
     private final boolean isRestart;
     private final boolean backupDomainFiles;
     private final boolean useCachedDc;
@@ -463,9 +463,9 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         WildFlySecurityManager.setPropertyPrivileged(DOMAIN_TEMP_DIR, this.domainTempDir.getAbsolutePath());
 
         if (defaultJVM != null) {
-            defaultJdk = JdkType.createFromJavaExecutable(defaultJVM, false);
+            defaultJvm = JvmType.createFromJavaExecutable(defaultJVM, false);
         } else {
-            defaultJdk = null;
+            defaultJvm = null;
         }
 
         final String defaultHostConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOST_DEFAULT_CONFIG, "host.xml");
@@ -705,7 +705,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      * @return the location of the default java executable
      */
     public File getDefaultJVM() {
-        return defaultJdk != null ? new File(defaultJdk.getJavaExecutable()) : null;
+        return defaultJvm != null ? new File(defaultJvm.getJavaExecutable()) : null;
     }
 
     /**

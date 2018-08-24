@@ -60,7 +60,7 @@ import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
-import org.jboss.as.process.jdk.JdkType;
+import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
@@ -124,7 +124,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
     private final boolean suspend;
-    private JdkType jdkType;
+    private JvmType jvmType;
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver, boolean suspend) {
         this.serverName = serverName;
@@ -273,7 +273,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         boolean comparable = other instanceof ManagedServerBootCmdFactory;
         if (comparable) {
             ManagedServerBootCmdFactory otherImpl = (ManagedServerBootCmdFactory) other;
-            comparable = getJdkType(false).equals(otherImpl.getJdkType(false))
+            comparable = getJvmType(false).equals(otherImpl.getJvmType(false))
                     && getServerLaunchCommand(false, false).equals(otherImpl.getServerLaunchCommand(false, false));
         }
         return comparable;
@@ -295,11 +295,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.addAll(commandPrefix);
         }
 
-        JdkType localJdkType = getJdkType(forLaunch);
+        JvmType localJvmType = getJvmType(forLaunch);
 
-        command.add(localJdkType.getJavaExecutable());
+        command.add(localJvmType.getJavaExecutable());
 
-        command.addAll(localJdkType.getDefaultArguments());
+        command.addAll(localJvmType.getDefaultArguments());
 
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
 
@@ -307,7 +307,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
         }
 
-        JvmOptionsBuilderFactory.getInstance(localJdkType).addOptions(jvmElement, command);
+        JvmOptionsBuilderFactory.getInstance(localJvmType).addOptions(jvmElement, command);
 
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
@@ -448,22 +448,22 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         return processId;
     }
 
-    private synchronized JdkType getJdkType(boolean forLaunch) {
-        JdkType result = this.jdkType;
+    private synchronized JvmType getJvmType(boolean forLaunch) {
+        JvmType result = this.jvmType;
         if (result == null) {
             String javaHome = jvmElement.getJavaHome();
             if (javaHome == null) {
                 if (environment.getDefaultJVM() != null) {
                     String javaExecutable = environment.getDefaultJVM().getAbsolutePath();
-                    result = JdkType.createFromJavaExecutable(javaExecutable, forLaunch);
+                    result = JvmType.createFromJavaExecutable(javaExecutable, forLaunch);
                 } else {
-                    result = JdkType.createFromSystemProperty(forLaunch);
+                    result = JvmType.createFromSystemProperty(forLaunch);
                 }
             } else {
-                result = JdkType.createFromJavaHome(javaHome, forLaunch);
+                result = JvmType.createFromJavaHome(javaHome, forLaunch);
             }
             if (forLaunch) {
-                this.jdkType = result;
+                this.jvmType = result;
             } // else don't cache it as we don't know if it's valid and may not add correct default java opts
         }
         return result;

@@ -472,15 +472,15 @@ public interface ProcessLogger extends BasicLogger {
     @Message(id = 23, value = "No value was provided for argument %s")
     String noArgValue(String argument);
 
-    /**
-     * Creates an exception indicating the Java executable could not be found.
-     *
-     * @param binDir the directory the executable file should be located.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 24, value = "Could not find java executable under %s.")
-    IllegalStateException cannotFindJavaExe(String binDir);
+//    /**
+//     * Creates an exception indicating the Java executable could not be found.
+//     *
+//     * @param binDir the directory the executable file should be located.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 24, value = "Could not find java executable under %s.")
+//    IllegalStateException cannotFindJavaExe(String binDir);
 
     /**
      * Creates an exception indicating the authentication key must be 16 bytes long.
@@ -498,26 +498,26 @@ public interface ProcessLogger extends BasicLogger {
 //    @Message(id = 26, value = "cmd must have at least one entry")
 //    IllegalArgumentException invalidCommandLen();
 
-    /**
-     * Creates an exception indicating the Java home directory does not exist.
-     *
-     * @param dir the directory to Java home.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 27, value = "Java home '%s' does not exist.")
-    IllegalStateException invalidJavaHome(String dir);
+//    /**
+//     * Creates an exception indicating the Java home directory does not exist.
+//     *
+//     * @param dir the directory to Java home.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 27, value = "Java home '%s' does not exist.")
+//    IllegalStateException invalidJavaHome(String dir);
 
-    /**
-     * Creates an exception indicating the Java home bin directory does not exist.
-     *
-     * @param binDir      the bin directory.
-     * @param javaHomeDir the Java home directory.
-     *
-     * @return an {@link IllegalStateException} for the error.
-     */
-    @Message(id = 28, value = "Java home's bin '%s' does not exist. The home directory was determined to be %s.")
-    IllegalStateException invalidJavaHomeBin(String binDir, String javaHomeDir);
+//    /**
+//     * Creates an exception indicating the Java home bin directory does not exist.
+//     *
+//     * @param binDir      the bin directory.
+//     * @param javaHomeDir the Java home directory.
+//     *
+//     * @return an {@link IllegalStateException} for the error.
+//     */
+//    @Message(id = 28, value = "Java home's bin '%s' does not exist. The home directory was determined to be %s.")
+//    IllegalStateException invalidJavaHomeBin(String binDir, String javaHomeDir);
 
     /**
      * Creates an exception indicating the parameter has an invalid length.

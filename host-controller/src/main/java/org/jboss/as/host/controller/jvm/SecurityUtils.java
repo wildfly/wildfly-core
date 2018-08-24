@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.process.jdk;
+package org.jboss.as.host.controller.jvm;
 
 import static java.lang.System.getSecurityManager;
 import static java.security.AccessController.doPrivileged;

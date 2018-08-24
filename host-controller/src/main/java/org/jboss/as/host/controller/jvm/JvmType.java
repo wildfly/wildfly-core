@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.process.jdk;
+package org.jboss.as.host.controller.jvm;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,26 +28,26 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
 
-import org.jboss.as.process.logging.ProcessLogger;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 
 /**
- * Jdk type detection utility.
+ * JVM type detection utility.
  *
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public final class JdkType {
+public final class JvmType {
 
     private static final String BIN_DIR = "bin";
     private static final String JMODS_DIR = "jmods";
     private static final String JAVA_HOME_SYS_PROP = "java.home";
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
     private static final String OS_NAME_SYS_PROP = "os.name";
-    private static final Collection<String> DEFAULT_MODULAR_JDK_ARGUMENTS;
+    private static final Collection<String> DEFAULT_MODULAR_JVM_ARGUMENTS;
     private static final String JAVA_EXECUTABLE;
     private static final String JAVA_UNIX_EXECUTABLE = "java";
     private static final String JAVA_WIN_EXECUTABLE = "java.exe";
     private final boolean forLaunch;
-    private final boolean isModularJdk;
+    private final boolean isModularJvm;
     private final String javaExecutable;
 
     static {
@@ -59,12 +59,12 @@ public final class JdkType {
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
         modularJavaOpts.add("--add-modules=java.se");
-        DEFAULT_MODULAR_JDK_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
+        DEFAULT_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }
 
-    private JdkType(final boolean forLaunch, final boolean isModularJdk, final String javaExecutable) {
+    private JvmType(final boolean forLaunch, final boolean isModularJvm, final String javaExecutable) {
         this.forLaunch = forLaunch;
-        this.isModularJdk = isModularJdk;
+        this.isModularJvm = isModularJvm;
         this.javaExecutable = javaExecutable;
     }
 
@@ -85,44 +85,44 @@ public final class JdkType {
      * {@code true}, as otherwise checks for JVM modularity may not be performed or may not be accurate.
      * @return {@code true} if the JVM is known to be modular, {@code false} otherwise
      */
-    public boolean isModularJdk() {
-        return isModularJdk;
+    public boolean isModularJvm() {
+        return isModularJvm;
     }
 
     public Collection<String> getDefaultArguments() {
-        return isModularJdk ? DEFAULT_MODULAR_JDK_ARGUMENTS : Collections.EMPTY_LIST;
+        return isModularJvm ? DEFAULT_MODULAR_JVM_ARGUMENTS : Collections.EMPTY_LIST;
     }
 
     /**
-     * Create a {@code JdkType} based on the location of the root dir of the JRE/JDK installation.
+     * Create a {@code JvmType} based on the location of the root dir of the JRE/JDK installation.
      * @param javaHome the root dir of the JRE/JDK installation. Cannot be {@code null} or empty
      * @param forLaunch {@code true} if the created object will be used for launching servers; {@code false}
      *                              if it is simply a data holder. A value of {@code true} will disable
      *                              some validity checks and may disable determining if the JVM is modular
-     * @return the {@code JdkType}. Will not return {@code null}
+     * @return the {@code JvmType}. Will not return {@code null}
      *
-     * @throws IllegalStateException if the {@code JdkType} cannot be determined.
+     * @throws IllegalStateException if the {@code JvmType} cannot be determined.
      */
-    public static JdkType createFromJavaHome(final String javaHome, boolean forLaunch) {
+    public static JvmType createFromJavaHome(final String javaHome, boolean forLaunch) {
         if (javaHome == null || javaHome.trim().equals("")) {
-            throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHome);
+            throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome(javaHome);
         }
         final File javaHomeDir = new File(javaHome);
         if (forLaunch && !javaHomeDir.exists()) {
-            throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
+            throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
         }
         final File javaBinDir = new File(javaHomeDir, BIN_DIR);
         if (forLaunch && !javaBinDir.exists()) {
-            throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), javaHomeDir.getAbsolutePath());
+            throw HostControllerLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), javaHomeDir.getAbsolutePath());
         }
         final File javaExecutable = new File(javaBinDir, JAVA_EXECUTABLE);
         if (forLaunch && !javaExecutable.exists()) {
-            throw ProcessLogger.ROOT_LOGGER.cannotFindJavaExe(javaBinDir.getAbsolutePath());
+            throw HostControllerLogger.ROOT_LOGGER.cannotFindJavaExe(javaBinDir.getAbsolutePath());
         }
-        return new JdkType(forLaunch, isModularJDK(javaHomeDir, forLaunch), javaExecutable.getAbsolutePath());
+        return new JvmType(forLaunch, isModularJvm(javaHomeDir, forLaunch), javaExecutable.getAbsolutePath());
     }
 
-    private static boolean isModularJDK(File javaHomeDir, boolean forLaunch) {
+    private static boolean isModularJvm(File javaHomeDir, boolean forLaunch) {
         // Only do potentially failing modular vm detection if the object
         // will be used for launching a server.
         if (forLaunch) {
@@ -133,14 +133,14 @@ public final class JdkType {
     }
 
     /**
-     * Create a {@code JdkType} based on the location of the java executable.
+     * Create a {@code JvmType} based on the location of the java executable.
      * @param javaExecutable the location of the java executable. Cannot be {@code null} or empty
      * @param forLaunch {@code true} if the created object will be used for launching servers; {@code false}
      *                              if it is simply a data holder. A value of {@code true} will disable
      *                              some validity checks and may disable determining if the JVM is modular
-     * @return the {@code JdkType}. Will not return {@code null}
+     * @return the {@code JvmType}. Will not return {@code null}
      */
-    public static JdkType createFromJavaExecutable(final String javaExecutable, boolean forLaunch) {
+    public static JvmType createFromJavaExecutable(final String javaExecutable, boolean forLaunch) {
         assert javaExecutable != null;
 
         if (javaExecutable.equals(JAVA_WIN_EXECUTABLE) || javaExecutable.equals(JAVA_UNIX_EXECUTABLE)) {
@@ -148,43 +148,43 @@ public final class JdkType {
         } else {
             final File javaExe = new File(javaExecutable);
             if (forLaunch && !javaExe.exists()) {
-                throw ProcessLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
+                throw HostControllerLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
             }
-            // FIXME. We should not require this structure in order to determine if a JDK is modular, e.g.
+            // FIXME. We should not require this structure in order to determine if a JVM is modular, e.g.
             // /lib/java is a valid value for javaExecutable but this algorithm rejects it
             final File javaBinDir = javaExe.getParentFile();
             if (javaBinDir == null) {
                 // We reject this even if forLaunch==false as we'll NPE otherwise. But fixing FIXME makes this go away
-                throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin("null", "null");
+                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHomeBin("null", "null");
             }
             if (forLaunch && !javaBinDir.exists()) {
-                throw ProcessLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), "null");
+                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), "null");
             }
             final File javaHomeDir = javaBinDir.getParentFile();
             if (javaHomeDir == null) {
                 // We reject this even if forLaunch==false as we'll NPE otherwise. But fixing FIXME makes this go away
-                throw ProcessLogger.ROOT_LOGGER.invalidJavaHome("null");
+                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome("null");
             }
             if (forLaunch && !javaHomeDir.exists()) {
-                throw ProcessLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
+                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
             }
             return createFromJavaHome(javaHomeDir.getAbsolutePath(), forLaunch);
         }
     }
 
     /**
-     * Create a {@code JdkType} based on the location of the root dir of the JRE/JDK installation, as specified
+     * Create a {@code JvmType} based on the location of the root dir of the JRE/JDK installation, as specified
      * by the system property {@code java.home}.
      * @param forLaunch {@code true} if the created object will be used for launching servers; {@code false}
      *                              if it is simply a data holder. A value of {@code true} will disable
      *                              some validity checks and may disable determining if the JVM is modular
-     * @return the {@code JdkType}. Will not return {@code null}
+     * @return the {@code JvmType}. Will not return {@code null}
      */
-    public static JdkType createFromSystemProperty(boolean forLaunch) {
+    public static JvmType createFromSystemProperty(boolean forLaunch) {
         return createFromJavaHome(SecurityUtils.getSystemProperty(JAVA_HOME_SYS_PROP), forLaunch);
     }
 
-    private static JdkType createFromEnvironmentVariable(boolean forLaunch) {
+    private static JvmType createFromEnvironmentVariable(boolean forLaunch) {
         final String envJavaHome = SecurityUtils.getSystemVariable(JAVA_HOME_ENV_VAR);
         if (envJavaHome != null && !"".equals(envJavaHome.trim())) {
             return createFromJavaHome(envJavaHome, forLaunch);
@@ -198,17 +198,17 @@ public final class JdkType {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        JdkType jdkType = (JdkType) o;
+        JvmType jvmType = (JvmType) o;
 
-        if (forLaunch != jdkType.forLaunch) return false;
-        if (isModularJdk != jdkType.isModularJdk) return false;
-        return javaExecutable.equals(jdkType.javaExecutable);
+        if (forLaunch != jvmType.forLaunch) return false;
+        if (isModularJvm != jvmType.isModularJvm) return false;
+        return javaExecutable.equals(jvmType.javaExecutable);
     }
 
     @Override
     public int hashCode() {
         int result = (forLaunch ? 1 : 0);
-        result = 31 * result + (isModularJdk ? 1 : 0);
+        result = 31 * result + (isModularJvm ? 1 : 0);
         result = 31 * result + javaExecutable.hashCode();
         return result;
     }

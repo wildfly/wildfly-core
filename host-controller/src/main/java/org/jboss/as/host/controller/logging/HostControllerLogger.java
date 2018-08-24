@@ -1421,4 +1421,35 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 212, value = "Fetch of missing configuration from the master Host Controller failed without explanation. Fetch operation outcome was %s")
     OperationFailedException fetchOfMissingConfigurationFailed(String failedOutcome);
 
+    /**
+     * Creates an exception indicating the Java home directory does not exist.
+     *
+     * @param dir the directory to Java home.
+     *
+     * @return an {@link IllegalStateException} for the error.
+     */
+    @Message(id = 213, value = "Java home '%s' does not exist.")
+    IllegalStateException invalidJavaHome(String dir);
+
+    /**
+     * Creates an exception indicating the Java home bin directory does not exist.
+     *
+     * @param binDir      the bin directory.
+     * @param javaHomeDir the Java home directory.
+     *
+     * @return an {@link IllegalStateException} for the error.
+     */
+    @Message(id = 214, value = "Java home's bin '%s' does not exist. The home directory was determined to be %s.")
+    IllegalStateException invalidJavaHomeBin(String binDir, String javaHomeDir);
+
+    /**
+     * Creates an exception indicating the Java executable could not be found.
+     *
+     * @param binDir the directory the executable file should be located.
+     *
+     * @return an {@link IllegalStateException} for the error.
+     */
+    @Message(id = 215, value = "Could not find java executable under %s.")
+    IllegalStateException cannotFindJavaExe(String binDir);
+
 }
