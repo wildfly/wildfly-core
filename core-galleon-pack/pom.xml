@@ -316,6 +316,21 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-config-gen</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-feature-spec-gen</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-galleon-plugins</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-java</artifactId>
         </dependency>
@@ -643,35 +658,6 @@
                         <configuration>
                             <fork-embedded>true</fork-embedded>
                             <output-dir>${basedir}/target/resources/features</output-dir>
-                            <standalone-extensions>
-                                <extension>org.jboss.as.deployment-scanner</extension>
-                                <extension>org.jboss.as.jmx</extension>
-                                <extension>org.jboss.as.logging</extension>
-                                <extension>org.jboss.as.remoting</extension>
-                                <extension>org.wildfly.extension.core-management</extension>
-                                <extension>org.wildfly.extension.discovery</extension>
-                                <extension>org.wildfly.extension.elytron</extension>
-                                <extension>org.wildfly.extension.io</extension>
-                                <extension>org.wildfly.extension.request-controller</extension>
-                                <extension>org.wildfly.extension.security.manager</extension>
-                            </standalone-extensions>
-                            <domain-extensions>
-                                <extension>org.jboss.as.jmx</extension>
-                                <extension>org.jboss.as.logging</extension>
-                                <extension>org.jboss.as.remoting</extension>
-                                <extension>org.wildfly.extension.core-management</extension>
-                                <extension>org.wildfly.extension.discovery</extension>
-                                <extension>org.wildfly.extension.elytron</extension>
-                                <extension>org.wildfly.extension.io</extension>
-                                <extension>org.wildfly.extension.request-controller</extension>
-                                <extension>org.wildfly.extension.security.manager</extension>
-                            </domain-extensions>
-                            <host-extensions>
-                                <extension>org.jboss.as.jmx</extension>
-                                <extension>org.wildfly.extension.core-management</extension>
-                                <extension>org.wildfly.extension.discovery</extension>
-                                <extension>org.wildfly.extension.elytron</extension>
-                            </host-extensions>
                         </configuration>
                     </execution>
                     <execution>
