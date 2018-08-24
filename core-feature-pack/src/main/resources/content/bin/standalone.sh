@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ./common.sh
+
 # Use --debug to activate debug mode with an optional argument to specify the port.
 # Usage : standalone.sh --debug
 #         standalone.sh --debug 9797
@@ -130,8 +132,6 @@ if [ "x$JAVA" = "x" ]; then
         JAVA="java"
     fi
 fi
-
-$JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
 
 if $linux; then
     # consolidate the server and command line opts
@@ -277,16 +277,9 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
         fi
     fi
 
-    if [ "$MODULAR_JDK" = "true" ]; then
-        MODULAR_OPTS=`echo $JAVA_OPTS | $GREP "\-\-add\-modules"`
-        if [ "x$MODULAR_OPTS" = "x" ]; then
-            # Set default modular jdk options
-            JAVA_OPTS="$JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-            JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
-            JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-            JAVA_OPTS="$JAVA_OPTS --add-modules=java.se"
-        fi
-    fi
+    # Set default modular JVM options
+    setDefaultModularJvmOptions $JAVA_OPTS
+    JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
     JAVA_OPTS="$PREPEND_JAVA_OPTS $JAVA_OPTS"
 fi
