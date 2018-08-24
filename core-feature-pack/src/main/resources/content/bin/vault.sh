@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ./common.sh
+
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
@@ -68,18 +70,9 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
-$JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
-
-if [ "$MODULAR_JDK" = "true" ]; then
-    MODULAR_OPTS=`echo $JAVA_OPTS | $GREP "\-\-add\-modules"`
-    if [ "x$MODULAR_OPTS" = "x" ]; then
-        # Set default modular jdk options
-        JAVA_OPTS="$JAVA_OPTS --add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-        JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
-        JAVA_OPTS="$JAVA_OPTS --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-        JAVA_OPTS="$JAVA_OPTS --add-modules=java.se"
-    fi
-fi
+# Set default modular JVM options
+setDefaultModularJvmOptions $JAVA_OPTS
+JAVA_OPTS="$JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"

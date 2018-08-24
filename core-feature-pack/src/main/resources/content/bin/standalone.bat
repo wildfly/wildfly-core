@@ -243,16 +243,10 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
         )
        )
     )
-    if "%MODULAR_JDK%" == "true" (
-      echo "%JAVA_OPTS%" | findstr /I "\-\-add\-modules" > nul
-      if errorlevel == 1 (
-        rem Set default modular jdk options
-        set JAVA_OPTS=%JAVA_OPTS% --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-        set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
-        set JAVA_OPTS=%JAVA_OPTS% --add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED
-        set JAVA_OPTS=%JAVA_OPTS% --add-modules=java.se
-      )
-    )
+
+    rem set default modular jvm parameters
+    call common.bat :setDefaultModularJvmOptions "%JAVA_OPTS%"
+    set "JAVA_OPTS=%JAVA_OPTS% %DEFAULT_MODULAR_JVM_OPTIONS%"
 )
 
 

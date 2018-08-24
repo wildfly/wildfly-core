@@ -98,19 +98,31 @@ Function Get-Java-Opts {
 			Write-Host "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 		}
 	}
-
-        & $JAVA_HOME\bin\java.exe --add-modules=java.se -version 2> $nul
-
-        if ($LASTEXITCODE -eq 0) {
-          if ($JAVA_OPTS -notcontains "--add-modules") {
-            $JAVA_OPTS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-            $JAVA_OPTS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
-            $JAVA_OPTS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-            $JAVA_OPTS += "--add-modules=java.se"
-          }
-        }
-
 	return $JAVA_OPTS
+}
+
+Function Get-Default-Modular-Jvm-Options {
+Param(
+   [Parameter(Mandatory=$true)]
+   [string[]]$opts
+
+) #end param
+
+	$DEFAULT_MODULAR_JVM_OPTIONS = ""
+	& $JAVA --add-modules=java.se -version 2> $nul
+	if ($LASTEXITCODE -eq 0) {
+		for($i=0; $i -lt $opts.Count; $i++){
+			$arg = $Params[$i]
+			if ($arg -contains "--add-modules") {
+				return $DEFAULT_MODULAR_JVM_OPTIONS
+			}
+		}
+		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-modules=java.se"
+	}
+	return $DEFAULT_MODULAR_JVM_OPTIONS
 }
 
 Function Display-Array($array){
@@ -132,10 +144,14 @@ Param(
 
 ) #end param
   $JAVA_OPTS = Get-Java-Opts #takes care of looking at defind settings and/or using env:JAVA_OPTS
+  $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS
 
   $PROG_ARGS = @()
   if ($JAVA_OPTS -ne $null){
   	$PROG_ARGS += $JAVA_OPTS
+  }
+  if ($DEFAULT_MODULAR_JVM_OPTS -ne $null){
+  	$PROG_ARGS += $DEFAULT_MODULAR_JVM_OPTS
   }
   if ($logFile){
   	$PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"
