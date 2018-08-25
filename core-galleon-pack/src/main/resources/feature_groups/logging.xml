@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature-group-spec name="logging" xmlns="urn:jboss:galleon:feature-group:1.0">
     <feature spec="subsystem.logging">
+      <feature spec="subsystem.logging.pattern-formatter">
+        <param name="pattern-formatter" value="PATTERN"/>
+        <param name="pattern" value="&quot;%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
+      </feature>
+      <feature spec="subsystem.logging.pattern-formatter">
+        <param name="pattern-formatter" value="COLOR-PATTERN"/>
+        <param name="pattern" value="&quot;%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
+      </feature>
       <feature spec="subsystem.logging.console-handler">
         <param name="console-handler" value="CONSOLE"/>
         <param name="level" value="INFO"/>
@@ -29,14 +37,6 @@
       <feature spec="subsystem.logging.root-logger.ROOT">
         <param name="level" value="INFO"/>
         <param name="handlers" value="[CONSOLE,FILE]"/>
-      </feature>
-      <feature spec="subsystem.logging.pattern-formatter">
-        <param name="pattern-formatter" value="PATTERN"/>
-        <param name="pattern" value="&quot;%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
-      </feature>
-      <feature spec="subsystem.logging.pattern-formatter">
-        <param name="pattern-formatter" value="COLOR-PATTERN"/>
-        <param name="pattern" value="&quot;%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n&quot;"/>
       </feature>
     </feature>
 </feature-group-spec>
