@@ -1267,6 +1267,9 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 143, value = "Invalid sensitive classification attribute '%s'")
     IllegalStateException invalidSensitiveClassificationAttribute(String attr);
 
+    @Message(id = 144, value = "Sensitivity constraint %s contains imcompatible attribute value to other sensitive classification constraints.")
+    OperationFailedException imcompatibleConfiguredRequiresAttributeValue(String addr);
+
     /**
      * Information message saying the username and password must be different.
      *

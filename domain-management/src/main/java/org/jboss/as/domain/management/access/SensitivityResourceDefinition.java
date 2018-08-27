@@ -48,6 +48,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.constraint.AbstractSensitivity;
 import org.jboss.as.controller.access.constraint.VaultExpressionSensitivityConfig;
 import org.jboss.as.controller.access.management.AccessConstraintKey;
@@ -221,6 +222,29 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
             final ModelNode value = operation.require(VALUE);
             final SensitivityClassificationResource resource = (SensitivityClassificationResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final AbstractSensitivity classification = resource.classification;
+
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    if (attribute.equals(CONFIGURED_REQUIRES_ADDRESSABLE.getName())) {
+                        if (!classification.isConfiguredRequiresAccessPermissionValid(value.asBooleanOrNull())) {
+                            throw DomainManagementLogger.ROOT_LOGGER.imcompatibleConfiguredRequiresAttributeValue(ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE);
+                        }
+                    }
+                    if (attribute.equals(CONFIGURED_REQUIRES_READ.getName())) {
+                        if (!classification.isConfiguredRequiresReadPermissionValid(value.asBooleanOrNull())) {
+                            throw DomainManagementLogger.ROOT_LOGGER.imcompatibleConfiguredRequiresAttributeValue(ModelDescriptionConstants.CONFIGURED_REQUIRES_READ);
+                        }
+                        classification.setConfiguredRequiresReadPermission(readValue(context, value, CONFIGURED_REQUIRES_READ));
+                    } else if (attribute.equals(CONFIGURED_REQUIRES_WRITE.getName())) {
+                        if (!classification.isConfiguredRequiresWritePermissionValid(value.asBooleanOrNull())) {
+                            throw DomainManagementLogger.ROOT_LOGGER.imcompatibleConfiguredRequiresAttributeValue(ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE);
+                        }
+                        classification.setConfiguredRequiresWritePermission(readValue(context, value, CONFIGURED_REQUIRES_WRITE));
+                    }
+                }
+            }, Stage.MODEL);
+
             if (attribute.equals(CONFIGURED_REQUIRES_ADDRESSABLE.getName()) && includeAddressable) {
                 classification.setConfiguredRequiresAccessPermission(readValue(context, value, CONFIGURED_REQUIRES_ADDRESSABLE));
             } else if (attribute.equals(CONFIGURED_REQUIRES_READ.getName())) {
@@ -246,7 +270,7 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
                         }
                     } catch (OperationFailedException e) {
                         // Should not happen since configured value is retrieved from resource.
-                        throw new RuntimeException(e);
+                        throw DomainManagementLogger.ROOT_LOGGER.invalidSensitiveClassificationAttribute(attribute);
                     }
                 }
             });

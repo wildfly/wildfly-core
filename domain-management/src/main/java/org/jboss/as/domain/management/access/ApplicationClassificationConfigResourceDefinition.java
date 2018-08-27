@@ -23,7 +23,6 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.APPLIES_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.parsing.Attribute.APPLICATION;
 
@@ -119,13 +118,12 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-            ModelNode modelNode = context.readResourceFromRoot(address).getModel();
-            // record model values for rollback handler
-            ModelNode configuredApplication = modelNode.get(ModelDescriptionConstants.CONFIGURED_APPLICATION);
-
             final ModelNode value = operation.require(VALUE);
-            final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource) context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ModelNode modelNode = resource.getModel();
+            // record model values for rollback handler
+            final ModelNode configuredApplication = modelNode.get(ModelDescriptionConstants.CONFIGURED_APPLICATION);
+
             final ApplicationTypeConfig classification = resource.applicationType;
             classification.setConfiguredApplication(readValue(context, value, CONFIGURED_APPLICATION));
 

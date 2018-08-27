@@ -124,4 +124,42 @@ public class AbstractSensitivity {
                         && defaultRequiresReadPermission == other.defaultRequiresReadPermission
                         && defaultRequiresWritePermission == other.defaultRequiresWritePermission);
     }
+
+    public boolean isConfiguredRequiresAccessPermissionValid(Boolean requiresAccessPermission) {
+        boolean effectiveAccessPermission = requiresAccessPermission == null ? defaultRequiresAccessPermission : requiresAccessPermission;
+        boolean effectiveReadPermission = configuredRequiresReadPermission == null ? defaultRequiresReadPermission : configuredRequiresReadPermission;
+        boolean effectiveWritePermission = configuredRequiresWritePermission == null ? defaultRequiresWritePermission : configuredRequiresWritePermission;
+        if (effectiveAccessPermission == true && (effectiveReadPermission == false | effectiveWritePermission == false)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isConfiguredRequiresReadPermissionValid(Boolean requiresReadPermission) {
+        boolean effectiveReadPermission = requiresReadPermission == null ? defaultRequiresReadPermission : requiresReadPermission;
+        boolean effectiveAccessPermission = configuredRequiresAccessPermission == null ? defaultRequiresAccessPermission : configuredRequiresAccessPermission;
+        boolean effectiveWritePermission = configuredRequiresWritePermission == null ? defaultRequiresWritePermission : configuredRequiresWritePermission;
+        if (effectiveReadPermission == false && effectiveAccessPermission == true) {
+            // write false to configured-requires-read while configured-requires-access is true is invalid
+            return false;
+        } else if (effectiveReadPermission == true && effectiveWritePermission == false) {
+            // write true to configured-requires-read while configured-requires-write is false is invalid
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isConfiguredRequiresWritePermissionValid(Boolean requiresWritePermission) {
+        boolean effectiveWritePermission = requiresWritePermission == null ? defaultRequiresWritePermission : requiresWritePermission;
+        boolean effectiveAccessPermission = configuredRequiresAccessPermission == null ? defaultRequiresAccessPermission : configuredRequiresAccessPermission;
+        boolean effectiveReadPermission = configuredRequiresReadPermission == null ? defaultRequiresReadPermission : configuredRequiresReadPermission;
+        if (effectiveWritePermission == false && (effectiveAccessPermission == true | effectiveReadPermission == true)) {
+            // write false to configured-requires-write while configured-requires-access or configured-requires-read is true is invalid
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
