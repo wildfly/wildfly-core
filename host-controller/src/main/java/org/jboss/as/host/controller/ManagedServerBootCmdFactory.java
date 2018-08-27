@@ -177,9 +177,6 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 resolveNilableExpressions(serverVM, expressionResolver, false));
 
         this.sslContextSupplier = createSSLContextSupplier(serverModel, expressionResolver);
-        // Defer initializing the vm type until we know we are at a point where a VM config
-        // validation failure 1) is acceptable and 2) can be handled properly
-        //this.jdkType = getJdkType();
     }
 
     private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {

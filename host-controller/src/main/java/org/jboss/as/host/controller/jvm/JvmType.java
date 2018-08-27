@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Locale;
 
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * JVM type detection utility.
@@ -50,7 +51,8 @@ public final class JvmType {
     private final String javaExecutable;
 
     static {
-        final String os = SecurityUtils.getSystemProperty(OS_NAME_SYS_PROP).toLowerCase(Locale.ROOT);
+        final String osSysProp = WildFlySecurityManager.getPropertyPrivileged(OS_NAME_SYS_PROP, "UNKNOWN");
+        final String os = osSysProp.toLowerCase(Locale.ROOT);
         JAVA_EXECUTABLE = os.contains("win") ? "java.exe" : "java";
 
         final ArrayList<String> modularJavaOpts = new ArrayList<>();
@@ -159,11 +161,12 @@ public final class JvmType {
      * @return the {@code JvmType}. Will not return {@code null}
      */
     public static JvmType createFromSystemProperty(boolean forLaunch) {
-        return createFromJavaHome(SecurityUtils.getSystemProperty(JAVA_HOME_SYS_PROP), forLaunch);
+        final String javaHome = WildFlySecurityManager.getPropertyPrivileged(JAVA_HOME_SYS_PROP, null);
+        return createFromJavaHome(javaHome, forLaunch);
     }
 
     private static JvmType createFromEnvironmentVariable(boolean forLaunch) {
-        final String envJavaHome = SecurityUtils.getSystemVariable(JAVA_HOME_ENV_VAR);
+        final String envJavaHome = WildFlySecurityManager.getEnvPropertyPrivileged(JAVA_HOME_ENV_VAR, null);
         if (envJavaHome != null && !"".equals(envJavaHome.trim())) {
             return createFromJavaHome(envJavaHome, forLaunch);
         } else {
