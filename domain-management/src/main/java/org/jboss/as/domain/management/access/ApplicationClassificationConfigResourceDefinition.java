@@ -23,6 +23,7 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.APPLIES_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.parsing.Attribute.APPLICATION;
 
@@ -121,6 +122,11 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            ModelNode modelNode = context.readResourceFromRoot(address).getModel();
+            // record model values for rollback handler
+            ModelNode configuredApplication = modelNode.get(ModelDescriptionConstants.CONFIGURED_APPLICATION);
+
             final String attribute = operation.require(NAME).asString();
             final ModelNode value = operation.require(VALUE);
             final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
@@ -132,6 +138,20 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
                 //TODO i18n
                 throw new IllegalStateException();
             }
+
+            context.completeStep(new OperationContext.RollbackHandler() {
+
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    try {
+                        classification.setConfiguredApplication(readValue(context, configuredApplication, CONFIGURED_APPLICATION));
+                    } catch (OperationFailedException e) {
+                        // Should not happen since configured value is retrieved from resource.
+                        throw new RuntimeException(e);
+                    }
+
+                }
+            });
         }
 
         private Boolean readValue(OperationContext context, ModelNode value, AttributeDefinition definition) throws OperationFailedException {

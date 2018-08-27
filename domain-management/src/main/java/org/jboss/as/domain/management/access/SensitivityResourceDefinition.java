@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.APP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONSTRAINT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_EXPRESSION;
 import static org.jboss.as.controller.parsing.Attribute.REQUIRES_ADDRESSABLE;
@@ -57,6 +58,7 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource.ResourceEntry;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
+import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -186,8 +188,7 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
             } else if (attribute.equals(CONFIGURED_REQUIRES_WRITE.getName())) {
                 result = classification.getConfiguredRequiresWritePermission();
             } else {
-                //TODO i18n
-                throw new IllegalStateException();
+                throw DomainManagementLogger.ROOT_LOGGER.invalidSensitiveClassificationAttribute(attribute);
             }
 
             context.getResult();
@@ -209,6 +210,13 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
         }
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            ModelNode modelNode = context.readResourceFromRoot(address).getModel();
+            // record model values for rollback handler
+            ModelNode configuredRequiresAddressable = modelNode.get(ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE);
+            ModelNode configuredRequiresRead = modelNode.get(ModelDescriptionConstants.CONFIGURED_REQUIRES_READ);
+            ModelNode configuredRequiresWrite = modelNode.get(ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE);
+
             final String attribute = operation.require(NAME).asString();
             final ModelNode value = operation.require(VALUE);
             final SensitivityClassificationResource resource = (SensitivityClassificationResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
@@ -220,9 +228,28 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
             } else if (attribute.equals(CONFIGURED_REQUIRES_WRITE.getName())) {
                 classification.setConfiguredRequiresWritePermission(readValue(context, value, CONFIGURED_REQUIRES_WRITE));
             } else {
-                //TODO i18n
-                throw new IllegalStateException();
+                throw DomainManagementLogger.ROOT_LOGGER.invalidSensitiveClassificationAttribute(attribute);
             }
+
+            context.completeStep(new OperationContext.RollbackHandler() {
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    try {
+                        if (attribute.equals(CONFIGURED_REQUIRES_ADDRESSABLE.getName()) && includeAddressable) {
+                            classification.setConfiguredRequiresAccessPermission(readValue(context, configuredRequiresAddressable, CONFIGURED_REQUIRES_ADDRESSABLE));
+                        } else if (attribute.equals(CONFIGURED_REQUIRES_READ.getName())) {
+                            classification.setConfiguredRequiresReadPermission(readValue(context, configuredRequiresRead, CONFIGURED_REQUIRES_READ));
+                        } else if (attribute.equals(CONFIGURED_REQUIRES_WRITE.getName())) {
+                            classification.setConfiguredRequiresWritePermission(readValue(context, configuredRequiresWrite, CONFIGURED_REQUIRES_WRITE));
+                        } else {
+                            throw DomainManagementLogger.ROOT_LOGGER.invalidSensitiveClassificationAttribute(attribute);
+                        }
+                    } catch (OperationFailedException e) {
+                        // Should not happen since configured value is retrieved from resource.
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
         }
 
         private Boolean readValue(OperationContext context, ModelNode value, AttributeDefinition definition) throws OperationFailedException {
