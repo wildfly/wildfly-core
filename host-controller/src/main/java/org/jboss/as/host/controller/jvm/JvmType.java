@@ -38,7 +38,6 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 public final class JvmType {
 
     private static final String BIN_DIR = "bin";
-    private static final String JMODS_DIR = "jmods";
     private static final String JAVA_HOME_SYS_PROP = "java.home";
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
     private static final String OS_NAME_SYS_PROP = "os.name";
@@ -119,15 +118,16 @@ public final class JvmType {
         if (forLaunch && !javaExecutable.exists()) {
             throw HostControllerLogger.ROOT_LOGGER.cannotFindJavaExe(javaBinDir.getAbsolutePath());
         }
-        return new JvmType(forLaunch, isModularJvm(javaHomeDir, forLaunch), javaExecutable.getAbsolutePath());
+        return new JvmType(forLaunch, isModularJvm(javaExecutable.getAbsolutePath(), forLaunch), javaExecutable.getAbsolutePath());
     }
 
-    private static boolean isModularJvm(File javaHomeDir, boolean forLaunch) {
-        // Only do potentially failing modular vm detection if the object
-        // will be used for launching a server.
+    private static boolean isModularJvm(final String javaExecutable, final boolean forLaunch) {
         if (forLaunch) {
-            // FIXME this assumes a certain structure; try to spawn a vm process instead
-            return new File(javaHomeDir, JMODS_DIR).exists();
+            try {
+                return 0 == new ProcessBuilder(javaExecutable, "--add-modules=java.se", "-version").start().waitFor();
+            } catch (Throwable t) {
+                throw HostControllerLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
+            }
         }
         return false;
     }
@@ -146,29 +146,7 @@ public final class JvmType {
         if (javaExecutable.equals(JAVA_WIN_EXECUTABLE) || javaExecutable.equals(JAVA_UNIX_EXECUTABLE)) {
             return createFromEnvironmentVariable(forLaunch);
         } else {
-            final File javaExe = new File(javaExecutable);
-            if (forLaunch && !javaExe.exists()) {
-                throw HostControllerLogger.ROOT_LOGGER.cannotFindJavaExe(javaExecutable);
-            }
-            // FIXME. We should not require this structure in order to determine if a JVM is modular, e.g.
-            // /lib/java is a valid value for javaExecutable but this algorithm rejects it
-            final File javaBinDir = javaExe.getParentFile();
-            if (javaBinDir == null) {
-                // We reject this even if forLaunch==false as we'll NPE otherwise. But fixing FIXME makes this go away
-                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHomeBin("null", "null");
-            }
-            if (forLaunch && !javaBinDir.exists()) {
-                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHomeBin(javaBinDir.getAbsolutePath(), "null");
-            }
-            final File javaHomeDir = javaBinDir.getParentFile();
-            if (javaHomeDir == null) {
-                // We reject this even if forLaunch==false as we'll NPE otherwise. But fixing FIXME makes this go away
-                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome("null");
-            }
-            if (forLaunch && !javaHomeDir.exists()) {
-                throw HostControllerLogger.ROOT_LOGGER.invalidJavaHome(javaHomeDir.getAbsolutePath());
-            }
-            return createFromJavaHome(javaHomeDir.getAbsolutePath(), forLaunch);
+            return new JvmType(forLaunch, isModularJvm(javaExecutable, forLaunch), javaExecutable);
         }
     }
 
