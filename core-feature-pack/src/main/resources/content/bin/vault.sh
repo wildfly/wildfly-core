@@ -1,10 +1,10 @@
 #!/bin/sh
 
-. ./common.sh
-
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
+
+"$DIRNAME/common.sh"
 
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"

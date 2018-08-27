@@ -119,8 +119,6 @@ if "%DEBUG_MODE%" == "true" (
   )
 )
 
-set DIRNAME=
-
 rem Setup JBoss specific properties
 set "JAVA_OPTS=-Dprogram.name=%PROGNAME% %JAVA_OPTS%"
 
@@ -245,8 +243,10 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
     )
 
     rem set default modular jvm parameters
-    call common.bat :setDefaultModularJvmOptions "%JAVA_OPTS%"
-    set "JAVA_OPTS=%JAVA_OPTS% %DEFAULT_MODULAR_JVM_OPTIONS%"
+    setlocal EnableDelayedExpansion
+    call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!JAVA_OPTS!"
+    set "JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+    setlocal DisableDelayedExpansion
 )
 
 

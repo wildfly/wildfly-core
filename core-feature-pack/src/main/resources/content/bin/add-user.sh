@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. ./common.sh
-
 # Add User Utility
 #
 # A simple utility for adding new users to the properties file used
@@ -10,6 +8,8 @@
 
 DIRNAME=`dirname "$0"`
 GREP="grep"
+
+"$DIRNAME/common.sh"
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
