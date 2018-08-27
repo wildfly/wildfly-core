@@ -22,11 +22,16 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
+import org.jboss.as.test.integration.management.extension.streams.LogStreamExtension;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -34,25 +39,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLAN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.junit.Assert.assertEquals;
 
@@ -69,6 +67,7 @@ public class ReloadWithRolloutPlanTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     private static final ModelNode ROLLOUT_PLANS_ADDRESS = new ModelNode().add(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
     private static final ModelNode ROLLOUT_PLAN_A = new ModelNode();
@@ -85,6 +84,7 @@ public class ReloadWithRolloutPlanTestCase {
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ReloadWithRolloutPlanTestCase.class.getSimpleName());
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }
 
     @AfterClass
@@ -102,7 +102,7 @@ public class ReloadWithRolloutPlanTestCase {
     }
 
     @Test
-    public void testReloadMasterWithRolloutPlan() throws IOException {
+    public void testReloadMasterWithRolloutPlan() throws Exception {
         final ModelNode addressA = ROLLOUT_PLANS_ADDRESS.clone().add(ROLLOUT_PLAN, "testPlan");
 
         // Add content
@@ -114,60 +114,28 @@ public class ReloadWithRolloutPlanTestCase {
         ModelNode returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_A, returnVal);
 
+        //reload
         reloadMaster();
 
-        final ModelNode slave = new ModelNode();
-        slave.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        slave.get(OP_ADDR).add(HOST, "slave");
-        slave.get(NAME).set(HOST_STATE);
-
-        // Wait until slave is reloaded
-        boolean slaveIsrunning = validateOutput(slave, masterClient, "running");
-
-        Assert.assertTrue("Cannot validate that host 'slave' is running", slaveIsrunning);
-
+        //remove rollout plan
+        op = Util.getEmptyOperation(REMOVE, addressA);
+        response = masterClient.execute(op);
+        validateResponse(response);
     }
 
-    private static boolean validateOutput(ModelNode operation, ModelControllerClient client, String excpected) {
-        final long time = System.currentTimeMillis() + TIMEOUT;
-        do {
-            try {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                final ModelNode result = client.execute(operation);
-                if (result.get(OUTCOME).asString().equals(SUCCESS)) {
-                    final ModelNode model = result.require(RESULT);
-                    if (model.asString().equalsIgnoreCase(excpected)) {
-                        return true;
-                    }
-                }
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-        } while (System.currentTimeMillis() < time);
-
-        return false;
-    }
-
-    private void reloadMaster() throws IOException {
+    private void reloadMaster() throws Exception {
         ModelNode op = new ModelNode();
-        op.get(OP).set("reload");
         op.get(OP_ADDR).add(HOST, "master");
-        op.get(ADMIN_ONLY).set(false);
+        op.get(OP).set("reload");
+        op.get("admin-only").set(false);
         domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+
         // Try to reconnect to the hc
         domainMasterLifecycleUtil.connect();
-        try {
-            domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-            domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
-        } catch (InterruptedException | TimeoutException e) {
-            throw new RuntimeException("Failed waiting for host controller and servers to start.", e);
-        }
+        //wait to start
+        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
-
 
     private static ModelNode getReadAttributeOperation(ModelNode address, String attribute) {
         ModelNode op = new ModelNode();
