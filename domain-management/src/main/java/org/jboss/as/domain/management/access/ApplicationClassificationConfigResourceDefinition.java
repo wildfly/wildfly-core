@@ -99,14 +99,11 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
             final String attribute = operation.require(NAME).asString();
             final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResource(PathAddress.EMPTY_ADDRESS);
             final ApplicationTypeConfig applicationType = resource.applicationType;
-            Boolean result;
+            Boolean result = null;
             if (attribute.equals(DEFAULT_APPLICATION.getName())) {
                 result = applicationType.isDefaultApplication();
             } else if (attribute.equals(CONFIGURED_APPLICATION.getName())) {
                 result = applicationType.getConfiguredApplication();
-            } else {
-                //TODO i18n
-                throw new IllegalStateException();
             }
 
             context.getResult();
@@ -127,17 +124,10 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
             // record model values for rollback handler
             ModelNode configuredApplication = modelNode.get(ModelDescriptionConstants.CONFIGURED_APPLICATION);
 
-            final String attribute = operation.require(NAME).asString();
             final ModelNode value = operation.require(VALUE);
             final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ApplicationTypeConfig classification = resource.applicationType;
-            if (attribute.equals(CONFIGURED_APPLICATION.getName())) {
-                Boolean confValue = readValue(context, value, CONFIGURED_APPLICATION);
-                classification.setConfiguredApplication(confValue);
-            } else {
-                //TODO i18n
-                throw new IllegalStateException();
-            }
+            classification.setConfiguredApplication(readValue(context, value, CONFIGURED_APPLICATION));
 
             context.completeStep(new OperationContext.RollbackHandler() {
 
