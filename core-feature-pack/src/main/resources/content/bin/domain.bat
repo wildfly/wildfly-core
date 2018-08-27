@@ -70,8 +70,6 @@ if exist "%DOMAIN_CONF%" (
    echo Config file not found "%DOMAIN_CONF%"
 )
 
-set DIRNAME=
-
 if "%OS%" == "Windows_NT" (
   set "PROGNAME=%~nx0%"
 ) else (
@@ -100,10 +98,12 @@ if "x%JAVA_HOME%" == "x" (
 )
 
 rem set default modular jvm parameters
-call common.bat :setDefaultModularJvmOptions "%PROCESS_CONTROLLER_JAVA_OPTS%"
-set "PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% %DEFAULT_MODULAR_JVM_OPTIONS%"
-call common.bat :setDefaultModularJvmOptions "%HOST_CONTROLLER_JAVA_OPTS%"
-set "HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% %DEFAULT_MODULAR_JVM_OPTIONS%"
+setlocal EnableDelayedExpansion
+call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!PROCESS_CONTROLLER_JAVA_OPTS!"
+set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!HOST_CONTROLLER_JAVA_OPTS!"
+set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+setlocal DisableDelayedExpansion
 
 rem Add -server to the JVM options, if supported
 "%JAVA%" -server -version 2>&1 | findstr /I hotspot > nul

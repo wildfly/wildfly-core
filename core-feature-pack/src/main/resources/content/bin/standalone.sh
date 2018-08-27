@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. ./common.sh
-
 # Use --debug to activate debug mode with an optional argument to specify the port.
 # Usage : standalone.sh --debug
 #         standalone.sh --debug 9797
@@ -41,6 +39,8 @@ done
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
+
+"$DIRNAME/common.sh"
 
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"

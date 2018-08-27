@@ -47,8 +47,10 @@ if "x%JAVA_HOME%" == "x" (
 )
 
 rem set default modular jvm parameters
-call common.bat :setDefaultModularJvmOptions "%JAVA_OPTS%"
-set "JAVA_OPTS=%JAVA_OPTS% %DEFAULT_MODULAR_JVM_OPTIONS%"
+setlocal EnableDelayedExpansion
+call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!JAVA_OPTS!"
+set "JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+setlocal DisableDelayedExpansion
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
