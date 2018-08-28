@@ -249,11 +249,12 @@ public class AbstractGitRepositoryTestCase {
     }
 
     protected void verifyDefaultSnapshotString(LocalDateTime snapshot, String string) {
-        LocalDateTime now = LocalDateTime.now();
-        assert snapshot.isBefore(now);
-        LocalDateTime timestamp = LocalDateTime.parse(string.substring("Snapshot-".length()), FORMATTER);
-        boolean valid = snapshot.isBefore(timestamp) && timestamp.isBefore(now);
-        Assert.assertTrue(string + " isn't before " + FORMATTER.format(now) + " or after " + FORMATTER.format(snapshot), valid);
+        LocalDateTime comparableSnapshot = snapshot.withNano(0);
+        LocalDateTime now = LocalDateTime.now().withNano(0);
+        assert comparableSnapshot.isBefore(now) || comparableSnapshot.isEqual(now);
+        LocalDateTime timestamp = LocalDateTime.parse(string.substring("Snapshot-".length()), FORMATTER).withNano(0);
+        boolean valid = (comparableSnapshot.isBefore(timestamp) || comparableSnapshot.isEqual(timestamp)) && (timestamp.isBefore(now) || timestamp.isEqual(now));
+        Assert.assertTrue(FORMATTER.format(timestamp) + " isn't before " + FORMATTER.format(now) + " or after " + FORMATTER.format(comparableSnapshot), valid);
     }
 
     protected Path getDotGitDir() {
