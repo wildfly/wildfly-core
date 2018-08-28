@@ -52,6 +52,10 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         Files.createDirectories(repoConfigDir);
         File baseDir = remoteRoot.toAbsolutePath().toFile();
         PathUtil.copyRecursively(getJbossServerBaseDir().resolve("configuration"), repoConfigDir, true);
+        Path properties = repoConfigDir.resolve("logging.properties");
+        if(Files.exists(properties)) {
+            Files.delete(properties);
+        }
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).call()) {
@@ -141,6 +145,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         Assert.assertEquals("Adding .gitignore", commits.get(0));
         Assert.assertEquals("Repository initialized", commits.get(1));
         List<String> paths = listFilesInCommit(repository);
+        Assert.assertEquals(Arrays.toString(paths.toArray()), 1, paths.size());
 
         // change configuration => commit
         addSystemProperty();
