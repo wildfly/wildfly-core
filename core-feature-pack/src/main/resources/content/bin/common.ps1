@@ -70,6 +70,16 @@ if (-Not $javaOpts){
 	$javaOpts = Get-Java-Opts
 }
 
+Function Check-For-Java9+ {
+	& $JAVA --add-modules java.se -version >$null 2>&1
+
+	if ($LastExitCode -eq 0){
+		$JAVA_9_PLUS = $true
+	}
+
+	return $JAVA_9_PLUS
+}
+
 # Display our environment
 Write-Host "================================================================================="
 Write-Host ""
@@ -141,14 +151,22 @@ Param(
 		if (-not(Test-Path $JBOSS_LOG_DIR)) {
 			$dir = New-Item $JBOSS_LOG_DIR -type directory -ErrorAction SilentlyContinue
 		}
-        $PROG_ARGS += "-verbose:gc"
-        $PROG_ARGS += "-XX:+PrintGCDetails"
-        $PROG_ARGS += "-XX:+PrintGCDateStamps"
-        $PROG_ARGS += "-XX:+UseGCLogFileRotation"
-        $PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
-        $PROG_ARGS += "-XX:GCLogFileSize=3M"
-        $PROG_ARGS += "-XX:-TraceClassUnloading"
-        $PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
+
+		$JAVA_9_PLUS = Check-For-Java9+
+
+		$PROG_ARGS += "-verbose:gc"
+		if ($JAVA_9_PLUS -eq $true)
+		{
+			$PROG_ARGS += "-Xlog:gc*:file=%JBOSS_LOG_DIR%\gc.log:time,uptimemillis:filecount=5,filesize=3M"
+		} else {
+			$PROG_ARGS += "-XX:+PrintGCDetails"
+			$PROG_ARGS += "-XX:+PrintGCDateStamps"
+			$PROG_ARGS += "-XX:+UseGCLogFileRotation"
+			$PROG_ARGS += "-XX:NumberOfGCLogFiles=5"
+			$PROG_ARGS += "-XX:GCLogFileSize=3M"
+			$PROG_ARGS += "-XX:-TraceClassUnloading"
+			$PROG_ARGS += "-Xloggc:$JBOSS_LOG_DIR\gc.log"
+		}
     }
   }
   $global:FINAL_JAVA_OPTS = $PROG_ARGS
@@ -303,7 +321,16 @@ Function Rotate-GC-Logs {
 
 Function Check-For-GC-Log {
 	if (GC_LOG){
-		$args = (,'-verbose:gc',"-Xloggc:$JBOSS_LOG_DIR/gc.log","-XX:+PrintGCDetails","-XX:+PrintGCDateStamps","-XX:+UseGCLogFileRotation","-XX:NumberOfGCLogFiles=5","-XX:GCLogFileSize=3M","-XX:-TraceClassUnloading",'-version')
+		$JAVA_9_PLUS = Check-For-Java9+
+
+		if ($JAVA_9_PLUS -eq $true)
+		{
+			$args = (,'-verbose:gc',"-Xlog:gc*:file=%JBOSS_LOG_DIR%\gc.log:time,uptimemillis:filecount=5,filesize=3M",'-version')
+		}
+		else
+		{
+			$args = (,'-verbose:gc',"-Xloggc:$JBOSS_LOG_DIR/gc.log","-XX:+PrintGCDetails","-XX:+PrintGCDateStamps","-XX:+UseGCLogFileRotation","-XX:NumberOfGCLogFiles=5","-XX:GCLogFileSize=3M","-XX:-TraceClassUnloading",'-version')
+		}
 		$OutputVariable = (&$JAVA $args )  | Out-String
 	}
 }
