@@ -424,6 +424,9 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         final List<String> cmd = new ArrayList<>();
         cmd.add("-D[Standalone]");
         cmd.addAll(getJavaOptions());
+        if (isModularJavaHome(getJavaHome())) {
+            cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);
         }

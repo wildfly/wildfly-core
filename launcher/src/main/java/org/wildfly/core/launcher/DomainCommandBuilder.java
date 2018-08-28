@@ -736,6 +736,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
         // PROCESS_CONTROLLER_JAVA_OPTS
         cmd.addAll(processControllerJavaOpts.asList());
+        if (isModularJavaHome(getJavaHome())) {
+            cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
 
         cmd.add(getBootLogArgument("process-controller.log"));
         cmd.add(getLoggingPropertiesArgument("logging.properties"));

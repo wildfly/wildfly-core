@@ -43,6 +43,9 @@ if ( $PROCESS_CONTROLLER_JAVA_OPTS -contains 'java.security.manager') {
     exit
 }
 
+$PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $PROCESS_CONTROLLER_JAVA_OPTS
+$HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $HOST_CONTROLLER_JAVA_OPTS
+
 Display-Environment
 
 $MODULE_OPTS += "-jvm"
@@ -54,6 +57,9 @@ $MODULE_OPTS += "$JBOSS_HOME"
 $PROG_ARGS = @()
 $PROG_ARGS +='-DProcessController' 
 $PROG_ARGS += $PROCESS_CONTROLLER_JAVA_OPTS
+if ($PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS -ne $null){
+	$PROG_ARGS += $PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS
+}
 $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR\process-controller.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR\logging.properties"
 $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
@@ -69,6 +75,9 @@ $PROG_ARGS += "--"
 $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR\host-controller.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR\logging.properties"
 $PROG_ARGS += $HOST_CONTROLLER_JAVA_OPTS
+if ($HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS -ne $null){
+	$PROG_ARGS += $HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS
+}
 $PROG_ARGS += "--"  
 $PROG_ARGS += "-default-jvm"
 $PROG_ARGS += $JAVA

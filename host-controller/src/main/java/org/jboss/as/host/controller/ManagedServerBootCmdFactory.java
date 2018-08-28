@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,8 +60,8 @@ import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
+import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.process.CommandLineConstants;
-import org.jboss.as.process.DefaultJvmUtils;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
@@ -74,6 +75,7 @@ import org.jboss.dmr.Property;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ManagedServerBootCmdFactory implements ManagedServerBootConfiguration {
 
@@ -122,6 +124,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
     private final boolean suspend;
+    private JvmType jvmType;
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver, boolean suspend) {
         this.serverName = serverName;
@@ -257,7 +260,30 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
     /** {@inheritDoc} */
     @Override
-    public List<String> getServerLaunchCommand(boolean includeProcessId) {
+    public List<String> getServerLaunchCommand() {
+        return getServerLaunchCommand(true, true);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean compareServerLaunchCommand(ManagedServerBootConfiguration other) {
+        boolean comparable = other instanceof ManagedServerBootCmdFactory;
+        if (comparable) {
+            ManagedServerBootCmdFactory otherImpl = (ManagedServerBootCmdFactory) other;
+            comparable = getJvmType(false).equals(otherImpl.getJvmType(false))
+                    && getServerLaunchCommand(false, false).equals(otherImpl.getServerLaunchCommand(false, false));
+        }
+        return comparable;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Map<String, String> getServerLaunchProperties() {
+        List<String> launchCommand = getServerLaunchCommand(true, false);
+        return parseLaunchProperties(launchCommand);
+    }
+
+    private List<String> getServerLaunchCommand(boolean includeProcessId, boolean forLaunch) {
         final List<String> command = new ArrayList<String>();
 
         if (jvmElement.getLaunchCommand() != null) {
@@ -266,7 +292,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.addAll(commandPrefix);
         }
 
-        command.add(getJavaCommand());
+        JvmType localJvmType = getJvmType(forLaunch);
+
+        command.add(localJvmType.getJavaExecutable());
+
+        command.addAll(localJvmType.getDefaultArguments());
 
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
 
@@ -274,7 +304,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
         }
 
-        JvmOptionsBuilderFactory.getInstance().addOptions(jvmElement, command);
+        JvmOptionsBuilderFactory.getInstance(localJvmType).addOptions(jvmElement, command);
 
         Map<String, String> bootTimeProperties = getAllSystemProperties(true);
         // Add in properties passed in to the ProcessController command line
@@ -415,19 +445,25 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         return processId;
     }
 
-    private String getJavaCommand() {
-        String javaHome = jvmElement.getJavaHome();
-        if (javaHome == null) {
-            if(environment.getDefaultJVM() != null) {
-                String defaultJvm = environment.getDefaultJVM().getAbsolutePath();
-                if (!defaultJvm.equals("java") || (defaultJvm.equals("java") && System.getenv("JAVA_HOME") != null)) {
-                    return defaultJvm;
+    private synchronized JvmType getJvmType(boolean forLaunch) {
+        JvmType result = this.jvmType;
+        if (result == null) {
+            String javaHome = jvmElement.getJavaHome();
+            if (javaHome == null) {
+                if (environment.getDefaultJVM() != null) {
+                    String javaExecutable = environment.getDefaultJVM().getAbsolutePath();
+                    result = JvmType.createFromJavaExecutable(javaExecutable, forLaunch);
+                } else {
+                    result = JvmType.createFromSystemProperty(forLaunch);
                 }
+            } else {
+                result = JvmType.createFromJavaHome(javaHome, forLaunch);
             }
-            javaHome = DefaultJvmUtils.getCurrentJvmHome();
+            if (forLaunch) {
+                this.jvmType = result;
+            } // else don't cache it as we don't know if it's valid and may not add correct default java opts
         }
-
-        return DefaultJvmUtils.findJavaExecutable(javaHome);
+        return result;
     }
 
     private ArrayList<String> getLaunchPrefixCommands(){
@@ -532,6 +568,21 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             path = new File(path, segment);
         }
         return path.getAbsoluteFile();
+    }
+
+    private static Map<String, String> parseLaunchProperties(final List<String> commands) {
+        final Map<String, String> result = new LinkedHashMap<String, String>();
+        for (String cmd : commands) {
+            if (cmd.startsWith("-D")) {
+                final String[] parts = cmd.substring(2).split("=");
+                if (parts.length == 2) {
+                    result.put(parts[0], parts[1]);
+                } else if (parts.length == 1) {
+                    result.put(parts[0], "true");
+                }
+            }
+        }
+        return result;
     }
 
 }
