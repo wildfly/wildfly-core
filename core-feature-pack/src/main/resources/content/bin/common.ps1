@@ -103,26 +103,29 @@ Function Get-Java-Opts {
 
 Function Get-Default-Modular-Jvm-Options {
 Param(
-   [Parameter(Mandatory=$true)]
    [string[]]$opts
 
 ) #end param
-
-	$DEFAULT_MODULAR_JVM_OPTIONS = ""
-	& $JAVA --add-modules=java.se -version 2> $nul
-	if ($LASTEXITCODE -eq 0) {
-		for($i=0; $i -lt $opts.Count; $i++){
-			$arg = $Params[$i]
-			if ($arg -contains "--add-modules") {
-				return $DEFAULT_MODULAR_JVM_OPTIONS
-			}
-		}
-		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
-		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-		$DEFAULT_MODULAR_JVM_OPTIONS += "--add-modules=java.se"
-	}
-	return $DEFAULT_MODULAR_JVM_OPTIONS
+    if($PRESERVE_JAVA_OPTS -eq 'true') {
+        return $null
+    }
+    $DEFAULT_MODULAR_JVM_OPTIONS = @()
+    & $JAVA --add-modules=java.se -version 2> $nul
+    if ($LASTEXITCODE -eq 0) {
+        if ($opts -ne $null) {
+              for($i=0; $i -lt $opts.Count; $i++) {
+                  $arg = $opts[$i]
+                  if ($arg -contains "--add-modules") {
+                      return $DEFAULT_MODULAR_JVM_OPTIONS
+                  }
+              }
+        }
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-modules=java.se"
+    }
+    return $DEFAULT_MODULAR_JVM_OPTIONS
 }
 
 Function Display-Array($array){

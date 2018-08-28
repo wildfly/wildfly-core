@@ -9,7 +9,7 @@
 DIRNAME=`dirname "$0"`
 GREP="grep"
 
-"$DIRNAME/common.sh"
+. "$DIRNAME/common.sh"
 
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
