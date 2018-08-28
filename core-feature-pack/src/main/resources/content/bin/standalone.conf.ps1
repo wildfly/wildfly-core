@@ -31,9 +31,10 @@ if (-Not(test-path env:JBOSS_MODULES_SYSTEM_PKGS )) {
   $JBOSS_MODULES_SYSTEM_PKGS="org.jboss.byteman"
 }
 
+#$PRESERVE_JAVA_OPTS=$true
+
 # Set default values if none have been set by the user
 if (-Not $JAVA_OPTS) {
-    $PRESERVE_JAVA_OPTS=true
 
     $JAVA_OPTS = @()
 

@@ -119,8 +119,6 @@ if "%DEBUG_MODE%" == "true" (
   )
 )
 
-set DIRNAME=
-
 rem Setup JBoss specific properties
 set "JAVA_OPTS=-Dprogram.name=%PROGNAME% %JAVA_OPTS%"
 
@@ -142,6 +140,8 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
+"%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
   rem Add -client to the JVM options, if supported (32 bit VM), and not overriden
   echo "%JAVA_OPTS%" | findstr /I \-server > nul
@@ -152,7 +152,6 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
     )
   )
 )
-
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
@@ -242,6 +241,12 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
         )
        )
     )
+
+    rem set default modular jvm parameters
+    setlocal EnableDelayedExpansion
+    call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!JAVA_OPTS!"
+    set "JAVA_OPTS=!JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
+    setlocal DisableDelayedExpansion
 )
 
 

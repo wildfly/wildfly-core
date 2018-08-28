@@ -4,6 +4,8 @@ DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"
 
+. "$DIRNAME/common.sh"
+
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
 
@@ -251,6 +253,12 @@ MODULE_OPTS=""
 if [ "$SECMGR" = "true" ]; then
     MODULE_OPTS="$MODULE_OPTS -secmgr";
 fi
+
+# Set default modular JVM options
+setDefaultModularJvmOptions $PROCESS_CONTROLLER_JAVA_OPTS
+PROCESS_CONTROLLER_JAVA_OPTS="$PROCESS_CONTROLLER_JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
+setDefaultModularJvmOptions $HOST_CONTROLLER_JAVA_OPTS
+HOST_CONTROLLER_JAVA_OPTS="$HOST_CONTROLLER_JAVA_OPTS $DEFAULT_MODULAR_JVM_OPTIONS"
 
 # Display our environment
 echo "========================================================================="
