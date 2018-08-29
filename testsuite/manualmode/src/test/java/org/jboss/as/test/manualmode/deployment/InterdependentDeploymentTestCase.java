@@ -84,129 +84,131 @@ public class InterdependentDeploymentTestCase {
 
     @Test
     public void test() throws Exception {
-
-        final JavaArchive deplA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
-                Collections.singletonMap("interrelated-a.jar", "a"));
+        ModelNode steps;
         Map<String, JavaArchive> dependents = new HashMap<>();
-        dependents.put("b", getDependentDeployment("b", ServiceActivatorDeploymentB.class, "interrelated-a.jar"));
-        dependents.put("c", getDependentDeployment("c", ServiceActivatorDeploymentC.class, "interrelated-a.jar"));
-        dependents.put("d", getDependentDeployment("d", ServiceActivatorDeploymentD.class, "interrelated-a.jar","interrelated-b.jar"));
-        dependents.put("e", getDependentDeployment("e", ServiceActivatorDeploymentE.class, "interrelated-a.jar","interrelated-d.jar"));
-        dependents.put("f", getDependentDeployment("f", ServiceActivatorDeploymentF.class, "interrelated-a.jar","interrelated-c.jar","interrelated-d.jar"));
+        try {
+            final JavaArchive deplA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
+                    Collections.singletonMap("interrelated-a.jar", "a"));
+            dependents.put("b", getDependentDeployment("b", ServiceActivatorDeploymentB.class, "interrelated-a.jar"));
+            dependents.put("c", getDependentDeployment("c", ServiceActivatorDeploymentC.class, "interrelated-a.jar"));
+            dependents.put("d", getDependentDeployment("d", ServiceActivatorDeploymentD.class, "interrelated-a.jar", "interrelated-b.jar"));
+            dependents.put("e", getDependentDeployment("e", ServiceActivatorDeploymentE.class, "interrelated-a.jar", "interrelated-d.jar"));
+            dependents.put("f", getDependentDeployment("f", ServiceActivatorDeploymentF.class, "interrelated-a.jar", "interrelated-c.jar", "interrelated-d.jar"));
 
-        deplA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
-                new PropertyPermission("interrelated-a.jar", "write"),
-                new PropertyPermission("interrelated-b.jar", "write"),
-                new PropertyPermission("interrelated-c.jar", "write"),
-                new PropertyPermission("interrelated-d.jar", "write"),
-                new PropertyPermission("interrelated-e.jar", "write"),
-                new PropertyPermission("interrelated-f.jar", "write")
-        ), "permissions.xml");
+            deplA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                    new PropertyPermission("interrelated-a.jar", "write"),
+                    new PropertyPermission("interrelated-b.jar", "write"),
+                    new PropertyPermission("interrelated-c.jar", "write"),
+                    new PropertyPermission("interrelated-d.jar", "write"),
+                    new PropertyPermission("interrelated-e.jar", "write"),
+                    new PropertyPermission("interrelated-f.jar", "write")
+            ), "permissions.xml");
 
-        List<InputStream> streams = new ArrayList<>();
-        ModelNode add = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
-        ModelNode steps = add.get("steps");
-        streams.add(deplA.as(ZipExporter.class).exportAsInputStream());
-        steps.add(createDeployStep("a", streams.size() - 1));
-        for (Map.Entry<String, JavaArchive> entry : dependents.entrySet()) {
-            streams.add(entry.getValue().as(ZipExporter.class).exportAsInputStream());
-            steps.add(createDeployStep(entry.getKey(), streams.size() - 1));
-        }
-
-        ModelNode response = managementClient.getControllerClient().execute(Operation.Factory.create(add, streams, true));
-        Assert.assertEquals(response.toString(), "success", response.get("outcome").asString());
-
-        validateDeployment("a", "a");
-
-        for (String dependent : dependents.keySet()) {
-            validateDeployment(dependent, dependent);
-        }
-
-        ModelNode undeployOp = Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar"));
-        // We can't undeploy without rolling back as the other deployments depend on this one
-        // But we don't want to roll back as we want to check how this is handled
-        undeployOp.get("operation-headers", "rollback-on-runtime-failure").set(false);
-        response = managementClient.getControllerClient().execute(undeployOp);
-        Assert.assertEquals(response.toString(), "failed", response.get("outcome").asString());
-        Assert.assertFalse(response.toString(), response.get("rolled-back").asBoolean(true));
-
-        validateNoDeployment("a");
-
-        for (String dependent : dependents.keySet()) {
-            validateNoDeployment(dependent);
-        }
-
-        managementClient.executeForResult(Util.createEmptyOperation("deploy", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
-
-        validateDeployment("a", "a");
-
-        for (String dependent : dependents.keySet()) {
-            validateDeployment(dependent, dependent);
-        }
-
-        // USE A SYSTEM PROPERTY TO EXECUTE full-replace-deployment repeatedly
-        int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "100"));
-        int blockingTime = TimeoutUtil.adjust(30); // set this to fail faster if it fails
-        for (int i = 0; i < loops; i++) {
-
-            try {
-                String newVal = "a" + i;
-                final JavaArchive replA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
-                        Collections.singletonMap("interrelated-a.jar", newVal));
-
-                replA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
-                        new PropertyPermission("interrelated-a.jar", "write"),
-                        new PropertyPermission("interrelated-b.jar", "write"),
-                        new PropertyPermission("interrelated-c.jar", "write"),
-                        new PropertyPermission("interrelated-d.jar", "write"),
-                        new PropertyPermission("interrelated-e.jar", "write"),
-                        new PropertyPermission("interrelated-f.jar", "write")
-                ), "permissions.xml");
-
-                ModelNode frd = Util.createEmptyOperation("full-replace-deployment", PathAddress.EMPTY_ADDRESS);
-                frd.get("name").set("interrelated-a.jar");
-                frd.get("content").add().get("input-stream-index").set(0);
-                frd.get("enabled").set(true);
-                frd.get("operation-headers", "blocking-timeout").set(blockingTime);
-
-                response = managementClient.getControllerClient().execute(Operation.Factory.create(frd,
-                        Collections.singletonList(replA.as(ZipExporter.class).exportAsInputStream()), true));
-                Assert.assertEquals("Response to iteration " + i + " -- " + response.toString(), "success", response.get("outcome").asString());
-
-                validateDeployment("a", newVal);
-
-                for (String dependent : dependents.keySet()) {
-                    validateDeployment(dependent, dependent);
-                }
-            } catch (AssertionError ae) {
-                dumpServiceDetails();
-                throw ae;
+            List<InputStream> streams = new ArrayList<>();
+            ModelNode add = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+            steps = add.get("steps");
+            streams.add(deplA.as(ZipExporter.class).exportAsInputStream());
+            steps.add(createDeployStep("a", streams.size() - 1));
+            for (Map.Entry<String, JavaArchive> entry : dependents.entrySet()) {
+                streams.add(entry.getValue().as(ZipExporter.class).exportAsInputStream());
+                steps.add(createDeployStep(entry.getKey(), streams.size() - 1));
             }
+
+            ModelNode response = managementClient.getControllerClient().execute(Operation.Factory.create(add, streams, true));
+            Assert.assertEquals(response.toString(), "success", response.get("outcome").asString());
+
+            validateDeployment("a", "a");
+
+            for (String dependent : dependents.keySet()) {
+                validateDeployment(dependent, dependent);
+            }
+
+            ModelNode undeployOp = Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar"));
+            // We can't undeploy without rolling back as the other deployments depend on this one
+            // But we don't want to roll back as we want to check how this is handled
+            undeployOp.get("operation-headers", "rollback-on-runtime-failure").set(false);
+            response = managementClient.getControllerClient().execute(undeployOp);
+            Assert.assertEquals(response.toString(), "failed", response.get("outcome").asString());
+            Assert.assertFalse(response.toString(), response.get("rolled-back").asBoolean(true));
+
+            validateNoDeployment("a");
+
+            for (String dependent : dependents.keySet()) {
+                validateNoDeployment(dependent);
+            }
+
+            managementClient.executeForResult(Util.createEmptyOperation("deploy", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
+
+            validateDeployment("a", "a");
+
+            for (String dependent : dependents.keySet()) {
+                validateDeployment(dependent, dependent);
+            }
+
+            // USE A SYSTEM PROPERTY TO EXECUTE full-replace-deployment repeatedly
+            int loops = Integer.parseInt(System.getProperty("InterdependentDeploymentTestCase.count", "100"));
+            int blockingTime = TimeoutUtil.adjust(30); // set this to fail faster if it fails
+            for (int i = 0; i < loops; i++) {
+
+                try {
+                    String newVal = "a" + i;
+                    final JavaArchive replA = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("interrelated-a.jar",
+                            Collections.singletonMap("interrelated-a.jar", newVal));
+
+                    replA.addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(
+                            new PropertyPermission("interrelated-a.jar", "write"),
+                            new PropertyPermission("interrelated-b.jar", "write"),
+                            new PropertyPermission("interrelated-c.jar", "write"),
+                            new PropertyPermission("interrelated-d.jar", "write"),
+                            new PropertyPermission("interrelated-e.jar", "write"),
+                            new PropertyPermission("interrelated-f.jar", "write")
+                    ), "permissions.xml");
+
+                    ModelNode frd = Util.createEmptyOperation("full-replace-deployment", PathAddress.EMPTY_ADDRESS);
+                    frd.get("name").set("interrelated-a.jar");
+                    frd.get("content").add().get("input-stream-index").set(0);
+                    frd.get("enabled").set(true);
+                    frd.get("operation-headers", "blocking-timeout").set(blockingTime);
+
+                    response = managementClient.getControllerClient().execute(Operation.Factory.create(frd,
+                            Collections.singletonList(replA.as(ZipExporter.class).exportAsInputStream()), true));
+                    Assert.assertEquals("Response to iteration " + i + " -- " + response.toString(), "success", response.get("outcome").asString());
+
+                    validateDeployment("a", newVal);
+
+                    for (String dependent : dependents.keySet()) {
+                        validateDeployment(dependent, dependent);
+                    }
+                } catch (AssertionError ae) {
+                    dumpServiceDetails();
+                    throw ae;
+                }
+            }
+        } finally {
+            ModelNode undeploy = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+            steps = undeploy.get("steps");
+            steps.add(Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
+            for (String dependent : dependents.keySet()) {
+                steps.add(Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-" + dependent + ".jar")));
+            }
+
+            managementClient.executeForResult(undeploy);
+
+            validateNoDeployment("a");
+
+            for (String dependent : dependents.keySet()) {
+                validateNoDeployment(dependent);
+            }
+
+            ModelNode remove = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+            steps = remove.get("steps");
+            steps.add(Util.createEmptyOperation("remove", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
+            for (String dependent : dependents.keySet()) {
+                steps.add(Util.createEmptyOperation("remove", PathAddress.pathAddress("deployment", "interrelated-" + dependent + ".jar")));
+            }
+
+            managementClient.executeForResult(remove);
         }
-
-        ModelNode undeploy = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
-        steps = undeploy.get("steps");
-        steps.add(Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
-        for (String dependent : dependents.keySet()) {
-            steps.add(Util.createEmptyOperation("undeploy", PathAddress.pathAddress("deployment", "interrelated-" + dependent + ".jar")));
-        }
-
-        managementClient.executeForResult(undeploy);
-
-        validateNoDeployment("a");
-
-        for (String dependent : dependents.keySet()) {
-            validateNoDeployment(dependent);
-        }
-
-        ModelNode remove = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
-        steps = remove.get("steps");
-        steps.add(Util.createEmptyOperation("remove", PathAddress.pathAddress("deployment", "interrelated-a.jar")));
-        for (String dependent : dependents.keySet()) {
-            steps.add(Util.createEmptyOperation("remove", PathAddress.pathAddress("deployment", "interrelated-" + dependent + ".jar")));
-        }
-
-        managementClient.executeForResult(remove);
 
     }
 
