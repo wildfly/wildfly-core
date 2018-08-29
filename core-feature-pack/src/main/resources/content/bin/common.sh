@@ -1,6 +1,6 @@
 #!/bin/sh -x
 
-function setDefaultModularJvmOptions() {
+setDefaultModularJvmOptions() {
   $JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
   if [ "$MODULAR_JDK" = "true" ]; then
     DEFAULT_MODULAR_JVM_OPTIONS=`echo $1 | $GREP "\-\-add\-modules"`
