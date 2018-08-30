@@ -39,8 +39,8 @@
       <artifactId>jsch</artifactId>
       <licenses>
         <license>
-          <name>BSD style licence</name>
-          <url>http://www.jcraft.com/jsch/LICENSE.txt</url>
+          <name>BSD 3-Clause "New" or "Revised" License</name>
+          <url>http://www.opensource.org/licenses/BSD-3-Clause</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
