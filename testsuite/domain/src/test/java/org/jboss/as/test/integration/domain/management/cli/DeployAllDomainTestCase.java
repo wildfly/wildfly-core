@@ -187,10 +187,9 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
             // Check error message
             assertThat("Error message doesn't contains expected message information!",
                     ex.getMessage(),
-                    allOf(containsString("WFLYCTL0216: Management resource"),
+                    allOf(containsString("WFLYCTL0216"),
                             containsString(sgOne),
-                            containsString(cliTestApp2War.getName()),
-                            containsString("not found")));
+                            containsString(cliTestApp2War.getName())));
             // Verification wrong command execution fail - success
         }
 
@@ -329,10 +328,9 @@ public class DeployAllDomainTestCase extends AbstractCliTestBase {
             // Check error message
             assertThat("Error message doesn't contains expected message information!",
                     ex.getMessage(),
-                    allOf(containsString("WFLYCTL0216: Management resource"),
+                    allOf(containsString("WFLYCTL0216:"),
                             containsString(sgOne),
-                            containsString(cliTestApp2War.getName()),
-                            containsString("not found")));
+                            containsString(cliTestApp2War.getName())));
             // Verification wrong command execution fail - success
         }
 
