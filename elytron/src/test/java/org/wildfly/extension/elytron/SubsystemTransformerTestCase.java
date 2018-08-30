@@ -71,6 +71,12 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, version)
                 .addMavenResourceURL(mavenResourceURLs)
                 .skipReverseControllerCheck()
+                .addParentFirstClassPattern("org.jboss.as.controller.logging.ControllerLogger*")
+                .addParentFirstClassPattern("org.jboss.as.controller.PathAddress")
+                .addParentFirstClassPattern("org.jboss.as.controller.PathElement")
+                .addParentFirstClassPattern("org.jboss.as.server.logging.*")
+                .addParentFirstClassPattern("org.jboss.logging.*")
+                .addParentFirstClassPattern("org.jboss.dmr.*")
                 .dontPersistXml();
 
         KernelServices services = builder.build();
@@ -102,6 +108,12 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         ));
         builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, elytronVersion)
                 .addMavenResourceURL(controllerVersion.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controllerVersion.getCoreVersion())
+                .addParentFirstClassPattern("org.jboss.as.controller.logging.ControllerLogger*")
+                .addParentFirstClassPattern("org.jboss.as.controller.PathAddress")
+                .addParentFirstClassPattern("org.jboss.as.controller.PathElement")
+                .addParentFirstClassPattern("org.jboss.as.server.logging.*")
+                .addParentFirstClassPattern("org.jboss.logging.*")
+                .addParentFirstClassPattern("org.jboss.dmr.*")
                 .dontPersistXml();
 
         KernelServices mainServices = builder.build();
