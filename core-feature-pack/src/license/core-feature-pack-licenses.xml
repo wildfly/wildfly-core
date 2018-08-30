@@ -122,11 +122,11 @@
       </licenses>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jgit</groupId>
-        <artifactId>org.eclipse.jgit</artifactId>
-        <licenses>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <licenses>
         <license>
-          <name>Eclipse Distribution License - v 1.0</name>
+          <name>Eclipse Distribution License, Version 1.0</name>
           <url>http://repository.jboss.org/licenses/edl-1.0.txt</url>
           <distribution>repo</distribution>
         </license>
