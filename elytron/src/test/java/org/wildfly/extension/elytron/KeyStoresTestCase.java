@@ -1080,16 +1080,16 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     @Test
     public void testShouldRenewCertificateExpiresWithinGivenDays() throws Exception {
         final ZonedDateTime notValidBeforeDate = ZonedDateTime.now();
-        final ZonedDateTime notValidAfterDate = ZonedDateTime.now().plusDays(60);
+        final ZonedDateTime notValidAfterDate = notValidBeforeDate.plusDays(60);
         ModelNode result = shouldRenewCertificate(notValidBeforeDate, notValidAfterDate, 90);
         assertTrue(result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).asBoolean());
-        assertEquals(59, result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).asLong());
+        assertEquals(60, result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).asLong());
     }
 
     @Test
     public void testShouldRenewCertificateDoesNotExpireWithinGivenDays() throws Exception {
         final ZonedDateTime notValidBeforeDate = ZonedDateTime.now();
-        final ZonedDateTime notValidAfterDate = ZonedDateTime.now().plusDays(30);
+        final ZonedDateTime notValidAfterDate = notValidBeforeDate.plusDays(30);
         ModelNode result = shouldRenewCertificate(notValidBeforeDate, notValidAfterDate, 15);
         assertFalse(result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).asBoolean());
         assertEquals(29, result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).asLong());

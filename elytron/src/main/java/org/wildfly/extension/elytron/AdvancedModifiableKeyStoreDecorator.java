@@ -50,7 +50,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -940,9 +939,9 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 if (certificate == null) {
                     throw ROOT_LOGGER.unableToObtainCertificate(alias);
                 }
-                Date current = new Date();
-                Date notAfter = certificate.getNotAfter();
-                long difference = notAfter.getTime() - current.getTime();
+                ZonedDateTime current = ZonedDateTime.now();
+                ZonedDateTime notAfter = ZonedDateTime.ofInstant(certificate.getNotAfter().toInstant(), ZoneId.of("UTC"));
+                long difference = notAfter.toInstant().toEpochMilli() - current.toInstant().toEpochMilli();
                 long daysToExpiry = 0;
                 ModelNode result = context.getResult();
                 if (difference <= 0) {
