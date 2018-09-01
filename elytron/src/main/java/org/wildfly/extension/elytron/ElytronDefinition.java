@@ -32,12 +32,18 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import javax.security.auth.message.config.AuthConfigFactory;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -73,10 +79,13 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.security.SecurityContextAssociation;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.Version;
+import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
+import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
@@ -84,6 +93,8 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
 import org.wildfly.security.authz.RoleMapper;
+import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
  * Top level {@link ResourceDefinition} for the Elytron subsystem.
@@ -120,6 +131,13 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .setElementValidator(new StringLengthValidator(1))
             .setAllowExpression(true)
             .build();
+
+    static final SimpleAttributeDefinition REGISTER_JASPI_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REGISTER_JASPI_FACTORY, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(true))
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     static final PropertiesAttributeDefinition SECURITY_PROPERTIES = new PropertiesAttributeDefinition.Builder("security-properties", true)
             .build();
 
@@ -226,6 +244,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(HttpServerDefinitions.getProviderHttpServerMechanismFactoryDefinition());
         resourceRegistration.registerSubModel(HttpServerDefinitions.getServiceLoaderServerMechanismFactoryDefinition());
 
+        // JSR-196 JASPI
+        resourceRegistration.registerSubModel(JaspiDefinition.getJaspiServletConfigurationDefinition());
+
         // SASL Mechanisms
         resourceRegistration.registerSubModel(SaslServerDefinitions.getAggregateSaslServerFactoryDefinition());
         resourceRegistration.registerSubModel(SaslServerDefinitions.getConfigurableSaslServerFactoryDefinition());
@@ -259,7 +280,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS);
+        OperationStepHandler writeHandler = new ReloadRequiredWriteAttributeHandler(INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, REGISTER_JASPI_FACTORY);
         resourceRegistration.registerReadWriteAttribute(INITIAL_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(FINAL_PROVIDERS, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(DISALLOWED_PROVIDERS, null, writeHandler);
@@ -283,6 +304,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         });
         resourceRegistration.registerReadWriteAttribute(SECURITY_PROPERTIES, null, new SecurityPropertiesWriteHandler(SECURITY_PROPERTIES));
+        resourceRegistration.registerReadWriteAttribute(REGISTER_JASPI_FACTORY, null, writeHandler);
     }
 
     @Deprecated
@@ -313,6 +335,26 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .install();
     }
 
+    private static void registerAuthConfigFactory(final AuthConfigFactory authConfigFactory) {
+        doPrivileged((PrivilegedAction<Void>) () -> {
+            AuthConfigFactory.setFactory(authConfigFactory);
+            return null;
+        });
+    }
+
+    private static AuthConfigFactory getAuthConfigFactory() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(ElytronDefinition.class.getClassLoader());
+            return AuthConfigFactory.getFactory();
+        } catch (Exception e) {
+            ROOT_LOGGER.trace("Unable to load default AuthConfigFactory.", e);
+            return null;
+        } finally {
+            Thread.currentThread().setContextClassLoader(classLoader);
+        }
+    }
+
     private static SecurityPropertyService uninstallSecurityPropertyService(OperationContext context) {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
 
@@ -331,7 +373,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
     private static class ElytronAdd extends AbstractBoottimeAddStepHandler implements ElytronOperationStepHandler {
 
         private ElytronAdd() {
-            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, SECURITY_PROPERTIES);
+            super(ELYTRON_RUNTIME_CAPABILITY, DEFAULT_AUTHENTICATION_CONTEXT, INITIAL_PROVIDERS, FINAL_PROVIDERS, DISALLOWED_PROVIDERS, SECURITY_PROPERTIES, REGISTER_JASPI_FACTORY);
         }
 
         @Override
@@ -368,8 +410,18 @@ class ElytronDefinition extends SimpleResourceDefinition {
                         context.getCapabilityServiceName(PROVIDERS_CAPABILITY, finalProviders, Provider[].class),
                         Provider[].class, prs.getFinalProviders());
             }
-
             builder.install();
+
+            if (registerJaspiFactory(context, model)) {
+                final AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
+                if (authConfigFactory != null) {
+                    // TODO This wrapping is only temporary to allow us to delegate to the PicketBox impl, at a later point there really should only
+                    // be one AuthConfigFactory at a time.
+                    registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
+                } else {
+                    registerAuthConfigFactory(new ElytronAuthConfigFactory());
+                }
+            }
 
             if (context.isNormalServer()) {
                 context.addStep(new AbstractDeploymentChainStep() {
@@ -381,6 +433,17 @@ class ElytronDefinition extends SimpleResourceDefinition {
                     }
                 }, Stage.RUNTIME);
             }
+        }
+
+        /*
+         * Test if we should register our own AuthConfigFactory.
+         *
+         * If a System property has been set it will automatically be loaded on the first use so we don't need to register it.
+         */
+        private boolean registerJaspiFactory(final OperationContext context, final ModelNode model) throws OperationFailedException {
+            String jaspiFactory = doPrivileged(new ReadPropertyAction(AuthConfigFactory.DEFAULT_FACTORY_SECURITY_PROPERTY));
+
+            return jaspiFactory == null && REGISTER_JASPI_FACTORY.resolveModelAttribute(context, model).asBoolean();
         }
 
         @Override
@@ -405,6 +468,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             if (context.isResourceServiceRestartAllowed()) {
+                registerAuthConfigFactory(null);
                 SecurityPropertyService securityPropertyService = uninstallSecurityPropertyService(context);
                 if (securityPropertyService != null) {
                     context.attach(SECURITY_PROPERTY_SERVICE_KEY, securityPropertyService);
@@ -428,4 +492,16 @@ class ElytronDefinition extends SimpleResourceDefinition {
         }
 
     }
+
+    private static final Supplier<Boolean> ALLOW_DELEGATION = new Supplier<Boolean>() {
+
+        @Override
+        public Boolean get() {
+            if (WildFlySecurityManager.isChecking()) {
+                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityContextAssociation.getSecurityContext() != null);
+            } else {
+                return SecurityContextAssociation.getSecurityContext() != null;
+            }
+        }
+    };
 }

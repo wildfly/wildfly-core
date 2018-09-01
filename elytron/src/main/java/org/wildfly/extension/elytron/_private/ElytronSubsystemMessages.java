@@ -542,4 +542,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
             " information associated with this existing account, use %s. To change the key associated with this existing account, use %s.")
     OperationFailedException certificateAuthorityAccountAlreadyExists(String updateAccount, String changeAccountKey);
 
+    @Message(id = 1057, value = "Failed to create ServerAuthModule [%s]")
+    RuntimeException failedToCreateServerAuthModule(String className, @Cause Exception cause);
+
 }

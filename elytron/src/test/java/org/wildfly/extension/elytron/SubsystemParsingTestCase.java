@@ -134,6 +134,11 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         standardSubsystemTest("credential-stores.xml");
     }
 
+    @Test
+    public void testParseAndMarshalModel_JASPI() throws Exception {
+        standardSubsystemTest("jaspi.xml");
+    }
+
     @Override
     protected AdditionalInitialization createAdditionalInitialization() {
         return AdditionalInitialization.MANAGEMENT;

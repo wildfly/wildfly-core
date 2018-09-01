@@ -23,6 +23,9 @@
   -->
 <module xmlns="urn:jboss:module:1.8" name="org.wildfly.security.elytron-private">
     <properties>
+        <!--
+             Although this module is private see the module 'org.wildfly.security.elytron' for the re-exported public API.
+         -->
         <property name="jboss.api" value="private"/>
     </properties>
 
@@ -52,6 +55,8 @@
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
         <module name="javax.security.jacc.api" optional="true"/>
+        <module name="javax.security.auth.message.api"/>
+        <module name="javax.servlet.api" optional="true"/>
         <module name="org.wildfly.common"/>
         <!--
         This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other

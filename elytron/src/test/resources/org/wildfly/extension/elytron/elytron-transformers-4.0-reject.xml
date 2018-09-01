@@ -1,0 +1,9 @@
+<subsystem xmlns="urn:wildfly:elytron:5.0">
+    <jaspi>
+        <jaspi-configuration name="minimal">
+            <server-auth-modules>
+                <server-auth-module class-name="org.wildfly.Test3" />
+            </server-auth-modules>
+        </jaspi-configuration>
+    </jaspi>
+</subsystem>
