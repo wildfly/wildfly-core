@@ -72,6 +72,7 @@
         <module>vault-test-feature-pack</module>
         <module>elytron</module>
         <module>embedded</module>
+        <module>scripts</module>
     </modules>
 
 
