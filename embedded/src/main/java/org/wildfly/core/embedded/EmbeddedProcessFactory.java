@@ -173,14 +173,21 @@ public class EmbeddedProcessFactory {
         }
 
         // Get a handle to the method which will create the server
-        final Method createServerMethod;
+        boolean useClMethod = true;
+        Method createServerMethod;
         try {
             createServerMethod = embeddedServerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class, ClassLoader.class);
         } catch (final NoSuchMethodException nsme) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedServerFactoryClass.getName());
+            useClMethod = false;
+            try {
+                // Check if we're using a version of WildFly Core before 6.0 which did not include the create method that accepts a class loader
+                createServerMethod = embeddedServerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class);
+            } catch (final NoSuchMethodException e) {
+                throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(e, "create", embeddedServerFactoryClass.getName());
+            }
         }
         // Create the server
-        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, configuration, embeddedModuleCL);
+        Object standaloneServerImpl = createManagedProcess(ProcessType.STANDALONE_SERVER, createServerMethod, configuration, useClMethod ? embeddedModuleCL : null);
         return new EmbeddedManagedProcessImpl(standaloneServerClass, standaloneServerImpl, context);
     }
 
@@ -264,15 +271,22 @@ public class EmbeddedProcessFactory {
         }
 
         // Get a handle to the method which will create the server
-        final Method createServerMethod;
+        boolean useClMethod = true;
+        Method createServerMethod;
         try {
             createServerMethod = embeddedHostControllerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class, ClassLoader.class);
         } catch (final NoSuchMethodException nsme) {
-            throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, "create", embeddedHostControllerFactoryClass.getName());
+            useClMethod = false;
+            try {
+                // Check if we're using a version of WildFly Core before 6.0 which did not include the create method that accepts a class loader
+                createServerMethod = embeddedHostControllerFactoryClass.getMethod("create", File.class, ModuleLoader.class, Properties.class, Map.class, String[].class);
+            } catch (final NoSuchMethodException e) {
+                throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(e, "create", embeddedHostControllerFactoryClass.getName());
+            }
         }
 
         // Create the server
-        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration, embeddedModuleCL);
+        Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration, useClMethod ? embeddedModuleCL : null);
         return new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context);
     }
 
@@ -293,7 +307,11 @@ public class EmbeddedProcessFactory {
             Properties sysprops = getSystemPropertiesPrivileged();
             Map<String, String> sysenv = getSystemEnvironmentPrivileged();
             String[] args = configuration.getCommandArguments();
-            serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args, embeddedModuleCL);
+            if (embeddedModuleCL == null) {
+                serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args);
+            } else {
+                serverImpl = createServerMethod.invoke(null, configuration.getJBossHome().toFile(), configuration.getModuleLoader(), sysprops, sysenv, args, embeddedModuleCL);
+            }
         } catch (final InvocationTargetException ite) {
             if (embeddedType == ProcessType.HOST_CONTROLLER) {
                 throw EmbeddedLogger.ROOT_LOGGER.cannotCreateHostController(ite.getCause(), createServerMethod);
