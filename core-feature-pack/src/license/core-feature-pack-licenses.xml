@@ -39,8 +39,8 @@
       <artifactId>jsch</artifactId>
       <licenses>
         <license>
-          <name>BSD style licence</name>
-          <url>http://www.jcraft.com/jsch/LICENSE.txt</url>
+          <name>BSD 3-Clause "New" or "Revised" License</name>
+          <url>http://www.opensource.org/licenses/BSD-3-Clause</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -50,8 +50,8 @@
       <artifactId>jzlib</artifactId>
       <licenses>
         <license>
-          <name>BSD style licence</name>
-          <url>http://www.jcraft.com/jzlib/LICENSE.txt</url>
+          <name>BSD 3-Clause "New" or "Revised" License</name>
+          <url>http://www.opensource.org/licenses/BSD-3-Clause</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -79,6 +79,39 @@
         <license>
           <name>GNU General Public License v2.0 only</name>
           <url>http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.aesh</groupId>
+      <artifactId>aesh</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.aesh</groupId>
+      <artifactId>aesh-extensions</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.aesh</groupId>
+      <artifactId>aesh-readline</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -122,11 +155,11 @@
       </licenses>
     </dependency>
     <dependency>
-        <groupId>org.eclipse.jgit</groupId>
-        <artifactId>org.eclipse.jgit</artifactId>
-        <licenses>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <licenses>
         <license>
-          <name>Eclipse Distribution License - v 1.0</name>
+          <name>Eclipse Distribution License, Version 1.0</name>
           <url>http://repository.jboss.org/licenses/edl-1.0.txt</url>
           <distribution>repo</distribution>
         </license>
@@ -209,39 +242,6 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>org.aesh</groupId>
-      <artifactId>aesh</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.aesh</groupId>
-      <artifactId>aesh-extensions</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.aesh</groupId>
-      <artifactId>aesh-readline</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
       <groupId>org.jboss.classfilewriter</groupId>
       <artifactId>jboss-classfilewriter</artifactId>
       <licenses>
@@ -255,6 +255,17 @@
     <dependency>
       <groupId>org.jboss.invocation</groupId>
       <artifactId>jboss-invocation</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>commons-logging-jboss-logging</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
@@ -281,17 +292,6 @@
         <license>
           <name>MIT License</name>
           <url>http://www.opensource.org/licenses/MIT</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.logging</groupId>
-      <artifactId>commons-logging-jboss-logging</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -417,6 +417,22 @@
       </licenses>
     </dependency>
     <dependency>
+      <groupId>org.jboss.spec.javax.security.auth.message</groupId>
+      <artifactId>jboss-jaspi-api_1.1_spec</artifactId>
+      <licenses>
+        <license>
+          <name>Common Development and Distribution License 1.1</name>
+          <url>https://javaee.github.io/glassfish/LICENSE</url>
+          <distribution>repo</distribution>
+        </license>
+        <license>
+          <name>GNU General Public License v2.0 only, with Classpath exception</name>
+          <url>https://fedoraproject.org/wiki/Licensing/GPL_Classpath_Exception</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
       <groupId>org.jboss.spec.javax.security.jacc</groupId>
       <artifactId>jboss-jacc-api_1.5_spec</artifactId>
       <licenses>
@@ -472,17 +488,6 @@
         <license>
           <name>Apache License 2.0</name>
           <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.picketbox</groupId>
-      <artifactId>picketbox</artifactId>
-      <licenses>
-        <license>
-          <name>GNU Lesser General Public License v2.1 only</name>
-          <url>http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</url>
           <distribution>repo</distribution>
         </license>
       </licenses>
@@ -1093,6 +1098,39 @@
       </licenses>
     </dependency>
     <dependency>
+      <groupId>org.wildfly.galleon-plugins</groupId>
+      <artifactId>wildfly-config-gen</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.wildfly.galleon-plugins</groupId>
+      <artifactId>wildfly-feature-spec-gen</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.wildfly.galleon-plugins</groupId>
+      <artifactId>wildfly-galleon-plugins</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
       <groupId>org.wildfly.openssl</groupId>
       <artifactId>wildfly-openssl-java</artifactId>
       <licenses>
@@ -1117,17 +1155,6 @@
     <dependency>
       <groupId>org.wildfly.openssl</groupId>
       <artifactId>wildfly-openssl-linux-x86_64</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.wildfly.openssl</groupId>
-      <artifactId>wildfly-openssl-solaris-sparcv9</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
