@@ -1,0 +1,7 @@
+<subsystem xmlns="urn:wildfly:elytron:5.0">
+    <audit-logging>
+        <!-- flushed was added in 4.0 - should be discarded if identical with synchronized or undefined -->
+        <file-audit-log name="audit1" path="audit.log" relative-to="jboss.home.dir" synchronized="false" autoflush="false" />
+        <file-audit-log name="audit2" path="audit.log" relative-to="jboss.home.dir" synchronized="false" />
+    </audit-logging>
+</subsystem>
