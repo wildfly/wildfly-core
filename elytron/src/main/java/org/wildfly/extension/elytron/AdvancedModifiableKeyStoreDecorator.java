@@ -48,16 +48,15 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
-import java.util.concurrent.TimeUnit;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -940,16 +939,15 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 if (certificate == null) {
                     throw ROOT_LOGGER.unableToObtainCertificate(alias);
                 }
-                Date current = new Date();
-                Date notAfter = certificate.getNotAfter();
-                long difference = notAfter.getTime() - current.getTime();
-                long daysToExpiry = 0;
+                ZonedDateTime current = ZonedDateTime.now().withZoneSameInstant(ZoneId.of("UTC")).withNano(0);
+                ZonedDateTime notAfter = ZonedDateTime.ofInstant(certificate.getNotAfter().toInstant(), ZoneId.of("UTC"));
+                long daysToExpiry = ChronoUnit.DAYS.between(current, notAfter);
                 ModelNode result = context.getResult();
-                if (difference <= 0) {
+                if (daysToExpiry <= 0) {
                     // already expired
                     result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
+                    daysToExpiry = 0;
                 } else {
-                    daysToExpiry = TimeUnit.DAYS.convert(difference, TimeUnit.MILLISECONDS);
                     if (daysToExpiry <= expiration) {
                         result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
                     } else {
