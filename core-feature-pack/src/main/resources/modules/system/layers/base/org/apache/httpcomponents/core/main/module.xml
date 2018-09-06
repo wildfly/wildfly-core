@@ -36,5 +36,7 @@
     <dependencies>
         <module name="javax.api"/>
         <module name="org.apache.commons.logging"/>
+        <!-- Following module is available in WildFly full -->
+        <module name="org.apache.commons.codec" optional="true"/>
     </dependencies>
 </module>
