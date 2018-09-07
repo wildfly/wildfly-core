@@ -151,6 +151,7 @@ interface ElytronDescriptionConstants {
     String DEFAULT_AUTHENTICATION_CONTEXT = "default-authentication-context";
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
+    String DEFAULT_SSL_CONTEXT = "default-ssl-context";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
     String DIGEST = "digest";
     String DIGEST_ALGORITHM = "digest-algorithm";
@@ -535,5 +536,4 @@ interface ElytronDescriptionConstants {
     String X509_CREDENTIAL_MAPPER = "x509-credential-mapper";
     String XOR = "xor";
 
-    String DEFAULT_SSL_CONTEXT = "default-ssl-context";
 }
