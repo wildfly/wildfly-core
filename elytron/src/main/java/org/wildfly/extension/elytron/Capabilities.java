@@ -227,16 +227,6 @@ class Capabilities {
         .Builder.of(SSL_CONTEXT_CAPABILITY, true, SSLContext.class)
         .build();
 
-    /**
-     * Capability that represents a non-sni SSL context. This is referenced by the SNI context rather than the core
-     * ssl context capability, as otherwise it is possible to define circular references
-     */
-    static final String SSL_CONTEXT_SERVER_CAPABILITY = CAPABILITY_BASE + "server-ssl-context";
-
-    static final RuntimeCapability<Void> SSL_CONTEXT_SERVER_RUNTIME_CAPABILITY = RuntimeCapability
-            .Builder.of(SSL_CONTEXT_SERVER_CAPABILITY, true, SSLContext.class)
-            .build();
-
     static final String SNI_MAPPING_CAPABILITY = CAPABILITY_BASE + "ssl-sni-mapping";
 
     static final RuntimeCapability<Void> SNI_MAPPING_RUNTIME_CAPABILITY = RuntimeCapability

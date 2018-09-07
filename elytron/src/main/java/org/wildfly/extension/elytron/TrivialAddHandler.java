@@ -21,10 +21,8 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -58,19 +56,6 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);
-    }
-    TrivialAddHandler(Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability, RuntimeCapability... additional) {
-        super(merge(runtimeCapability, additional), attributes);
-        this.runtimeCapability = runtimeCapability;
-        checkNotNullParam("serviceType", serviceType);
-        this.initialMode = checkNotNullParam("initialMode", initialMode);
-    }
-
-    private static Set<RuntimeCapability> merge(RuntimeCapability<?> runtimeCapability, RuntimeCapability[] additional) {
-        HashSet<RuntimeCapability> ret = new HashSet<>();
-        ret.add(runtimeCapability);
-        ret.addAll(Arrays.asList(additional));
-        return ret;
     }
 
     @Override

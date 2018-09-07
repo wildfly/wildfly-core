@@ -26,8 +26,6 @@ import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_C
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_SERVER_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_SERVER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.TRUST_MANAGER_CAPABILITY;
@@ -294,14 +292,14 @@ class SSLDefinitions {
             .build();
 
     static SimpleAttributeDefinition DEFAULT_SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_SSL_CONTEXT, ModelType.STRING)
-            .setCapabilityReference(SSL_CONTEXT_SERVER_CAPABILITY)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY)
             .setRequired(true)
             .setRestartAllServices()
             .build();
 
 
     static SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING)
-            .setCapabilityReference(SSL_CONTEXT_SERVER_CAPABILITY)
+            .setCapabilityReference(SSL_CONTEXT_CAPABILITY)
             .setRequired(true)
             .setRestartAllServices()
             .build();
@@ -855,12 +853,8 @@ class SSLDefinitions {
         Builder builder = TrivialResourceDefinition.builder()
                 .setPathKey(pathKey)
                 .setAddHandler(addHandler)
-                .setAttributes(attributes);
-        if(server) {
-                builder.setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_SERVER_RUNTIME_CAPABILITY);
-        } else {
-            builder.setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY);
-        }
+                .setAttributes(attributes)
+                .setRuntimeCapabilities(SSL_CONTEXT_RUNTIME_CAPABILITY);
 
         if (serverOrHostController) {
             builder.addReadOnlyAttribute(ACTIVE_SESSION_COUNT, new SSLContextRuntimeHandler() {
@@ -918,7 +912,7 @@ class SSLDefinitions {
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
                 providersDefinition, PROVIDER_NAME};
 
-        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, ServiceController.Mode.ACTIVE, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY, SSL_CONTEXT_SERVER_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, ServiceController.Mode.ACTIVE, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SSLContext> getValueSupplier(ServiceBuilder<SSLContext> serviceBuilder,
