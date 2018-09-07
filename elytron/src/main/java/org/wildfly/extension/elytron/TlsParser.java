@@ -31,6 +31,9 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STOR
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_KEY_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_SSL_CONTEXTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SNI_MAPPING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TLS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGERS;
@@ -146,6 +149,12 @@ class TlsParser {
             .addAttribute(CertificateAuthorityAccountDefinition.ALIAS)
             .addAttribute(CertificateAuthorityAccountDefinition.CREDENTIAL_REFERENCE);
 
+    private PersistentResourceXMLBuilder serverSslSniContextParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(SERVER_SSL_SNI_CONTEXT))
+            .setXmlWrapperElement(SERVER_SSL_SNI_CONTEXTS)
+            .addAttribute(SSLDefinitions.DEFAULT_SSL_CONTEXT)
+            .addChild(PersistentResourceXMLDescription.builder(PathElement.pathElement(SNI_MAPPING))
+            .addAttribute(SSLDefinitions.SSL_CONTEXT));
+
     // 1_0 to 3_0
     final PersistentResourceXMLDescription tlsParser = decorator(TLS)
             .addChild(decorator(KEY_STORES)
@@ -165,13 +174,26 @@ class TlsParser {
                     .addChild(keyStoreParser)
                     .addChild(ldapKeyStoreParser)
                     .addChild(filteringKeyStoreParser)
-
             )
             .addChild(keyManagerParser)
             .addChild(trustManagerParser)
             .addChild(serverSslContextParser)
             .addChild(clientSslContextParser)
             .addChild(certificateAuthorityAccountParser) // new
+            .build();
+
+    final PersistentResourceXMLDescription tlsParser_5_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                .addChild(keyStoreParser)
+                .addChild(ldapKeyStoreParser)
+                .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser)
+            .addChild(trustManagerParser)
+            .addChild(serverSslContextParser)
+            .addChild(clientSslContextParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser) // new
             .build();
 
 }

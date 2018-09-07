@@ -32,6 +32,7 @@ import io.undertow.server.HttpServerExchange;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistryException;
 
@@ -109,8 +110,19 @@ public class UndertowServiceActivator implements ServiceActivator {
         assert port > 0 : "port must be greater than 0";
         final HttpHandler handler = getHttpHandler();
         assert handler != null : "A handler is required";
-        final UndertowService service = new UndertowService(address, port, handler);
-        serviceActivatorContext.getServiceTarget().addService(getServiceName(), service).install();
+        ServiceBuilder<?> builder = serviceActivatorContext.getServiceTarget().addService(getServiceName());
+        createService(address, port, handler, builder);
+        builder.install();
+    }
+
+    /**
+     * Create the Undertow service
+     *
+     */
+    protected void createService(String address, int port, HttpHandler handler, ServiceBuilder<?> builder) {
+        UndertowService service =  new UndertowService(address, port, handler);
+        builder.setInstance(service);
+
     }
 
     /**
