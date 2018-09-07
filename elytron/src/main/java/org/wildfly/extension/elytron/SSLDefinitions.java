@@ -57,6 +57,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -73,15 +74,16 @@ import javax.net.ssl.X509ExtendedTrustManager;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ReloadRequiredAddStepHandler;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -291,23 +293,24 @@ class SSLDefinitions {
             .setRestartAllServices()
             .build();
 
-    static SimpleAttributeDefinition DEFAULT_SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_SSL_CONTEXT, ModelType.STRING)
+    static final SimpleAttributeDefinition DEFAULT_SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEFAULT_SSL_CONTEXT, ModelType.STRING)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY)
             .setRequired(true)
             .setRestartAllServices()
             .build();
 
-
-    static SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SSL_CONTEXT, ModelType.STRING)
+    static final MapAttributeDefinition HOST_CONTEXT_MAP = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.HOST_CONTEXT_MAP, ModelType.STRING, true)
+            .setMinSize(0)
+            .setAllowExpression(false)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY)
-            .setRequired(true)
             .setRestartAllServices()
             .build();
+
     /*
      * Runtime Attributes
      */
 
-    private static SimpleAttributeDefinition ACTIVE_SESSION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACTIVE_SESSION_COUNT, ModelType.INT)
+    private static final SimpleAttributeDefinition ACTIVE_SESSION_COUNT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ACTIVE_SESSION_COUNT, ModelType.INT)
             .setStorageRuntime()
             .build();
 
@@ -1024,23 +1027,9 @@ class SSLDefinitions {
                 serverOrHostController);
     }
 
-
-    static ResourceDefinition getServerSNIMappingSSLContextDefinition() {
-
-        AttributeDefinition[] attributes = new AttributeDefinition[]{SSL_CONTEXT};
-
-        AbstractAddStepHandler add = new ReloadRequiredAddStepHandler(attributes);
-        Builder builder = TrivialResourceDefinition.builder()
-                .setPathKey(ElytronDescriptionConstants.SNI_MAPPING)
-                .setAddHandler(add)
-                .setRuntimeCapabilities(Capabilities.SNI_MAPPING_RUNTIME_CAPABILITY)
-                .setAttributes(attributes);
-        return builder.build();
-    }
-
     static ResourceDefinition getServerSNISSLContextDefinition() {
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{DEFAULT_SSL_CONTEXT};
+        AttributeDefinition[] attributes = new AttributeDefinition[] { DEFAULT_SSL_CONTEXT, HOST_CONTEXT_MAP };
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
 
@@ -1053,14 +1042,16 @@ class SSLDefinitions {
                 ModelNode defaultContextName = DEFAULT_SSL_CONTEXT.resolveModelAttribute(context, model);
                 serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(defaultContextName.asString()), SSLContext.class, defaultContext);
 
-                final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>();
-                for(Resource.ResourceEntry i : context.readResource(PathAddress.EMPTY_ADDRESS).getChildren(ElytronDescriptionConstants.SNI_MAPPING)) {
-                    String contextName = SSL_CONTEXT.resolveModelAttribute(context, i.getModel()).asString();
-                    final InjectedValue<SSLContext> injector = new InjectedValue<>();
-                    serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(contextName), SSLContext.class, injector);
-                    sslContextMap.put(i.getName(), injector);
-                }
+                ModelNode hostContextMap = HOST_CONTEXT_MAP.resolveModelAttribute(context, model);
 
+                Set<String> keys = hostContextMap.keys();
+                final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(keys.size());
+                for (String host : keys) {
+                    String sslContextName = hostContextMap.require(host).asString();
+                    final InjectedValue<SSLContext> injector = new InjectedValue<>();
+                    serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(sslContextName), SSLContext.class, injector);
+                    sslContextMap.put(host, injector);
+                }
 
                 return () -> {
                     SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();

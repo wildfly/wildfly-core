@@ -4284,7 +4284,7 @@
             </xs:documentation>
         </xs:annotation>
 
-        <xs:attribute name="name" type="xs:string" use="required">
+        <xs:attribute name="host" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
                     The host name that this element matches. If it begins with a '*' it is considered a wildcard match.

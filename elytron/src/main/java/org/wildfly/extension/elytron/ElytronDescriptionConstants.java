@@ -205,6 +205,7 @@ interface ElytronDescriptionConstants {
     String GROUPS_PROPERTIES = "groups-properties";
 
     String HOST = "host";
+    String HOST_CONTEXT_MAP = "host-context-map";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
     String HASH_FROM = "hash-from";
@@ -482,10 +483,10 @@ interface ElytronDescriptionConstants {
     String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     String SIZE = "size";
     String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
-    String SNI_MAPPING = "sni-mapping";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_SESSION = "ssl-session";
+    String SNI_MAPPING = "sni-mapping";
     String STAGING = "staging";
     String START_SEGMENT = "start-segment";
     String STATE = "state";

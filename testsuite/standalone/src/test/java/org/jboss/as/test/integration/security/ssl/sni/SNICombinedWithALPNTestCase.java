@@ -112,7 +112,6 @@ public class SNICombinedWithALPNTestCase {
     private static final String[] HOST_SSL_CONTEXT = {"subsystem", "elytron", "server-ssl-context", "host"};
     private static final String[] IP_SSL_CONTEXT = {"subsystem", "elytron", "server-ssl-context", "ip"};
     private static final String[] SNI_SSL_CONTEXT = {"subsystem", "elytron", "server-ssl-sni-context", "test-context"};
-    private static final String[] SNI_MAPPING = {"subsystem", "elytron", "server-ssl-sni-context", "test-context", "sni-mapping", "127.0.0.1"};
     private static final String TEST_JAR = "test.jar";
 
     private static File hostNameKeystore;
@@ -167,10 +166,9 @@ public class SNICombinedWithALPNTestCase {
 
             modelNode = createAddOperation(createAddress(SNI_SSL_CONTEXT));
             modelNode.get("default-ssl-context").set("host");
-            managementClient.executeForResult(modelNode);
-
-            modelNode = createAddOperation(createAddress(SNI_MAPPING));
-            modelNode.get("ssl-context").set("ip");
+            ModelNode hostContextMap = new ModelNode();
+            hostContextMap.get("127.0.0.1").set("ip");
+            modelNode.get("host-context-map").set(hostContextMap);
             managementClient.executeForResult(modelNode);
 
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, TEST_JAR)
@@ -188,7 +186,6 @@ public class SNICombinedWithALPNTestCase {
             hostNameKeystore.delete();
             ipKeystore.delete();
 
-            managementClient.executeForResult(createRemoveOperation(createAddress(SNI_MAPPING)));
             managementClient.executeForResult(createRemoveOperation(createAddress(SNI_SSL_CONTEXT)));
             managementClient.executeForResult(createRemoveOperation(createAddress(IP_SSL_CONTEXT)));
             managementClient.executeForResult(createRemoveOperation(createAddress(HOST_SSL_CONTEXT)));
