@@ -26,10 +26,12 @@ package org.jboss.as.controller;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -63,6 +65,37 @@ public class SimpleMapAttributeDefinition extends MapAttributeDefinition {
     protected void addOperationParameterValueTypeDescription(ModelNode node, String operationName, ResourceDescriptionResolver resolver, Locale locale, ResourceBundle bundle) {
         node.get(ModelDescriptionConstants.VALUE_TYPE).set(valueType);
         node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(new ModelNode(isAllowExpression()));
+    }
+
+    @Override
+    public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, resource, attributeValue, false);
+    }
+
+    @Override
+    public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
+        handleCapabilityRequirements(context, resource, attributeValue, true);
+    }
+
+    private void handleCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue, boolean remove) {
+        CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
+        if (refRecorder != null && attributeValue.isDefined()) {
+            Set<String> KeyList = attributeValue.keys();
+            String[] attributeValues = new String[KeyList.size()];
+            int position = 0;
+            for (String key : KeyList) {
+                ModelNode current = attributeValue.get(key);
+                if (current.isDefined() == false || current.getType().equals(ModelType.EXPRESSION)) {
+                    return;
+                }
+                attributeValues[position++] = current.asString();
+            }
+            if (remove) {
+                refRecorder.removeCapabilityRequirements(context, resource, getName(), attributeValues);
+            } else {
+                refRecorder.addCapabilityRequirements(context, resource, getName(), attributeValues);
+            }
+        }
     }
 
     public static final class Builder extends MapAttributeDefinition.Builder<Builder, SimpleMapAttributeDefinition> {
