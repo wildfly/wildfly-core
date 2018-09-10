@@ -122,11 +122,10 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.ssl.CipherSuiteSelector;
 import org.wildfly.security.ssl.Protocol;
 import org.wildfly.security.ssl.ProtocolSelector;
+import org.wildfly.security.ssl.SNIContextMatcher;
+import org.wildfly.security.ssl.SNISSLContext;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.security.ssl.X509CRLExtendedTrustManager;
-
-import io.undertow.protocols.ssl.SNIContextMatcher;
-import io.undertow.protocols.ssl.SNISSLContext;
 
 /**
  * Definitions for resources used to configure SSLContexts.

@@ -34,6 +34,7 @@
         <module name="org.jboss.xnio.nio" services="import"/>
         <module name="org.jboss.logging"/>
         <module name="org.wildfly.openssl" optional="true"/>
+        <module name="org.wildfly.security.elytron-web.undertow-server" services="import" />
         <module name="sun.jdk"/>
             <system export="true">
                 <paths>
