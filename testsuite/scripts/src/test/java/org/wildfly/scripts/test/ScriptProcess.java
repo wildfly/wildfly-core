@@ -119,7 +119,11 @@ public class ScriptProcess extends Process implements AutoCloseable {
         cmd.add(script.toString());
         if (Environment.isWindows()) {
             for (String arg : arguments) {
-                cmd.add(WINDOWS_ARG_FORMATTER.apply(arg));
+                if ("&&".equals(arg) || "exit".equals(arg)) {
+                    cmd.add(arg);
+                } else {
+                    cmd.add(WINDOWS_ARG_FORMATTER.apply(arg));
+                }
             }
         } else {
             cmd.addAll(arguments);
@@ -192,7 +196,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
 
     @Override
     public String toString() {
-        return getCommandString(Collections.singleton(script.toString()));
+        return getCommandString(Collections.emptyList());
     }
 
     private String getCommandString(final Collection<String> arguments) {

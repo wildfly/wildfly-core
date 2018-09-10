@@ -20,6 +20,9 @@
 package org.wildfly.scripts.test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 
@@ -52,7 +55,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
     @Test
     public void testPowerShellScript() throws Exception {
         Assume.assumeTrue(Environment.isWindows() && isShellSupported("powershell", "-Help"));
-        testStart(new ScriptProcess(getExecutable("standalone.ps1"), STANDALONE_CHECK, POWER_SHELL_PREFIX));
+        testStart(new ScriptProcess(getExecutable("standalone.ps1"), STANDALONE_CHECK, POWER_SHELL_PREFIX), "&&", "exit");
     }
 
     @Test
@@ -102,9 +105,12 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         testStart(new ScriptProcess(getExecutable("standalone.sh"), STANDALONE_CHECK, "zsh"));
     }
 
-    private void testStart(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
+    private void testStart(final ScriptProcess script, final String... arguments) throws InterruptedException, TimeoutException, IOException {
         try {
-            script.start(DEFAULT_SERVER_JAVA_OPTS);
+            final Collection<String> args = new ArrayList<>();
+            args.addAll(Arrays.asList(DEFAULT_SERVER_JAVA_OPTS));
+            args.addAll(Arrays.asList(arguments));
+            script.start(args);
             Assert.assertNotNull("The process is null and may have failed to start.", script);
             Assert.assertTrue("The process is not running and should be", script.isAlive());
 
