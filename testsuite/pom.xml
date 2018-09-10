@@ -401,6 +401,7 @@
                 <module>domain</module>
                 <module>manualmode</module>
                 <module>patching</module>
+                <module>scripts</module>
             </modules>
         </profile>
 
