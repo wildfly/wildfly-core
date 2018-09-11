@@ -25,6 +25,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.api.ReadConfigAsFeaturesTestBase;
 import org.jboss.dmr.ModelNode;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,6 +60,11 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
 
     @Inject
     private static ServerController serverController;
+
+    @AfterClass
+    public static void tearDownClass() {
+        serverController.reload("standalone.xml");
+    }
 
     @Test
     public void writeParameterTest() throws UnsuccessfulOperationException {
