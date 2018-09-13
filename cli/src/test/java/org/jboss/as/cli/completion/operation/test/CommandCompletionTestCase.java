@@ -104,7 +104,9 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesWithMultipleLines() {
         // test cursor moves to new line in multiples lines context, it should find 2 candidates
-        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 6, true).getCandidates();
+        // The cursor value must be at the end of last line, this is how aesh completion set
+        // the cursor. Eveything after the cursor is now not taken into account.
+        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 12, true).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION3, OPERATION2), candidates);
     }
@@ -112,7 +114,9 @@ public class CommandCompletionTestCase {
     @Test
     public void testSelectedCandidatesWithMultipleLinesCursorMoveLeft() {
         // test cursor moves to left in multiples lines context, it should find 3 candidates
-        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 1, true).getCandidates();
+        // The cursor value must be at the end of last line, this is how aesh completion set
+        // the cursor. Eveything after the cursor is now not taken into account.
+        List<String> candidates = fetchCandidates(OPERATION_MULTILINES_FULL, 7, true).getCandidates();
         assertNotNull(candidates);
         assertEquals(Arrays.asList(OPERATION1, OPERATION3, OPERATION2), candidates);
     }
