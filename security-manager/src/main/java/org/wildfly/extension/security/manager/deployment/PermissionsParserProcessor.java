@@ -25,6 +25,7 @@ package org.wildfly.extension.security.manager.deployment;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
@@ -40,6 +41,7 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.PermissionFactory;
 import org.jboss.vfs.VirtualFile;
+import org.wildfly.common.expression.ResolveContext;
 
 /**
  * This class implements a {@link DeploymentUnitProcessor} that parses security permission files that might be
@@ -91,11 +93,14 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         final ModuleIdentifier moduleIdentifier = deploymentUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
+        final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> wflyDescriptorExprExpandFunc = deploymentUnit.getAttachment(Attachments.WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
+        final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> specDescriptorExprExpandFunc = deploymentUnit.getAttachment(Attachments.SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION);
+
 
         // non-spec behavior: always process permissions declared in META-INF/jboss-permissions.xml.
         VirtualFile jbossPermissionsXML = deploymentRoot.getRoot().getChild(JBOSS_PERMISSIONS_XML);
         if (jbossPermissionsXML.exists() && jbossPermissionsXML.isFile()) {
-            List<PermissionFactory> factories = this.parsePermissions(jbossPermissionsXML, moduleLoader, moduleIdentifier);
+            List<PermissionFactory> factories = this.parsePermissions(jbossPermissionsXML, moduleLoader, moduleIdentifier, wflyDescriptorExprExpandFunc);
             for (PermissionFactory factory : factories) {
                 moduleSpecification.addPermissionFactory(factory);
             }
@@ -112,7 +117,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
                 VirtualFile permissionsXML = deploymentRoot.getRoot().getChild(PERMISSIONS_XML);
                 if (permissionsXML.exists() && permissionsXML.isFile()) {
                     // parse the permissions and attach them in the deployment unit.
-                    List<PermissionFactory> factories = this.parsePermissions(permissionsXML, moduleLoader, moduleIdentifier);
+                    List<PermissionFactory> factories = this.parsePermissions(permissionsXML, moduleLoader, moduleIdentifier, specDescriptorExprExpandFunc);
                     for (PermissionFactory factory : factories) {
                         moduleSpecification.addPermissionFactory(factory);
                     }
@@ -150,7 +155,8 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
      * @return a list of {@link PermissionFactory} objects representing the parsed permissions.
      * @throws DeploymentUnitProcessingException if an error occurs while parsing the permissions.
      */
-    private List<PermissionFactory> parsePermissions(final VirtualFile file, final ModuleLoader loader, final ModuleIdentifier identifier)
+    private List<PermissionFactory> parsePermissions(final VirtualFile file, final ModuleLoader loader, final ModuleIdentifier identifier,
+                                                     final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> exprExpandFunction)
             throws DeploymentUnitProcessingException {
 
         InputStream inputStream = null;
@@ -158,7 +164,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
             inputStream = file.openStream();
             final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
             XMLStreamReader xmlReader = inputFactory.createXMLStreamReader(inputStream);
-            return PermissionsParser.parse(xmlReader, loader, identifier);
+            return PermissionsParser.parse(xmlReader, loader, identifier, exprExpandFunction);
         } catch (Exception e) {
             throw new DeploymentUnitProcessingException(e.getMessage(), e);
         } finally {

@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -38,6 +39,8 @@ import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.ModularPermissionFactory;
 import org.jboss.modules.security.PermissionFactory;
+import org.wildfly.common.expression.Expression;
+import org.wildfly.common.expression.ResolveContext;
 import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
 
 /**
@@ -48,8 +51,39 @@ import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
  */
 public class PermissionsParser {
 
+    /**
+     * This method is equivalent to calling {@link #parse(XMLStreamReader, ModuleLoader, ModuleIdentifier, BiConsumer)} with {@code null}
+     * as the last argument.
+     *
+     * @param reader     The {@link XMLStreamReader} for the XML file
+     * @param loader     A {@link ModuleLoader} which will be used to load the configured permission class and create a {@link PermissionFactory}
+     *                   out of it
+     * @param identifier A {@link ModuleIdentifier} which identifies the module, which contains the permission class to load
+     * @return A list of {@link PermissionFactory}s constructed out of the parsed content
+     * @throws XMLStreamException
+     * @deprecated Use {@link #parse(XMLStreamReader, ModuleLoader, ModuleIdentifier, BiConsumer)} instead
+     */
+    @Deprecated
     public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
             throws XMLStreamException {
+        return parse(reader, loader, identifier, null);
+    }
+
+    /**
+     * Parses the contents of a permissions.xml/jboss-permissions.xml file
+     *
+     * @param reader             The {@link XMLStreamReader} for the XML file
+     * @param loader             A {@link ModuleLoader} which will be used to load the configured permission class and create a {@link PermissionFactory}
+     *                           out of it
+     * @param identifier         A {@link ModuleIdentifier} which identifies the module, which contains the permission class to load
+     * @param exprExpandFunction A function which will be used, if provided, to expand any expressions (of the form of {@code ${foobar}})
+     *                           in the content being parsed. This function can be null, in which case the content is processed literally.
+     * @return A list of {@link PermissionFactory}s constructed out of the parsed content
+     * @throws XMLStreamException
+     */
+    public static List<PermissionFactory> parse(final XMLStreamReader reader, final ModuleLoader loader,
+                                                final ModuleIdentifier identifier,
+                                                final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> exprExpandFunction) throws XMLStreamException {
 
         reader.require(XMLStreamConstants.START_DOCUMENT, null, null);
 
@@ -59,7 +93,7 @@ public class PermissionsParser {
                     Element element = Element.forName(reader.getLocalName());
                     switch (element) {
                         case PERMISSIONS: {
-                            return parsePermissions(reader, loader, identifier);
+                            return parsePermissions(reader, loader, identifier, exprExpandFunction);
                         }
                         default: {
                             throw unexpectedElement(reader);
@@ -74,7 +108,7 @@ public class PermissionsParser {
         throw unexpectedEndOfDocument(reader);
     }
 
-    private static List<PermissionFactory> parsePermissions(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
+    private static List<PermissionFactory> parsePermissions(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier, final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> exprExpandFunction)
             throws XMLStreamException {
 
         List<PermissionFactory> factories = new ArrayList<PermissionFactory>();
@@ -115,7 +149,7 @@ public class PermissionsParser {
                     Element element = Element.forName(reader.getLocalName());
                     switch (element) {
                         case PERMISSION: {
-                            PermissionFactory factory = parsePermission(reader, loader, identifier);
+                            PermissionFactory factory = parsePermission(reader, loader, identifier, exprExpandFunction);
                             factories.add(factory);
                             break;
                         }
@@ -133,8 +167,9 @@ public class PermissionsParser {
         throw unexpectedEndOfDocument(reader);
     }
 
-    private static PermissionFactory parsePermission(final XMLStreamReader reader, final ModuleLoader loader, final ModuleIdentifier identifier)
-            throws XMLStreamException {
+    private static PermissionFactory parsePermission(final XMLStreamReader reader, final ModuleLoader loader,
+                                                     final ModuleIdentifier identifier,
+                                                     final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> exprExpandFunction) throws XMLStreamException {
 
         // permission element has no attributes.
         requireNoAttributes(reader);
@@ -162,17 +197,17 @@ public class PermissionsParser {
                     switch (element) {
                         case CLASS_NAME: {
                             requireNoAttributes(reader);
-                            permissionClass = reader.getElementText();
+                            permissionClass = expandPossibleExpression(reader.getElementText(), exprExpandFunction);
                             break;
                         }
                         case NAME: {
                             requireNoAttributes(reader);
-                            permissionName = reader.getElementText();
+                            permissionName = expandPossibleExpression(reader.getElementText(), exprExpandFunction);
                             break;
                         }
                         case ACTIONS: {
                             requireNoAttributes(reader);
-                            permissionActions = reader.getElementText();
+                            permissionActions = expandPossibleExpression(reader.getElementText(), exprExpandFunction);
                             break;
                         }
                         default: {
@@ -187,6 +222,14 @@ public class PermissionsParser {
             }
         }
         throw unexpectedEndOfDocument(reader);
+    }
+
+    private static String expandPossibleExpression(final String content, final BiConsumer<ResolveContext<RuntimeException>, StringBuilder> exprExpandFunction) {
+        if (content == null || exprExpandFunction == null) {
+            return content;
+        }
+        final Expression expression = Expression.compile(content);
+        return expression.evaluate(exprExpandFunction);
     }
 
     private static XMLStreamException unexpectedContent(final XMLStreamReader reader) {
@@ -268,7 +311,7 @@ public class PermissionsParser {
      * Gets an exception reporting an unexpected XML attribute.
      *
      * @param reader a reference to the stream reader.
-     * @param index the attribute index.
+     * @param index  the attribute index.
      * @return the constructed {@link javax.xml.stream.XMLStreamException}.
      */
     private static XMLStreamException unexpectedAttribute(final XMLStreamReader reader, final int index) {
@@ -290,7 +333,7 @@ public class PermissionsParser {
     /**
      * Gets an exception reporting missing required XML attribute(s).
      *
-     * @param reader a reference to the stream reader
+     * @param reader   a reference to the stream reader
      * @param required a set of enums whose toString method returns the attribute name.
      * @return the constructed {@link javax.xml.stream.XMLStreamException}.
      */
@@ -310,7 +353,7 @@ public class PermissionsParser {
     /**
      * Get an exception reporting missing required XML element(s).
      *
-     * @param reader a reference to the stream reader.
+     * @param reader   a reference to the stream reader.
      * @param required a set of enums whose toString method returns the element name.
      * @return the constructed {@link javax.xml.stream.XMLStreamException}.
      */
@@ -393,7 +436,7 @@ public class PermissionsParser {
          *
          * @param localName a {@code String} representing the local name of the element.
          * @return the {@code Element} identified by the name. If no attribute can be found, the {@code Element.UNKNOWN}
-         *         type is returned.
+         * type is returned.
          */
         public static Element forName(String localName) {
             final Element element = MAP.get(localName);
@@ -450,7 +493,7 @@ public class PermissionsParser {
          *
          * @param localName a {@code String} representing the local name of the attribute.
          * @return the {@code Attribute} identified by the name. If no attribute can be found, the {@code Attribute.UNKNOWN}
-         *         type is returned.
+         * type is returned.
          */
         public static Attribute forName(String localName) {
             final Attribute attribute = MAP.get(localName);
