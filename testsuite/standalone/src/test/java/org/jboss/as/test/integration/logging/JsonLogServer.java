@@ -107,7 +107,7 @@ public abstract class JsonLogServer implements Runnable, AutoCloseable {
             keyManagers = kmf.getKeyManagers();
         }
 
-        final SSLContext context = SSLContext.getInstance("TLS");
+        final SSLContext context = SSLContext.getInstance("TLSv1.2");
         context.init(keyManagers, null, null);
         return new TcpServer(context.getServerSocketFactory(), port);
     }
