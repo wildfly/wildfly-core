@@ -61,7 +61,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
  *
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-public class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
+class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
     static ResourceDefinition wrap(ResourceDefinition resourceDefinition) {
         return new ModifiableKeyStoreDecorator(resourceDefinition);
