@@ -47,7 +47,7 @@ public enum ModelTestControllerVersion {
 
     // TODO https://issues.jboss.org/browse/WFCORE-4089 Get rid of EAP_7_2_0_TEMP and enable EAP_7_2_0, once
     // 7.2.0.GA-redhat-xx version is known
-    EAP_7_2_0_TEMP("11.0.0.Final", false, "14.0.0", "6.0.1.Final", "wf14"),
+    EAP_7_2_0_TEMP("14.0.0.Final", false, "14.0.0", "6.0.1.Final", "wf14"),
     // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
     //EAP_7_2_0("7.2.0.Final-redhat-??", true, "14.0.0", "6.0.1.Final", "7.2.0"),
     ;

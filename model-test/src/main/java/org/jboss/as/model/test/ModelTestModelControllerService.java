@@ -169,7 +169,97 @@ public abstract class ModelTestModelControllerService extends AbstractController
     }
 
     /**
-     * This is the constructor to use for 2.x core model tests
+     * This is the constructor to use for 10.0.x core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+                                              ExpressionResolver expressionResolver, Controller10x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 10.0.x subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller10x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 11.0.x core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+                                              ExpressionResolver expressionResolver, Controller11x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 11.0.x subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller11x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 14.0.x core model tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final DelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState,
+                                              ExpressionResolver expressionResolver, Controller14x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition, null,
+                expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer());
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for 14.0.x subsystem tests
+     */
+    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
+                                              final ResourceDefinition resourceDefinition, ControlledProcessState processState, Controller14x version) {
+        super(processType, runningModeControl, persister,
+                processState == null ? new ControlledProcessState(true) : processState, resourceDefinition, null, ExpressionResolver.TEST_RESOLVER);
+        this.persister = persister;
+        this.transformerRegistry = transformerRegistry;
+        this.validateOpsFilter = validateOpsFilter;
+        this.runningModeControl = runningModeControl;
+    }
+
+    /**
+     * This is the constructor to use for current core model tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
             final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
@@ -185,7 +275,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
     }
 
     /**
-     * This is the constructor to use for 10.x subsystem tests
+     * This is the constructor to use for current subsystem tests
      */
     protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
@@ -457,4 +547,15 @@ public abstract class ModelTestModelControllerService extends AbstractController
         }
     }
 
+    public static class Controller11x {
+        public static Controller11x INSTANCE = new Controller11x();
+        private Controller11x() {
+        }
+    }
+
+    public static class Controller14x {
+        public static Controller14x INSTANCE = new Controller14x();
+        private Controller14x() {
+        }
+    }
 }
