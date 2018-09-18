@@ -259,7 +259,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 25, value = "Referenced property file is invalid: %s")
     StartException propertyFileIsInvalid(String message, @Cause Throwable cause);
 
-    //@Message(id = 26, value = "trusted-security-domains cannot contain the security-domain \"%s\" itself")
+    //@Message(id = 26, value = "trusted-security-domains cannot contain the security-domain '%s' itself")
     //OperationFailedException trustedDomainsCannotContainDomainItself(String domain);
 
     @Message(id = 27, value = "Unable to obtain OID for X.500 attribute '%s'")
@@ -314,13 +314,13 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 37, value = "Injected value is not of '%s' type.")
     StartException invalidTypeInjected(final String type);
 
-    @Message(id = 38, value = "Could not load permission class \"%s\"")
+    @Message(id = 38, value = "Could not load permission class '%s'")
     StartException invalidPermissionClass(String className);
 
     @Message(id = 39, value = "Unable to reload CRL file - TrustManager is not reloadable")
     OperationFailedException unableToReloadCRLNotReloadable();
 
-    @Message(id = 40, value = "Unable to load the permission module \"%s\" for the permission mapping")
+    @Message(id = 40, value = "Unable to load the permission module '%s' for the permission mapping")
     StartException invalidPermissionModule(String module, @Cause Throwable cause);
 
     // CREDENTIAL_STORE section
@@ -361,7 +361,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = Message.NONE, value = "Reload dependent services which might already have cached the secret value")
     String reloadDependantServices();
 
-    @Message(id = Message.NONE, value = "Update dependent resources as alias \"%s\" does not exist anymore")
+    @Message(id = Message.NONE, value = "Update dependent resources as alias '%s' does not exist anymore")
     String updateDependantServices(String alias);
 
     /*
