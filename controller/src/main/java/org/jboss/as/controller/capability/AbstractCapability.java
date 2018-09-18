@@ -81,7 +81,7 @@ public abstract class AbstractCapability implements Capability {
         if (dynamicNameMapper != null) {
             this.dynamicNameMapper = dynamicNameMapper;
         } else {
-            this.dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
+            this.dynamicNameMapper = DynamicNameMappers.SIMPLE;
         }
     }
 
@@ -93,18 +93,6 @@ public abstract class AbstractCapability implements Capability {
         }
     }
 
-    /**
-     * Resolves the dynamic elements of a capability name from a path address by returning last element value.
-     *
-     * @param pathAddress the address. Cannot be {@code null}
-     * @return dynamic part of the capability name
-     *
-     * @deprecated Will be made non-public in a future release.
-     */
-    @Deprecated
-    public static String[] addressValueToDynamicName(PathAddress pathAddress){
-        return new String[]{pathAddress.getLastElement().getValue()};
-    }
 
     @Override
     public String getName() {

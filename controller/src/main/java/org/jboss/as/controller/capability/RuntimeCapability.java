@@ -313,7 +313,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         private Set<String> requirements;
         private boolean allowMultipleRegistrations = ALLOW_MULTIPLE;
         @SuppressWarnings("deprecation")
-        private Function<PathAddress, String[]> dynamicNameMapper = AbstractCapability::addressValueToDynamicName;
+        private Function<PathAddress, String[]> dynamicNameMapper = DynamicNameMappers.SIMPLE;
         private Set<String> additionalPackages;
 
         /**
