@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.test.integration.domain.suites;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -101,7 +100,7 @@ import org.junit.Test;
 
 /**
  *
- * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a>  (c) 2015 Red Hat, inc.
+ * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
 public class ExplodedDeploymentTestCase {
 
@@ -151,7 +150,7 @@ public class ExplodedDeploymentTestCase {
     public void testInstallAndExplodeDeploymentOnDC() throws IOException, MgmtOperationException {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
-        try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()){
+        try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
             AsyncFuture<ModelNode> future = masterClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
@@ -189,7 +188,7 @@ public class ExplodedDeploymentTestCase {
                 "org/jboss/as/",
                 "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
-                "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
+                "service-activator-deployment.properties", "org/wildfly/", "org/wildfly/test/",
                 "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
                 "org/wildfly/test/deployment/trivial/simple.properties")));
         browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
@@ -267,10 +266,10 @@ public class ExplodedDeploymentTestCase {
                 "org/jboss/as/",
                 "org/jboss/as/test/", "org/jboss/as/test/deployment/", "org/jboss/as/test/deployment/trivial/",
                 "org/jboss/as/test/deployment/trivial/ServiceActivatorDeployment.class",
-                "service-activator-deployment.properties", "org/wildfly/","org/wildfly/test/",
+                "service-activator-deployment.properties", "org/wildfly/", "org/wildfly/test/",
                 "org/wildfly/test/deployment/", "org/wildfly/test/deployment/trivial/",
                 "org/wildfly/test/deployment/trivial/simple.properties")));
-        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF","services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
+        browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
         //Redeploy
         future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
@@ -297,6 +296,77 @@ public class ExplodedDeploymentTestCase {
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
     }
+
+    @Test
+    public void testEmptyAndAddContentInComposite() throws Exception {
+
+        ModelNode composite = Operations.createCompositeOperation();
+        ModelNode steps = composite.get(STEPS);
+        steps.add(addEmptyDeploymentNode());
+
+        ModelNode addContent = Operations.createOperation(ADD_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        Map<String, InputStream> initialContents = new HashMap<>();
+        initialContents.put(ServiceActivatorDeployment.class.getName().replace('.', File.separatorChar) + ".class",
+                ServiceActivatorDeployment.class.getResourceAsStream("ServiceActivatorDeployment.class"));
+        initialContents.put("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream("Dependencies: org.jboss.msc\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/services/org.jboss.msc.service.ServiceActivator",
+                new ByteArrayInputStream("org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/permissions.xml", new ByteArrayInputStream(PermissionUtils.createPermissionsXml(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission("service", "write"))));
+        initialContents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE,
+                toStream(properties, "Creating content"));
+        List<InputStream> contentAttachments = addContentToDeploymentNode(addContent, initialContents);
+        steps.add(addContent);
+        Operation operation = Operation.Factory.create(composite, contentAttachments);
+
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        ModelNode result = awaitSimpleOperationExecution(future);
+        assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
+        ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
+        String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
+        Assert.assertNotNull(initialHash);
+        assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
+        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        result = awaitSimpleOperationExecution(future);
+        assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
+    }
+
+    @Test
+    public void testEmptyAndAddContentAndDeployInComposite() throws Exception {
+
+        ModelNode composite = Operations.createCompositeOperation();
+        ModelNode steps = composite.get(STEPS);
+        steps.add(addEmptyDeploymentNode());
+
+        ModelNode addContent = Operations.createOperation(ADD_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        Map<String, InputStream> initialContents = new HashMap<>();
+        initialContents.put(ServiceActivatorDeployment.class.getName().replace('.', File.separatorChar) + ".class",
+                ServiceActivatorDeployment.class.getResourceAsStream("ServiceActivatorDeployment.class"));
+        initialContents.put("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream("Dependencies: org.jboss.msc\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/services/org.jboss.msc.service.ServiceActivator",
+                new ByteArrayInputStream("org.jboss.as.test.deployment.trivial.ServiceActivatorDeployment\n".getBytes(StandardCharsets.UTF_8)));
+        initialContents.put("META-INF/permissions.xml", new ByteArrayInputStream(PermissionUtils.createPermissionsXml(
+                new PropertyPermission("test.deployment.trivial.prop", "write"),
+                new PropertyPermission("service", "write"))));
+        initialContents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE,
+                toStream(properties, "Creating content"));
+        List<InputStream> contentAttachments = addContentToDeploymentNode(addContent, initialContents);
+        steps.add(addContent);
+        steps.add(deployOnServerGroup());
+        Operation operation = Operation.Factory.create(composite, contentAttachments);
+
+        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        ModelNode result = awaitSimpleOperationExecution(future);
+        assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
+        ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
+        String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
+        Assert.assertNotNull(initialHash);
+        assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
+    }
+
 
     private ModelNode readDeploymentResource(PathAddress address) {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
@@ -388,6 +458,10 @@ public class ExplodedDeploymentTestCase {
         }
     }
 
+    private Operation addEmptyDeployment() throws MalformedURLException {
+        return Operation.Factory.create(addEmptyDeploymentNode());
+    }
+
     private Operation addDeployment(InputStream attachment) throws MalformedURLException {
         ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         ModelNode content = new ModelNode();
@@ -398,9 +472,22 @@ public class ExplodedDeploymentTestCase {
 
     private Operation addContentToDeployment(Map<String, InputStream> contents) throws MalformedURLException {
         ModelNode operation = Operations.createOperation(ADD_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        final List<InputStream> attachments = addContentToDeploymentNode(operation, contents);
+        return Operation.Factory.create(operation, attachments);
+    }
+
+    private ModelNode addEmptyDeploymentNode() {
+        ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
+        ModelNode content = new ModelNode();
+        content.get(EMPTY).set(true);
+        operation.get(CONTENT).add(content);
+        return operation;
+    }
+
+    private List<InputStream> addContentToDeploymentNode(ModelNode operation, Map<String, InputStream> contents) {
         int stream = 0;
         List<InputStream> attachments = new ArrayList<>(contents.size());
-        for(Entry<String, InputStream> content : contents.entrySet()) {
+        for (Entry<String, InputStream> content : contents.entrySet()) {
             ModelNode contentNode = new ModelNode();
             contentNode.get(INPUT_STREAM_INDEX).set(stream);
             contentNode.get(TARGET_PATH).set(content.getKey());
@@ -408,13 +495,13 @@ public class ExplodedDeploymentTestCase {
             operation.get(CONTENT).add(contentNode);
             stream++;
         }
-        return Operation.Factory.create(operation, attachments);
+        return attachments;
     }
 
     private Operation removeContentFromDeployment(List<String> paths) throws MalformedURLException {
         ModelNode operation = Operations.createOperation(REMOVE_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         operation.get(PATHS).setEmptyList();
-        for(String path : paths) {
+        for (String path : paths) {
             operation.get(PATHS).add(path);
         }
         return Operation.Factory.create(operation);
@@ -424,14 +511,6 @@ public class ExplodedDeploymentTestCase {
         ModelNode operation = Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode());
         operation.get(ENABLED).set(true);
         return operation;
-    }
-
-    private Operation addEmptyDeployment() throws MalformedURLException {
-        ModelNode operation = Operations.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
-        ModelNode content = new ModelNode();
-        content.get(EMPTY).set(true);
-        operation.get(CONTENT).add(content);
-        return Operation.Factory.create(operation);
     }
 
     private ModelNode undeployAndRemoveOp() throws MalformedURLException {
