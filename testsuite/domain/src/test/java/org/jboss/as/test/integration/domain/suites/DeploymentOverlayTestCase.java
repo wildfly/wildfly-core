@@ -64,6 +64,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
@@ -220,7 +221,8 @@ public class DeploymentOverlayTestCase {
         ModelNode failingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         failingOperation.get("deployments").setEmptyList();
         failingOperation.get("deployments").add(OTHER_RUNTIME_NAME);
-        executeAsyncForFailure(slaveClient, failingOperation, "WFLYDC0032: Operation redeploy-links for address " + PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode().toString() + " can only be handled by the master Domain Controller; this host is not the master Domain Controller");
+        final String expectedFailureMessage = DomainControllerLogger.ROOT_LOGGER.masterDomainControllerOnlyOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH));
+        executeAsyncForFailure(slaveClient, failingOperation, expectedFailureMessage);
         ModelNode removeLinkOp = Operations.createOperation(REMOVE, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode());
         removeLinkOp.get("redeploy-affected").set(true);
         executeAsyncForResult(masterClient, removeLinkOp);

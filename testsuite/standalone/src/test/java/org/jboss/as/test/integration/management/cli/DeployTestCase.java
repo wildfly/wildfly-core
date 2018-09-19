@@ -477,8 +477,8 @@ public class DeployTestCase extends AbstractCliTestBase{
         } catch (Exception ex) {
             // Check error message
             assertThat("Error message doesn't contains expected message information!"
-                    , ex.getMessage(), containsString("WFLYSRV0150: Cannot create input stream from URL '" +
-                            cliTestApp2War.toURI() + WRONG_PATH_PART + "'"));
+                    , ex.getMessage(), allOf(containsString("WFLYSRV0150:"),
+                            containsString("'" + cliTestApp2War.toURI() + WRONG_PATH_PART + "'")));
             // Verification wrong command execution fail - success
         }
 
@@ -511,7 +511,7 @@ public class DeployTestCase extends AbstractCliTestBase{
         } catch (Exception ex) {
             // Check error message
             assertThat("Error message doesn't contains expected message information!"
-                    , ex.getMessage(), containsString("Path " + tempCliTestAppWar.getPath() + WRONG_PATH_PART + " doesn't exist."));
+                    , ex.getMessage(), containsString(tempCliTestAppWar.getPath() + WRONG_PATH_PART));
             // Verification wrong command execution fail - success
         }
 
@@ -529,7 +529,7 @@ public class DeployTestCase extends AbstractCliTestBase{
         } catch (Exception ex) {
             // Check error message
             assertThat("Error message doesn't contains expected message information!"
-                    , ex.getMessage(), containsString("Unrecognized arguments: [" + wrongArgument + "]"));
+                    , ex.getMessage(), containsString("[" + wrongArgument + "]"));
             // Verification wrong command execution fail - success
         }
 
@@ -560,8 +560,7 @@ public class DeployTestCase extends AbstractCliTestBase{
         } catch (Exception ex) {
             // Check error message
             assertThat("Error message doesn't contains expected message information!"
-                    , ex.getMessage(), containsString("'" + WRONG_DEPLOYMENT +
-                            "' is not found among the registered deployments."));
+                    , ex.getMessage(), containsString("'" + WRONG_DEPLOYMENT + "'"));
             // Verification wrong command execution fail - success
         }
 

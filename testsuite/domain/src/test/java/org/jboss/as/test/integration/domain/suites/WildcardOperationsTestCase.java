@@ -401,6 +401,7 @@ public class WildcardOperationsTestCase {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_RESOURCE_DESCRIPTION_OPERATION);
         operation.get(OP_ADDR).set(address);
+        operation.get("locale").set("en");
         return operation;
     }
 

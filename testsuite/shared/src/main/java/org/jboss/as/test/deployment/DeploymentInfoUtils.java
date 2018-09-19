@@ -730,8 +730,7 @@ public class DeploymentInfoUtils {
             // Verify error message
             assertThat("Wrong error message for missing deployment " + param.getName() + " in server group " + param.getResult().getServerGroup(),
                     response.get(FAILURE_DESCRIPTION).asString(), allOf(
-                            containsString("WFLYCTL0216: Management resource"),
-                            containsString("not found"),
+                            containsString("WFLYCTL0216:"),
                             containsString(param.getName())
                     )
             );
@@ -790,8 +789,7 @@ public class DeploymentInfoUtils {
         // Verify error message
         assertThat("Wrong error message for missing deployment " + param.getName() + " in server group " + param.getResult().getServerGroup(),
                 response.get(FAILURE_DESCRIPTION).asString(), allOf(
-                        containsString("WFLYCTL0216: Management resource"),
-                        containsString("not found"),
+                        containsString("WFLYCTL0216:"),
                         containsString(param.getName())
                 )
         );
