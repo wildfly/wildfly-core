@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.concurrent.TimeoutException;
+
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
@@ -247,6 +249,10 @@ public class HTTPSManagementInterfaceTestCase {
             //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
             //in particular the SocketException gets thrown on Windows
             // OK
+        } catch (SSLException e) {
+            if (!(e.getCause() instanceof SocketException)) {
+                throw e;
+            }
         }
 
         String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
