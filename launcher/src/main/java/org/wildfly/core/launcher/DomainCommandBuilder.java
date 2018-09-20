@@ -764,6 +764,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
         // HOST_CONTROLLER_JAVA_OPTS
         cmd.addAll(hostControllerJavaOpts.asList());
+        if (isModularJavaHome(getHostControllerJavaHome())) {
+            cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
 
         cmd.add("--");
         cmd.add("-default-jvm");
