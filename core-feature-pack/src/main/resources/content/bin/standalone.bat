@@ -237,7 +237,7 @@ if not "%PRESERVE_JAVA_OPTS%" == "true" (
           if not exist "%JBOSS_LOG_DIR" > nul 2>&1 (
             mkdir "%JBOSS_LOG_DIR%"
           )
-		set JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+		set "JAVA_OPTS=%JAVA_OPTS% -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -Xloggc:%JBOSS_LOG_DIR%\gc.log -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
         )
        )
     )
