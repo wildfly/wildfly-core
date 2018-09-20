@@ -690,4 +690,26 @@ public class ModelTestUtils {
         return result;
     }
 
+    public static ModelNode removeDefaultFormatter(final ModelNode model) {
+        for (String key : model.keys()) {
+            final ModelNode subModel = model.get(key);
+            if (subModel.getType() == ModelType.OBJECT) {
+                for (String subKey : subModel.keys()) {
+                    final ModelNode childModel = subModel.get(subKey);
+                    if (childModel.getType() == ModelType.OBJECT) {
+                        final Set<String> keys = childModel.keys();
+                        if(keys.contains("named-formatter")) {
+                            final ModelNode undefined = new ModelNode();
+                            if(!(undefined.equals(childModel.get("named-formatter")))) {
+                                childModel.remove("formatter");
+                            }
+                        } else {
+                            removeDefaultFormatter(childModel);
+                        }
+                    }
+                }
+            }
+        }
+        return model;
+    }
 }

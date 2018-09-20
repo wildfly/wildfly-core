@@ -423,6 +423,8 @@ final class SubsystemTestDelegate {
             legacySubsystem = legacyModelFixer.fixModel(legacySubsystem);
         }
 
+        legacySubsystem = ModelTestUtils.removeDefaultFormatter(legacySubsystem);
+
         //1) Check that the transformed model is the same as the whole model read from the legacy controller.
         //The transformed model is done via the resource transformers
         //The model in the legacy controller is built up via transformed operations
