@@ -146,6 +146,32 @@ public class CommandBuilderTest {
     }
 
     @Test
+    public void testCliBuilder() {
+        // Set up a standalone command builder
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(WILDFLY_HOME)
+                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+                .addJavaOption("-Djava.net.preferIPv4Stack=false");
+
+        // Get all the commands
+        final List<String> commands = commandBuilder.buildArguments();
+
+        // If we're using Java 9+ ensure the modular JDK options were added
+        testModularJvmArguments(commands, 1);
+
+        // A system property should only be added ones
+        long count = 0L;
+        for (String s : commandBuilder.getJavaOptions()) {
+            if (s.contains("java.net.preferIPv4Stack")) {
+                count++;
+            }
+        }
+        Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, count);
+
+        // The value saved should be the last value added
+        Assert.assertTrue("java.net.preferIPv4Stack should be set to false", commandBuilder.getJavaOptions().contains("-Djava.net.preferIPv4Stack=false"));
+    }
+
+    @Test
     public void testArguments() {
         final Arguments arguments = new Arguments();
         arguments.add("-Dkey=value");
