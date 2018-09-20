@@ -73,7 +73,7 @@
    </tls>
    <dir-contexts>
       <dir-context authentication-level="none" authentication-context="ldapAuthContext" name="DirContextInsecure" url="ldap://localhost:11391/"/>
-      <dir-context name="DirContextSsl" authentication-context="ldapAuthContext" referral-mode="THROW" url="ldaps://localhost:11391/" connection-timeout="6000" read-timeout="10000">
+      <dir-context name="DirContextSsl" authentication-context="ldapAuthContext" referral-mode="throw" url="ldaps://localhost:11391/" connection-timeout="6000" read-timeout="10000">
          <properties>
             <property name="java.naming.dns.url" value="dns://dnsserver/wiz.com"/>
          </properties>
