@@ -62,6 +62,11 @@ public class DelegatingResourceDefinition implements ResourceDefinition {
     }
 
     @Override
+    public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+        delegate.registerAdditionalRuntimePackages(resourceRegistration);
+    }
+
+    @Override
     public boolean isFeature() {
         return delegate.isFeature();
     }

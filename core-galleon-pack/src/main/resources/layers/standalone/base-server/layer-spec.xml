@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="base-server">
+    <feature-group name="standalone-base"/>
+    <feature-group name="public-interface"/>
+</layer-spec>

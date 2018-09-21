@@ -330,6 +330,16 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
      * @param requirements a set of CapabilityReferenceRecorder.
      */
     void registerRequirements(Set<CapabilityReferenceRecorder> requirements);
+
+    /**
+     * Register
+     * {@link org.jboss.as.controller.registry.RuntimePackageDependency}
+     * additional packages.
+     *
+     * @param pkgs The packages.
+     */
+    void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs);
+
     /**
      * A factory for creating a new, root model node registration.
      */
@@ -390,6 +400,7 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
             resourceDefinition.registerChildren(resourceRegistration);
             resourceDefinition.registerCapabilities(resourceRegistration);
             resourceDefinition.registerNotifications(resourceRegistration);
+            resourceDefinition.registerAdditionalRuntimePackages(resourceRegistration);
             return resourceRegistration;
         }
     }

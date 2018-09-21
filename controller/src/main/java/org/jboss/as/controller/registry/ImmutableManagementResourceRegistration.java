@@ -396,4 +396,13 @@ public interface ImmutableManagementResourceRegistration {
      * @return Set of CapabilityReferenceRecorder if any registered otherwise an empty set.
      */
     Set<CapabilityReferenceRecorder> getRequirements();
+
+    /**
+     * Returns additional packages provided by this resource.
+     *
+     * @return Set of
+     * {@link org.jboss.as.controller.registry.RuntimePackageDependency} if any
+     * registered otherwise an empty set.
+     */
+    Set<RuntimePackageDependency> getAdditionalRuntimePackages();
 }

@@ -36,6 +36,7 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -97,5 +98,10 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
         resourceRegistration.registerReadWriteAttribute(SERVER_NAME, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SASL_AUTHENTICATION_FACTORY, null, writeHandler);
         resourceRegistration.registerReadWriteAttribute(SASL_PROTOCOL, null, writeHandler);
+    }
+
+    @Override
+    public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.required("io.undertow.core"));
     }
 }

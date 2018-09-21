@@ -80,6 +80,7 @@ import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemXmlWriterRegistry;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
@@ -1165,6 +1166,17 @@ public class ExtensionRegistry {
 
         public boolean isFeature() {
             return deployments.isFeature();
+        }
+
+        @Override
+        public void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs) {
+            deployments.registerAdditionalRuntimePackages(pkgs);
+            subdeployments.registerAdditionalRuntimePackages(pkgs);
+        }
+
+        @Override
+        public Set<RuntimePackageDependency> getAdditionalRuntimePackages() {
+            return deployments.getAdditionalRuntimePackages();
         }
 
     }

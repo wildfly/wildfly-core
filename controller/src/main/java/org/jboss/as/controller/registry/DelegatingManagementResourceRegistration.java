@@ -376,4 +376,14 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
         return getDelegate().getRequirements();
     }
 
+    @Override
+    public void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs) {
+        getDelegate().registerAdditionalRuntimePackages(pkgs);
+    }
+
+    @Override
+    public Set<RuntimePackageDependency> getAdditionalRuntimePackages() {
+        return getDelegate().getAdditionalRuntimePackages();
+    }
+
 }

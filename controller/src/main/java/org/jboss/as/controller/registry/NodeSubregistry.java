@@ -111,6 +111,7 @@ final class NodeSubregistry {
             provider.registerNotifications(newRegistry);
             provider.registerChildren(newRegistry);
             provider.registerCapabilities(newRegistry);
+            provider.registerAdditionalRuntimePackages(newRegistry);
 
             if (constraintUtilizationRegistry != null) {
                 PathAddress childAddress = newRegistry.getPathAddress();

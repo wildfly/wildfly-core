@@ -36,6 +36,7 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -56,7 +57,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
     private Set<RuntimeCapability> incorporatingCapabilities;
     private Set<CapabilityReferenceRecorder> requirements;
     private boolean isFeature = true;
-
+    private final List<RuntimePackageDependency> additionalPackages = new LinkedList<>();
 
     /** Normal constructor */
     private ResourceBuilderRoot(PathElement pathElement, StandardResourceDescriptionResolver resourceResolver,
@@ -91,6 +92,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
         this.isRuntime = parent.isRuntime;
         this.isFeature = parent.isFeature;
         this.attributeResolver = toCopy.attributeResolver; // TODO Remove if this field is unneeded
+        this.additionalPackages.addAll(toCopy.additionalPackages);
     }
 
     static ResourceBuilder create(PathElement pathElement, StandardResourceDescriptionResolver resourceDescriptionResolver) {
@@ -260,6 +262,11 @@ class ResourceBuilderRoot implements ResourceBuilder {
         return parent;
     }
 
+    @Override
+    public ResourceBuilder addAdditionalRuntimePackages(RuntimePackageDependency... additionalPackages) {
+        this.additionalPackages.addAll(Arrays.asList(additionalPackages));
+        return this;
+    }
 
     @Override
     public ResourceDefinition build() {
@@ -292,6 +299,7 @@ class ResourceBuilderRoot implements ResourceBuilder {
                     .setDeprecationData(builder.deprecationData)
                     .setRuntime(builder.isRuntime)
                     .setCapabilities(builder.capabilities.toArray(new RuntimeCapability[builder.capabilities.size()]))
+                    .setAdditionalPackages(builder.additionalPackages.toArray(new RuntimePackageDependency[builder.additionalPackages.size()]))
                     .setIncorporatingCapabilities(builder.incorporatingCapabilities)
                     .setFeature(builder.isFeature)
             );

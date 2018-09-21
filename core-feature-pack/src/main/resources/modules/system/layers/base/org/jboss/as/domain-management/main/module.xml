@@ -45,13 +45,16 @@
         <module name="org.wildfly.security.elytron-private" />
         <module name="org.jboss.as.controller" />
         <module name="org.jboss.as.core-security"/>
+        <!-- for SecurityRealmService ADDITIONAL_PERMISSION -->
         <module name="org.jboss.ejb-client" optional="true" />
         <module name="org.jboss.logging" />
         <module name="org.jboss.logmanager"/>
         <module name="org.jboss.modules" />
         <module name="org.jboss.msc" />
         <module name="org.jboss.staxmapper"/>
+        <!-- used with jaas authentication -->
         <module name="org.picketbox" optional="true"/>
+        <!-- for SecurityRealmService ADDITIONAL_PERMISSION -->
         <module name="org.wildfly.transaction.client" optional="true" />
     </dependencies>
 </module>

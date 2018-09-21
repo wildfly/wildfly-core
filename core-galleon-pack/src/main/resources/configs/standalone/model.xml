@@ -14,12 +14,12 @@
         <package name="misc.standalone"/>
         <package name="org.jboss.as.standalone"/>
         <package name="org.jboss.as.domain-management"/>
-        <!-- is not required but useful even if elytron subsystem is not installed -->
-        <package name="org.wildfly.security.elytron"/>
         <!-- cleanup runtime dirs -->
         <package name="cleanup.standalone.config.history.dir" optional="true"/>
         <package name="cleanup.standalone.log.dir" optional="true"/>
         <package name="cleanup.standalone.data.dir" optional="true"/>
         <package name="cleanup.standalone.tmp.vfs" optional="true"/>
+        
+        <package name="org.wildfly.embedded"/>
     </packages>
 </config>

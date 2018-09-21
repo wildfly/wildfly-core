@@ -31,6 +31,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
@@ -81,6 +82,14 @@ public interface ResourceBuilder {
     ResourceBuilder addCapability(Capability capability);
 
     ResourceBuilder addCapabilities(Capability... capability);
+
+    /**
+     * Add additional packages to be provisioned.
+     * Find more on additional packages in {@link org.jboss.as.controller.ResourceDefinition#registerAdditionalRuntimePackages}
+     * @param packages The runtime packages to add.
+     * @return This builder.
+     */
+    ResourceBuilder addAdditionalRuntimePackages(RuntimePackageDependency... packages);
 
     default ResourceBuilder setIncorporatingCapabilities(Set<RuntimeCapability> incorporating) {
         // We have a default implementation so unknown impls can compile, but if anyone calls

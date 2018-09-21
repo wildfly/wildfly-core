@@ -41,6 +41,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.wildfly.common.Assert;
 
 /**
@@ -72,6 +73,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     private final int minOccurs;
     private final int maxOccurs;
     private boolean feature;
+    private final RuntimePackageDependency[] additionalPackages;
 
     /**
      * {@link ResourceDefinition} that uses the given {code descriptionProvider} to describe the resource.
@@ -102,6 +104,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.minOccurs = 0;
         this.maxOccurs = Integer.MAX_VALUE;
         this.feature = true;
+        this.additionalPackages = null;
     }
 
     /**
@@ -307,6 +310,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         this.minOccurs = parameters.minOccurs;
         this.maxOccurs = parameters.maxOccurs;
         this.feature = parameters.feature;
+        this.additionalPackages = parameters.additionalPackages;
     }
 
     private static OperationEntry.Flag restartLevelForAdd(OperationStepHandler addHandler) {
@@ -381,6 +385,13 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         }
         assert requirements != null;
         resourceRegistration.registerRequirements(requirements);
+    }
+
+    @Override
+    public void registerAdditionalRuntimePackages(final ManagementResourceRegistration resourceRegistration) {
+        if (additionalPackages!=null) {
+            resourceRegistration.registerAdditionalRuntimePackages(additionalPackages);
+        }
     }
 
     /**
@@ -558,6 +569,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         private boolean feature = true;
         private int minOccurs = 0;
         private int maxOccurs = Integer.MAX_VALUE;
+        private RuntimePackageDependency[] additionalPackages;
         /**
          * Creates a Parameters object
          * @param pathElement the path element of the created ResourceDefinition. Cannot be {@code null}
@@ -702,6 +714,16 @@ public class SimpleResourceDefinition implements ResourceDefinition {
          */
         public Parameters setCapabilities(RuntimeCapability ... capabilities){
             this.capabilities = capabilities;
+            return this;
+        }
+
+        /**
+         * Set the additional packages that this resource exposes
+         * @param additionalPackages runtime packages to register
+         * @return Parameters object
+         */
+        public Parameters setAdditionalPackages(RuntimePackageDependency... additionalPackages){
+            this.additionalPackages = additionalPackages;
             return this;
         }
 
