@@ -1,0 +1,25 @@
+<subsystem xmlns="urn:wildfly:elytron:5.0" register-jaspi-factory="false">
+    <jaspi>
+        <jaspi-configuration name="test" layer="HttpServlet" application-context="default /test" description="Test Definition">
+            <server-auth-modules>
+                <server-auth-module class-name="org.wildfly.Test" module="org.test" flag="REQUISITE">
+                    <options>
+                        <property name="a" value="b"/>
+                        <property name="c" value="d"/>
+                    </options>
+                </server-auth-module>
+                <server-auth-module class-name="org.wildfly.Test2" module="org.test2" flag="SUFFICIENT">
+                    <options>
+                        <property name="e" value="f"/>
+                        <property name="g" value="h"/>
+                    </options>
+                </server-auth-module>
+            </server-auth-modules>
+        </jaspi-configuration>
+        <jaspi-configuration name="minimal">
+            <server-auth-modules>
+                <server-auth-module class-name="org.wildfly.Test3" />
+            </server-auth-modules>
+        </jaspi-configuration>
+    </jaspi>
+</subsystem>

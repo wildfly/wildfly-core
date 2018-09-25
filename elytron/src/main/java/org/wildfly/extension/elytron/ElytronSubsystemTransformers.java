@@ -22,6 +22,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_5_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
 
 import java.util.Collections;
@@ -57,6 +58,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 5.0.0 (WildFly 15) to 4.0.0 (WildFly 14)
+        from5(chainedBuilder);
         // 4.0.0 (WildFly 14) to 3.0.0 (WildFly 13)
         from4(chainedBuilder);
         // 3.0.0 (WildFly 13) to 2.0.0 (WildFly 12)
@@ -64,8 +67,16 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
 
+    }
+
+    private static void from5(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
+        builder.getAttributeBuilder()
+            .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDefinition.REGISTER_JASPI_FACTORY)
+            .end();
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION));
     }
 
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
