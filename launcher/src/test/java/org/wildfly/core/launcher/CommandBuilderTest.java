@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -70,9 +71,6 @@ public class CommandBuilderTest {
                 .addJavaOption("-Djava.security.manager")
                 .addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
-                .addJavaOption("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED")
-                .addJavaOption("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED")
-                .addJavaOption("--add-modules=java.base, java.annotation.common")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
@@ -90,8 +88,8 @@ public class CommandBuilderTest {
 
         Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
-        Assert.assertTrue("Missing --add-exports option", commands.contains("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"));
-
+        // If we're using Java 9+ ensure the modular JDK options were added
+        testModularJvmArguments(commands, 1);
 
         // A system property should only be added ones
         long count = 0L;
@@ -138,10 +136,39 @@ public class CommandBuilderTest {
 
         Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
 
+        // If we're using Java 9+ ensure the modular JDK options were added
+        testModularJvmArguments(commands, 2);
+
         // Rename the binding address
         commandBuilder.setBindAddressHint(null);
         commands = commandBuilder.buildArguments();
         Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testCliBuilder() {
+        // Set up a standalone command builder
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(WILDFLY_HOME)
+                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+                .addJavaOption("-Djava.net.preferIPv4Stack=false");
+
+        // Get all the commands
+        final List<String> commands = commandBuilder.buildArguments();
+
+        // If we're using Java 9+ ensure the modular JDK options were added
+        testModularJvmArguments(commands, 1);
+
+        // A system property should only be added ones
+        long count = 0L;
+        for (String s : commandBuilder.getJavaOptions()) {
+            if (s.contains("java.net.preferIPv4Stack")) {
+                count++;
+            }
+        }
+        Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, count);
+
+        // The value saved should be the last value added
+        Assert.assertTrue("java.net.preferIPv4Stack should be set to false", commandBuilder.getJavaOptions().contains("-Djava.net.preferIPv4Stack=false"));
     }
 
     @Test
@@ -175,6 +202,34 @@ public class CommandBuilderTest {
         Assert.assertTrue("Missing -Dprop1=value1", stringArgs.contains("-Dprop1=value1"));
         Assert.assertTrue("Missing -Dprop2=value2", stringArgs.contains("-Dprop2=value2"));
         Assert.assertTrue("Missing -Dprop3=value3", stringArgs.contains("-Dprop3=value3"));
+    }
+
+    private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {
+        // If we're using Java 9+ ensure the modular JDK options were added
+        if (Environment.isModularJavaHome(JAVA_HOME)) {
+            assertArgumentExists(command, "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-modules=java.se", expectedCount);
+        } else {
+            Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.nio.ch=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-modules=java.se\" to be in the command list", command.contains("--add-modules=java.se"));
+        }
+    }
+
+    private static void assertArgumentExists(final Collection<String> args, final String arg, final int expectedCount) {
+        int count = 0;
+        for (String value : args) {
+            if (value.equals(arg)) {
+                count++;
+            }
+        }
+        Assert.assertEquals(String.format("Expected %d %s arguments, found %d", expectedCount, arg, count), expectedCount, count);
     }
 
 }

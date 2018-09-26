@@ -617,6 +617,9 @@ public class CliCommandBuilder implements CommandBuilder {
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();
         cmd.addAll(getJavaOptions());
+        if (Environment.isModularJavaHome(getJavaHome())) {
+            cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
         cmd.add("-jar");
         cmd.add(environment.getModuleJar().toString());
         cmd.add("-mp");
