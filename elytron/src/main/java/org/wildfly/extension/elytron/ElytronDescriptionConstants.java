@@ -243,10 +243,12 @@ interface ElytronDescriptionConstants {
     String KEY_TYPE = "key-type";
     String KEY_MANAGER = "key-manager";
     String KEY_MANAGERS = "key-managers";
+    String KEY_MAP = "key-map";
     String KEY_SIZE = "key-size";
     String KEY_STORE = "key-store";
     String KEY_STORE_REALM = "key-store-realm";
     String KEY_STORES = "key-stores";
+    String KID = "kid";
 
     String LAST_ACCESSED_TIME = "last-accessed-time";
     String LDAP_KEY_STORE = "ldap-key-store";
