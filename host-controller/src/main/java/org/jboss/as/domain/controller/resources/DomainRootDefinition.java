@@ -343,7 +343,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
 
         //TODO perhaps all these descriptions and the validator log messages should be moved into management-client-content?
         resourceRegistration.registerSubModel(
-                new ManagedDMRContentTypeResourceDefinition(contentRepo, ROLLOUT_PLAN,
+                new ManagedDMRContentTypeResourceDefinition(contentRepo, fileRepository, ROLLOUT_PLAN,
                 PathElement.pathElement(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS), new RolloutPlanValidator(), DomainResolver.getResolver(ROLLOUT_PLANS), DomainResolver.getResolver(ROLLOUT_PLAN)));
 
         // Extensions
