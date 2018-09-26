@@ -214,8 +214,15 @@ public interface Bootstrap {
                             persister = new GitConfigurationPersister(serverEnvironment.getGitRepository(), configurationFile, rootElement, parser, parser,
                                     runningModeControl.isReloaded());
                         } else {
-                            persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
+                           if(configurationFile.getInteractionPolicy().isReadOnly() || (serverEnvironment.isStandalone() && serverEnvironment.isXMLHistoryDisabled() )){
+                           //We reset boot file to choose original one.
+                               configurationFile.resetBootFile(false, null);
+                           //And never supressLoad (last false) to allow :reload to work
+                               persister = new XmlConfigurationPersister(configurationFile.getBootFile(), rootElement, parser, parser,false);
+                           }else {
+                                persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
                                     runningModeControl.isReloaded(), serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.EMBEDDED);
+                            }
                         }
                         for (Namespace namespace : Namespace.domainValues()) {
                             if (!namespace.equals(Namespace.CURRENT)) {

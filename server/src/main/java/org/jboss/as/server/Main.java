@@ -153,6 +153,7 @@ public final class Main {
         boolean startSuspended = false;
         boolean removeConfig = false;
         boolean startModeSet = false;
+        boolean disableXMLHistory = false;
         for (int i = 0; i < argsLength; i++) {
             final String arg = args[i];
             try {
@@ -187,6 +188,8 @@ public final class Main {
                         return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                     }
                     configInteractionPolicy = ConfigurationFile.InteractionPolicy.READ_ONLY;
+                } else if (arg.equals(CommandLineConstants.DISABLE_XML_HISTORY)) {
+                    disableXMLHistory = true;
                 } else if (arg.startsWith(CommandLineConstants.OLD_SERVER_CONFIG)) {
                     serverConfig = parseValue(arg, CommandLineConstants.OLD_SERVER_CONFIG);
                     if (serverConfig == null) {
@@ -387,7 +390,7 @@ public final class Main {
         productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
                 serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended,
-                gitRepository, gitBranch, gitAuthConfiguration));
+                gitRepository, gitBranch, gitAuthConfiguration,disableXMLHistory));
     }
 
     private static void assertSingleConfig(String serverConfig) {

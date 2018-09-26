@@ -103,6 +103,10 @@ public class CommandLineConstants {
      * the file is not persisted */
     public static final String READ_ONLY_SERVER_CONFIG = "--read-only-server-config";
 
+    /**
+     * Only in standalone mode, it avoids creation and use of 'standalone_xml_history'
+     */
+    public static final String DISABLE_XML_HISTORY = "--disable-configuration-history";
     /** Address on which the process controller listens */
     public static final String OLD_PROCESS_CONTROLLER_BIND_ADDR = "-bind-addr";
     public static final String PROCESS_CONTROLLER_BIND_ADDR = "--pc-address";
@@ -141,7 +145,6 @@ public class CommandLineConstants {
     public static final String SHORT_HOST = "-H";
     public static final String HOST = "--host";
     public static final String CONNECTION_PROPERTIES = "--ejb-client-properties";
-
 
     private CommandLineConstants() {
     }

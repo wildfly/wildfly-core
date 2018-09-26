@@ -321,6 +321,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
     private final boolean standalone;
     private final boolean allowModelControllerExecutor;
+    private final boolean disableXMLHistory;
     private final RunningMode initialRunningMode;
     private final ProductConfig productConfig;
     private final RunningModeControl runningModeControl;
@@ -333,28 +334,29 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, boolean startSuspended) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), startSuspended, null, null, null);
+                System.currentTimeMillis(), startSuspended, null, null, null,false);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                System.currentTimeMillis(), false, null, null, null);
+                System.currentTimeMillis(), false, null, null, null,false);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, String gitRepository, String gitBranch, String gitAuthConfiguration) {
         this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode, productConfig,
-                startTime, false, gitRepository, gitBranch, gitAuthConfiguration);
+                startTime, false, gitRepository, gitBranch, gitAuthConfiguration,false);
     }
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
-                             String gitRepository, String gitBranch, String gitAuthConfiguration) {
+                             String gitRepository, String gitBranch, String gitAuthConfiguration, boolean disableXMLHistory) {
         this.startSuspended = startSuspended;
+        this.disableXMLHistory = disableXMLHistory;
         assert props != null;
 
         this.launchType = launchType;
@@ -981,6 +983,10 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public boolean isStartSuspended() {
         return startSuspended;
+    }
+
+    public boolean isXMLHistoryDisabled() {
+        return disableXMLHistory;
     }
 
     private File configureServerTempDir(String path, Properties providedProps) {
