@@ -49,7 +49,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -133,16 +132,6 @@ public abstract class ScriptTestCase {
     }
 
     @Test
-    @Ignore("Current tests do not work with csh")
-    public void testCshScript() throws Exception {
-        Assume.assumeTrue(!Environment.isWindows() && isShellSupported("csh", "-c", "echo", "test"));
-        try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "csh")) {
-            testScript(script);
-        }
-    }
-
-
-    @Test
     public void testDashScript() throws Exception {
         Assume.assumeTrue(!Environment.isWindows() && isShellSupported("dash", "-c", "echo", "test"));
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "dash")) {
@@ -151,36 +140,9 @@ public abstract class ScriptTestCase {
     }
 
     @Test
-    @Ignore("Current tests do not work with fish")
-    public void testFishScript() throws Exception {
-        Assume.assumeTrue(!Environment.isWindows() && isShellSupported("fish", "-c", "echo", "test"));
-        try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "fish")) {
-            testScript(script);
-        }
-    }
-
-    @Test
     public void testKshScript() throws Exception {
         Assume.assumeTrue(!Environment.isWindows() && isShellSupported("ksh", "-c", "echo", "test"));
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "ksh")) {
-            testScript(script);
-        }
-    }
-
-    @Test
-    @Ignore("Current tests do not work with tcsh")
-    public void testTcshScript() throws Exception {
-        Assume.assumeTrue(!Environment.isWindows() && isShellSupported("tcsh", "-c", "echo", "test"));
-        try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "tcsh")) {
-            testScript(script);
-        }
-    }
-
-    @Test
-    @Ignore("Current tests do not work with zsh")
-    public void testZshScript() throws Exception {
-        Assume.assumeTrue(!Environment.isWindows() && isShellSupported("zsh", "-c", "echo", "test"));
-        try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".sh"), check, "zsh")) {
             testScript(script);
         }
     }
