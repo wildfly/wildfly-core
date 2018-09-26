@@ -25,6 +25,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_P
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 
 import java.security.AccessController;
 import java.security.Policy;
@@ -77,6 +78,7 @@ import org.jboss.security.jacc.SubjectPolicyContextHandler;
 import org.wildfly.common.Assert;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
@@ -358,7 +360,7 @@ class PolicyDefinitions {
                         @Override
                         public Object getContext(String key, Object data) throws PolicyContextException {
                             if (supports(key)) {
-                                SecurityDomain securityDomain = SecurityDomain.getCurrent();
+                                SecurityDomain securityDomain = doPrivileged((PrivilegedAction<SecurityDomain>) SecurityDomain::getCurrent);
 
                                 if (securityDomain == null) {
                                     return null;
@@ -498,7 +500,7 @@ class PolicyDefinitions {
                 }
             }
 
-            for (Credential credential : securityIdentity.getPrivateCredentials()) {
+            for (Credential credential : doPrivileged((PrivilegedAction<IdentityCredentials>) securityIdentity::getPrivateCredentials)) {
                 if (credential instanceof PasswordCredential) {
                     addPrivateCredential(subject, credential.castAs(PasswordCredential.class).getPassword());
                 }
