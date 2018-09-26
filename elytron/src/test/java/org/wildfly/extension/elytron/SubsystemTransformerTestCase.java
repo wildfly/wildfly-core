@@ -97,8 +97,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testTransformerEAP720() throws Exception {
-        // TODO Once the controller version EAP_7_2_0 is available this should switch to use it.
-        testTransformation(EAP_7_1_0);
+        testTransformation(EAP_7_2_0_TEMP);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
