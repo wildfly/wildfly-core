@@ -65,7 +65,9 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         WILDFLY10_1("WildFly10.1", 4, 2),
         WILDFLY11("WildFly11.0", 5, 0),
         WILDFLY12("WildFly12.0", 6, 0),
-        WILDFLY13("WildFly13.0", 7, 0);
+        WILDFLY13("WildFly13.0", 7, 0),
+        WILDFLY14("WildFly14.0", 8, 0);
+
 
         private static final Map<String, KnownRelease> map = new HashMap<>();
         static {
