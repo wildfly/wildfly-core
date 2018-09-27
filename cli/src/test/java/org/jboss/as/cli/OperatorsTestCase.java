@@ -193,7 +193,7 @@ public class OperatorsTestCase {
             ctx.handle("version ||");
             throw new Exception("Should have failed");
         } catch (CommandLineException ex) {
-            Assert.assertTrue(ex.toString(), ex.getMessage().contains("Failed to handle 'version ||'"));
+            Assert.assertTrue(ex.toString(), ex.getMessage().contains("aesh: syntax error near unexpected token '|'"));
         } finally {
             ctx.terminateSession();
         }
