@@ -17,6 +17,7 @@ limitations under the License.
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0_TEMP;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -46,23 +47,57 @@ import org.junit.Test;
  */
 public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
+    private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
+
     public SubsystemTransformerTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("elytron-transformers-1.2.xml");
+        return readResource("elytron-transformers-4.0.xml");
+    }
+
+    protected String getSubsystemXml(final String subsystemFile) throws IOException {
+        return readResource(subsystemFile);
     }
 
     @Test
     public void testRejectingTransformersEAP710() throws Exception {
-        testRejectingTransformers(EAP_7_1_0);
+        testRejectingTransformers(EAP_7_1_0, "elytron-transformers-1.2-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(KerberosSecurityFactoryDefinition.FAIL_CACHE)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha384")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha512")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, "DisallowedMappedRoleMapper")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT)),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER)),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                ));
+    }
+
+    @Test
+    public void testRejectingTransformersEAP720() throws Exception {
+        testRejectingTransformers(EAP_7_2_0_TEMP, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig());
     }
 
     @Test
     public void testTransformerEAP710() throws Exception {
-        testTransformation(EAP_7_1_0);
+        testTransformation(EAP_7_1_0, getSubsystemXml("elytron-transformers-1.2.xml"));
+    }
+
+    @Test
+    public void testTransformerEAP720() throws Exception {
+        testTransformation(EAP_7_2_0_TEMP);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
@@ -85,10 +120,10 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         return services;
     }
 
-    private void testTransformation(final ModelTestControllerVersion controller) throws Exception {
+    private void testTransformation(final ModelTestControllerVersion controller, final String subsystemXml) throws Exception {
         final ModelVersion version = controller.getSubsystemModelVersion(getMainSubsystemName());
 
-        KernelServices services = this.buildKernelServices(getSubsystemXml(), controller, version,
+        KernelServices services = this.buildKernelServices(subsystemXml, controller, version,
                 controller.getCoreMavenGroupId() + ":wildfly-elytron-integration:" + controller.getCoreVersion());
 
         // check that both versions of the legacy model are the same and valid
@@ -98,8 +133,11 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         Assert.assertTrue(transformed.isDefined());
     }
 
+    private void testTransformation(final ModelTestControllerVersion controller) throws Exception {
+        testTransformation(controller, getSubsystemXml());
+    }
 
-    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
+    private void testRejectingTransformers(ModelTestControllerVersion controllerVersion, final String subsystemXmlFile, final FailedOperationTransformationConfig config) throws Exception {
         ModelVersion elytronVersion = controllerVersion.getSubsystemModelVersion(getMainSubsystemName());
 
         //Boot up empty controllers with the resources needed for the ops coming from the xml to work
@@ -120,32 +158,10 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(elytronVersion).isSuccessfulBoot());
 
-        List<ModelNode> ops = builder.parseXmlResource("elytron-transformers-1.2-reject.xml");
-        PathAddress subsystemAddress = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(KerberosSecurityFactoryDefinition.FAIL_CACHE)
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha384")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "DisallowedScramSha512")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, "DisallowedMappedRoleMapper")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT)),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-                .addFailedAttribute(subsystemAddress.append(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER)),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
-        );
-        /*ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, new FailedOperationTransformationConfig()
-               ...
-        );*/
+        List<ModelNode> ops = builder.parseXmlResource(subsystemXmlFile);
+        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, config);
     }
+
 
 
 }
