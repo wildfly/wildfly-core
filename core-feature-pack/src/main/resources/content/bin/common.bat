@@ -2,8 +2,12 @@
 call %*
 goto :eof
 
+:setModularJdk
+    "%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+goto :eof
+
 :setDefaultModularJvmOptions
-  "%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
+  call :setModularJdk
   if "!MODULAR_JDK!" == "true" (
     echo "%~1" | findstr /I "\-\-add\-modules" > nul
     if errorlevel == 1 (
