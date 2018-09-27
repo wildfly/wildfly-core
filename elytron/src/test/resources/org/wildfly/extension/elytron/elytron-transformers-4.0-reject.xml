@@ -1,2 +1,7 @@
 <subsystem xmlns="urn:wildfly:elytron:5.0">
+    <audit-logging>
+        <!-- flushed was added in 5.0 - should be rejected when different from synchronized -->
+        <file-audit-log name="auditTransformable" path="audit.log" synchronized="false" autoflush="false"/>
+        <file-audit-log name="auditUntransformable" path="audit.log" synchronized="false" autoflush="true"/>
+    </audit-logging>
 </subsystem>

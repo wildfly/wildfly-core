@@ -27,6 +27,7 @@
         </simple-permission-mapper>
         <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
             <permission-mapping match-all="true">
+                <!-- permission-sets was added in 3.0 - should be inlined -->
                 <permission-set name="my-permission" />
             </permission-mapping>
         </simple-permission-mapper>

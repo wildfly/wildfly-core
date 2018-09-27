@@ -87,6 +87,11 @@ class AuditResourceDefinitions {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition AUTOFLUSH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTOFLUSH, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     static final SimpleAttributeDefinition SYNCHRONIZED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYNCHRONIZED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(true))
@@ -186,7 +191,7 @@ class AuditResourceDefinitions {
     }
 
     static ResourceDefinition getFileAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -195,6 +200,7 @@ class AuditResourceDefinitions {
                     throws OperationFailedException {
 
                 final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
+                final boolean autoflush = AUTOFLUSH.resolveModelAttribute(context, model).asBoolean(synv);
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
 
                 final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
@@ -222,6 +228,7 @@ class AuditResourceDefinitions {
                         try {
                             endpoint = FileAuditEndpoint.builder().setLocation(resolvedPath.toPath())
                                     .setSyncOnAccept(synv)
+                                    .setFlushOnAccept(autoflush)
                                     .setDateTimeFormatterSupplier(dateTimeFormatterSupplier).build();
                         } catch (IOException e) {
                             throw ROOT_LOGGER.unableToStartService(e);
@@ -241,7 +248,7 @@ class AuditResourceDefinitions {
     }
 
     static ResourceDefinition getPeriodicRotatingFileAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, PERIODIC_SUFFIX };
+        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, PERIODIC_SUFFIX };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -250,6 +257,7 @@ class AuditResourceDefinitions {
                     throws OperationFailedException {
 
                 final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
+                final boolean autoflush = AUTOFLUSH.resolveModelAttribute(context, model).asBoolean(synv);
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
                 final String suffix = PERIODIC_SUFFIX.resolveModelAttribute(context, model).asString();
 
@@ -280,6 +288,7 @@ class AuditResourceDefinitions {
                                     .setSuffix(suffix)
                                     .setLocation(resolvedPath.toPath())
                                     .setSyncOnAccept(synv)
+                                    .setFlushOnAccept(autoflush)
                                     .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
 
                             endpoint = builder.build();
@@ -301,7 +310,7 @@ class AuditResourceDefinitions {
     }
 
     static ResourceDefinition getSizeRotatingFileAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] {PATH, RELATIVE_TO, SYNCHRONIZED, FORMAT, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SIZE_SUFFIX };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { PATH, RELATIVE_TO, AUTOFLUSH, SYNCHRONIZED, FORMAT, MAX_BACKUP_INDEX, ROTATE_ON_BOOT, ROTATE_SIZE, SIZE_SUFFIX };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -310,6 +319,7 @@ class AuditResourceDefinitions {
                     throws OperationFailedException {
 
                 final boolean synv = SYNCHRONIZED.resolveModelAttribute(context, model).asBoolean();
+                final boolean autoflush = AUTOFLUSH.resolveModelAttribute(context, model).asBoolean(synv);
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
                 final int maxBackupIndex = MAX_BACKUP_INDEX.resolveModelAttribute(context, model).asInt(0);
                 final boolean rotateOnBoot = ROTATE_ON_BOOT.resolveModelAttribute(context, model).asBoolean();
@@ -348,6 +358,7 @@ class AuditResourceDefinitions {
                             }
                             builder.setLocation(resolvedPath.toPath())
                                     .setSyncOnAccept(synv)
+                                    .setFlushOnAccept(autoflush)
                                     .setDateTimeFormatterSupplier(dateTimeFormatterSupplier);
 
                             endpoint = builder.build();
