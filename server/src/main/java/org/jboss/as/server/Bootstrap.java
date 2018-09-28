@@ -215,10 +215,9 @@ public interface Bootstrap {
                                     runningModeControl.isReloaded());
                         } else {
                            if(configurationFile.getInteractionPolicy().isReadOnly() || (serverEnvironment.isStandalone() && serverEnvironment.isXMLHistoryDisabled() )){
-                           //We reset boot file to choose original one.
-                               configurationFile.resetBootFile(false, null);
+                           //We use original configurationFile. instead of bootFile resolved by 'ConfigurationFile'
                            //And never supressLoad (last false) to allow :reload to work
-                               persister = new XmlConfigurationPersister(configurationFile.getBootFile(), rootElement, parser, parser,false);
+                               persister = new XmlConfigurationPersister(configurationFile.getMainFile(), rootElement, parser, parser,false);
                            }else {
                                 persister = new BackupXmlConfigurationPersister(configurationFile, rootElement, parser, parser,
                                     runningModeControl.isReloaded(), serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.EMBEDDED);
