@@ -97,7 +97,7 @@ public class ExtensionResource implements Resource.ResourceEntry {
             Map<String, SubsystemInformation> entry = extensionRegistry.getAvailableSubsystems(moduleName);
             SubsystemInformation info = entry != null ? entry.get(element.getValue()) : null;
             if (info != null) {
-                return new SubsystemResource(element.getValue(), info);
+                result = new SubsystemResource(element.getValue(), info);
             }
         }
         return result;
@@ -159,7 +159,7 @@ public class ExtensionResource implements Resource.ResourceEntry {
                 }
             }
         }
-        return result;
+        return result != null ? result : Collections.emptySet();
     }
 
     @Override
