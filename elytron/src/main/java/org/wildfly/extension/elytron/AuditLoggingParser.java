@@ -50,10 +50,20 @@ class AuditLoggingParser {
 
     private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
+            .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
+            .build();
+
+    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
+            .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
             .build();
 
     private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
+            .setUseElementsForGroups(false)
+            .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
+            .build();
+
+    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
             .build();
@@ -91,10 +101,10 @@ class AuditLoggingParser {
 
     final PersistentResourceXMLDescription parser5_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
             .addChild(aggregateSecurityEventParser)
-            .addChild(customSecurityEventParser) // new
+            .addChild(customSecurityEventParser)
             .addChild(fileAuditLogParser_5_0)
-            .addChild(periodicRotatingFileAuditLogParser)
-            .addChild(sizeRotatingFileAuditLogParser)
+            .addChild(periodicRotatingFileAuditLogParser_5_0)
+            .addChild(sizeRotatingFileAuditLogParser_5_0)
             .addChild(syslogAuditLogParser)
             .build();
 

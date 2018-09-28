@@ -19,7 +19,9 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
@@ -78,12 +80,18 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from5(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
+        transformAutoFlush(builder, FILE_AUDIT_LOG);
+        transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
+        transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);
+    }
+
+    private static void transformAutoFlush(ResourceTransformationDescriptionBuilder builder, final String resourceName) {
         builder
-               .addChildResource(PathElement.pathElement(FILE_AUDIT_LOG))
-               .getAttributeBuilder()
-               .setDiscard(DISCARD_IF_EQUALS_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
-               .addRejectCheck(REJECT_FLUSHED_DIFFERENT_FROM_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
-               .end();
+            .addChildResource(PathElement.pathElement(resourceName))
+            .getAttributeBuilder()
+            .setDiscard(DISCARD_IF_EQUALS_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
+            .addRejectCheck(REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
+            .end();
     }
 
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -179,7 +187,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
-    private static final RejectAttributeChecker REJECT_FLUSHED_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+    private static final RejectAttributeChecker REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
             return ROOT_LOGGER.unableToTransformTornAttribute(AUTOFLUSH, SYNCHRONIZED);
@@ -187,8 +195,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
         @Override
         protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            boolean synced = context.readResourceFromRoot(address).getModel().get(SYNCHRONIZED).asBoolean();
-            return synced != attributeValue.asBoolean();
+            if (attributeValue.isDefined()) {
+                boolean synced = context.readResourceFromRoot(address).getModel().get(SYNCHRONIZED).asBoolean();
+                return synced != attributeValue.asBoolean();
+            }
+            return false;
         }
     };
 
