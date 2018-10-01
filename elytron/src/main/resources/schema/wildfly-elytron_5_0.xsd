@@ -600,6 +600,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="autoflush" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether every event should be immediately flushed to output stream.
+                            When not specified, "synchronized" value is used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
                 <xs:attribute name="format" default="SIMPLE" type="formatType">
                     <xs:annotation>
                         <xs:documentation>
