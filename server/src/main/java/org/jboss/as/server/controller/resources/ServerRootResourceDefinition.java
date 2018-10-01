@@ -60,7 +60,6 @@ import org.jboss.as.controller.operations.common.SnapshotListHandler;
 import org.jboss.as.controller.operations.common.SnapshotTakeHandler;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.controller.operations.common.ValidateOperationHandler;
-import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.controller.operations.common.XmlMarshallingHandler;
 import org.jboss.as.controller.operations.global.GlobalInstallationReportHandler;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
@@ -113,6 +112,7 @@ import org.jboss.as.server.operations.ServerSuspendHandler;
 import org.jboss.as.server.operations.ServerVersionOperations.DefaultEmptyListAttributeHandler;
 import org.jboss.as.server.operations.SetServerGroupHostHandler;
 import org.jboss.as.server.operations.SuspendStateReadHandler;
+import org.jboss.as.server.operations.WriteConfigHandler;
 import org.jboss.as.server.services.net.InterfaceResourceDefinition;
 import org.jboss.as.server.services.net.NetworkInterfaceRuntimeHandler;
 import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
@@ -376,33 +376,26 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(ServerResumeHandler.DEFINITION, ServerResumeHandler.INSTANCE);
         }
 
-        // Runtime operations
-        if (serverEnvironment != null) {
-            // The System.exit() based shutdown command is only valid for a server process directly launched from the command line
-            if (serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.STANDALONE) {
-                ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState);
-                resourceRegistration.registerOperationHandler(ServerShutdownHandler.DEFINITION, serverShutdownHandler);
-
-            }
-            resourceRegistration.registerSubModel(ServerEnvironmentResourceDescription.of(serverEnvironment));
+        // The System.exit() based shutdown command is only valid for a server process directly launched from the command line
+        if (serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.STANDALONE) {
+            ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState);
+            resourceRegistration.registerOperationHandler(ServerShutdownHandler.DEFINITION, serverShutdownHandler);
         }
 
     }
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        if (serverEnvironment != null) { // TODO eliminate test cases that result in serverEnvironment == null
-            if (isDomain) {
-                resourceRegistration.registerReadOnlyAttribute(NAME, serverEnvironment.getProcessNameReadHandler());
-                resourceRegistration.registerReadWriteAttribute(PROFILE_NAME, null, new ModelOnlyWriteAttributeHandler(PROFILE_NAME));
-            } else {
-                resourceRegistration.registerReadWriteAttribute(NAME, serverEnvironment.getProcessNameReadHandler(), serverEnvironment.getProcessNameWriteHandler());
-                // The legacy "undefined" profile-name
-                resourceRegistration.registerReadOnlyAttribute(NULL_PROFILE_NAME, null);
-                resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
-            }
-            resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
+        if (isDomain) {
+            resourceRegistration.registerReadOnlyAttribute(NAME, serverEnvironment.getProcessNameReadHandler());
+            resourceRegistration.registerReadWriteAttribute(PROFILE_NAME, null, new ModelOnlyWriteAttributeHandler(PROFILE_NAME));
+        } else {
+            resourceRegistration.registerReadWriteAttribute(NAME, serverEnvironment.getProcessNameReadHandler(), serverEnvironment.getProcessNameWriteHandler());
+            // The legacy "undefined" profile-name
+            resourceRegistration.registerReadOnlyAttribute(NULL_PROFILE_NAME, null);
+            resourceRegistration.registerReadWriteAttribute(ORGANIZATION_IDENTIFIER, null, new ModelOnlyWriteAttributeHandler(ORGANIZATION_IDENTIFIER));
         }
+        resourceRegistration.registerReadOnlyAttribute(LAUNCH_TYPE, new LaunchTypeHandler(serverEnvironment.getLaunchType()));
 
         resourceRegistration.registerReadOnlyAttribute(RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         resourceRegistration.registerReadOnlyAttribute(SERVER_STATE, new ProcessStateAttributeHandler(processState));
@@ -438,6 +431,10 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
+
+        // Server environment
+        resourceRegistration.registerSubModel(ServerEnvironmentResourceDescription.of(serverEnvironment));
+
         // System Properties
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(serverEnvironment));
 
