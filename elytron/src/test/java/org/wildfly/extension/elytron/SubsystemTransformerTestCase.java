@@ -89,7 +89,24 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     public void testRejectingTransformersEAP720() throws Exception {
         testRejectingTransformers(EAP_7_2_0_TEMP, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION, "minimal")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG, "audit1")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG, "audit2")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG, "audit3")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG, "audit4")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG, "audit5")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG, "audit6")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
                 ));
     }
 

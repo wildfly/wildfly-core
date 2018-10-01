@@ -6,4 +6,13 @@
             </server-auth-modules>
         </jaspi-configuration>
     </jaspi>
+    <audit-logging>
+        <!-- autoflush was added in 5.0 - should be rejected when different from synchronized -->
+        <file-audit-log name="audit1" path="audit.log" synchronized="true" autoflush="false"/>
+        <file-audit-log name="audit2" path="audit.log" synchronized="false" autoflush="true"/>
+        <periodic-rotating-file-audit-log name="audit3" path="target/audit.log" format="JSON" suffix="y-M-d" synchronized="true" autoflush="false" />
+        <periodic-rotating-file-audit-log name="audit4" path="target/audit.log" format="JSON" suffix="y-M-d" synchronized="false" autoflush="true" />
+        <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="true" autoflush="false" />
+        <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
+    </audit-logging>
 </subsystem>

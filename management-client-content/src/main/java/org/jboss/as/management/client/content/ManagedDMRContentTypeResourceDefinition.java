@@ -35,6 +35,7 @@ import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.repository.ContentRepository;
+import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -53,12 +54,13 @@ public class ManagedDMRContentTypeResourceDefinition extends SimpleResourceDefin
     private final ResourceDescriptionResolver childResolver;
 
     public ManagedDMRContentTypeResourceDefinition(final ContentRepository contentRepository,
+                                                   final HostFileRepository hostFileRepository,
                                                    final String childType,
                                                    final PathElement pathElement,
                                                    final ParameterValidator contentValidator,
                                                    final ResourceDescriptionResolver descriptionResolver,
                                                    final ResourceDescriptionResolver childResolver) {
-        super(pathElement, descriptionResolver, new ManagedDMRContentTypeAddHandler(contentRepository, childType),
+        super(pathElement, descriptionResolver, new ManagedDMRContentTypeAddHandler(contentRepository, hostFileRepository, childType),
                 null, OperationEntry.Flag.RESTART_NONE, null);
         this.childResolver = childResolver;
         this.contentValidator = contentValidator;

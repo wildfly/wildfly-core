@@ -17,15 +17,22 @@ limitations under the License.
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_5_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -77,6 +84,18 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDefinition.REGISTER_JASPI_FACTORY)
             .end();
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION));
+        transformAutoFlush(builder, FILE_AUDIT_LOG);
+        transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
+        transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);
+    }
+
+    private static void transformAutoFlush(ResourceTransformationDescriptionBuilder builder, final String resourceName) {
+        builder
+            .addChildResource(PathElement.pathElement(resourceName))
+            .getAttributeBuilder()
+            .setDiscard(DISCARD_IF_EQUALS_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
+            .addRejectCheck(REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED, AuditResourceDefinitions.AUTOFLUSH)
+            .end();
     }
 
     private static void from4(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -130,6 +149,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
     }
 
+    // converting permission-set reference back to inline permissions
     private static final AttributeConverter MAPPING_PERMISSION_SET_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
         @Override
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
@@ -152,6 +172,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
+    // converting permission-set reference back to inline permissions
     private static final AttributeConverter CONSTANT_PERMISSION_SET_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
         @Override
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
@@ -170,4 +191,27 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
+    private static final RejectAttributeChecker REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return ROOT_LOGGER.unableToTransformTornAttribute(AUTOFLUSH, SYNCHRONIZED);
+        }
+
+        @Override
+        protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.isDefined()) {
+                boolean synced = context.readResourceFromRoot(address).getModel().get(SYNCHRONIZED).asBoolean();
+                return synced != attributeValue.asBoolean();
+            }
+            return false;
+        }
+    };
+
+    private static final DiscardAttributeChecker DISCARD_IF_EQUALS_SYNCHRONIZED = new DiscardAttributeChecker.DefaultDiscardAttributeChecker() {
+        @Override
+        protected boolean isValueDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            boolean synced = context.readResourceFromRoot(address).getModel().get(SYNCHRONIZED).asBoolean();
+            return synced == attributeValue.asBoolean();
+        }
+    };
 }

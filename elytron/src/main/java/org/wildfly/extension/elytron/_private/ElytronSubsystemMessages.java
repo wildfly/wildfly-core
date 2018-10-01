@@ -323,6 +323,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 40, value = "Unable to load the permission module '%s' for the permission mapping")
     StartException invalidPermissionModule(String module, @Cause Throwable cause);
 
+    @Message(id = 41, value = "Unable to transform configuration to the target version - attribute '%s' is different from '%s'")
+    String unableToTransformTornAttribute(String attribute1, String attribute2);
+
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);

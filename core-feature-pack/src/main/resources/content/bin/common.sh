@@ -1,7 +1,11 @@
 #!/bin/sh -x
 
-setDefaultModularJvmOptions() {
+setModularJdk() {
   $JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
+}
+
+setDefaultModularJvmOptions() {
+  setModularJdk
   if [ "$MODULAR_JDK" = "true" ]; then
     DEFAULT_MODULAR_JVM_OPTIONS=`echo $* | $GREP "\-\-add\-modules"`
     if [ "x$DEFAULT_MODULAR_JVM_OPTIONS" = "x" ]; then
