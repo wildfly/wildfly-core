@@ -107,6 +107,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.jboss.spec.javax.security.auth.message</groupId>
+            <artifactId>jboss-jaspi-api_1.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Temporary due to backward compatibility with the configuration of JACC and related services -->
         <dependency>
             <groupId>org.picketbox</groupId>

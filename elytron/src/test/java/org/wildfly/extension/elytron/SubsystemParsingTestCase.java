@@ -18,13 +18,12 @@
 
 package org.wildfly.extension.elytron;
 
-
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
+
 import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -47,7 +46,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition;
-
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -62,7 +60,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.security.auth.server.SecurityIdentity;
-
 
 /**
  * Tests all management expects for subsystem, parsing, marshaling, model definition and other
@@ -166,6 +163,10 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testParseAndMarshalModel_CredentialStores() throws Exception {
         standardSubsystemTest("credential-stores.xml");
+    }
+
+    public void testParseAndMarshalModel_JASPI() throws Exception {
+        standardSubsystemTest("jaspi.xml");
     }
 
     @Test

@@ -80,6 +80,10 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from5(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
+        builder.getAttributeBuilder()
+            .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDefinition.REGISTER_JASPI_FACTORY)
+            .end();
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION));
         transformAutoFlush(builder, FILE_AUDIT_LOG);
         transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
         transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);

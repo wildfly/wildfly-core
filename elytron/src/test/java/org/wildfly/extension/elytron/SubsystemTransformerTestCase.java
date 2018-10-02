@@ -88,6 +88,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testRejectingTransformersEAP720() throws Exception {
         testRejectingTransformers(EAP_7_2_0_TEMP, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION, "minimal")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG, "audit1")),
                         new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
                 )
@@ -179,7 +181,5 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         List<ModelNode> ops = builder.parseXmlResource(subsystemXmlFile);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, elytronVersion, ops, config);
     }
-
-
 
 }

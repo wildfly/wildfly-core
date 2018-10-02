@@ -45,6 +45,7 @@
             <xs:element name="credential-stores" type="credentialStoresType" minOccurs="0" />
             <xs:element name="dir-contexts" type="dirContextsType" minOccurs="0" />
             <xs:element name="policy" type="policyType" minOccurs="0" />
+            <xs:element name="jaspi" type="jaspiType" minOccurs="0" />
         </xs:all>
         <xs:attribute name="default-authentication-context" type="xs:string">
             <xs:annotation>
@@ -71,6 +72,13 @@
             <xs:annotation>
                 <xs:documentation>
                     A list of providers that are disallowed, and will be removed from the providers list.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="register-jaspi-factory" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Should the WildFly Elytron AuthConfigFactory implementation be automatically registered.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1234,19 +1242,19 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="password-salt-digest-md5" />
-            		<xs:enumeration value="password-salt-digest-sha-1" />
-            		<xs:enumeration value="password-salt-digest-sha-256" />
-            		<xs:enumeration value="password-salt-digest-sha-384" />
-            		<xs:enumeration value="password-salt-digest-sha-512" />
-            		<xs:enumeration value="salt-password-digest-md5" />
-            		<xs:enumeration value="salt-password-digest-sha-1" />
-            		<xs:enumeration value="salt-password-digest-sha-256" />
-            		<xs:enumeration value="salt-password-digest-sha-384" />
-            		<xs:enumeration value="salt-password-digest-sha-512" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="password-salt-digest-md5" />
+                    <xs:enumeration value="password-salt-digest-sha-1" />
+                    <xs:enumeration value="password-salt-digest-sha-256" />
+                    <xs:enumeration value="password-salt-digest-sha-384" />
+                    <xs:enumeration value="password-salt-digest-sha-512" />
+                    <xs:enumeration value="salt-password-digest-md5" />
+                    <xs:enumeration value="salt-password-digest-sha-1" />
+                    <xs:enumeration value="salt-password-digest-sha-256" />
+                    <xs:enumeration value="salt-password-digest-sha-384" />
+                    <xs:enumeration value="salt-password-digest-sha-512" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>
@@ -1287,15 +1295,15 @@
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
-            	<xs:restriction base="xs:string">
-                	<xs:enumeration value="simple-digest-md2" />
-            		<xs:enumeration value="simple-digest-md5" />
-            		<xs:enumeration value="simple-digest-sha-1" />
-            		<xs:enumeration value="simple-digest-sha-256" />
-            		<xs:enumeration value="simple-digest-sha-384" />
-            		<xs:enumeration value="simple-digest-sha-512" />
-            	</xs:restriction>
-        	</xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="simple-digest-md2" />
+                    <xs:enumeration value="simple-digest-md5" />
+                    <xs:enumeration value="simple-digest-sha-1" />
+                    <xs:enumeration value="simple-digest-sha-256" />
+                    <xs:enumeration value="simple-digest-sha-384" />
+                    <xs:enumeration value="simple-digest-sha-512" />
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="password-index" use="required">
             <xs:annotation>
@@ -5186,4 +5194,118 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="jaspiType">
+        <xs:annotation>
+            <xs:documentation>
+                JASPI Configurations.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="jaspi-configuration" type="jaspiConfigurationType" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="jaspiConfigurationType">
+        <xs:annotation>
+            <xs:documentation>
+                An individual JASPI configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="server-auth-modules">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="server-auth-module" type="serverAuthModuleType" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of this JASPI configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="layer" type="xs:string" default="*">
+            <xs:annotation>
+                <xs:documentation>
+                    The layer this configuration should be associated with.
+
+                    If set to '*' this configuration will be associated with all layers and resolved according the the
+                    resolution rules defined within the JSR-196 specification.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="application-context" type="xs:string" default="*">
+            <xs:annotation>
+                <xs:documentation>
+                    The application context this configuration should be associated with.
+
+                    If set to '*' this configuration will be associated with all application contexts and resolved according the the
+                    resolution rules defined within the JSR-196 specification.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="description" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Descrption for this JASPI configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="serverAuthModuleType">
+        <xs:sequence>
+            <xs:element name="options" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Configuration options to be passed into the ServerAuthModule during initialisation.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="property" type="propertyType" maxOccurs="unbounded" />
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            </xs:sequence>
+                <xs:attribute name="class-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The fully qualified class name of the class implementing the ServerAuthModule interface.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the module to use to load the ServerAuthModule.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="flag" type="flagType" default="REQUIRED">
+            <xs:annotation>
+                <xs:documentation>
+                    The control flag to control how the response from this module is interpreted.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="flagType">
+        <xs:annotation>
+            <xs:documentation>
+                The control flag for JASPI modules.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="REQUIRED" />
+            <xs:enumeration value="REQUISITE" />
+            <xs:enumeration value="SUFFICIENT" />
+            <xs:enumeration value="OPTIONAL" />
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

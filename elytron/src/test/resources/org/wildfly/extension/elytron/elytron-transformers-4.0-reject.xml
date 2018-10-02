@@ -1,4 +1,11 @@
 <subsystem xmlns="urn:wildfly:elytron:5.0">
+    <jaspi>
+        <jaspi-configuration name="minimal">
+            <server-auth-modules>
+                <server-auth-module class-name="org.wildfly.Test3" />
+            </server-auth-modules>
+        </jaspi-configuration>
+    </jaspi>
     <audit-logging>
         <!-- autoflush was added in 5.0 - should be rejected when different from synchronized -->
         <file-audit-log name="audit1" path="audit.log" synchronized="true" autoflush="false"/>

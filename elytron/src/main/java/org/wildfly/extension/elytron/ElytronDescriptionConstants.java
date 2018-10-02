@@ -52,6 +52,7 @@ interface ElytronDescriptionConstants {
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
+    String APPLICATION_CONTEXT = "application-context";
     String ARGUMENT = "argument";
     String ATTRIBUTE = "attribute";
     String ATTRIBUTE_MAPPING = "attribute-mapping";
@@ -153,6 +154,7 @@ interface ElytronDescriptionConstants {
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
+    String DESCRIPTION = "description";
     String DIGEST = "digest";
     String DIGEST_ALGORITHM = "digest-algorithm";
     String DIGEST_FROM = "digest-from";
@@ -192,6 +194,7 @@ interface ElytronDescriptionConstants {
     String FINAL_PRINCIPAL_TRANSFORMER = "final-principal-transformer";
     String FINAL_PROVIDERS = "final-providers";
     String FIRST = "first";
+    String FLAG = "flag";
     String FORMAT = "format";
     String FORWARDING_MODE = "forwarding-mode";
     String FROM = "from";
@@ -232,6 +235,8 @@ interface ElytronDescriptionConstants {
     String ITERATOR_FILTER = "iterator-filter";
 
     String JACC_POLICY = "jacc-policy";
+    String JASPI = "jaspi";
+    String JASPI_CONFIGURATION = "jaspi-configuration";
     String JDBC_REALM = "jdbc-realm";
     String JOINER = "joiner";
     String JWT = "jwt";
@@ -250,6 +255,7 @@ interface ElytronDescriptionConstants {
     String KEY_STORES = "key-stores";
 
     String LAST_ACCESSED_TIME = "last-accessed-time";
+    String LAYER = "layer";
     String LDAP_KEY_STORE = "ldap-key-store";
     String LDAP_MAPPING = "ldap-mapping";
     String LDAP_REALM = "ldap-realm";
@@ -330,6 +336,7 @@ interface ElytronDescriptionConstants {
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
     String OPTION = "option";
+    String OPTIONAL = "optional";
     String OPTIONS = "options";
     String OR = "or";
     String OUTFLOW_ANONYMOUS = "outflow-anonymous";
@@ -399,6 +406,7 @@ interface ElytronDescriptionConstants {
     String REASON = "reason";
     String REFERENCE = "reference";
     String REFERRAL_MODE = "referral-mode";
+    String REGISTER_JASPI_FACTORY = "register-jaspi-factory";
     String REGEX_PRINCIPAL_TRANSFORMER = "regex-principal-transformer";
     String REGEX_VALIDATING_PRINCIPAL_TRANSFORMER = "regex-validating-principal-transformer";
     String RELATIVE_TO = "relative-to";
@@ -411,6 +419,7 @@ interface ElytronDescriptionConstants {
     String REQUIRED = "required";
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
+    String REQUISITE = "requisite";
     String REVERSE = "reverse";
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";
@@ -457,6 +466,8 @@ interface ElytronDescriptionConstants {
     String SERIAL_NUMBER_FROM = "serial-number-from";
     String SERVER = "server";
     String SERVER_ADDRESS = "server-address";
+    String SERVER_AUTH_MODULE = "server-auth-module";
+    String SERVER_AUTH_MODULES = "server-auth-modules";
     String SERVER_SSL_CONTEXT = "server-ssl-context";
     String SERVER_SSL_CONTEXTS = "server-ssl-contexts";
     String SESSION_TIMEOUT = "session-timeout";
@@ -489,6 +500,7 @@ interface ElytronDescriptionConstants {
     String STORE = "store";
     String SUBJECT = "subject";
     String SUBJECT_DN_FROM = "subject-dn-from";
+    String SUFFICIENT = "sufficient";
     String SUFFIX = "suffix";
     String SYNCHRONIZED = "synchronized";
     String SYSLOG_AUDIT_LOG = "syslog-audit-log";
