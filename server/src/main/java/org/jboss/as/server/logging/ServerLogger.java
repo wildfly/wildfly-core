@@ -545,7 +545,7 @@ public interface ServerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set the server's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start other runtime services or accept end user requests. Cannot be used in conjunction with --start-mode.")
+    @Message(id = Message.NONE, value = "Set the server's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start other runtime services or accept end user requests. Cannot be used in conjunction with --start-mode. Deprecated; use --start-mode=admin-only instead.")
     String argAdminOnly();
 
     /**
