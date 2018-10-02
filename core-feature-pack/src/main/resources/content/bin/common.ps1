@@ -185,6 +185,7 @@ Param(
         {
             $PROG_ARGS += "-Xlog:gc*:file=`\`"$JBOSS_LOG_DIR\gc.log`\`":time,uptimemillis:filecount=5,filesize=3M"
         } else {
+            $PROG_ARGS += "-verbose:gc"
             $PROG_ARGS += "-XX:+PrintGCDetails"
             $PROG_ARGS += "-XX:+PrintGCDateStamps"
             $PROG_ARGS += "-XX:+UseGCLogFileRotation"

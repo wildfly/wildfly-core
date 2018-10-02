@@ -281,7 +281,7 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             if [ "$MODULAR_JDK" = "true" ]; then
                 TMP_PARAM="-Xlog:gc*:file=$JBOSS_LOG_DIR/gc.log:time,uptimemillis:filecount=5,filesize=3M"
             else
-                TMP_PARAM="-Xloggc:$JBOSS_LOG_DIR/gc.log -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
+                TMP_PARAM="-verbose:gc -Xloggc:$JBOSS_LOG_DIR/gc.log -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
             fi
 
             "$JAVA" $JVM_OPTVERSION $TMP_PARAM -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS $TMP_PARAM"

@@ -244,7 +244,7 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
             if "!MODULAR_JDK!" == "true" (
                 set TMP_PARAM=-Xlog:gc*:file="\"%JBOSS_LOG_DIR%\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
             ) else (
-                set TMP_PARAM=-Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+                set TMP_PARAM=-verbose:gc -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
             )
             "%JAVA%" !TMP_PARAM! -version > nul 2>&1
             if not errorlevel == 1 (
