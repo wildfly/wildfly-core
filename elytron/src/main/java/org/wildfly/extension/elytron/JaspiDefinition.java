@@ -161,7 +161,7 @@ class JaspiDefinition {
                 Object sam =  classLoader.loadClass(className).newInstance();
                 return ServerAuthModule.class.cast(sam);
                 } catch (Exception e) {
-                  throw   ROOT_LOGGER.failedToCreateServerAuthModule(className, e);
+                  throw   ROOT_LOGGER.failedToCreateServerAuthModule(className, module, e);
                 }
             }
         };
