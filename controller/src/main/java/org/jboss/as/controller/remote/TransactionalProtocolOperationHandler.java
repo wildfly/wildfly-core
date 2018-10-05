@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.remote;
 
+import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -33,13 +34,16 @@ import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.read;
 import java.io.DataInput;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
@@ -61,6 +65,7 @@ import org.jboss.as.protocol.mgmt.ManagementResponseHeader;
 import org.jboss.as.protocol.mgmt.ProtocolUtils;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * The transactional request handler for a remote {@link TransactionalProtocolClient}.
@@ -155,15 +160,21 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
                 @Override
                 public void execute(final ManagementRequestContext<ExecuteRequestContext> context) throws Exception {
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
-
+                    final Supplier<Void> execution = new Supplier<Void>() {
                         @Override
-                        public Void run() {
-                            AccessAuditContext.doAs(securityIdentity != null , securityIdentity, remoteAddress, action);
-                            return null;
+                        public Void get() {
+                            if (executableRequest.inVmCall && securityIdentity == null) {
+                                return InVmAccess.runInVm((PrivilegedAction<Void>) () -> {
+                                    AccessAuditContext.doAs(false, null, remoteAddress, action);
+                                    return null;
+                                });
+                            } else {
+                                AccessAuditContext.doAs(securityIdentity != null, securityIdentity, remoteAddress, action);
+                                return null;
+                            }
                         }
-                    });
-
+                    };
+                    privilegedExecution().execute(execution);
                 }
 
                 @Override
@@ -214,11 +225,13 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
         private final ModelNode operation;
         private final int attachmentsLength;
         private final PropagatedIdentity propagatedIdentity;
+        private final boolean inVmCall;
 
-        private ExecutableRequest(ModelNode operation, int attachmentsLength, PropagatedIdentity propagatedIdentity) {
+        private ExecutableRequest(ModelNode operation, int attachmentsLength, PropagatedIdentity propagatedIdentity, boolean inVmCall) {
             this.operation = operation;
             this.attachmentsLength = attachmentsLength;
             this.propagatedIdentity = propagatedIdentity;
+            this.inVmCall = inVmCall;
         }
 
         static ExecutableRequest parse(DataInput input, ManagementChannelAssociation channelAssociation) throws IOException {
@@ -232,7 +245,14 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             final Boolean readIdentity = channelAssociation.getAttachments().getAttachment(TransactionalProtocolClient.SEND_IDENTITY);
             propagatedIdentity = (readIdentity != null && readIdentity) ? read(input) : null;
 
-            return new ExecutableRequest(operation, attachmentsLength, propagatedIdentity);
+            final Boolean readSendInVm = channelAssociation.getAttachments().getAttachment(TransactionalProtocolClient.SEND_IN_VM);
+            boolean inVmCall = false;
+            if (readSendInVm != null && readSendInVm) {
+                ProtocolUtils.expectHeader(input, ModelControllerProtocol.PARAM_IN_VM_CALL);
+                inVmCall = input.readBoolean();
+            }
+
+            return new ExecutableRequest(operation, attachmentsLength, propagatedIdentity, inVmCall);
         }
     }
 
@@ -639,6 +659,43 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
 
     private static class IOExceptionHolder {
         private IOException exception;
+    }
+
+    /**
+     * Provides a Supplier execution in a doPrivileged block if a security manager is checking privileges
+     */
+    private static Execution privilegedExecution() {
+        return WildFlySecurityManager.isChecking() ? Execution.PRIVILEGED : Execution.NON_PRIVILEGED;
+    }
+
+    private interface Execution {
+        <T> T execute(Supplier<T> supplier);
+
+        Execution NON_PRIVILEGED = new Execution() {
+            @Override
+            public <T> T execute(Supplier<T> supplier) {
+                return supplier.get();
+            }
+        };
+
+        Execution PRIVILEGED = new Execution() {
+            @Override
+            public <T> T execute(Supplier<T> supplier) {
+                try {
+                    return doPrivileged((PrivilegedExceptionAction<T>) () -> NON_PRIVILEGED.execute(supplier));
+                } catch (PrivilegedActionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof RuntimeException) {
+                        throw (RuntimeException) cause;
+                    } else if (cause instanceof Error) {
+                        throw (Error) cause;
+                    } else {
+                        // Not possible as Function doesn't throw any checked exception
+                        throw new RuntimeException(cause);
+                    }
+                }
+            }
+        };
     }
 
 }

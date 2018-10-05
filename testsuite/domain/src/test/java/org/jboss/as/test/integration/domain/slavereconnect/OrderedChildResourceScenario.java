@@ -83,7 +83,7 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
         if (initialised >=2) {
             DomainTestUtils.executeForResult(Util.createRemoveOperation(SUBSYSTEM_ADDRESS), masterClient);
         }

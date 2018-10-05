@@ -60,5 +60,6 @@ public interface ModelControllerProtocol {
     byte PARAM_OPERATION_PREPARED = 0x4B;
     // The propagated identity params
     byte PARAM_IDENTITY_LENGTH = 0x50;
+    byte PARAM_IN_VM_CALL = 0x51;
 
 }

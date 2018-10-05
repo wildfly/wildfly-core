@@ -48,7 +48,7 @@ abstract class ReconnectTestScenario {
      *  @param masterClient
      * @param slaveClient
      */
-    void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
 
     }
 
