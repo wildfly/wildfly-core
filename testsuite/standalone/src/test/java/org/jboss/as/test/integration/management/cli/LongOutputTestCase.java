@@ -1,5 +1,6 @@
 package org.jboss.as.test.integration.management.cli;
 
+import com.sun.javafx.util.Utils;
 import org.aesh.readline.terminal.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
@@ -22,6 +23,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -179,6 +181,8 @@ public class LongOutputTestCase {
         checkWithRegex(window, morePattern);
         Assert.assertEquals(window, 2, countLines(window));
 
+        emulateAlternateBuffer();
+
         // it sends semicolon to the console what should move output one line up
         consoleWriter.print(Key.SEMI_COLON.getAsChar());
         Assert.assertFalse(consoleWriter.checkError());
@@ -217,6 +221,8 @@ public class LongOutputTestCase {
         // +1 is for command string which was sent to the CLI
         Assert.assertEquals(window, readlineConsole.getTerminalHeight() + 1, countLines(window));
 
+        emulateAlternateBuffer();
+
         consoleWriter.print(Key.CTRL_C.getAsChar());
         Assert.assertFalse(consoleWriter.checkError());
 
@@ -226,6 +232,22 @@ public class LongOutputTestCase {
         final Pattern promptPattern = Pattern.compile(".*\\[.*@.* /\\]\\s*$");
         checkWithRegex(window, promptPattern);
         Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
+    }
+
+    private static void emulateAlternateBuffer() throws Exception {
+        // We need to emulate alternateBuffer support
+        // to be able to go up and search
+        if (Utils.isWindows()) {
+            Field pagingSupportField = readlineConsole.getClass().getDeclaredField("pagingSupport");
+            pagingSupportField.setAccessible(true);
+            Object pagingSupport = pagingSupportField.get(readlineConsole);
+            Field f = pagingSupport.getClass().getDeclaredField("paging");
+            f.setAccessible(true);
+            Object paging = f.get(pagingSupport);
+            Field alt = paging.getClass().getDeclaredField("alternateSupported");
+            alt.setAccessible(true);
+            alt.set(paging, true);
+        }
     }
 
     private static String getBeforeLastLine(String window) {
