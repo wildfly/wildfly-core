@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.zip.CRC32;
 
@@ -54,6 +55,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -78,10 +80,24 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     private static Path logDir;
 
+    private KernelServices kernelServices;
+
     @BeforeClass
     public static void setupLoggingDir() throws Exception {
         logDir = LoggingTestEnvironment.get().getLogDir();
         clearDirectory(logDir);
+    }
+
+    @Before
+    public void bootKernelServices() throws Exception {
+        kernelServices = boot();
+    }
+
+    @After
+    public void shutdown() {
+        if (kernelServices != null) {
+            kernelServices.shutdown();
+        }
     }
 
     @After
@@ -142,14 +158,13 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     @Test
-    public void testCompositeOperations() throws Exception {
+    public void testCompositeOperations() {
         testCompositeOperations(null);
         testCompositeOperations(PROFILE);
     }
 
     @Test
     public void testLegacyFilters() throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         // add new file logger so we can track logged messages
@@ -262,7 +277,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     @Test
     public void testLoggingProfile() throws Exception {
-        final KernelServices kernelServices = boot();
         final String handlerName = "test-file-handler";
 
         final Path logFile = createLogFile();
@@ -312,9 +326,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     @Test
-    public void testRemoveReAdd() throws Exception {
-        final KernelServices kernelServices = boot();
-
+    public void testRemoveReAdd() {
         // Get all add ops for the current subsystem
         final ModelNode addOps = SubsystemOperations.readResult(executeOperation(kernelServices, createDescribeOperation()));
 
@@ -331,7 +343,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void testChangeRootLogLevel(final String loggingProfile) throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         // add new file logger so we can track logged messages
@@ -395,7 +406,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void testSetRootLogger(final String loggingProfile) throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         // Add new file logger so we can test root logger change
@@ -440,7 +450,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void testAddRemoveFileHandler(final String loggingProfile) throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         Path logFile = createLogFile();
@@ -487,7 +496,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void testDisableHandler(final String profileName, boolean legacy) throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         final Path logFile = createLogFile();
@@ -551,7 +559,6 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private void testPatternFormatter(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
         final String fileHandlerName = "test-file-handler";
 
         final Path logFile = createLogFile();
@@ -604,8 +611,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
     }
 
-    private void testCompositeOperations(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
+    private void testCompositeOperations(final String profileName) {
         final String asyncHandlerName = "async";
         final String consoleHandlerName = "console";
 
@@ -731,7 +737,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
     }
 
     private static Path createLogFile() throws IOException {
-        return createLogFile("test-fh.log");
+        return createLogFile(UUID.randomUUID().toString() + ".log");
     }
 
     private static Path createLogFile(final String filename) throws IOException {

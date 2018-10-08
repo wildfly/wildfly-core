@@ -31,6 +31,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,6 +46,13 @@ public class LogFilterTestCase extends AbstractOperationsTestCase {
     @Before
     public void bootKernelServices() throws Exception {
         kernelServices = boot();
+    }
+
+    @After
+    public void shutdown() {
+        if (kernelServices != null) {
+            kernelServices.shutdown();
+        }
     }
 
     @Override

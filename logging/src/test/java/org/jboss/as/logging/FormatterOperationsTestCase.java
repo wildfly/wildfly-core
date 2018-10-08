@@ -37,6 +37,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -48,6 +49,8 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
     private static final Map<String, String> TEST_KEY_OVERRIDES = new LinkedHashMap<>();
     private static final Map<String, String> EXPECTED_META_DATA = new LinkedHashMap<>();
 
+    private KernelServices kernelServices;
+
     @BeforeClass
     public static void setup() {
         for (AttributeDefinition attribute : StructuredFormatterResourceDefinition.KEY_OVERRIDES.getValueTypes()) {
@@ -57,6 +60,18 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
         EXPECTED_META_DATA.put("key1", "value1");
         EXPECTED_META_DATA.put("key2", "value2");
         EXPECTED_META_DATA.put("key3", null);
+    }
+
+    @Before
+    public void bootKernelServices() throws Exception {
+        kernelServices = boot();
+    }
+
+    @After
+    public void shutdown() {
+        if (kernelServices != null) {
+            kernelServices.shutdown();
+        }
     }
 
     @After
@@ -82,24 +97,18 @@ public class FormatterOperationsTestCase extends AbstractOperationsTestCase {
 
     @Test
     public void testDefaultOperations() throws Exception {
-        final KernelServices kernelServices = boot();
-
         testPatternFormatter(kernelServices, null);
         testPatternFormatter(kernelServices, PROFILE);
     }
 
     @Test
     public void testJsonFormatterOperations() throws Exception {
-        final KernelServices kernelServices = boot();
-
         testJsonFormatter(kernelServices, null);
         testJsonFormatter(kernelServices, PROFILE);
     }
 
     @Test
     public void testXmlFormatterOperations() throws Exception {
-        final KernelServices kernelServices = boot();
-
         testXmlFormatter(kernelServices, null);
         testXmlFormatter(kernelServices, PROFILE);
     }

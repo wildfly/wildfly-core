@@ -94,6 +94,8 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
             config.configure(in);
             compare(currentModel, config);
         }
+
+        kernelServices.shutdown();
     }
 
     @Test
