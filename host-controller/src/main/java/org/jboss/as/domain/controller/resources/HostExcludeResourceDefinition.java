@@ -28,6 +28,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -41,6 +42,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.domain.controller.transformers.KernelAPIVersion;
 import org.jboss.as.host.controller.mgmt.DomainHostExcludeRegistry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -56,17 +58,17 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
     public static final PathElement PATH_ELEMENT = PathElement.pathElement(HOST_EXCLUDE);
 
     private enum KnownRelease {
-        EAP62("EAP6.2", 1, 5),
-        EAP63("EAP6.3", 1, 6),
-        EAP64("EAP6.4", 1, 7),
-        EAP70("EAP7.0", 4, 1),
-        EAP71("EAP7.1", 5, 0),
-        WILDFLY10("WildFly10.0", 4, 0),
-        WILDFLY10_1("WildFly10.1", 4, 2),
-        WILDFLY11("WildFly11.0", 5, 0),
-        WILDFLY12("WildFly12.0", 6, 0),
-        WILDFLY13("WildFly13.0", 7, 0),
-        WILDFLY14("WildFly14.0", 8, 0);
+        EAP62("EAP6.2", KernelAPIVersion.VERSION_1_5),
+        EAP63("EAP6.3", KernelAPIVersion.VERSION_1_6),
+        EAP64("EAP6.4", KernelAPIVersion.VERSION_1_7),
+        EAP70("EAP7.0", KernelAPIVersion.VERSION_4_1),
+        EAP71("EAP7.1", KernelAPIVersion.VERSION_5_0),
+        WILDFLY10("WildFly10.0", KernelAPIVersion.VERSION_4_0),
+        WILDFLY10_1("WildFly10.1", KernelAPIVersion.VERSION_4_2),
+        WILDFLY11("WildFly11.0", KernelAPIVersion.VERSION_5_0),
+        WILDFLY12("WildFly12.0", KernelAPIVersion.VERSION_6_0),
+        WILDFLY13("WildFly13.0", KernelAPIVersion.VERSION_7_0),
+        WILDFLY14("WildFly14.0", KernelAPIVersion.VERSION_8_0);
 
 
         private static final Map<String, KnownRelease> map = new HashMap<>();
@@ -85,13 +87,11 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         }
 
         private final String name;
-        private final int major;
-        private final int minor;
+        private final KernelAPIVersion kernelAPIVersion;
 
-        KnownRelease(String name, int major, int minor) {
+        KnownRelease(String name, KernelAPIVersion kernelAPIVersion) {
             this.name = name;
-            this.major = major;
-            this.minor = minor;
+            this.kernelAPIVersion = kernelAPIVersion;
         }
 
         @Override
@@ -198,16 +198,13 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         ModelNode release = HOST_RELEASE.resolveModelAttribute(context, model);
         if (release.isDefined()) {
             KnownRelease kr = KnownRelease.fromName(release.asString());
-            return new DomainHostExcludeRegistry.VersionKey(kr.major, kr.minor, null);
+            ModelVersion modelVersion = kr.kernelAPIVersion.getModelVersion();
+            return new DomainHostExcludeRegistry.VersionKey(modelVersion.getMajor(), modelVersion.getMinor(), modelVersion.getMicro());
         } else {
             int major = MANAGEMENT_MAJOR_VERSION.resolveModelAttribute(context, model).asInt();
             int minor = MANAGEMENT_MINOR_VERSION.resolveModelAttribute(context, model).asInt();
             ModelNode micro = MANAGEMENT_MICRO_VERSION.resolveModelAttribute(context, model);
-            if (micro.isDefined()) {
-                return new DomainHostExcludeRegistry.VersionKey(major, minor, micro.asInt());
-            } else {
-                return new DomainHostExcludeRegistry.VersionKey(major, minor, null);
-            }
+            return new DomainHostExcludeRegistry.VersionKey(major, minor, micro.asIntOrNull());
         }
     }
 
