@@ -852,7 +852,12 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * @see AttributeDefinition#removeCapabilityRequirements(OperationContext, org.jboss.as.controller.registry.Resource, ModelNode)
      */
     public BUILDER setCapabilityReference(String referencedCapability, RuntimeCapability<?> dependentCapability) {
-        return setCapabilityReference(referencedCapability, dependentCapability.getName());
+        if (dependentCapability.isDynamicallyNamed()) {
+            return setCapabilityReference(referencedCapability, dependentCapability.getName());
+        } else {
+            //noinspection deprecation
+            return setCapabilityReference(referencedCapability, dependentCapability.getName(), false);
+        }
     }
 
     /**
@@ -948,7 +953,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      *                             portion of which comes from the name of the resource with which
      *                             the attribute is associated
      * @return the builder
-     * @deprecated Use {@link #setCapabilityReference(String, String)} instead.
+     * @deprecated Use {@link #setCapabilityReference(String, RuntimeCapability)} instead.
      */
     @Deprecated
     public BUILDER setCapabilityReference(String referencedCapability, String dependentCapability, boolean dynamicDependent) {
