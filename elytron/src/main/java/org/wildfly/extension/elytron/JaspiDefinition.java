@@ -93,13 +93,11 @@ class JaspiDefinition {
 
     static final ObjectTypeAttributeDefinition SERVER_AUTH_MODULE = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULE, CLASS_NAME, MODULE, FLAG, OPTIONS)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-            .setXmlName(ElytronDescriptionConstants.SERVER_AUTH_MODULE)
             .build();
 
     static final  ObjectListAttributeDefinition SERVER_AUTH_MODULES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.SERVER_AUTH_MODULES, SERVER_AUTH_MODULE)
             .setRequired(false)
             .setRestartAllServices()
-            .setXmlName(ElytronDescriptionConstants.SERVER_AUTH_MODULES)
             .build();
 
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { LAYER, APPLICATION_CONTEXT, DESCRIPTION, SERVER_AUTH_MODULES };
