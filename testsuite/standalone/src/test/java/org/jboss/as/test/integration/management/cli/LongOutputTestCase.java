@@ -1,6 +1,5 @@
 package org.jboss.as.test.integration.management.cli;
 
-import com.sun.javafx.util.Utils;
 import org.aesh.readline.terminal.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
@@ -34,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.aesh.utils.Config;
 
 
 /**
@@ -237,7 +237,7 @@ public class LongOutputTestCase {
     private static void emulateAlternateBuffer() throws Exception {
         // We need to emulate alternateBuffer support
         // to be able to go up and search
-        if (Utils.isWindows()) {
+        if (Config.isWindows()) {
             Field pagingSupportField = readlineConsole.getClass().getDeclaredField("pagingSupport");
             pagingSupportField.setAccessible(true);
             Object pagingSupport = pagingSupportField.get(readlineConsole);
