@@ -81,6 +81,8 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         testWrite(kernelServices, address, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG, false);
         testUndefine(kernelServices, address, LoggingResourceDefinition.ADD_LOGGING_API_DEPENDENCIES);
         testUndefine(kernelServices, address, LoggingResourceDefinition.USE_DEPLOYMENT_LOGGING_CONFIG);
+
+        kernelServices.shutdown();
     }
 
     @Test
@@ -136,6 +138,8 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         resources = SubsystemOperations.readResult(result).asList();
         assertEquals("Log file " + logFile + " should not be a resource", ++expectedSize, resources.size());
 
+        kernelServices.shutdown();
+
     }
 
     @Test
@@ -188,6 +192,8 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
             // Reset the file permissions
             assertTrue("Could not reset file permissions", setReadable(file, true));
         }
+
+        kernelServices.shutdown();
     }
 
     @Test
@@ -237,6 +243,8 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         op.get("name").set("invalid");
         result = kernelServices.executeOperation(op);
         assertFalse("Should have failed due to invalid file.", SubsystemOperations.isSuccessfulOutcome(result));
+
+        kernelServices.shutdown();
     }
 
     @Test
@@ -281,6 +289,8 @@ public class RootSubsystemOperationsTestCase extends AbstractOperationsTestCase 
         // however it used a relative path to attempt to allow any file to be read
         op = SubsystemOperations.createOperation("read-log-file", address);
         executeOperationForFailure(kernelServices, op);
+
+        kernelServices.shutdown();
     }
 
     private void testReadLogFile(final KernelServices kernelServices, final ModelNode op, final Logger logger) {

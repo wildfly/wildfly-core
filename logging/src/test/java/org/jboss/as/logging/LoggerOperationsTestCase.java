@@ -60,6 +60,8 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
 
         testLogger(kernelServices, null);
         testLogger(kernelServices, PROFILE);
+
+        kernelServices.shutdown();
     }
 
     private void testRootLogger(final KernelServices kernelServices, final String profileName) {

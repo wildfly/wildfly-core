@@ -39,6 +39,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -48,6 +49,20 @@ import org.junit.runner.RunWith;
 @RunWith(BMUnitRunner.class)
 public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTest {
     private static final String PROFILE_NAME = "test-profile";
+
+    private KernelServices kernelServices;
+
+    @Before
+    public void bootKernelServices() throws Exception {
+        kernelServices = boot();
+    }
+
+    @After
+    public void shutdown() {
+        if (kernelServices != null) {
+            kernelServices.shutdown();
+        }
+    }
 
     @Override
     protected String getSubsystemXml() throws IOException {
@@ -79,8 +94,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
             action = "$1.setRollbackOnly()"
     )
     public void testRollbackLogger() throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -113,8 +126,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
             condition = "$1.getCurrentAddressValue().equals(\"CONSOLE2\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackHandler() throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -148,8 +159,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
             condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackComposite() throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Add a handler to be removed
         final PathAddress consoleHandler = createConsoleHandlerAddress("CONSOLE2");
         // Create a new handler
@@ -214,8 +223,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
             condition = "$1.getCurrentAddressValue().equals(\"org.jboss.as.logging\")",
             action = "$1.setRollbackOnly()")
     public void testRollbackCompositeLoggingProfile() throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Add a handler to be removed
         final PathAddress consoleHandler = createConsoleHandlerAddress("CONSOLE2");
         // Create a new handler
@@ -352,8 +359,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
                     action = "$1.setRollbackOnly()")
     })
     public void testRollbackRemoveProfile() throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -383,8 +388,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     }
 
     public void rollbackAdd(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -420,8 +423,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     }
 
     public void rollbackWriteAttribute(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -456,8 +457,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     }
 
     public void rollbackUpdateAttribute(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 
@@ -494,8 +493,6 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
     }
 
     public void rollbackRemove(final String profileName) throws Exception {
-        final KernelServices kernelServices = boot();
-
         // Save the current model
         final ModelNode validSubsystemModel = getSubsystemModel(kernelServices);
 

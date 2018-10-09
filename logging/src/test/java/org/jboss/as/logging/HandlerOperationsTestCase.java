@@ -61,6 +61,8 @@ import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -70,6 +72,20 @@ import org.junit.Test;
 public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
     private static final String ENCODING = "UTF-8";
+
+    private KernelServices kernelServices;
+
+    @Before
+    public void bootKernelServices() throws Exception {
+        kernelServices = boot();
+    }
+
+    @After
+    public void shutdown() {
+        if (kernelServices != null) {
+            kernelServices.shutdown();
+        }
+    }
 
     @Override
     protected void standardSubsystemTest(final String configId) {
@@ -83,8 +99,6 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
     @Test
     public void testOperations() throws Exception {
-        final KernelServices kernelServices = boot();
-
         testConsoleHandler(kernelServices, null);
         testConsoleHandler(kernelServices, PROFILE);
 
@@ -111,8 +125,6 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
     @Test
     public void testFormatsNoColor() throws Exception {
-        final KernelServices kernelServices = boot();
-
         final Path logFile = LoggingTestEnvironment.get().getLogDir().resolve("formatter.log");
         // Delete the file if it exists
         Files.deleteIfExists(logFile);
@@ -199,12 +211,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
      * {@code named-formatter} is defined it removes the formatter, named the same as the handler, which was created
      * as part of the {@code undefine-attribute} operation of the {@code formatter} attribute.
      *
-     * @throws Exception if an error occurs
      */
     @Test
-    public void testCompositeOperations() throws Exception {
-        final KernelServices kernelServices = boot();
-
+    public void testCompositeOperations() {
         final ModelNode address = createFileHandlerAddress("FILE").toModelNode();
         final String filename = "test-file.log";
 
@@ -244,9 +253,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     }
 
     @Test
-    public void testAddHandlerComposite() throws Exception {
-        final KernelServices kernelServices = boot();
-
+    public void testAddHandlerComposite() {
         final ModelNode handlerAddress = createFileHandlerAddress("FILE").toModelNode();
         final String filename = "test-file-2.log";
 

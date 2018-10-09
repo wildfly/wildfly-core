@@ -77,6 +77,8 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         // ones will not update runtime once that is done
         testAsyncHandler(kernelServices, null);
         testAsyncHandler(kernelServices, PROFILE);
+
+        kernelServices.shutdown();
     }
 
     private void testAsyncHandler(final KernelServices kernelServices, final String profileName) {
