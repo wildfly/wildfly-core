@@ -144,4 +144,9 @@ public class MockCliConfig implements CliConfig {
     public ColorConfig getColorConfig() {
         return null;
     }
+
+    @Override
+    public boolean isOutputPaging() {
+        return false;
+    }
 }

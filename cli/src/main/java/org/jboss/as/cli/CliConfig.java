@@ -210,4 +210,11 @@ public interface CliConfig {
      * @return The color configurations
      */
     ColorConfig getColorConfig();
+
+    /**
+     * Output paging is enabled by default and it enables users to browse and search long output of commands.
+     *
+     * @return true, the output of commands is paged, false, whole output of commands is written at once.
+     */
+    boolean isOutputPaging();
 }

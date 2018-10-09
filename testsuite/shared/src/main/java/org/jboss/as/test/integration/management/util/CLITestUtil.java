@@ -149,4 +149,16 @@ public class CLITestUtil {
         }
     }
 
+    public static CommandContextConfiguration.Builder getCommandContextBuilder(String address, int port, InputStream in, OutputStream out)
+            throws CliInitializationException {
+        setJBossCliConfig();
+        return new CommandContextConfiguration.Builder()
+                .setController(address + ":" + port)
+                .setUsername(isRemote ? username : null)
+                .setPassword(isRemote ? password.toCharArray() : null)
+                .setConsoleInput(in)
+                .setConsoleOutput(out)
+                .setDisableLocalAuth(false)
+                .setInitConsole(false);
+    }
 }

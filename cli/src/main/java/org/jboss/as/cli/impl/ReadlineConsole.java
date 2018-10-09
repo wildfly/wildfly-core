@@ -129,6 +129,11 @@ public class ReadlineConsole {
          * @return the interrupt
          */
         Runnable getInterrupt();
+
+        /**
+         * @return the outputPaging
+         */
+        boolean isOutputPaging();
     }
 
     /**
@@ -202,6 +207,7 @@ public class ReadlineConsole {
         private final FileAccessPermission permission;
         private final Runnable interrupt;
         private final boolean outputRedefined;
+        private final boolean outputPaging;
 
         private SettingsImpl(InputStream inStream,
                 OutputStream outStream,
@@ -210,7 +216,8 @@ public class ReadlineConsole {
                 File historyFile,
                 int historySize,
                 FileAccessPermission permission,
-                Runnable interrupt) {
+                Runnable interrupt,
+                boolean outputPaging) {
             this.inStream = inStream;
             this.outStream = outStream;
             this.outputRedefined = outputRedefined;
@@ -219,6 +226,7 @@ public class ReadlineConsole {
             this.historySize = historySize;
             this.permission = permission;
             this.interrupt = interrupt;
+            this.outputPaging = outputPaging;
         }
 
         /**
@@ -284,6 +292,14 @@ public class ReadlineConsole {
         public Runnable getInterrupt() {
             return interrupt;
         }
+
+        /**
+         * @return the outputPaging
+         */
+        @Override
+        public boolean isOutputPaging() {
+            return outputPaging;
+        }
     }
 
     public static class SettingsBuilder {
@@ -296,6 +312,7 @@ public class ReadlineConsole {
         private FileAccessPermission permission;
         private Runnable interrupt;
         private boolean outputRedefined;
+        private boolean outputPaging;
 
         public SettingsBuilder inputStream(InputStream inStream) {
             this.inStream = inStream;
@@ -337,9 +354,14 @@ public class ReadlineConsole {
             return this;
         }
 
+        public SettingsBuilder outputPaging(boolean outputPaging) {
+            this.outputPaging = outputPaging;
+            return this;
+        }
+
         public Settings create() {
             return new SettingsImpl(inStream, outStream, outputRedefined,
-                    disableHistory, historyFile, historySize, permission, interrupt);
+                    disableHistory, historyFile, historySize, permission, interrupt, outputPaging);
         }
     }
 
@@ -907,10 +929,10 @@ public class ReadlineConsole {
      * @return
      */
     public boolean isPagingOutputEnabled() {
-        if (forcePaging) {
+        if (forcePaging && settings.isOutputPaging()) {
             return true;
         }
-        return isSystemTerminal;
+        return settings.isOutputPaging() && isSystemTerminal;
     }
 
     public boolean isPagingOutputActive() {

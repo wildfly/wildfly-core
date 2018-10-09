@@ -4,18 +4,20 @@ import org.aesh.readline.terminal.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandContextFactory;
+import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.cli.impl.ReadlineConsole;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.logging.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
@@ -47,28 +49,42 @@ public class LongOutputTestCase {
 
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern morePattern = Pattern.compile(".*--More\\(\\d+%\\)--$");
-    private static final AtomicBoolean readThreadActive = new AtomicBoolean(true);
-    private static final List<Thread> threads = new ArrayList<>();
-    private static final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1);
+    private static final Pattern promptPattern = Pattern.compile(".*\\[.*@.* /\\]\\s*$");
+    private static final int bufferSize = 1024*64;
 
-    private static CommandContext ctx;
-    private static PipedInputStream consoleInput;
-    private static PrintWriter consoleWriter;
-    private static PipedOutputStream consoleOutput;
-    private static Reader consoleReader;
-    private static ReadlineConsole readlineConsole;
+    private AtomicBoolean readThreadActive;
+    private List<Thread> threads;
+    private BlockingQueue<String> queue;
+    private CommandContext ctx;
+    private PipedInputStream consoleInput;
+    private PrintWriter consoleWriter;
+    private PipedOutputStream consoleOutput;
+    private Reader consoleReader;
+    private ReadlineConsole readlineConsole;
+    private InputStream consoleInputStream;
+    private StringBuilder sb;
 
-    @BeforeClass
-    public static void setup() throws Exception {
-
-        consoleInput = new PipedInputStream();
+    @Before
+    public void setup() throws Exception {
+        readThreadActive = new AtomicBoolean(true);
+        threads = new ArrayList<>();
+        queue = new ArrayBlockingQueue<>(1);
+        consoleInput = new PipedInputStream(bufferSize);
         consoleWriter = new PrintWriter(new PipedOutputStream(consoleInput));
         consoleOutput = new PipedOutputStream();
-        InputStream consoleInputStream = new PipedInputStream(consoleOutput);
+        consoleInputStream = new PipedInputStream(consoleOutput, bufferSize);
         consoleReader = new InputStreamReader(consoleInputStream);
+        sb = new StringBuilder();
+    }
 
-        ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                TestSuiteEnvironment.getServerPort(), consoleInput, consoleOutput);
+    private void setupConsole(boolean outputPaging) throws Exception {
+        CommandContextConfiguration.Builder builder =  CLITestUtil.getCommandContextBuilder(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(),
+                consoleInput,
+                consoleOutput);
+        builder.setOutputPaging(outputPaging);
+
+        ctx = CommandContextFactory.getInstance().newCommandContext(builder.build());
 
         Class<?> ctxClass = Class.forName("org.jboss.as.cli.impl.CommandContextImpl");
         Method getConsoleMethod = ctxClass.getDeclaredMethod("getConsole");
@@ -84,7 +100,9 @@ public class LongOutputTestCase {
         interactThread.start();
 
         final InputStream readThreadIs = consoleInputStream;
-        final Reader readThreadReader = consoleReader;
+        final Reader readThreadReader = new BufferedReader(consoleReader);
+
+
 
         /**
          * The thread reads output from the CLI. There is implemented logic, which
@@ -94,8 +112,7 @@ public class LongOutputTestCase {
          */
         Thread readThread = new Thread(() -> {
 
-            char[] buffer = new char[1024];
-            StringBuilder sb = new StringBuilder();
+            char[] buffer = new char[bufferSize];
             int noAvailable = 0;
 
             while (readThreadActive.get()) {
@@ -107,7 +124,7 @@ public class LongOutputTestCase {
                     } else {
                         if (noAvailable < 300) {
                             noAvailable++;
-                            Thread.sleep(10);
+                            Thread.sleep(5);
                         } else {
                             queue.put(sb.toString());
                             sb = new StringBuilder();
@@ -130,8 +147,9 @@ public class LongOutputTestCase {
         Assert.assertTrue(readlineConsole.getTerminalHeight() > 0);
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
+        afterTest();
         readThreadActive.set(false);
         if (ctx != null) {
             ctx.terminateSession();
@@ -143,14 +161,14 @@ public class LongOutputTestCase {
             }
             waitFor(() -> !thread.isAlive(), 10000);
         }
+        threads.removeAll(threads);
         IOUtil.close(consoleInput);
         IOUtil.close(consoleWriter);
         IOUtil.close(consoleOutput);
         IOUtil.close(consoleReader);
     }
 
-    @After
-    public void afterTest() throws Exception {
+    private void afterTest() throws Exception {
         if (readlineConsole.isPagingOutputActive()) {
             consoleWriter.print(Key.Q.getAsChar());
             Assert.assertFalse(consoleWriter.checkError());
@@ -164,6 +182,7 @@ public class LongOutputTestCase {
      */
     @Test
     public void testBasic() throws Exception {
+        setupConsole(true);
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
 
@@ -234,7 +253,7 @@ public class LongOutputTestCase {
         Assert.assertEquals(window, readlineConsole.getTerminalHeight(), countLines(window));
     }
 
-    private static void emulateAlternateBuffer() throws Exception {
+    private void emulateAlternateBuffer() throws Exception {
         // We need to emulate alternateBuffer support
         // to be able to go up and search
         if (Config.isWindows()) {
@@ -297,4 +316,22 @@ public class LongOutputTestCase {
         Assert.fail("waitFor timed out");
     }
 
+
+    /**
+     * Check that the whole output was written at once when the output paging is disabled
+     */
+    @Test
+    public void testDisabledOutputPaging() throws Exception {
+        setupConsole(false);
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+        String window = queue.poll(10, TimeUnit.SECONDS);
+
+        Assert.assertNotNull(window);
+        checkWithRegex(window, promptPattern);
+
+        //Check if the whole output was written at once - e.g. there is the starting "{" and ending "}"
+        Assert.assertTrue(Pattern.compile("^\\{.*^\\}", Pattern.MULTILINE | Pattern.DOTALL)
+                .matcher(window).find());
+    }
 }

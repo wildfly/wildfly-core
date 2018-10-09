@@ -16,6 +16,7 @@ Usage:
                      [--no-operation-validation]
                      [--output-json]
                      [--no-color-output]
+                     [--no-output-paging]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -106,6 +107,8 @@ Usage:
                               Operations will be only validated by the server.
 
  --no-color-output  - disable CLI output and prompt colors.
+
+ --no-output-paging - disable output paging (the possibility to browse and search in output of commands) and print the output of commands at once.
 
 For a list of available commands, once the CLI is started, execute:
 

@@ -168,6 +168,8 @@ public class CliLauncher {
                     ctxBuilder.setOutputJSON(true);
                 } else if (arg.equals("--no-color-output")) {
                     ctxBuilder.setColorOutput(false);
+                } else if (arg.equals("--no-output-paging")) {
+                    ctxBuilder.setOutputPaging(false);
                 } else if (arg.startsWith("--command-timeout=")) {
                     ctxBuilder.
                             setCommandTimeout(Integer.parseInt(arg.substring(18)));
