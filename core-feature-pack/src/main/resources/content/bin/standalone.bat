@@ -248,7 +248,7 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
             )
             "%JAVA%" !TMP_PARAM! -version > nul 2>&1
             if not errorlevel == 1 (
-               set JAVA_OPTS="%JAVA_OPTS%" !TMP_PARAM!
+               set JAVA_OPTS=%JAVA_OPTS% !TMP_PARAM!
             )
         )
         setlocal DisableDelayedExpansion
