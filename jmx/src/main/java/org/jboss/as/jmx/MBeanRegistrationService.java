@@ -28,6 +28,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Supplier;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
@@ -47,34 +48,38 @@ import org.jboss.msc.value.Value;
  * Service used to register and unregister an mbean with an mbean server.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class MBeanRegistrationService<T> implements Service<Void> {
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("mbean", "registration");
+    private final Supplier<MBeanServer> mBeanServerSupplier;
+    private final Supplier<Object> objectSupplier;
+    @Deprecated // TODO: eliminate injectedMBeanServer field once sar subsystem will switch to new MSC API
     private final InjectedValue<MBeanServer> injectedMBeanServer = new InjectedValue<MBeanServer>();
+    @Deprecated // TODO: eliminate value field once sar subsystem will switch to new MSC API
     private final InjectedValue<T> value = new InjectedValue<T>();
     private final String name;
     private ObjectName objectName;
     private final List<SetupAction> setupActions;
 
-    /**
-     * Create an instance.
-     *
-     * @param name The name to use as an ObjectName
-     */
+    @Deprecated // TODO: eliminate this constructor once sar subsystem will switch to new MSC API
     public MBeanRegistrationService(final String name, final List<SetupAction> setupActions) {
-        this.name = name;
-        this.setupActions = setupActions;
+        this(name, setupActions, null, null);
     }
 
-    /**
-     * Create an instance.
-     *
-     * @param name  The name to use as an ObjectName
-     * @param value The object to register
-     */
+    @Deprecated // TODO: eliminate this constructor once sar subsystem will switch to new MSC API
     public MBeanRegistrationService(final String name, final List<SetupAction> setupActions, final Value<T> value) {
         this(name, setupActions);
         this.value.inject(value.getValue());
+    }
+
+    public MBeanRegistrationService(final String name, final List<SetupAction> setupActions,
+                                    final Supplier<MBeanServer> mBeanServerSupplier,
+                                    final Supplier<Object> objectSupplier) {
+        this.name = name;
+        this.setupActions = setupActions;
+        this.mBeanServerSupplier = mBeanServerSupplier;
+        this.objectSupplier = objectSupplier;
     }
 
     /**
@@ -85,7 +90,7 @@ public class MBeanRegistrationService<T> implements Service<Void> {
      */
     public synchronized void start(final StartContext context) throws StartException {
         final MBeanServer mBeanServer = getMBeanServer();
-        final T value = this.value.getValue();
+        final Object value = objectSupplier != null ? objectSupplier.get() : this.value.getValue();
         try {
             objectName = new ObjectName(name);
         } catch (MalformedObjectNameException e) {
@@ -139,23 +144,23 @@ public class MBeanRegistrationService<T> implements Service<Void> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Deprecated // TODO: eliminate getValue() method once sar subsystem will switch to new MSC API
     public Void getValue() throws IllegalStateException {
         return null;
     }
 
+    @Deprecated // TODO: eliminate getMBeanServerInjector() method once sar subsystem will switch to new MSC API
     public Injector<MBeanServer> getMBeanServerInjector() {
         return injectedMBeanServer;
     }
 
+    @Deprecated // TODO: eliminate getValueInjector() method once sar subsystem will switch to new MSC API
     public Injector<T> getValueInjector() {
         return value;
     }
 
     private MBeanServer getMBeanServer() {
-        MBeanServer mBeanServer = injectedMBeanServer.getOptionalValue();
+        MBeanServer mBeanServer = mBeanServerSupplier != null ? mBeanServerSupplier.get() : injectedMBeanServer.getOptionalValue();
         if (mBeanServer == null) {
             mBeanServer = ManagementFactory.getPlatformMBeanServer();
         }
