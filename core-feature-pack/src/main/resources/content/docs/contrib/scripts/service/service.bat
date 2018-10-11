@@ -133,6 +133,8 @@ set ISDEBUG=
 set CONFIG=
 set HOSTCONFIG=host.xml
 set BASE=
+set STDOUT=auto
+set STDERR=auto
 
 set COMMAND=%1
 shift
@@ -212,6 +214,14 @@ echo                                 default depends on domain or standalone mod
 echo                                 /base applies when /logpath is not set.
 echo                                   %JBOSS_HOME%\domain\log
 echo                                   %JBOSS_HOME%\standalone\log
+echo(
+echo     /stdout ^<path^>            : Redirected stdout filename
+echo                                 default to %SHORTNAME%-stdout.YEAR-MONTH-DAY.log
+echo                                 inside the logpath folder. Leave empty to disable
+echo(
+echo     /stderr ^<path^>            : Redirected stderr filename
+echo                                 default to %SHORTNAME%-stderr.YEAR-MONTH-DAY.log
+echo                                 inside the logpath folder. Leave empty to disable
 echo(
 echo     /debug                      : run the service install in debug mode
 echo(
@@ -493,6 +503,27 @@ if /I "%~1"== "/environment" (
     goto endBatch
   )
   shift
+if /I "%~1"== "/stdout" (
+  set STDOUT=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set STDOUT=%~2
+      shift
+	)
+  )
+  shift
+  goto LoopArgs
+)
+if /I "%~1"== "/stderr" (
+  set STDERR=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set STDERR=%~2
+	  shift
+	)
+  )
   shift
   goto LoopArgs
 )
@@ -518,9 +549,6 @@ if not "%SERVICE_USER%" == "" (
   )
   set RUNAS=--ServiceUser="%SERVICE_USER%" --ServicePassword="%SERVICE_PASS%"
 )
-
-if "%STDOUT%"=="" set STDOUT=auto
-if "%STDERR%"=="" set STDERR=auto
 
 if "%START_PATH%"=="" set START_PATH="%JBOSS_HOME%\bin"
 if "%STOP_PATH%"=="" set STOP_PATH="%JBOSS_HOME%\bin"
