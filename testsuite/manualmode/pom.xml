@@ -151,7 +151,7 @@
                                 <configuration>
                                     <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
                                     <plugin-options>
-                                        <jboss-fork-embedded/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                     </plugin-options>
                                     <resolve-locals>
                                         <resolve-local>
