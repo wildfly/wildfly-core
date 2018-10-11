@@ -938,6 +938,27 @@ public interface OperationContext extends ExpressionResolver {
     void deregisterCapabilityRequirement(String required, String dependent);
 
     /**
+     * Record that a previously registered requirement for a capability will no longer exist.
+     * <p>
+     * <strong>Semantics with "reload-required" and "restart-required":</strong>
+     * Deregistering a capability requirement does not obligate the caller to cease using a
+     * {@link #getCapabilityRuntimeAPI(String, Class) previously obtained} reference to that
+     * capability's {@link org.jboss.as.controller.capability.RuntimeCapability#getRuntimeAPI() runtime API}. But, if
+     * the caller will not cease using the capability, it must put the process in {@link #reloadRequired() reload-required}
+     * or {@link #restartRequired() restart-required} state. This will reflect the fact that the model says the
+     * capability is not required, but in the runtime it still is.
+     * </p>
+     *
+     * @param required  the name of the no longer required capability
+     * @param dependent the name of the capability that no longer has the requirement
+     * @param attribute the name of the attribute that references to the no longer required capability, or {@code null}
+     *                  if there is if no single attribute referring to the required capability.
+     *
+     * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is not {@link Stage#MODEL}
+     */
+    void deregisterCapabilityRequirement(String required, String dependent, String attribute);
+
+    /**
      * Record that a previously registered capability will no longer be available. Invoking this operation will also
      * automatically {@link #deregisterCapabilityRequirement(String, String) deregister any requirements} that are
      * associated with this capability, including optional ones.

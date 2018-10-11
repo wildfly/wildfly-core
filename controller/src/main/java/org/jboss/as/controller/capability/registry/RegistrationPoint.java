@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.Objects;
+
 import org.jboss.as.controller.PathAddress;
 
 /**
@@ -66,5 +68,19 @@ public class RegistrationPoint {
         } else {
             return "address=" + address.toString() +";attribute=" + attribute;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RegistrationPoint that = (RegistrationPoint) o;
+        return Objects.equals(address, that.address) &&
+                Objects.equals(attribute, that.attribute);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(address, attribute);
     }
 }
