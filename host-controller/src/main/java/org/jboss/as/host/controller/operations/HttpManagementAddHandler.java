@@ -138,6 +138,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
         final UndertowHttpManagementService service = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
+        service.getPortInjector().inject(port);
+        service.getSecurePortInjector().inject(securePort);
+        service.getAllowedOriginsInjector().inject(commonPolicy.getAllowedOrigins());
         CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, service)
                 .addCapabilityRequirement("org.wildfly.network.interface",
                         NetworkInterfaceBinding.class, service.getInterfaceInjector(), interfaceName)
@@ -148,10 +151,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
                 .addDependency(RemotingServices.HTTP_LISTENER_REGISTRY, ListenerRegistry.class, service.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
-                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, service.getManagementExecutor())
-                .addInjection(service.getPortInjector(), port)
-                .addInjection(service.getSecurePortInjector(), securePort)
-                .addInjection(service.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
+                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, service.getManagementExecutor());
 
         String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
         String securityRealm = commonPolicy.getSecurityRealm();

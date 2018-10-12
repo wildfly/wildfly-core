@@ -136,14 +136,14 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
+        undertowService.getAllowedOriginsInjector().inject(commonPolicy.getAllowedOrigins());
         CapabilityServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, undertowService).addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
                 .addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(RemotingServices.HTTP_LISTENER_REGISTRY, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
                 .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, undertowService.getWorker())
-                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, undertowService.getManagementExecutor())
-                .addInjection(undertowService.getAllowedOriginsInjector(), commonPolicy.getAllowedOrigins());
+                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, undertowService.getManagementExecutor());
 
         if (socketBindingName != null) {
             undertowBuilder.addCapabilityRequirement(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, undertowService.getSocketBindingInjector(), socketBindingName);
