@@ -70,6 +70,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -731,7 +732,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         if (requestProperties.isDefined()) {
             List<Property> request = requestProperties.asPropertyList();
             if (!request.isEmpty()) {
-                ModelNode required = new ModelNode().setEmptyList();
+                Map<String, ModelNode> required = new TreeMap<>();
                 boolean filteredOut = false;
                 for (String cap : capabilities) {
                     if (cap.startsWith("org.wildfly.domain.server-config.")) {
@@ -748,7 +749,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         String capabilityName = capability.require(NAME).asString();
                         if (!capabilityName.startsWith("org.wildfly.domain.server-group.")
                                 && !capabilityName.startsWith("org.wildfly.domain.socket-binding-group.")) {
-                            required.add(capability);
+                            required.put(capability.get(NAME).asString(), capability);
                         }
                         String baseName = attrDescription.get(CAPABILITY_REFERENCE).asString();
                         if (capabilityName.indexOf('$') > 0) {
@@ -776,9 +777,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         }
                     }
                 }}
-                if (!registration.getRequirements().isEmpty()) {
+                Set<CapabilityReferenceRecorder> resourceRequirements = registration.getRequirements();
+                if (!resourceRequirements.isEmpty()) {
                     PathAddress aliasAddress = createAliasPathAddress(registration, registration.getPathAddress());
-                    for (CapabilityReferenceRecorder requirement : registration.getRequirements()) {
+                    for (CapabilityReferenceRecorder requirement : resourceRequirements) {
                         String[] segments = requirement.getRequirementPatternSegments(null, aliasAddress);
                         String[] dynamicElements;
                         if (segments == null || segments.length == 0) {
@@ -801,11 +803,25 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         } else {
                             capability.get(NAME).set(RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, dynamicElements));
                         }
-                        required.add(capability);
+                        required.put(capability.get(NAME).asString(), capability);
                     }
                 }
-                if (!required.asList().isEmpty()) {
-                    feature.get(REQUIRES).set(required);
+                // WFLY-4164 record the fixed requirements of the registration's capabilities
+                Set<RuntimeCapability> regCaps = registration.getCapabilities();
+                for (RuntimeCapability regCap : regCaps) {
+                    for (String capReq : regCap.getRequirements()) {
+                        if (!required.containsKey(capReq)) {
+                            ModelNode capability = new ModelNode();
+                            capability.get(NAME).set(capReq);
+                            required.put(capReq, capability);
+                        }
+                    }
+                }
+                if (!required.isEmpty()) {
+                    ModelNode requiresList = feature.get(REQUIRES);
+                    for (ModelNode req : required.values()) {
+                        requiresList.add(req);
+                    }
                 }
             }
         }
