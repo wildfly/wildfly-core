@@ -345,10 +345,12 @@ public abstract class AbstractControllerService implements Service<ModelControll
         if (isExposingClientServicesAllowed()) {
             capabilityRegistry.registerCapability(
                     new RuntimeCapabilityRegistration(CLIENT_FACTORY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-            capabilityRegistry.registerPossibleCapability(CLIENT_FACTORY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
             capabilityRegistry.registerCapability(
                     new RuntimeCapabilityRegistration(NOTIFICATION_REGISTRY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-            capabilityRegistry.registerPossibleCapability(NOTIFICATION_REGISTRY_CAPABILITY, PathAddress.EMPTY_ADDRESS);
+            // Record the core capabilities with the root MRR so reads of it will show it as their provider
+            // This also gets them recorded as 'possible capabilities' in the capability registry
+            rootResourceRegistration.registerCapability(CLIENT_FACTORY_CAPABILITY);
+            rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
             ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
             target.addService(CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName(),
                     new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))

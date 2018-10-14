@@ -108,7 +108,6 @@ import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
-import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -553,7 +552,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
-        HostModelUtil.createRootRegistry(managementModel.getRootResourceRegistration(), environment,
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
+        HostModelUtil.createRootRegistry(rootRegistration, environment,
                 ignoredRegistry, this, processType, authorizer, modelControllerResource,
                 hostControllerInfo, managementModel.getCapabilityRegistry());
         VersionModelInitializer.registerRootResource(managementModel.getRootResource(), environment != null ? environment.getProductConfig() : null);
@@ -565,11 +565,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityReg.registerCapability(
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-        // TODO consider having ManagementModel provide CapabilityRegistry instead of just RuntimeCapabilityRegistry
-        if (capabilityReg instanceof PossibleCapabilityRegistry) {
-            ((PossibleCapabilityRegistry) capabilityReg).registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-            ((PossibleCapabilityRegistry) capabilityReg).registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-        }
+        // Record the core capabilities with the root MRR so reads of it will show it as their provider
+        // This also gets them recorded as 'possible capabilities' in the capability registry
+        rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
+        rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
 
         // Register the slave host info
         ResourceProvider.Tool.addResourceProvider(HOST_CONNECTION, new ResourceProvider() {
