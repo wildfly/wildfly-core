@@ -250,6 +250,8 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
             if not errorlevel == 1 (
                set JAVA_OPTS=%JAVA_OPTS% !TMP_PARAM!
             )
+            rem Remove the gc.log file from the -version check
+            del /F /Q "%JBOSS_LOG_DIR%\gc.log" > null 2>&1
         )
         setlocal DisableDelayedExpansion
     )
