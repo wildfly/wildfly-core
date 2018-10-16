@@ -60,7 +60,6 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
-import org.jboss.as.controller.capability.registry.PossibleCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -69,6 +68,7 @@ import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
@@ -458,12 +458,11 @@ public final class ServerService extends AbstractControllerService {
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
-        // TODO consider having ManagementModel provide CapabilityRegistry instead of just RuntimeCapabilityRegistry
-        if (capabilityRegistry instanceof PossibleCapabilityRegistry) {
-            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(PATH_MANAGER_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-            ((PossibleCapabilityRegistry) capabilityRegistry).registerPossibleCapability(EXECUTOR_CAPABILITY, PathAddress.EMPTY_ADDRESS);
-        }
-
+        // Record the core capabilities with the root MRR so reads of it will show it as their provider
+        // This also gets them recorded as 'possible capabilities' in the capability registry
+        ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
+        rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
+        rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
     }
 
     @Override

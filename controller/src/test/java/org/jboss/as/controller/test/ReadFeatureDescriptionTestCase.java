@@ -91,6 +91,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String MAIN_RESOURCE_PACKAGE_NAME = "main-resource-package";
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
     private static final String DYNAMIC_CAPABILITY_NAME = "dynamic-capability";
+    private static final String CLIENT_FACTORY_CAPABILITY_NAME = "org.wildfly.management.model-controller-client-factory";
+    private static final String NOTIFICATION_REGISTRY_CAPABILITY_NAME = "org.wildfly.management.notification-handler-registry";
 
     private static final OperationStepHandler WRITE_HANDLER = new ModelOnlyWriteAttributeHandler();
 
@@ -378,13 +380,15 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         // capabilities
         ModelNode provides = feature.require(PROVIDES);
-        Assert.assertEquals(2, provides.asList().size());
-        Set<String> providedCaps = new HashSet<>(2);
+        Assert.assertEquals(4, provides.asList().size());
+        Set<String> providedCaps = new HashSet<>(4);
         for(ModelNode providedCap : provides.asList()) {
             providedCaps.add(providedCap.asString());
         }
         Assert.assertTrue(providedCaps.contains(ROOT_CAPABILITY_NAME));
         Assert.assertTrue(providedCaps.contains(DYNAMIC_CAPABILITY_NAME));
+        Assert.assertTrue(providedCaps.contains(CLIENT_FACTORY_CAPABILITY_NAME));
+        Assert.assertTrue(providedCaps.contains(NOTIFICATION_REGISTRY_CAPABILITY_NAME));
     }
 
     /**
