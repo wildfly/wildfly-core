@@ -87,6 +87,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         transformAutoFlush(builder, FILE_AUDIT_LOG);
         transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
         transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT));
     }
 
     private static void transformAutoFlush(ResourceTransformationDescriptionBuilder builder, final String resourceName) {

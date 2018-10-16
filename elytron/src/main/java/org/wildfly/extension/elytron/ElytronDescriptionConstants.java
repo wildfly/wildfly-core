@@ -153,6 +153,7 @@ interface ElytronDescriptionConstants {
     String DEFAULT_AUTHENTICATION_CONTEXT = "default-authentication-context";
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
+    String DEFAULT_SSL_CONTEXT = "default-ssl-context";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
     String DESCRIPTION = "description";
     String DIGEST = "digest";
@@ -208,6 +209,7 @@ interface ElytronDescriptionConstants {
     String GROUPS_PROPERTIES = "groups-properties";
 
     String HOST = "host";
+    String HOST_CONTEXT_MAP = "host-context-map";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
     String HASH_FROM = "hash-from";
@@ -470,6 +472,8 @@ interface ElytronDescriptionConstants {
     String SERVER_AUTH_MODULES = "server-auth-modules";
     String SERVER_SSL_CONTEXT = "server-ssl-context";
     String SERVER_SSL_CONTEXTS = "server-ssl-contexts";
+    String SERVER_SSL_SNI_CONTEXT = "server-ssl-sni-context";
+    String SERVER_SSL_SNI_CONTEXTS = "server-ssl-sni-contexts";
     String SESSION_TIMEOUT = "session-timeout";
     String SET_PASSWORD = "set-password";
     String SET_SECRET = "set-secret";
@@ -494,6 +498,7 @@ interface ElytronDescriptionConstants {
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_SESSION = "ssl-session";
+    String SNI_MAPPING = "sni-mapping";
     String STAGING = "staging";
     String START_SEGMENT = "start-segment";
     String STATE = "state";

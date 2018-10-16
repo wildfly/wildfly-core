@@ -15,4 +15,24 @@
         <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="true" autoflush="false" />
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
     </audit-logging>
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="key1" key-store="accounts.keystore">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+        </key-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="ctx" key-manager="key1"/>
+        </server-ssl-contexts>
+        <server-ssl-sni-contexts>
+            <server-ssl-sni-context name="test" default-ssl-context="ctx"></server-ssl-sni-context>
+        </server-ssl-sni-contexts>
+    </tls>
 </subsystem>
