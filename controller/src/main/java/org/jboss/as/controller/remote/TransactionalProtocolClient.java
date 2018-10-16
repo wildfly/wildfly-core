@@ -48,6 +48,13 @@ public interface TransactionalProtocolClient {
     Attachments.Key<Boolean> SEND_IDENTITY = new Attachments.Key<>(Boolean.class);
 
     /**
+     * Attachment whether the client should send a flag that allows IN-VM operation requests.
+     * <p>
+     * HC > server: HostControllerConnection > ManagedServer
+     */
+    Attachments.Key<Boolean> SEND_IN_VM = new Attachments.Key<>(Boolean.class);
+
+    /**
      * Execute an operation. This returns a future for the final result, which will only available after the prepared
      * operation is committed.
      *

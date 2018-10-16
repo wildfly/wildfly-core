@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.client.MessageSeverity;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -118,9 +119,11 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
         AccessAuditContext accessAuditContext = WildFlySecurityManager.isChecking()
                 ? doPrivileged((PrivilegedAction<AccessAuditContext>) AccessAuditContext::currentAccessAuditContext)
                 : AccessAuditContext.currentAccessAuditContext();
-        final ExecuteRequestContext context = new ExecuteRequestContext(new OperationWrapper<T>(listener, operation),
+        final ExecuteRequestContext context = new ExecuteRequestContext(new OperationWrapper<>(listener, operation),
                 accessAuditContext != null ? accessAuditContext.getSecurityIdentity() : null,
-                accessAuditContext != null ? accessAuditContext.getRemoteAddress() : null, tempDir);
+                accessAuditContext != null ? accessAuditContext.getRemoteAddress() : null,
+                tempDir,
+                InVmAccess.isInVmCall());
         final ActiveOperation<OperationResponse, ExecuteRequestContext> op = channelAssociation.initializeOperation(context, context);
         final AtomicBoolean cancelSent = new AtomicBoolean();
         final AsyncFuture<OperationResponse> result = new AbstractDelegatingAsyncFuture<OperationResponse>(op.getResult()) {
@@ -196,6 +199,13 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
             if (sendIdentity != null && sendIdentity) {
                 ExecuteRequestContext attachment = context.getAttachment();
                 write(output, attachment.getSecurityIdentity(), attachment.getRemoteAddress());
+            }
+
+            final Boolean sendInVm = channelAssociation.getAttachments().getAttachment(SEND_IN_VM);
+            if (sendInVm != null && sendInVm) {
+                ExecuteRequestContext attachment = context.getAttachment();
+                output.writeByte(ModelControllerProtocol.PARAM_IN_VM_CALL);
+                output.writeBoolean(attachment.isInVmCall());
             }
         }
 
@@ -396,12 +406,14 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
         final SecurityIdentity securityIdentity;
         final InetAddress remoteAddress;
         final File tempDir;
+        final boolean inVmCall;
 
-        ExecuteRequestContext(OperationWrapper<?> operationWrapper, SecurityIdentity securityIdentity, InetAddress remoteAddress, File tempDir) {
+        ExecuteRequestContext(OperationWrapper<?> operationWrapper, SecurityIdentity securityIdentity, InetAddress remoteAddress, File tempDir, boolean inVmCall) {
             this.wrapper = operationWrapper;
             this.securityIdentity = securityIdentity;
             this.remoteAddress = remoteAddress;
             this.tempDir = tempDir;
+            this.inVmCall = inVmCall;
         }
 
         void initialize(final AsyncFuture<OperationResponse> result) {
@@ -463,6 +475,9 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
             wrapper.prepared(transaction, result);
         }
 
+        public boolean isInVmCall() {
+            return inVmCall;
+        }
     }
 
     private static class OperationWrapper<T extends Operation> {

@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +38,7 @@ import java.util.function.Function;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -120,7 +122,14 @@ public class HostControllerClient implements AbstractControllerService.Controlle
             @Override
             public void reconnected(boolean inSync) {
                 if (!inSync || mgmtEndpointChanged) {
-                    privilegedExecution().execute(HostControllerClient::executeRequireReload, controller);
+                    Function<ModelController, ModelNode> function = new Function<ModelController, ModelNode>() {
+                        @Override
+                        public ModelNode apply(ModelController modelController) {
+                            return InVmAccess.runInVm((PrivilegedAction<ModelNode>) () -> executeRequireReload(modelController));
+                        }
+                    };
+
+                    privilegedExecution().execute(function, controller);
                 }
             }
 
