@@ -28,7 +28,7 @@
         <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
 
-        <ts.elytron.cli>../shared/enable-elytron.cli</ts.elytron.cli>
+        <ts.elytron.cli>enable-elytron.cli</ts.elytron.cli>
     </properties>
 
     <dependencies>
