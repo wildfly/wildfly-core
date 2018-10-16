@@ -79,7 +79,9 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
                                 REMOTE_JMX_CAPABILITY.getName(),
                                 USE_MANAGEMENT_ENDPOINT.getName());
                     } else {
-                        context.deregisterCapabilityRequirement(REMOTING_CAPABILITY, REMOTE_JMX_CAPABILITY.getName());
+                        context.deregisterCapabilityRequirement(REMOTING_CAPABILITY,
+                                REMOTE_JMX_CAPABILITY.getName(),
+                                USE_MANAGEMENT_ENDPOINT.getName());
                     }
                 }
             }

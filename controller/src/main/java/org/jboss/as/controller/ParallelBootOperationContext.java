@@ -369,8 +369,13 @@ class ParallelBootOperationContext extends AbstractOperationContext {
 
     @Override
     public void deregisterCapabilityRequirement(String required, String dependent) {
+        deregisterCapabilityRequirement(required, dependent, null);
+    }
+
+    @Override
+    public void deregisterCapabilityRequirement(String required, String dependent, String attribute) {
         // pass in the step we are executing so it can be failed if there is problem resolving capabilities/requirements
-        primaryContext.removeCapabilityRequirement(required, dependent, activeStep);
+        primaryContext.removeCapabilityRequirement(required, dependent, activeStep, attribute);
     }
 
     @Override

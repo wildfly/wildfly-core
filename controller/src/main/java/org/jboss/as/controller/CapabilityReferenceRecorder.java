@@ -199,7 +199,7 @@ public interface CapabilityReferenceRecorder {
                 if (attributeValue != null) {
                     String requirementName = getRequirementName(context, resource, attributeValue);
                     if (remove) {
-                        context.deregisterCapabilityRequirement(requirementName, dependentName);
+                        context.deregisterCapabilityRequirement(requirementName, dependentName, attributeName);
                     } else {
                         context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
                     }
@@ -354,7 +354,7 @@ public interface CapabilityReferenceRecorder {
             String dependentName = getDependentName(context.getCurrentAddress());
             String requirementName = getRequirementName(context.getCurrentAddress());
             if (remove) {
-                context.deregisterCapabilityRequirement(requirementName, dependentName);
+                context.deregisterCapabilityRequirement(requirementName, dependentName, attributeName);
             } else {
                 context.registerAdditionalCapabilityRequirement(requirementName, dependentName, attributeName);
             }

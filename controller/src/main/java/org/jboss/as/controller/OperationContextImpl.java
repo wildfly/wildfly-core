@@ -1584,14 +1584,19 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public void deregisterCapabilityRequirement(String required, String dependent) {
-        removeCapabilityRequirement(required, dependent, activeStep);
+        deregisterCapabilityRequirement(required, dependent, null);
     }
 
-    void removeCapabilityRequirement(String required, String dependent, Step step) {
+    @Override
+    public void deregisterCapabilityRequirement(String required, String dependent, String attribute) {
+        removeCapabilityRequirement(required, dependent, activeStep, attribute);
+    }
+
+    void removeCapabilityRequirement(String required, String dependent, Step step, String attributeName) {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
-        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, false, step, null);
+        RuntimeRequirementRegistration registration = createRequirementRegistration(required, dependent, false, step, attributeName);
         managementModel.getCapabilityRegistry().removeCapabilityRequirement(registration);
         removeRequirement(required, registration.getDependentContext(), step);
     }

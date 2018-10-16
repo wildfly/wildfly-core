@@ -59,7 +59,7 @@ class LoggingProfileCapabilityRecorder implements CapabilityReferenceRecorder {
         String dependentName = getDependentName(context);
         for (String value : attributeValues) {
             if (value != null) {
-                context.deregisterCapabilityRequirement(getRequirementName(context, value), dependentName);
+                context.deregisterCapabilityRequirement(getRequirementName(context, value), dependentName, attributeName);
             }
         }
     }
