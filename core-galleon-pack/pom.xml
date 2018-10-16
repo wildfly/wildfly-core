@@ -317,16 +317,6 @@
 
         <dependency>
             <groupId>org.wildfly.galleon-plugins</groupId>
-            <artifactId>wildfly-config-gen</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.galleon-plugins</groupId>
-            <artifactId>wildfly-feature-spec-gen</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.galleon-plugins</groupId>
             <artifactId>wildfly-galleon-plugins</artifactId>
         </dependency>
 
@@ -570,6 +560,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.wildfly.galleon-plugins</groupId>
+            <artifactId>wildfly-config-gen</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
         </dependency>
@@ -656,7 +651,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <fork-embedded>true</fork-embedded>
+                            <fork-embedded>${galleon.fork.embedded}</fork-embedded>
                             <output-dir>${basedir}/target/resources/features</output-dir>
                         </configuration>
                     </execution>
