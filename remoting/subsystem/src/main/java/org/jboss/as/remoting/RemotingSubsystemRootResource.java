@@ -21,6 +21,10 @@
 */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.Capabilities.HTTP_LISTENER_REGISTRY_CAPABILITY_NAME;
+import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
+import static org.jboss.as.remoting.Capabilities.REMOTING_ENDPOINT_CAPABILITY_NAME;
+
 import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -55,14 +59,18 @@ import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.extension.io.OptionAttributeDefinition;
 import org.xnio.Option;
 
+import io.undertow.server.ListenerRegistry;
+
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
 
-    static final String IO_WORKER_CAPABILITY = "org.wildfly.io.worker";
     static final RuntimeCapability<Void> REMOTING_ENDPOINT_CAPABILITY =
-            RuntimeCapability.Builder.of("org.wildfly.remoting.endpoint", Endpoint.class).build();
+            RuntimeCapability.Builder.of(REMOTING_ENDPOINT_CAPABILITY_NAME, Endpoint.class).build();
+
+    static final RuntimeCapability<Void> HTTP_LISTENER_REGISTRY_CAPABILITY =
+            RuntimeCapability.Builder.of(HTTP_LISTENER_REGISTRY_CAPABILITY_NAME, ListenerRegistry.class).build();
 
     private static final String ENDPOINT = "endpoint";
 
@@ -72,7 +80,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new StringLengthValidator(1))
             .setDefaultValue(new ModelNode("default"))
-            .setCapabilityReference(IO_WORKER_CAPABILITY, REMOTING_ENDPOINT_CAPABILITY)
+            .setCapabilityReference(IO_WORKER_CAPABILITY_NAME, REMOTING_ENDPOINT_CAPABILITY)
             .build();
 
     private static final OptionAttributeDefinition SEND_BUFFER_SIZE = createOptionAttribute("send-buffer-size", RemotingOptions.SEND_BUFFER_SIZE, new ModelNode(RemotingOptions.DEFAULT_SEND_BUFFER_SIZE));
@@ -139,7 +147,7 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
                 .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
                 .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
-                .setCapabilities(REMOTING_ENDPOINT_CAPABILITY)
+                .setCapabilities(REMOTING_ENDPOINT_CAPABILITY, HTTP_LISTENER_REGISTRY_CAPABILITY)
         );
         this.attributes = attributes;
     }

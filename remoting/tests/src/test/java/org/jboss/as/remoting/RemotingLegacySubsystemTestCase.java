@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.jboss.as.remoting.RemotingSubsystemTestUtil.HC_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertEquals;
@@ -327,14 +328,14 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                 super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
 
                 Map<String, Class> capabilities = new HashMap<>();
-                capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                         "default-remoting"), XnioWorker.class);
 
                 if (legacyParser) {
                     // Deal with the fact that legacy parsers will add the io extension/subsystem
                     RemotingSubsystemTestUtil.registerIOExtension(extensionRegistry, rootRegistration);
                 } else {
-                    capabilities.put(buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                    capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                             RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
                 }
 

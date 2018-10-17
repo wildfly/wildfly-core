@@ -117,7 +117,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         ServiceBuilder<RemotingHttpUpgradeService> serviceBuilder = serviceTarget.addService(UPGRADE_SERVICE_NAME.append(remotingConnectorName), service)
                 .setInitialMode(ServiceController.Mode.PASSIVE)
                 .addDependency(HTTP_UPGRADE_REGISTRY.append(httpConnectorName), ChannelUpgradeHandler.class, service.injectedRegistry)
-                .addDependency(HttpListenerRegistryService.SERVICE_NAME, ListenerRegistry.class, service.listenerRegistry)
+                .addDependency(RemotingServices.HTTP_LISTENER_REGISTRY, ListenerRegistry.class, service.listenerRegistry)
                 .addDependency(endpointName, Endpoint.class, service.injectedEndpoint);
 
         if (securityRealm != null) {
