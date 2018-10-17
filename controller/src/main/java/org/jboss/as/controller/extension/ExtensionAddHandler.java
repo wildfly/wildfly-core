@@ -29,7 +29,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleNotFoundException;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -117,7 +116,8 @@ public class ExtensionAddHandler implements OperationStepHandler {
                                     ExtensionRegistryType extensionRegistryType) {
         try {
             boolean unknownModule = false;
-            for (Extension extension : Module.loadServiceFromCallerModuleLoader(ModuleIdentifier.fromString(module), Extension.class)) {
+            boolean initialized = false;
+            for (Extension extension : Module.loadServiceFromCallerModuleLoader(module, Extension.class)) {
                 ClassLoader oldTccl = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(extension.getClass());
                 try {
                     if (unknownModule || !extensionRegistry.getExtensionModuleNames().contains(module)) {
@@ -132,6 +132,10 @@ public class ExtensionAddHandler implements OperationStepHandler {
                 } finally {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
                 }
+                initialized = true;
+            }
+            if (!initialized) {
+                throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module);
             }
         } catch (ModuleNotFoundException e) {
             // Treat this as a user mistake, e.g. incorrect module name.
