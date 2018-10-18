@@ -27,7 +27,9 @@ import static org.jboss.as.controller.client.helpers.Operations.createRemoveOper
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilePermission;
 import java.io.IOException;
+import java.lang.reflect.ReflectPermission;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyManagementException;
@@ -61,6 +63,7 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.test.integration.management.util.ServerReload;
+import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
@@ -175,6 +178,11 @@ public class SNICombinedWithALPNTestCase {
                     .addClasses(UndertowServiceActivator.DEPENDENCIES)
                     .addClasses(UndertowSSLService.class)
                     .addAsResource(new StringAsset("Dependencies: io.undertow.core"), "META-INF/MANIFEST.MF")
+                    .addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(UndertowServiceActivator.appendPermissions(new FilePermission("-", "read"),
+                            new RuntimePermission("getClassLoader"),
+                            new RuntimePermission("accessDeclaredMembers"),
+                            new RuntimePermission("accessClassInPackage.sun.security.ssl"),
+                            new ReflectPermission("suppressAccessChecks"))), "permissions.xml")
                     .addAsServiceProviderAndClasses(ServiceActivator.class, UndertowSSLServiceActivator.class);
             deploy(jar, managementClient);
 
