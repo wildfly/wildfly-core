@@ -114,7 +114,7 @@ public class DeploymentScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
         if (rolloutPlan) {
             DomainTestUtils.executeForResult(
                     Util.createRemoveOperation(

@@ -1553,6 +1553,26 @@
                 A token validator to be used in conjunction with a token-based realm that handles security tokens based on the JWT/JWS standard.
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="key" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="kid" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The JWK kid. Tokens with the same kid will use this public key for signature verification.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="public-key" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                RSA public key in PEM format.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="issuer" type="stringListType" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -1585,6 +1605,20 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the certificate with a public key to load from the key store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="client-ssl-context" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A predefined client-ssl-context that will be used to connect to the jwks endpoint specifien in jku token claim. This configuration is mandatory if you want to use remote keys with jku.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="host-name-verification-policy" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A policy that defines how host names should be verified when using HTTPS for fetching jwks. Allowed values: "ANY".
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

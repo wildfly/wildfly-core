@@ -72,6 +72,9 @@ if (-Not $JAVA_OPTS) {
     # Uncomment to enable the experimental JDK 11 support for ByteBuddy
     # ByteBuddy is the default bytecode provider of Hibernate ORM
     # $JAVA_OPTS += '-Dnet.bytebuddy.experimental=true'
+
+    # Uncomment and edit to use a custom java.security file to override all the Java security properties
+    # $JAVA_OPTS += '-Djava.security.properties==C:\path\to\custom\java.security'
 }
 
 # Uncomment this to run with a security manager enabled

@@ -67,6 +67,9 @@
         <byteman.host>127.0.0.1</byteman.host>
         <byteman.port>17091</byteman.port>
 
+        <!-- Galleon -->
+        <galleon.fork.embedded>true</galleon.fork.embedded>
+
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
 
@@ -104,7 +107,7 @@
         <version.org.jboss.galleon>2.0.1.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.10.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>2.0.1.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>2.0.2.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
@@ -617,6 +620,20 @@
                     <groupId>org.wildfly.galleon-plugins</groupId>
                     <artifactId>wildfly-galleon-maven-plugin</artifactId>
                     <version>${version.org.wildfly.galleon-plugins}</version>
+                    <dependencies>
+                        <!-- feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated wildfly-embedded version must match the pack one -->
+                        <dependency>
+                            <groupId>org.wildfly.core</groupId>
+                            <artifactId>wildfly-embedded</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                        <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
+                        <dependency>
+                            <groupId>org.wildfly.common</groupId>
+                            <artifactId>wildfly-common</artifactId>
+                            <version>${version.org.wildfly.common}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.plugins</groupId>
@@ -1393,24 +1410,19 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.galleon-plugins</groupId>
-                <artifactId>wildfly-config-gen</artifactId>
-                <version>${version.org.wildfly.galleon-plugins}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.galleon-plugins</groupId>
-                <artifactId>wildfly-feature-spec-gen</artifactId>
-                <version>${version.org.wildfly.galleon-plugins}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-galleon-plugins</artifactId>
                 <version>${version.org.wildfly.galleon-plugins}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>*</groupId>
+                        <groupId>org.jboss.galleon</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-config-gen</artifactId>
+                <version>${version.org.wildfly.galleon-plugins}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.legacy.test</groupId>

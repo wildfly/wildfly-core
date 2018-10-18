@@ -132,7 +132,7 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
         if (deployed) {
             undeploy(masterClient);
         }

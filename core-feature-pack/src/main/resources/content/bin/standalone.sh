@@ -285,6 +285,8 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
             fi
 
             "$JAVA" $JVM_OPTVERSION $TMP_PARAM -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS $TMP_PARAM"
+            # Remove the gc.log file from the -version check
+            rm -f "$JBOSS_LOG_DIR/gc.log" >/dev/null 2>&1
         fi
     fi
 

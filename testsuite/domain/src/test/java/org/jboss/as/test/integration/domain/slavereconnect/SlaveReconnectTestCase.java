@@ -27,12 +27,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
@@ -40,17 +38,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
 import java.util.List;
+
+import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.integration.domain.management.util.Authentication;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
+import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
@@ -76,22 +76,34 @@ public class SlaveReconnectTestCase {
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
+    private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
 
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        testSupport = DomainTestSuite.createSupport(SlaveReconnectTestCase.class.getSimpleName());
+        testSupport = DomainTestSupport.create(
+                DomainTestSupport.Configuration.create(SlaveReconnectTestCase.class.getSimpleName(),
+                        "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml"));
+
+        WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();
+        CallbackHandler callbackHandler = Authentication.getCallbackHandler("slave", RIGHT_PASSWORD, "ManagementRealm");
+        masterConfig.setCallbackHandler(callbackHandler);
+
+        WildFlyManagedConfiguration slaveConfig = testSupport.getDomainSlaveConfiguration();
+        slaveConfig.setCallbackHandler(callbackHandler);
+
+        testSupport.start();
+
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
-
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
+        testSupport.stop();
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
-        DomainTestSuite.stopSupport();
     }
 
     @Test
@@ -104,7 +116,14 @@ public class SlaveReconnectTestCase {
     }
 
     @Test
-    public void test02_DeploymentOverlays() throws Exception {
+    public void test02_RBAC_user_and_model_out_of_sync() throws Exception {
+        testReconnect(new ReconnectTestScenario[]{
+                new RBACModelOutOfSyncScenario()
+        });
+    }
+
+    @Test
+    public void test03_DeploymentOverlays() throws Exception {
         //Since deployment-overlays affect all servers (https://issues.jboss.org/browse/WFCORE-710), this needs to
         //be tested separately, and to come last since the server state gets affected
         testReconnect(new ReconnectTestScenario[]{
@@ -123,6 +142,9 @@ public class SlaveReconnectTestCase {
                 initialisedScenarios = i;
                 scenarios[i].setUpDomain(testSupport, masterClient, slaveClient);
             }
+            //server could have been reloaded in the setUpDomain, get the new clients
+            masterClient = domainMasterLifecycleUtil.getDomainClient();
+            slaveClient = domainSlaveLifecycleUtil.getDomainClient();
 
             for (ReconnectTestScenario scenario : scenarios) {
                 scenario.testOnInitialStartup(masterClient, slaveClient);
@@ -176,7 +198,7 @@ public class SlaveReconnectTestCase {
             for (int i = initialisedScenarios; i >=0 ; i--) {
                 try {
                     scenarios[i].tearDownDomain(
-                            domainMasterLifecycleUtil.getDomainClient(), domainSlaveLifecycleUtil.getDomainClient());
+                            testSupport, domainMasterLifecycleUtil.getDomainClient(), domainSlaveLifecycleUtil.getDomainClient());
                 } catch (Throwable thrown) {
                     if (t == null) {
                         t = thrown;
@@ -228,9 +250,7 @@ public class SlaveReconnectTestCase {
                 op = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.pathAddress(HOST, host).append(SERVER, server));
                 op.get(NAME).set("server-state");
                 ModelNode state = DomainTestUtils.executeForResult(op, masterClient);
-                if (SUCCESS.equals(state.get(OUTCOME).asString())) {
-                    return "running".equals(state.get(RESULT).asString());
-                }
+                return "running".equals(state.asString());
             }
             return false;
         } catch (Exception e) {

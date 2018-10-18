@@ -614,6 +614,11 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
             @Override
             public void deregisterCapabilityRequirement(String required, String dependent) {
+                deregisterCapabilityRequirement(required, dependent, null);
+            }
+
+            @Override
+            public void deregisterCapabilityRequirement(String required, String dependent, String attribute) {
                 throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
 

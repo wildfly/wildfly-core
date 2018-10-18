@@ -273,21 +273,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.wildfly.galleon-plugins</groupId>
-            <artifactId>wildfly-config-gen</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.galleon-plugins</groupId>
-            <artifactId>wildfly-feature-spec-gen</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.galleon-plugins</groupId>
-            <artifactId>wildfly-galleon-plugins</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-java</artifactId>
         </dependency>

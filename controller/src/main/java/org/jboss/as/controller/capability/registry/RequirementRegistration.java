@@ -22,9 +22,11 @@
 
 package org.jboss.as.controller.capability.registry;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,7 +39,7 @@ import org.jboss.as.controller.PathAddress;
  */
 public class RequirementRegistration {
 
-    private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
+    private final Map<PathAddress, List<RegistrationPoint>> registrationPoints = new LinkedHashMap<>();
     private final String requiredName;
     private final CapabilityId dependentId;
 
@@ -61,7 +63,7 @@ public class RequirementRegistration {
     protected RequirementRegistration(String requiredName, String dependentName, CapabilityScope dependentContext,
                                       RegistrationPoint registrationPoint) {
         this(requiredName, dependentName, dependentContext);
-        this.registrationPoints.put(registrationPoint.getAddress(), registrationPoint);
+        putRegistrationPoint(registrationPoint);
     }
 
     /**
@@ -115,7 +117,7 @@ public class RequirementRegistration {
      * @return the initial registration point, or {@code null} if there are no longer any registration points
      */
     public synchronized RegistrationPoint getOldestRegistrationPoint() {
-        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next();
+        return registrationPoints.size() == 0 ? null : registrationPoints.values().iterator().next().get(0);
     }
 
     /**
@@ -124,28 +126,59 @@ public class RequirementRegistration {
      * @return all registration points. Will not be {@code null} but may be empty
      */
     public synchronized Set<RegistrationPoint> getRegistrationPoints() {
-        return Collections.unmodifiableSet(new HashSet<>(registrationPoints.values()));
+        Set<RegistrationPoint> result = new HashSet<>();
+        for (List<RegistrationPoint> registrationPoints : registrationPoints.values()) {
+            result.addAll(registrationPoints);
+        }
+        return Collections.unmodifiableSet(result);
     }
 
     public synchronized boolean addRegistrationPoint(RegistrationPoint toAdd) {
         PathAddress addedAddress = toAdd.getAddress();
         if (registrationPoints.containsKey(addedAddress)) {
-            return false;
+            List<RegistrationPoint> registrationPoints = this.registrationPoints.get(addedAddress);
+            if (registrationPoints.contains(toAdd)) {
+                return false;
+            }
         }
-        registrationPoints.put(addedAddress, toAdd);
+        putRegistrationPoint(toAdd);
+
         return true;
     }
 
-    public synchronized boolean removeRegistrationPoint(RegistrationPoint toAdd) {
-        PathAddress addedAddress = toAdd.getAddress();
-        if (!registrationPoints.containsKey(addedAddress)) {
+    public synchronized boolean removeRegistrationPoint(RegistrationPoint toRemove) {
+        PathAddress removedAddress = toRemove.getAddress();
+        if (!registrationPoints.containsKey(removedAddress)) {
             return false;
         }
-        registrationPoints.remove(addedAddress);
+        List<RegistrationPoint> registrationPoints = this.registrationPoints.get(removedAddress);
+        if (toRemove.getAttribute() == null){
+            registrationPoints.clear();
+        } else {
+            registrationPoints.remove(toRemove);
+        }
+        if (registrationPoints.isEmpty()) {
+            this.registrationPoints.remove(removedAddress);
+        }
         return true;
     }
 
     public synchronized int getRegistrationPointCount() {
-        return registrationPoints.size();
+        int size = 0;
+        for (List<RegistrationPoint> value : registrationPoints.values()){
+            size=+value.size();
+        }
+        return size;
+    }
+
+    private void putRegistrationPoint(RegistrationPoint registrationPoint) {
+        PathAddress address = registrationPoint.getAddress();
+        if (this.registrationPoints.containsKey(address)) {
+            this.registrationPoints.get(address).add(registrationPoint);
+        } else {
+            List<RegistrationPoint> registrationPoints = new ArrayList<>();
+            registrationPoints.add(registrationPoint);
+            this.registrationPoints.put(address, registrationPoints);
+        }
     }
 }

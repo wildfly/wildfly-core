@@ -78,4 +78,7 @@ rem set "SECMGR=true"
 rem # Uncomment this out to control garbage collection logging
 rem set "GC_LOG=true"
 
+rem # Uncomment and edit to use a custom java.security file to override all the Java security properties
+rem set "JAVA_OPTS=%JAVA_OPTS% -Djava.security.properties==C:\path\to\custom\java.security"
+
 :JAVA_OPTS_SET

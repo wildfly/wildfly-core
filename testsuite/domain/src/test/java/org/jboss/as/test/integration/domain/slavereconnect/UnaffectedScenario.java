@@ -76,7 +76,7 @@ public class UnaffectedScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void tearDownDomain(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
         if (initialized >= 4) {
             stopServer(slaveClient, SERVER.getValue());
         }
