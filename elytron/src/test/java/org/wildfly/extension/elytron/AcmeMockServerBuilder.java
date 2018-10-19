@@ -129,7 +129,7 @@ class AcmeMockServerBuilder {
                         .withHeader("Content-Type", "application/jose+json")
                         .withBody(expectedChallengeRequestBody),
                 Times.once())
-                .callback(request -> {
+                .respond(request -> {
                     HttpResponse response = response()
                             .withHeader("Cache-Control", "public, max-age=0, no-cache")
                             .withHeader("Content-Type", useProblemContentType ? "application/problem+json" : "application/json")
