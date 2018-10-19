@@ -41,13 +41,13 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
 /**
- * {@code SocketBinding} metric handlers.
+ * {@code SocketBinding} runtime handlers.
  *
  * @author Emanuel Muckenhuber
  */
-public final class BindingMetricHandlers {
+public final class BindingRuntimeHandlers {
 
-    abstract static class AbstractBindingMetricsHandler implements OperationStepHandler {
+    abstract static class AbstractBindingRuntimeHandler implements OperationStepHandler {
 
         /** {@inheritDoc} */
         @Override
@@ -62,7 +62,7 @@ public final class BindingMetricHandlers {
                     final ServiceController<?> controller = context.getServiceRegistry(false).getRequiredService(svcName);
                     if(controller != null && controller.getState() == ServiceController.State.UP) {
                         final SocketBinding binding = SocketBinding.class.cast(controller.getValue());
-                        AbstractBindingMetricsHandler.this.execute(operation, binding, result);
+                        AbstractBindingRuntimeHandler.this.execute(operation, binding, result);
                     } else {
                         result.set(getNoMetrics());
                     }
@@ -75,7 +75,7 @@ public final class BindingMetricHandlers {
         abstract ModelNode getNoMetrics();
     }
 
-    public static class BoundHandler extends AbstractBindingMetricsHandler {
+    public static class BoundHandler extends AbstractBindingRuntimeHandler {
 
         public static final String ATTRIBUTE_NAME = "bound";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.BOOLEAN)
@@ -101,7 +101,7 @@ public final class BindingMetricHandlers {
 
     }
 
-    public static class BoundAddressHandler extends AbstractBindingMetricsHandler {
+    public static class BoundAddressHandler extends AbstractBindingRuntimeHandler {
 
         public static final String ATTRIBUTE_NAME = "bound-address";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.STRING)
@@ -129,7 +129,7 @@ public final class BindingMetricHandlers {
         }
     }
 
-    public static class BoundPortHandler extends AbstractBindingMetricsHandler {
+    public static class BoundPortHandler extends AbstractBindingRuntimeHandler {
 
         public static final String ATTRIBUTE_NAME = "bound-port";
         public static final AttributeDefinition ATTRIBUTE_DEFINITION = SimpleAttributeDefinitionBuilder.create(ATTRIBUTE_NAME, ModelType.INT)
@@ -159,7 +159,7 @@ public final class BindingMetricHandlers {
         }
     }
 
-    private BindingMetricHandlers() {
+    private BindingRuntimeHandlers() {
         //
     }
 

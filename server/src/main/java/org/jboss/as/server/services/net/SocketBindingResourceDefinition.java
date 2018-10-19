@@ -57,10 +57,10 @@ public class SocketBindingResourceDefinition extends AbstractSocketBindingResour
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
 
-        // Metrics
-        resourceRegistration.registerMetric(BindingMetricHandlers.BoundHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundHandler.INSTANCE);
-        resourceRegistration.registerMetric(BindingMetricHandlers.BoundAddressHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundAddressHandler.INSTANCE);
-        resourceRegistration.registerMetric(BindingMetricHandlers.BoundPortHandler.ATTRIBUTE_DEFINITION, BindingMetricHandlers.BoundPortHandler.INSTANCE);
+        // Runtime read only attributes
+        resourceRegistration.registerReadOnlyAttribute(BindingRuntimeHandlers.BoundHandler.ATTRIBUTE_DEFINITION, BindingRuntimeHandlers.BoundHandler.INSTANCE);
+        resourceRegistration.registerReadOnlyAttribute(BindingRuntimeHandlers.BoundAddressHandler.ATTRIBUTE_DEFINITION, BindingRuntimeHandlers.BoundAddressHandler.INSTANCE);
+        resourceRegistration.registerReadOnlyAttribute(BindingRuntimeHandlers.BoundPortHandler.ATTRIBUTE_DEFINITION, BindingRuntimeHandlers.BoundPortHandler.INSTANCE);
     }
 
     @Override
