@@ -23,10 +23,16 @@
 package org.jboss.as.remoting;
 
 /**
+ * Class to hold capabilities provided by and required by resources within this package.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 final class Capabilities {
+    static final String HTTP_LISTENER_REGISTRY_CAPABILITY_NAME = "org.wildfly.remoting.http-listener-registry";
+
+    static final String REMOTING_ENDPOINT_CAPABILITY_NAME = "org.wildfly.remoting.endpoint";
+
+    static final String IO_WORKER_CAPABILITY_NAME = "org.wildfly.io.worker";
 
     static final String AUTHENTICATION_CONTEXT_CAPABILITY = "org.wildfly.security.authentication-context";
 

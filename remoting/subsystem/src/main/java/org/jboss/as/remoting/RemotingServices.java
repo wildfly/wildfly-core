@@ -21,6 +21,9 @@
  */
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.HTTP_LISTENER_REGISTRY_CAPABILITY;
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
+
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.OperationContext;
@@ -39,6 +42,8 @@ import org.xnio.StreamConnection;
 import org.xnio.XnioWorker;
 import org.xnio.channels.AcceptingChannel;
 
+import io.undertow.server.ListenerRegistry;
+
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -49,13 +54,15 @@ public class RemotingServices {
     public static final ServiceName REMOTING_BASE = ServiceName.JBOSS.append("remoting");
 
     /** The name of the endpoint service installed by the remoting subsystem.  */
-    public static final ServiceName SUBSYSTEM_ENDPOINT = RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);//REMOTING_BASE.append("endpoint", "subsystem");
+    public static final ServiceName SUBSYSTEM_ENDPOINT = REMOTING_ENDPOINT_CAPABILITY.getCapabilityServiceName(Endpoint.class);//REMOTING_BASE.append("endpoint", "subsystem");
 
     /** The base name of the connector services */
     private static final ServiceName CONNECTOR_BASE = REMOTING_BASE.append("connector");
 
     /** The base name of the stream server services */
     private static final ServiceName SERVER_BASE = REMOTING_BASE.append("server");
+
+    public static final ServiceName HTTP_LISTENER_REGISTRY = HTTP_LISTENER_REGISTRY_CAPABILITY.getCapabilityServiceName(ListenerRegistry.class);
 
     /**
      * Create the service name for a connector

@@ -24,6 +24,7 @@ package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
+import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ModelOnlyAddStepHandler;
@@ -51,10 +52,10 @@ class RemotingSubsystemTestUtil {
 
     static final AdditionalInitialization DEFAULT_ADDITIONAL_INITIALIZATION =
             AdditionalInitialization.withCapabilities(
-                    buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY,
+                    buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                     RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()),
                     // This one is specified in one of the test configs
-                    buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"),
+                    buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME, "default-remoting"),
                     buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "dummy-outbound-socket"),
                     buildDynamicCapabilityName("org.wildfly.network.outbound-socket-binding", "other-outbound-socket"),
                     buildDynamicCapabilityName("org.wildfly.network.socket-binding", "remoting")
@@ -74,7 +75,7 @@ class RemotingSubsystemTestUtil {
                     super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
                     AdditionalInitialization.registerCapabilities(capabilityRegistry,
                             // This one is specified in one of the test configs
-                            buildDynamicCapabilityName(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, "default-remoting"));
+                            buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME, "default-remoting"));
 
                     // Deal with the fact that legacy parsers will add the io extension/subsystem
                     registerIOExtension(extensionRegistry, rootRegistration);

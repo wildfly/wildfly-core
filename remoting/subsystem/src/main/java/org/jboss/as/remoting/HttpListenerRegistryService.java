@@ -17,10 +17,12 @@ import org.jboss.msc.service.StopContext;
  */
 public class HttpListenerRegistryService implements Service<ListenerRegistry> {
 
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("http", "listener", "registry");
 
     public static void install(final ServiceTarget serviceTarget) {
-        serviceTarget.addService(SERVICE_NAME, new HttpListenerRegistryService())
+        serviceTarget.addService(RemotingServices.HTTP_LISTENER_REGISTRY, new HttpListenerRegistryService())
+                .addAliases(SERVICE_NAME)
                 .install();
     }
 

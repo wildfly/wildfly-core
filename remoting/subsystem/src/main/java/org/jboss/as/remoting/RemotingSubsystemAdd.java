@@ -23,6 +23,8 @@
 package org.jboss.as.remoting;
 
 
+import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
+import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -81,8 +83,8 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             }
         }
 
-        context.getCapabilityServiceTarget().addCapability(RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY, endpointService)
-                .addCapabilityRequirement(RemotingSubsystemRootResource.IO_WORKER_CAPABILITY, XnioWorker.class, endpointService.getWorker(), workerName)
+        context.getCapabilityServiceTarget().addCapability(REMOTING_ENDPOINT_CAPABILITY, endpointService)
+                .addCapabilityRequirement(IO_WORKER_CAPABILITY_NAME, XnioWorker.class, endpointService.getWorker(), workerName)
                 .install();
     }
 }
