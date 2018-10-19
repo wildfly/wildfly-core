@@ -59,6 +59,7 @@ import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
@@ -173,6 +174,12 @@ public final class ServerService extends AbstractControllerService {
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
     private final SuspendController suspendController;
     public static final String SERVER_NAME = "server";
+
+    static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
+
+    static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
+            RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
+                    .build();
 
     /**
      * Construct a new instance.
@@ -298,13 +305,14 @@ public final class ServerService extends AbstractControllerService {
             final Boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
             suspendController.setStartSuspended(suspend);
             runningModeControl.setSuspend(false);
-            context.getServiceTarget().addService(SuspendController.SERVICE_NAME, suspendController)
+            context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
+                    .addAliases(SuspendController.SERVICE_NAME)
                     .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
                     .install();
 
             GracefulShutdownService gracefulShutdownService = new GracefulShutdownService();
             context.getServiceTarget().addService(GracefulShutdownService.SERVICE_NAME, gracefulShutdownService)
-                    .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, gracefulShutdownService.getSuspendControllerInjectedValue())
+                    .addDependency(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), SuspendController.class, gracefulShutdownService.getSuspendControllerInjectedValue())
                     .install();
 
             // Activate module loader
@@ -457,12 +465,15 @@ public final class ServerService extends AbstractControllerService {
                 new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(SUSPEND_CONTROLLER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
         ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
         rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
         rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
+        rootRegistration.registerCapability(SUSPEND_CONTROLLER_CAPABILITY);
     }
 
     @Override

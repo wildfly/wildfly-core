@@ -23,6 +23,8 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -75,7 +77,7 @@ public class ServerResumeHandler implements OperationStepHandler {
                         if(resultAction == OperationContext.ResultAction.KEEP) {
                             //even if the timeout is zero we still pause the server
                             //to stop new requests being accepted as it is shutting down
-                            ServiceController<SuspendController> shutdownController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
+                            ServiceController<SuspendController> shutdownController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
                             shutdownController.getValue().resume();
                         }
                     }

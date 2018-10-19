@@ -26,6 +26,7 @@ package org.jboss.as.server.operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 
 import java.util.EnumSet;
 
@@ -118,7 +119,7 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             //to stop new requests being accepted as it is shutting down
                             final ShutdownAction shutdown = new ShutdownAction(getOperationName(operation), restart);
                             final ServiceRegistry registry = context.getServiceRegistry(false);
-                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
+                            final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
                             final SuspendController suspendController = suspendControllerServiceController.getValue();
                             OperationListener listener = new OperationListener() {
                                 @Override

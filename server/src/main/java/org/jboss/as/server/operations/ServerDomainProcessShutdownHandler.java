@@ -23,6 +23,8 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import java.util.EnumSet;
 
 import org.jboss.as.controller.OperationContext;
@@ -97,7 +99,7 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
                             // is already shutting down due to receiving a SIGINT
                             final ServiceController<GracefulShutdownService> gracefulController = (ServiceController<GracefulShutdownService>) registry.getService(GracefulShutdownService.SERVICE_NAME);
                             if (gracefulController != null) {
-                                final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getService(SuspendController.SERVICE_NAME);
+                                final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getService(JBOSS_SUSPEND_CONTROLLER);
                                 if (suspendControllerServiceController != null) {
                                     gracefulController.getValue().startGracefulShutdown();
                                     suspendControllerServiceController.getValue().suspend(timeout > 0 ? timeout * 1000 : timeout);
