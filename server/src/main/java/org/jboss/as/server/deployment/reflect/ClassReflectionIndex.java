@@ -81,7 +81,12 @@ public final class ClassReflectionIndex {
         final Map<String, Map<ParamList, Map<Class<?>, Method>>> methods = new HashMap<String, Map<ParamList, Map<Class<?>, Method>>>();
         final Map<String, Map<ParamNameList, Map<String, Method>>> methodsByTypeName = new HashMap<String, Map<ParamNameList, Map<String, Method>>>();
         for (Method method : declaredMethods) {
-            method.setAccessible(true);
+            // Ignore setting the accessible flag as Object.class comes from the java.base module in Java 9+. Really the
+            // only method that causes a warning and eventual failure is finalize(), but there's no reason for the
+            // overhead of the change.
+            if (method.getDeclaringClass() != Object.class) {
+                method.setAccessible(true);
+            }
             addMethod(methods, method);
             addMethodByTypeName(methodsByTypeName, method);
         }
