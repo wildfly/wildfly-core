@@ -122,7 +122,7 @@ public class DeferredExtensionContext {
                 }
             }
             if (!initialized) {
-                throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module.getIdentifier());
+                throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module.getName());
             }
             return null;
         } catch (final ModuleLoadException e) {

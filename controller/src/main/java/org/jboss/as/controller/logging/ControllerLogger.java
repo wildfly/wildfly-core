@@ -72,7 +72,6 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleNotFoundException;
 import org.jboss.msc.service.ServiceName;
@@ -1762,16 +1761,16 @@ public interface ControllerLogger extends BasicLogger {
     IllegalStateException notADirectory(String path);
 
     /**
-     * Creates an exception indicating no {@code path/className} was found for the module identifier.
+     * Creates an exception indicating no {@code path/className} was found for the module name.
      *
-     * @param path      the path of the SPI.
-     * @param className the class name.
-     * @param id        the module identifier.
+     * @param path        the path of the SPI.
+     * @param className   the class name.
+     * @param moduleName  the module name.
      *
      * @return an {@link IllegalStateException} for the error.
      */
     @Message(id = 153, value = "No %s%s found for %s")
-    IllegalStateException notFound(String path, String className, ModuleIdentifier id);
+    IllegalStateException notFound(String path, String className, String moduleName);
 
     /**
      * Creates an exception indicating an asynchronous operation cannot execute without an executor.
