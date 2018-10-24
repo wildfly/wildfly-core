@@ -649,7 +649,7 @@ final class SubsystemTestDelegate {
         private ModelTestOperationValidatorFilter.Builder operationValidationExcludeBuilder;
         private boolean persistXml = true;
         private boolean skipReverseCheck;
-        private AdditionalInitialization reverseCheckConfig;
+        private AdditionalInitialization reverseCheckConfig = AdditionalInitialization.MANAGEMENT;
         private ModelFixer reverseCheckModelFixer;
         private OperationFixer reverseCheckOperationFixer = operation -> operation;
 
