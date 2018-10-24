@@ -1,6 +1,7 @@
 package org.jboss.as.test.integration.management.cli;
 
 import org.aesh.readline.terminal.Key;
+import org.aesh.utils.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.jboss.as.cli.CommandContext;
@@ -16,8 +17,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
@@ -35,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.aesh.utils.Config;
 
 
 /**
@@ -63,6 +65,15 @@ public class LongOutputTestCase {
     private ReadlineConsole readlineConsole;
     private InputStream consoleInputStream;
     private StringBuilder sb;
+    private String originalCliConfig;
+
+    private enum OutputPaging   {
+        ENABLE_PAGING_OUTPUT_VIA_ARGUMENT,
+        ENABLE_PAGING_OUTPUT_VIA_XML,
+        DISABLE_PAGING_OUTPUT_VIA_XML,
+        DISABLE_PAGING_OUTPUT_VIA_ARGUMENT,
+        DEFAULT
+    }
 
     @Before
     public void setup() throws Exception {
@@ -75,14 +86,43 @@ public class LongOutputTestCase {
         consoleInputStream = new PipedInputStream(consoleOutput, bufferSize);
         consoleReader = new InputStreamReader(consoleInputStream);
         sb = new StringBuilder();
+        // tests can  manipulate with jboss.cli.config system property thus we need  keep have original value so
+        // it can be restored in @After phase
+        originalCliConfig = WildFlySecurityManager.getPropertyPrivileged("jboss.cli.config", "");
     }
 
-    private void setupConsole(boolean outputPaging) throws Exception {
+    private void setupConsole(OutputPaging outputPaging) throws Exception {
         CommandContextConfiguration.Builder builder =  CLITestUtil.getCommandContextBuilder(TestSuiteEnvironment.getServerAddress(),
                 TestSuiteEnvironment.getServerPort(),
                 consoleInput,
                 consoleOutput);
-        builder.setOutputPaging(outputPaging);
+
+        File configFile;
+        switch (outputPaging)   {
+            case ENABLE_PAGING_OUTPUT_VIA_XML:
+                // create jboss-cli.xml and set to and set path to jboss.cli.config property
+                configFile = CliConfigUtils.createConfigFile(false, 0, true, false, false, true);
+                WildFlySecurityManager.setPropertyPrivileged("jboss.cli.config", configFile.getAbsolutePath());
+                break;
+            case DISABLE_PAGING_OUTPUT_VIA_XML:
+                // create jboss-cli.xml and set to and set path to jboss.cli.config property
+                configFile = CliConfigUtils.createConfigFile(false, 0, true, false, false, false);
+                WildFlySecurityManager.setPropertyPrivileged("jboss.cli.config", configFile.getAbsolutePath());
+                break ;
+            case DISABLE_PAGING_OUTPUT_VIA_ARGUMENT:
+                builder.setOutputPaging(false);
+                break;
+            case ENABLE_PAGING_OUTPUT_VIA_ARGUMENT:
+                builder.setOutputPaging(true);
+                break;
+            case DEFAULT:
+                // do nothing - just keep default (which is paging output enabled)
+                break;
+            default:
+                // throw exception here
+                throw new IllegalArgumentException("Invalid paging output enum passed: " + outputPaging
+                        + " - see LongOutputTestCase.OutputPaging enum for valid values.");
+        }
 
         ctx = CommandContextFactory.getInstance().newCommandContext(builder.build());
 
@@ -166,6 +206,9 @@ public class LongOutputTestCase {
         IOUtil.close(consoleWriter);
         IOUtil.close(consoleOutput);
         IOUtil.close(consoleReader);
+
+        // return back original value for jboss.cli.config property
+        WildFlySecurityManager.setPropertyPrivileged("jboss.cli.config", originalCliConfig);
     }
 
     private void afterTest() throws Exception {
@@ -182,7 +225,7 @@ public class LongOutputTestCase {
      */
     @Test
     public void testBasic() throws Exception {
-        setupConsole(true);
+        setupConsole(OutputPaging.DEFAULT);
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
 
@@ -316,13 +359,34 @@ public class LongOutputTestCase {
         Assert.fail("waitFor timed out");
     }
 
-
     /**
      * Check that the whole output was written at once when the output paging is disabled
      */
     @Test
-    public void testDisabledOutputPaging() throws Exception {
-        setupConsole(false);
+    public void testDisabledOutputPagingViaArgument() throws Exception {
+        setupConsole(OutputPaging.DISABLE_PAGING_OUTPUT_VIA_ARGUMENT);
+        testDisabledOutputPaging();
+    }
+
+    @Test
+    public void testEnableOutputPagingViaArgument() throws Exception {
+        setupConsole(OutputPaging.ENABLE_PAGING_OUTPUT_VIA_ARGUMENT);
+        testEnabledOutputPaging();
+    }
+
+    @Test
+    public void testDisabledOutputPagingViaXml() throws Exception {
+        setupConsole(OutputPaging.DISABLE_PAGING_OUTPUT_VIA_XML);
+        testDisabledOutputPaging();
+    }
+
+    @Test
+    public void testEnableOutputPagingViaXml() throws Exception {
+        setupConsole(OutputPaging.ENABLE_PAGING_OUTPUT_VIA_XML);
+        testEnabledOutputPaging();
+    }
+
+    private void testDisabledOutputPaging() throws Exception {
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
         String window = queue.poll(10, TimeUnit.SECONDS);
@@ -333,5 +397,14 @@ public class LongOutputTestCase {
         //Check if the whole output was written at once - e.g. there is the starting "{" and ending "}"
         Assert.assertTrue(Pattern.compile("^\\{.*^\\}", Pattern.MULTILINE | Pattern.DOTALL)
                 .matcher(window).find());
+    }
+
+    private void testEnabledOutputPaging() throws Exception {
+        consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
+        Assert.assertFalse(consoleWriter.checkError());
+        String window = queue.poll(10, TimeUnit.SECONDS);
+
+        Assert.assertNotNull(window);
+        checkWithRegex(window, morePattern);
     }
 }
