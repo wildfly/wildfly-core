@@ -548,4 +548,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1057, value = "Failed to create ServerAuthModule [%s] using module '%s'")
     RuntimeException failedToCreateServerAuthModule(String className, String module, @Cause Exception cause);
 
+    @Message(id = 1058, value = "Failed to parse PEM public key with kid: %s")
+    OperationFailedException failedToParsePEMPublicKey(String kid);
+
 }

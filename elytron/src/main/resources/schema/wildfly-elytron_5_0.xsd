@@ -1611,14 +1611,14 @@
         <xs:attribute name="client-ssl-context" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    A predefined client-ssl-context that will be used to connect to the jwks endpoint specifien in jku token claim. This configuration is mandatory if you want to use remote keys with jku.
+                    A predefined client-ssl-context that will be used to connect to the jwks endpoint specified in the jku token claim. This configuration is mandatory if you want to use remote keys with jku.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="host-name-verification-policy" type="xs:string" use="optional">
+        <xs:attribute name="host-name-verification-policy" type="verificationPolicy" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    A policy that defines how host names should be verified when using HTTPS for fetching jwks. Allowed values: "ANY".
+                    A policy that defines how host names should be verified when using HTTPS for fetching jwks.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -5400,6 +5400,18 @@
             <xs:enumeration value="REQUISITE" />
             <xs:enumeration value="SUFFICIENT" />
             <xs:enumeration value="OPTIONAL" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="verificationPolicy">
+        <xs:annotation>
+            <xs:documentation>
+                A host name verification policy.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ANY" />
+            <xs:enumeration value="DEFAULT" />
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

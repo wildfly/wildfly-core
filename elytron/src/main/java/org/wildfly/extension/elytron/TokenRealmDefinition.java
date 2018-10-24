@@ -290,7 +290,6 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
 
                     if (kids.size() > 0) {
                         for (String kid : kids) {
-                            ROOT_LOGGER.warn("KID: " + kid + "\n");
                             byte[] pemKey = keyMap.get(kid).asString().getBytes(StandardCharsets.UTF_8);
 
                             Iterator<PemEntry<?>> pemEntryIterator = Pem.parsePemContent(CodePointIterator.ofUtf8Bytes(pemKey));
@@ -298,11 +297,11 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                             try {
                                 namedPublicKey = pemEntryIterator.next().tryCast(PublicKey.class);
                             } catch (Exception e) {
-                                throw new RuntimeException("Failed to parse PEM public key with kid: " + kid, e);
-
+                                ROOT_LOGGER.debug(e);
+                                throw ROOT_LOGGER.failedToParsePEMPublicKey(kid);
                             }
                             if (namedPublicKey == null) {
-                                throw new RuntimeException("Failed to parse PEM public key with kid: " + kid);
+                                throw ROOT_LOGGER.failedToParsePEMPublicKey(kid);
                             }
 
                             namedKeys.put(kid, namedPublicKey);
