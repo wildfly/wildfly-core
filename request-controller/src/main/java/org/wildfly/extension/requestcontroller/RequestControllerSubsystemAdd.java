@@ -24,6 +24,8 @@
 
 package org.wildfly.extension.requestcontroller;
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -72,7 +74,7 @@ class RequestControllerSubsystemAdd extends AbstractBoottimeAddStepHandler {
         requestController.setMaxRequestCount(maxRequests);
 
         context.getServiceTarget().addService(RequestController.SERVICE_NAME, requestController)
-                .addDependency(SuspendController.SERVICE_NAME, SuspendController.class, requestController.getShutdownControllerInjectedValue())
+                .addDependency(JBOSS_SUSPEND_CONTROLLER, SuspendController.class, requestController.getShutdownControllerInjectedValue())
                 .install();
 
     }

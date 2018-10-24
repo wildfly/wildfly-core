@@ -23,6 +23,8 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -91,7 +93,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
             @Override
             public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
                 final ServiceRegistry registry = context.getServiceRegistry(false);
-                ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(SuspendController.SERVICE_NAME);
+                ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
                 final SuspendController suspendController = suspendControllerServiceController.getValue();
 
                 final CountDownLatch latch = new CountDownLatch(1);

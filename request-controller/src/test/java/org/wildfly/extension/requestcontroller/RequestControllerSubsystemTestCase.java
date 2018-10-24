@@ -24,6 +24,8 @@
 
 package org.wildfly.extension.requestcontroller;
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import java.io.IOException;
 
 import org.jboss.as.controller.PathAddress;
@@ -90,7 +92,9 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
 
                     }
                 }));
-                target.addService(SuspendController.SERVICE_NAME, suspendController).install();
+                target.addService(JBOSS_SUSPEND_CONTROLLER, suspendController)
+                        .addAliases(SuspendController.SERVICE_NAME)
+                        .install();
             }
 
             @Override

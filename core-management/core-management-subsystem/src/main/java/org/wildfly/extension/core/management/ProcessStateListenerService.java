@@ -22,6 +22,8 @@
 package org.wildfly.extension.core.management;
 
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Map;
@@ -233,7 +235,7 @@ public class ProcessStateListenerService implements Service<Void> {
         ServiceBuilder<Void> builder = serviceTarget.addService(SERVICE_NAME.append(listenerName), service)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateService);
         if (!processType.isHostController()) {
-            builder.addDependency(SuspendController.SERVICE_NAME, SuspendController.class, service.suspendControllerInjectedValue);
+            builder.addDependency(JBOSS_SUSPEND_CONTROLLER, SuspendController.class, service.suspendControllerInjectedValue);
         }
         Services.addServerExecutorDependency(builder, service.executorServiceValue);
         builder.install();

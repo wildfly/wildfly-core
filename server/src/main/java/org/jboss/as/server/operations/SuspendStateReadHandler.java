@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.operations;
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -43,7 +45,7 @@ public class SuspendStateReadHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         @SuppressWarnings("unchecked")
-        ServiceController<SuspendController> sc = (ServiceController<SuspendController>) context.getServiceRegistry(false).getService(SuspendController.SERVICE_NAME);
+        ServiceController<SuspendController> sc = (ServiceController<SuspendController>) context.getServiceRegistry(false).getService(JBOSS_SUSPEND_CONTROLLER);
         SuspendController.State state;
         if(sc != null) {
             state = sc.getValue().getState();

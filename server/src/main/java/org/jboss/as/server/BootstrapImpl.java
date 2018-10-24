@@ -22,6 +22,8 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -337,7 +339,7 @@ final class BootstrapImpl implements Bootstrap {
         private static SuspendController getSuspendController(ServiceContainer sc) {
             SuspendController result = null;
             if (sc != null && !sc.isShutdownComplete()) {
-                final ServiceController serviceController = sc.getService(SuspendController.SERVICE_NAME);
+                final ServiceController serviceController = sc.getService(JBOSS_SUSPEND_CONTROLLER);
                 if (serviceController != null && serviceController.getState() == ServiceController.State.UP) {
                     result = (SuspendController) serviceController.getValue();
                 }

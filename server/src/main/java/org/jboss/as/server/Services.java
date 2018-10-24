@@ -69,6 +69,8 @@ public final class Services {
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");
 
+    public static final ServiceName JBOSS_SUSPEND_CONTROLLER = ServerService.SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName();
+
     /**
      * Creates dependency on management executor.
      *

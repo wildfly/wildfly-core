@@ -36,6 +36,11 @@ public class SuspendController implements Service<SuspendController> {
     //TODO: should this notification handling be placed into its own class
     private static final PathAddress NOTIFICATION_ADDRESS = PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(SERVICE, MANAGEMENT_OPERATIONS);
 
+    /**
+     * @deprecated Use org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER instead which gets the service name
+     * via org.wildfly.server.suspend-controller capability
+     */
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "suspend-controller");
 
     /**
