@@ -78,4 +78,9 @@ public class ElytronSubsystemParser5_0 extends ElytronSubsystemParser4_0 {
         return new AuditLoggingParser().parser5_0;
     }
 
+    @Override
+    PersistentResourceXMLDescription getTlsParser() {
+        return new TlsParser().tlsParser_5_0;
+    }
+
 }

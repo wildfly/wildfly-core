@@ -87,6 +87,16 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         transformAutoFlush(builder, FILE_AUDIT_LOG);
         transformAutoFlush(builder, PERIODIC_ROTATING_FILE_AUDIT_LOG);
         transformAutoFlush(builder, SIZE_ROTATING_FILE_AUDIT_LOG);
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT));
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM))
+            .getAttributeBuilder()
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.HOST_NAME_VERIFICATION_POLICY,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.SSL_CONTEXT,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
+            .addRejectCheck(new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(Collections.singletonMap(ElytronDescriptionConstants.KEY_MAP,
+                RejectAttributeChecker.DEFINED)), ElytronDescriptionConstants.JWT)
+            .end();
     }
 
     private static void transformAutoFlush(ResourceTransformationDescriptionBuilder builder, final String resourceName) {

@@ -1553,6 +1553,26 @@
                 A token validator to be used in conjunction with a token-based realm that handles security tokens based on the JWT/JWS standard.
             </xs:documentation>
         </xs:annotation>
+        <xs:sequence>
+            <xs:element name="key" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="kid" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The JWK kid. Tokens with the same kid will use this public key for signature verification.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="public-key" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                RSA public key in PEM format.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="issuer" type="stringListType" use="optional">
             <xs:annotation>
                 <xs:documentation>
@@ -1585,6 +1605,20 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the certificate with a public key to load from the key store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="client-ssl-context" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A predefined client-ssl-context that will be used to connect to the jwks endpoint specified in the jku token claim. This configuration is mandatory if you want to use remote keys with jku.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="host-name-verification-policy" type="verificationPolicy" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A policy that defines how host names should be verified when using HTTPS for fetching jwks.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4072,6 +4106,7 @@
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
             <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
+            <xs:element name="server-ssl-sni-contexts" type="serverSSLSNIContextsType" minOccurs="0" />
         </xs:all>
     </xs:complexType>
 
@@ -4251,6 +4286,65 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="serverSSLSNIContextsType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for Server SNI SSLContext definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="server-ssl-sni-context" type="serverSSLSNIContextType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="serverSSLSNIContextType">
+        <xs:annotation>
+            <xs:documentation>
+                Definitions of a single server side SNI SSLContext.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="sni-mapping" type="serverSSLSNIMappingType" minOccurs="0" maxOccurs="unbounded"  />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this Server side SNI SSLContext.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="default-ssl-context" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The SSLContext to use if SNI is not in use
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="serverSSLSNIMappingType">
+        <xs:annotation>
+            <xs:documentation>
+                Definitions of a single server side SNI SSLContext.
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:attribute name="host" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The host name that this element matches. If it begins with a '*' it is considered a wildcard match.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ssl-context" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The SSLContext to use if the name matches.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -5306,6 +5400,18 @@
             <xs:enumeration value="REQUISITE" />
             <xs:enumeration value="SUFFICIENT" />
             <xs:enumeration value="OPTIONAL" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="verificationPolicy">
+        <xs:annotation>
+            <xs:documentation>
+                A host name verification policy.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ANY" />
+            <xs:enumeration value="DEFAULT" />
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>
