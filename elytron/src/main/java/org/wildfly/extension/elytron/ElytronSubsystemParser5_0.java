@@ -55,6 +55,7 @@ public class ElytronSubsystemParser5_0 extends ElytronSubsystemParser4_0 {
                 .addAttribute(ElytronDefinition.DISALLOWED_PROVIDERS)
                 .addAttribute(ElytronDefinition.SECURITY_PROPERTIES, new AttributeParsers.PropertiesParser(null, SECURITY_PROPERTY, true), new AttributeMarshallers.PropertiesAttributeMarshaller(null, SECURITY_PROPERTY, true))
                 .addAttribute(ElytronDefinition.REGISTER_JASPI_FACTORY)
+                .addAttribute(ElytronDefinition.DEFAULT_SSL_CONTEXT)
                 .addChild(getAuthenticationClientParser())
                 .addChild(getProviderParser())
                 .addChild(getAuditLoggingParser())

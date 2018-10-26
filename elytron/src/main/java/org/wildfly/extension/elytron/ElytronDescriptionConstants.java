@@ -499,6 +499,7 @@ interface ElytronDescriptionConstants {
     String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
+    String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
     String SNI_MAPPING = "sni-mapping";
     String STAGING = "staging";

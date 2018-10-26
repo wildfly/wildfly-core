@@ -82,6 +82,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_5_0_0, ELYTRON_4_0_0);
         builder.getAttributeBuilder()
             .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDefinition.REGISTER_JASPI_FACTORY)
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.DEFAULT_SSL_CONTEXT)
+            .setDiscard(DiscardAttributeChecker.UNDEFINED, ElytronDefinition.DEFAULT_SSL_CONTEXT)
             .end();
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION));
         transformAutoFlush(builder, FILE_AUDIT_LOG);
