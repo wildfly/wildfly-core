@@ -29,73 +29,12 @@
         <group name="org.wildfly.core"/>
     </package-schemas>
 
-    <config model="standalone">
-        <props>
-            <prop name="config.branch-is-batch" value="true"/>
-            <prop name="config.merge-independent-branches" value="true"/>
-            <!-- <prop name="config.merge-same-deps-branches" value="true"/> -->
-            <prop name="--admin-only" value=""/>
-            <prop name="--internal-empty-config" value=""/>
-            <prop name="--internal-remove-config" value=""/>
-        </props>
-        <packages>
-            <package name="product.conf" optional="true"/>
-            <package name="misc.standalone"/>
-            <package name="org.jboss.as.standalone"/>
-            <package name="org.jboss.as.domain-management"/>
-            <!-- is not required but useful even if elytron subsystem is not installed -->
-            <package name="org.wildfly.security.elytron"/>
-            <!-- cleanup runtime dirs -->
-            <package name="cleanup.standalone.config.history.dir" optional="true"/>
-            <package name="cleanup.standalone.log.dir" optional="true"/>
-            <package name="cleanup.standalone.data.dir" optional="true"/>
-            <package name="cleanup.standalone.tmp.vfs" optional="true"/>
-        </packages>
-    </config>
-
-    <config model="domain">
-        <props>
-            <prop name="config.branch-is-batch" value="true"/>
-            <prop name="config.merge-independent-branches" value="true"/>
-            <prop name="--empty-domain-config" value=""/>
-            <prop name="--remove-existing-domain-config" value=""/>
-            <prop name="--empty-host-config" value=""/>
-            <prop name="--remove-existing-host-config" value=""/>
-        </props>
-        <packages>
-            <package name="product.conf" optional="true"/>
-            <package name="misc.domain"/>
-            <package name="org.jboss.as.domain-management"/>
-            <!-- is not required but useful even if elytron subsystem is not installed -->
-            <package name="org.wildfly.security.elytron"/>
-            <!-- cleanup runtime dirs -->
-            <package name="cleanup.domain.config.history.dir" optional="true"/>
-            <package name="cleanup.domain.servers.dir" optional="true"/>
-            <package name="cleanup.domain.log.dir" optional="true"/>
-            <package name="cleanup.domain.data.dir" optional="true"/>
-        </packages>
-    </config>
-
-    <config model="host">
-        <config-deps>
-            <config-dep id="domain-dep" model="domain"/>
-        </config-deps>
-        <props>
-            <prop name="config.branch-is-batch" value="true"/>
-            <prop name="config.merge-independent-branches" value="true"/>
-            <prop name="--domain-config" value="domain.xml"/>
-            <prop name="--empty-host-config" value=""/>
-            <prop name="--remove-existing-host-config" value=""/>
-        </props>
-    </config>
-
     <config name="standalone.xml" model="standalone">
         <!-- config name is the resulting xml file name which can be changed by setting the property below
         <props>
             <prop name="- -server-config" value="standalone-custom.xml"/>
         </props>
         -->
-        <feature-group name="standalone"/>
     </config>
 
     <config name="domain.xml" model="domain">
@@ -104,7 +43,6 @@
             <prop name="- -domain-config" value="domain-custom.xml"/>
         </props>
         -->
-        <feature-group name="domain"/>
     </config>
 
     <config name="host.xml" model="host">
@@ -113,16 +51,10 @@
             <prop name="- -host-config" value="host-custom.xml"/>
         </props>
         -->
-        <feature-group name="host"/>
     </config>
 
-    <config name="host-master.xml" model="host">
-        <feature-group name="host-master"/>
-    </config>
-
-    <config name="host-slave.xml" model="host">
-        <feature-group name="host-slave"/>
-    </config>
+    <config name="host-master.xml" model="host"/>
+    <config name="host-slave.xml" model="host"/>
 
     <plugins>
         <plugin artifact="org.wildfly.galleon-plugins:wildfly-galleon-plugins"/>
