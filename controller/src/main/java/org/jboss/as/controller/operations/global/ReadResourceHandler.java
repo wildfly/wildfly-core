@@ -23,8 +23,6 @@
 package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -43,7 +41,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -62,7 +59,6 @@ import org.jboss.as.controller.UnauthorizedException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
-import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -276,7 +272,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                     if (recursive) {
                         boolean getChild = false;
-                        ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
+                        ImmutableManagementResourceRegistration childReg = registry == null ? null : registry.getSubModel(relativeAddr);
                         if (childReg != null) {
                             // Decide if we want to invoke on this child resource
                             boolean proxy = childReg.isRemote();
@@ -346,40 +342,6 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                 AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
                 addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, responseMap);
 
-            }
-        }
-
-        // Any attributes stored in the model but without a registry entry
-        final ModelNode model = resource.getModel();
-        if (model.isDefined()) {
-            for (String key : model.keys()) {
-                AttributeDefinition.NameAndGroup nag = new AttributeDefinition.NameAndGroup(key);
-                // Skip children and attributes already handled
-                if (!otherAttributes.containsKey(nag) && !childrenByType.containsKey(key) && !metrics.containsKey(nag)) {
-                    addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, otherAttributes);
-                }
-            }
-        }
-
-        // Last, if defaults are desired, look for unregistered attributes also not in the model
-        // by checking the resource description
-        if (defaults) {
-            //get the model description
-            final DescriptionProvider descriptionProvider = registry.getModelDescription(PathAddress.EMPTY_ADDRESS);
-            final Locale locale = GlobalOperationHandlers.getLocale(context, operation);
-            final ModelNode nodeDescription = descriptionProvider.getModelDescription(locale);
-
-            if (nodeDescription.isDefined() && nodeDescription.hasDefined(ATTRIBUTES)) {
-                for (String key : nodeDescription.get(ATTRIBUTES).keys()) {
-                    AttributeDefinition.NameAndGroup nag = new AttributeDefinition.NameAndGroup(key);
-                    if ((!childrenByType.containsKey(key)) &&
-                            !otherAttributes.containsKey(nag) &&
-                            !metrics.containsKey(nag) &&
-                            nodeDescription.get(ATTRIBUTES).hasDefined(key) &&
-                            nodeDescription.get(ATTRIBUTES, key).hasDefined(DEFAULT)) {
-                        addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, otherAttributes);
-                    }
-                }
             }
         }
     }

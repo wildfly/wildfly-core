@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PLATFORM_MBEAN;
@@ -300,6 +301,7 @@ public class DeploymentScenario extends ReconnectTestScenario {
         ModelNode readResource = Util.createEmptyOperation(READ_RESOURCE_OPERATION,
                 PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS));
         readResource.get(RECURSIVE).set(true);
+        readResource.get(INCLUDE_RUNTIME).set(true);
         return DomainTestUtils.executeForResult(readResource, client);
     }
 }
