@@ -239,14 +239,20 @@ public class DomainDeploymentOverlayTransformersTestCase extends AbstractCoreMod
         KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        checkCoreModelTransformation(mainServices, modelVersion, MODEL_FIXER, MODEL_FIXER);
+        Fixer fixer = new Fixer(modelVersion);
+        checkCoreModelTransformation(mainServices, modelVersion, fixer, fixer);
 
     }
 
-    private final ModelFixer MODEL_FIXER = new ModelFixer() {
+    private class Fixer extends RbacModelFixer {
+
+        Fixer(ModelVersion modelVersion) {
+            super(modelVersion);
+        }
 
         @Override
         public ModelNode fixModel(ModelNode modelNode) {
+            modelNode = super.fixModel(modelNode);
             modelNode.remove(SOCKET_BINDING_GROUP);
             modelNode.remove(PROFILE);
             return modelNode;

@@ -94,7 +94,8 @@ public abstract class AbstractSystemPropertyTransformersTest extends AbstractCor
         KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        ModelNode legacyModel = checkCoreModelTransformation(mainServices, modelVersion, StandardServerGroupInitializers.MODEL_FIXER, StandardServerGroupInitializers.MODEL_FIXER);
+        ModelFixer fixer = new StandardServerGroupInitializers.Fixer(modelVersion);
+        ModelNode legacyModel = checkCoreModelTransformation(mainServices, modelVersion, fixer, fixer);
         ModelNode properties = legacyModel;
         if (serverGroup) {
             properties = legacyModel.get(SERVER_GROUP, "test");
@@ -160,9 +161,10 @@ public abstract class AbstractSystemPropertyTransformersTest extends AbstractCor
         }
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, config);
 
-        checkCoreModelTransformation(mainServices, modelVersion, null, new ModelFixer() {
+        checkCoreModelTransformation(mainServices, modelVersion, new RbacModelFixer(modelVersion), new RbacModelFixer(modelVersion) {
             @Override
             public ModelNode fixModel(ModelNode modelNode) {
+                modelNode = super.fixModel(modelNode);
                 modelNode.remove(SOCKET_BINDING_GROUP);
                 if (!allowExpressions()) {
                     modelNode =  resolve(modelNode);

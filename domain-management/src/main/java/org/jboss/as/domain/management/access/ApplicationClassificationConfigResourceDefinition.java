@@ -157,7 +157,6 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
         @Override
         public ModelNode getModel() {
             ModelNode model = new ModelNode();
-            model.get(DEFAULT_APPLICATION.getName()).set(applicationType.isDefaultApplication());
             model.get(CONFIGURED_APPLICATION.getName()).set(getBoolean(applicationType.getConfiguredApplication()));
             return model;
         }

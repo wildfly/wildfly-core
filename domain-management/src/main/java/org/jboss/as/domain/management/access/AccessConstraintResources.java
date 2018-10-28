@@ -40,7 +40,6 @@ import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConstraint;
 import org.jboss.as.controller.access.constraint.SensitiveTargetConstraint;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
-import org.jboss.as.controller.access.constraint.VaultExpressionSensitivityConfig;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.registry.Resource;
 
@@ -64,7 +63,7 @@ public class AccessConstraintResources {
 
     // Vault Expression Resource
     public static final PathElement VAULT_PATH_ELEMENT = PathElement.pathElement(CONSTRAINT, VAULT_EXPRESSION);
-    public static final Resource VAULT_RESOURCE = SensitivityResourceDefinition.createVaultExpressionResource(VaultExpressionSensitivityConfig.INSTANCE, VAULT_PATH_ELEMENT);
+    public static final Resource VAULT_RESOURCE = SensitivityResourceDefinition.createVaultExpressionResource();
 
     private static volatile Map<String, Map<String, SensitivityClassification>> classifications;
     private static volatile Map<String, Map<String, ApplicationTypeConfig>> applicationTypes;

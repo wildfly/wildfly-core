@@ -118,11 +118,13 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
 
         boolean allowResourceTransformation = !isIgnoredResourceListAvailableAtRegistration()
                 || modelVersion.getMajor() >= 3;
+
+        final ModelFixer fixer = new Fixer(modelVersion);
         try {
             checkCoreModelTransformation(mainServices,
                     modelVersion,
-                    FIXER,
-                    FIXER);
+                    fixer,
+                    fixer);
             if (!allowResourceTransformation) {
                 Assert.fail("Resource transformation did not fail");
             }
@@ -138,8 +140,8 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
             mainServices.executeOperation(op, ModelController.OperationTransactionControl.COMMIT);
             checkCoreModelTransformation(mainServices,
                     modelVersion,
-                    FIXER,
-                    FIXER);
+                    fixer,
+                    fixer);
         }
         mainServices.shutdown();
     }
@@ -176,10 +178,15 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
         return modelVersion.getMajor() >= 1 && modelVersion.getMinor() >= 4;
     }
 
-    private ModelFixer FIXER = new ModelFixer() {
+    private class Fixer extends RbacModelFixer {
+
+        Fixer(ModelVersion modelVersion) {
+            super(modelVersion);
+        }
 
         @Override
         public ModelNode fixModel(ModelNode modelNode) {
+            modelNode = super.fixModel(modelNode);
             modelNode.remove(SOCKET_BINDING_GROUP);
             if (!isIgnoredResourceListAvailableAtRegistration()) {
                 modelNode.get(SERVER_GROUP, "test", JVM, "full").remove(LAUNCH_COMMAND.getName());

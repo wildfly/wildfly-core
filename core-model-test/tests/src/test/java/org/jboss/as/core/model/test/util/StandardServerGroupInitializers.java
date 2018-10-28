@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 
 import org.jboss.as.controller.ManagementModel;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
@@ -34,12 +35,12 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
 import org.jboss.as.core.model.test.ModelInitializer;
 import org.jboss.as.core.model.test.ModelWriteSanitizer;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
-import org.jboss.as.model.test.ModelFixer;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -96,14 +97,19 @@ public class StandardServerGroupInitializers {
         return legacyKernelServicesInitializer;
     }
 
-    public static final ModelFixer MODEL_FIXER = new ModelFixer() {
+    public static class Fixer extends AbstractCoreModelTest.RbacModelFixer {
+
+        public Fixer(ModelVersion transformFromVersion) {
+            super(transformFromVersion);
+        }
 
         @Override
         public ModelNode fixModel(ModelNode modelNode) {
+            modelNode = super.fixModel(modelNode);
             modelNode.remove(SOCKET_BINDING_GROUP);
             modelNode.remove(PROFILE);
             return modelNode;
         }
-    };
+    }
 
 }
