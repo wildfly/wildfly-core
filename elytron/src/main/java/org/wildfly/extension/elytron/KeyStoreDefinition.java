@@ -82,7 +82,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
     static final ServiceUtil<KeyStore> KEY_STORE_UTIL = ServiceUtil.newInstance(KEY_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.KEY_STORE, KeyStore.class);
 
-    static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TYPE, ModelType.STRING, false)
+    static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TYPE, ModelType.STRING, true)
         .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
         .setAllowExpression(true)
         .setMinSize(1)
@@ -241,7 +241,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             ModelNode model = resource.getModel();
             String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
-            String type = TYPE.resolveModelAttribute(context, model).asString();
+            String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
             String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
             String relativeTo = null;
             boolean required;
@@ -251,9 +251,11 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
             if (path != null) {
                 relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
                 required = REQUIRED.resolveModelAttribute(context, model).asBoolean();
-
                 keyStoreService = KeyStoreService.createFileBasedKeyStoreService(providerName, type, relativeTo, path, required, aliasFilter);
             } else {
+                if (type == null) {
+                    throw ROOT_LOGGER.filelessKeyStoreMissingType();
+                }
                 keyStoreService = KeyStoreService.createFileLessKeyStoreService(providerName, type, aliasFilter);
             }
 
