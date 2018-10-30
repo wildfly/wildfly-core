@@ -71,6 +71,11 @@ class GlobalOperationAttributes {
     .setDefaultValue(new ModelNode(false))
     .build();
 
+    static final SimpleAttributeDefinition INCLUDE_UNDEFINED_METRIC_VALUES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_UNDEFINED_METRIC_VALUES, ModelType.BOOLEAN)
+            .setRequired(false)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)
     .setValidator(new StringLengthValidator(1))
     .setRequired(true)
