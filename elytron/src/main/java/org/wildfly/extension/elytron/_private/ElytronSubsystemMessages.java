@@ -551,4 +551,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1058, value = "Failed to parse PEM public key with kid: %s")
     OperationFailedException failedToParsePEMPublicKey(String kid);
 
+    @Message(id = 1059, value = "Unable to detect KeyStore '%s'")
+    StartException unableToDetectKeyStore(String path);
+
+    @Message(id = 1060, value = "Fileless KeyStore needs to have a defined type.")
+    OperationFailedException filelessKeyStoreMissingType();
+
 }

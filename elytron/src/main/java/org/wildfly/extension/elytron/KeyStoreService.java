@@ -54,6 +54,7 @@ import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.keystore.AliasFilter;
 import org.wildfly.security.keystore.AtomicLoadKeyStore;
 import org.wildfly.security.keystore.FilteringKeyStore;
+import org.wildfly.security.keystore.KeyStoreUtil;
 import org.wildfly.security.keystore.ModifyTrackingKeyStore;
 import org.wildfly.security.keystore.UnmodifiableKeyStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -108,8 +109,13 @@ class KeyStoreService implements ModifiableKeyStoreService {
     @Override
     public void start(StartContext startContext) throws StartException {
         try {
-            Provider provider = resolveProvider();
-            AtomicLoadKeyStore keyStore = AtomicLoadKeyStore.newInstance(type, provider);
+            AtomicLoadKeyStore keyStore = null;
+
+            if (type != null) {
+                Provider provider = resolveProvider();
+                keyStore = AtomicLoadKeyStore.newInstance(type, provider);
+            }
+
             if (path != null) {
                 pathResolver = pathResolver();
                 resolvedPath = getResolvedPath(pathResolver, path, relativeTo);
@@ -117,13 +123,14 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
             synched = System.currentTimeMillis();
             if (resolvedPath != null && ! resolvedPath.exists()) {
-                if (required) {
+                if (required || type == null) {
                     throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
                 } else {
                     ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
                 }
             }
-            try (InputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
+
+            try (FileInputStream is = (resolvedPath != null && resolvedPath.exists()) ? new FileInputStream(resolvedPath) : null) {
                 char[] password = resolvePassword();
 
                 ROOT_LOGGER.tracef(
@@ -132,7 +139,17 @@ class KeyStoreService implements ModifiableKeyStoreService {
                 );
 
                 if (is != null) {
-                    keyStore.load(is, password);
+                    if (type != null) {
+                        keyStore.load(is, password);
+                    } else {
+                        Provider[] resolvedProviders = providers.getOptionalValue();
+                        keyStore = AtomicLoadKeyStore.atomize(KeyStoreUtil.loadKeyStore(() -> resolvedProviders == null ? Security.getProviders() : resolvedProviders,
+                                                                this.provider, is, resolvedPath.getPath(), password));
+
+                        if (keyStore == null) {
+                            throw ROOT_LOGGER.unableToDetectKeyStore(resolvedPath.getPath());
+                        }
+                    }
                 } else {
                     synchronized (EmptyProvider.getInstance()) {
                         keyStore.load(null, password);
