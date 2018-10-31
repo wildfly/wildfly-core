@@ -447,8 +447,8 @@ public class ModelTestUtils {
             if (!copy.hasDefined(key)) {
                 copy.remove(key);
             } else if (copy.get(key).getType() == ModelType.OBJECT) {
-                boolean undefined = true;
                 for (ModelNode mn : model.get(key).asList()) {
+                    boolean undefined = true;
                     Property p = mn.asProperty();
                     if (p.getValue().getType() != ModelType.OBJECT) { continue; }
                     for (String subKey : new HashSet<String>(p.getValue().keys())) {
