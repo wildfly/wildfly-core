@@ -24,9 +24,9 @@ DESCRIPTION
     indicated a failure, the handler will log the failure message and
     will not disconnect from the controller.
 
-    NOTE: this command cannot be used in a batch because it the handler
+    NOTE: this command cannot be used in a batch because the handler
     is waiting for the controller to shutdown before returning the
-    control back to the client which would not possible if the
+    control back to the client which would not be possible if the
     command was executed as a step in a composite operation.
     So, if there is a need to shutdown the controller from a batch,
     :shutdown operation must be used instead (and should be the last
