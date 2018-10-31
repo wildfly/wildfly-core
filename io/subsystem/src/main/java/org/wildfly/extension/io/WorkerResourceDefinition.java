@@ -112,19 +112,12 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             STACK_SIZE
     };
 
-    private static final AttributeDefinition SHUTDOWN_REQUESTED = new SimpleAttributeDefinitionBuilder("shutdown-requested", ModelType.BOOLEAN).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(false)).build();
-    private static final AttributeDefinition CORE_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("core-pool-size", ModelType.INT).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(0)).build();
-    private static final AttributeDefinition MAX_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("max-pool-size", ModelType.INT).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(0)).build();
-    private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(0)).build();
-    private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(0)).build();
-    private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).setStorageRuntime()
-            .setUndefinedMetricValue(new ModelNode(0)).build();
-
+    private static final AttributeDefinition SHUTDOWN_REQUESTED = new SimpleAttributeDefinitionBuilder("shutdown-requested", ModelType.BOOLEAN).setStorageRuntime().build();
+    private static final AttributeDefinition CORE_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("core-pool-size", ModelType.INT).build();
+    private static final AttributeDefinition MAX_WORKER_POOL_SIZE = new SimpleAttributeDefinitionBuilder("max-pool-size", ModelType.INT).build();
+    private static final AttributeDefinition IO_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("io-thread-count", ModelType.INT).build();
+    private static final AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder("queue-size", ModelType.INT).build();
+    private static final AttributeDefinition BUSY_WORKER_THREAD_COUNT = new SimpleAttributeDefinitionBuilder("busy-task-thread-count", ModelType.INT).build();
 
     static final Map<String, OptionAttributeDefinition> ATTRIBUTES_BY_XMLNAME;
 
@@ -203,7 +196,8 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
                 });
 
         WorkerMetricsHandler metricsHandler = new WorkerMetricsHandler();
-        resourceRegistration.registerMetric(SHUTDOWN_REQUESTED, metricsHandler);
+        resourceRegistration.registerReadOnlyAttribute(SHUTDOWN_REQUESTED, metricsHandler);
+
         resourceRegistration.registerMetric(CORE_WORKER_POOL_SIZE, metricsHandler);
         resourceRegistration.registerMetric(MAX_WORKER_POOL_SIZE, metricsHandler);
         resourceRegistration.registerMetric(IO_THREAD_COUNT, metricsHandler);
