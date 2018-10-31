@@ -320,7 +320,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         saslAuthenticationFactory = saslBuilder.build();
     }
 
-    private static PermissionVerifier createPermissionVerifier() {
+    public static PermissionVerifier createPermissionVerifier() {
         PermissionVerifier permissionVerifier = LoginPermission.getInstance();
         for (String permissionName : ADDITIONAL_PERMISSION) {
             try {

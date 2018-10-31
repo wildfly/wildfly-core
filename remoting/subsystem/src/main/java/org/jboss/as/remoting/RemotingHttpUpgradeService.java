@@ -33,6 +33,7 @@ import io.undertow.server.ListenerRegistry;
 import io.undertow.server.handlers.ChannelUpgradeHandler;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.domain.management.security.SecurityRealmService;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.service.Service;
@@ -47,7 +48,6 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.UnknownURISchemeException;
 import org.jboss.remoting3.spi.ExternalConnectionProvider;
-import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -193,7 +193,7 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
                 final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
                 domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
                 domainBuilder.setDefaultRealmName("default");
-                domainBuilder.setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance());
+                domainBuilder.setPermissionMapper((permissionMappable, roles) -> SecurityRealmService.createPermissionVerifier());
                 final SaslAuthenticationFactory.Builder authBuilder = SaslAuthenticationFactory.builder();
                 authBuilder.setSecurityDomain(domainBuilder.build());
                 authBuilder.setFactory(new AnonymousServerFactory());
