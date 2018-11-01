@@ -24,6 +24,9 @@ package org.jboss.as.server.deployment;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceBuilder;
+
+import java.util.List;
 
 /**
  * @author Stuart Douglas
@@ -45,9 +48,14 @@ public class DeploymentCompleteServiceProcessor implements DeploymentUnitProcess
             }
         }
 
-        phaseContext.getServiceTarget().addService(serviceName(deploymentUnit.getServiceName()), Service.NULL)
-                .addDependencies(deploymentUnit.getAttachmentList(Attachments.DEPLOYMENT_COMPLETE_SERVICES))
-                .install();
+        final ServiceBuilder<?> sb = phaseContext.getServiceTarget().addService(serviceName(deploymentUnit.getServiceName()), Service.NULL);
+        final List<ServiceName> deploymentCompleteServices = deploymentUnit.getAttachmentList(Attachments.DEPLOYMENT_COMPLETE_SERVICES);
+        if (deploymentCompleteServices != null) {
+            for (final ServiceName deploymentCompleteService : deploymentCompleteServices) {
+                sb.addDependency(deploymentCompleteService);
+            }
+        }
+        sb.install();
     }
 
     @Override

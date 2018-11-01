@@ -315,8 +315,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Deprecated
     static <T> ServiceBuilder<T>  commonDependencies(ServiceBuilder<T> serviceBuilder, boolean dependOnProperties, boolean dependOnProviderRegistration) {
-        if (dependOnProperties) serviceBuilder.addDependencies(SecurityPropertyService.SERVICE_NAME);
-        if (dependOnProviderRegistration) serviceBuilder.addDependencies(ProviderRegistrationService.SERVICE_NAME);
+        if (dependOnProperties) serviceBuilder.addDependency(SecurityPropertyService.SERVICE_NAME);
+        if (dependOnProviderRegistration) serviceBuilder.addDependency(ProviderRegistrationService.SERVICE_NAME);
         return serviceBuilder;
     }
 

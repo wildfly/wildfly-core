@@ -275,8 +275,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         ModuleDefinition moduleDefinition = new ModuleDefinition(moduleIdentifier, new HashSet<>(moduleSpecification.getAllDependencies()), moduleSpec);
 
         final ValueService<ModuleDefinition> moduleSpecService = new ValueService<>(new ImmediateValue<>(moduleDefinition));
-        phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependencies(
-                deploymentUnit.getServiceName()).addDependencies(phaseContext.getPhaseServiceName()).setInitialMode(
+        phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependency(
+                deploymentUnit.getServiceName()).addDependency(phaseContext.getPhaseServiceName()).setInitialMode(
                 Mode.ON_DEMAND).install();
 
         final List<ModuleDependency> allDependencies = new ArrayList<ModuleDependency>();
@@ -302,8 +302,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             ModuleDefinition moduleDefinition = new ModuleDefinition(alias, dependencies, spec);
 
             final ValueService<ModuleDefinition> moduleSpecService = new ValueService<>(new ImmediateValue<>(moduleDefinition));
-            phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependencies(
-                    deploymentUnit.getServiceName()).addDependencies(phaseContext.getPhaseServiceName()).setInitialMode(
+            phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependency(
+                    deploymentUnit.getServiceName()).addDependency(phaseContext.getPhaseServiceName()).setInitialMode(
                     Mode.ON_DEMAND).install();
             ModuleLoadService.installService(phaseContext.getServiceTarget(), alias, Collections.singletonList(moduleIdentifier));
 
