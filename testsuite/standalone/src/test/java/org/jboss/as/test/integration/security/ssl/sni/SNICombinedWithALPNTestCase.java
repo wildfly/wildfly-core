@@ -73,6 +73,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -209,6 +210,9 @@ public class SNICombinedWithALPNTestCase {
 
     @Test
     public void testSimpleViaHostname() throws Exception {
+        Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
+                        " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
+
         XnioSsl ssl = createClientSSL(hostNameKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
@@ -218,6 +222,9 @@ public class SNICombinedWithALPNTestCase {
 
     @Test
     public void testHttpsViaIp() throws Exception {
+        Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
+                " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
+
         XnioSsl ssl = createClientSSL(ipKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
@@ -372,6 +379,13 @@ public class SNICombinedWithALPNTestCase {
      */
     private static boolean isIbmJdk() {
         return System.getProperty("java.vendor").startsWith("IBM");
+    }
+
+    /**
+     * @return true if JVM running is version less than 9
+     */
+    private static boolean jdkLessThan9() {
+        return System.getProperty("java.version").startsWith("1.");
     }
 
     /**
