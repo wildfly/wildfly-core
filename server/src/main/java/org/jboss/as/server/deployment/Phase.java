@@ -474,6 +474,7 @@ public enum Phase {
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
     public static final int CONFIGURE_AUTHENTICATION_CONTEXT            = 0x0500;
+    public static final int CONFIGURE_DEFAULT_SSL_CONTEXT               = 0x0580;
     public static final int CONFIGURE_DISTRIBUTABLE_WEB                 = 0x0600;
 
     // FIRST_MODULE_USE

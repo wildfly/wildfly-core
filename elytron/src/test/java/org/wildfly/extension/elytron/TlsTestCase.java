@@ -312,17 +312,22 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceNoAuth() throws Throwable {
-        testCommunication("ServerSslContextNoAuth", "ClientSslContextNoAuth", "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", null);
+        testCommunication("ServerSslContextNoAuth", "ClientSslContextNoAuth", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", null);
+    }
+
+    @Test
+    public void testSslServiceNoAuth_Default() throws Throwable {
+        testCommunication("ServerSslContextNoAuth", "ClientSslContextNoAuth", true, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", null);
     }
 
     @Test
     public void testSslServiceAuth() throws Throwable {
-        testCommunication("ServerSslContextAuth", "ClientSslContextAuth", "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
+        testCommunication("ServerSslContextAuth", "ClientSslContextAuth", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
     }
 
     @Test(expected = SSLHandshakeException.class)
     public void testSslServiceAuthRequiredButNotProvided() throws Throwable {
-        testCommunication("ServerSslContextAuth", "ClientSslContextNoAuth", "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "");
+        testCommunication("ServerSslContextAuth", "ClientSslContextNoAuth", false, "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "");
     }
 
     @Test
@@ -419,9 +424,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return sslContext;
     }
 
-    private void testCommunication(String serverContextName, String clientContextName, String expectedServerPrincipal, String expectedClientPrincipal) throws Throwable {
+    private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal) throws Throwable {
         SSLContext serverContext = getSslContext(serverContextName);
-        SSLContext clientContext = getSslContext(clientContextName);
+        SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
 
         ServerSocket listeningSocket = serverContext.getServerSocketFactory().createServerSocket();
         listeningSocket.bind(new InetSocketAddress("localhost", TESTING_PORT));

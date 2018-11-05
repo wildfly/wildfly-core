@@ -82,6 +82,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="default-ssl-context" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to an SSLContext which should be globally registered as the default.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!--

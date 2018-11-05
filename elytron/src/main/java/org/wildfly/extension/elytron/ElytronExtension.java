@@ -20,6 +20,8 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
@@ -65,6 +67,7 @@ public class ElytronExtension implements Extension {
      * The attachment key that is used for associating the authentication context with a deployment context.
      */
     public static final AttachmentKey<AuthenticationContext> AUTHENTICATION_CONTEXT_KEY = AttachmentKey.create(AuthenticationContext.class);
+    public static final AttachmentKey<SSLContext> SSL_CONTEXT_KEY = AttachmentKey.create(SSLContext.class);
 
     static final ModelVersion ELYTRON_1_2_0 = ModelVersion.create(1, 2);
     static final ModelVersion ELYTRON_2_0_0 = ModelVersion.create(2);
