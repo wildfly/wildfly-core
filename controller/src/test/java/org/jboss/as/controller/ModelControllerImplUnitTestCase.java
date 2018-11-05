@@ -1239,7 +1239,7 @@ public class ModelControllerImplUnitTestCase {
                             .install();
                     final ServiceName dependentSvcName = ServiceName.JBOSS.append("dependent-service");
                     context.getServiceTarget().addService(dependentSvcName, Service.NULL)
-                            .addDependencies(dependedSvcName)
+                            .addDependency(dependedSvcName)
                             .install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {

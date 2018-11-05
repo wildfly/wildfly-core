@@ -167,7 +167,9 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
             final List<ServiceName> nextPhaseDeps = processorContext.getAttachment(Attachments.NEXT_PHASE_DEPS);
             if (nextPhaseDeps != null) {
-                phaseServiceBuilder.addDependencies(nextPhaseDeps);
+                for (final ServiceName nextPhaseDep : nextPhaseDeps) {
+                    phaseServiceBuilder.addDependency(nextPhaseDep);
+                }
             }
             final List<AttachableDependency> nextPhaseAttachableDeps = processorContext.getAttachment(Attachments.NEXT_PHASE_ATTACHABLE_DEPS);
             if (nextPhaseAttachableDeps != null) {
@@ -181,13 +183,13 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
 
             // Add a dependency on the parent's next phase
             if (parent != null) {
-                phaseServiceBuilder.addDependencies(Services.deploymentUnitName(parent.getName(), nextPhase));
+                phaseServiceBuilder.addDependency(Services.deploymentUnitName(parent.getName(), nextPhase));
             }
 
             // Make sure all sub deployments have finished this phase before moving to the next one
             List<DeploymentUnit> subDeployments = deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS);
             for (DeploymentUnit du : subDeployments) {
-                phaseServiceBuilder.addDependencies(du.getServiceName().append(phase.name()));
+                phaseServiceBuilder.addDependency(du.getServiceName().append(phase.name()));
             }
 
             phaseServiceBuilder.install();
