@@ -79,5 +79,8 @@ class ServerGroupScopedRoleWriteAttributeHandler extends AbstractWriteAttributeH
         }
     }
 
-
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return true;
+    }
 }
