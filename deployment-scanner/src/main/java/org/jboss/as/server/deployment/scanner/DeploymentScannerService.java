@@ -133,7 +133,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
         final DeploymentScannerService service = new DeploymentScannerService(resourceAddress, relativeTo, path, scanInterval, unit, autoDeployZip,
                 autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
         final ServiceName serviceName = getServiceName(resourceAddress.getLastElement().getValue());
-
+        service.scheduledExecutorValue.inject(scheduledExecutorService);
         return context.getServiceTarget().addService(serviceName, service)
                 .addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class), PathManager.class, service.pathManagerValue)
                 .addDependency(context.getCapabilityServiceName("org.wildfly.management.notification-handler-registry", null),
@@ -142,7 +142,6 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                         ModelControllerClientFactory.class, service.clientFactoryValue)
                 .addDependency(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS)
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateServiceValue)
-                .addInjection(service.scheduledExecutorValue, scheduledExecutorService)
                 .setInitialMode(Mode.ACTIVE)
                 .install();
     }
