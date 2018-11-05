@@ -19,10 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-/**
- *
- */
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
@@ -32,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LEVEL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
@@ -434,6 +431,18 @@ public class ModelControllerImplUnitTestCase {
 
         result = controller.execute(operation, null, null, null);
         assertTrue(result.get("result", "child", "one").hasDefined("attribute1"));
+        assertEquals(1, result.get("result", "child", "one","attribute1").asInt());
+        assertFalse(result.get("result", "child", "one").has("attribute2"));
+        assertFalse(result.get("result", "child", "two").has("attribute2"));
+        notificationHandler.validate(0);
+
+        operation.get(INCLUDE_RUNTIME).set(true);
+        result = controller.execute(operation, null, null, null);
+        assertTrue(result.get("result", "child", "one").hasDefined("attribute1"));
+        assertEquals(1, result.get("result", "child", "one","attribute1").asInt());
+        assertTrue(result.get("result", "child", "one").has("attribute2"));
+        assertFalse(result.get("result", "child", "one").hasDefined("attribute2"));
+        assertEquals(result.toString(), 2, result.get("result", "child", "two","attribute2").asInt());
         notificationHandler.validate(0);
 
         operation = new ModelNode();
@@ -842,15 +851,16 @@ public class ModelControllerImplUnitTestCase {
 
             GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
+            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr1", ModelType.INT), null);
+            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr2", ModelType.INT), null);
+
             SimpleResourceDefinition childResource = new SimpleResourceDefinition(
                     PathElement.pathElement("child"),
                     new NonResolvingResourceDescriptionResolver()
             );
-            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr1", ModelType.INT), null);
-            rootRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attr2", ModelType.INT), null);
             ManagementResourceRegistration childRegistration = rootRegistration.registerSubModel(childResource);
             childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute1", ModelType.INT), null);
-            childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute2", ModelType.INT), null);
+            childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute2", ModelType.INT, true), null);
         }
 
     }

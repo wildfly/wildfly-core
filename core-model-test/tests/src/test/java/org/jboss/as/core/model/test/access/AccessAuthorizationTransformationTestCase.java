@@ -71,7 +71,8 @@ public class AccessAuthorizationTransformationTestCase extends AbstractCoreModel
         KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        checkCoreModelTransformation(mainServices, modelVersion);
+        checkCoreModelTransformation(mainServices, modelVersion, new RbacModelFixer(modelVersion), null);
+
         mainServices.shutdown();
     }
 }

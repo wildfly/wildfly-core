@@ -41,14 +41,12 @@ import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.KernelServicesBuilder;
-import org.jboss.as.core.model.test.LegacyKernelServicesInitializer;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.core.model.test.TransformersTestParameterized;
 import org.jboss.as.core.model.test.TransformersTestParameterized.TransformersParameter;
 import org.jboss.as.core.model.test.util.StandardServerGroupInitializers;
 import org.jboss.as.core.model.test.util.TransformersTestParameter;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
-import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
@@ -86,8 +84,7 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
                 .createContentRepositoryContent("09876543210987654321")
                 .setXmlResource("servergroup-with-expressions.xml");
 
-        LegacyKernelServicesInitializer legacyInitializer =
-                StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
+        StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
 
         KernelServices mainServices = builder.build();
         Assert.assertTrue(mainServices.isSuccessfulBoot());
@@ -95,7 +92,8 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         KernelServices legacyServices = mainServices.getLegacyServices(modelVersion);
         Assert.assertTrue(legacyServices.isSuccessfulBoot());
 
-        checkCoreModelTransformation(mainServices, modelVersion, MODEL_FIXER, MODEL_FIXER);
+        Fixer fixer = new Fixer(modelVersion);
+        checkCoreModelTransformation(mainServices, modelVersion, fixer, fixer);
 
     }
 
@@ -159,8 +157,7 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
                 .createContentRepositoryContent("09876543210987654321");
 
         // Add legacy subsystems
-        LegacyKernelServicesInitializer legacyInitializer =
-                StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
+        StandardServerGroupInitializers.addServerGroupInitializers(builder.createLegacyKernelServicesBuilder(modelVersion, testControllerVersion));
         KernelServices mainServices = builder.build();
 
         List<ModelNode> ops = builder.parseXmlResource("servergroup.xml");
@@ -205,13 +202,18 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         Assert.assertTrue(transOp.getFailureDescription(), transOp.rejectOperation(success()));
     }
 
-    private static final ModelFixer MODEL_FIXER = new ModelFixer() {
+    private static class Fixer extends RbacModelFixer {
+
+        private Fixer(ModelVersion transformFromVersion) {
+            super(transformFromVersion);
+        }
 
         @Override
         public ModelNode fixModel(ModelNode modelNode) {
+            modelNode = super.fixModel(modelNode);
             modelNode.remove(SOCKET_BINDING_GROUP);
             modelNode.remove(PROFILE);
             return modelNode;
         }
-    };
+    }
 }

@@ -48,6 +48,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.AbstractSensitivity;
+import org.jboss.as.controller.access.constraint.VaultExpressionSensitivityConfig;
 import org.jboss.as.controller.access.management.AccessConstraintKey;
 import org.jboss.as.controller.access.management.AccessConstraintUtilization;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
@@ -69,18 +70,18 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
 
     public static PathElement VAULT_ELEMENT = PathElement.pathElement(CONSTRAINT, VAULT_EXPRESSION);
 
-    public static SimpleAttributeDefinition DEFAULT_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, false)
+    private static SimpleAttributeDefinition DEFAULT_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
 
-    public static SimpleAttributeDefinition DEFAULT_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_READ, ModelType.BOOLEAN, false)
+    private static SimpleAttributeDefinition DEFAULT_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_READ, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
-    public static SimpleAttributeDefinition DEFAULT_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_WRITE, ModelType.BOOLEAN, false)
+    private static SimpleAttributeDefinition DEFAULT_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_WRITE, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
@@ -102,8 +103,7 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     public static List<AttributeDefinition> getWritableVaultAttributeDefinitions() {
-        return Arrays.asList((AttributeDefinition) CONFIGURED_REQUIRES_READ,
-                (AttributeDefinition) CONFIGURED_REQUIRES_WRITE);
+        return Arrays.asList(CONFIGURED_REQUIRES_READ, CONFIGURED_REQUIRES_WRITE);
     }
 
     private final boolean includeAddressable;
@@ -124,8 +124,8 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
         return new SensitivityResourceDefinition(VAULT_ELEMENT, DomainManagementResolver.getResolver("core.access-control.constraint.vault-expression-sensitivity"), false, false);
     }
 
-    static ResourceEntry createVaultExpressionResource(AbstractSensitivity classification, PathElement pathElement) {
-        return new SensitivityClassificationResource(pathElement, classification);
+    static ResourceEntry createVaultExpressionResource() {
+        return new SensitivityClassificationResource(AccessConstraintResources.VAULT_PATH_ELEMENT, VaultExpressionSensitivityConfig.INSTANCE);
     }
 
     static ResourceEntry createSensitivityClassificationResource(AbstractSensitivity classification, String classificationType, String name,
@@ -163,7 +163,7 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
 
         private final boolean includeAddressable;
 
-        public SensitivityClassificationReadAttributeHandler(boolean includeAddressable) {
+        SensitivityClassificationReadAttributeHandler(boolean includeAddressable) {
             this.includeAddressable = includeAddressable;
         }
 
@@ -260,11 +260,6 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
         public ModelNode getModel() {
             ModelNode model = new ModelNode();
             if (includeAddressable) {
-                model.get(DEFAULT_REQUIRES_ADDRESSABLE.getName()).set(classification.isDefaultRequiresAccessPermission());
-            }
-            model.get(DEFAULT_REQUIRES_READ.getName()).set(classification.isDefaultRequiresReadPermission());
-            model.get(DEFAULT_REQUIRES_WRITE.getName()).set(classification.isDefaultRequiresWritePermission());
-            if (includeAddressable) {
                 model.get(CONFIGURED_REQUIRES_ADDRESSABLE.getName()).set(getBoolean(classification.getConfiguredRequiresAccessPermission()));
             }
             model.get(CONFIGURED_REQUIRES_READ.getName()).set(getBoolean(classification.getConfiguredRequiresReadPermission()));
@@ -351,6 +346,7 @@ public class SensitivityResourceDefinition extends SimpleResourceDefinition {
         }
 
         private Map<PathAddress, AccessConstraintUtilization> getAccessConstraintUtilizations() {
+            assert registry != null;
             boolean core = ModelDescriptionConstants.CORE.equals(classificationType);
             AccessConstraintKey key =
                     new AccessConstraintKey(ModelDescriptionConstants.SENSITIVITY_CLASSIFICATION,

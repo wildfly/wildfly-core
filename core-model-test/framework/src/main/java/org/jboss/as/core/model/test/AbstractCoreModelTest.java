@@ -72,7 +72,7 @@ public abstract class AbstractCoreModelTest {
      * @return the whole model of the legacy controller
      */
     protected ModelNode checkCoreModelTransformation(KernelServices kernelServices, ModelVersion modelVersion) throws IOException {
-        return checkCoreModelTransformation(kernelServices, modelVersion, null, null);
+        return checkCoreModelTransformation(kernelServices, modelVersion, new RbacModelFixer(modelVersion), null);
     }
 
     /**
@@ -106,5 +106,94 @@ public abstract class AbstractCoreModelTest {
      */
     protected void ignoreThisTestIfEAPRepositoryIsNotReachable() {
         Assume.assumeTrue(EAPRepositoryReachableUtil.isReachable());
+    }
+
+    public static class RbacModelFixer implements ModelFixer {
+
+        private final ModelVersion transformFromVersion;
+
+        public RbacModelFixer(ModelVersion transformFromVersion) {
+            this.transformFromVersion = transformFromVersion;
+        }
+
+        @Override
+        public ModelNode fixModel(ModelNode modelNode) {
+            ModelNode result = transformFromVersion.getMajor() < 9
+                    ? fixVaultConstraint(fixSensitivityConstraint(fixApplicationConstraint(modelNode)))
+                    : modelNode;
+            if (!modelNode.hasDefined("core-service","management","access","authorization","constraint","sensitivity-classification","type", "core", "classification", "credential")) {
+                throw new IllegalArgumentException(modelNode.toString());
+            }
+            return result;
+        }
+
+        private ModelNode fixApplicationConstraint(ModelNode modelNode) {
+            if (modelNode.hasDefined("core-service","management","access","authorization","constraint","application-classification","type")) {
+                ModelNode typeNode = modelNode.get("core-service","management","access","authorization","constraint","application-classification","type");
+                for (String type : typeNode.keys()) {
+                    if (typeNode.hasDefined(type, "classification")) {
+                        ModelNode classificationNode = typeNode.get(type, "classification");
+                        for (String classification : classificationNode.keys()) {
+                            ModelNode target = classificationNode.get(classification);
+                            if (target.has("default-application")) {
+                                target.remove("default-application");
+                            }
+                        }
+                    }
+                }
+            }
+            return modelNode;
+        }
+
+        private ModelNode fixSensitivityConstraint(ModelNode modelNode) {
+            if (modelNode.hasDefined("core-service","management","access","authorization","constraint","sensitivity-classification","type")) {
+                ModelNode typeNode = modelNode.get("core-service","management","access","authorization","constraint","sensitivity-classification","type");
+                for (String type : typeNode.keys()) {
+                    if (typeNode.hasDefined(type, "classification")) {
+                        ModelNode classificationNode = typeNode.get(type, "classification");
+                        if ("core".equals(type)) {
+                            if (!classificationNode.hasDefined("credential") || !classificationNode.hasDefined("domain-controller")) {
+                                throw new IllegalArgumentException(classificationNode.toString());
+                            }
+                        }
+                        for (String classification : classificationNode.keys()) {
+                            ModelNode target = classificationNode.get(classification);
+                            if (target.has("default-requires-addressable")) {
+                                target.remove("default-requires-addressable");
+                            }
+                            if (target.has("default-requires-read")) {
+                                target.remove("default-requires-read");
+                            }
+                            if (target.has("default-requires-write")) {
+                                target.remove("default-requires-write");
+                            }
+                        }
+                        if ("core".equals(type)) {
+                            if (!classificationNode.hasDefined("credential") || !classificationNode.hasDefined("domain-controller")) {
+                                throw new IllegalArgumentException(classificationNode.toString());
+                            }
+                        }
+                    }
+                }
+            } else throw new IllegalArgumentException(modelNode.toString());
+            return modelNode;
+        }
+
+        private ModelNode fixVaultConstraint(ModelNode modelNode) {
+            if (modelNode.hasDefined("core-service","management","access","authorization","constraint","vault-expression")) {
+                ModelNode target = modelNode.get("core-service","management","access","authorization","constraint","vault-expression");
+                if (target.has("default-requires-addressable")) {
+                    target.remove("default-requires-addressable");
+                }
+                if (target.has("default-requires-read")) {
+                    target.remove("default-requires-read");
+                }
+                if (target.has("default-requires-write")) {
+                    target.remove("default-requires-write");
+                }
+            }
+            return modelNode;
+
+        }
     }
 }
