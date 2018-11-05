@@ -73,6 +73,7 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -146,13 +147,13 @@ public class SNICombinedWithALPNTestCase {
             managementClient.executeForResult(modelNode);
 
             modelNode = createAddOperation(createAddress(HOST_KEY_MANAGER));
-            modelNode.get("algorithm").set("SunX509");
+            modelNode.get("algorithm").set(keyAlgorithm());
             modelNode.get("key-store").set("host");
             modelNode.get("credential-reference").set(credential);
             managementClient.executeForResult(modelNode);
 
             modelNode = createAddOperation(createAddress(IP_KEY_MANAGER));
-            modelNode.get("algorithm").set("SunX509");
+            modelNode.get("algorithm").set(keyAlgorithm());
             modelNode.get("key-store").set("ip");
             modelNode.get("credential-reference").set(credential);
             managementClient.executeForResult(modelNode);
@@ -209,6 +210,9 @@ public class SNICombinedWithALPNTestCase {
 
     @Test
     public void testSimpleViaHostname() throws Exception {
+        Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
+                        " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
+
         XnioSsl ssl = createClientSSL(hostNameKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
@@ -218,6 +222,9 @@ public class SNICombinedWithALPNTestCase {
 
     @Test
     public void testHttpsViaIp() throws Exception {
+        Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
+                " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
+
         XnioSsl ssl = createClientSSL(ipKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
@@ -272,9 +279,10 @@ public class SNICombinedWithALPNTestCase {
         try (FileInputStream in = new FileInputStream(hostNameKeystore)) {
             store.load(in, PASSWORD.toCharArray());
         }
-        KeyManagerFactory km = KeyManagerFactory.getInstance("SunX509");
+
+        KeyManagerFactory km = KeyManagerFactory.getInstance(keyAlgorithm());
         km.init(store, PASSWORD.toCharArray());
-        TrustManagerFactory tm = TrustManagerFactory.getInstance("SunX509");
+        TrustManagerFactory tm = TrustManagerFactory.getInstance(keyAlgorithm());
         tm.init(store);
         clientContext.init(km.getKeyManagers(), tm.getTrustManagers(), new SecureRandom());
         return new UndertowXnioSsl(Xnio.getInstance(), OptionMap.EMPTY, clientContext);
@@ -353,6 +361,32 @@ public class SNICombinedWithALPNTestCase {
         return buf.toString();
     }
 
+    /**
+     * Determines key algorithm to be used based on the used JDK.
+     *
+     * @return IbmX509 in case of IBM JDK, SunX509 otherwise
+     */
+    private static String keyAlgorithm() {
+        if (isIbmJdk()) {
+            return "IbmX509";
+        } else {
+            return "SunX509";
+        }
+    }
+
+    /**
+     * @return true if JVM running is IBM JDK
+     */
+    private static boolean isIbmJdk() {
+        return System.getProperty("java.vendor").startsWith("IBM");
+    }
+
+    /**
+     * @return true if JVM running is version less than 9
+     */
+    private static boolean jdkLessThan9() {
+        return System.getProperty("java.version").startsWith("1.");
+    }
 
     /**
      * Deploys the archive to the running server.
