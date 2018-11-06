@@ -80,6 +80,9 @@ class HostScopedRoleWriteAttributeHandler extends AbstractWriteAttributeHandler<
         constraint.setAllowedHosts(hosts);
     }
 
-
+    @Override
+    protected boolean requiresRuntime(OperationContext context) {
+        return true;
+    }
 }
 
