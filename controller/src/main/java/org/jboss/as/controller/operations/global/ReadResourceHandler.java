@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_ALIASES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.PROXIES;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
@@ -88,7 +89,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_RESOURCE_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(RECURSIVE, RECURSIVE_DEPTH, PROXIES, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, ATTRIBUTES_ONLY, INCLUDE_ALIASES)
+            .setParameters(RECURSIVE, RECURSIVE_DEPTH, PROXIES, INCLUDE_RUNTIME, INCLUDE_DEFAULTS, ATTRIBUTES_ONLY, INCLUDE_ALIASES, INCLUDE_UNDEFINED_METRIC_VALUES)
             .setReadOnly()
             .setReplyType(ModelType.OBJECT)
             .build();
@@ -214,6 +215,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         final boolean proxies = operation.get(ModelDescriptionConstants.PROXIES).asBoolean(false);
         final boolean aliases = operation.get(ModelDescriptionConstants.INCLUDE_ALIASES).asBoolean(false);
         final boolean defaults = operation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).asBoolean(true);
+        final boolean includeUndefinedMetricValues = operation.get(ModelDescriptionConstants.INCLUDE_UNDEFINED_METRIC_VALUES).asBoolean(false);
         final boolean attributesOnly = operation.get(ModelDescriptionConstants.ATTRIBUTES_ONLY).asBoolean(false);
         final boolean resolve = RESOLVE.resolveModelAttribute(context, operation).asBoolean();
 
@@ -340,7 +342,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
 
                 AttributeDefinition ad = access.getAttributeDefinition();
                 AttributeDefinition.NameAndGroup nag = ad == null ? new AttributeDefinition.NameAndGroup(attributeName) : new AttributeDefinition.NameAndGroup(ad);
-                addReadAttributeStep(context, address, defaults, resolve, localFilteredData, registry, nag, responseMap);
+                addReadAttributeStep(context, address, defaults, resolve, includeUndefinedMetricValues, localFilteredData, registry, nag, responseMap);
 
             }
         }
@@ -367,7 +369,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(childName))).isAlias();
     }
 
-    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, FilteredData localFilteredData,
+    private void addReadAttributeStep(OperationContext context, PathAddress address, boolean defaults, boolean resolve, boolean includeUndefinedMetricValues, FilteredData localFilteredData,
                                       ImmutableManagementResourceRegistration registry,
                                       AttributeDefinition.NameAndGroup attributeKey, Map<AttributeDefinition.NameAndGroup, GlobalOperationHandlers.AvailableResponse> responseMap) {
         // See if there was an override registered for the standard :read-attribute handling (unlikely!!!)
@@ -383,6 +385,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
         final ModelNode attributeOperation = Util.getReadAttributeOperation(address, attributeKey.getName());
         attributeOperation.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).set(defaults);
         attributeOperation.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
+        attributeOperation.get(ModelDescriptionConstants.INCLUDE_UNDEFINED_METRIC_VALUES).set(includeUndefinedMetricValues);
 
         final ModelNode attrResponse = new ModelNode();
         GlobalOperationHandlers.AvailableResponse availableResponse = new GlobalOperationHandlers.AvailableResponse(attrResponse);

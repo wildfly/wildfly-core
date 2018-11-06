@@ -62,7 +62,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiTargetHandler {
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_ATTRIBUTE_OPERATION, ControllerResolver.getResolver("global"))
-            .setParameters(GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS)
+            .setParameters(GlobalOperationAttributes.NAME, GlobalOperationAttributes.INCLUDE_DEFAULTS, GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES)
             .setReadOnly()
             .setReplyType(ModelType.OBJECT)
             .build();
@@ -111,6 +111,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         }
         validator.registerValidator(GlobalOperationAttributes.NAME.getName(), new StringLengthValidator(1));
         validator.registerValidator(GlobalOperationAttributes.INCLUDE_DEFAULTS.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
+        validator.registerValidator(GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES.getName(), new ModelTypeValidator(ModelType.BOOLEAN, true));
         assert overrideHandler == null || filteredData != null : "overrideHandler only supported with filteredData";
         this.overrideHandler = overrideHandler;
         this.resolvable = resolvable;
@@ -149,6 +150,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         validator.validate(operation);
         String attributeName = GlobalOperationAttributes.NAME.resolveModelAttribute(context, operation).asString();
         final boolean defaults = GlobalOperationAttributes.INCLUDE_DEFAULTS.resolveModelAttribute(context,operation).asBoolean();
+        final boolean includeUndefinedMetricValue = GlobalOperationAttributes.INCLUDE_UNDEFINED_METRIC_VALUES.resolveModelAttribute(context, operation).asBoolean();
         final ImmutableManagementResourceRegistration registry = context.getResourceRegistration();
         final boolean useEnhancedSyntax = containsEnhancedSyntax(attributeName, registry);
         String attributeExpression = attributeName;
@@ -173,11 +175,13 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
             }
-            if (attributeAccess.getAccessType() == AttributeAccess.AccessType.METRIC
-                    && !context.getResult().isDefined()) {
-                ModelNode undefinedMetricValue = attributeAccess.getAttributeDefinition().getUndefinedMetricValue();
-                if (undefinedMetricValue != null) {
-                    context.getResult().set(undefinedMetricValue);
+            if (attributeAccess.getAccessType() == AttributeAccess.AccessType.METRIC) {
+                if (!context.getResult().isDefined() && !includeUndefinedMetricValue) {
+                    // Use the undefined metric value for the attribute definition instead.
+                    ModelNode undefinedMetricValue = attributeAccess.getAttributeDefinition().getUndefinedMetricValue();
+                    if (undefinedMetricValue != null) {
+                        context.getResult().set(undefinedMetricValue);
+                    }
                 }
             }
             if (useEnhancedSyntax) {

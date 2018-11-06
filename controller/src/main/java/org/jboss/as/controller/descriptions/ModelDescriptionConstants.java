@@ -254,6 +254,7 @@ public class ModelDescriptionConstants {
     public static final String INCLUDE_ALIASES = "include-aliases";
     public static final String INCLUDE_DATE = "include-date";
     public static final String INCLUDE_DEFAULTS = "include-defaults";
+    public static final String INCLUDE_UNDEFINED_METRIC_VALUES = "include-undefined-metric-values";
     public static final String INCLUDE_RUNTIME = "include-runtime";
     public static final String INCLUDE_SINGLETONS = "include-singletons";
     public static final String INET_ADDRESS = "inet-address";

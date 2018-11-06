@@ -26,6 +26,7 @@
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_UNDEFINED_METRIC_VALUES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -115,7 +116,7 @@ public class MetricsUndefinedValueUnitTestCase {
                 .build();
         reg.registerMetric(def, new HardCodedValueHandler(new ModelNode("test2")));
 
-        checkTestMetric("test2");
+        checkTestMetric("test2", null);
     }
 
     @Test
@@ -127,18 +128,37 @@ public class MetricsUndefinedValueUnitTestCase {
                 .build();
         reg.registerMetric(def, new EmptyHandler());
 
-        checkTestMetric("test");
+        checkTestMetric("test", null);
     }
 
-    private void checkTestMetric(String expectedValue) throws Exception {
+    @Test
+    public void testReadMetricNotDefinedByHandlerWithIncludeUndefinedMetric() throws Exception {
+        ManagementResourceRegistration reg = setupController(new TestResourceDefinition());
+        SimpleAttributeDefinition def = new SimpleAttributeDefinitionBuilder(TEST_METRIC, ModelType.STRING)
+                .setStorageRuntime()
+                .setUndefinedMetricValue(new ModelNode("test"))
+                .build();
+        reg.registerMetric(def, new EmptyHandler());
+
+        checkTestMetric("test", true);
+    }
+
+    private void checkTestMetric(String expectedValue, Boolean includeUndefinedMetric) throws Exception {
         ModelNode result = getResult(client.execute(Util.getReadAttributeOperation(ADDRESS, TEST_METRIC)));
         Assert.assertEquals(expectedValue, result.asString());
 
         ModelNode rr = Util.createEmptyOperation(READ_RESOURCE_OPERATION, ADDRESS);
         rr.get(INCLUDE_RUNTIME).set(true);
+        if (includeUndefinedMetric != null) {
+            rr.get(INCLUDE_UNDEFINED_METRIC_VALUES).set(includeUndefinedMetric.booleanValue());
+        }
         result = getResult(client.execute(rr));
-        Assert.assertTrue(result.hasDefined(TEST_METRIC));
-        Assert.assertEquals(expectedValue, result.get(TEST_METRIC).asString());
+        if (includeUndefinedMetric != null && includeUndefinedMetric.booleanValue()) {
+            Assert.assertFalse(result.hasDefined(TEST_METRIC));
+        } else {
+            Assert.assertTrue(result.hasDefined(TEST_METRIC));
+            Assert.assertEquals(expectedValue, result.get(TEST_METRIC).asString());
+        }
     }
 
     private ModelNode getResult(ModelNode result) {
