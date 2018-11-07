@@ -24,7 +24,7 @@ package org.jboss.as.remoting.management;
 
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -47,11 +47,10 @@ public class ManagementChannelRegistryService implements Service<ManagementChann
     private final ManagementRequestTracker trackerService = new ManagementRequestTracker();
 
     public static void addService(final ServiceTarget serviceTarget, final ServiceName endpointName) {
-        serviceTarget.addService(SERVICE_NAME, new ManagementChannelRegistryService())
-                // Make sure the endpoint service does not close all connections
-                .addDependency(endpointName)
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
+        final ServiceBuilder sb = serviceTarget.addService(SERVICE_NAME, new ManagementChannelRegistryService());
+        // Make sure the endpoint service does not close all connections
+        sb.requires(endpointName);
+        sb.install();
     }
 
     protected ManagementChannelRegistryService() {

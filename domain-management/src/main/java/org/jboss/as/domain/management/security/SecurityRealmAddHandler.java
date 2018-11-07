@@ -444,7 +444,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         if (relativeTo != null) {
             propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                     PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
-            propsBuilder.addDependency(pathName(relativeTo));
+            propsBuilder.requires(pathName(relativeTo));
         }
 
         propsBuilder.setInitialMode(ON_DEMAND)
@@ -468,7 +468,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         if (relativeTo != null) {
             propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                     PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
-            propsBuilder.addDependency(pathName(relativeTo));
+            propsBuilder.requires(pathName(relativeTo));
         }
 
         propsBuilder.setInitialMode(ON_DEMAND).install();
@@ -729,7 +729,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             if (relativeTo != null) {
                 serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                         PathManager.class, keyManagerService.getPathManagerInjector());
-                serviceBuilder.addDependency(pathName(relativeTo));
+                serviceBuilder.requires(pathName(relativeTo));
             }
         }
 
@@ -767,7 +767,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             if (relativeTo != null) {
                 serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                         PathManager.class, trustManagerService.getPathManagerInjector());
-                serviceBuilder.addDependency(pathName(relativeTo));
+                serviceBuilder.requires(pathName(relativeTo));
             }
         }
 
@@ -832,7 +832,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                 if (relativeTo != null) {
                     keytabBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
                             PathManager.class, ks.getPathManagerInjector());
-                    keytabBuilder.addDependency(pathName(relativeTo));
+                    keytabBuilder.requires(pathName(relativeTo));
                 }
 
                  keytabBuilder.install();

@@ -107,7 +107,7 @@ public class ModuleLoadService implements Service<Module> {
         final ServiceBuilder<Module> builder = target.addService(serviceName, service);
         builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.getServiceModuleLoader());
         builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(identifier), ModuleDefinition.class, service.getModuleDefinitionInjectedValue());
-        builder.addDependency(ServiceModuleLoader.moduleResolvedServiceName(identifier)); //don't attempt to load until all dependent module specs are up, even transitive ones
+        builder.requires(ServiceModuleLoader.moduleResolvedServiceName(identifier)); //don't attempt to load until all dependent module specs are up, even transitive ones
         builder.setInitialMode(Mode.ON_DEMAND);
         builder.install();
         return serviceName;

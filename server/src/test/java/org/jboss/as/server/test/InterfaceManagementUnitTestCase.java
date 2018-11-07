@@ -139,9 +139,9 @@ public class InterfaceManagementUnitTestCase {
                 return null;
             }
         };
-        ServiceController<Void> dependentController = target.addService(ServiceName.JBOSS.append("interface", "management", "test", "case", "dependent"), dependentService)
-                .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append("test"))
-                .install();
+        final ServiceBuilder sb = target.addService(ServiceName.JBOSS.append("interface", "management", "test", "case", "dependent"), dependentService);
+        sb.requires(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append("test"));
+        ServiceController<Void> dependentController = sb.install();
 
         svc.latch.await(20, TimeUnit.SECONDS);
         this.controller = svc.getValue();

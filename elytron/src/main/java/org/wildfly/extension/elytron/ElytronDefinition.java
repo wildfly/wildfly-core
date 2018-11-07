@@ -49,7 +49,6 @@ import javax.net.ssl.SSLContext;
 import javax.security.auth.message.config.AuthConfigFactory;
 
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
-import org.jboss.as.controller.AbstractWriteAttributeHandler.HandbackHolder;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.OperationContext;
@@ -345,8 +344,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
     @Deprecated
     static <T> ServiceBuilder<T>  commonDependencies(ServiceBuilder<T> serviceBuilder, boolean dependOnProperties, boolean dependOnProviderRegistration) {
-        if (dependOnProperties) serviceBuilder.addDependency(SecurityPropertyService.SERVICE_NAME);
-        if (dependOnProviderRegistration) serviceBuilder.addDependency(ProviderRegistrationService.SERVICE_NAME);
+        if (dependOnProperties) serviceBuilder.requires(SecurityPropertyService.SERVICE_NAME);
+        if (dependOnProviderRegistration) serviceBuilder.requires(ProviderRegistrationService.SERVICE_NAME);
         return serviceBuilder;
     }
 

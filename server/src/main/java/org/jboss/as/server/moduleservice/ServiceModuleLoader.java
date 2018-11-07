@@ -220,9 +220,9 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
 
     public static void installModuleResolvedService(ServiceTarget serviceTarget, ModuleIdentifier identifier) {
         final ValueService<ModuleIdentifier> resolvedService = new ValueService<ModuleIdentifier>(new ImmediateValue<ModuleIdentifier>(identifier));
-        serviceTarget.addService(ServiceModuleLoader.moduleResolvedServiceName(identifier), resolvedService)
-                .addDependency(moduleSpecServiceName(identifier))
-                .install();
+        final ServiceBuilder sb = serviceTarget.addService(ServiceModuleLoader.moduleResolvedServiceName(identifier), resolvedService);
+        sb.requires(moduleSpecServiceName(identifier));
+        sb.install();
     }
 
     /**

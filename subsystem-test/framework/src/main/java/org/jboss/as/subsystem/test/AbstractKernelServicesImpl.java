@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.lang.reflect.Method;
+
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.Extension;
@@ -33,7 +35,6 @@ import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.wildfly.legacy.test.spi.subsystem.TestModelControllerFactory;
-
 
 /**
  * Allows access to the service container and the model controller
@@ -111,7 +112,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         ModelTestModelControllerService svc = testModelControllerFactory.create(mainExtension, controllerInitializer, additionalInit, controllerExtensionRegistry, persister, validateOpsFilter, registerTransformers);
         ServiceBuilder<ModelController> builder = target.addService(Services.JBOSS_SERVER_CONTROLLER, svc);
         ServiceName pmSvcName = ServiceName.parse("org.wildfly.management.path-manager"); // we can't reference the capability directly as it's not present in legacy controllers
-        builder.addDependency(pmSvcName); // ensure this is up before the ModelControllerService, as it would be in a real server
+        addDependencyViaReflection(builder, pmSvcName); // ensure this is up before the ModelControllerService, as it would be in a real server
         builder.install();
         target.addService(pmSvcName, pathManager).addAliases(PathManagerService.SERVICE_NAME).install();
         if (legacyModelVersion == null) {
@@ -142,6 +143,24 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                             svc.getBootError(), registerTransformers);
 
         return kernelServices;
+    }
+
+    private static void addDependencyViaReflection(final ServiceBuilder builder, final ServiceName dependencyName) {
+        // FYI We are using reflective code here because AbstractKernelServicesImpl is used in transformer tests
+        // which are testing legacy EAP distributions that didn't have MSC with ServiceBuilder.requires() method.
+        try {
+            // use requires() first
+            final Method requiresMethod = ServiceBuilder.class.getMethod("requires", ServiceName.class);
+            requiresMethod.invoke(builder, new Object[] {dependencyName});
+            return;
+        } catch (Throwable ignored) {}
+        try {
+            // use addDependency() second
+            final Method addDependencyMethod = ServiceBuilder.class.getMethod("addDependency", ServiceName.class);
+            addDependencyMethod.invoke(builder, new Object[] {dependencyName});
+            return;
+        } catch (Throwable ignored) {}
+        throw new IllegalStateException();
     }
 
     public ModelNode readFullModelDescription(ModelNode pathAddress) {

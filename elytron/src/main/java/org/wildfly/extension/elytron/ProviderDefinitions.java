@@ -166,7 +166,7 @@ class ProviderDefinitions {
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.addDependency(pathName(relativeTo));
+                    serviceBuilder.requires(pathName(relativeTo));
                 }
 
                 return new ValueSupplier<Provider[]>() {

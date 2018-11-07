@@ -181,7 +181,7 @@ import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -293,12 +293,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup,
                 EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
 
-        serviceTarget.addService(SERVICE_NAME, service)
-                .addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector())
-                .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection)
-                .addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()) // ensure this is up
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
+        final ServiceBuilder sb = serviceTarget.addService(SERVICE_NAME, service);
+        sb.addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector());
+        sb.addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection);
+        sb.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()); // ensure this is up
+        sb.install();
     }
 
     private DomainModelControllerService(final HostControllerEnvironment environment,
@@ -827,17 +826,15 @@ public class DomainModelControllerService extends AbstractControllerService impl
                         getExecutorServiceInjector().getValue(), new InternalExecutor(), this, expressionResolver, environment.getDomainTempDir());
 
                 // demand native mgmt services
-                serviceTarget.addService(ServiceName.JBOSS.append("native-mgmt-startup"), Service.NULL)
-                        .addDependency(ManagementRemotingServices.channelServiceName(ManagementRemotingServices.MANAGEMENT_ENDPOINT, ManagementRemotingServices.SERVER_CHANNEL))
-                        .setInitialMode(ServiceController.Mode.ACTIVE)
-                        .install();
+                final ServiceBuilder nativeSB = serviceTarget.addService(ServiceName.JBOSS.append("native-mgmt-startup"), Service.NULL);
+                nativeSB.requires(ManagementRemotingServices.channelServiceName(ManagementRemotingServices.MANAGEMENT_ENDPOINT, ManagementRemotingServices.SERVER_CHANNEL));
+                nativeSB.install();
 
                 // demand http mgmt services
                 if (capabilityRegistry.hasCapability(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getName(), CapabilityScope.GLOBAL)) {
-                    serviceTarget.addService(ServiceName.JBOSS.append("http-mgmt-startup"), Service.NULL)
-                            .addDependency(UndertowHttpManagementService.SERVICE_NAME)
-                            .setInitialMode(ServiceController.Mode.ACTIVE)
-                            .install();
+                    final ServiceBuilder httpSB = serviceTarget.addService(ServiceName.JBOSS.append("http-mgmt-startup"), Service.NULL);
+                    httpSB.requires(UndertowHttpManagementService.SERVICE_NAME);
+                    httpSB.install();
                 }
 
                 reachedServers = true;

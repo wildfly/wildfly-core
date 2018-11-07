@@ -264,7 +264,7 @@ final class KeyStoreDefinition extends SimpleResourceDefinition {
 
             serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, keyStoreService.getPathManagerInjector());
             if (relativeTo != null) {
-                serviceBuilder.addDependency(pathName(relativeTo));
+                serviceBuilder.requires(pathName(relativeTo));
             }
 
             if (providers != null) {
