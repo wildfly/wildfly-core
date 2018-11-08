@@ -40,14 +40,16 @@ public class UnboundedQueueThreadPoolRemove extends AbstractRemoveStepHandler {
         this.addHandler = addHandler;
     }
 
+    @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final ThreadPoolManagementUtils.BaseThreadPoolParameters params =
                 ThreadPoolManagementUtils.parseUnboundedQueueThreadPoolParameters(context, operation, model);
-        ThreadPoolManagementUtils.removeThreadPoolService(params.getName(), addHandler.getServiceNameBase(),
+        ThreadPoolManagementUtils.removeThreadPoolService(params.getName(),  addHandler.getCapability(), addHandler.getServiceNameBase(),
                 params.getThreadFactory(), addHandler.getThreadFactoryResolver(),
                 context);
     }
 
+    @Override
     protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         addHandler.performRuntime(context, operation, model);
     }

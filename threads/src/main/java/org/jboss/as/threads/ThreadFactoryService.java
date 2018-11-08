@@ -65,6 +65,7 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
         this.namePattern = namePattern;
     }
 
+    @Override
     public synchronized void start(final StartContext context) throws StartException {
         final ThreadGroup threadGroup = (threadGroupName != null) ? new ThreadGroup(threadGroupName) : null;
         value = doPrivileged(new PrivilegedAction<ThreadFactory>() {
@@ -74,10 +75,12 @@ public final class ThreadFactoryService implements Service<ThreadFactory> {
         });
     }
 
+    @Override
     public synchronized void stop(final StopContext context) {
         value = null;
     }
 
+    @Override
     public synchronized ThreadFactory getValue() throws IllegalStateException {
         final ThreadFactory value = this.value;
         if (value == null) {

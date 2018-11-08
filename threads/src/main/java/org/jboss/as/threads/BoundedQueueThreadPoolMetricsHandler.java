@@ -28,6 +28,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 
@@ -44,24 +45,33 @@ public class BoundedQueueThreadPoolMetricsHandler extends ThreadPoolMetricsHandl
             PoolAttributeDefinitions.QUEUE_SIZE);
 
     public BoundedQueueThreadPoolMetricsHandler(final ServiceName serviceNameBase) {
-        super(METRICS, serviceNameBase);
+        this(null, serviceNameBase);
+    }
+
+    public BoundedQueueThreadPoolMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
+        super(METRICS, capability, serviceNameBase);
     }
 
     @Override
     protected void setResult(OperationContext context, final String attributeName, final Service<?> service)
             throws OperationFailedException {
         BoundedQueueThreadPoolService bounded = (BoundedQueueThreadPoolService) service;
-        if(attributeName.equals(CommonAttributes.CURRENT_THREAD_COUNT)) {
-            context.getResult().set(bounded.getCurrentThreadCount());
-        } else if (attributeName.equals(CommonAttributes.LARGEST_THREAD_COUNT)) {
-            context.getResult().set(bounded.getLargestThreadCount());
-        } else if (attributeName.equals(CommonAttributes.REJECTED_COUNT)) {
-            context.getResult().set(bounded.getRejectedCount());
-        } else if (attributeName.equals(CommonAttributes.QUEUE_SIZE)) {
-            context.getResult().set(bounded.getQueueSize());
-        } else {
-            // Programming bug. Throw a RuntimeException, not OFE, as this is not a client error
-            throw ThreadsLogger.ROOT_LOGGER.unsupportedBoundedQueueThreadPoolMetric(attributeName);
+        switch (attributeName) {
+            case CommonAttributes.CURRENT_THREAD_COUNT:
+                context.getResult().set(bounded.getCurrentThreadCount());
+                break;
+            case CommonAttributes.LARGEST_THREAD_COUNT:
+                context.getResult().set(bounded.getLargestThreadCount());
+                break;
+            case CommonAttributes.REJECTED_COUNT:
+                context.getResult().set(bounded.getRejectedCount());
+                break;
+            case CommonAttributes.QUEUE_SIZE:
+                context.getResult().set(bounded.getQueueSize());
+                break;
+            default:
+                // Programming bug. Throw a RuntimeException, not OFE, as this is not a client error
+                throw ThreadsLogger.ROOT_LOGGER.unsupportedBoundedQueueThreadPoolMetric(attributeName);
         }
     }
 }

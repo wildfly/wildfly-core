@@ -22,6 +22,9 @@
 
 package org.jboss.as.threads;
 
+import static org.jboss.as.threads.CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.QUEUELESS_THREAD_POOL;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -32,6 +35,8 @@ import org.jboss.msc.service.ServiceName;
 
 import java.util.Arrays;
 import java.util.Collection;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a queueless thread pool resource.
@@ -40,7 +45,6 @@ import java.util.Collection;
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
 public class QueuelessThreadPoolResourceDefinition extends PersistentResourceDefinition {
-
     private final QueuelessThreadPoolWriteAttributeHandler writeHandler;
     private final QueuelessThreadPoolMetricsHandler metricsHandler;
     private final boolean blocking;
@@ -49,22 +53,23 @@ public class QueuelessThreadPoolResourceDefinition extends PersistentResourceDef
 
     public static QueuelessThreadPoolResourceDefinition create(boolean blocking, boolean registerRuntimeOnly) {
         if (blocking) {
-            return create(CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
+            return create(BLOCKING_QUEUELESS_THREAD_POOL, ThreadsServices.getThreadFactoryResolver(BLOCKING_QUEUELESS_THREAD_POOL),
                     null, ThreadsServices.EXECUTOR, registerRuntimeOnly);
         } else {
-            return create(CommonAttributes.QUEUELESS_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
-                    ThreadsServices.STANDARD_HANDOFF_EXECUTOR_RESOLVER, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+            return create(QUEUELESS_THREAD_POOL, ThreadsServices.getThreadFactoryResolver(QUEUELESS_THREAD_POOL),
+                    ThreadsServices.getHandoffExecutorResolver(QUEUELESS_THREAD_POOL),
+                    ThreadsServices.EXECUTOR, registerRuntimeOnly);
         }
     }
 
     public static QueuelessThreadPoolResourceDefinition create(boolean blocking, String type, boolean registerRuntimeOnly) {
         if (blocking) {
-            return create(type, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
+            return create(type, ThreadsServices.getThreadFactoryResolver(type),
                     null, ThreadsServices.EXECUTOR, registerRuntimeOnly);
 
         } else {
-            return create(type, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER,
-                    ThreadsServices.STANDARD_HANDOFF_EXECUTOR_RESOLVER, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+            return create(type, ThreadsServices.getThreadFactoryResolver(type),
+                    ThreadsServices.getHandoffExecutorResolver(type), ThreadsServices.EXECUTOR, registerRuntimeOnly);
         }
     }
 
@@ -72,23 +77,26 @@ public class QueuelessThreadPoolResourceDefinition extends PersistentResourceDef
                                                                HandoffExecutorResolver handoffExecutorResolver,
                                                                ServiceName serviceNameBase, boolean registerRuntimeOnly) {
         final boolean blocking = handoffExecutorResolver == null;
-        final String resolverPrefix = blocking ? CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL : CommonAttributes.QUEUELESS_THREAD_POOL;
-        final QueuelessThreadPoolAdd addHandler = new QueuelessThreadPoolAdd(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase);
+        final String resolverPrefix = blocking ? BLOCKING_QUEUELESS_THREAD_POOL : QUEUELESS_THREAD_POOL;
+        final RuntimeCapability<Void> capability = ThreadsServices.createCapability(type, ManagedQueuelessExecutorService.class);
+        final QueuelessThreadPoolAdd addHandler = new QueuelessThreadPoolAdd(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase, capability);
         final OperationStepHandler removeHandler = new QueuelessThreadPoolRemove(addHandler);
-        return new QueuelessThreadPoolResourceDefinition(blocking, registerRuntimeOnly, type, serviceNameBase, resolverPrefix, addHandler, removeHandler);
+        return new QueuelessThreadPoolResourceDefinition(blocking, registerRuntimeOnly, capability, type, serviceNameBase, resolverPrefix, addHandler, removeHandler);
     }
 
 
-    private QueuelessThreadPoolResourceDefinition(boolean blocking, boolean registerRuntimeOnly,
+    private QueuelessThreadPoolResourceDefinition(boolean blocking, boolean registerRuntimeOnly, RuntimeCapability<Void> capability,
                                                   String type, ServiceName serviceNameBase, String resolverPrefix, OperationStepHandler addHandler,
                                                   OperationStepHandler removeHandler) {
-        super(PathElement.pathElement(type),
-                new ThreadPoolResourceDescriptionResolver(resolverPrefix, ThreadsExtension.RESOURCE_NAME, ThreadsExtension.class.getClassLoader()),
-                addHandler, removeHandler);
+        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(type),
+                new ThreadPoolResourceDescriptionResolver(resolverPrefix, ThreadsExtension.RESOURCE_NAME, ThreadsExtension.class.getClassLoader()))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(removeHandler)
+                .setCapabilities(capability));
         this.registerRuntimeOnly = registerRuntimeOnly;
         this.blocking = blocking;
-        writeHandler = new QueuelessThreadPoolWriteAttributeHandler(blocking, serviceNameBase);
-        metricsHandler = new QueuelessThreadPoolMetricsHandler(serviceNameBase);
+        writeHandler = new QueuelessThreadPoolWriteAttributeHandler(blocking, capability, serviceNameBase);
+        metricsHandler = new QueuelessThreadPoolMetricsHandler(capability, serviceNameBase);
     }
 
 

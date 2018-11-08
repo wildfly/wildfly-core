@@ -25,6 +25,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -45,10 +46,14 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
     static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[] {
         PoolAttributeDefinitions.GROUP_NAME, PoolAttributeDefinitions.THREAD_NAME_PATTERN, PoolAttributeDefinitions.PRIORITY};
 
-    static final ThreadFactoryAdd INSTANCE = new ThreadFactoryAdd();
+    private final RuntimeCapability cap;
 
-    private ThreadFactoryAdd() {
+    /**
+     * @param cap : nullable -  Setting it to null will only use old service name.
+     */
+    ThreadFactoryAdd(RuntimeCapability cap) {
         super(ATTRIBUTES);
+        this.cap = cap;
     }
 
     @Override
@@ -59,7 +64,7 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
         ModelNode threadNamePatternModelNode = PoolAttributeDefinitions.THREAD_NAME_PATTERN.resolveModelAttribute(context, model);
 
         final String threadNamePattern = threadNamePatternModelNode.isDefined() ? threadNamePatternModelNode.asString() : null;
-        final Integer priority = priorityModelNode.isDefined() ? new Integer(priorityModelNode.asInt()) : null;
+        final Integer priority = priorityModelNode.isDefined() ? priorityModelNode.asInt() : null;
         final String groupName = groupNameModelNode.isDefined() ? groupNameModelNode.asString() : null;
 
         final String name = context.getCurrentAddressValue();
@@ -69,8 +74,15 @@ public class ThreadFactoryAdd extends AbstractAddStepHandler {
         service.setNamePattern(threadNamePattern);
         service.setPriority(priority);
         service.setThreadGroupName(groupName);
-        target.addService(ThreadsServices.threadFactoryName(name), service)
+        if (cap != null) {
+            target.addService(cap.getCapabilityServiceName(context.getCurrentAddress()), service)
+                    .addAliases(ThreadsServices.threadFactoryName(name))
+                    .setInitialMode(ServiceController.Mode.ACTIVE)
+                    .install();
+        } else {
+            target.addService(ThreadsServices.threadFactoryName(name), service)
                 .setInitialMode(ServiceController.Mode.ACTIVE)
                 .install();
+        }
     }
 }

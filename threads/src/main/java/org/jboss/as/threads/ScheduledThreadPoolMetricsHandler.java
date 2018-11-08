@@ -28,6 +28,7 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 
@@ -44,7 +45,11 @@ public class ScheduledThreadPoolMetricsHandler extends ThreadPoolMetricsHandler 
             PoolAttributeDefinitions.QUEUE_SIZE);
 
     public ScheduledThreadPoolMetricsHandler(final ServiceName serviceNameBase) {
-        super(METRICS, serviceNameBase);
+        this(null, serviceNameBase);
+    }
+
+    public ScheduledThreadPoolMetricsHandler(RuntimeCapability capability, final ServiceName serviceNameBase) {
+        super(METRICS, capability, serviceNameBase);
     }
 
     @Override

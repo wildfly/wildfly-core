@@ -46,16 +46,19 @@ public class UnboundedQueueThreadPoolService implements Service<ManagedJBossThre
 
     private int maxThreads;
     private TimeSpec keepAlive;
+    private boolean allowCoreThreadTimeout;
 
-    public UnboundedQueueThreadPoolService(int maxThreads, TimeSpec keepAlive) {
+    public UnboundedQueueThreadPoolService(boolean allowCoreThreadTimeout, int maxThreads, TimeSpec keepAlive) {
         this.maxThreads = maxThreads;
         this.keepAlive = keepAlive;
+        this.allowCoreThreadTimeout= allowCoreThreadTimeout;
     }
 
     public synchronized void start(final StartContext context) throws StartException {
         final TimeSpec keepAliveSpec = keepAlive;
         long keepAliveTime = keepAliveSpec == null ? Long.MAX_VALUE : keepAliveSpec.getUnit().toNanos(keepAliveSpec.getDuration());
         final JBossThreadPoolExecutor jbossExecutor = new JBossThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.NANOSECONDS, new LinkedBlockingQueue<Runnable>(), threadFactoryValue.getValue());
+        jbossExecutor.setAllowCoreThreadTimeout(allowCoreThreadTimeout);
         executor = new ManagedJBossThreadPoolExecutorService(jbossExecutor);
     }
 
