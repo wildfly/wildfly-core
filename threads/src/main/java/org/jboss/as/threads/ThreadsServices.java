@@ -22,6 +22,8 @@
 
 package org.jboss.as.threads;
 
+import org.jboss.as.controller.ServiceNameFactory;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -50,6 +52,20 @@ public final class ThreadsServices {
      */
     public static final ThreadFactoryResolver STANDARD_THREAD_FACTORY_RESOLVER = new ThreadFactoryResolver.SimpleResolver(ThreadsServices.FACTORY);
 
+    public static ThreadFactoryResolver getThreadFactoryResolver(String type) {
+        if(type != null && ! type.isEmpty()) {
+           return new ThreadFactoryResolver.SimpleResolver(ServiceNameFactory.parseServiceName(getCapabilityBaseName(type)));
+        }
+        return STANDARD_THREAD_FACTORY_RESOLVER;
+    }
+
+    public static HandoffExecutorResolver getHandoffExecutorResolver(String type) {
+        if(type != null && ! type.isEmpty()) {
+           return new HandoffExecutorResolver.SimpleResolver(ServiceNameFactory.parseServiceName(getCapabilityBaseName(type)));
+        }
+        return STANDARD_HANDOFF_EXECUTOR_RESOLVER;
+    }
+
     public static ServiceName threadFactoryName(String name) {
         return FACTORY.append(name);
     }
@@ -57,4 +73,14 @@ public final class ThreadsServices {
     public static ServiceName executorName(final String name) {
         return EXECUTOR.append(name);
     }
+
+    public static RuntimeCapability<Void> createCapability(String type, Class<?> serviceValueType) {
+       return RuntimeCapability.Builder.of(getCapabilityBaseName(type) , true, serviceValueType).build();
+    }
+
+    public static String getCapabilityBaseName(String type) {
+       assert type != null && !type.isEmpty();
+       return "org.wildfly.threads.executor." + type;
+    }
+
 }

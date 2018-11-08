@@ -24,12 +24,15 @@ package org.jboss.as.threads;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.ThreadFactory;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.ServiceRemoveStepHandler;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
@@ -46,11 +49,12 @@ public class ThreadFactoryResourceDefinition extends PersistentResourceDefinitio
     }
 
     public ThreadFactoryResourceDefinition(String type) {
-        super(PathElement.pathElement(type),
+        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(type),
                 new StandardResourceDescriptionResolver(CommonAttributes.THREAD_FACTORY, ThreadsExtension.RESOURCE_NAME,
-                        ThreadsExtension.class.getClassLoader(), true, false),
-                ThreadFactoryAdd.INSTANCE,
-                new ServiceRemoveStepHandler(ThreadsServices.FACTORY, ThreadFactoryAdd.INSTANCE));
+                        ThreadsExtension.class.getClassLoader(), true, false))
+                .setAddHandler(ThreadFactoryAdd.INSTANCE)
+                .setRemoveHandler(new ServiceRemoveStepHandler(ThreadsServices.FACTORY, ThreadFactoryAdd.INSTANCE))
+                .setCapabilities(RuntimeCapability.Builder.of("org.wildfly.threads." + type , true, ThreadFactory.class).build()));
     }
 
     @Override

@@ -42,6 +42,7 @@ public interface PoolAttributeDefinitions {
             .build();
 
     SimpleAttributeDefinition THREAD_FACTORY = new SimpleAttributeDefinitionBuilder(CommonAttributes.THREAD_FACTORY, ModelType.STRING, true)
+            .setCapabilityReference("org.wildfly.threads.thread-factory")
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     SimpleAttributeDefinition MAX_THREADS = new SimpleAttributeDefinitionBuilder(CommonAttributes.MAX_THREADS, ModelType.INT, false)

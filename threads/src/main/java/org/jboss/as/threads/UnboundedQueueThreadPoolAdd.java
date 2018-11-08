@@ -21,10 +21,12 @@
  */
 package org.jboss.as.threads;
 
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -46,11 +48,17 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
     private final ThreadFactoryResolver threadFactoryResolver;
     private final ServiceName serviceNameBase;
+    private final RuntimeCapability<Void> capability;
 
     public UnboundedQueueThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
+        this(threadFactoryResolver, serviceNameBase, null);
+    }
+
+    public UnboundedQueueThreadPoolAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability) {
         super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;
+        this.capability = capability;
     }
 
     @Override
@@ -60,8 +68,8 @@ public class UnboundedQueueThreadPoolAdd extends AbstractAddStepHandler {
 
         final UnboundedQueueThreadPoolService service = new UnboundedQueueThreadPoolService(params.getMaxThreads(), params.getKeepAliveTime());
 
-        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
-                params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
+        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, serviceNameBase,
+                params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(), null, null, null,
                 context.getServiceTarget());
     }
 

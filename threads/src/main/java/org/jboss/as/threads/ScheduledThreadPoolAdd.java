@@ -21,6 +21,8 @@
  */
 package org.jboss.as.threads;
 
+import static org.jboss.as.threads.ScheduledThreadPoolResourceDefinition.CAPABILITY;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -58,8 +60,8 @@ public class ScheduledThreadPoolAdd extends AbstractAddStepHandler {
 
         final ScheduledThreadPoolService service = new ScheduledThreadPoolService(params.getMaxThreads(), params.getKeepAliveTime());
 
-        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
-                params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
+        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), CAPABILITY, serviceNameBase,
+                params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(), null, null, null,
                 context.getServiceTarget());
     }
 

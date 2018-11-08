@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -72,11 +73,39 @@ class ThreadPoolManagementUtils {
                                              final HandoffExecutorResolver handoffExecutorResolver,
                                              final Injector<Executor> handoffExecutorInjector,
                                              final ServiceTarget target) {
+        installThreadPoolService(threadPoolService, threadPoolName, null, serviceNameBase, threadFactoryName,
+                threadFactoryResolver, threadFactoryInjector, handoffExecutorName, handoffExecutorResolver,
+                handoffExecutorInjector, target);
+    }
 
-        final ServiceName threadPoolServiceName = serviceNameBase.append(threadPoolName);
-
+    static <T> void installThreadPoolService(final Service<T> threadPoolService,
+                                             final String threadPoolName,
+                                             final RuntimeCapability<Void> cap,
+                                             final ServiceName serviceNameBase,
+                                             final String threadFactoryName,
+                                             final ThreadFactoryResolver threadFactoryResolver,
+                                             final Injector<ThreadFactory> threadFactoryInjector,
+                                             final String handoffExecutorName,
+                                             final HandoffExecutorResolver handoffExecutorResolver,
+                                             final Injector<Executor> handoffExecutorInjector,
+                                             final ServiceTarget target) {
+        final ServiceName threadPoolServiceName;
+        final ServiceName aliasServiceName;
+        if(cap != null) {
+            threadPoolServiceName = cap.getCapabilityServiceName(threadPoolName);
+            if(serviceNameBase != null) {
+                aliasServiceName = serviceNameBase.append(threadPoolName);
+            } else {
+                aliasServiceName = null;
+            }
+        } else {
+            threadPoolServiceName = serviceNameBase.append(threadPoolName);
+            aliasServiceName = null;
+        }
         final ServiceBuilder<?> serviceBuilder = target.addService(threadPoolServiceName, threadPoolService);
-
+        if(aliasServiceName != null) {
+            serviceBuilder.addAliases(aliasServiceName);
+        }
         final ServiceName threadFactoryServiceName = threadFactoryResolver.resolveThreadFactory(threadFactoryName,
                 threadPoolName, threadPoolServiceName, target);
         serviceBuilder.addDependency(threadFactoryServiceName, ThreadFactory.class, threadFactoryInjector);
