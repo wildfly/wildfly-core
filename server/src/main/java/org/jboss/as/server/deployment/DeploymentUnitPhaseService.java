@@ -175,7 +175,7 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             if (nextPhaseAttachableDeps != null) {
                 for (AttachableDependency attachableDep : nextPhaseAttachableDeps) {
                     AttachedDependency result = new AttachedDependency(attachableDep.getAttachmentKey(), attachableDep.isDeploymentUnit());
-                    phaseServiceBuilder.addDependency(attachableDep.getServiceName(), result.getValue());
+                    phaseServiceBuilder.addDependency(attachableDep.getServiceName(), Object.class, result.getValue());
                     phaseService.injectedAttachedDependencies.add(result);
 
                 }
