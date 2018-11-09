@@ -37,14 +37,10 @@
     <dependencies>
         <!-- for java.beans -->
         <module name="java.desktop"/>
+
         <module name="java.management"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
-
-        <!-- Optional deps -->
-
-        <module name="javax.inject.api" optional="true"/>
-        <module name="org.jboss.threads" optional="true"/>
-        <module name="org.jboss.vfs" optional="true"/>
+        <module name="org.jboss.threads"/>
     </dependencies>
 </module>
