@@ -439,6 +439,11 @@ public enum Phase {
     public static final int DEPENDENCIES_JAXR                           = 0x1600;
     public static final int DEPENDENCIES_DRIVERS                        = 0x1700;
     public static final int DEPENDENCIES_JSF                            = 0x1800;
+    public static final int DEPENDENCIES_MICROPROFILE_CONFIG            = 0x1850;
+    public static final int DEPENDENCIES_MICROPROFILE_METRICS           = 0x1860;
+    public static final int DEPENDENCIES_MICROPROFILE_HEALTH            = 0x1870;
+    public static final int DEPENDENCIES_MICROPROFILE_OPENTRACING       = 0x1880;
+
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
      */
@@ -596,6 +601,11 @@ public enum Phase {
     public static final int POST_MODULE_TRANSACTIONS_EE_CONCURRENCY     = 0x3500;
     public static final int POST_MODULE_EE_COMPONENT_SUSPEND            = 0x3600;
     public static final int POST_MODULE_PERMISSIONS_VALIDATION          = 0x3700;
+    public static final int POST_MODULE_MICROPROFILE_CONFIG             = 0x3750;
+    public static final int POST_MODULE_MICROPROFILE_METRICS            = 0x3760;
+    public static final int POST_MODULE_MICROPROFILE_HEALTH             = 0x3770;
+    public static final int POST_MODULE_MICROPROFILE_OPENTRACING        = 0x3780;
+
 
     // INSTALL
     public static final int INSTALL_SHARED_SESSION_MANAGER              = 0x0100;
