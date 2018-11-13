@@ -15,7 +15,7 @@
     </feature>
     <feature spec="subsystem.elytron.identity-realm">
         <param name="identity-realm" value="local" />
-        <param name="identity" value="&quot;\$local&quot;" />
+        <param name="identity" value="$local" />
     </feature>
     <feature spec="subsystem.elytron.file-audit-log">
         <param name="file-audit-log" value="local-audit" />

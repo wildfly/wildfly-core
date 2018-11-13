@@ -1,5 +1,7 @@
 <?xml version="1.0" ?>
 
 <tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
-    <delete path="standalone/data" recursive="true"/>
+    <delete path="standalone/data/kernel" recursive="true"/>
+    <delete path="standalone/data/content" if-empty="true"/>
+    <delete path="standalone/data" if-empty="true"/>
 </tasks>
