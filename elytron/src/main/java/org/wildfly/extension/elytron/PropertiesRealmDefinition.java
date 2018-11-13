@@ -162,10 +162,10 @@ class PropertiesRealmDefinition {
             if (usersRelativeTo != null || groupsRelativeTo != null) {
                 serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
                 if (usersRelativeTo != null) {
-                    serviceBuilder.addDependency(pathName(usersRelativeTo));
+                    serviceBuilder.requires(pathName(usersRelativeTo));
                 }
                 if (groupsRelativeTo != null) {
-                    serviceBuilder.addDependency(pathName(groupsRelativeTo));
+                    serviceBuilder.requires(pathName(groupsRelativeTo));
                 }
             }
 

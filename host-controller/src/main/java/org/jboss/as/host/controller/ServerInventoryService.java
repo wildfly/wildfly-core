@@ -39,6 +39,7 @@ import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.server.services.net.NetworkInterfaceService;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -89,14 +90,14 @@ class ServerInventoryService implements Service<ServerInventory> {
                                            final String interfaceBinding, final int port, final String protocol){
 
         final ServerInventoryService inventory = new ServerInventoryService(domainController, runningModeControl, environment, extensionRegistry, port, protocol);
-        serviceTarget.addService(ServerInventoryService.SERVICE_NAME, inventory)
-                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, inventory.executorService)
-                .addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, inventory.getClient())
-                .addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceBinding), NetworkInterfaceBinding.class, inventory.interfaceBinding)
-                .addDependency(ServerInventoryCallbackService.SERVICE_NAME, ServerInventoryCallbackService.class, inventory.serverCallback)
-                .addDependency(DomainManagedServerCallbackHandler.SERVICE_NAME, DomainManagedServerCallbackHandler.class, inventory.domainServerCallback)
-                .addDependency(ManagementChannelRegistryService.SERVICE_NAME)
-                .install();
+        final ServiceBuilder sb = serviceTarget.addService(ServerInventoryService.SERVICE_NAME, inventory);
+        sb.addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, inventory.executorService);
+        sb.addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, inventory.getClient());
+        sb.addDependency(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(interfaceBinding), NetworkInterfaceBinding.class, inventory.interfaceBinding);
+        sb.addDependency(ServerInventoryCallbackService.SERVICE_NAME, ServerInventoryCallbackService.class, inventory.serverCallback);
+        sb.addDependency(DomainManagedServerCallbackHandler.SERVICE_NAME, DomainManagedServerCallbackHandler.class, inventory.domainServerCallback);
+        sb.requires(ManagementChannelRegistryService.SERVICE_NAME);
+        sb.install();
         return inventory.futureInventory;
     }
 

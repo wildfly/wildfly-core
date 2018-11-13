@@ -1076,9 +1076,9 @@ public class ModelControllerImplUnitTestCase {
                     context.getResult().set(current);
 
                     final ServiceName svcName = ServiceName.JBOSS.append("missing-service");
-                    context.getServiceTarget().addService(svcName, Service.NULL)
-                            .addDependency(ServiceName.JBOSS.append("missing"))
-                            .install();
+                    final ServiceBuilder sb = context.getServiceTarget().addService(svcName, Service.NULL);
+                    sb.requires(ServiceName.JBOSS.append("missing"));
+                    sb.install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -1238,9 +1238,9 @@ public class ModelControllerImplUnitTestCase {
                     context.getServiceTarget().addService(dependedSvcName, Service.NULL)
                             .install();
                     final ServiceName dependentSvcName = ServiceName.JBOSS.append("dependent-service");
-                    context.getServiceTarget().addService(dependentSvcName, Service.NULL)
-                            .addDependency(dependedSvcName)
-                            .install();
+                    final ServiceBuilder sb = context.getServiceTarget().addService(dependentSvcName, Service.NULL);
+                    sb.requires(dependedSvcName);
+                    sb.install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -1307,9 +1307,9 @@ public class ModelControllerImplUnitTestCase {
                 public void execute(final OperationContext context, ModelNode operation) {
                     final ServiceName svcName = ServiceName.JBOSS.append("good-service");
                     context.removeService(svcName);
-                    context.getServiceTarget().addService(svcName, Service.NULL)
-                            .addDependency(ServiceName.JBOSS.append("missing"))
-                            .install();
+                    final ServiceBuilder sb = context.getServiceTarget().addService(svcName, Service.NULL);
+                    sb.requires(ServiceName.JBOSS.append("missing"));
+                    sb.install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override

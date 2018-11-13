@@ -54,6 +54,7 @@ import org.jboss.modules.filter.PathFilters;
 import org.jboss.modules.security.FactoryPermissionCollection;
 import org.jboss.modules.security.ImmediatePermissionFactory;
 import org.jboss.modules.security.PermissionFactory;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ValueService;
@@ -275,9 +276,11 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         ModuleDefinition moduleDefinition = new ModuleDefinition(moduleIdentifier, new HashSet<>(moduleSpecification.getAllDependencies()), moduleSpec);
 
         final ValueService<ModuleDefinition> moduleSpecService = new ValueService<>(new ImmediateValue<>(moduleDefinition));
-        phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependency(
-                deploymentUnit.getServiceName()).addDependency(phaseContext.getPhaseServiceName()).setInitialMode(
-                Mode.ON_DEMAND).install();
+        final ServiceBuilder sb = phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService);
+        sb.requires(deploymentUnit.getServiceName());
+        sb.requires(phaseContext.getPhaseServiceName());
+        sb.setInitialMode(Mode.ON_DEMAND);
+        sb.install();
 
         final List<ModuleDependency> allDependencies = new ArrayList<ModuleDependency>();
         allDependencies.addAll(dependencies);
@@ -302,9 +305,11 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             ModuleDefinition moduleDefinition = new ModuleDefinition(alias, dependencies, spec);
 
             final ValueService<ModuleDefinition> moduleSpecService = new ValueService<>(new ImmediateValue<>(moduleDefinition));
-            phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService).addDependency(
-                    deploymentUnit.getServiceName()).addDependency(phaseContext.getPhaseServiceName()).setInitialMode(
-                    Mode.ON_DEMAND).install();
+            final ServiceBuilder sb = phaseContext.getServiceTarget().addService(moduleSpecServiceName, moduleSpecService);
+            sb.requires(deploymentUnit.getServiceName());
+            sb.requires(phaseContext.getPhaseServiceName());
+            sb.setInitialMode(Mode.ON_DEMAND);
+            sb.install();
             ModuleLoadService.installService(phaseContext.getServiceTarget(), alias, Collections.singletonList(moduleIdentifier));
 
             ModuleResolvePhaseService.installService(phaseContext.getServiceTarget(), moduleDefinition);

@@ -54,8 +54,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
@@ -143,15 +143,12 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
             @Override
             public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
                 final ServiceTarget target = serviceActivatorContext.getServiceTarget();
-                target.addService(ServiceName.JBOSS.append("server-boot-operations"), service)
-                        .addDependency(Services.JBOSS_AS)
-                        .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.getServerController())
-                        .addDependency(HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class, service.getClientInjector())
-                        .addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, service.getExecutorInjector())
-                        .setInitialMode(ServiceController.Mode.ACTIVE)
-                        .install();
-
-
+                final ServiceBuilder sb = target.addService(ServiceName.JBOSS.append("server-boot-operations"), service);
+                sb.requires(Services.JBOSS_AS);
+                sb.addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, service.getServerController());
+                sb.addDependency(HostControllerConnectionService.SERVICE_NAME, HostControllerClient.class, service.getClientInjector());
+                sb.addDependency(Services.JBOSS_SERVER_EXECUTOR, Executor.class, service.getExecutorInjector());
+                sb.install();
             }
         };
         services.add(activator);

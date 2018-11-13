@@ -210,7 +210,7 @@ class AuditResourceDefinitions {
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.addDependency(pathName(relativeTo));
+                    serviceBuilder.requires(pathName(relativeTo));
                 }
 
                 return new EndpointClosingEventListenerSupplier() {
@@ -268,7 +268,7 @@ class AuditResourceDefinitions {
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.addDependency(pathName(relativeTo));
+                    serviceBuilder.requires(pathName(relativeTo));
                 }
 
                 return new EndpointClosingEventListenerSupplier() {
@@ -333,7 +333,7 @@ class AuditResourceDefinitions {
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.addDependency(pathName(relativeTo));
+                    serviceBuilder.requires(pathName(relativeTo));
                 }
 
                 return new EndpointClosingEventListenerSupplier() {

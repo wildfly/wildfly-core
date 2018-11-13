@@ -168,7 +168,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
             if (relativeTo != null) {
                 serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
-                serviceBuilder.addDependency(pathName(relativeTo));
+                serviceBuilder.requires(pathName(relativeTo));
             }
             serviceBuilder.install();
         }

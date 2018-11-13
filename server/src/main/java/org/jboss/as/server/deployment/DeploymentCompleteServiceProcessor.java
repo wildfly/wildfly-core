@@ -52,7 +52,7 @@ public class DeploymentCompleteServiceProcessor implements DeploymentUnitProcess
         final List<ServiceName> deploymentCompleteServices = deploymentUnit.getAttachmentList(Attachments.DEPLOYMENT_COMPLETE_SERVICES);
         if (deploymentCompleteServices != null) {
             for (final ServiceName deploymentCompleteService : deploymentCompleteServices) {
-                sb.addDependency(deploymentCompleteService);
+                sb.requires(deploymentCompleteService);
             }
         }
         sb.install();

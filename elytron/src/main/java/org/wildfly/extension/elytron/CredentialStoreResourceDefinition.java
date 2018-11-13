@@ -317,7 +317,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
             if (relativeTo != null) {
                 credentialStoreServiceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, csService.getPathManagerInjector());
-                credentialStoreServiceBuilder.addDependency(pathName(relativeTo));
+                credentialStoreServiceBuilder.requires(pathName(relativeTo));
             }
             if (providers != null) {
                 String providersCapabilityName = RuntimeCapability.buildDynamicCapabilityName(PROVIDERS_CAPABILITY, providers);

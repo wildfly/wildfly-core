@@ -65,6 +65,7 @@ import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -174,13 +175,12 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         // Add service preventing the server from shutting down
         final HttpShutdownService shutdownService = new HttpShutdownService();
         final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
-        serviceTarget.addService(shutdownName, shutdownService)
-                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue())
-                .addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, shutdownService.getExecutorValue())
-                .addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry())
-                .addDependency(UndertowHttpManagementService.SERVICE_NAME)
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
+        final ServiceBuilder sb = serviceTarget.addService(shutdownName, shutdownService);
+        sb.addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue());
+        sb.addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, shutdownService.getExecutorValue());
+        sb.addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry());
+        sb.requires(UndertowHttpManagementService.SERVICE_NAME);
+        sb.install();
 
         if (commonPolicy.isHttpUpgradeEnabled()) {
             NativeManagementServices.installRemotingServicesIfNotInstalled(serviceTarget, hostControllerInfo.getLocalHostName(), context.getServiceRegistry(true), onDemand);

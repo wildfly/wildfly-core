@@ -2594,7 +2594,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type) {
             final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
-            addDependency(serviceName);
+            requires(serviceName);
             return this;
         }
 

@@ -186,7 +186,7 @@ class KerberosSecurityFactoryDefinition {
 
                 if (relativeTo != null) {
                     serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.addDependency(pathName(relativeTo));
+                    serviceBuilder.requires(pathName(relativeTo));
                 }
 
                 ModelNode optionsNode = OPTIONS.resolveModelAttribute(context, model);

@@ -590,7 +590,7 @@ class SSLDefinitions {
                 if (crlPath != null) {
                     if (crlRelativeTo != null) {
                         serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
-                        serviceBuilder.addDependency(pathName(crlRelativeTo));
+                        serviceBuilder.requires(pathName(crlRelativeTo));
                     }
                 }
 
