@@ -27,6 +27,10 @@
         <param name="level" value="WARN"/>
       </feature>
       <feature spec="subsystem.logging.logger">
+        <param name="logger" value="io.jaegertracing.Configuration"/>
+        <param name="level" value="WARN"/>
+      </feature>
+      <feature spec="subsystem.logging.logger">
         <param name="logger" value="org.jboss.as.config"/>
         <param name="level" value="DEBUG"/>
       </feature>
