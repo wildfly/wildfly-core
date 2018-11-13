@@ -2599,15 +2599,27 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
+        public <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target){
+            super.addDependency(dependency, type, target);
+            return this;
+        }
+
+        @Override
         public CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode) {
             super.setInitialMode(mode);
             return this;
         }
 
         @Override
-        public <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target){
-            super.addDependency(dependency, type, target);
-            return this;
+        public <V> Supplier<V> requiresCapability(String capabilityBaseName, Class<V> dependencyType, String... referenceNames) {
+            String capabilityName;
+            if (referenceNames != null && referenceNames.length > 0) {
+                capabilityName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, referenceNames);
+            } else {
+                capabilityName = capabilityBaseName;
+            }
+            final ServiceName serviceName = getCapabilityServiceName(capabilityName, dependencyType);
+            return requires(serviceName);
         }
 
         @Override

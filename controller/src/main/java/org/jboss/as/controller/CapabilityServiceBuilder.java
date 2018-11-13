@@ -25,6 +25,8 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
+import java.util.function.Supplier;
+
 /**
  * A builder for an individual service in a {@code CapabilityServiceTarget}.
  * Create an instance via the {@link CapabilityServiceTarget#addCapability(RuntimeCapability, Service)},
@@ -33,6 +35,7 @@ import org.jboss.msc.service.ServiceName;
  *
  * @param <T> the service type
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     /**
@@ -44,7 +47,10 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      * @param <I>            the type of the value of the dependency
      * @param referenceNames dynamic part(s) of capability name, only useful when using dynamic named capabilities
      * @return this builder
+     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
+     * This method will be removed in a future release.
      */
+    @Deprecated
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target, String... referenceNames);
 
     /**
@@ -55,7 +61,10 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      * @param target         the injector into which the dependency should be stored
      * @param <I>            the type of the value of the dependency
      * @return this builder
+     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
+     * This method will be removed in a future release.
      */
+    @Deprecated
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target);
 
     /**
@@ -65,19 +74,26 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      * @param type           the class of the value of the dependency
      * @param <I>            the type of the value of the dependency
      * @return this builder
+     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
+     * This method will be removed in a future release.
      */
+    @Deprecated
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type);
 
     /**
      * {@inheritDoc}
      * @return this builder
+     * @deprecated Use {@link ServiceBuilder#requires(ServiceName)} instead. This method will be removed in a future release.
      */
+    @Deprecated
     <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target);
 
     /**
      * {@inheritDoc}
      * @return this builder
+     * @deprecated This method will be removed in a future release.
      */
+    @Deprecated
     <I> CapabilityServiceBuilder<T> addInjection(Injector<? super I> target, I value);
 
     /**
@@ -86,4 +102,15 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      */
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
+
+    /**
+     * Capability requirement.
+     *
+     * @param capabilityName name of capability requirement
+     * @param dependencyType the class of the value of the dependency
+     * @param <V>            the type of the value of the dependency
+     * @param referenceNames dynamic part(s) of capability name, only useful when using dynamic named capabilities
+     * @return readonly dependency reference
+     */
+    <V> Supplier<V> requiresCapability(String capabilityName, Class<V> dependencyType, String... referenceNames);
 }
