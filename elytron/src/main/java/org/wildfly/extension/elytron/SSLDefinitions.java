@@ -1043,25 +1043,28 @@ class SSLDefinitions {
 
                 ModelNode hostContextMap = HOST_CONTEXT_MAP.resolveModelAttribute(context, model);
 
-                Set<String> keys = hostContextMap.keys();
-                final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(keys.size());
-                for (String host : keys) {
-                    String sslContextName = hostContextMap.require(host).asString();
-                    final InjectedValue<SSLContext> injector = new InjectedValue<>();
-                    serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(sslContextName), SSLContext.class, injector);
-                    sslContextMap.put(host, injector);
-                }
-
-                return () -> {
-                    SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();
-                    for(Map.Entry<String, InjectedValue<SSLContext>> e : sslContextMap.entrySet()) {
-                        builder.addMatch(e.getKey(), e.getValue().getValue());
+                Set<String> keys;
+                if (hostContextMap.isDefined() && (keys = hostContextMap.keys()).size() > 0) {
+                    final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(keys.size());
+                    for (String host : keys) {
+                        String sslContextName = hostContextMap.require(host).asString();
+                        final InjectedValue<SSLContext> injector = new InjectedValue<>();
+                        serviceBuilder.addDependency(SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(sslContextName), SSLContext.class, injector);
+                        sslContextMap.put(host, injector);
                     }
-                    return new SNISSLContext(builder
-                            .setDefaultContext(defaultContext.getValue())
-                            .build());
 
-                };
+                    return () -> {
+                        SNIContextMatcher.Builder builder = new SNIContextMatcher.Builder();
+                        for(Map.Entry<String, InjectedValue<SSLContext>> e : sslContextMap.entrySet()) {
+                            builder.addMatch(e.getKey(), e.getValue().getValue());
+                        }
+                        return new SNISSLContext(builder
+                                .setDefaultContext(defaultContext.getValue())
+                                .build());
+                    };
+                } else {
+                    return () -> defaultContext.getValue();
+                }
             }
         };
 
