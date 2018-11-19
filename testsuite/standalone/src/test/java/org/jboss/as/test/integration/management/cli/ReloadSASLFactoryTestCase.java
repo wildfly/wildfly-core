@@ -23,8 +23,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
+import static org.jboss.as.cli.Util.RESULT;
 import org.jboss.as.cli.impl.CommandContextConfiguration;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -58,6 +61,8 @@ public class ReloadSASLFactoryTestCase {
     private static CommandContext ctx;
     private static final Path SOURCE = Paths.get(ROOT, "standalone", "configuration", "standalone.xml");
     private static Path TARGET;
+
+    private static ModelNode existingSaslManagementUpgrade;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -100,6 +105,14 @@ public class ReloadSASLFactoryTestCase {
         ctx.handle("/subsystem=elytron/sasl-authentication-factory=other-digest:"
                 + "add(security-domain=Other,sasl-server-factory=elytron,mechanism-configurations="
                 + "[{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=OtherRealm}]}])");
+
+        // -Delytron profile, the factory is already attached to management interface.
+        ModelNode getSaslFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
+        getSaslFactory.get("name").set("http-upgrade");
+        ModelNode res = ctx.getModelControllerClient().execute(getSaslFactory);
+        if (res.hasDefined(RESULT) && res.get(RESULT).hasDefined("sasl-authentication-factory")) {
+            existingSaslManagementUpgrade = res.get(RESULT);
+        }
     }
 
     @Test
@@ -214,27 +227,40 @@ public class ReloadSASLFactoryTestCase {
                     }
                 } finally {
                     try {
-                        // make the http-interface usable again for ctx context.
-                        context.handle("reload");
+                        if (existingSaslManagementUpgrade != null) {
+                            ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                            resetFactory.get("name").set("http-upgrade");
+                            resetFactory.get("value").set(existingSaslManagementUpgrade);
+                            context.getModelControllerClient().execute(resetFactory);
+                        }
                     } catch (Exception ex) {
                         if (e == null) {
                             e = ex;
                         }
                     } finally {
                         try {
-                            removeNativeInterface(context);
+                            // make the http-interface usable again for ctx context.
+                            context.handle("reload");
                         } catch (Exception ex) {
                             if (e == null) {
                                 e = ex;
                             }
                         } finally {
                             try {
-                                // put back the server in original state.
-                                // can only be done from http-interface
-                                ctx.handle("reload");
+                                removeNativeInterface(context);
                             } catch (Exception ex) {
                                 if (e == null) {
                                     e = ex;
+                                }
+                            } finally {
+                                try {
+                                    // put back the server in original state.
+                                    // can only be done from http-interface
+                                    ctx.handle("reload");
+                                } catch (Exception ex) {
+                                    if (e == null) {
+                                        e = ex;
+                                    }
                                 }
                             }
                         }
