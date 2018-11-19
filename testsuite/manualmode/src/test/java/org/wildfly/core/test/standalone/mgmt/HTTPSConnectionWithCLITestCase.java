@@ -38,6 +38,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
@@ -228,8 +229,15 @@ public class HTTPSConnectionWithCLITestCase {
 
             // create native interface to control server while http interface
             // will be secured
+            operation = org.jboss.as.controller.operations.common.Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+            operation.get("steps").add(createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.ADD));
+            ModelNode localAuth = createOpNode("core-service=management/security-realm=native-realm/authentication=local", ModelDescriptionConstants.ADD);
+            localAuth.get("default-user").set("$local");
+            operation.get("steps").add(localAuth);
+            CoreUtils.applyUpdate(operation, client);
+
             operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
-            operation.get("security-realm").set("ManagementRealm");
+            operation.get("security-realm").set("native-realm");
             operation.get("socket-binding").set("management-native");
             CoreUtils.applyUpdate(operation, client);
         }
@@ -242,6 +250,9 @@ public class HTTPSConnectionWithCLITestCase {
             CoreUtils.applyUpdate(operation, client);
 
             operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.REMOVE);
+            CoreUtils.applyUpdate(operation, client);
+
+            operation = createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.REMOVE);
             CoreUtils.applyUpdate(operation, client);
 
             FileUtils.deleteDirectory(WORK_DIR);
