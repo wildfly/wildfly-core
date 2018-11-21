@@ -163,7 +163,7 @@
         <version.org.eclipse.jgit>5.0.2.201807311906-r</version.org.eclipse.jgit>
         <version.org.fusesource.jansi>1.16</version.org.fusesource.jansi>
         <version.org.glassfish.javax.json>1.1.2</version.org.glassfish.javax.json>
-        <version.org.jboss.byteman>4.0.4</version.org.jboss.byteman>
+        <version.org.jboss.byteman>4.0.5</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.3.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.1.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.0.5.Final</version.org.jboss.jandex>
