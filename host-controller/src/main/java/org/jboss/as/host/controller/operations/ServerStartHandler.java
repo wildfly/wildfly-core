@@ -19,32 +19,22 @@
 package org.jboss.as.host.controller.operations;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.START_MODE;
 
 import java.util.Locale;
 
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.validation.EnumValidator;
-import org.jboss.as.controller.operations.validation.StringLengthValidator;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.ServerInventory;
-import org.jboss.as.host.controller.descriptions.HostResolver;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * Starts a server.
@@ -53,40 +43,7 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerStartHandler implements OperationStepHandler {
 
-    public static final String OPERATION_NAME = "start";
-
-    private static final AttributeDefinition SERVER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER, ModelType.STRING, true)
-        .setValidator(new StringLengthValidator(1, true))
-        .setDeprecated(ModelVersion.create(1, 0, 4)) //TODO This has never been used since 7.0.0, not sure which version to set deprecated
-        .build();
-
-    private static final AttributeDefinition BLOCKING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
-        .build();
-
-    static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)
-            .setDefaultValue(new ModelNode(StartMode.NORMAL.toString()))
-            .setValidator(new EnumValidator<>(StartMode.class, true, true))
-            .build();
-
-    public static final OperationDefinition DEFINITION = getOperationDefinition(OPERATION_NAME, ServerStartHandler.START_MODE);
-
     private final ServerInventory serverInventory;
-
-    static OperationDefinition getOperationDefinition(String name, AttributeDefinition... additional) {
-        return getOperationDefinitionBuilder(name, additional).build();
-    }
-
-    static SimpleOperationDefinitionBuilder getOperationDefinitionBuilder(String name, AttributeDefinition... additional) {
-        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, HostResolver.getResolver("host.server"))
-                .setParameters(SERVER, BLOCKING)
-                .setReplyType(ModelType.STRING)
-                .setRuntimeOnly()
-                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY);
-        for (AttributeDefinition param : additional) {
-            builder.addParameter(param);
-        }
-        return builder;
-    }
 
     /**
      * Create the ServerAddHandler
@@ -105,11 +62,9 @@ public class ServerStartHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
-        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
-        final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(StartMode.SUSPEND.toString());
+        final String serverName = context.getCurrentAddressValue();
+        final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
+        final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(SUSPEND);
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
@@ -144,21 +99,5 @@ public class ServerStartHandler implements OperationStepHandler {
                 context.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    enum StartMode {
-        NORMAL("normal"),
-        SUSPEND("suspend");
-
-        private final String localName;
-
-        StartMode(String localName) {
-            this.localName = localName;
-        }
-
-        @Override
-        public String toString() {
-            return localName;
-        }
     }
 }

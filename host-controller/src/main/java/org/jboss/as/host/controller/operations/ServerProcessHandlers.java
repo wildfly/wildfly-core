@@ -25,37 +25,17 @@ package org.jboss.as.host.controller.operations;
 import java.util.EnumSet;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.ServerInventory;
-import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 /**
  * @author Emanuel Muckenhuber
  */
 public abstract class ServerProcessHandlers implements OperationStepHandler {
 
-    public static final OperationDefinition DESTROY_OPERATION = new SimpleOperationDefinitionBuilder("destroy", HostResolver.getResolver("host.server"))
-            .setReplyType(ModelType.UNDEFINED)
-            .setRuntimeOnly()
-            .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .build();
-
-    public static final OperationDefinition KILL_OPERATION = new SimpleOperationDefinitionBuilder("kill", HostResolver.getResolver("host.server"))
-            .setReplyType(ModelType.UNDEFINED)
-            .setRuntimeOnly()
-            .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .build();
     final ServerInventory serverInventory;
 
     ServerProcessHandlers(ServerInventory serverInventory) {
@@ -65,9 +45,7 @@ public abstract class ServerProcessHandlers implements OperationStepHandler {
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
+        final String serverName = context.getCurrentAddressValue();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

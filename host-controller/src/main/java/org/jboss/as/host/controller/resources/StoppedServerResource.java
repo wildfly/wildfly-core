@@ -24,6 +24,10 @@ package org.jboss.as.host.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.START_MODE;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.getDomainServerLifecycleDefinition;
 
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.OperationContext;
@@ -33,10 +37,13 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
+import org.jboss.as.host.controller.operations.ServerStartHandler;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 
 /**
  * {@code ResourceDescription} describing a stopped server instance.
@@ -47,9 +54,12 @@ public class StoppedServerResource extends SimpleResourceDefinition {
 
     private static final PathElement SERVER = PathElement.pathElement(ModelDescriptionConstants.RUNNING_SERVER);
 
-    public StoppedServerResource() {
+    private final ServerInventory serverInventory;
+
+    public StoppedServerResource(ServerInventory serverInventory) {
         super(new Parameters(SERVER, HostResolver.getResolver(ModelDescriptionConstants.RUNNING_SERVER, false))
                 .setRuntime());
+        this.serverInventory = serverInventory;
     }
 
     @Override
@@ -89,8 +99,10 @@ public class StoppedServerResource extends SimpleResourceDefinition {
 
     @Override
     public void registerOperations(final ManagementResourceRegistration resourceRegistration) {
-        // TODO also allow start,stop,restart,reload operations here
-        // registerServerLifecycleOperations(resourceRegistration, serverInventory);
+
+        resourceRegistration.registerOperationHandler(
+                getDomainServerLifecycleDefinition(START, ModelType.STRING, null, BLOCKING, START_MODE),
+                new ServerStartHandler(serverInventory));
 
         // WFCORE-998 register composite here so addressing this resource as a step in a composite works
         resourceRegistration.registerOperationHandler(CompositeOperationHandler.INTERNAL_DEFINITION, CompositeOperationHandler.INSTANCE);

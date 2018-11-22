@@ -22,13 +22,17 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANNOTATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTROY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KILL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
@@ -39,10 +43,21 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 
 import java.io.IOException;
@@ -52,6 +67,7 @@ import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -323,7 +339,8 @@ public class ManagementReadsTestCase {
 
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
-        // TODO make getDeploymentManager();some more assertions about result content
+        validateServerLifecycleOps(response, true);
+        // TODO make some more assertions about result content
 
         address.setEmptyList();
         address.add(HOST, "slave");
@@ -333,8 +350,9 @@ public class ManagementReadsTestCase {
         // TODO make some more assertions about result content
     }
 
+    // Check the stopped server has a resource description too
     @Test
-    public void testRunningServerReadResourceDescription() throws IOException {
+    public void testStoppedServerReadResourceDescription() throws IOException {
 
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
@@ -342,11 +360,12 @@ public class ManagementReadsTestCase {
         ModelNode address = request.get(OP_ADDR);
         address.add(HOST, "master");
         address.add(RUNNING_SERVER, "reload-one");
+        request.get(RECURSIVE).set(true);
+        request.get(OPERATIONS).set(true);
 
-        // Check the stopped server has a resource description too
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
-
+        validateServerLifecycleOps(response, false);
     }
 
     @Test
@@ -486,6 +505,7 @@ public class ManagementReadsTestCase {
         Assert.assertEquals(PATH_SEPARATOR, serverResult.asString());
     }
 
+
     private static int validateBaseFeature(ModelNode base) {
         Assert.assertTrue(base.toString(), base.hasDefined(FEATURE));
         Assert.assertEquals(base.toString(), 1, base.asInt());
@@ -522,5 +542,44 @@ public class ManagementReadsTestCase {
             }
         }
         return highestDepth;
+    }
+
+    private static void validateServerLifecycleOps(ModelNode response, boolean isRunning) {
+        ModelNode operations = response.get(RESULT, OPERATIONS);
+        if (isRunning) {
+            Assert.assertFalse(operations.toString(), operations.hasDefined(START));
+            validateOperation(operations, RESTART, ModelType.STRING, BLOCKING, START_MODE);
+            validateOperation(operations, RELOAD, ModelType.STRING, BLOCKING, START_MODE);
+            validateOperation(operations, STOP, ModelType.STRING, BLOCKING, TIMEOUT);
+            validateOperation(operations, SUSPEND, null, TIMEOUT);
+            validateOperation(operations, RESUME, null);
+            validateOperation(operations, DESTROY, null);
+            validateOperation(operations, KILL, null);
+        } else {
+            validateOperation(operations, START, ModelType.STRING, BLOCKING, START_MODE);
+            Assert.assertFalse(operations.toString(), operations.hasDefined(RESTART));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(RELOAD));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(STOP));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(SUSPEND));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(RESUME));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(DESTROY));
+            Assert.assertFalse(operations.toString(), operations.hasDefined(KILL));
+        }
+    }
+
+    private static void validateOperation(ModelNode operations, String name, ModelType replyType, String... params) {
+        Assert.assertTrue(operations.toString(), operations.hasDefined(name));
+        ModelNode op = operations.get(name);
+        ModelNode props = op.get(REQUEST_PROPERTIES);
+        for (String param : params) {
+            Assert.assertTrue(op.toString(), props.hasDefined(param));
+        }
+        ModelNode reply = op.get(REPLY_PROPERTIES);
+        if (replyType != null) {
+            Assert.assertTrue(op.toString(), reply.hasDefined(TYPE));
+            Assert.assertEquals(op.toString(), replyType, reply.get(TYPE).asType());
+        } else {
+            Assert.assertFalse(op.toString(), reply.hasDefined(TYPE));
+        }
     }
 }

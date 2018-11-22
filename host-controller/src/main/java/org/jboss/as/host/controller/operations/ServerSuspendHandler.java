@@ -22,44 +22,24 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.host.controller.ServerInventory;
-import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * @author Stuart Douglas
  */
 public class ServerSuspendHandler implements OperationStepHandler {
-
-    public static final String OPERATION_NAME = ModelDescriptionConstants.SUSPEND;
-    private static final AttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
-            .setDefaultValue(new ModelNode(0))
-            .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .build();
-
-    public static final OperationDefinition DEFINITION = getOperationDefinition();
 
     private final ServerInventory serverInventory;
 
@@ -75,9 +55,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
+        final String serverName = context.getCurrentAddressValue();
         final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds, by default is 0
         final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
@@ -92,15 +70,5 @@ public class ServerSuspendHandler implements OperationStepHandler {
                 }
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    static OperationDefinition getOperationDefinition() {
-        assert TIMEOUT != null; //this can happen if the order of the contents is wrong
-        return new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host.server"))
-                .setParameters(TIMEOUT)
-                .setRuntimeOnly()
-                .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-                .setDeprecated(ModelVersion.create(7,0,0))
-                .build();
     }
 }

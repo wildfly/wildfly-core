@@ -19,22 +19,21 @@
 package org.jboss.as.host.controller.operations;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.START_MODE;
 
 import java.util.Locale;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.ServerInventory;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -43,9 +42,6 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ServerRestartHandler implements OperationStepHandler {
-
-    public static final String OPERATION_NAME = "restart";
-    public static final OperationDefinition DEFINITION = ServerStartHandler.getOperationDefinition(OPERATION_NAME, ServerStartHandler.START_MODE);
 
     private final ServerInventory serverInventory;
 
@@ -66,11 +62,9 @@ public class ServerRestartHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final PathElement element = address.getLastElement();
-        final String serverName = element.getValue();
-        final boolean blocking = operation.get(ModelDescriptionConstants.BLOCKING).asBoolean(false);
-        final boolean suspend = ServerStartHandler.START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(ServerStartHandler.StartMode.SUSPEND.toString());
+        final String serverName = context.getCurrentAddressValue();
+        final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
+        final boolean suspend = START_MODE.resolveModelAttribute(context, operation).asString().toLowerCase(Locale.ENGLISH).equals(SUSPEND);
 
         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {

@@ -23,16 +23,15 @@
 package org.jboss.as.server.operations;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
@@ -45,17 +44,11 @@ import org.jboss.msc.service.ServiceRegistry;
  * @author Stuart Douglas
  */
 public class ServerResumeHandler implements OperationStepHandler {
-    protected static final String OPERATION_NAME = ModelDescriptionConstants.RESUME;
 
     public static final ServerResumeHandler INSTANCE = new ServerResumeHandler();
 
-    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.RESUME, ServerDescriptions.getResourceDescriptionResolver())
+    public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(RESUME, ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
             .setRuntimeOnly()
-            .build();
-
-    public static final OperationDefinition DOMAIN_DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, ServerDescriptions.getResourceDescriptionResolver())
-            .setPrivateEntry() // For now
-            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY, OperationEntry.Flag.RUNTIME_ONLY)
             .build();
 
     /**
