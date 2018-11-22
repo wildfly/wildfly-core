@@ -75,6 +75,11 @@ public final class Attachments {
     public static final AttachmentKey<Set<String>> EXCLUDED_SUBSYSTEMS = AttachmentKey.create(Set.class);
 
     /**
+     * Set of subsystems who register deployment unit processors to at least run in one deployment phase.
+     */
+    public static final AttachmentKey<Set<String>> REGISTERED_SUBSYSTEMS = AttachmentKey.create(Set.class);
+
+    /**
      * The deployments runtime name
      *
      * @deprecated use {@link org.jboss.as.server.deployment.DeploymentUnit#getName()}

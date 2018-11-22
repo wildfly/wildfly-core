@@ -1328,6 +1328,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 272, value = "Suspending server")
     void suspendingServer();
 
+    @LogMessage(level = WARN)
+    @Message(id = 273, value = "Excluded subsystem %s via jboss-deployment-structure.xml does not exist.")
+    void excludedSubSystemsNotExist(String subSystem);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
