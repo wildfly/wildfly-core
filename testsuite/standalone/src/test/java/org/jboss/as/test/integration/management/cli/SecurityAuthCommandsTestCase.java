@@ -77,6 +77,9 @@ public class SecurityAuthCommandsTestCase {
     private static List<ModelNode> originalConstantMappers;
     private static List<ModelNode> originalConstantRoleMappers;
 
+    private static String existingHttpManagementFactory;
+    private static ModelNode existingSaslManagementUpgrade;
+
     @BeforeClass
     public static void setup() throws Exception {
         // Create ctx, used to setup the test and do the final reload.
@@ -99,6 +102,26 @@ public class SecurityAuthCommandsTestCase {
         originalConstantMappers = getConstantRealmMappers();
         originalConstantRoleMappers = getConstantRoleMappers();
         originalKSRealms = getKSRealms();
+
+        ModelNode getHttpFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
+        getHttpFactory.get("name").set("http-authentication-factory");
+        ModelNode res = client.executeForResult(getHttpFactory);
+        if (res.isDefined()) {
+            ModelNode eraseFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+            eraseFactory.get("name").set("http-authentication-factory");
+            client.executeForResult(eraseFactory);
+            existingHttpManagementFactory = res.asString();
+        }
+
+        ModelNode getSaslFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
+        getSaslFactory.get("name").set("http-upgrade");
+        res = client.executeForResult(getSaslFactory);
+        if (res.isDefined() && res.hasDefined("sasl-authentication-factory")) {
+            ModelNode eraseFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+            eraseFactory.get("name").set("http-upgrade.sasl-authentication-factory");
+            client.executeForResult(eraseFactory);
+            existingSaslManagementUpgrade = res;
+        }
     }
 
     private static void addFSRealm() throws Exception {
@@ -384,16 +407,42 @@ public class SecurityAuthCommandsTestCase {
         Exception e = null;
         if (ctx != null) {
             try {
-                ctx.handle("/subsystem=elytron/filesystem-realm=" + TEST_FS_REALM + ":remove");
+                if (existingHttpManagementFactory != null) {
+                    ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                    resetFactory.get("name").set("http-authentication-factory");
+                    resetFactory.get("value").set(existingHttpManagementFactory);
+                    client.executeForResult(resetFactory);
+                }
             } catch (Exception ex) {
                 if (e == null) {
                     e = ex;
                 }
             } finally {
                 try {
-                    ctx.handle("reload");
+                    if (existingSaslManagementUpgrade != null) {
+                        ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                        resetFactory.get("name").set("http-upgrade");
+                        resetFactory.get("value").set(existingSaslManagementUpgrade);
+                        client.executeForResult(resetFactory);
+                    }
+                } catch (Exception ex) {
+                    if (e == null) {
+                        e = ex;
+                    }
                 } finally {
-                    ctx.terminateSession();
+                    try {
+                        ctx.handle("/subsystem=elytron/filesystem-realm=" + TEST_FS_REALM + ":remove");
+                    } catch (Exception ex) {
+                        if (e == null) {
+                            e = ex;
+                        }
+                    } finally {
+                        try {
+                            ctx.handle("reload");
+                        } finally {
+                            ctx.terminateSession();
+                        }
+                    }
                 }
             }
         }

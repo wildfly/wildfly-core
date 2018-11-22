@@ -28,7 +28,11 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -673,14 +677,27 @@ public class SecurityCommandsTestCase {
         ctx.handle("security disable-ssl-management --no-reload");
     }
 
-    public static void enableNative(CommandContext ctx) throws CommandLineException {
+    public static void enableNative(CommandContext ctx) throws Exception {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:add(port=9999,interface=management)");
-        ctx.handle("/core-service=management/management-interface=native-interface:add(security-realm=ManagementRealm, socket-binding=management-native)");
+        ModelNode operation = org.jboss.as.controller.operations.common.Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+        operation.get("steps").add(createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.ADD));
+        ModelNode localAuth = createOpNode("core-service=management/security-realm=native-realm/authentication=local", ModelDescriptionConstants.ADD);
+        localAuth.get("default-user").set("$local");
+        operation.get("steps").add(localAuth);
+        CoreUtils.applyUpdate(operation, ctx.getModelControllerClient());
+        ctx.handle("/core-service=management/management-interface=native-interface:add(security-realm=native-realm, socket-binding=management-native)");
     }
 
     public static void disableNative(CommandContext ctx) throws CommandLineException {
-        ctx.handle("/core-service=management/management-interface=native-interface:remove()");
-        ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:remove()");
+        try {
+            ctx.handle("/core-service=management/management-interface=native-interface:remove()");
+        } finally {
+            try {
+                ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:remove()");
+            } finally {
+                ctx.handle("/core-service=management/security-realm=native-realm:remove");
+            }
+        }
     }
 
     private void testEnableSSL(String mgmtInterface) throws Exception {

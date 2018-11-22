@@ -66,6 +66,9 @@ public class CLIAuthenticationTestCase {
     @ClassRule
     public static final TemporaryFolder temporaryDir = new TemporaryFolder();
 
+    private static String existingHttpManagementFactory;
+    private static ModelNode existingSaslManagementUpgrade;
+
     @BeforeClass
     public static void initServer() throws Exception {
         container.start();
@@ -86,6 +89,26 @@ public class CLIAuthenticationTestCase {
         ModelNode clear = setPassword.get("clear");
         clear.get("password").set(PASSWORD);
         container.getClient().executeForResult(setPassword);
+
+        ModelNode getHttpFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
+        getHttpFactory.get("name").set("http-authentication-factory");
+        ModelNode res = container.getClient().executeForResult(getHttpFactory);
+        if (res.isDefined()) {
+            ModelNode eraseFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+            eraseFactory.get("name").set("http-authentication-factory");
+            container.getClient().executeForResult(eraseFactory);
+            existingHttpManagementFactory = res.asString();
+        }
+
+        ModelNode getSaslFactory = createOpNode("core-service=management/management-interface=http-interface", "read-attribute");
+        getSaslFactory.get("name").set("http-upgrade");
+        res = container.getClient().executeForResult(getSaslFactory);
+        if (res.isDefined() && res.hasDefined("sasl-authentication-factory")) {
+            ModelNode eraseFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+            eraseFactory.get("name").set("http-upgrade.sasl-authentication-factory");
+            container.getClient().executeForResult(eraseFactory);
+            existingSaslManagementUpgrade = res;
+        }
 
     }
 
@@ -131,9 +154,27 @@ public class CLIAuthenticationTestCase {
     }
 
     private static void cleanConfig(ManagementClient client) throws UnsuccessfulOperationException {
-        ModelNode removeFS = createOpNode("subsystem=elytron/filesystem-realm=" + FS_REALM_NAME,
-                "remove");
-        client.executeForResult(removeFS);
+        try {
+            ModelNode removeFS = createOpNode("subsystem=elytron/filesystem-realm=" + FS_REALM_NAME,
+                    "remove");
+            client.executeForResult(removeFS);
+        } finally {
+            try {
+                if (existingHttpManagementFactory != null) {
+                    ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                    resetFactory.get("name").set("http-authentication-factory");
+                    resetFactory.get("value").set(existingHttpManagementFactory);
+                    client.executeForResult(resetFactory);
+                }
+            } finally {
+                if (existingSaslManagementUpgrade != null) {
+                    ModelNode resetFactory = createOpNode("core-service=management/management-interface=http-interface", "write-attribute");
+                    resetFactory.get("name").set("http-upgrade");
+                    resetFactory.get("value").set(existingSaslManagementUpgrade);
+                    client.executeForResult(resetFactory);
+                }
+            }
+        }
     }
 
     private static void cleanTest(ManagementClient client, String factory, String domain) throws Exception {
