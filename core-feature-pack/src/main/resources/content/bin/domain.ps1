@@ -16,6 +16,12 @@ $DOMAIN_CONF = $scripts +'\domain.conf.ps1'
 $DOMAIN_CONF = Get-Env RUN_CONF $DOMAIN_CONF
 . $DOMAIN_CONF
 
+Write-Debug "sec mgr: $SECMGR"
+
+if ($SECMGR) {
+    $MODULE_OPTS +="-secmgr";
+}
+
 Set-Global-Variables-Domain
 
 # consolidate the host-controller and command line opts
@@ -48,13 +54,7 @@ $PROCESS_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -
 $HOST_CONTROLLER_DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $HOST_CONTROLLER_JAVA_OPTS -modularJDK $MODULAR_JDK
 
 Display-Environment
-
-$MODULE_OPTS += "-jvm"
-$MODULE_OPTS += "$JAVA"
-$MODULE_OPTS += "-jboss-home"
-$MODULE_OPTS += "$JBOSS_HOME"
-         
-
+      
 $PROG_ARGS = @()
 $PROG_ARGS +='-DProcessController' 
 $PROG_ARGS += $PROCESS_CONTROLLER_JAVA_OPTS
@@ -66,12 +66,19 @@ $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR\logging.properties
 $PROG_ARGS += "-Djboss.home.dir=$JBOSS_HOME"
 $PROG_ARGS += "-jar"
 $PROG_ARGS += "$JBOSS_HOME\jboss-modules.jar"
+if ($MODULE_OPTS -ne $null){
+	$PROG_ARGS += $MODULE_OPTS
+}
 $PROG_ARGS += "-mp"
 $PROG_ARGS += $JBOSS_MODULEPATH
 $PROG_ARGS += "org.jboss.as.process-controller"
 if ($MODULE_OPTS -ne $null){
 	$PROG_ARGS += $MODULE_OPTS
 }
+$PROG_ARGS += "-jvm"
+$PROG_ARGS += "$JAVA"
+$PROG_ARGS += "-jboss-home"
+$PROG_ARGS += "$JBOSS_HOME"
 $PROG_ARGS += "--"  
 $PROG_ARGS += "-Dorg.jboss.boot.log.file=$JBOSS_LOG_DIR\host-controller.log"
 $PROG_ARGS += "-Dlogging.configuration=file:$JBOSS_CONFIG_DIR\logging.properties"
