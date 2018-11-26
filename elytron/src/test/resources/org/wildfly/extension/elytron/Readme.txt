@@ -86,6 +86,8 @@ keytool -genkeypair -alias account8 -keystore account.keystore -dname CN=account
 
 keytool -genkeypair -alias account9 -keystore account.keystore -dname CN=account9.key -keyalg RSA -keysize 2048 -validity 3650 -keypass elytron -storepass elytron
 
+keytool -genkeypair -alias account10 -keystore account.keystore -dname CN=account10.key -keyalg RSA -keysize 2048 -validity 3650 -keypass elytron -storepass elytron
+
 keytool -genkeypair -alias newKey -keystore account.keystore -dname CN=account8.key -keyalg RSA -keysize 2048 -validity 3650 -keypass elytron -storepass elytron
 
 keytool -genkeypair -alias newECKey -keystore account.keystore -dname CN=account8.key -keyalg EC -keysize 256 -validity 3650 -keypass elytron -storepass elytron
