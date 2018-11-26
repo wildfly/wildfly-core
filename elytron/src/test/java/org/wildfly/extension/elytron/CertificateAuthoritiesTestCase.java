@@ -259,8 +259,8 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
     @Test
     public void testDeactivateAccount() throws Exception {
         addKeyStore(ACCOUNTS_KEYSTORE_NAME);
-        addCertificateAuthorityAccount("account5");
-        final String ACCT_LOCATION = "http://localhost:4001/acme/acct/438";
+        addCertificateAuthorityAccount("account10");
+        final String ACCT_LOCATION = "http://localhost:4001/acme/acct/6";
         server = setupTestDeactivateAccount();
         AcmeAccount acmeAccount = getAcmeAccount();
         acmeAccount.setAccountUrl(ACCT_LOCATION);
@@ -678,7 +678,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
     }
 
     private ClientAndServer setupTestDeactivateAccount() {
-        final String ACCT_PATH = "/acme/acct/438";
+        final String ACCT_PATH = "/acme/acct/6";
 
         // set up a mock Let's Encrypt server
         final String DIRECTORY_RESPONSE_BODY = "{" + System.lineSeparator() +
@@ -697,27 +697,26 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
                 "  \"revokeCert\": \"http://localhost:4001/acme/revoke-cert\"" + System.lineSeparator() +
                 "}" + System.lineSeparator();
 
-        final String NEW_NONCE_RESPONSE = "h0V-FzAC8dRlCKoIW04p4Buphwj94DZfgB7-m75CiNo";
+        final String NEW_NONCE_RESPONSE = "e8aGQUdmuZd2BI2iLmOSp-5Ac6ntDEm1q4SIHKJkXUY";
 
-        final String UPDATE_ACCT_REQUEST_BODY = "{\"protected\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvNDM4Iiwibm9uY2UiOiJoMFYtRnpBQzhkUmxDS29JVzA0cDRCdXBod2o5NERaZmdCNy1tNzVDaU5vIiwidXJsIjoiaHR0cDovL2xvY2FsaG9zdDo0MDAxL2FjbWUvYWNjdC80MzgifQ\",\"payload\":\"eyJzdGF0dXMiOiJkZWFjdGl2YXRlZCJ9\",\"signature\":\"MCjlb7X-q0cD58zzql8Xhz2zjdmiLxRGKcPptd60KJKBAaH8QBXCl0SL2FczwW8gk6ZHWfWq57DosrRL7WEQJNXVpjehMGXtftZgFU7btGg7gnZRn3vvEirvBDJM_1bl-BGBxsyO8NoD1R_NY3g3w_mUu9yWFPk8kM_V-sLBmlPDbwYgnwP9o9Gj2HfmOdngQjMc9WTmTkCPqLpiwONLzl-Fny3w5C6oHIzw2H7OhHEn5JUbuuIf3h19e4UIi1zY-CjC07Zto_DZUqLw_0fUVaB-x8e04W2HgxNuNfwgFceyxIGH7HDKkc1RBZJoz-OtFaojA--UbQnIKSpXv1rN9g\"}";
+        final String UPDATE_ACCT_REQUEST_BODY = "{\"protected\":\"eyJhbGciOiJSUzI1NiIsImtpZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvNiIsIm5vbmNlIjoiZThhR1FVZG11WmQyQkkyaUxtT1NwLTVBYzZudERFbTFxNFNJSEtKa1hVWSIsInVybCI6Imh0dHA6Ly9sb2NhbGhvc3Q6NDAwMS9hY21lL2FjY3QvNiJ9\",\"payload\":\"eyJzdGF0dXMiOiJkZWFjdGl2YXRlZCJ9\",\"signature\":\"qn9BveVslRMk2vUCluPbmzIL5yhsIIcObCYDVzo6aHrSJ-1YmphP_GmRiQj-_iBuCWBbYMJ6N58QE1unEQV_SeBRJHzDLuRgM7dGkiwr5h1BDlBRCYK3F4J_Tvd78c7NVjvBqDFvk7Przq4aBhleuvXfMkinmDuPdE9BOl-rofto7EVkwOBTEHoByKLtUhSzEX5KfTkp7pNObNkujz64bCVcBdpyHVP5Hrmwr3zUI76VFIf9dMaNeayvNgFy9L-YzOF1-KL_kGiGVCq27Dx7YguFnkY1hJVIz0fGA37bNG2plryCtGE2WO5vQ4vYpp1W0wXfPakyy4Xk7uwDLOuWcA\"}";
 
         final String UPDATE_ACCT_RESPONSE_BODY = "{" + System.lineSeparator() +
-                "  \"id\": 438," + System.lineSeparator() +
+                "  \"id\": 6," + System.lineSeparator() +
                 "  \"key\": {" + System.lineSeparator() +
                 "    \"kty\": \"RSA\"," + System.lineSeparator() +
-                "    \"n\": \"pgfz0TZaGydbCtC32-J8fA5I0xuvdAv-i5iWBPFTMSeeunyAJPrDQQQEvbYNxeC5cRBMcfn1pdPliC6-vKgcRe0ZyRLlFUVJ3bBEmWF8PmPVGzhLzHpXlpg8yPmlvnkebU90vKTONPXq6q8UJyzN49UZIIhEoRGzBw1skBcRyHOgemC96g2xJJ63trFX8JATPIT4aqyqrUFzKxxq2ua-5um23DoG5uLKJ4PfOPu8JJxiRPGO5Vcor8tiDVYPLASrltKfSSA4B4wWofw72MWSmXJ8jgkdf4FREfYP3mFmFZygMF_3IQgOhESZGRTaFTQzrQ9Ldasnt0gR31-2pdI0Ew\"," + System.lineSeparator() +
+                "    \"n\": \"5fqeWddYJOZvOjktoJp_rjtCXyMWIyyJ-9Yy9s_LVlv0FH3rITex7KG-dL43-Zn_FIWZhAOLKAarBqjoOZ99Eav3qjS1gVA9YjlX5a6p6U9VhMBPQHYCycWo5J4o2FTnSxvO0Jb_w_9v_ysYMYVefEW1Ov0heF0UMuXX2rLEf5gSaXPlrJLDmcKVsip1r0yB8b_p3unUzb-RSHJFxbZKCL2mkBLZq7J85qjXxg_ypMe8NO-iloQ6_xLK4RXsLnCEQjb80rmPH34Qtm0BEa6Ghy1TGxJPQq7n1Q9QKNKIV0krc0S1kOwe7jsy6xKI6N9NtgL-Z0KA-oIgxucg7RWXiw\"," + System.lineSeparator() +
                 "    \"e\": \"AQAB\"" + System.lineSeparator() +
                 "  }," + System.lineSeparator() +
                 "  \"contact\": [" + System.lineSeparator() +
-                "    \"mailto:admin@example.com\"" + System.lineSeparator() +
+                "    \"mailto:admin@examples.com\"" + System.lineSeparator() +
                 "  ]," + System.lineSeparator() +
-                "  \"agreement\": \"https://boulder:4431/terms/v7\"," + System.lineSeparator() +
-                "  \"initialIp\": \"127.0.0.1\"," + System.lineSeparator() +
-                "  \"createdAt\": \"2018-06-21T13:43:46-04:00\"," + System.lineSeparator() +
+                "  \"initialIp\": \"10.77.77.1\"," + System.lineSeparator() +
+                "  \"createdAt\": \"2018-11-27T15:56:09Z\"," + System.lineSeparator() +
                 "  \"status\": \"deactivated\"" + System.lineSeparator() +
                 "}" + System.lineSeparator();
 
-        final String UPDATE_ACCT_REPLAY_NONCE = "zbHC8_fJCQTLPsLH4XWErDCQdveG3BIRiFnzEuHZifo";
+        final String UPDATE_ACCT_REPLAY_NONCE = "vhoT4ml_X2qAyg3i7aBqKRpE2SMI5AzYqldekMzvy-8";
 
         return new AcmeMockServerBuilder(server)
                 .addDirectoryResponseBody(DIRECTORY_RESPONSE_BODY)

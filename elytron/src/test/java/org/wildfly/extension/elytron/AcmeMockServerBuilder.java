@@ -103,17 +103,18 @@ class AcmeMockServerBuilder {
                 "", orderLocation, orderCertificateStatusCode, useProblemContentType);
     }
 
-    public AcmeMockServerBuilder addAuthorizationResponseBody(String expectedAuthorizationUrl, String authorizationResponseBody) {
+    public AcmeMockServerBuilder addAuthorizationResponseBody(String expectedAuthorizationUrl, String expectedAuthorizationRequestBody, String authorizationResponseBody, String authorizationReplayNonce) {
         server.when(
                 request()
-                        .withMethod("GET")
+                        .withMethod("POST")
                         .withPath(expectedAuthorizationUrl)
-                        .withBody(""),
+                        .withBody(expectedAuthorizationRequestBody == null ? "" : expectedAuthorizationRequestBody),
                 Times.exactly(10))
                 .respond(
                         response()
                                 .withHeader("Cache-Control", "public, max-age=0, no-cache")
                                 .withHeader("Content-Type", "application/json")
+                                .withHeader("Replay-Nonce", authorizationReplayNonce)
                                 .withBody(authorizationResponseBody));
         return this;
     }
@@ -121,7 +122,8 @@ class AcmeMockServerBuilder {
     public AcmeMockServerBuilder addChallengeRequestAndResponse(String expectedChallengeRequestBody, String expectedChallengeUrl, String challengeResponseBody,
                                                                 String challengeReplayNonce, String challengeLocation, String challengeLink,
                                                                 int challengeStatusCode, boolean useProblemContentType, String verifyChallengePath,
-                                                                String challengeFileContents, String expectedAuthorizationUrl, String authorizationResponseBody) {
+                                                                String challengeFileContents, String expectedAuthorizationUrl, String authorizationResponseBody,
+                                                                String authorizationReplayNonce) {
         server.when(
                 request()
                         .withMethod("POST")
@@ -154,7 +156,7 @@ class AcmeMockServerBuilder {
                         //
                     }
                     if (challengeFileContents.equals(new String(challengeResponseBytes, StandardCharsets.UTF_8))) {
-                        addAuthorizationResponseBody(expectedAuthorizationUrl, authorizationResponseBody);
+                        addAuthorizationResponseBody(expectedAuthorizationUrl, null, authorizationResponseBody, authorizationReplayNonce);
                     }
                     return response;
                 });
@@ -172,34 +174,36 @@ class AcmeMockServerBuilder {
                 orderLocation, finalizeStatusCode, useProblemContentType);
     }
 
-    public AcmeMockServerBuilder addCertificateRequestAndResponse(String certificateUrl, String certificateResponseBody, int certificateStatusCode) {
+    public AcmeMockServerBuilder addCertificateRequestAndResponse(String certificateUrl, String expectedCertificateRequestBody, String certificateResponseBody, String certificateReplayNonce, int certificateStatusCode) {
         HttpResponse response = response()
                 .withHeader("Cache-Control", "public, max-age=0, no-cache")
                 .withHeader("Content-Type", "application/pem-certificate-chain")
+                .withHeader("Replay-Nonce", certificateReplayNonce)
                 .withBody(certificateResponseBody)
                 .withStatusCode(certificateStatusCode);
         server.when(
                 request()
-                        .withMethod("GET")
+                        .withMethod("POST")
                         .withPath(certificateUrl)
-                        .withBody(""),
+                        .withBody(expectedCertificateRequestBody),
                 Times.once())
                 .respond(response);
 
         return this;
     }
 
-    public AcmeMockServerBuilder addCheckOrderRequestAndResponse(String orderUrl, String checkCertificateResponseBody, int checkCertificateStatusCode) {
+    public AcmeMockServerBuilder addCheckOrderRequestAndResponse(String orderUrl, String expectedCheckCertificateRequestBody, String checkCertificateResponseBody, String checkOrderReplayNonce, int checkCertificateStatusCode) {
         HttpResponse response = response()
                 .withHeader("Cache-Control", "public, max-age=0, no-cache")
                 .withHeader("Content-Type", "application/json")
+                .withHeader("Replay-Nonce", checkOrderReplayNonce)
                 .withBody(checkCertificateResponseBody)
                 .withStatusCode(checkCertificateStatusCode);
         server.when(
                 request()
-                        .withMethod("GET")
+                        .withMethod("POST")
                         .withPath(orderUrl)
-                        .withBody(""),
+                        .withBody(expectedCheckCertificateRequestBody),
                 Times.once())
                 .respond(response);
 
