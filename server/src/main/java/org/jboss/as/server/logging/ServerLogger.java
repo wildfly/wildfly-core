@@ -382,9 +382,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 57, value = "No deployment content with hash %s is available in the deployment content repository for deployment %s. Because this Host Controller is booting in ADMIN-ONLY mode, boot will be allowed to proceed to provide administrators an opportunity to correct this problem. If this Host Controller were not in ADMIN-ONLY mode this would be a fatal boot failure.")
     void reportAdminOnlyMissingDeploymentContent(String contentHash, String deploymentName);
 
-    @LogMessage(level = Logger.Level.WARN)
+    /*@LogMessage(level = Logger.Level.WARN)
     @Message(id = 58, value = "Additional resource root %s added via jboss-deployment-structure.xml does not exist")
-    void additionalResourceRootDoesNotExist(String resourceRoot);
+    void additionalResourceRootDoesNotExist(String resourceRoot);*/
 
     @LogMessage(level = Logger.Level.WARN)
     @Message(id = 59, value = "Class Path entry %s in %s  does not point to a valid jar for a Class-Path reference.")
@@ -994,6 +994,9 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 179, value = "Failed to load module: %s")
     StartException failedToLoadModule(ModuleIdentifier module, @Cause ModuleLoadException cause);
+
+    @Message(id = 180, value = "Additional resource root %s added via jboss-deployment-structure.xml does not exist")
+    StartException additionalResourceRootDoesNotExist(String resourceRoot);
 
     //@Message(id = 180, value = "Timeout waiting for module service: %s")
     //ModuleLoadException timeoutWaitingForModuleService(ModuleIdentifier module);

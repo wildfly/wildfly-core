@@ -63,6 +63,7 @@ import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
+import org.jboss.msc.service.StartException;
 import org.jboss.staxmapper.XMLMapper;
 import org.jboss.vfs.VirtualFile;
 
@@ -135,8 +136,12 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 for(AdditionalModuleSpecification i : deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
                     additionalModules.add(i.getModuleIdentifier());
                 }
-                handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
-            }
+                try {
+handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
+} catch (StartException e) {
+ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(e.getCause().toString());
+}
+           }
         }
 
         VirtualFile deploymentFile = null;
@@ -178,7 +183,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 while (itr.hasNext()) {
                     final ResourceRoot resourceRoot = itr.next();
                     if(!resourceRoot.getRoot().exists()) {
-                        ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(resourceRoot.getRoot().getPathName());
+                    resourceRoot.resourceRootExistenceCheck();
                         itr.remove();
                     }
                 }
@@ -233,12 +238,12 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             }
 
 
-        } catch (IOException e) {
+        } catch (IOException | StartException e) {
             throw new DeploymentUnitProcessingException(e);
         }
     }
 
-    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification, Set<ModuleIdentifier> additionalModules) throws DeploymentUnitProcessingException {
+    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification, Set<ModuleIdentifier> additionalModules) throws DeploymentUnitProcessingException, StartException {
         final Map<VirtualFile, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
         moduleSpec.addUserDependencies(rootDeploymentSpecification.getModuleDependencies());
         moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
@@ -251,7 +256,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 //we already have to the resource root
                 //so now we want to merge it
                 existingRoot.merge(additionalResourceRoot);
-            } else if (!additionalResourceRoot.getRoot().exists()) {
+            }
+
+            else if (!additionalResourceRoot.resourceRootExistenceCheck()) {
                 ServerLogger.DEPLOYMENT_LOGGER.additionalResourceRootDoesNotExist(additionalResourceRoot.getRoot().getPathName());
             } else {
                 deploymentUnit.addToAttachmentList(Attachments.RESOURCE_ROOTS, additionalResourceRoot);

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.msc.service.StartException;
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.vfs.VirtualFile;
 
@@ -103,5 +104,18 @@ public final class ResourceRoot extends SimpleAttachable {
         } else {
             this.exportFilters.addAll(additionalResourceRoot.getExportFilters());
         }
+    }
+
+    /**
+     * Checks if the additional Resource root exists
+     *
+     * @param additionalResourceRoot check is performed on this fix for WFCORE-4231
+     */
+
+    public boolean resourceRootExistenceCheck() throws StartException {
+    if(this.getRoot()==null || !this.getRoot().exists()) {
+    throw ServerLogger.ROOT_LOGGER.additionalResourceRootDoesNotExist(this.getRoot().getPathName());
+    }
+    return true;
     }
 }
