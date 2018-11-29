@@ -396,6 +396,82 @@ public class SecurityCommandsTestCase {
     }
 
     @Test
+    public void testInteractiveFailure() throws Exception {
+        // Remove management-https
+        DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.READ_RESOURCE);
+        builder.addNode(Util.SOCKET_BINDING_GROUP, Util.STANDARD_SOCKETS);
+        builder.addNode(Util.SOCKET_BINDING, Util.MANAGEMENT_HTTPS);
+        ModelNode response = ctx.getModelControllerClient().execute(builder.buildRequest());
+        ModelNode resource = null;
+        if (Util.isSuccess(response)) {
+            if (response.hasDefined(Util.RESULT)) {
+                resource = response.get(Util.RESULT);
+            }
+        }
+        if (resource == null) {
+            throw new Exception("can't retrieve management-https");
+        }
+        ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-https:remove");
+        try {
+            CliProcessWrapper cli = new CliProcessWrapper().
+                    addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString()).
+                    addCliArgument("--controller=remote+http://"
+                            + TestSuiteEnvironment.getServerAddress() + ":"
+                            + TestSuiteEnvironment.getServerPort()).
+                    addCliArgument("--connect");
+            cli.executeInteractive();
+            cli.clearOutput();
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload", "Key-store file name"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(GENERATED_KEY_STORE_FILE_NAME, "Password"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(GENERATED_KEY_STORE_PASSWORD, "What is your first and last name? [Unknown]"));
+
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "What is the name of your organizational unit? [Unknown]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "What is the name of your organization? [Unknown]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "What is the name of your City or Locality? [Unknown]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "What is the name of your State or Province? [Unknown]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "What is the two-letter country code for this unit? [Unknown]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Is CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=Unknown correct y/n [y]"));
+
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", "Validity"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Alias"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(GENERATED_KEY_STORE_ALIAS, "Enable SSL Mutual Authentication"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("n", "Do you confirm"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", null));
+            // Nothing was generated due to missing management-https
+            assertEmptyModel(null);
+            // check that the server is not in reload state
+            builder = new DefaultOperationRequestBuilder();
+            builder.setOperationName(Util.READ_RESOURCE);
+            response = ctx.getModelControllerClient().execute(builder.buildRequest());
+            if (response.has(Util.RESPONSE_HEADERS)) {
+                ModelNode mn = response.get(Util.RESPONSE_HEADERS);
+                if (mn.has("process-state")) {
+                    ModelNode ps = mn.get("process-state");
+                    if ("reload-required".equals(ps.asString())) {
+                        throw new Exception("Server is in reload state");
+                    }
+                }
+            }
+        } finally {
+            try {
+                builder = new DefaultOperationRequestBuilder();
+                builder.setOperationName(Util.ADD);
+                builder.addNode(Util.SOCKET_BINDING_GROUP, Util.STANDARD_SOCKETS);
+                builder.addNode(Util.SOCKET_BINDING, Util.MANAGEMENT_HTTPS);
+                builder.getModelNode().get("port").set(resource.get("port"));
+                builder.getModelNode().get("interface").set(resource.get("interface"));
+                response = ctx.getModelControllerClient().execute(builder.buildRequest());
+                if (!Util.isSuccess(response)) {
+                    throw new Exception("Failure adding back management-https");
+                }
+            } finally {
+                ctx.handle("reload");
+            }
+        }
+    }
+
+    @Test
     public void testEnableSSLNative() throws Exception {
         enableNative(ctx);
         try {

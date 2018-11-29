@@ -386,7 +386,7 @@ public abstract class SSLSecurityBuilder implements SecurityCommand.FailureConsu
             // REMOVE WHEN WFCORE-3491 is fixed.
             if (generatedTrustStore != null) {
                 ModelNode req = ElytronUtil.removeKeyStore(ctx, generatedTrustStore);
-                SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER);
+                SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER, false);
             }
         } catch (Exception ex) {
             builder.append("Error while cleaning up key-stores " + ex).append("\n");
