@@ -28,12 +28,14 @@ import org.aesh.command.option.Option;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_CA_ACCOUNT;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_INTERACTIVE;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_PASSWORD;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_PATH;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_PATH_RELATIVE_TO;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_TYPE;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_LETS_ENCRYPT;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_KEY_MANAGER_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_KEY_STORE_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SSL_CONTEXT_NAME;
@@ -120,6 +122,13 @@ public abstract class AbstractEnableSSLCommand implements Command<CLICommandInvo
 
     @Option(name = OPT_INTERACTIVE, hasValue = false, activator = OptionActivators.InteractiveActivator.class)
     boolean interactive;
+
+    @Option(name = OPT_LETS_ENCRYPT, hasValue = false, activator = OptionActivators.LetsEncryptActivator.class)
+    boolean useLetsEncrypt;
+
+    @Option(name = OPT_CA_ACCOUNT,  completer = OptionCompleters.CaAccountNameCompleter.class,
+            activator = OptionActivators.CaAccountActivator.class)
+    String caAccount;
 
     protected abstract void secure(CommandContext ctx, SSLSecurityBuilder ssl) throws CommandException;
 
@@ -243,7 +252,9 @@ public abstract class AbstractEnableSSLCommand implements Command<CLICommandInvo
             }
             checkKeyStoreOperationsSupported(ctx, OPT_INTERACTIVE);
             builder = new InteractiveSecurityBuilder(getDefaultKeyStoreFileName(ctx),
-                    getDefaultTrustStoreFileName(ctx));
+                    getDefaultTrustStoreFileName(ctx),
+                    useLetsEncrypt,
+                    caAccount);
         }
 
         if (trustedCertificatePath != null) {
