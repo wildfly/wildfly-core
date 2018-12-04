@@ -706,7 +706,7 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
-                List<String> res = Arrays.asList("--management-interface=", "--no-reload");
+                List<String> res = Arrays.asList("--lets-encrypt", "--management-interface=", "--no-reload");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);
                 assertEquals(candidates.toString(), res, candidates);
@@ -747,7 +747,7 @@ public class CliCompletionTestCase {
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
-                List<String> res = Arrays.asList("--no-reload");
+                List<String> res = Arrays.asList("--lets-encrypt", "--no-reload");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);
                 assertEquals(candidates.toString(), res, candidates);
@@ -755,6 +755,28 @@ public class CliCompletionTestCase {
 
             {
                 String cmd = "security enable-ssl-management --interactive --management-interface=foo --no-reload ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--lets-encrypt");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=foo --no-reload --lets-encrypt ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                List<String> res = Arrays.asList("--ca-account=");
+                assertEquals(candidates.toString(), res, candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), res, candidates);
+            }
+
+            {
+                String cmd = "security enable-ssl-management --interactive --management-interface=foo --no-reload --lets-encrypt --ca-account=foo";
                 List<String> candidates = new ArrayList<>();
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);

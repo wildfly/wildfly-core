@@ -100,6 +100,8 @@ public class Util {
     public static final String BYTES = "bytes";
     public static final String CAPABILITY_REFERENCE = "capability-reference";
     public static final String CAPABILITY_REGISTRY = "capability-registry";
+    public static final String CERTIFICATE_AUTHORITY = "certificate-authority";
+    public static final String CERTIFICATE_AUTHORITY_ACCOUNT = "certificate-authority-account";
     public static final String CHILDREN = "children";
     public static final String CHILD_TYPE = "child-type";
     public static final String CLEAR_TEXT = "clear-text";
@@ -109,6 +111,7 @@ public class Util {
     public static final String CONFIGURED = "configured";
     public static final String CONSTANT_REALM_MAPPER = "constant-realm-mapper";
     public static final String CONSTANT_ROLE_MAPPER = "constant-role-mapper";
+    public static final String CONTACT_URLS = "contact-urls";
     public static final String CONTENT = "content";
     public static final String CORE_SERVICE = "core-service";
     public static final String CREDENTIAL_REFERENCE = "credential-reference";
@@ -199,6 +202,7 @@ public class Util {
     public static final String OPERATION = "operation";
     public static final String OPERATIONS = "operations";
     public static final String OPERATION_HEADERS = "operation-headers";
+    public static final String OBTAIN_CERTIFICATE = "obtain-certificate";
     public static final String OUTCOME = "outcome";
     public static final String PATH = "path";
     public static final String PEM = "pem";
@@ -310,6 +314,8 @@ public class Util {
     public static final String DESCRIPTION_RESPONSE = "DESCRIPTION_RESPONSE";
 
     public static final String NOT_OPERATOR = "!";
+    public static final String DOMAIN_NAMES = "domain-names";
+    public static final String AGREE_TO_TERMS_OF_SERVICE = "agree-to-terms-of-service";
 
     private static TerminalColor ERROR_COLOR;
     private static TerminalColor SUCCESS_COLOR;

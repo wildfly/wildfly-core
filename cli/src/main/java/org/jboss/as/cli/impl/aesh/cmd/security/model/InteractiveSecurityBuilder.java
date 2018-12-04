@@ -16,6 +16,9 @@ limitations under the License.
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
 import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.aesh.command.CommandException;
@@ -27,6 +30,7 @@ import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_ST
 import org.jboss.as.cli.impl.aesh.cmd.security.ssl.PromptFileCompleter;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 /**
  * An SSL security builder that handles interaction with user to collect
@@ -103,13 +107,30 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
 
     private final String defaultKeyStoreFile;
     private final String defaultTrustStoreFile;
+    private final boolean useLetsEncrypt;
+    private final String caAccount;
 
+    private String accountKeyStoreName;
+    private String accountKeyStoreFile;
+    private String accountKeyStorePassword;
+    private CertificateAuthority certificateAuthority;
+    private String certAuthorityAccountName;
+    private List<String> contactUrls;
+    private String certAuthorityAccountPassword;
+    private String certAuthorityAccountAlias;
+    private boolean agreedToTOS = false;
+    private List<String> domainNames;
+
+    private static final String defaultAccountKeyStoreFile = "accounts.keystore.jks";
+    private static final String defaultCertAuthorityAccountName = "CertAuthorityAccount";
     private static final String KEY_ALG = "RSA";
-    private static final int KEY_SIZE = 1024;
+    private static final int KEY_SIZE = 2048;
 
-    public InteractiveSecurityBuilder(String defaultKeyStoreFile, String defaultTrustStoreFile) throws CommandException {
+    public InteractiveSecurityBuilder(String defaultKeyStoreFile, String defaultTrustStoreFile, boolean useLetsEncrypt, String caAccount) throws CommandException {
         this.defaultKeyStoreFile = defaultKeyStoreFile;
         this.defaultTrustStoreFile = defaultTrustStoreFile;
+        this.useLetsEncrypt = useLetsEncrypt;
+        this.caAccount = caAccount;
     }
 
     public InteractiveSecurityBuilder setCommandInvocation(CLICommandInvocation commandInvocation) {
@@ -130,14 +151,125 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             clientCertificate = File.separator + PLACE_HOLDER;
             trustStorePassword = PLACE_HOLDER;
             trustStoreFileName = PLACE_HOLDER;
+            accountKeyStoreFile = PLACE_HOLDER;
+            accountKeyStorePassword = PLACE_HOLDER;
+            certAuthorityAccountName = PLACE_HOLDER;
+            contactUrls = new ArrayList<>();
+            contactUrls.add(PLACE_HOLDER);
+            certAuthorityAccountPassword = PLACE_HOLDER;
+            certAuthorityAccountAlias = PLACE_HOLDER;
+            agreedToTOS = true;
+            domainNames = new ArrayList<>();
+            domainNames.add(PLACE_HOLDER);
         } else {
             ctx.printLine("Please provide required pieces of information to enable SSL:");
         }
         String relativeTo = Util.JBOSS_SERVER_CONFIG_DIR;
+        String id = UUID.randomUUID().toString();
         boolean ok = false;
+
+        //Use Let's Encrypt CA Account
+        if(useLetsEncrypt && caAccount != null) {
+            certAuthorityAccountName = caAccount;
+        }
+        //Let's Encrypt account KS and certAuthAccount prompts
+        if(useLetsEncrypt && caAccount == null) {
+            ctx.print("\nLet's Encrypt account key-store:");
+            //then account key store
+            while (accountKeyStoreFile == null) {
+                accountKeyStoreFile = commandInvocation.inputLine(new Prompt("File name (default " + defaultAccountKeyStoreFile + "): "));
+                if (accountKeyStoreFile != null && accountKeyStoreFile.length() == 0) {
+                    accountKeyStoreFile = defaultAccountKeyStoreFile;
+                }
+                //Check that we are not going to corrupt existing key-stores that are referencing the exact same file.
+                List<String> ksNames = ElytronUtil.findMatchingKeyStores(ctx, new File(accountKeyStoreFile), relativeTo);
+                if (!ksNames.isEmpty()) {
+                    throw new CommandException("Error, the file " + accountKeyStoreFile + " is already referenced from " + ksNames
+                            + " resources. Use " + SecurityCommand.formatOption(OPT_KEY_STORE_NAME) + " option or choose another file name.");
+                }
+            }
+
+            //then accountKeyStorePassword
+            while (accountKeyStorePassword == null) {
+                accountKeyStorePassword = commandInvocation.inputLine(new Prompt("Password (blank generated): "));
+                if (accountKeyStorePassword != null && accountKeyStorePassword.length() == 0) {
+                    accountKeyStorePassword = SSLSecurityBuilder.generateRandomPassword();
+                }
+            }
+
+            // then Let's Encrypt certificate authority account:
+            ctx.print("\nLet's Encrypt certificate authority account:");
+            //then account name
+            while (certAuthorityAccountName == null) {
+                certAuthorityAccountName = commandInvocation.inputLine(new Prompt("Account name (default " + defaultCertAuthorityAccountName + "): "));
+                if (certAuthorityAccountName != null && certAuthorityAccountName.length() == 0) {
+                    certAuthorityAccountName = defaultCertAuthorityAccountName;
+                }
+                //Check that we are not going to corrupt existing CertificateAccount.
+                List<String> caAccountNames = ElytronUtil.getCaAccountNames(ctx.getModelControllerClient());
+                if (caAccountNames.contains(certAuthorityAccountName)) {
+                    throw new CommandException("Error, the certificate authority account " + certAuthorityAccountName + " already exists.");
+                }
+            }
+
+            //then contactUrls / email
+            while (contactUrls == null || contactUrls.size() < 1) {
+                String emails = commandInvocation.inputLine(new Prompt("Contact email(s) [admin@example.com,info@example.com]: "));
+                contactUrls = parseEmails(emails);
+            }
+
+            //then certAuthorityAccountPassword
+            while (certAuthorityAccountPassword == null) {
+                certAuthorityAccountPassword = commandInvocation.inputLine(new Prompt("Password (blank generated): "));
+                if (certAuthorityAccountPassword != null && certAuthorityAccountPassword.length() == 0) {
+                    certAuthorityAccountPassword = SSLSecurityBuilder.generateRandomPassword();
+                }
+            }
+
+            while (certAuthorityAccountAlias == null) {
+                certAuthorityAccountAlias = commandInvocation.inputLine(new Prompt("Alias (blank generated): "));
+                if (certAuthorityAccountAlias != null && certAuthorityAccountAlias.length() == 0) {
+                    certAuthorityAccountAlias = "account-key-store-alias-" + id;
+                }
+            }
+
+            //then Custom Certificate Authority URL
+            certificateAuthority = CertificateAuthority.getDefault();
+            String certificateAuthorityUrl = null;
+            while (certificateAuthorityUrl == null) {
+                certificateAuthorityUrl = commandInvocation.inputLine(new Prompt("Certificate authority URL (default " + certificateAuthority.getUrl() + "): "));
+                if (certificateAuthorityUrl != null && !certificateAuthorityUrl.isEmpty()) {
+                    //Create Let's encrypt account-key-store and certificate authority account
+                    URI certAuthUri = new URI(certificateAuthorityUrl);
+                    certificateAuthority = new CertificateAuthority(certAuthUri.getHost(), certificateAuthorityUrl, certificateAuthorityUrl);
+                }
+            }
+
+
+            if (!buildRequest) {
+                //then Let's Encrypt TOS (https://community.letsencrypt.org/tos)
+                String reply = null;
+                while (reply == null) {
+                    ctx.print("\nLet's Encrypt TOS (https://community.letsencrypt.org/tos)");
+
+                    reply = commandInvocation.inputLine(new Prompt("Do you agree to Let's Encrypt terms of service? y/n:"));
+                    if (reply != null && reply.equals("y")) {
+                        agreedToTOS = true;
+                        break;
+                    } else if (reply != null && !reply.equals("n")) {
+                        reply = null;
+                    }
+                }
+                if (!agreedToTOS) {
+                    throw new CommandException("Ignoring, command not executed. You need to accept the TOS to create account and obtain certificates.");
+                }
+            }
+        }
+
         Long v = null;
         String certName;
         String csrName;
+        ctx.print("\nCertificate info:");
         // First keystore file name
         while (keyStoreFile == null) {
             keyStoreFile = commandInvocation.inputLine(new Prompt("Key-store file name (default " + defaultKeyStoreFile + "): "));
@@ -168,23 +300,35 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             }
         }
 
-        // then prompt for dn
-        if (dn == null) {
-            dn = new DNWizard().buildDN();
-        }
+        if(useLetsEncrypt) {
+            //then prompt for domainName
+            while (domainNames == null || domainNames.size() < 1) {
+                String domains = commandInvocation.inputLine(new Prompt("Your domain name(s) (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com,second.example.com]: "));
+                domainNames = parseItemsFromString(domains, "example.com,second.example.com");
+            }
 
-        // then validity
-        while (validity == null) {
-            validity = commandInvocation.inputLine(new Prompt("Validity (in days, blank default): "));
-            if (validity != null) {
-                if (validity.length() == 0) {
-                    v = null;
-                } else {
-                    try {
-                        v = Long.parseLong(validity);
-                    } catch (NumberFormatException e) {
-                        ctx.printLine("Invalid number " + validity);
-                        validity = null;
+            //then set validity to 90 - this is default Let's Encrypt setting
+            validity = "90";
+        } else {
+            // then prompt for dn
+            if (dn == null) {
+                dn = new DNWizard().buildDN();
+            }
+
+
+            // then validity
+            while (validity == null) {
+                validity = commandInvocation.inputLine(new Prompt("Validity (in days, blank default): "));
+                if (validity != null) {
+                    if (validity.length() == 0) {
+                        v = null;
+                    } else {
+                        try {
+                            v = Long.parseLong(validity);
+                        } catch (NumberFormatException e) {
+                            ctx.printLine("Invalid number " + validity);
+                            validity = null;
+                        }
                     }
                 }
             }
@@ -194,7 +338,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         while (alias == null) {
             alias = commandInvocation.inputLine(new Prompt("Alias (blank generated): "));
             if (alias != null && alias.length() == 0) {
-                alias = "alias-" + UUID.randomUUID().toString();
+                alias = "alias-" + id;
             }
         }
 
@@ -272,12 +416,33 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             }
         }
 
+        keyStoreName = "key-store-" + id;
+        accountKeyStoreName = "account-key-store-" + id;
+        setKeyManagerName("key-manager-" + id);
+        setSSLContextName("ssl-context-" + id);
+
         if (!buildRequest) {
             String reply = null;
             while (reply == null) {
+                if(useLetsEncrypt && caAccount == null) {
+                    ctx.printLine("\nLet's Encrypt options:" + "\n"
+                            + "account key store name: " + accountKeyStoreName + "\n"
+                            + "password: " + accountKeyStorePassword + "\n"
+                            + "Account keystore file " + accountKeyStoreFile + " will be generated in server configuration directory." + "\n"
+                            + "Let's Encrypt Certificate authority account name: " + certAuthorityAccountName + "\n"
+                            + "Contact urls: " + contactUrls + "\n"
+                            + "password: " + certAuthorityAccountPassword + "\n"
+                            + "alias: " + certAuthorityAccountAlias + "\n"
+                            + "certificate authority URL: " + certificateAuthority.getUrl() + "\n"
+                            + "You provided agreement to Let's Encrypt terms of service." + "\n"
+                    );
+                } else if (caAccount != null) {
+                    ctx.printLine("Let's Encrypt Certificate authority account name: " + certAuthorityAccountName + "\n");
+                }
+
                 ctx.printLine("\nSSL options:");
                 ctx.printLine("key store file: " + keyStoreFile + "\n"
-                        + "distinguished name: " + dn + "\n"
+                        + (useLetsEncrypt ?  "domain name: " + domainNames + "\n" : "distinguished name: " + dn + "\n")
                         + "password: " + password + "\n"
                         + "validity: " + (validity.length() == 0 ? "default" : validity) + "\n"
                         + "alias: " + alias);
@@ -286,9 +451,15 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
                     ctx.printLine("trust store file: " + trustStoreFileName);
                     ctx.printLine("trust store password: " + trustStorePassword);
                 }
-                ctx.printLine("Server keystore file " + keyStoreFile
-                        + ", certificate file " + certName + " and " + csrName
-                        + " file will be generated in server configuration directory.");
+                if (useLetsEncrypt) {
+                    ctx.printLine("Certificate will be obtained from Let's Encrypt server and will be valid for 90 days." + "\n"
+                            + "Server keystore file a will be generated in server configuration directory.");
+
+                } else {
+                    ctx.printLine("Server keystore file " + keyStoreFile
+                            + ", certificate file " + certName + " and " + csrName
+                            + " file will be generated in server configuration directory.");
+                }
                 if (mutual) {
                     ctx.printLine("Server truststore file " + trustStoreFileName + " will be generated in server configuration directory.");
                 }
@@ -307,12 +478,6 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         }
 
         String type = DefaultResourceNames.buildDefaultKeyStoreType(null, ctx);
-
-        String id = UUID.randomUUID().toString();
-        setKeyManagerName("key-manager-" + id);
-        setSSLContextName("ssl-context-" + id);
-
-        keyStoreName = "key-store-" + id;
         ModelNode request = ElytronUtil.addKeyStore(ctx, keyStoreName, new File(keyStoreFile), relativeTo, password, type, false, null);
         try {
             // For now that is a workaround because we can't add and call operation in same composite.
@@ -322,33 +487,98 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             } else {
                 SecurityCommand.execute(ctx, request, SecurityCommand.DEFAULT_FAILURE_CONSUMER);
             }
-            // Hard coded algorithm and key size.
-            ModelNode request2 = ElytronUtil.generateKeyPair(ctx, keyStoreName, dn, alias, v, KEY_ALG, KEY_SIZE);
-            addStep(request2, new FailureDescProvider() {
-                @Override
-                public String stepFailedDescription() {
-                    return "Generating key-pair from "
-                            + keyStoreName;
+
+            //Let's encrypt requests
+            if(useLetsEncrypt) {
+                if (caAccount == null) {
+                    if (certificateAuthority != CertificateAuthority.getDefault()) {
+                        ModelNode requestAddCertAuth = ElytronUtil.addCertificateAuthority(certificateAuthority);
+                        if(buildRequest)
+                            addStep(requestAddCertAuth, NO_DESC);
+                        else {
+                            SecurityCommand.execute(ctx, requestAddCertAuth, new SecurityCommand.FailureConsumer() {
+
+                                @Override
+                                public void failureOccured(CommandContext ctx, ModelNode reply) throws CommandException {
+                                    throw new CommandException(Util.getFailureDescription(reply) + " " + requestAddCertAuth.asString());
+                                }
+                            });
+                        }
+
+                    }
+                    ModelNode requestAddAccKS = ElytronUtil.addKeyStore(ctx, accountKeyStoreName, new File(accountKeyStoreFile), relativeTo, accountKeyStorePassword, type, false, null);
+                    ModelNode requestAddCertAuthAcc = ElytronUtil.addCertificateAuthorityAccount(
+                            certAuthorityAccountName,
+                            certAuthorityAccountPassword,
+                            certAuthorityAccountAlias,
+                            accountKeyStoreName,
+                            contactUrls,
+                            certificateAuthority);
+
+                    // For now that is a workaround because we can't add and call operation in same composite.
+                    // REMOVE WHEN WFCORE-3491 is fixed.
+                    if(buildRequest) {
+                        addStep(requestAddAccKS, NO_DESC);
+                        addStep(requestAddCertAuthAcc, NO_DESC);
+                    } else {
+                        SecurityCommand.execute(ctx, requestAddAccKS, new SecurityCommand.FailureConsumer() {
+
+                            @Override
+                            public void failureOccured(CommandContext ctx, ModelNode reply) throws CommandException {
+                                throw new CommandException(Util.getFailureDescription(reply) + " " + requestAddAccKS.asString());
+                            }
+                        });
+                        SecurityCommand.execute(ctx, requestAddCertAuthAcc, new SecurityCommand.FailureConsumer() {
+
+                            @Override
+                            public void failureOccured(CommandContext ctx, ModelNode reply) throws CommandException {
+                                throw new CommandException(Util.getFailureDescription(reply) + " " + requestAddCertAuthAcc.asString());
+                            }
+                        });
+                    }
+                    needKeyStoreStore(accountKeyStoreName);
                 }
-            });
-            needKeyStoreStore(keyStoreName);
-            final String cName = certName;
-            ModelNode request4 = ElytronUtil.exportCertificate(ctx, keyStoreName, new File(certName), relativeTo, alias, true);
-            addFinalstep(request4, new FailureDescProvider() {
-                @Override
-                public String stepFailedDescription() {
-                    return "Exporting certificate " + cName
-                            + " from key-store " + keyStoreName;
-                }
-            });
-            ModelNode request5 = ElytronUtil.generateSigningRequest(ctx, keyStoreName, new File(csrName), relativeTo, alias);
-            addFinalstep(request5, new FailureDescProvider() {
-                @Override
-                public String stepFailedDescription() {
-                    return "Generating signing request "
-                            + " from key-store " + keyStoreName;
-                }
-            });
+
+                needKeyStoreStore(keyStoreName);
+
+                //Now we’re ready to start obtaining and managing certificates
+                ModelNode request3 = ElytronUtil.obtainCertificateRequest(keyStoreName, alias, password, domainNames, certAuthorityAccountName, agreedToTOS, KEY_SIZE, KEY_ALG);
+                addStep(request3, new FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Obtaining certificate from Let's Encrypt for keystore "
+                                + keyStoreName;
+                    }
+                });
+            } else {
+                // Hard coded algorithm and key size.
+                ModelNode request2 = ElytronUtil.generateKeyPair(ctx, keyStoreName, dn, alias, v, KEY_ALG, KEY_SIZE);
+                addStep(request2, new FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Generating key-pair from "
+                                + keyStoreName;
+                    }
+                });
+                needKeyStoreStore(keyStoreName);
+                final String cName = certName;
+                ModelNode request4 = ElytronUtil.exportCertificate(ctx, keyStoreName, new File(certName), relativeTo, alias, true);
+                addFinalstep(request4, new FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Exporting certificate " + cName
+                                + " from key-store " + keyStoreName;
+                    }
+                });
+                ModelNode request5 = ElytronUtil.generateSigningRequest(ctx, keyStoreName, new File(csrName), relativeTo, alias);
+                addFinalstep(request5, new FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Generating signing request "
+                                + " from key-store " + keyStoreName;
+                    }
+                });
+            }
             // Two way certificate
             if (clientCertificate != null) {
                 setTrustedCertificatePath(new File(clientCertificate));
@@ -367,6 +597,31 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         super.buildRequest(ctx, buildRequest);
     }
 
+    private List<String> parseEmails(String emails) {
+        List<String> emailsList = parseItemsFromString(emails, "admin@example.com,info@example.com");
+        List<String> urls = new ArrayList<>();
+        if (emailsList != null) {
+            for (String email : emailsList) {
+                if (email.contains("@")) {
+                    urls.add("mailto:".concat(email));
+                }
+            }
+        }
+        return urls;
+    }
+
+    private List<String> parseItemsFromString(String items, String example) {
+        List<String> itemsList = null;
+        if (items != null) {
+            if (items.length() == 0) {
+                items = example;
+            }
+            itemsList = Arrays.asList(items.split(","));
+        }
+
+        return itemsList;
+    }
+
     @Override
     protected KeyStore buildKeyStore(CommandContext ctx, boolean buildRequest) throws Exception {
         return new KeyStore(keyStoreName, password, alias, false);
@@ -376,6 +631,12 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
     public void doFailureOccured(CommandContext ctx) throws Exception {
         // REMOVE WHEN WFCORE-3491 is fixed.
         if (keyStoreName != null) {
+            if(useLetsEncrypt && caAccount == null) {
+                ModelNode req = ElytronUtil.removeCertificateAuthorityAccount(certAuthorityAccountName);
+                SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER, false);
+                req = ElytronUtil.removeKeyStore(ctx, accountKeyStoreName);
+                SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER, false);
+            }
             ModelNode req = ElytronUtil.removeKeyStore(ctx, keyStoreName);
             SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER, false);
         }

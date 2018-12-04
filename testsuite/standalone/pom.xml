@@ -82,6 +82,16 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-jmx</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

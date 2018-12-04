@@ -17,7 +17,19 @@ package org.jboss.as.test.integration.management.cli;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +55,14 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockserver.integration.ClientAndServer;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
+
+import static org.jboss.as.test.integration.management.cli.AcmeMockServerBuilder.setupTestObtainCertificateWithKeySize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -55,7 +74,8 @@ public class SecurityCommandsTestCase {
     private static final ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
 
     private static CommandContext ctx;
-
+    private static final String LOCALHOST_ACME = "LOCALHOST_ACME";
+    private static final String LOCALHOST_ACME_URL = "http://localhost:4001/directory";
     private static final String GENERATED_KEY_STORE_FILE_NAME = "gen-key-store.keystore";
     private static final String GENERATED_PEM_FILE_NAME = "gen-key-store.pem";
     private static final String GENERATED_CSR_FILE_NAME = "gen-key-store.csr";
@@ -77,11 +97,268 @@ public class SecurityCommandsTestCase {
     private static File clientKeyStore;
     private static File clientCertificate;
 
+    private static final String ACCOUNTS_KEYSTORE_FILE_NAME = "account.keystore";
+    private static final String ACCOUNTS_KEYSTORE_PASSWORD = "elytron";
+    private static final String CA_ACCOUNT_ALIAS = "account6";
+    private static final String CA_ACCOUNT_NAME = "CertAuthorityAccount";
+    private static final String KEYSTORE_FILE = "test.keystore";
+    private static final String KEYSTORE_PASSWORD = "secret";
+    private static final String certificateAlias = "server";
+    private static ClientAndServer server;
+    private static CertificateAuthority certificateAuthority = CertificateAuthority.getDefault();
+
     @ClassRule
     public static final TemporaryFolder temporaryUserHome = new TemporaryFolder();
 
+    @Test
+    public void testEnableLetsEncryptSSLInteractiveDeclineTOS() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper().
+                addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString()).
+                addCliArgument("--controller=remote+http://"
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort()).
+                addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload --lets-encrypt",
+                    "File name (default accounts.keystore.jks)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_FILE_NAME, "Password (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_PASSWORD, "Account name (default CertAuthorityAccount)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(CA_ACCOUNT_NAME, "Contact email(s)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("admin@example.com", "Password (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_PASSWORD, "Alias"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(CA_ACCOUNT_ALIAS, "Certificate authority URL (default "+ certificateAuthority.getUrl() +"):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(LOCALHOST_ACME_URL, "Do you agree to Let's Encrypt terms of service? y/n:"));
+            //Check that the interactive mode exits after rejecting the TOS
+            Assert.assertTrue(cli.pushLineAndWaitForResults("n", null));
+            Assert.assertTrue(cli.getOutput().contains("Ignoring, command not executed. You need to accept the TOS to create account and obtain certificates."));
+        } catch (Throwable ex) {
+            throw new Exception(cli.getOutput(), ex);
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testEnableLetsEncryptSSLInteractiveUseFakeCaAccount() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper().
+                addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString()).
+                addCliArgument("--controller=remote+http://"
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort()).
+                addCliArgument("--connect");
+
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+
+            Path jbossStandaloneConfig = Paths.get(TestSuiteEnvironment.getJBossHome() +"/standalone/configuration");
+            Path KSFile = jbossStandaloneConfig.resolve(KEYSTORE_FILE);
+
+            //Copy the pre-generated key stores to the server config
+            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(ACCOUNTS_KEYSTORE_FILE_NAME),
+                    jbossStandaloneConfig.resolve(ACCOUNTS_KEYSTORE_FILE_NAME),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(KEYSTORE_FILE), KSFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            //Check that the key-store does not contain server certificate
+            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
+
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
+                            + " --lets-encrypt"
+                            + " --ca-account=FakeCaAccount", "Key-store file name (default management.keystore):" ));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(KEYSTORE_FILE, "Password (blank generated)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(KEYSTORE_PASSWORD, "Your domain name(s) (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com,second.example.com]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("inlneseppwkfwew.com", "Alias (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(certificateAlias, "Enable SSL Mutual Authentication"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("n", "Do you confirm"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", null));
+            Assert.assertTrue(cli.getOutput().contains("FakeCaAccount not found"));
+
+            //Check that the security command failed and the keystore does not contain the new certificate alias
+            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
+
+        } catch (Throwable ex) {
+            throw new Exception(cli.getOutput(), ex);
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testEnableLetsEncryptSSLInteractiveConfirm() throws Exception {
+        testEnableLetsEncryptSSLInteractiveConfirm(false);
+    }
+
+    @Test
+    public void testEnableLetsEncryptSSLInteractiveConfirmUseCaAccount() throws Exception {
+        testEnableLetsEncryptSSLInteractiveConfirm(true);
+    }
+
+    private void testEnableLetsEncryptSSLInteractiveConfirm(boolean useCaAccount) throws Exception {
+        setupTestObtainCertificateWithKeySize(server, useCaAccount);
+
+        CliProcessWrapper cli = new CliProcessWrapper().
+                addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString()).
+                addCliArgument("--controller=remote+http://"
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort()).
+                addCliArgument("--connect");
+        File genKeyStore = null;
+        File genTrustStore = null;
+        File genServerCertificate = null;
+        File genCsr = null;
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+
+            Path jbossStandaloneConfig = Paths.get(TestSuiteEnvironment.getJBossHome() +"/standalone/configuration");
+            Path KSFile = jbossStandaloneConfig.resolve(KEYSTORE_FILE);
+            genKeyStore = KSFile.toFile();
+
+            //Copy the pre-generated key stores to the server config
+            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(ACCOUNTS_KEYSTORE_FILE_NAME),
+                    jbossStandaloneConfig.resolve(ACCOUNTS_KEYSTORE_FILE_NAME),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(KEYSTORE_FILE), KSFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            //Check that the key-store does not contain server certificate
+            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
+
+
+            if (useCaAccount) {
+                //In this case the ACME Mock server will ignore, that the user did not accept TOS this is enforced only in test.
+                //Normally it would fail since the TOS were not accepted.
+                ctx.handle("/subsystem=elytron/certificate-authority=" + LOCALHOST_ACME + ":add(url=\"" + LOCALHOST_ACME_URL + "\",staging-url=\"http://localhost:4001/directory\"");
+                ctx.handle("/subsystem=elytron/key-store=AccountsKeyStore:add(path=" + ACCOUNTS_KEYSTORE_FILE_NAME + ", type=JKS,"
+                        + " relative-to=" + Util.JBOSS_SERVER_CONFIG_DIR + ", credential-reference={clear-text=" + ACCOUNTS_KEYSTORE_PASSWORD + "})");
+                ctx.handle("/subsystem=elytron/certificate-authority-account=" + CA_ACCOUNT_NAME + ":add(certificate-authority=" + LOCALHOST_ACME + ", contact-urls=[mailto:admin@example.com],"
+                        + " key-store=AccountsKeyStore, alias=" + CA_ACCOUNT_ALIAS + ", credential-reference={clear-text="+ ACCOUNTS_KEYSTORE_PASSWORD + "})");
+
+                Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
+                                + " --lets-encrypt"
+                                + " --ca-account=" + CA_ACCOUNT_NAME,
+                        (useCaAccount ? "Key-store file name (default management.keystore):" : "File name (default accounts.keystore.jks)")));
+            } else {
+                Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
+                                + " --lets-encrypt",
+                        (useCaAccount ? "Key-store file name (default management.keystore):" : "File name (default accounts.keystore.jks)")));
+
+                //skip this when ca Account already created
+                Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_FILE_NAME, "Password (blank generated):"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_PASSWORD, "Account name (default CertAuthorityAccount)"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults(CA_ACCOUNT_NAME, "Contact email(s)"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults("admin@example.com", "Password (blank generated):"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_PASSWORD, "Alias"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults(CA_ACCOUNT_ALIAS, "Certificate authority URL (default "+ certificateAuthority.getUrl() +"):"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults(LOCALHOST_ACME_URL, "Do you agree to Let's Encrypt terms of service? y/n:"));
+                Assert.assertTrue(cli.pushLineAndWaitForResults("y", "Key-store file name (default management.keystore):"));
+            }
+            Assert.assertTrue(cli.pushLineAndWaitForResults(KEYSTORE_FILE, "Password (blank generated)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(KEYSTORE_PASSWORD, "Your domain name(s) (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com,second.example.com]"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("inlneseppwkfwew.com", "Alias (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(certificateAlias, "Enable SSL Mutual Authentication"));
+
+            //Mutual auth
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", "Client certificate (path to pem file)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(clientCertificate.getAbsolutePath(), "Validate certificate"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("n", "Trust-store file name"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(GENERATED_TRUST_STORE_FILE_NAME, "Password"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(GENERATED_KEY_STORE_PASSWORD, "Do you confirm"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", null));
+            //Check that the key-store does contain generated aliases
+            checkObtainedCertificate("RSA", 4096, certificateAlias, loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD));
+
+            assertTLSNumResources(3, 1, 1, 1);
+            genTrustStore = new File(TestSuiteEnvironment.getJBossHome() + File.separator + "standalone"
+                    + File.separator + "configuration" + File.separator + GENERATED_TRUST_STORE_FILE_NAME);
+            Assert.assertTrue(genTrustStore.exists());
+
+            // Check the model contains the provided values.
+            List<String> ksList = getNames(ctx.getModelControllerClient(), Util.KEY_STORE);
+            List<String> kmList = getNames(ctx.getModelControllerClient(), Util.KEY_MANAGER);
+            List<String> tmList = getNames(ctx.getModelControllerClient(), Util.TRUST_MANAGER);
+            List<String> sslContextList = getNames(ctx.getModelControllerClient(), Util.SERVER_SSL_CONTEXT);
+            ModelNode trustManager = getResource(Util.TRUST_MANAGER, tmList.get(0), null);
+            checkModel(null, KEYSTORE_FILE, Util.JBOSS_SERVER_CONFIG_DIR,
+                    KEYSTORE_PASSWORD, GENERATED_TRUST_STORE_FILE_NAME,
+                    GENERATED_KEY_STORE_PASSWORD, ksList.get(1), kmList.get(0),
+                    trustManager.get(Util.KEY_STORE).asString(), tmList.get(0), sslContextList.get(0));
+
+            ctx.handle("security disable-ssl-management --no-reload");
+            cli.clearOutput();
+            // Test that existing account-key-store file makes the command to abort.
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive  --no-reload"
+                    + " --lets-encrypt", "File name (default accounts.keystore.jks)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_FILE_NAME, null));
+
+            // Test that existing key-store file makes the command to abort.
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive  --no-reload"
+                    + " --lets-encrypt", "File name (default accounts.keystore.jks)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Password (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Account name (default CertAuthorityAccount)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("CertAuthorityAccount1", "Contact email(s)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("admin@example.com", "Password (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Alias"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Certificate authority URL"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Do you agree to Let's Encrypt terms of service? y/n:"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("y", "Key-store file name (default management.keystore):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults(KEYSTORE_FILE, null));
+
+            //Test that existing Ca account makes the command to abort.
+            // Test that existing key-store file makes the command to abort.
+            Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive  --no-reload"
+                    + " --lets-encrypt", "File name (default accounts.keystore.jks)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Password (blank generated):"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("", "Account name (default CertAuthorityAccount)"));
+            Assert.assertTrue(cli.pushLineAndWaitForResults("CertAuthorityAccount", null));
+
+        } catch (Throwable ex) {
+            throw new Exception(cli.getOutput(), ex);
+        } finally {
+            if (genKeyStore != null) {
+                genKeyStore.delete();
+            }
+            if (genTrustStore != null) {
+                genTrustStore.delete();
+            }
+            if (genServerCertificate != null) {
+                genServerCertificate.delete();
+            }
+            if (genCsr != null) {
+                genCsr.delete();
+            }
+            cli.destroyProcess();
+        }
+    }
+
+    private KeyStore loadKeyStore(String fileName, String password) throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
+        try(final FileInputStream in = new FileInputStream(fileName)) {
+            final KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(in, password.toCharArray());
+            return ks;
+        }
+    }
+
+    private void checkObtainedCertificate(String keyAlgorithmName, int keySize, String alias, KeyStore keyStore) throws Exception {
+        assertTrue(keyStore.containsAlias(alias));
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, KEYSTORE_PASSWORD.toCharArray());
+        X509Certificate signedCert = (X509Certificate) keyStore.getCertificate(alias);
+        assertEquals(keyAlgorithmName, privateKey.getAlgorithm());
+        assertEquals(keyAlgorithmName, signedCert.getPublicKey().getAlgorithm());
+        if (keyAlgorithmName.equals("EC")) {
+            assertEquals(keySize, ((ECPublicKey) signedCert.getPublicKey()).getParams().getCurve().getField().getFieldSize());
+        } else if (keyAlgorithmName.equals("RSA")) {
+            assertEquals(keySize, ((RSAPublicKey) signedCert.getPublicKey()).getModulus().bitLength());
+        }
+    }
+
     @BeforeClass
     public static void setup() throws Exception {
+         server = new ClientAndServer(4001);
+
         // Create ctx, used to setup the test and do the final reload.
         CommandContextConfiguration.Builder configBuilder = new CommandContextConfiguration.Builder();
         configBuilder.setConsoleOutput(consoleOutput).
@@ -144,6 +421,9 @@ public class SecurityCommandsTestCase {
 
     @AfterClass
     public static void cleanup() throws Exception {
+        if (server != null) {
+            server.stop();
+        }
         if (serverKeyStore != null) {
             serverKeyStore.delete();
         }
@@ -1097,6 +1377,15 @@ public class SecurityCommandsTestCase {
         List<String> tmList = getNames(ctx.getModelControllerClient(), Util.TRUST_MANAGER);
         for (String tm : tmList) {
             ctx.handle("/subsystem=elytron/trust-manager=" + tm + ":remove");
+        }
+        List<String> caAccountsList = getNames(ctx.getModelControllerClient(), Util.CERTIFICATE_AUTHORITY_ACCOUNT);
+        for (String caAccount : caAccountsList) {
+            ctx.handle("/subsystem=elytron/"+Util.CERTIFICATE_AUTHORITY_ACCOUNT+"=" + caAccount + ":remove");
+        }
+        // Remove Localhost certificate authority
+        List<String> certificatAuthorities = getNames(ctx.getModelControllerClient(), Util.CERTIFICATE_AUTHORITY);
+        for (String certificateAuthority : certificatAuthorities) {
+            ctx.handle("/subsystem=elytron/"+Util.CERTIFICATE_AUTHORITY+"=" + certificateAuthority + ":remove");
         }
         List<String> ksList = getNames(ctx.getModelControllerClient(), Util.KEY_STORE);
         for (String ks : ksList) {
