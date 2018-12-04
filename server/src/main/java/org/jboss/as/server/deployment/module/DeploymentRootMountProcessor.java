@@ -89,7 +89,7 @@ public class DeploymentRootMountProcessor implements DeploymentUnitProcessor {
                     type = MountType.ZIP;
                 }
                 handle = deploymentMountProvider.mountDeploymentContent(deploymentContents, deploymentRoot, type);
-                mountHandle = new MountHandle(handle);
+                mountHandle = MountHandle.create(handle);
             } catch (IOException e) {
                 failed = true;
                 throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);

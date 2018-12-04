@@ -22,6 +22,10 @@
 
 package org.jboss.as.server.deployment.module.descriptor;
 
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +44,6 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.MountedDeploymentOverlay;
@@ -50,6 +53,7 @@ import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.deployment.module.TempFileProviderService;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -60,10 +64,6 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
-
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
 
 /**
  * @author Stuart Douglas
@@ -770,7 +770,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
                         } else if(child.isFile()) {
                             closable = VFS.mountZip(child, child, TempFileProviderService.provider());
                         }
-                        final MountHandle mountHandle = new MountHandle(closable);
+                        final MountHandle mountHandle = MountHandle.create(closable);
                         final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
                         for (final FilterSpecification filter : resourceFilters) {
                             resourceRoot.getExportFilters().add(filter);

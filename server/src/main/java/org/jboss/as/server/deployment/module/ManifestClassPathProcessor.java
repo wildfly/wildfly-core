@@ -274,7 +274,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             } else if(file.isFile()) {
                 closable = VFS.mountZip(file, file, TempFileProviderService.provider());
             }
-            final MountHandle mountHandle = new MountHandle(closable);
+            final MountHandle mountHandle = MountHandle.create(closable);
             final ResourceRoot resourceRoot = new ResourceRoot(file, mountHandle);
             ModuleRootMarker.mark(resourceRoot);
             ResourceRootIndexer.indexResourceRoot(resourceRoot);

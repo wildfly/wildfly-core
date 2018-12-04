@@ -119,7 +119,7 @@ public class Seam2Processor implements DeploymentUnitProcessor {
                 builder.setInitialMode(ServiceController.Mode.ACTIVE).install();
                 serviceTarget = null; // our cleanup service install work is done
 
-                MountHandle dummy = new MountHandle(null); // actual close is done by the MSC service above
+                MountHandle dummy = MountHandle.create(null); // actual close is done by the MSC service above
                 seamIntResourceRoot = new ResourceRoot(vf, dummy);
             }
             return seamIntResourceRoot;
