@@ -23,6 +23,7 @@
 package org.jboss.as.process.protocol;
 
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -35,18 +36,30 @@ import java.util.concurrent.Executor;
 
 import org.jboss.as.process.logging.ProcessLogger;
 import org.wildfly.common.Assert;
+import org.wildfly.common.ref.CleanerReference;
+import org.wildfly.common.ref.Reaper;
+import org.wildfly.common.ref.Reference;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class ConnectionImpl implements Connection {
 
+    private static final Reaper<MessageOutputStream, OutputStreamCloser> REAPER = new Reaper<MessageOutputStream, OutputStreamCloser>() {
+        @Override
+        public void reap(Reference<MessageOutputStream, OutputStreamCloser> reference) {
+            reference.getAttachment().cleanup();
+        }
+    };
+
     private final Socket socket;
 
     private final Object lock = new Object();
 
     // protected by {@link #lock}
-    private OutputStream sender;
+    // This isn't actually the MessageOutputStream object that is sending; it's just a marker
+    // that MOS instances use to track if they are the current sender for the connection
+    private Object sender;
     // protected by {@link #lock}
     private boolean readDone;
     // protected by {@link #lock}
@@ -86,8 +99,12 @@ final class ConnectionImpl implements Connection {
             }
             boolean ok = false;
             try {
-                sender = new MessageOutputStream();
-                os = new BufferedOutputStream(sender);
+                MessageOutputStream mos = new MessageOutputStream();
+                // Use a PhantomReference instead of overriding finalize() to ensure close gets called
+                // CleanerReference handles ensuring there's a strong ref to itself so we can just construct it and move on
+                new CleanerReference<MessageOutputStream, OutputStreamCloser>(mos, mos.closer, REAPER);
+                sender = mos.closer;
+                os = new BufferedOutputStream(mos);
                 ok = true;
             } finally {
                 if (! ok) {
@@ -322,9 +339,15 @@ final class ConnectionImpl implements Connection {
     final class MessageOutputStream extends FilterOutputStream {
 
         private final byte[] hdr = new byte[5];
+        private final OutputStreamCloser closer;
 
         MessageOutputStream() throws IOException {
-            super(socket.getOutputStream());
+            this(socket.getOutputStream());
+        }
+
+        private MessageOutputStream(OutputStream out) {
+            super(out);
+            this.closer = new OutputStreamCloser(out);
         }
 
         @Override
@@ -344,8 +367,8 @@ final class ConnectionImpl implements Connection {
             hdr[3] = (byte) (len >> 8);
             hdr[4] = (byte) (len >> 0);
             synchronized (lock) {
-                if (sender != this || writeDone) {
-                    if (sender == this) sender = null;
+                if (sender != closer || writeDone) {
+                    if (sender == closer) sender = null;
                     lock.notifyAll();
                     throw ProcessLogger.ROOT_LOGGER.writeChannelClosed();
                 }
@@ -353,6 +376,20 @@ final class ConnectionImpl implements Connection {
                 out.write(hdr);
                 out.write(b, off, len);
             }
+        }
+
+        @Override
+        public void close() throws IOException {
+            closer.close();
+        }
+    }
+
+    private final class OutputStreamCloser implements Closeable {
+
+        private final OutputStream out;
+
+        private OutputStreamCloser(OutputStream out) {
+            this.out = out;
         }
 
         @Override
@@ -378,13 +415,15 @@ final class ConnectionImpl implements Connection {
             }
         }
 
-        @Override
-        protected void finalize() throws Throwable {
-            super.finalize();
+        private void cleanup() {
             synchronized (lock) {
                 if (sender == this) {
                     ProcessLogger.PROTOCOL_CONNECTION_LOGGER.leakedMessageOutputStream();
-                    close();
+                    try {
+                        close();
+                    } catch (IOException e) {
+                        // ignored, same as a finalizer failure would be ignored by the VM
+                    }
                 }
             }
         }
