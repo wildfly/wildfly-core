@@ -166,7 +166,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
     @Override
     public void handleNotification(Notification notification) {
-        if (acquireScanLock()) {
+        if (scanEnabled && acquireScanLock()) {
             try {
                 switch (notification.getType()) {
                     case DEPLOYMENT_DEPLOYED_NOTIFICATION: {
