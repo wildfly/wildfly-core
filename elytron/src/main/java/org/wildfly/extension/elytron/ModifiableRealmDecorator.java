@@ -232,6 +232,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 .build();
 
         static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING, false)
+                .setMinSize(0)
                 .build();
 
         static final SimpleListAttributeDefinition VALUES = new SimpleListAttributeDefinition.Builder(ElytronDescriptionConstants.VALUE, VALUE)

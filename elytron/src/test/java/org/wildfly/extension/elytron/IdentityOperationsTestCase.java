@@ -200,6 +200,38 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testAddEmptyAttributeValue() throws Exception {
+        KernelServices services = createKernelServicesBuilder(null)
+                .setSubsystemXmlResource("identity-management.xml")
+                .build();
+        String principalName = "plainUser";
+        PathAddress realmAddress = getSecurityRealmAddress("FileSystemRealm");
+        ModelNode operation = createAddIdentityOperation(realmAddress, principalName);
+        ModelNode result = services.executeOperation(operation);
+
+        assertSuccessful(result);
+
+        operation = createAddAttributeOperation(realmAddress, principalName, "name", "John Smith");
+        result = services.executeOperation(operation);
+        assertSuccessful(result);
+
+        operation = createAddAttributeOperation(realmAddress, principalName, "phoneNumber", "");
+        result = services.executeOperation(operation);
+        assertSuccessful(result);
+
+        operation = createReadIdentityOperation(realmAddress, principalName);
+        result = services.executeOperation(operation);
+        assertSuccessful(result);
+
+        ModelNode resultNode = result.get(RESULT);
+        ModelNode attributesNode = resultNode.get(ATTRIBUTES);
+
+        assertTrue(attributesNode.isDefined());
+        assertAttributeValue(attributesNode, "name", "John Smith");
+        assertAttributeValue(attributesNode, "phoneNumber", "");
+    }
+
+    @Test
     public void testRemoveAttribute() throws Exception {
         KernelServices services = createKernelServicesBuilder(null)
                 .setSubsystemXmlResource("identity-management.xml")
