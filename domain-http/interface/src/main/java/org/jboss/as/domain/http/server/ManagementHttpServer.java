@@ -182,7 +182,7 @@ public class ManagementHttpServer {
         IoUtils.safeClose(secureServer);
     }
 
-    public void addStaticContext(String contextName, ResourceManager resourceManager) {
+    public synchronized void addStaticContext(String contextName, ResourceManager resourceManager) {
         Assert.checkNotNullParam("contextName", contextName);
         Assert.checkNotNullParam("resourceManager", resourceManager);
         String context = fixPath(contextName);
@@ -196,7 +196,7 @@ public class ManagementHttpServer {
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
 
-    public void addManagementHandler(String contextName, boolean requireSecurity, HttpHandler managementHandler) {
+    public synchronized void addManagementHandler(String contextName, boolean requireSecurity, HttpHandler managementHandler) {
         Assert.checkNotNullParam("contextName", contextName);
         Assert.checkNotNullParam("managementHandler", managementHandler);
         String context = fixPath(contextName);
@@ -215,7 +215,7 @@ public class ManagementHttpServer {
         extensionHandlers.extensionPathHandler.addPrefixPath(context, readinessHandler);
     }
 
-    public void addManagementGetRemapContext(String contextName, PathRemapper remapper) {
+    public synchronized void addManagementGetRemapContext(String contextName, PathRemapper remapper) {
         Assert.checkNotNullParam("contextName", contextName);
         String context = fixPath(contextName);
         // Reject reserved contexts or duplicate extensions
@@ -226,7 +226,7 @@ public class ManagementHttpServer {
         extensionHandlers.extensionPathHandler.addPrefixPath(context, remapHandler);
     }
 
-    public void removeContext(String contextName) {
+    public synchronized void removeContext(String contextName) {
         Assert.checkNotNullParam("contextName", contextName);
         String context = fixPath(contextName);
         // Reject reserved contexts or non-existent extensions
