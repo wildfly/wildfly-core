@@ -377,7 +377,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         // REMOVE WHEN WFCORE-3491 is fixed.
         if (keyStoreName != null) {
             ModelNode req = ElytronUtil.removeKeyStore(ctx, keyStoreName);
-            SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER);
+            SecurityCommand.execute(ctx, req, SecurityCommand.DEFAULT_FAILURE_CONSUMER, false);
         }
     }
 }
