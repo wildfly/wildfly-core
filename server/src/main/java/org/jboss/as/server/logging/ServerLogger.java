@@ -1324,6 +1324,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 271, value = "Git error: %s")
     void errorUsingGit(@Cause Throwable cause, String message);
 
+    @LogMessage(level = INFO)
+    @Message(id = 272, value = "Suspending server")
+    void suspendingServer();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

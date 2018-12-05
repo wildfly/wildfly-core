@@ -78,8 +78,10 @@ public class SuspendController implements Service<SuspendController> {
         }
         if (timeoutMillis > 0) {
             ServerLogger.ROOT_LOGGER.suspendingServer(timeoutMillis);
-        } else {
+        } else if (timeoutMillis < 0) {
             ServerLogger.ROOT_LOGGER.suspendingServerWithNoTimeout();
+        } else {
+            ServerLogger.ROOT_LOGGER.suspendingServer();
         }
         state = State.PRE_SUSPEND;
         //we iterate a copy, in case a listener tries to register a new listener
@@ -100,8 +102,8 @@ public class SuspendController implements Service<SuspendController> {
             for (ServerActivity activity : activities) {
                 activity.preSuspend(cb);
             }
-            timer = new Timer();
             if (timeoutMillis > 0) {
+                timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -166,7 +168,7 @@ public class SuspendController implements Service<SuspendController> {
         return state;
     }
 
-    synchronized void activityPaused() {
+    private synchronized void activityPaused() {
         --outstandingCount;
         handlePause();
     }
@@ -185,7 +187,7 @@ public class SuspendController implements Service<SuspendController> {
         }
     }
 
-    synchronized void timeout() {
+    private synchronized void timeout() {
         if (timer != null) {
             timer.cancel();
             timer = null;
