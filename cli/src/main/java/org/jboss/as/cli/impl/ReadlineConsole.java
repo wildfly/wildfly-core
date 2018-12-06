@@ -146,8 +146,9 @@ public class ReadlineConsole {
 
         private final Consumer<int[]> interceptor;
         private Thread connectionThread;
+        private final ReadlineConsole console;
 
-        CLITerminalConnection(Terminal terminal) {
+        CLITerminalConnection(Terminal terminal, ReadlineConsole console) {
             super(terminal);
             interceptor = (int[] ints) -> {
                 if (isTraceEnabled) {
@@ -156,11 +157,24 @@ public class ReadlineConsole {
                 }
                 CLITerminalConnection.super.stdoutHandler().accept(ints);
             };
+            this.console = console;
         }
 
         @Override
         public Consumer<int[]> stdoutHandler() {
             return interceptor;
+        }
+
+        @Override
+        public void setAttributes(Attributes attr) {
+            // Console already closed with Ctrl-c,
+            // aesh AeshInputProcessor.finish would reset the attributes
+            // to original ones, in our case we are in raw (AESH-463) so
+            // ignore these attributes. During connection.close the original
+            // attributes have been set back by the connection.
+            if (!console.closed) {
+                super.setAttributes(attr);
+            }
         }
 
         /**
@@ -462,7 +476,9 @@ public class ReadlineConsole {
                 if (signal == Signal.INT) {
                     LOG.trace("Calling InterruptHandler");
                     connection.write(Config.getLineSeparator());
-                    connection.close();
+                    // Put the console in closed state. No more readline
+                    // input handler can be set when closed.
+                    stop();
                 }
             };
             connection.setSignalHandler(interruptHandler);
@@ -514,7 +530,7 @@ public class ReadlineConsole {
         if (isTraceEnabled) {
             LOG.tracef("New Terminal %s", terminal.getClass());
         }
-        CLITerminalConnection c = new CLITerminalConnection(terminal);
+        CLITerminalConnection c = new CLITerminalConnection(terminal, this);
         isSystemTerminal = c.supportsAnsi();
 
         return c;
