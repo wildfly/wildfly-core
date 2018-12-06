@@ -34,10 +34,12 @@ import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.EndpointBuilder;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
+
 /**
  * An MSC service for Remoting endpoints.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class EndpointService implements Service<Endpoint> {
 
@@ -69,8 +71,6 @@ public class EndpointService implements Service<Endpoint> {
         } catch (IOException e) {
             throw RemotingLogger.ROOT_LOGGER.couldNotStart(e);
         }
-        // TODO: this is not really how we want to do this though; we want to set a context-sensitive default
-        Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(endpoint);
         // Reuse the options for the remote connection factory for now
         this.endpoint = endpoint;
     }
@@ -85,8 +85,6 @@ public class EndpointService implements Service<Endpoint> {
         } finally {
             endpoint.addCloseHandler((closed, exception) -> {
                 context.complete();
-                // TODO fix this later
-                Endpoint.ENDPOINT_CONTEXT_MANAGER.setGlobalDefault(null);
             });
         }
     }
