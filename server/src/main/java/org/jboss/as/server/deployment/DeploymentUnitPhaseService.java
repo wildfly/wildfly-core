@@ -23,11 +23,13 @@
 package org.jboss.as.server.deployment;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.LifecycleEvent;
@@ -134,6 +136,26 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
                 target.addToAttachmentList((AttachmentKey) attachedDependency.getAttachmentKey(), attachedDependency.getValue().getValue());
             } else {
                 target.putAttachment((AttachmentKey) attachedDependency.getAttachmentKey(), attachedDependency.getValue().getValue());
+            }
+        }
+
+        Set<String> subSystemNames = list.stream().map(e -> e.getSubsystemName()).collect(Collectors.toSet());
+        Set<String> registeredSubSystems = (phase == Phase.STRUCTURE) ? new HashSet<>() : deploymentUnit.getAttachment(Attachments.REGISTERED_SUBSYSTEMS);
+        registeredSubSystems.addAll(subSystemNames);
+        deploymentUnit.putAttachment(Attachments.REGISTERED_SUBSYSTEMS, registeredSubSystems);
+
+        if (phase == Phase.CLEANUP) {
+            // WFCORE-4233 check all excluded subsystems via jboss-deployment-structure.xml are valid in last Phase.CLEANUP
+            Set<String> excludedSubSystems = deploymentUnit.getAttachment(Attachments.EXCLUDED_SUBSYSTEMS);
+            if (excludedSubSystems == null && deploymentUnit.getParent() != null) {
+                excludedSubSystems = deploymentUnit.getParent().getAttachment(Attachments.EXCLUDED_SUBSYSTEMS);
+            }
+            if (excludedSubSystems != null) {
+                for (String sub : excludedSubSystems) {
+                    if (!registeredSubSystems.contains(sub)) {
+                        ServerLogger.DEPLOYMENT_LOGGER.excludedSubSystemsNotExist(sub);
+                    }
+                }
             }
         }
 
