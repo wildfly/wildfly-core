@@ -16,9 +16,9 @@ $STANDALONE_CONF_FILE = Get-Env RUN_CONF $STANDALONE_CONF_FILE
 
 Write-Debug "debug is: $global:DEBUG_MODE"
 Write-Debug "debug port: $global:DEBUG_PORT"
-Write-Debug "sec mgr: $global:SECMGR"
+Write-Debug "sec mgr: $SECMGR"
 
-if ($global:SECMGR) {
+if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }
 # Set debug settings if not already set
