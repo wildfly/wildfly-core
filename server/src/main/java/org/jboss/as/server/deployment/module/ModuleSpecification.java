@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.as.server.deployment.SimpleAttachable;
 import org.jboss.modules.DependencySpec;
@@ -82,6 +83,11 @@ public class ModuleSpecification extends SimpleAttachable {
     private final Set<ModuleIdentifier> exclusions = new HashSet<ModuleIdentifier>();
 
     /**
+     * A subset of found dependencies that are excluded in process of deployment, as the user has excluded them
+     */
+    private final Set<ModuleIdentifier> excludedDependencies = new HashSet<ModuleIdentifier>();
+
+    /**
      * Flag that is set to true if modules of non private sub deployments should be able to see each other
      */
     private boolean subDeploymentModulesIsolated;
@@ -130,6 +136,8 @@ public class ModuleSpecification extends SimpleAttachable {
         if (!exclusions.contains(dependency.getIdentifier()) && !systemDependenciesSet.contains(dependency.getIdentifier())) {
             this.systemDependencies.add(dependency);
             this.systemDependenciesSet.add(dependency.getIdentifier());
+        } else {
+            excludedDependencies.add(dependency.getIdentifier());
         }
     }
 
@@ -154,6 +162,8 @@ public class ModuleSpecification extends SimpleAttachable {
         allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
             this.localDependencies.add(dependency);
+        } else {
+            excludedDependencies.add(dependency.getIdentifier());
         }
     }
 
@@ -361,5 +371,10 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     public List<PermissionFactory> getPermissionFactories() {
         return permissionFactories;
+    }
+
+    public Set<ModuleIdentifier> getNonexistentExcludedDependencies() {
+        // WFCORE-4234 check all excluded dependencies via jboss-deployment-structure.xml are also valid.
+        return exclusions.stream().filter(e -> !excludedDependencies.contains(e)).collect(Collectors.toSet());
     }
 }
