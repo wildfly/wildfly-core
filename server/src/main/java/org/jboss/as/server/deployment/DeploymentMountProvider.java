@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment;
 
-
 import static java.security.AccessController.doPrivileged;
 
 import java.io.Closeable;
@@ -32,15 +31,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
@@ -51,6 +52,7 @@ import org.jboss.vfs.VirtualFile;
  * Provides VFS mounts of deployment content.
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface DeploymentMountProvider {
 
@@ -75,26 +77,26 @@ public interface DeploymentMountProvider {
 
     static class Factory {
         public static void addService(final ServiceTarget serviceTarget) {
-            ServerDeploymentRepositoryImpl service = new ServerDeploymentRepositoryImpl();
-            org.jboss.as.server.Services.addServerExecutorDependency(
-                    serviceTarget.addService(DeploymentMountProvider.SERVICE_NAME, service),
-                    service.injectedExecutorService)
-                    .install();
+            //ServerDeploymentRepositoryImpl service = new ServerDeploymentRepositoryImpl();
+            final ServiceBuilder<?> sb = serviceTarget.addService(DeploymentMountProvider.SERVICE_NAME);
+            final Consumer<DeploymentMountProvider> dmpConsumer = sb.provides(DeploymentMountProvider.SERVICE_NAME);
+            final Supplier<ExecutorService> esSupplier = org.jboss.as.server.Services.requireServerExecutor(sb);
+            sb.setInstance(new ServerDeploymentRepositoryImpl(dmpConsumer, esSupplier));
+            sb.install();
         }
 
         /**
          * Default implementation of {@link DeploymentMountProvider}.
          */
-        private static class ServerDeploymentRepositoryImpl implements DeploymentMountProvider, Service<DeploymentMountProvider> {
-
-            private final InjectedValue<ExecutorService> injectedExecutorService = new InjectedValue<ExecutorService>();
+        private static class ServerDeploymentRepositoryImpl implements DeploymentMountProvider, Service {
+            private final Consumer<DeploymentMountProvider> deploymentMountProviderConsumer;
+            private final Supplier<ExecutorService> executorSupplier;
             private volatile TempFileProvider tempFileProvider;
             private volatile ScheduledExecutorService scheduledExecutorService;
 
-            /**
-             * Creates a new ServerDeploymentRepositoryImpl.
-             */
-            private ServerDeploymentRepositoryImpl() {
+            private ServerDeploymentRepositoryImpl(final Consumer<DeploymentMountProvider> deploymentMountProviderConsumer, final Supplier<ExecutorService> executorSupplier) {
+                this.deploymentMountProviderConsumer = deploymentMountProviderConsumer;
+                this.executorSupplier = executorSupplier;
             }
 
             @Override
@@ -123,6 +125,7 @@ public interface DeploymentMountProvider {
                     });
                     scheduledExecutorService =  Executors.newScheduledThreadPool(2, threadFactory);
                     tempFileProvider = TempFileProvider.create("temp", scheduledExecutorService, true);
+                    deploymentMountProviderConsumer.accept(this);
                 } catch (IOException e) {
                     throw ServerLogger.ROOT_LOGGER.failedCreatingTempProvider(e);
                 }
@@ -135,6 +138,7 @@ public interface DeploymentMountProvider {
                     @Override
                     public void run() {
                         try {
+                            deploymentMountProviderConsumer.accept(null);
                             VFSUtils.safeClose(tempFileProvider);
                         } finally {
                             try {
@@ -150,7 +154,7 @@ public interface DeploymentMountProvider {
                         }
                     }
                 };
-                final ExecutorService executorService = injectedExecutorService.getValue();
+                final ExecutorService executorService = executorSupplier.get();
                 try {
                     try {
                         executorService.execute(r);
@@ -160,12 +164,6 @@ public interface DeploymentMountProvider {
                 } finally {
                     context.asynchronous();
                 }
-            }
-
-
-            @Override
-            public DeploymentMountProvider getValue() throws IllegalStateException {
-                return this;
             }
 
         }

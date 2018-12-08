@@ -16,7 +16,7 @@ limitations under the License.
 
 package org.jboss.as.server.deployment;
 
-import static org.jboss.as.server.Services.addServerExecutorDependency;
+import static org.jboss.as.server.Services.requireServerExecutor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,20 +25,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.ExplodedContentException;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironmentService;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -47,32 +49,44 @@ import org.jboss.vfs.VirtualFile;
  * content repo to the jboss.server.data.dir.
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class ManagedExplodedContentServitor implements Service<VirtualFile> {
+class ManagedExplodedContentServitor implements Service {
 
-    private final InjectedValue<ContentRepository> contentRepositoryInjectedValue = new InjectedValue<ContentRepository>();
-    private final InjectedValue<ServerEnvironment> serverEnvironmentInjectedValue = new InjectedValue<ServerEnvironment>();
-    private final InjectedValue<ExecutorService> executorInjectedValue = new InjectedValue<ExecutorService>();
+    private final Consumer<VirtualFile> virtualFileConsumer;
+    private final Supplier<ContentRepository> contentRepositorySupplier;
+    private final Supplier<ServerEnvironment> serverEnvironmentSupplier;
+    private final Supplier<ExecutorService> executorSupplier;
     private final String managementName;
     private final byte[] hash;
     private volatile Path deploymentRoot;
 
     static ServiceController<?> addService(final ServiceTarget serviceTarget, final ServiceName serviceName, final String managementName, final byte[] hash) {
-        final ManagedExplodedContentServitor service = new ManagedExplodedContentServitor(managementName, hash);
-        return addServerExecutorDependency(serviceTarget.addService(serviceName, service), service.executorInjectedValue)
-                .addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.contentRepositoryInjectedValue)
-                .addDependency(ServerEnvironmentService.SERVICE_NAME, ServerEnvironment.class, service.serverEnvironmentInjectedValue)
-                .install();
+        final ServiceBuilder<?> sb = serviceTarget.addService(serviceName);
+        final Consumer<VirtualFile> vfConsumer = sb.provides(serviceName);
+        final Supplier<ContentRepository> crSupplier = sb.requires(ContentRepository.SERVICE_NAME);
+        final Supplier<ServerEnvironment> seSupplier = sb.requires(ServerEnvironmentService.SERVICE_NAME);
+        final Supplier<ExecutorService> esSupplier = requireServerExecutor(sb);
+        sb.setInstance(new ManagedExplodedContentServitor(managementName, hash, vfConsumer, crSupplier, seSupplier, esSupplier));
+        return sb.install();
     }
 
-    private ManagedExplodedContentServitor(final String managementName, final byte[] hash) {
+    private ManagedExplodedContentServitor(final String managementName, final byte[] hash,
+                                           final Consumer<VirtualFile> virtualFileConsumer,
+                                           final Supplier<ContentRepository> contentRepositorySupplier,
+                                           final Supplier<ServerEnvironment> serverEnvironmentSupplier,
+                                           final Supplier<ExecutorService> executorSupplier) {
         this.managementName = managementName;
         this.hash = hash;
+        this.virtualFileConsumer = virtualFileConsumer;
+        this.contentRepositorySupplier = contentRepositorySupplier;
+        this.serverEnvironmentSupplier = serverEnvironmentSupplier;
+        this.executorSupplier = executorSupplier;
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
-        final Path root = DeploymentHandlerUtil.getExplodedDeploymentRoot(serverEnvironmentInjectedValue.getValue(), managementName);
+        final Path root = DeploymentHandlerUtil.getExplodedDeploymentRoot(serverEnvironmentSupplier.get(), managementName);
 
         Runnable task = new Runnable() {
             @Override
@@ -95,8 +109,9 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
                     }
 
                     Files.createDirectories(root.getParent());
-                    contentRepositoryInjectedValue.getValue().copyExplodedContent(hash, root);
+                    contentRepositorySupplier.get().copyExplodedContent(hash, root);
                     deploymentRoot = root;
+                    virtualFileConsumer.accept(VFS.getChild(deploymentRoot.toAbsolutePath().toString()));
                     context.complete();
                 } catch (IOException | ExplodedContentException e) {
                     context.failed(new StartException(e));
@@ -104,7 +119,7 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
             }
         };
         try {
-            executorInjectedValue.getValue().execute(task);
+            executorSupplier.get().execute(task);
         } catch (RejectedExecutionException e) {
             task.run();
         } finally {
@@ -122,6 +137,7 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
                 @Override
                 public void run() {
                     try {
+                        virtualFileConsumer.accept(null);
                         CountDownLatch latch = asyncCleanup(theRoot);
                         if (latch != null) {
                             try {
@@ -141,7 +157,7 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
                 }
             };
             try {
-                executorInjectedValue.getValue().execute(task);
+                executorSupplier.get().execute(task);
             } catch (RejectedExecutionException e) {
                 task.run();
             } finally {
@@ -149,14 +165,6 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
             }
 
         }
-    }
-
-    @Override
-    public VirtualFile getValue() {
-        if (deploymentRoot == null) {
-            throw new IllegalStateException();
-        }
-        return VFS.getChild(deploymentRoot.toAbsolutePath().toString());
     }
 
     private CountDownLatch asyncCleanup(Path root) throws IOException {
@@ -173,7 +181,7 @@ class ManagedExplodedContentServitor implements Service<VirtualFile> {
                     }
                 }
             };
-            executorInjectedValue.getValue().submit(r);
+            executorSupplier.get().submit(r);
         } else {
             result = null;
         }

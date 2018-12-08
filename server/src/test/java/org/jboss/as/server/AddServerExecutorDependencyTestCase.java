@@ -25,6 +25,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -37,7 +38,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.msc.value.Value;
 import org.junit.After;
 import org.junit.Assert;
@@ -101,7 +101,7 @@ public class AddServerExecutorDependencyTestCase {
     }
 
     /**
-     * Tests that Services.addServerExecutorDependency's dependency injection works regardless of what
+     * Tests that Services.requireServerExecutor's dependency injection works regardless of what
      * ServiceTarget API was used for creating the target ServiceBuilder.
      */
     @SuppressWarnings("deprecation")
@@ -115,15 +115,16 @@ public class AddServerExecutorDependencyTestCase {
         ServiceController<?> executorController =
                 serviceTarget.addService(ServerService.MANAGEMENT_EXECUTOR, mscExecutorService).install();
 
-        TestService legacy = new TestService();
-        ServiceBuilder<ExecutorService> legacyBuilder = serviceTarget.addService(ServiceName.of("LEGACY"), legacy);
-        ServiceController<?> legacyController =
-                Services.addServerExecutorDependency(legacyBuilder, legacy.injector).install();
+        //TestService legacy = new TestService();
+        ServiceBuilder<?> legacyBuilder = serviceTarget.addService(ServiceName.of("LEGACY"));
+        TestService legacy = new TestService(Services.requireServerExecutor(legacyBuilder));
+        legacyBuilder.setInstance(legacy);
+        ServiceController<?> legacyController = legacyBuilder.install();
 
-        TestService current = new TestService();
         ServiceBuilder<?> currentBuilder = serviceTarget.addService(ServiceName.of("CURRENT"));
-        ServiceController<?> currentController =
-                Services.addServerExecutorDependency(currentBuilder.setInstance(current), current.injector).install();
+        TestService current = new TestService(Services.requireServerExecutor(currentBuilder));
+        currentBuilder.setInstance(current);
+        ServiceController<?> currentController = currentBuilder.install();
 
         try {
             container.awaitStability(60, TimeUnit.SECONDS);
@@ -143,13 +144,17 @@ public class AddServerExecutorDependencyTestCase {
     @SuppressWarnings("deprecation")
     private static class TestService implements Service<ExecutorService>, org.jboss.msc.Service {
 
-        private final InjectedValue<ExecutorService> injector = new InjectedValue<>();
+        private final Supplier<ExecutorService> supplier;
 
         private ExecutorService value;
 
+        private TestService(final Supplier<ExecutorService> supplier) {
+            this.supplier = supplier;
+        }
+
         @Override
         public void start(StartContext context) throws StartException {
-            value = injector.getValue();
+            value = supplier.get();
         }
 
         @Override
