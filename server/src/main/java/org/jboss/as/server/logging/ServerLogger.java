@@ -1332,6 +1332,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 273, value = "Excluded subsystem %s via jboss-deployment-structure.xml does not exist.")
     void excludedSubSystemsNotExist(String subSystem);
 
+    @LogMessage(level = WARN)
+    @Message(id = 274, value = "Excluded dependency %s via jboss-deployment-structure.xml does not exist.")
+    void excludedDependenciesNotExist(String dependency);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
