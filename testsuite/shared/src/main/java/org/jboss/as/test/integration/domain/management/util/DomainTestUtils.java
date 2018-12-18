@@ -22,9 +22,6 @@
 
 package org.jboss.as.test.integration.domain.management.util;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.client.ModelControllerClient;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
@@ -42,15 +39,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import org.jboss.as.test.integration.management.util.MgmtOperationException;
-import org.jboss.dmr.ModelNode;
-import org.junit.Assert;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 
 /**
  * @author Emanuel Muckenhuber
@@ -203,7 +204,19 @@ public class DomainTestUtils {
      * @throws IOException
      */
     public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
-        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS, "status");
+    }
+
+    /**
+     * Wait until a server reached a given suspend state or fail if the timeout was reached.
+     *
+     * @param client        the controller client
+     * @param serverAddress the server address
+     * @param state         the required state
+     * @throws IOException
+     */
+    public static void waitUntilSuspendState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
+        waitUntilState(client, serverAddress, state, DEFAULT_TIMEOUT, TimeUnit.SECONDS, "suspend-state");
     }
 
     /**
@@ -303,14 +316,14 @@ public class DomainTestUtils {
      * @param unit the time unit
      * @throws IOException
      */
-    public static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String required, final long timeout, final TimeUnit unit) throws IOException {
+    private static void waitUntilState(final ModelControllerClient client, final PathAddress serverAddress, final String required, final long timeout, final TimeUnit unit, final String attrName) throws IOException {
         final long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         for(;;) {
             final long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {
                 break;
             }
-            if (checkState(client, serverAddress, required)) {
+            if (getState(client, serverAddress, attrName).equals(required)) {
                 return;
             }
             try {
@@ -320,7 +333,7 @@ public class DomainTestUtils {
                 return;
             }
         }
-        final String state = getServerState(client, serverAddress);
+        final String state = getState(client, serverAddress, attrName);
         Assert.assertEquals(serverAddress.toString(), required, state);
     }
 
@@ -333,13 +346,7 @@ public class DomainTestUtils {
      * @throws IOException
      */
     public static String getServerState(final ModelControllerClient client, final PathAddress serverAddress) throws IOException {
-        final ModelNode operation = new ModelNode();
-        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).set(serverAddress.toModelNode());
-        operation.get(NAME).set("status");
-
-        ModelNode status = client.execute(operation);
-        return status.get(RESULT).asString();
+        return getState(client, serverAddress, "status");
     }
 
     /**
@@ -351,7 +358,7 @@ public class DomainTestUtils {
      * @return {@code true} if the state matches, {@code false} otherwise
      * @throws IOException
      */
-    public static boolean checkState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
+    public static boolean checkServerState(final ModelControllerClient client, final PathAddress serverAddress, final String state) throws IOException {
         final String serverState = getServerState(client, serverAddress);
         return state.equals(serverState);
     }
@@ -367,4 +374,13 @@ public class DomainTestUtils {
         return createOperation(op, address.toModelNode());
     }
 
+    private static String getState(final ModelControllerClient client, final PathAddress serverAddress, final String attrName) throws IOException {
+        final ModelNode operation = new ModelNode();
+        operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        operation.get(OP_ADDR).set(serverAddress.toModelNode());
+        operation.get(NAME).set(attrName);
+
+        ModelNode status = client.execute(operation);
+        return status.get(RESULT).asString();
+    }
 }

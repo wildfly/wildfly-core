@@ -66,7 +66,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_
 import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.LAUNCH_TYPE;
 import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.server.controller.descriptions.ServerDescriptionConstants.RUNTIME_CONFIGURATION_STATE;
-import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkServerState;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.getServerConfigAddress;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.startServer;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
@@ -247,7 +247,7 @@ public class ServerManagementTestCase {
         Assert.assertTrue(exists(client, newRunningServerAddress));
 
         startServer(client, "slave", "new-server");
-        Assert.assertTrue(checkState(client, newServerConfigAddress, "STARTED"));
+        Assert.assertTrue(checkServerState(client, newServerConfigAddress, "STARTED"));
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
@@ -273,7 +273,7 @@ public class ServerManagementTestCase {
         stopServer.get("blocking").set(true);
         result = client.execute(stopServer);
         DomainTestSupport.validateResponse(result);
-        Assert.assertTrue(checkState(client, newServerConfigAddress, "DISABLED"));
+        Assert.assertTrue(checkServerState(client, newServerConfigAddress, "DISABLED"));
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
@@ -319,7 +319,7 @@ public class ServerManagementTestCase {
 
         executeForResult(client, operation);
 
-        Assert.assertTrue(checkState(client, address, "STARTED"));
+        Assert.assertTrue(checkServerState(client, address, "STARTED"));
     }
 
     @Test
@@ -738,7 +738,7 @@ public class ServerManagementTestCase {
 
     private void resetServerToExpectedState(final ModelControllerClient client, final String hostName, final String serverName, final String state) throws IOException {
         final PathAddress serverConfigAddress = PathAddress.pathAddress(HOST, hostName).append(SERVER_CONFIG, serverName);
-        if (!checkState(client, serverConfigAddress, state)) {
+        if (!checkServerState(client, serverConfigAddress, state)) {
             final ModelNode operation = new ModelNode();
             operation.get(OP_ADDR).set(serverConfigAddress.toModelNode());
             if (state.equals("STARTED")) {

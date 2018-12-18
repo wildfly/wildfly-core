@@ -502,6 +502,7 @@ public class ModelDescriptionConstants {
     public static final String SOURCE_FILE = "source-file";
     public static final String SOURCE_NETWORK = "source-network";
     public static final String SSL_PROTOCOL = "ssl-protocol";
+    public static final String SUSPEND_TIMEOUT = "suspend-timeout";
     public static final String OPERATION_REQUIRES_RELOAD = "operation-requires-reload";
     public static final String OPERATION_REQUIRES_RESTART = "operation-requires-restart";
     public static final String RELOAD_SERVERS = "reload-servers";

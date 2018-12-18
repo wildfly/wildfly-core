@@ -76,7 +76,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WHE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
-import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkState;
+import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkServerState;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -1213,6 +1213,6 @@ public class CoreResourceManagementTestCase {
         operation.get(BLOCKING).set(true);
         ModelNode response = client.execute(operation);
         validateResponse(response, true);
-        Assert.assertTrue(checkState(client, serverAddress, "STARTED"));
+        Assert.assertTrue(checkServerState(client, serverAddress, "STARTED"));
     }
 }

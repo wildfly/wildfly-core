@@ -183,7 +183,7 @@ public class SlaveSynchronizationTestCase {
     @Test
     public void testRemoveRunningServer() throws Exception {
        PathAddress mainOneAddress = PathAddress.pathAddress("host", "hc2").append("server-config", "server-one");
-       Assert.assertTrue(DomainTestUtils.checkState(masterClient, mainOneAddress, "STARTED"));
+       Assert.assertTrue(DomainTestUtils.checkServerState(masterClient, mainOneAddress, "STARTED"));
        ModelNode result = masterClient.execute(Util.createRemoveOperation(mainOneAddress));
        ModelNode failure = DomainTestSupport.validateFailedResponse(result);
        Assert.assertTrue("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString().matches("WFLYHC0078.+server-one.*"));
