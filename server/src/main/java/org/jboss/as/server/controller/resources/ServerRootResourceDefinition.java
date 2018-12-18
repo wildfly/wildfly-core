@@ -242,11 +242,27 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .setValidator(EnumValidator.create(StartMode.class))
             .build();
 
-    /** The 'timeout' parameter for server lifecycle ops */
+    /**
+     * The 'timeout' parameter for server lifecycle ops
+     * @deprecated Since Version 9.0.0, use suspend-timeout instead.
+     */
+    @Deprecated
     public static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
             .setDefaultValue(new ModelNode(0))
             .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .setAlternatives(ModelDescriptionConstants.SUSPEND_TIMEOUT)
+            .setDeprecated(ModelVersion.create(9, 0))
+            .build();
+
+    /**
+     * The 'suspend-timeout' parameter for server lifecycle ops
+     */
+    public static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT)
+            .setDefaultValue(new ModelNode(0))
+            .setRequired(false)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .setAlternatives(ModelDescriptionConstants.TIMEOUT)
             .build();
 
     private final boolean isDomain;
@@ -392,7 +408,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             //
             // We don't register 'start' because for this code to even run the user already started the server
             // and we don't need to offer 'start' any more
-            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(STOP, ModelType.STRING, null, BLOCKING, TIMEOUT), NoopOperationStepHandler.WITHOUT_RESULT);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(STOP, ModelType.STRING, null, BLOCKING, TIMEOUT, SUSPEND_TIMEOUT), NoopOperationStepHandler.WITHOUT_RESULT);
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESTART, ModelType.STRING, null, BLOCKING, START_MODE), NoopOperationStepHandler.WITHOUT_RESULT);
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(DESTROY, null, null), NoopOperationStepHandler.WITHOUT_RESULT);
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(KILL, null, null), NoopOperationStepHandler.WITHOUT_RESULT);
@@ -403,7 +419,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final ServerDomainProcessReloadHandler reloadHandler = new ServerDomainProcessReloadHandler(Services.JBOSS_AS, runningModeControl, processState, operationIDUpdater, serverEnvironment);
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RELOAD, ModelType.STRING, null, BLOCKING, START_MODE), reloadHandler);
 
-            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(SUSPEND, null, null, TIMEOUT), ServerSuspendHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(SUSPEND, null, null, TIMEOUT, SUSPEND_TIMEOUT), ServerSuspendHandler.INSTANCE);
 
             resourceRegistration.registerOperationHandler(getDomainServerLifecycleDefinition(RESUME, null, null), ServerResumeHandler.INSTANCE);
 
@@ -576,6 +592,21 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             builder.setDeprecated(deprecatedSince);
         }
         return builder.build();
+    }
+
+    /**
+     * Renames the deprecated attribute 'timeout' by 'suspend-timeout' for the current operation.
+     * <p>
+     * If the 'timeout' attribute is found in the operation and 'suspend-timeout' is not being used, the value of this
+     * 'timeout' is used as the 'suspend-timeout' and the 'timeout' attribute is removed from the operation.
+     *
+     * @param operation The current operation
+     */
+    public static void renameTimeoutToSuspendTimeout(ModelNode operation) {
+        if (!operation.hasDefined(SUSPEND_TIMEOUT.getName()) && operation.hasDefined(TIMEOUT.getName())) {
+            operation.get(SUSPEND_TIMEOUT.getName()).set(operation.get(TIMEOUT.getName()));
+            operation.remove(TIMEOUT.getName());
+        }
     }
 
     private enum StartMode {

@@ -23,13 +23,16 @@
 package org.jboss.as.test.integration.domain.suites;
 
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ANNOTATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESTROY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.KILL;
@@ -44,20 +47,30 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REPLY_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESUME_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_SERVERS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE_CURRENT_HOST_CONFIG;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 
 import java.io.IOException;
@@ -272,6 +285,7 @@ public class ManagementReadsTestCase {
 
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
+        validateDomainLifecycleOps(response);
         // TODO make some more assertions about result content
     }
 
@@ -303,11 +317,13 @@ public class ManagementReadsTestCase {
 
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
+        validateHostLifecycleOps(response, true);
         // TODO make some more assertions about result content
 
         request.get(OP_ADDR).setEmptyList().add(HOST, "slave");
         response = domainClient.execute(request);
         validateResponse(response);
+        validateHostLifecycleOps(response, false);
     }
 
     @Test
@@ -550,8 +566,8 @@ public class ManagementReadsTestCase {
             Assert.assertFalse(operations.toString(), operations.hasDefined(START));
             validateOperation(operations, RESTART, ModelType.STRING, BLOCKING, START_MODE);
             validateOperation(operations, RELOAD, ModelType.STRING, BLOCKING, START_MODE);
-            validateOperation(operations, STOP, ModelType.STRING, BLOCKING, TIMEOUT);
-            validateOperation(operations, SUSPEND, null, TIMEOUT);
+            validateOperation(operations, STOP, ModelType.STRING, BLOCKING, TIMEOUT, SUSPEND_TIMEOUT);
+            validateOperation(operations, SUSPEND, null, TIMEOUT, SUSPEND_TIMEOUT);
             validateOperation(operations, RESUME, null);
             validateOperation(operations, DESTROY, null);
             validateOperation(operations, KILL, null);
@@ -565,6 +581,28 @@ public class ManagementReadsTestCase {
             Assert.assertFalse(operations.toString(), operations.hasDefined(DESTROY));
             Assert.assertFalse(operations.toString(), operations.hasDefined(KILL));
         }
+    }
+
+    private static void validateDomainLifecycleOps(ModelNode response) {
+        ModelNode operations = response.get(RESULT, OPERATIONS);
+        validateOperation(operations, RELOAD_SERVERS, null, BLOCKING, START_MODE);
+        validateOperation(operations, RESTART_SERVERS, null, BLOCKING, START_MODE);
+        validateOperation(operations, RESUME_SERVERS, null);
+        validateOperation(operations, START_SERVERS, null, BLOCKING, START_MODE);
+        validateOperation(operations, STOP_SERVERS, null, BLOCKING, TIMEOUT, SUSPEND_TIMEOUT);
+        validateOperation(operations, SUSPEND_SERVERS,  null, TIMEOUT, SUSPEND_TIMEOUT);
+    }
+
+    private static void validateHostLifecycleOps(ModelNode response, boolean isMaster) {
+        ModelNode operations = response.get(RESULT, OPERATIONS);
+        if (isMaster) {
+            validateOperation(operations, RELOAD, null, ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_DOMAIN_CONFIG, USE_CURRENT_HOST_CONFIG, DOMAIN_CONFIG, HOST_CONFIG);
+        } else {
+            validateOperation(operations, RELOAD, null, ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG);
+        }
+        validateOperation(operations, SHUTDOWN, null, RESTART);
+        validateOperation(operations, RESUME_SERVERS, null);
+        validateOperation(operations, SUSPEND_SERVERS,null, SUSPEND_TIMEOUT);
     }
 
     private static void validateOperation(ModelNode operations, String name, ModelType replyType, String... params) {

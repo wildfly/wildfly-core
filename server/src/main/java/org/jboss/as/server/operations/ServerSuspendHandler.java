@@ -25,7 +25,9 @@ package org.jboss.as.server.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +56,7 @@ public class ServerSuspendHandler implements OperationStepHandler {
 
     public static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SUSPEND,
                 ServerDescriptions.getResourceDescriptionResolver(RUNNING_SERVER))
-            .setParameters(TIMEOUT)
+            .setParameters(TIMEOUT, SUSPEND_TIMEOUT)
             .setRuntimeOnly()
             .build();
 
@@ -64,8 +66,9 @@ public class ServerSuspendHandler implements OperationStepHandler {
     @Override
     public void execute(final OperationContext context, ModelNode operation) throws OperationFailedException {
         // Acquire the controller lock to prevent new write ops and wait until current ones are done
-        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in seconds, need to convert to ms
         context.acquireControllerLock();
+        renameTimeoutToSuspendTimeout(operation);
+        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
 
         context.addStep(new OperationStepHandler() {
             @Override

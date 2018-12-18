@@ -24,7 +24,9 @@ package org.jboss.as.server.operations;
 
 
 import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.EnumSet;
 
@@ -55,7 +57,7 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
 
 
     public static final SimpleOperationDefinition DOMAIN_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.SHUTDOWN, ServerDescriptions.getResourceDescriptionResolver())
-            .setParameters(TIMEOUT)
+            .setParameters(TIMEOUT, SUSPEND_TIMEOUT)
             .setPrivateEntry()
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY, OperationEntry.Flag.RUNTIME_ONLY)
             .build();
@@ -63,7 +65,8 @@ public class ServerDomainProcessShutdownHandler implements OperationStepHandler 
     @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.acquireControllerLock();
-        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in milliseconds, as this is what is passed in from the HC
+        renameTimeoutToSuspendTimeout(operation);
+        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt(); //in milliseconds, as this is what is passed in from the HC
         // Acquire the controller lock to prevent new write ops and wait until current ones are done
         context.acquireControllerLock();
         context.addStep(new OperationStepHandler() {

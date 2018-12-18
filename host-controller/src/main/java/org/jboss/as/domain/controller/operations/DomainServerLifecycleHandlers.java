@@ -44,6 +44,7 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BlockingTimeout;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationDefinition;
@@ -90,8 +91,19 @@ public class DomainServerLifecycleHandlers {
             .setValidator(new EnumValidator<>(StartMode.class, true, true))
             .build();
 
+    @Deprecated
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
-            .setMeasurementUnit(MeasurementUnit.SECONDS).setDefaultValue(new ModelNode(0)).build();
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .setDefaultValue(new ModelNode(0))
+            .setAlternatives(ModelDescriptionConstants.SUSPEND_TIMEOUT)
+            .setDeprecated(ModelVersion.create(9, 0))
+            .build();
+
+    private static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .setAlternatives(ModelDescriptionConstants.TIMEOUT)
+            .setDefaultValue(new ModelNode(0))
+            .build();
 
     private static final AttributeDefinition HOST_SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
@@ -166,6 +178,7 @@ public class DomainServerLifecycleHandlers {
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .addParameter(BLOCKING)
                 .addParameter(TIMEOUT)
+                .addParameter(SUSPEND_TIMEOUT)
                 .setRuntimeOnly()
                 .build();
     }
@@ -176,7 +189,8 @@ public class DomainServerLifecycleHandlers {
                 DomainResolver.getResolver(serverGroup ? ModelDescriptionConstants.SERVER_GROUP : ModelDescriptionConstants.DOMAIN))
                 .setRuntimeOnly();
         if (operationName.equals(SUSPEND_SERVERS_NAME)) {
-            builder.setParameters(TIMEOUT);
+            builder.setParameters(TIMEOUT)
+                    .addParameter(SUSPEND_TIMEOUT);
         }
         return builder.build();
     }
@@ -258,9 +272,12 @@ public class DomainServerLifecycleHandlers {
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             context.acquireControllerLock();
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
+            renameTimeoutToSuspendTimeout(operation);
+
             final String group = getServerGroupName(operation);
             final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
-            final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+            final int suspendTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -270,14 +287,14 @@ public class DomainServerLifecycleHandlers {
                         final Set<String> waitForServers = new HashSet<String>();
                         final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
                         for (String server : getServersForGroup(model, group)) {
-                            serverInventory.stopServer(server, timeout);
+                            serverInventory.stopServer(server, suspendTimeout);
                             waitForServers.add(server);
                         }
                         if (blocking) {
                             serverInventory.awaitServersState(waitForServers, false);
                         }
                     } else {
-                        serverInventory.stopServers(timeout, blocking);
+                        serverInventory.stopServers(suspendTimeout, blocking);
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 }
@@ -414,9 +431,11 @@ public class DomainServerLifecycleHandlers {
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.acquireControllerLock();
             context.readResource(PathAddress.EMPTY_ADDRESS, false);
+            renameTimeoutToSuspendTimeout(operation);
+
             final ModelNode model = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
             final String group = getServerGroupName(operation);
-            final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); // timeout in seconds, by default is 0
+            final int suspendTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
             final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
 
@@ -608,10 +627,14 @@ public class DomainServerLifecycleHandlers {
     }
 
     public static void registerServerLifeCycleOperationsTransformers(ResourceTransformationDescriptionBuilder builder) {
-        builder.addOperationTransformationOverride(SUSPEND_SERVERS).setReject().end()
+        builder.addOperationTransformationOverride(SUSPEND_SERVERS)
+                .setReject()
+                .end()
                 .discardOperations(RESUME_SERVERS) //If the legacy slave was not able to suspend a server, then nothing is suspended and the "resume" can be interpreted as having worked.
                 .addOperationTransformationOverride(STOP_SERVERS)
+                .addRename(SUSPEND_TIMEOUT, TIMEOUT.getName())
                 .addRejectCheck(RejectAttributeChecker.DEFINED, TIMEOUT)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SUSPEND_TIMEOUT)
                 .end();
     }
 
@@ -640,6 +663,15 @@ public class DomainServerLifecycleHandlers {
                 .end();
     }
 
+    public static void registerTimeoutToSuspendTimeoutRename(ResourceTransformationDescriptionBuilder builder) {
+        builder.addOperationTransformationOverride(SUSPEND_SERVERS)
+                .addRename(SUSPEND_TIMEOUT, TIMEOUT.getName())
+                .end()
+                .addOperationTransformationOverride(STOP_SERVERS)
+                .addRename(SUSPEND_TIMEOUT, TIMEOUT.getName())
+                .end();
+    }
+
     enum StartMode {
         NORMAL("normal"),
         SUSPEND("suspend");
@@ -656,4 +688,10 @@ public class DomainServerLifecycleHandlers {
         }
     }
 
+    private static void renameTimeoutToSuspendTimeout(ModelNode operation) {
+        if (!operation.hasDefined(SUSPEND_TIMEOUT.getName()) && operation.hasDefined(TIMEOUT.getName())) {
+            operation.get(SUSPEND_TIMEOUT.getName()).set(operation.get(TIMEOUT.getName()));
+            operation.remove(TIMEOUT.getName());
+        }
+    }
 }

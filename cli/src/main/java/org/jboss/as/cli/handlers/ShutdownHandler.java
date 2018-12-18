@@ -51,7 +51,9 @@ public class ShutdownHandler extends BaseOperationCommand {
 
     private final ArgumentWithValue restart;
     private final ArgumentWithValue host;
+    @Deprecated
     private final ArgumentWithValue timeout;
+    private final ArgumentWithValue suspendTimeout;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
     private PerNodeOperationAccess hostShutdownPermission;
 
@@ -66,6 +68,22 @@ public class ShutdownHandler extends BaseOperationCommand {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
                 if (ctx.isDomainMode()) {
+                    return false;
+                }
+                if (suspendTimeout.isPresent(ctx.getParsedCommandLine())) {
+                    return false;
+                }
+                return super.canAppearNext(ctx);
+            }
+        };
+
+        suspendTimeout = new ArgumentWithValue(this, "--suspend-timeout") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                if (ctx.isDomainMode()) {
+                    return false;
+                }
+                if (timeout.isPresent(ctx.getParsedCommandLine())) {
                     return false;
                 }
                 return super.canAppearNext(ctx);
@@ -187,15 +205,25 @@ public class ShutdownHandler extends BaseOperationCommand {
             if(timeout.isPresent(args)){
                 throw new CommandFormatException(timeout.getFullName() + " is not allowed in the domain mode.");
             }
+
+            if (suspendTimeout.isPresent(args)) {
+                throw new CommandFormatException(suspendTimeout.getFullName() + " is not allowed in the domain mode.");
+            }
         } else {
             if(host.isPresent(args)) {
                 throw new CommandFormatException(host.getFullName() + " is not allowed in the standalone mode.");
             }
+
+            if (timeout.isPresent(args) && suspendTimeout.isPresent(args)) {
+                throw new CommandFormatException(timeout.getFullName() + " cannot be used in conjunction with suspend-timeout.");
+            }
+
             op.get(Util.ADDRESS).setEmptyList();
         }
         op.get(Util.OPERATION).set(Util.SHUTDOWN);
         setBooleanArgument(args, op, restart, Util.RESTART);
         setIntArgument(args, op, timeout, Util.TIMEOUT);
+        setIntArgument(args, op, suspendTimeout, Util.SUSPEND_TIMEOUT);
         return op;
     }
 

@@ -22,7 +22,8 @@
 
 package org.jboss.as.host.controller.operations;
 
-import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.Collections;
 import java.util.List;
@@ -55,8 +56,9 @@ public class ServerSuspendHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
+        renameTimeoutToSuspendTimeout(operation);
         final String serverName = context.getCurrentAddressValue();
-        final int suspendTimeout = TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds, by default is 0
+        final int suspendTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt(); //timeout in seconds, by default is 0
         final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
         context.addStep(new OperationStepHandler() {

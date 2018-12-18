@@ -47,9 +47,13 @@ class ServerGroupTransformers {
         //////////////////////////////////
         //The EAP/AS 7.x chains
 
+        //timeout attribute renamed to suspend-timeout in Version 9.0. Must be renamed for 8.0 and below
+        ResourceTransformationDescriptionBuilder currentTo80 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_8_0);
+        DomainServerLifecycleHandlers.registerTimeoutToSuspendTimeoutRename(currentTo80);
+
         // kill-servers and destroy-servers are rejected since 5.0 and below
-        ResourceTransformationDescriptionBuilder currentTo50 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_5_0);
-        DomainServerLifecycleHandlers.registerKillDestroyTransformers(currentTo50);
+        ResourceTransformationDescriptionBuilder builder60to50 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_6_0, KernelAPIVersion.VERSION_5_0);
+        DomainServerLifecycleHandlers.registerKillDestroyTransformers(builder60to50);
 
         // The use of default-interface attribute in socket-binding-group is rejected since 1.8 and below
         ResourceTransformationDescriptionBuilder builder20to18 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_2_0, KernelAPIVersion.VERSION_1_8)

@@ -31,7 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.START_MODE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIMEOUT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_TIMEOUT;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.io.IOException;
@@ -738,7 +738,7 @@ class ManagedServer {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(SUSPEND);
         operation.get(OP_ADDR).setEmptyList();
-        operation.get(TIMEOUT).set(timeoutInSeconds);
+        operation.get(SUSPEND_TIMEOUT).set(timeoutInSeconds);
 
         return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
@@ -747,7 +747,7 @@ class ManagedServer {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(SHUTDOWN);
         operation.get(OP_ADDR).setEmptyList();
-        operation.get(TIMEOUT).set(timeoutInSeconds);
+        operation.get(SUSPEND_TIMEOUT).set(timeoutInSeconds);
 
         return protocolClient.execute(listener, operation, OperationMessageHandler.DISCARD, OperationAttachments.EMPTY);
     }
