@@ -37,7 +37,70 @@
     </exports>
 
     <resources>
-        <artifact name="${org.wildfly.security:wildfly-elytron}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-asn1}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-audit}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth-server}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth-server-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth-server-http}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth-server-sasl}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-auth-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-base}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-client}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-credential}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-credential-store}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-digest}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-basic}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-bearer}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-cert}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-digest}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-form}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-spnego}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-sso}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jacc}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jaspi}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-json-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-keystore}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-digest}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-http}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-gssapi}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-oauth2}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-scram}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-password-impl}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-permission}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-realm}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-realm-jdbc}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-realm-ldap}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-realm-token}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-auth-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-anonymous}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-digest}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-entity}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-external}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-gs2}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-gssapi}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-localuser}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-oauth2}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-otp}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-plain}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-scram}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-security-manager}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-security-manager-action}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-ssl}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert-acme}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert-util}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-x500-principal}"/>
     </resources>
 
     <dependencies>
