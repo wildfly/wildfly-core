@@ -753,7 +753,7 @@ public class JBossDeploymentStructureParser11 implements XMLElementReader<ParseR
                         } else if(child.isFile()) {
                             closable = VFS.mountZip(child, child, TempFileProviderService.provider());
                         }
-                        final MountHandle mountHandle = new MountHandle(closable);
+                        final MountHandle mountHandle = MountHandle.create(closable);
                         final ResourceRoot resourceRoot = new ResourceRoot(name, child, mountHandle);
                         for (final FilterSpecification filter : resourceFilters) {
                             resourceRoot.getExportFilters().add(filter);

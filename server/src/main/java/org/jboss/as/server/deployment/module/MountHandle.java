@@ -25,6 +25,9 @@ package org.jboss.as.server.deployment.module;
 import java.io.Closeable;
 
 import org.jboss.vfs.VFSUtils;
+import org.wildfly.common.ref.CleanerReference;
+import org.wildfly.common.ref.Reaper;
+import org.wildfly.common.ref.Reference;
 
 /**
  * Wrapper object to hold onto and close a VFS mount handle.
@@ -36,13 +39,35 @@ import org.jboss.vfs.VFSUtils;
  * @author Stuart Douglas
  */
 public class MountHandle implements Closeable {
+
+    private static final Reaper<MountHandle, Closeable> REAPER = new Reaper<MountHandle, Closeable>() {
+        @Override
+        public void reap(Reference<MountHandle, Closeable> reference) {
+            VFSUtils.safeClose(reference.getAttachment());
+        }
+    };
+
+    public static MountHandle create(final Closeable handle) {
+        @SuppressWarnings("deprecation")
+        MountHandle mountHandle = new MountHandle(handle);
+        if (handle != null) {
+            // Use a PhantomReference instead of overriding finalize() to ensure close gets called
+            // CleanerReference handles ensuring there's a strong ref to itself so we can just construct it and move on
+            new CleanerReference<MountHandle, Closeable>(mountHandle, handle, REAPER);
+        }
+        return mountHandle;
+    }
+
     private final Closeable handle;
 
     /**
      * Construct new instance with the mount handle to close.
      *
      * @param handle The mount handle to close
+     *
+     * @deprecated Use {@link #create(Closeable)}
      */
+    @Deprecated
     public MountHandle(final Closeable handle) {
         this.handle = handle;
     }
@@ -54,13 +79,5 @@ public class MountHandle implements Closeable {
         if (handle != null) {
             VFSUtils.safeClose(handle);
         }
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        if (handle != null) {
-            VFSUtils.safeClose(handle);
-        }
-        super.finalize();
     }
 }

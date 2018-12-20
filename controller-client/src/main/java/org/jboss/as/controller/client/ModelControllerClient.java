@@ -606,7 +606,7 @@ public interface ModelControllerClient extends Closeable {
          * @return the client
          */
         public static ModelControllerClient create(final ModelControllerClientConfiguration configuration) {
-            final ModelControllerClient result =  new RemotingModelControllerClient(configuration);
+            final ModelControllerClient result =  RemotingModelControllerClient.create(configuration);
             Contextual<?> contextual = null;
             final URI authenticationConfig = configuration.getAuthenticationConfigUri();
             if (authenticationConfig != null) {
