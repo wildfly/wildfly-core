@@ -600,7 +600,7 @@ public class ManagementReadsTestCase {
         } else {
             validateOperation(operations, RELOAD, null, ADMIN_ONLY, RESTART_SERVERS, USE_CURRENT_HOST_CONFIG, HOST_CONFIG);
         }
-        validateOperation(operations, SHUTDOWN, null, RESTART);
+        validateOperation(operations, SHUTDOWN, null, RESTART, SUSPEND_TIMEOUT);
         validateOperation(operations, RESUME_SERVERS, null);
         validateOperation(operations, SUSPEND_SERVERS,null, SUSPEND_TIMEOUT);
     }

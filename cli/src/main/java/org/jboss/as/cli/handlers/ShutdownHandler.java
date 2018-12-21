@@ -80,9 +80,6 @@ public class ShutdownHandler extends BaseOperationCommand {
         suspendTimeout = new ArgumentWithValue(this, "--suspend-timeout") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                if (ctx.isDomainMode()) {
-                    return false;
-                }
                 if (timeout.isPresent(ctx.getParsedCommandLine())) {
                     return false;
                 }
@@ -206,9 +203,6 @@ public class ShutdownHandler extends BaseOperationCommand {
                 throw new CommandFormatException(timeout.getFullName() + " is not allowed in the domain mode.");
             }
 
-            if (suspendTimeout.isPresent(args)) {
-                throw new CommandFormatException(suspendTimeout.getFullName() + " is not allowed in the domain mode.");
-            }
         } else {
             if(host.isPresent(args)) {
                 throw new CommandFormatException(host.getFullName() + " is not allowed in the standalone mode.");

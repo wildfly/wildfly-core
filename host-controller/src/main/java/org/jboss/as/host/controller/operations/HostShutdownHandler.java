@@ -21,11 +21,16 @@ package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -35,16 +40,20 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
+import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.DomainController;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.SystemExiter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 
 /**
  * Stops a host.
@@ -60,17 +69,27 @@ public class HostShutdownHandler implements OperationStepHandler {
     private static final AttributeDefinition RESTART = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN, true)
             .setRequired(false)
             .build();
+
+    private static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
+            .setMeasurementUnit(MeasurementUnit.SECONDS)
+            .setDefaultValue(new ModelNode(0))
+            .build();
+
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
             .addParameter(RESTART)
+            .addParameter(SUSPEND_TIMEOUT)
             .withFlag(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .setRuntimeOnly()
             .build();
 
+    private final ServerInventory serverInventory;
+
     /**
      * Create the ServerAddHandler
      */
-    public HostShutdownHandler(final DomainController domainController) {
+    public HostShutdownHandler(final DomainController domainController, ServerInventory serverInventory) {
         this.domainController = domainController;
+        this.serverInventory = serverInventory;
     }
 
     /**
@@ -79,6 +98,10 @@ public class HostShutdownHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         final boolean restart = RESTART.validateOperation(operation).asBoolean(false);
+        final Resource hostResource = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final int suspendTimeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+        final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
+
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -95,21 +118,48 @@ public class HostShutdownHandler implements OperationStepHandler {
                     throw ControllerLogger.ACCESS_LOGGER.unauthorized(operation.get(OP).asString(),
                             PathAddress.pathAddress(operation.get(OP_ADDR)), authorizationResult.getExplanation());
                 }
-                SystemExiter.logBeforeExit(new SystemExiter.ExitLogger() {
+
+
+                Set<String> servers = getServersForHost(hostResource);
+                final List<ModelNode> errorResponses = serverInventory.suspendServers(servers, suspendTimeout, blockingTimeout);
+                if (!errorResponses.isEmpty()) {
+                    context.getFailureDescription().set(errorResponses);
+                }
+
+                context.completeStep(new OperationContext.ResultHandler() {
                     @Override
-                    public void logExit() {
-                        HostControllerLogger.ROOT_LOGGER.shuttingDownInResponseToManagementRequest(getOperationName(operation));
+                    public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                        if(resultAction == OperationContext.ResultAction.KEEP) {
+                            SystemExiter.logBeforeExit(new SystemExiter.ExitLogger() {
+                                @Override
+                                public void logExit() {
+                                    HostControllerLogger.ROOT_LOGGER.shuttingDownInResponseToManagementRequest(getOperationName(operation));
+                                }
+                            });
+
+                            if (restart) {
+                                //Add the exit code so that we get respawned
+                                domainController.stopLocalHost(ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT);
+                            } else {
+                                domainController.stopLocalHost();
+                            }
+                        }
                     }
                 });
-                if (restart) {
-                    //Add the exit code so that we get respawned
-                    domainController.stopLocalHost(ExitCodes.RESTART_PROCESS_FROM_STARTUP_SCRIPT);
-                } else {
-                    domainController.stopLocalHost();
-                }
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    Set<String> getServersForHost(final Resource hostResource) {
+        final Set<String> servers = new HashSet<>();
+        final ModelNode hostModel = Resource.Tools.readModel(hostResource);
+        final ModelNode serverConfig = hostModel.get(SERVER_CONFIG);
+        if (serverConfig.isDefined()) {
+            for (Property config : serverConfig.asPropertyList()) {
+                servers.add(config.getName());
+            }
+        }
+        return servers;
     }
 
     private static String getOperationName(ModelNode op) {
