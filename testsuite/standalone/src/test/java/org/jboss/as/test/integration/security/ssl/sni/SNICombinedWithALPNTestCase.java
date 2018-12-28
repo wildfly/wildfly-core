@@ -179,7 +179,7 @@ public class SNICombinedWithALPNTestCase {
                     .addClasses(UndertowServiceActivator.DEPENDENCIES)
                     .addClasses(UndertowSSLService.class)
                     .addAsResource(new StringAsset("Dependencies: io.undertow.core"), "META-INF/MANIFEST.MF")
-                    .addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(UndertowServiceActivator.appendPermissions(new FilePermission("-", "read"),
+                    .addAsManifestResource(PermissionUtils.createPermissionsXmlAsset(UndertowServiceActivator.appendPermissions(new FilePermission("<<ALL FILES>>", "read"),
                             new RuntimePermission("getClassLoader"),
                             new RuntimePermission("accessDeclaredMembers"),
                             new RuntimePermission("accessClassInPackage.sun.security.ssl"),
