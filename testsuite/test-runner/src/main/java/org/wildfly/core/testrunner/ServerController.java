@@ -137,9 +137,13 @@ public class ServerController {
     }
 
     public void stop() {
+        stop(false);
+    }
+
+    public void stop(boolean forcibly) {
         if (server != null) {
             try {
-                server.stop();
+                server.stop(forcibly);
             } finally {
                 server = null;
                 started.set(false);

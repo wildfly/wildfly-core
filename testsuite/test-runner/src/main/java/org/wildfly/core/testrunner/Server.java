@@ -239,22 +239,23 @@ public class Server {
         }
     }
 
-    protected void stop() {
+    protected void stop(boolean forcibly) {
         if (shutdownThread != null) {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
             shutdownThread = null;
         }
         try {
             if (process != null) {
-                try {
-                    // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
-                    client.getControllerClient().executeAsync(Operations.createOperation("shutdown"), null);
-                } catch (AssertionError | RuntimeException e) {
-                    //ignore as this can only fail if shutdown is already in progress
+                if (! forcibly) {
+                    try {
+                        // AS7-6620: Create the shutdown operation and run it asynchronously and wait for process to terminate
+                        client.getControllerClient().executeAsync(Operations.createOperation("shutdown"), null);
+                    } catch (AssertionError | RuntimeException e) {
+                        //ignore as this can only fail if shutdown is already in progress
+                    }
                 }
 
-
-                if (!process.waitFor(stopTimeout, TimeUnit.SECONDS)) {
+                if (forcibly || !process.waitFor(stopTimeout, TimeUnit.SECONDS)) {
                     // The process hasn't shutdown within the specified timeout. Terminate forcibly.
                     process.destroy();
                     process.waitFor();
