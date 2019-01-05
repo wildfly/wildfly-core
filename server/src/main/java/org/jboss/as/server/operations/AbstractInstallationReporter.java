@@ -325,10 +325,12 @@ public abstract class AbstractInstallationReporter implements OperationStepHandl
         }
 
         String getLastUpdateDate() {
-            List<ModelNode> result = Operations.readResult(patchingInfo).asList();
-            for (ModelNode patchAtt : result) {
-                if (patchAtt.has("applied-at")) {
-                    return patchAtt.get("applied-at").asString();
+            if (patchingInfo.isDefined()) {
+                List<ModelNode> result = Operations.readResult(patchingInfo).asList();
+                for (ModelNode patchAtt : result) {
+                    if (patchAtt.has("applied-at")) {
+                        return patchAtt.get("applied-at").asString();
+                    }
                 }
             }
             return null;
