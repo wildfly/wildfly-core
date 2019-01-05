@@ -24,6 +24,7 @@ package org.jboss.as.server;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 
@@ -41,7 +42,7 @@ import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
-import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
@@ -53,6 +54,7 @@ import org.xnio.OptionMap;
  * Service activator for the communication services of a managed server in a domain.
  *
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DomainServerCommunicationServices  implements ServiceActivator, Serializable {
 
@@ -99,13 +101,13 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             ManagementRemotingServices.installRemotingManagementEndpoint(serviceTarget, endpointName, WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.NODE_NAME, null), endpointType, options);
 
             // Install the communication services
-            HostControllerConnectionService service = new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier);
-            Services.addServerExecutorDependency(serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME, service), service.getExecutorInjector())
-                    .addDependency(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR, ScheduledExecutorService.class, service.getScheduledExecutorInjector())
-                    .addDependency(endpointName, Endpoint.class, service.getEndpointInjector())
-                    .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getProcessStateServiceInjectedValue())
-                    .setInitialMode(ServiceController.Mode.ACTIVE).install();
-
+            final ServiceBuilder<?> sb = serviceTarget.addService(HostControllerConnectionService.SERVICE_NAME);
+            final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(sb);
+            final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
+            final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
+            final Supplier<ControlledProcessStateService> cpssSupplier = sb.requires(ControlledProcessStateService.SERVICE_NAME);
+            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpssSupplier));
+            sb.install();
         } catch (OperationFailedException e) {
             throw new ServiceRegistryException(e);
         }

@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
@@ -42,14 +43,13 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.core.management.client.Process;
 import org.wildfly.extension.core.management.client.Process.RunningState;
 import org.wildfly.extension.core.management.client.RuntimeConfigurationStateChangeEvent;
@@ -65,14 +65,15 @@ import org.wildfly.extension.core.management.client.ProcessStateListenerInitPara
  *
  * @author <a href="http://jmesnil.net/">Jeff Mesnil</a> (c) 2016 Red Hat inc.
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2016 Red Hat, inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class ProcessStateListenerService implements Service<Void> {
+public class ProcessStateListenerService implements Service {
 
     static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("core", "management", "process-state-listener");
 
-    private final InjectedValue<ControlledProcessStateService> controlledProcessStateService = new InjectedValue<>();
-    private final InjectedValue<SuspendController> suspendControllerInjectedValue = new InjectedValue<>();
-    private final InjectedValue<ExecutorService> executorServiceValue = new InjectedValue<>();
+    private final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier;
+    private final Supplier<SuspendController> suspendControllerSupplier;
+    private final Supplier<ExecutorService> executorServiceSupplier;
     private final PropertyChangeListener propertyChangeListener;
     private final OperationListener operationListener;
     private final ProcessStateListener listener;
@@ -84,7 +85,11 @@ public class ProcessStateListenerService implements Service<Void> {
 
     private volatile Process.RunningState runningState = null;
 
-    private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout) {
+    private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout,
+                                        final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier,
+                                        final Supplier<SuspendController> suspendControllerSupplier,
+                                        final Supplier<ExecutorService> executorServiceSupplier
+    ) {
         CoreManagementLogger.ROOT_LOGGER.debugf("Initalizing ProcessStateListenerService with a running mode of %s", runningMode);
         this.listener = listener;
         this.name = name;
@@ -102,6 +107,9 @@ public class ProcessStateListenerService implements Service<Void> {
                 transition(oldState, newState);
             }
         };
+        this.controlledProcessStateServiceSupplier = controlledProcessStateServiceSupplier;
+        this.suspendControllerSupplier = suspendControllerSupplier;
+        this.executorServiceSupplier = executorServiceSupplier;
         if (!processType.isHostController()) {
             this.operationListener = new OperationListener() {
                 @Override
@@ -144,7 +152,7 @@ public class ProcessStateListenerService implements Service<Void> {
                 return;
             }
             final RuntimeConfigurationStateChangeEvent event = new RuntimeConfigurationStateChangeEvent(oldState, newState);
-            Future<?> controlledProcessStateTransition = executorServiceValue.getValue().submit(() -> {
+            Future<?> controlledProcessStateTransition = executorServiceSupplier.get().submit(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runtimeConfigurationStateChanged %s in thread %s", event, Thread.currentThread().getName());
                 listener.runtimeConfigurationStateChanged(event);
             });
@@ -209,7 +217,7 @@ public class ProcessStateListenerService implements Service<Void> {
             }
             this.runningState = newState;
             final RunningStateChangeEvent event = new RunningStateChangeEvent(oldState, newState);
-            Future<?> suspendStateTransition = executorServiceValue.getValue().submit(() -> {
+            Future<?> suspendStateTransition = executorServiceSupplier.get().submit(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runningStateChanged %s in thread %s", event, Thread.currentThread().getName());
                 listener.runningStateChanged(event);
             });
@@ -231,23 +239,22 @@ public class ProcessStateListenerService implements Service<Void> {
     }
 
     static void install(ServiceTarget serviceTarget, ProcessType processType, RunningMode runningMode, String listenerName, ProcessStateListener listener, Map<String, String> properties, int timeout) {
-        ProcessStateListenerService service = new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout);
-        ServiceBuilder<Void> builder = serviceTarget.addService(SERVICE_NAME.append(listenerName), service)
-                .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.controlledProcessStateService);
-        if (!processType.isHostController()) {
-            builder.addDependency(JBOSS_SUSPEND_CONTROLLER, SuspendController.class, service.suspendControllerInjectedValue);
-        }
-        Services.addServerExecutorDependency(builder, service.executorServiceValue);
+        final ServiceBuilder<?> builder = serviceTarget.addService(SERVICE_NAME.append(listenerName));
+        final Supplier<ControlledProcessStateService> cpssSupplier = builder.requires(ControlledProcessStateService.SERVICE_NAME);
+        final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(builder);
+        final Supplier<SuspendController> scSupplier = !processType.isHostController() ? builder.requires(JBOSS_SUSPEND_CONTROLLER) : null;
+        builder.setInstance(new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout, cpssSupplier, scSupplier, esSupplier));
         builder.install();
     }
 
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(StartContext context) {
         Runnable task = () -> {
             try {
                 ProcessStateListenerService.this.listener.init(parameters);
-                controlledProcessStateService.getValue().addPropertyChangeListener(propertyChangeListener);
-                SuspendController controller = ProcessStateListenerService.this.suspendControllerInjectedValue.getOptionalValue();
+                controlledProcessStateServiceSupplier.get().addPropertyChangeListener(propertyChangeListener);
+                final Supplier<SuspendController> suspendControllerSupplier = ProcessStateListenerService.this.suspendControllerSupplier;
+                SuspendController controller = suspendControllerSupplier != null ? suspendControllerSupplier.get() : null;
                 if (controller != null) {
                     controller.addListener(operationListener);
                     CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a SuspendControllerState %s", controller.getState());
@@ -263,7 +270,7 @@ public class ProcessStateListenerService implements Service<Void> {
                             }
                             break;
                         case SUSPENDED:
-                            if (controlledProcessStateService.getValue().getCurrentState() == State.STARTING) {
+                            if (controlledProcessStateServiceSupplier.get().getCurrentState() == State.STARTING) {
                                 this.runningState = Process.RunningState.STARTING;
                             } else {
                                 this.runningState = Process.RunningState.SUSPENDED;
@@ -274,8 +281,8 @@ public class ProcessStateListenerService implements Service<Void> {
                             break;
                     }
                 } else {
-                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a ControllerProcessState of %s", controlledProcessStateService.getValue().getCurrentState());
-                    if (controlledProcessStateService.getValue().getCurrentState() == State.STARTING) {
+                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a ControllerProcessState of %s", controlledProcessStateServiceSupplier.get().getCurrentState());
+                    if (controlledProcessStateServiceSupplier.get().getCurrentState() == State.STARTING) {
                         this.runningState = Process.RunningState.STARTING;
                     } else {
                         if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
@@ -291,7 +298,7 @@ public class ProcessStateListenerService implements Service<Void> {
             }
         };
         try {
-            executorServiceValue.getValue().execute(task);
+            executorServiceSupplier.get().execute(task);
         } catch (RejectedExecutionException e) {
             task.run();
         } finally {
@@ -308,8 +315,8 @@ public class ProcessStateListenerService implements Service<Void> {
     public void stop(StopContext context) {
         Runnable asyncStop = () -> {
             synchronized (stopLock) {
-                controlledProcessStateService.getValue().removePropertyChangeListener(propertyChangeListener);
-                SuspendController controller = suspendControllerInjectedValue.getOptionalValue();
+                controlledProcessStateServiceSupplier.get().removePropertyChangeListener(propertyChangeListener);
+                SuspendController controller = suspendControllerSupplier != null ? suspendControllerSupplier.get() : null;
                 if (controller != null) {
                     controller.removeListener(operationListener);
                 }
@@ -323,7 +330,7 @@ public class ProcessStateListenerService implements Service<Void> {
                 }
             }
         };
-        final ExecutorService executorService = executorServiceValue.getValue();
+        final ExecutorService executorService = executorServiceSupplier.get();
         try {
             try {
                 executorService.execute(asyncStop);
@@ -333,10 +340,5 @@ public class ProcessStateListenerService implements Service<Void> {
         } finally {
             context.asynchronous();
         }
-    }
-
-    @Override
-    public Void getValue() throws IllegalStateException, IllegalArgumentException {
-        return null;
     }
 }

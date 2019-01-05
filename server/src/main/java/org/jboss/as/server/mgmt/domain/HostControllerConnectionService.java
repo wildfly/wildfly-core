@@ -57,7 +57,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
@@ -66,6 +65,7 @@ import org.xnio.OptionMap;
  * Service setting up the connection to the local host controller.
  *
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class HostControllerConnectionService implements Service<HostControllerClient> {
 
@@ -74,10 +74,10 @@ public class HostControllerConnectionService implements Service<HostControllerCl
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
     private static final long SERVER_CONNECTION_TIMEOUT = 60000;
 
-    private final InjectedValue<ExecutorService> executorInjector = new InjectedValue<ExecutorService>();
-    private final InjectedValue<ScheduledExecutorService> scheduledExecutorInjector = new InjectedValue<>();
-    private final InjectedValue<Endpoint> endpointInjector = new InjectedValue<Endpoint>();
-    private final InjectedValue<ControlledProcessStateService> processStateServiceInjectedValue = new InjectedValue<ControlledProcessStateService>();
+    private final Supplier<ExecutorService> executorSupplier;
+    private final Supplier<ScheduledExecutorService> scheduledExecutorSupplier;
+    private final Supplier<Endpoint> endpointSupplier;
+    private final Supplier<ControlledProcessStateService> processStateServiceSupplier;
 
     private final URI connectionURI;
     private final String serverName;
@@ -93,7 +93,11 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     public HostControllerConnectionService(final URI connectionURI, final String serverName, final String serverProcessName,
                                            final String authKey, final int connectOperationID,
-                                           final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier) {
+                                           final boolean managementSubsystemEndpoint, final Supplier<SSLContext> sslContextSupplier,
+                                           final Supplier<ExecutorService> executorSupplier,
+                                           final Supplier<ScheduledExecutorService> scheduledExecutorSupplier,
+                                           final Supplier<Endpoint> endpointSupplier,
+                                           final Supplier<ControlledProcessStateService> processStateServiceSupplier) {
         this.connectionURI= connectionURI;
         this.serverName = serverName;
         this.userName = DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX + serverName;
@@ -106,12 +110,16 @@ public class HostControllerConnectionService implements Service<HostControllerCl
         } else {
             this.sslContextSupplier = HostControllerConnectionService::getAcceptingSSLContext;
         }
+        this.executorSupplier = executorSupplier;
+        this.scheduledExecutorSupplier = scheduledExecutorSupplier;
+        this.endpointSupplier = endpointSupplier;
+        this.processStateServiceSupplier = processStateServiceSupplier;
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public synchronized void start(final StartContext context) throws StartException {
-        final Endpoint endpoint = endpointInjector.getValue();
+        final Endpoint endpoint = endpointSupplier.get();
         try {
             // we leave local auth enabled as an option for domain servers to use if available. elytron only configuration
             // will require this to be enabled and available on the server side for servers to connect successfully.
@@ -121,12 +129,12 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
-            this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorInjector.getValue());
+            this.responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());
             // Create the connection
             final HostControllerConnection connection = new HostControllerConnection(serverProcessName, userName, connectOperationID,
-                    configuration, responseAttachmentSupport, executorInjector.getValue());
+                    configuration, responseAttachmentSupport, executorSupplier.get());
             // Trigger the started notification based on the process state listener
-            final ControlledProcessStateService processService = processStateServiceInjectedValue.getValue();
+            final ControlledProcessStateService processService = processStateServiceSupplier.get();
             processService.addPropertyChangeListener(new PropertyChangeListener() {
                 @Override
                 public void propertyChange(final PropertyChangeEvent evt) {
@@ -144,7 +152,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                 }
             });
             this.client = new HostControllerClient(serverName, connection.getChannelHandler(), connection,
-                    managementSubsystemEndpoint, executorInjector.getValue());
+                    managementSubsystemEndpoint, executorSupplier.get());
         } catch (Exception e) {
             throw new StartException(e);
         }
@@ -152,7 +160,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     @Override
     public synchronized void stop(final StopContext stopContext) {
-        final ExecutorService executorService = executorInjector.getValue();
+        final ExecutorService executorService = executorSupplier.get();
         final Runnable task = new Runnable() {
             @Override
             public void run() {
@@ -181,22 +189,6 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             throw new IllegalStateException();
         }
         return client;
-    }
-
-    public InjectedValue<ControlledProcessStateService> getProcessStateServiceInjectedValue() {
-        return processStateServiceInjectedValue;
-    }
-
-    public InjectedValue<Endpoint> getEndpointInjector() {
-        return endpointInjector;
-    }
-
-    public InjectedValue<ExecutorService> getExecutorInjector() {
-        return executorInjector;
-    }
-
-    public InjectedValue<ScheduledExecutorService> getScheduledExecutorInjector() {
-        return scheduledExecutorInjector;
     }
 
     private static SSLContext getAcceptingSSLContext() {
