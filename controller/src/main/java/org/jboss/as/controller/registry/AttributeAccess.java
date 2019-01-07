@@ -151,7 +151,23 @@ public final class AttributeAccess {
          * Support for use of an expression for the value of this attribute is deprecated
          * and may be removed in a future release.
          */
-        EXPRESSIONS_DEPRECATED;
+        EXPRESSIONS_DEPRECATED,
+        /**
+         * The attribute represents a Gauge metric, a single numerical value that can arbitrarily go up and down.
+         *
+         * If the attribute is registered as a metric without specifying the {@link #GAUGE_METRIC} or {@link #COUNTER_METRIC} flag,
+         * it is considered as a gauge.
+         *
+         * {@link #GAUGE_METRIC} and {@link #COUNTER_METRIC} are mutually exclusive.
+         */
+        GAUGE_METRIC,
+        /**
+         * The attribute represents a Counter metric, a cumulative metric that represents a single monotonically
+         * increasing counter whose value can only increase or be reset to zero on restart.
+         *
+         * {@link #GAUGE_METRIC} and {@link #COUNTER_METRIC} are mutually exclusive.
+         */
+        COUNTER_METRIC;
 
         private static final Map<EnumSet<AttributeAccess.Flag>, Set<AttributeAccess.Flag>> flagSets = new ConcurrentHashMap<>(16);
         public static Set<AttributeAccess.Flag> immutableSetOf(AttributeAccess.Flag... flags) {

@@ -1,5 +1,8 @@
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.GAUGE_METRIC;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -19,16 +22,19 @@ class ClassLoadingResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
     private static SimpleAttributeDefinition LOADED_CLASS_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.LOADED_CLASS_COUNT, ModelType.INT, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(GAUGE_METRIC)
             .build();
     private static SimpleAttributeDefinition UNLOADED_CLASS_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.UNLOADED_CLASS_COUNT, ModelType.LONG, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
     //r+w attributes
     private static SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.VERBOSE, ModelType.BOOLEAN, false)
