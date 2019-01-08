@@ -36,11 +36,13 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
@@ -52,6 +54,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Parsing and marshalling logic specific to system properties.
@@ -68,6 +71,8 @@ class SystemPropertiesXml {
 
     void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address,
             final Namespace expectedNs, final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
+
+        Properties properties = WildFlySecurityManager.getSystemPropertiesPrivileged();
 
         while (reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
@@ -130,6 +135,17 @@ class SystemPropertiesXml {
             if (!setName) {
                 throw ParseUtils.missingRequired(reader, Collections.singleton(NAME));
             }
+
+            try {
+                String newPropertyValue = SystemPropertyResourceDefinition.VALUE.resolveValue(ExpressionResolver.SIMPLE, op.get(VALUE)).asString();
+                String oldPropertyValue = properties.getProperty(name);
+                if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue)) {
+                    ControllerLogger.ROOT_LOGGER.systemPropertyAlreadyExist(name, oldPropertyValue, newPropertyValue);
+                }
+            } catch (OperationFailedException e) {
+                ServerLogger.AS_ROOT_LOGGER.tracef(e, "Failed to resolve value for system property %s at parse time.", name);
+            }
+
             if(standalone) {
                 //eagerly set the property so it can potentially be used by jboss modules
                 //only do this for standalone servers
