@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ProcessType;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.remoting.HttpListenerRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.BootstrapListener;
@@ -257,11 +258,24 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
             Thread executorShutdown = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    boolean interrupted = false;
                     try {
                         executorService.shutdown();
+                        executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        interrupted = true;
                     } finally {
-                        executorService = null;
-                        context.complete();
+                        try {
+                            List<Runnable> tasks = executorService.shutdownNow();
+                            executorService = null;
+                            if (!interrupted) {
+                                for (Runnable task : tasks) {
+                                    HostControllerLogger.ROOT_LOGGER.debugf("%s -- Discarding unexecuted task %s", getClass().getSimpleName(), task);
+                                }
+                            }
+                        } finally {
+                            context.complete();
+                        }
                     }
                 }
             }, "HostController ExecutorService Shutdown Thread");

@@ -33,6 +33,7 @@ import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_CORE
 import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_THREADS;
 
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.ExecutorService;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -217,6 +218,8 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         final WorkerService workerService = new WorkerService(builder);
         context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY, workerService)
+                .addCapabilityRequirement("org.wildfly.management.executor",
+                        ExecutorService.class, workerService.injectedExecutor)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)
                 .install();
     }
