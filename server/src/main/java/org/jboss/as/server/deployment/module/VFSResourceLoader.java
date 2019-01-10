@@ -45,7 +45,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.AbstractResourceLoader;
@@ -64,6 +67,7 @@ import org.jboss.vfs.VirtualFilePermission;
 import org.jboss.vfs.VisitorAttributes;
 import org.jboss.vfs.util.FilterVirtualFileVisitor;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.manager.action.ReadPropertyAction;
 
 /**
  * Resource loader capable of loading resources from VFS archives.
@@ -73,10 +77,24 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class VFSResourceLoader extends AbstractResourceLoader implements IterableResourceLoader {
 
+    private static final String MR_PREFIX = "META-INF/versions/";
+    private static final int RELEASE;
+    private static final Attributes.Name MULTI_RELEASE_NAME = new Attributes.Name("Multi-Release");
+
+    static {
+        final Matcher matcher = Pattern.compile("^(?:1\\.)?([0-9]+)").matcher(doPrivileged(new ReadPropertyAction("java.version")));
+        if (matcher.find()) {
+            RELEASE = Integer.parseInt(matcher.group(1));
+        } else {
+            RELEASE = 8;
+        }
+    }
+
     private final VirtualFile root;
     private final String rootName;
     private final Manifest manifest;
     private final URL rootUrl;
+    private final boolean multiRelease;
 
     // protected by {@code this}
     private final Map<CodeSigners, CodeSource> codeSources = new HashMap<>();
@@ -123,7 +141,32 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                 throw new UndeclaredThrowableException(e);
             }
         }
+        // "A multi-release jar file is a jar file that contains a manifest with a main attribute named "Multi-Release", [...]"
+        multiRelease = manifest != null && manifest.getMainAttributes().containsKey(MULTI_RELEASE_NAME);
         rootUrl = usePhysicalCodeSource ? VFSUtils.getRootURL(root) : root.asFileURL();
+    }
+
+    VirtualFile getExistentVirtualFile(final String name) {
+        VirtualFile file;
+        int version = RELEASE;
+        if (multiRelease) while (version >= 9) {
+            file = root.getChild(MR_PREFIX + version + "/" + name);
+            if (file.exists()) {
+                return file;
+            }
+            version --;
+        }
+        file = root.getChild(name);
+        return file.exists() ? file : null;
+    }
+
+    /**
+     * Determine if this resource root is a multi-release root.
+     *
+     * @return {@code true} if it is a multi-release root, {@code false} otherwise
+     */
+    public boolean isMultiRelease() {
+        return multiRelease;
     }
 
     /** {@inheritDoc} */
@@ -131,10 +174,8 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
         try {
             return doPrivileged(new PrivilegedExceptionAction<ClassSpec>() {
                 public ClassSpec run() throws Exception {
-                    final VirtualFile file = root.getChild(name);
-                    if (!file.exists()) {
-                        return null;
-                    }
+                    final VirtualFile file = getExistentVirtualFile(name);
+                    if (file == null) return null;
                     final long size = file.getSize();
                     final ClassSpec spec = new ClassSpec();
                     synchronized (VFSResourceLoader.this) {
@@ -205,8 +246,8 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
         return doPrivileged(new PrivilegedAction<Resource>() {
             public Resource run() {
                 try {
-                    final VirtualFile file = root.getChild(PathUtils.canonicalize(name));
-                    if (!file.exists()) {
+                    final VirtualFile file = getExistentVirtualFile(PathUtils.canonicalize(name));
+                    if (file == null) {
                         return null;
                     }
                     return new VFSEntryResource(file.getPathNameRelativeTo(root), file, file.toURL());
