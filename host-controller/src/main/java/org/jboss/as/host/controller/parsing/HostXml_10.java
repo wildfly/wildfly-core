@@ -502,6 +502,9 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
         operationAddress.add(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
         final ModelNode addOp = Util.getEmptyOperation(ADD, operationAddress);
 
+        int socketCount = 0;
+        int httpUpgradeCount = 0;
+
         // Handle attributes
         parseHttpManagementInterfaceAttributes(reader, addOp);
 
@@ -511,9 +514,15 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case SOCKET:
+                    if (++socketCount > 1) {
+                        throw unexpectedElement(reader);
+                    }
                     parseHttpManagementSocket(reader, addOp);
                     break;
                 case HTTP_UPGRADE:
+                    if (++httpUpgradeCount > 1) {
+                        throw unexpectedElement(reader);
+                    }
                     parseHttpUpgrade(reader, addOp);
                     break;
                 default:
