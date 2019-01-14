@@ -52,6 +52,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.AssumptionViolatedException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -121,6 +122,7 @@ public class SuspendOnSoftKillTestCase {
     }
 
     @Test
+    @Ignore
     public void testSuspendOnSoftKillNegativeTimeout() throws Exception {
         startContainer(-1);
         suspendOnSoftKillTest();
