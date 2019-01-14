@@ -91,7 +91,11 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
 
 
     public ProfileResourceDefinition(LocalHostControllerInfo hostInfo, IgnoredDomainResourceRegistry ignoredDomainResourceRegistry) {
-        super(PATH, DomainResolver.getResolver(PROFILE, false), ProfileAddHandler.INSTANCE, ProfileRemoveHandler.INSTANCE);
+        super(new SimpleResourceDefinition.Parameters(PATH, DomainResolver.getResolver(PROFILE, false))
+                .setAddHandler(ProfileAddHandler.INSTANCE)
+                .setRemoveHandler(ProfileRemoveHandler.INSTANCE)
+                .addCapabilities(PROFILE_CAPABILITY)
+        );
         this.hostInfo = hostInfo;
         this.ignoredDomainResourceRegistry = ignoredDomainResourceRegistry;
     }
@@ -109,12 +113,6 @@ public class ProfileResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerReadOnlyAttribute(NAME, ReadResourceNameOperationStepHandler.INSTANCE);
         resourceRegistration.registerReadWriteAttribute(INCLUDES, null, createIncludesValidationHandler());
     }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(PROFILE_CAPABILITY);
-    }
-
 
     public static OperationStepHandler createIncludesValidationHandler() {
         return new DomainIncludesValidationWriteAttributeHandler(INCLUDES);

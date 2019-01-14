@@ -45,6 +45,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
@@ -176,10 +177,11 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
     private final boolean updateRuntime;
     private final boolean resolvable;
 
-    public InterfaceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler, boolean updateRuntime, boolean resolvable) {
+    public InterfaceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler, boolean updateRuntime, boolean resolvable, RuntimeCapability<Void>... capabilities) {
         super(new Parameters(PathElement.pathElement(INTERFACE), ControllerResolver.getResolver(INTERFACE))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
+                .addCapabilities(capabilities)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG));
         this.updateRuntime = updateRuntime;
         this.resolvable = resolvable;

@@ -59,10 +59,10 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
     static final RemotingConnectorResource INSTANCE = new RemotingConnectorResource();
 
     private RemotingConnectorResource() {
-        super(REMOTE_CONNECTOR_CONFIG_PATH,
-                JMXExtension.getResourceDescriptionResolver(CommonAttributes.REMOTING_CONNECTOR),
-                RemotingConnectorAdd.INSTANCE,
-                RemotingConnectorRemove.INSTANCE);
+        super(new SimpleResourceDefinition.Parameters(REMOTE_CONNECTOR_CONFIG_PATH, JMXExtension.getResourceDescriptionResolver(CommonAttributes.REMOTING_CONNECTOR))
+                .setAddHandler(RemotingConnectorAdd.INSTANCE)
+                .setRemoveHandler(RemotingConnectorRemove.INSTANCE)
+                .setCapabilities(REMOTE_JMX_CAPABILITY));
     }
 
     @Override
@@ -103,10 +103,5 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
             }
         };
         resourceRegistration.registerReadWriteAttribute(USE_MANAGEMENT_ENDPOINT, null, writeHandler);
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(REMOTE_JMX_CAPABILITY);
     }
 }

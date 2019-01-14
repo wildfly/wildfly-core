@@ -22,6 +22,7 @@
 
 package org.jboss.as.domain.controller.resources;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_REFERENCE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -36,7 +37,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEATURE_REFERENCE;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
@@ -115,7 +115,11 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     public ServerGroupResourceDefinition(final boolean master, final LocalHostControllerInfo hostInfo,
                                          final HostFileRepository fileRepository, final ContentRepository contentRepository) {
-        super(PATH, DomainResolver.getResolver(SERVER_GROUP, false), ServerGroupAddHandler.INSTANCE, new ServerGroupRemoveHandler(hostInfo));
+        super(new SimpleResourceDefinition.Parameters(PATH, DomainResolver.getResolver(SERVER_GROUP, false))
+                .setAddHandler(ServerGroupAddHandler.INSTANCE)
+                .setRemoveHandler(new ServerGroupRemoveHandler(hostInfo))
+                .addCapabilities(SERVER_GROUP_CAPABILITY));
+
         this.contentRepository = contentRepository;
         this.fileRepository = fileRepository;
     }
@@ -147,11 +151,6 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(DomainDeploymentResourceDefinition.createForServerGroup(fileRepository, contentRepository));
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForDomainOrHost(Location.SERVER_GROUP));
         resourceRegistration.registerSubModel(new DomainDeploymentOverlayDefinition(false, null, null));
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(SERVER_GROUP_CAPABILITY);
     }
 
     public static OperationStepHandler createRestartRequiredHandler() {

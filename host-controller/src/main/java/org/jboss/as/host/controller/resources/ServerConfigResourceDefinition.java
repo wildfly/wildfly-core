@@ -165,8 +165,10 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
      * @param pathManager the {@link PathManagerService} to use for the child {@code path} resources. Cannot be {@code null}
      */
     public ServerConfigResourceDefinition(final LocalHostControllerInfo hostControllerInfo, final ServerInventory serverInventory, final PathManagerService pathManager, final ControlledProcessState processState, final File domainDataDir) {
-        super(PathElement.pathElement(SERVER_CONFIG), HostResolver.getResolver(SERVER_CONFIG, false),
-                ServerAddHandler.create(hostControllerInfo, serverInventory, processState, domainDataDir), ServerRemoveHandler.INSTANCE);
+        super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SERVER_CONFIG), HostResolver.getResolver(SERVER_CONFIG, false))
+                .setAddHandler(ServerAddHandler.create(hostControllerInfo, serverInventory, processState, domainDataDir))
+                .setRemoveHandler(ServerRemoveHandler.INSTANCE)
+                .addCapabilities(SERVER_CONFIG_CAPABILITY));
 
         assert pathManager != null : "pathManager is null";
 
@@ -223,11 +225,6 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(JvmResourceDefinition.SERVER);
         // ssl=loopback
         resourceRegistration.registerSubModel(new SslLoopbackResourceDefinition());
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(SERVER_CONFIG_CAPABILITY);
     }
 
     public static void registerServerLifecycleOperations(final ManagementResourceRegistration resourceRegistration, final ServerInventory serverInventory) {

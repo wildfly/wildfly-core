@@ -30,6 +30,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -111,12 +112,13 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
-    public AbstractSocketBindingResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
+    public AbstractSocketBindingResourceDefinition(final OperationStepHandler addHandler, final OperationStepHandler removeHandler, RuntimeCapability<Void>... capabilities) {
         super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.SOCKET_BINDING))
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
                 .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
-                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .addCapabilities(capabilities));
     }
 
     @Override

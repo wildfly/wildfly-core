@@ -44,6 +44,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -134,22 +135,16 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
 
 
     private WorkerResourceDefinition() {
-        super(IOExtension.WORKER_PATH,
-                IOExtension.getResolver(Constants.WORKER),
-                WorkerAdd.INSTANCE,
-                new ReloadRequiredRemoveStepHandler()
-        );
+        super(new SimpleResourceDefinition.Parameters(IOExtension.WORKER_PATH, IOExtension.getResolver(Constants.WORKER))
+                .setAddHandler(WorkerAdd.INSTANCE)
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .addCapabilities(IO_WORKER_RUNTIME_CAPABILITY));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Collection<AttributeDefinition> getAttributes() {
         return (Collection) ATTRIBUTES_BY_XMLNAME.values();
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(IO_WORKER_RUNTIME_CAPABILITY);
     }
 
     @Override
