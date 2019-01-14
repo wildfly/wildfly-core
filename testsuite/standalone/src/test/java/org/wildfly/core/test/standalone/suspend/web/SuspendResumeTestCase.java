@@ -43,6 +43,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerController;
@@ -57,6 +58,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
  * Tests for suspend/resume functionality
  */
 @RunWith(WildflyTestRunner.class)
+@Ignore // FIXME: WFCORE-4274
 public class SuspendResumeTestCase {
 
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
