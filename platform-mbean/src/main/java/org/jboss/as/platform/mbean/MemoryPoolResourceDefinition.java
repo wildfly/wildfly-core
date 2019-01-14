@@ -25,6 +25,7 @@
 package org.jboss.as.platform.mbean;
 
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.NAME;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.VALID;
 
@@ -83,12 +84,14 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD_COUNT, ModelType.LONG, true)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
 
     private static AttributeDefinition COLLECTION_USAGE_THRESHOLD = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_USAGE_THRESHOLD, ModelType.LONG, true)

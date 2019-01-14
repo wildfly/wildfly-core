@@ -24,6 +24,7 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.THREADING_PATH;
 
 import java.util.Arrays;
@@ -80,6 +81,7 @@ class ThreadResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
 
     static AttributeDefinition DAEMON_THREAD_COUNT = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.DAEMON_THREAD_COUNT, ModelType.INT, false)

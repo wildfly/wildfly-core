@@ -24,6 +24,8 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.GAUGE_METRIC;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.NAME;
 
 import java.util.Arrays;
@@ -48,11 +50,13 @@ class GarbageCollectorResourceDefinition extends SimpleResourceDefinition {
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.NONE)
+            .setFlags(COUNTER_METRIC)
             .build();
     private static SimpleAttributeDefinition COLLECTION_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.COLLECTION_TIME, ModelType.LONG, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
+            .setFlags(GAUGE_METRIC)
             .build();
     private static AttributeDefinition MEMORY_POOL_NAMES = new StringListAttributeDefinition.Builder(PlatformMBeanConstants.MEMORY_POOL_NAMES)
             .setStorageRuntime()

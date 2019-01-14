@@ -24,6 +24,7 @@
 
 package org.jboss.as.platform.mbean;
 
+import static org.jboss.as.controller.registry.AttributeAccess.Flag.COUNTER_METRIC;
 import static org.jboss.as.platform.mbean.PlatformMBeanConstants.RUNTIME_PATH;
 
 import java.util.Arrays;
@@ -50,6 +51,7 @@ class RuntimeResourceDefinition extends SimpleResourceDefinition {
             .setMeasurementUnit(MeasurementUnit.MILLISECONDS)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
+            .setFlags(COUNTER_METRIC)
             .build();
 
     private static AttributeDefinition START_TIME = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.START_TIME, ModelType.LONG, false)
