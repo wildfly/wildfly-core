@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.capability;
 
+import java.util.Optional;
+
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -85,6 +87,38 @@ public interface CapabilityServiceSupport {
      * @throws java.lang.ClassCastException if the runtime API exposed by the capability cannot be cast to type {code T}
      */
     <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) throws NoSuchCapabilityException;
+
+    /**
+     * Gets the runtime API associated with a given capability, if there is one.
+     *
+     * @param capabilityName the name of the capability. Cannot be {@code null}
+     * @param apiType        class of the java type that exposes the API. Cannot be {@code null}
+     * @param <T>            the java type that exposes the API
+     *
+     * @return an Optional describing the value of the runtime API. If no matching capability is registered, the optional
+     * will be empty.
+     *
+     * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
+     * @throws java.lang.ClassCastException       if the runtime API exposed by the capability cannot be cast to type {code T}
+     */
+    <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityName, Class<T> apiType);
+
+    /**
+     * Gets the runtime API associated with a given {@link RuntimeCapability#isDynamicallyNamed() dynamically named}
+     * capability, if there is one.
+     *
+     * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
+     * @param dynamicPart        the dynamic part of the capability name. Cannot be {@code null}
+     * @param apiType            class of the java type that exposes the API. Cannot be {@code null}
+     * @param <T>                the java type that exposes the API
+     *
+     * @return an Optional describing the value of the runtime API. If no matching capability is registered, the optional
+     * will be empty.
+     *
+     * @throws java.lang.IllegalArgumentException if the capability does not provide a runtime API
+     * @throws java.lang.ClassCastException       if the runtime API exposed by the capability cannot be cast to type {code T}
+     */
+    <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType);
 
     /**
      * Gets the name of a service associated with a given capability. This method does not confirm that the

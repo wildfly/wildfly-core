@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -2549,6 +2550,24 @@ final class OperationContextImpl extends AbstractOperationContext {
         public <T> T getCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) throws NoSuchCapabilityException {
             String fullName = RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart);
             return getCapabilityRuntimeAPI(fullName, apiType);
+        }
+
+        @Override
+        public <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityName, Class<T> apiType) {
+            try {
+                return Optional.of(getCapabilityRuntimeAPI(capabilityName, apiType));
+            } catch (NoSuchCapabilityException e) {
+                return Optional.empty();
+            }
+        }
+
+        @Override
+        public <T> Optional<T> getOptionalCapabilityRuntimeAPI(String capabilityBaseName, String dynamicPart, Class<T> apiType) {
+            try {
+                return Optional.of(getCapabilityRuntimeAPI(capabilityBaseName, dynamicPart, apiType));
+            } catch (NoSuchCapabilityException e) {
+                return Optional.empty();
+            }
         }
 
         @Override
