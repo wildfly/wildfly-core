@@ -21,10 +21,13 @@
  */
 package org.jboss.as.threads;
 
+
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.threads.ThreadPoolManagementUtils.BoundedThreadPoolParameters;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -58,21 +61,28 @@ public class BoundedQueueThreadPoolAdd extends AbstractAddStepHandler {
     private final ThreadFactoryResolver threadFactoryResolver;
     private final HandoffExecutorResolver handoffExecutorResolver;
     private final ServiceName serviceNameBase;
+    private final RuntimeCapability<Void> capability;
 
     public BoundedQueueThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
                                      HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase) {
+        this(blocking, threadFactoryResolver, handoffExecutorResolver, serviceNameBase, null);
+    }
+
+    public BoundedQueueThreadPoolAdd(boolean blocking, ThreadFactoryResolver threadFactoryResolver,
+                                     HandoffExecutorResolver handoffExecutorResolver, ServiceName serviceNameBase,
+                                     RuntimeCapability<Void> capability) {
         super(blocking ? BLOCKING_ATTRIBUTES : NON_BLOCKING_ATTRIBUTES);
         this.blocking = blocking;
         this.threadFactoryResolver = threadFactoryResolver;
         this.handoffExecutorResolver = handoffExecutorResolver;
         this.serviceNameBase = serviceNameBase;
+        this.capability= capability;
     }
 
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         final BoundedThreadPoolParameters params = ThreadPoolManagementUtils.parseBoundedThreadPoolParameters(context, operation, model, blocking);
-
         final BoundedQueueThreadPoolService service = new BoundedQueueThreadPoolService(
                 params.getCoreThreads(),
                 params.getMaxThreads(),
@@ -81,8 +91,8 @@ public class BoundedQueueThreadPoolAdd extends AbstractAddStepHandler {
                 params.getKeepAliveTime(),
                 params.isAllowCoreTimeout());
 
-        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), serviceNameBase,
-                params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
+        ThreadPoolManagementUtils.installThreadPoolService(service, params.getName(), capability, context.getCurrentAddress(),
+                serviceNameBase, params.getThreadFactory(), threadFactoryResolver, service.getThreadFactoryInjector(),
                 params.getHandoffExecutor(), handoffExecutorResolver, blocking ?  null : service.getHandoffExecutorInjector(),
                 context.getServiceTarget());
     }

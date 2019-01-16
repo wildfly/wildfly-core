@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
@@ -72,11 +73,40 @@ class ThreadPoolManagementUtils {
                                              final HandoffExecutorResolver handoffExecutorResolver,
                                              final Injector<Executor> handoffExecutorInjector,
                                              final ServiceTarget target) {
+        installThreadPoolService(threadPoolService, threadPoolName, null, null, serviceNameBase, threadFactoryName,
+                threadFactoryResolver, threadFactoryInjector, handoffExecutorName, handoffExecutorResolver,
+                handoffExecutorInjector, target);
+    }
 
-        final ServiceName threadPoolServiceName = serviceNameBase.append(threadPoolName);
-
+    static <T> void installThreadPoolService(final Service<T> threadPoolService,
+                                             final String threadPoolName,
+                                             final RuntimeCapability<Void> cap,
+                                             final PathAddress address,
+                                             final ServiceName serviceNameBase,
+                                             final String threadFactoryName,
+                                             final ThreadFactoryResolver threadFactoryResolver,
+                                             final Injector<ThreadFactory> threadFactoryInjector,
+                                             final String handoffExecutorName,
+                                             final HandoffExecutorResolver handoffExecutorResolver,
+                                             final Injector<Executor> handoffExecutorInjector,
+                                             final ServiceTarget target) {
+        final ServiceName threadPoolServiceName;
+        final ServiceName aliasServiceName;
+        if(cap != null) {
+            threadPoolServiceName = cap.getCapabilityServiceName(address);
+            if(serviceNameBase != null) {
+                aliasServiceName = serviceNameBase.append(threadPoolName);
+            } else {
+                aliasServiceName = null;
+            }
+        } else {
+            threadPoolServiceName = serviceNameBase.append(threadPoolName);
+            aliasServiceName = null;
+        }
         final ServiceBuilder<?> serviceBuilder = target.addService(threadPoolServiceName, threadPoolService);
-
+        if(aliasServiceName != null) {
+            serviceBuilder.addAliases(aliasServiceName);
+        }
         final ServiceName threadFactoryServiceName = threadFactoryResolver.resolveThreadFactory(threadFactoryName,
                 threadPoolName, threadPoolServiceName, target);
         serviceBuilder.addDependency(threadFactoryServiceName, ThreadFactory.class, threadFactoryInjector);
@@ -102,23 +132,43 @@ class ThreadPoolManagementUtils {
     }
 
     static void removeThreadPoolService(final String threadPoolName,
-                                             final ServiceName serviceNameBase,
-                                             final String threadFactoryName,
-                                             final ThreadFactoryResolver threadFactoryResolver,
-                                             final String handoffExecutorName,
-                                             final HandoffExecutorResolver handoffExecutorResolver,
-                                             final OperationContext operationContext) {
+            final RuntimeCapability<Void> cap,
+            final ServiceName serviceNameBase,
+            final String threadFactoryName,
+            final ThreadFactoryResolver threadFactoryResolver,
+            final OperationContext operationContext) {
+        removeThreadPoolService(threadPoolName, cap, serviceNameBase, threadFactoryName, threadFactoryResolver, null, null, operationContext);
+    }
 
-        final ServiceName threadPoolServiceName = serviceNameBase.append(threadPoolName);
+    static void removeThreadPoolService(final String threadPoolName,
+            final ServiceName serviceNameBase,
+            final String threadFactoryName,
+            final ThreadFactoryResolver threadFactoryResolver,
+            final String handoffExecutorName,
+            final HandoffExecutorResolver handoffExecutorResolver,
+            final OperationContext operationContext) {
+        removeThreadPoolService(threadPoolName, null, serviceNameBase, threadFactoryName, threadFactoryResolver, handoffExecutorName, handoffExecutorResolver, operationContext);
+    }
 
+    public static void removeThreadPoolService(String threadPoolName,
+            final RuntimeCapability<Void> cap,
+            ServiceName serviceNameBase,
+            String threadFactoryName,
+            ThreadFactoryResolver threadFactoryResolver,
+            String handoffExecutorName,
+            HandoffExecutorResolver handoffExecutorResolver,
+            OperationContext operationContext) {
+        final ServiceName threadPoolServiceName;
+        if (cap != null) {
+            threadPoolServiceName = cap.getCapabilityServiceName(threadPoolName);
+        } else {
+            threadPoolServiceName = serviceNameBase.append(threadPoolName);
+        }
         operationContext.removeService(threadPoolServiceName);
-
         threadFactoryResolver.releaseThreadFactory(threadFactoryName, threadPoolName, threadPoolServiceName, operationContext);
-
         if (handoffExecutorResolver != null) {
             handoffExecutorResolver.releaseHandoffExecutor(handoffExecutorName, threadPoolName, threadPoolServiceName, operationContext);
         }
-
     }
 
     static BaseThreadPoolParameters parseUnboundedQueueThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {

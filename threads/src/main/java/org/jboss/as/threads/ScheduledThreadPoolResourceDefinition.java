@@ -22,6 +22,8 @@
 
 package org.jboss.as.threads;
 
+import static org.jboss.as.threads.CommonAttributes.SCHEDULED_THREAD_POOL;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceDefinition;
@@ -31,6 +33,8 @@ import org.jboss.msc.service.ServiceName;
 
 import java.util.Arrays;
 import java.util.Collection;
+import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a scheduled thread pool resource.
@@ -41,26 +45,42 @@ public class ScheduledThreadPoolResourceDefinition extends PersistentResourceDef
     private final ScheduledThreadPoolWriteAttributeHandler writeAttributeHandler;
     private final ScheduledThreadPoolMetricsHandler metricsHandler;
     private final boolean registerRuntimeOnly;
+    public static final RuntimeCapability<Void> CAPABILITY = ThreadsServices.createCapability(SCHEDULED_THREAD_POOL, ManagedScheduledExecutorService.class);
 
     public static ScheduledThreadPoolResourceDefinition create(boolean registerRuntimeOnly) {
-        return create(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsServices.STANDARD_THREAD_FACTORY_RESOLVER, ThreadsServices.EXECUTOR, registerRuntimeOnly);
+        return create(SCHEDULED_THREAD_POOL, ThreadsServices.getThreadFactoryResolver(SCHEDULED_THREAD_POOL), ThreadsServices.EXECUTOR, registerRuntimeOnly);
     }
 
     public static ScheduledThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
                                                                ServiceName serviceNameBase, boolean registerRuntimeOnly) {
-        ScheduledThreadPoolAdd addHandler = new ScheduledThreadPoolAdd(threadFactoryResolver, serviceNameBase);
-        return new ScheduledThreadPoolResourceDefinition(type, addHandler, serviceNameBase, registerRuntimeOnly);
+        return create(type, threadFactoryResolver, serviceNameBase, registerRuntimeOnly, CAPABILITY);
     }
 
-    private ScheduledThreadPoolResourceDefinition(String type, ScheduledThreadPoolAdd addHandler,
-                                                  ServiceName serviceNameBase, boolean registerRuntimeOnly) {
-        super(PathElement.pathElement(type),
-                new ThreadPoolResourceDescriptionResolver(CommonAttributes.SCHEDULED_THREAD_POOL, ThreadsExtension.RESOURCE_NAME,
-                        ThreadsExtension.class.getClassLoader()),
-                addHandler, new ScheduledThreadPoolRemove(addHandler));
+    public static ScheduledThreadPoolResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
+                                                               ServiceName serviceNameBase, boolean registerRuntimeOnly,
+                                                               RuntimeCapability<Void> capability) {
+        return create(PathElement.pathElement(type), threadFactoryResolver, serviceNameBase, registerRuntimeOnly, capability);
+    }
+
+    public static ScheduledThreadPoolResourceDefinition create(PathElement path, ThreadFactoryResolver threadFactoryResolver,
+                                                               ServiceName serviceNameBase, boolean registerRuntimeOnly,
+                                                               RuntimeCapability<Void> capability) {
+        ScheduledThreadPoolAdd addHandler = new ScheduledThreadPoolAdd(threadFactoryResolver, serviceNameBase, capability);
+        return new ScheduledThreadPoolResourceDefinition(path, addHandler, capability, serviceNameBase, registerRuntimeOnly);
+    }
+
+    private ScheduledThreadPoolResourceDefinition(PathElement path, ScheduledThreadPoolAdd addHandler,
+                                                  RuntimeCapability<Void> capability, ServiceName serviceNameBase,
+                                                  boolean registerRuntimeOnly) {
+        super(new SimpleResourceDefinition.Parameters(path,
+                new ThreadPoolResourceDescriptionResolver(SCHEDULED_THREAD_POOL, ThreadsExtension.RESOURCE_NAME,
+                        ThreadsExtension.class.getClassLoader()))
+                .setAddHandler(addHandler)
+                .setRemoveHandler(new ScheduledThreadPoolRemove(addHandler))
+                .setCapabilities(capability));
         this.registerRuntimeOnly = registerRuntimeOnly;
-        this.writeAttributeHandler = new ScheduledThreadPoolWriteAttributeHandler(serviceNameBase);
-        this.metricsHandler = new ScheduledThreadPoolMetricsHandler(serviceNameBase);
+        this.writeAttributeHandler = new ScheduledThreadPoolWriteAttributeHandler(capability, serviceNameBase);
+        this.metricsHandler = new ScheduledThreadPoolMetricsHandler(capability, serviceNameBase);
     }
 
     @Override

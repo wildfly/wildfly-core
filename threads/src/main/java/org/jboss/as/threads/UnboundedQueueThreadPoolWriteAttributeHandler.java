@@ -22,13 +22,12 @@
 package org.jboss.as.threads;
 
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -42,10 +41,17 @@ import org.jboss.msc.service.ServiceName;
 public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
+    private final RuntimeCapability capability;
 
+    @Deprecated
     public UnboundedQueueThreadPoolWriteAttributeHandler(ServiceName serviceNameBase) {
+        this(null, serviceNameBase);
+    }
+
+    public UnboundedQueueThreadPoolWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
         super(UnboundedQueueThreadPoolAdd.ATTRIBUTES, UnboundedQueueThreadPoolAdd.RW_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
+        this.capability = capability;
     }
 
     @Override
@@ -68,9 +74,20 @@ public class UnboundedQueueThreadPoolWriteAttributeHandler extends ThreadsWriteA
 
     @Override
     protected ServiceController<?> getService(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        final String name = Util.getNameFromAddress(model.require(OP_ADDR));
-        final ServiceName serviceName = serviceNameBase.append(name);
-        ServiceController<?> controller = context.getServiceRegistry(true).getService(serviceName);
+        final String name = context.getCurrentAddressValue();
+        ServiceName serviceName = null;
+        ServiceController<?> controller = null;
+        if(capability != null) {
+            serviceName = capability.getCapabilityServiceName(context.getCurrentAddress());
+            controller = context.getServiceRegistry(true).getService(serviceName);
+            if(controller != null) {
+                return controller;
+            }
+        }
+        if (serviceNameBase != null) {
+            serviceName = serviceNameBase.append(name);
+            controller = context.getServiceRegistry(true).getService(serviceName);
+        }
         if(controller == null) {
             throw ThreadsLogger.ROOT_LOGGER.unboundedQueueThreadPoolServiceNotFound(serviceName);
         }
