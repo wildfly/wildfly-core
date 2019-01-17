@@ -223,9 +223,19 @@ public class SuspendOnSoftKillTestCase {
             // Confirm 1st request completed
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
 
-            // Check server behaves like a suspended or stopped server; which it will be is unknown
+            // Check server behaves like a suspended, suspending or stopped server; which it will be is unknown.
+            // If we are still in suspending state, wait a bit longer until get suspended or the server is down.
             try {
-                Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
+                timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+                do {
+                    suspendState = serverController.getClient().executeForResult(op).asString();
+                    if ("SUSPENDING".equals(suspendState)) {
+                        Thread.sleep(50);
+                    } else {
+                        break;
+                    }
+                } while (System.currentTimeMillis() < timeout);
+                Assert.assertEquals("SUSPENDED", suspendState);
             } catch (UnsuccessfulOperationException | RuntimeException ok) {
                 // ignore; it's fine if the server's down
             }
