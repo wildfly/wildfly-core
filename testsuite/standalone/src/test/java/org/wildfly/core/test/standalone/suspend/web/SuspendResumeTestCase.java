@@ -113,7 +113,17 @@ public class SuspendResumeTestCase {
 
             HttpRequest.get(address + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
-            Assert.assertEquals("SUSPENDED", serverController.getClient().executeForResult(op).asString());
+            String suspendState;
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+            do {
+                suspendState = serverController.getClient().executeForResult(op).asString();
+                if ("SUSPENDING".equals(suspendState)) {
+                    Thread.sleep(50);
+                } else {
+                    break;
+                }
+            } while (System.currentTimeMillis() < timeout);
+            Assert.assertEquals("SUSPENDED", suspendState);
 
             final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
             try {
