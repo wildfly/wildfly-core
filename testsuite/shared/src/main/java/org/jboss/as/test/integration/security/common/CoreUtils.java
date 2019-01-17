@@ -337,8 +337,8 @@ public class CoreUtils {
 
     /**
      * Returns response body for the given URL request as a String. It also checks if the returned HTTP status code is the
-     * expected one. If the server returns {@link HttpServletResponse#SC_UNAUTHORIZED} and username is provided, then a new
-     * request is created with the provided credentials (basic authentication).
+     * expected one. If the server returns {@link org.apache.http.HttpStatus#SC_UNAUTHORIZED} and username is provided,
+     * then a new request is created with the provided credentials (basic authentication).
      *
      * @param url URL to which the request should be made
      * @param user Username (may be null)
