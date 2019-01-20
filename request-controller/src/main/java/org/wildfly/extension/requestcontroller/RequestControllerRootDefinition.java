@@ -35,6 +35,7 @@ import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -71,10 +72,10 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
     private final boolean registerRuntimeOnly;
 
     RequestControllerRootDefinition(boolean registerRuntimeOnly) {
-        super(RequestControllerExtension.SUBSYSTEM_PATH,
-                RequestControllerExtension.getResolver(),
-                new RequestControllerSubsystemAdd(getAttributeDefinitions(registerRuntimeOnly)),
-                ReloadRequiredRemoveStepHandler.INSTANCE);
+        super(new SimpleResourceDefinition.Parameters(RequestControllerExtension.SUBSYSTEM_PATH, RequestControllerExtension.getResolver())
+                .setAddHandler(new RequestControllerSubsystemAdd(getAttributeDefinitions(registerRuntimeOnly)))
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .addCapabilities(REQUEST_CONTROLLER_CAPABILITY));
         this.registerRuntimeOnly = registerRuntimeOnly;
     }
 
@@ -104,10 +105,5 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
         if(registerRuntimeOnly) {
             resourceRegistration.registerMetric(ACTIVE_REQUESTS, new ActiveRequestsReadHandler());
         }
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(REQUEST_CONTROLLER_CAPABILITY);
     }
 }

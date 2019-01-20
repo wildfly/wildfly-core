@@ -24,7 +24,6 @@ package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.resource.InterfaceDefinition;
 import org.jboss.as.network.NetworkInterfaceBinding;
 
@@ -46,11 +45,6 @@ public class InterfaceResourceDefinition extends InterfaceDefinition {
 
     public InterfaceResourceDefinition(InterfaceAddHandler addHandler, OperationStepHandler removeHandler,
                                        boolean updateRuntime, boolean resolvable) {
-        super(addHandler, removeHandler, updateRuntime, resolvable);
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(INTERFACE_CAPABILITY);
+        super(addHandler, removeHandler, updateRuntime, resolvable, INTERFACE_CAPABILITY);
     }
 }

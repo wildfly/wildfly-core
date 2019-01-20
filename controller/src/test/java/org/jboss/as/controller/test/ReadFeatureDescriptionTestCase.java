@@ -30,9 +30,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FEA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPTIONAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_PARAMS_MAPPING;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPTIONAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PARAMS;
@@ -614,7 +614,9 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
                         .build();
 
         MainResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
-            super(pathElement, descriptionResolver, new AddHandler(), null);
+            super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
+                    .setAddHandler(new AddHandler())
+                    .addCapabilities(MAIN_RESOURCE_CAPABILITY));
         }
 
         @Override
@@ -626,12 +628,6 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
             resourceRegistration.registerReadWriteAttribute(OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadWriteAttribute(COMPLEX_OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadWriteAttribute(LIST_ATTRIBUTE, null, WRITE_HANDLER);
-        }
-
-        @Override
-        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-            super.registerCapabilities(resourceRegistration);
-            resourceRegistration.registerCapability(MAIN_RESOURCE_CAPABILITY);
         }
     }
 
@@ -650,6 +646,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         ReferencingResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
             super(new Parameters(pathElement, descriptionResolver)
+                    .addCapabilities(REFERENCING_RESOURCE_CAPABILITY)
                     .addRequirement(REFERENCING_RESOURCE_CAPABILITY_NAME, null, ROOT_CAPABILITY_NAME, null)
             );
         }
@@ -658,12 +655,6 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
             super.registerAttributes(resourceRegistration);
             resourceRegistration.registerReadWriteAttribute(MAIN_RESOURCE_ATTR, null, WRITE_HANDLER);
-        }
-
-        @Override
-        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-            super.registerCapabilities(resourceRegistration);
-            resourceRegistration.registerCapability(REFERENCING_RESOURCE_CAPABILITY);
         }
     }
 

@@ -109,8 +109,10 @@ public class TestHostCapableExtension implements Extension {
         private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", new NonResolvingResourceDescriptionResolver()).build();
 
         public RootResourceDefinition(String name) {
-            super(PathElement.pathElement(SUBSYSTEM, name), new NonResolvingResourceDescriptionResolver(),
-                    new AddSubsystemHandler(), new RemoveSubsystemHandler());
+            super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SUBSYSTEM, name), new NonResolvingResourceDescriptionResolver())
+                    .setAddHandler(new AddSubsystemHandler())
+                    .setRemoveHandler(new RemoveSubsystemHandler())
+                    .addCapabilities(TEST_CAPABILITY));
         }
 
         @Override
@@ -132,11 +134,6 @@ public class TestHostCapableExtension implements Extension {
                     context.getResult().set(sc != null);
                 }
             });
-        }
-
-        @Override
-        public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-            resourceRegistration.registerCapability(TEST_CAPABILITY);
         }
 
         private static ServiceName createServiceName(PathAddress address) {

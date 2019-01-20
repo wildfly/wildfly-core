@@ -274,7 +274,18 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                                   final ManagedAuditLogger auditLogger,
                                   final BootErrorCollector bootErrorCollector) {
         super(new Parameters(PathElement.pathElement(HOST, hostName), HostModelUtil.getResourceDescriptionResolver())
-                .setCapabilities(HOST_RUNTIME_CAPABILITY));
+                .setCapabilities(HOST_RUNTIME_CAPABILITY,
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.HOME_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_CONFIG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_DATA_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_LOG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_TEMP_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.CONTROLLER_TEMP_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_CONFIG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_DATA_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_LOG_DIR),
+                        PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_TEMP_DIR)));
         this.configurationPersister = configurationPersister;
         this.environment = environment;
         this.runningModeControl = runningModeControl;
@@ -389,24 +400,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
         ignoredRegistry.registerResources(hostRegistration);
 
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        super.registerCapabilities(resourceRegistration);
-
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.HOME_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_CONFIG_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_DATA_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_LOG_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.DOMAIN_TEMP_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(HostControllerEnvironment.CONTROLLER_TEMP_DIR));
-
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_BASE_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_CONFIG_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_DATA_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_LOG_DIR));
-        resourceRegistration.registerCapability(PATH_CAPABILITY.fromBaseCapability(ServerEnvironment.SERVER_TEMP_DIR));
     }
 
     @Override

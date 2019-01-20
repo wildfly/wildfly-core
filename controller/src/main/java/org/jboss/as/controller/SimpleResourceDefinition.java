@@ -362,6 +362,13 @@ public class SimpleResourceDefinition implements ResourceDefinition {
         // no-op
     }
 
+    /**
+     * Register capabilities associated with this resource.
+     *
+     * <p>Classes that overrides this method <em>MUST</em> call {@code super.registerCapabilities(resourceRegistration)}.</p>
+     *
+     * @param resourceRegistration a {@link ManagementResourceRegistration} created from this definition
+     */
     @Override
     public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
         if (capabilities!=null) {

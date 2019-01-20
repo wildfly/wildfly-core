@@ -115,11 +115,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         }
     }
 
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY);
-    }
-
     protected abstract AttributeDefinition[] getAttributeDefinitions();
 
     protected static AttributeDefinition[] combine(AttributeDefinition[] commonAttributes, AttributeDefinition... additionalAttributes) {

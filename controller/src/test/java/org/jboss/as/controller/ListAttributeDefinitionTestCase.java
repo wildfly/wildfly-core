@@ -153,7 +153,6 @@ public class ListAttributeDefinitionTestCase {
 
             @Override
             public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-
             }
         };
 

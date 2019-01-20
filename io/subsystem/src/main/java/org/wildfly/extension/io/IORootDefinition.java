@@ -32,8 +32,8 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PersistentResourceDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 
 /**
@@ -54,12 +54,12 @@ class IORootDefinition extends PersistentResourceDefinition {
         };
 
     private IORootDefinition() {
-        super(IOExtension.SUBSYSTEM_PATH,
-                IOExtension.getResolver(),
-                IOSubsystemAdd.INSTANCE,
-                ReloadRequiredRemoveStepHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE,
-                OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new SimpleResourceDefinition.Parameters(IOExtension.SUBSYSTEM_PATH, IOExtension.getResolver())
+                .setAddHandler(IOSubsystemAdd.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES)
+                .addCapabilities(IO_MAX_THREADS_RUNTIME_CAPABILITY));
     }
 
     @Override
@@ -70,10 +70,5 @@ class IORootDefinition extends PersistentResourceDefinition {
     @Override
     protected List<? extends PersistentResourceDefinition> getChildren() {
         return Arrays.asList(CHILDREN);
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(IO_MAX_THREADS_RUNTIME_CAPABILITY);
     }
 }

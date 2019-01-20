@@ -45,7 +45,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
@@ -126,6 +125,8 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
                 IOExtension.getResolver(Constants.BUFFER_POOL))
                 .setAddHandler(new BufferPoolAdd())
                 .setRemoveHandler(new ReloadRequiredRemoveStepHandler())
+                .addCapabilities(IO_POOL_RUNTIME_CAPABILITY,
+                        IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
                 .setDeprecatedSince(ModelVersion.create(4))
         );
     }
@@ -134,12 +135,6 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
     @Override
     public Collection<AttributeDefinition> getAttributes() {
         return (Collection) ATTRIBUTES;
-    }
-
-    @Override
-    public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerCapability(IO_POOL_RUNTIME_CAPABILITY);
-        resourceRegistration.registerCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY);
     }
 
     private static class BufferPoolAdd extends AbstractAddStepHandler {
