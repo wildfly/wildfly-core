@@ -143,7 +143,7 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
         kernelServices.executeOperation(keepAliveOp);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        ObjectName threadPoolName = new ObjectName("jboss.threads:name=default,type=thread-pool");
+        ObjectName threadPoolName = new ObjectName("jboss.threads:name=\"default\",type=thread-pool");
         Assert.assertEquals(coreThreads, (int) mbs.getAttribute(threadPoolName, "CorePoolSize"));
         Assert.assertEquals(maxThreads, (int) mbs.getAttribute(threadPoolName, "MaximumPoolSize"));
         Assert.assertEquals(keepAliveMillis / 1000, (long) mbs.getAttribute(threadPoolName, "KeepAliveTimeSeconds"));
